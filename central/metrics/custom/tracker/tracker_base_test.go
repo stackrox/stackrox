@@ -3,9 +3,9 @@ package tracker
 import (
 	"context"
 	"maps"
-	"regexp"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -671,31 +671,31 @@ func Test_scope(t *testing.T) {
 		cluster1Gatherer, _ := tracker.gatherers.Load(cluster1Identity.UID())
 		noAccessGatherer, _ := tracker.gatherers.Load(noAccessIdentity.UID())
 
-		adminRegistry := adminGatherer.(*gatherer).registry
-		cluster1Registry := cluster1Gatherer.(*gatherer).registry
-		noAccessRegistry := noAccessGatherer.(*gatherer).registry
+		adminRegistry := adminGatherer.(*gatherer[testFinding]).registry
+		cluster1Registry := cluster1Gatherer.(*gatherer[testFinding]).registry
+		noAccessRegistry := noAccessGatherer.(*gatherer[testFinding]).registry
 
 		adminMetrics := readMetrics(adminRegistry)
 		cluster1Metrics := readMetrics(cluster1Registry)
 		noAccessMetrics := readMetrics(noAccessRegistry)
 
-		const expectedAdminMetrics = `# HELP rox_central_test_Test_scope_scoped_access_metric1 The total number of Test aggregated by Cluster,Severity and gathered every 1h0m0s
+		const expectedAdminMetrics = `# HELP rox_central_test_Test_scope_scoped_access_metric1 The total number of Test aggregated by Cluster, Severity, and gathered every 1h0m0s
 # TYPE rox_central_test_Test_scope_scoped_access_metric1 gauge
 rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 1",Severity="CRITICAL"} 2
 rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 2",Severity="HIGH"} 1
 rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 3",Severity="LOW"} 1
 rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 5",Severity="LOW"} 1
-# HELP rox_central_test_Test_scope_scoped_access_metric2 The total number of Test aggregated by Namespace and gathered every 1h0m0s
+# HELP rox_central_test_Test_scope_scoped_access_metric2 The total number of Test aggregated by Namespace, and gathered every 1h0m0s
 # TYPE rox_central_test_Test_scope_scoped_access_metric2 gauge
 rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 1"} 1
 rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 2"} 1
 rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 3
 `
 
-		const expectedCluster1Metrics = `# HELP rox_central_test_Test_scope_scoped_access_metric1 The total number of Test aggregated by Cluster,Severity and gathered every 1h0m0s
+		const expectedCluster1Metrics = `# HELP rox_central_test_Test_scope_scoped_access_metric1 The total number of Test aggregated by Cluster, Severity, and gathered every 1h0m0s
 # TYPE rox_central_test_Test_scope_scoped_access_metric1 gauge
 rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 1",Severity="CRITICAL"} 2
-# HELP rox_central_test_Test_scope_scoped_access_metric2 The total number of Test aggregated by Namespace and gathered every 1h0m0s
+# HELP rox_central_test_Test_scope_scoped_access_metric2 The total number of Test aggregated by Namespace, and gathered every 1h0m0s
 # TYPE rox_central_test_Test_scope_scoped_access_metric2 gauge
 rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 1"} 1
 rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 1
@@ -745,13 +745,13 @@ rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 1
 		globalRegistry, err := metrics.GetGlobalRegistry()
 		require.NoError(t, err)
 
-		const expectedMetrics = `# HELP rox_central_test_Test_scope_global_access_metric1 The total number of Test aggregated by Cluster,Severity and gathered every 1h0m0s
+		const expectedMetrics = `# HELP rox_central_test_Test_scope_global_access_metric1 The total number of Test aggregated by Cluster, Severity, and gathered every 1h0m0s
 # TYPE rox_central_test_Test_scope_global_access_metric1 gauge
 rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 1",Severity="CRITICAL"} 2
 rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 2",Severity="HIGH"} 1
 rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 3",Severity="LOW"} 1
 rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 5",Severity="LOW"} 1
-# HELP rox_central_test_Test_scope_global_access_metric2 The total number of Test aggregated by Namespace and gathered every 1h0m0s
+# HELP rox_central_test_Test_scope_global_access_metric2 The total number of Test aggregated by Namespace, and gathered every 1h0m0s
 # TYPE rox_central_test_Test_scope_global_access_metric2 gauge
 rox_central_test_Test_scope_global_access_metric2{Namespace="ns 1"} 1
 rox_central_test_Test_scope_global_access_metric2{Namespace="ns 2"} 1
