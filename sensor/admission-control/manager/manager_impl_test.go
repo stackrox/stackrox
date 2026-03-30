@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/admission-control/resources"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
