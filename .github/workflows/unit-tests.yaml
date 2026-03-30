@@ -179,7 +179,6 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-operator-integration
-        cache-mod: 'true'
 
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration

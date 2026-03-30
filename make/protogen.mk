@@ -34,11 +34,12 @@ GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 GENERATED_API_SWAGGER_SPECS_V2 = $(API_SERVICE_PROTOS_V2:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
-# Lazy: only downloads/resolves when a recipe expands these variables.
-SCANNER_DIR = $(shell go mod download github.com/stackrox/scanner >/dev/null 2>&1; go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
+SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
+ifneq ($(SCANNER_DIR),)
 SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
-ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto' 2>/dev/null)
+ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
 ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
+endif
 
 $(call go-tool, PROTOC_GEN_GO_BIN, google.golang.org/protobuf/cmd/protoc-gen-go)
 $(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
@@ -124,8 +125,8 @@ null :=
 space := $(null) $(null)
 comma := ,
 
-M_ARGS_STR = $(subst $(space),$(comma),$(strip $(M_ARGS)))
-GATEWAY_M_ARGS_STR = $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
+M_ARGS_STR := $(subst $(space),$(comma),$(strip $(M_ARGS)))
+GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
 
 
 $(PROTOC_INCLUDES): $(PROTOC)

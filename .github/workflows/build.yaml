@@ -309,6 +309,9 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
+
       - name: Generate the swagger docs
         run: |
           make swagger-docs
@@ -685,6 +688,9 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
 
       - name: Build Operator Bundle image
         if: |
