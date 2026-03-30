@@ -156,6 +156,10 @@ func (m mockStoreProvider) Pods() store.PodStore {
 	return nil
 }
 
+func (m mockStoreProvider) Namespaces() store.NamespaceStore {
+	return nil
+}
+
 func (m mockStoreProvider) NetworkPolicies() store.NetworkPolicyStore {
 	return nil
 }
