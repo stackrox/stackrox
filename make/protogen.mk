@@ -34,7 +34,7 @@ GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 GENERATED_API_SWAGGER_SPECS_V2 = $(API_SERVICE_PROTOS_V2:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
-SCANNER_DIR = $(shell go mod download github.com/stackrox/scanner >/dev/null 2>&1; go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
+SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 ifneq ($(SCANNER_DIR),)
 SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
 ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')

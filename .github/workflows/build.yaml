@@ -309,8 +309,8 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
 
       - name: Generate the swagger docs
         run: |
@@ -667,9 +667,6 @@ jobs:
         with:
           key-suffix: ${{ matrix.name }}
 
-      - name: Resolve mods for protos
-        run: go mod tidy
-
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
@@ -691,6 +688,9 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
 
       - name: Build Operator Bundle image
         if: |
