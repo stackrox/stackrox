@@ -378,11 +378,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
 
     - uses: ./.github/actions/job-preamble
       with:
