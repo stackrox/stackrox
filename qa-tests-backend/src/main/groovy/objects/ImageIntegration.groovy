@@ -2,11 +2,15 @@ package objects
 
 import common.Constants
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import util.Env
 
 trait ImageIntegration {
     abstract static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs)
+
+    // Returns true for integrations that can be deleted, false otherwise.
+    static boolean isDeletable() { true }
 }
 
 class StackroxScannerIntegration implements ImageIntegration {
@@ -14,7 +18,7 @@ class StackroxScannerIntegration implements ImageIntegration {
     static String name() { Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION }
 
     static Boolean isTestable() {
-        return true
+        return !FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4")
     }
 
     static String createDefaultIntegration() {
@@ -425,6 +429,28 @@ class GoogleArtifactRegistry implements ImageIntegration {
                 .addAllCategories(ImageIntegrationService.getIntegrationCategories(false))
                 .setGoogle(config)
                 .setSkipTestIntegration(args.skipTestIntegration as Boolean)
+    }
+}
+
+class ScannerV4Integration implements ImageIntegration {
+
+    static String name() { "Scanner V4" }
+
+    static Boolean isTestable() {
+        return FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4")
+    }
+
+    static boolean isDeletable() { false }
+
+    // The Scanner V4 integration is auto-registered and cannot be deleted.
+    // createDefaultIntegration() looks up the existing integration rather than creating one.
+    static String createDefaultIntegration() {
+        ImageIntegrationOuterClass.ImageIntegration existing =
+                ImageIntegrationService.getImageIntegrationByName(name())
+        if (!existing) {
+            return ""
+        }
+        return existing.id
     }
 }
 
