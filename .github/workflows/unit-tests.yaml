@@ -424,10 +424,8 @@ jobs:
       matrix:
         variant:
           - name: development
-            env: NO_BATS_ROXCTL_REBUILD=1
             files: tests/roxctl/bats-tests/local/*development* tests/roxctl/bats-tests/local/central-generate-interactive-flavors.bats tests/roxctl/bats-tests/local/central-help-output.bats tests/roxctl/bats-tests/local/deployment-bundles-psps.bats tests/roxctl/bats-tests/local/expect
           - name: release
-            env: NO_BATS_ROXCTL_REBUILD=1
             files: tests/roxctl/bats-tests/local/*release*
     runs-on: ubuntu-latest
     outputs:
