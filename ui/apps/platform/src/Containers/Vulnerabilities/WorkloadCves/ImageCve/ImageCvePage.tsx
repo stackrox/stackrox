@@ -138,6 +138,7 @@ export const imageCveAffectedDeploymentsQuery = gql`
         $criticalImageCountQuery: String
         $statusesForExceptionCount: [String!]
     ) {
+        deploymentCount(query: $query)
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
         }
@@ -319,13 +320,17 @@ function ImageCvePage({
 
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
+    // When the deployment data request has completed, use its count (which reflects any
+    // tombstone-extended query) so the pagination stays accurate when "Show deleted" is on.
+    const deploymentTableRowCount =
+        deploymentDataRequest.data?.deploymentCount ?? deploymentCount;
 
     let tableRowCount = 0;
 
     if (entityTab === 'Image') {
         tableRowCount = imageCount;
     } else if (entityTab === 'Deployment') {
-        tableRowCount = deploymentCount;
+        tableRowCount = deploymentTableRowCount;
     }
 
     function onEntityTypeChange(entityTab: WorkloadEntityTab, historyAction?: HistoryAction) {

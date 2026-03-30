@@ -67,7 +67,7 @@ export type DeploymentForCve = {
     type: string;
     clusterName: string;
     created: string | null;
-    tombstoneDeletedAt?: string;
+    tombstone?: { deletedAt?: string | null };
     unknownImageCount: number;
     lowImageCount: number;
     moderateImageCount: number;
@@ -86,7 +86,9 @@ export const deploymentsForCveFragment = gql`
         type
         clusterName
         created
-        tombstoneDeletedAt
+        tombstone {
+            deletedAt
+        }
         unknownImageCount: imageCount(query: $unknownImageCountQuery)
         lowImageCount: imageCount(query: $lowImageCountQuery)
         moderateImageCount: imageCount(query: $moderateImageCountQuery)
@@ -174,7 +176,7 @@ function AffectedDeploymentsTable({
                             namespace,
                             type,
                             clusterName,
-                            tombstoneDeletedAt,
+                            tombstone,
                             unknownImageCount,
                             lowImageCount,
                             moderateImageCount,
@@ -217,9 +219,9 @@ function AffectedDeploymentsTable({
                                             >
                                                 <Truncate position="middle" content={name} />
                                             </Link>
-                                            {tombstoneDeletedAt && (
+                                            {tombstone?.deletedAt && (
                                                 <TombstonedDeploymentLabel
-                                                    deletedAt={tombstoneDeletedAt}
+                                                    deletedAt={tombstone.deletedAt}
                                                     isCompact
                                                     variant="outline"
                                                 />

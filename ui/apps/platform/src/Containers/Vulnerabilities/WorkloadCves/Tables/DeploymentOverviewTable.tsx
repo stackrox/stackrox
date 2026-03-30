@@ -76,7 +76,9 @@ export const deploymentListQuery = gql`
             namespace
             imageCount(query: $query)
             created
-            tombstoneDeletedAt
+            tombstone {
+                deletedAt
+            }
         }
     }
 `;
@@ -96,7 +98,7 @@ export type Deployment = {
     namespace: string;
     imageCount: number;
     created: string | null;
-    tombstoneDeletedAt?: string;
+    tombstone?: { deletedAt?: string | null };
 };
 
 type DeploymentOverviewTableProps = {
@@ -180,8 +182,9 @@ function DeploymentOverviewTable({
                             namespace,
                             imageCount,
                             created,
-                            tombstoneDeletedAt,
+                            tombstone,
                         } = deployment;
+                        const tombstoneDeletedAt = tombstone?.deletedAt ?? undefined;
                         const criticalCount = imageCVECountBySeverity.critical.total;
                         const importantCount = imageCVECountBySeverity.important.total;
                         const moderateCount = imageCVECountBySeverity.moderate.total;

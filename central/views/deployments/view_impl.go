@@ -23,12 +23,23 @@ type deploymentViewImpl struct {
 	db     postgres.DB
 }
 
+// withTombstoneExclusion adds a filter to exclude soft-deleted (tombstoned) deployments,
+// unless the caller has already explicitly referenced the TombstoneDeletedAt field.
+func withTombstoneExclusion(q *v1.Query) *v1.Query {
+	if search.QueryMentionsField(q, search.TombstoneDeletedAt) {
+		return q
+	}
+	excludeFilter := search.NewQueryBuilder().AddNullField(search.TombstoneDeletedAt).ProtoQuery()
+	return search.ConjunctionQuery(excludeFilter, q)
+}
+
 func (v *deploymentViewImpl) Get(ctx context.Context, query *v1.Query) ([]DeploymentCore, error) {
 	if err := common.ValidateQuery(query); err != nil {
 		return nil, err
 	}
 
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	query = withTombstoneExclusion(query)
 	query = common.UpdateSortAggs(query)
 	query = withSelectQuery(query)
 
