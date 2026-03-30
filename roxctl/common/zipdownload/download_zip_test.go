@@ -3,6 +3,8 @@ package zipdownload
 import (
 	"archive/zip"
 	"bytes"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -207,7 +209,9 @@ func TestExtractZipToFolder_PreventPathTraversal(t *testing.T) {
 
 	for _, path := range checkPaths {
 		_, err := os.Stat(path)
-		// Expect an error (not exist or permission denied) - meaning the file wasn't created
-		assert.Error(t, err, "Malicious file should not be accessible at %s", path)
+		// File must not exist. On non-root runners, paths under /root/ return
+		// ErrPermission instead of ErrNotExist — both confirm the file wasn't written.
+		assert.True(t, errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrPermission),
+			"Malicious file should not be accessible at %s, got: %v", path, err)
 	}
 }
