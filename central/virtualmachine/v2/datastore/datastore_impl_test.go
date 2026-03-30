@@ -22,6 +22,7 @@ import (
 )
 
 func TestVirtualMachineV2DataStore(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
 		t.Skip("VM enhanced data model is not enabled")
 	}
