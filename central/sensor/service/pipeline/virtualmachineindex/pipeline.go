@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
-	vmV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
+	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -29,26 +29,29 @@ var (
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
 	return newPipeline(
-		vmDatastore.Singleton(),
+		virtualMachineDataStore.Singleton(),
 		vmEnricher.Singleton(),
-		vmV2DataStore.Singleton(),
+		virtualMachineV2DataStore.Singleton(),
 	)
 }
 
 // newPipeline returns a new instance of Pipeline.
-
-func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, vmV2Store vmV2DataStore.DataStore) pipeline.Fragment {
+func newPipeline(
+	virtualMachineStore virtualMachineDataStore.DataStore,
+	enricher vmEnricher.VirtualMachineEnricher,
+	virtualMachineV2Store virtualMachineV2DataStore.DataStore,
+) pipeline.Fragment {
 	return &pipelineImpl{
-		vmDatastore: vms,
-		enricher:    enricher,
-		vmV2Store:   vmV2Store,
+		virtualMachineStore:   virtualMachineStore,
+		enricher:              enricher,
+		virtualMachineV2Store: virtualMachineV2Store,
 	}
 }
 
 type pipelineImpl struct {
-	vmDatastore vmDatastore.DataStore
-	enricher    vmEnricher.VirtualMachineEnricher
-	vmV2Store   vmV2DataStore.DataStore
+	virtualMachineStore   virtualMachineDataStore.DataStore
+	enricher              vmEnricher.VirtualMachineEnricher
+	virtualMachineV2Store virtualMachineV2DataStore.DataStore
 }
 
 func (p *pipelineImpl) OnFinish(string) {}
@@ -123,7 +126,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	// Store enriched VM via v1 or v2 path.
-	if p.vmV2Store != nil {
+	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		if err := p.storeV2Scan(ctx, clusterID, vm); err != nil {
 			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
 			return err
@@ -143,14 +146,14 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 func (p *pipelineImpl) storeV1Scan(ctx context.Context, vm *storage.VirtualMachine) error {
-	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+	if err := p.virtualMachineStore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
 		return errors.Wrapf(err, "failed to upsert VM %s to datastore", vm.GetId())
 	}
 	return nil
 }
 
 func (p *pipelineImpl) storeV2Scan(ctx context.Context, clusterID string, vm *storage.VirtualMachine) error {
-	if err := p.vmV2Store.EnsureVirtualMachineExists(ctx, vm.GetId(), clusterID); err != nil {
+	if err := p.virtualMachineV2Store.EnsureVirtualMachineExists(ctx, vm.GetId(), clusterID); err != nil {
 		return errors.Wrapf(err, "failed to ensure VM %s exists in v2 datastore", vm.GetId())
 	}
 
@@ -159,7 +162,7 @@ func (p *pipelineImpl) storeV2Scan(ctx context.Context, clusterID string, vm *st
 		return nil
 	}
 
-	if err := p.vmV2Store.UpsertScan(ctx, vm.GetId(), *parts); err != nil {
+	if err := p.virtualMachineV2Store.UpsertScan(ctx, vm.GetId(), *parts); err != nil {
 		return errors.Wrapf(err, "failed to upsert v2 scan for VM %s", vm.GetId())
 	}
 	return nil

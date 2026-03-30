@@ -7,12 +7,13 @@ import (
 	"github.com/stackrox/rox/central/convert/internaltostorage"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDSMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
-	vmV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
+	virtualMachineV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protomock"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -87,6 +88,7 @@ func TestMatch(t *testing.T) {
 }
 
 func TestPipelineRun(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	testClusterID := fixtureconsts.Cluster1
 	type mocks struct {
 		clusters        *clusterDSMocks.MockDataStore
@@ -180,6 +182,7 @@ func TestPipelineRun(t *testing.T) {
 }
 
 func TestPipelineReconcile(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	testClusterID := fixtureconsts.Cluster1
 	tests := []struct {
 		name          string
@@ -282,10 +285,11 @@ func TestPipelineReconcile(t *testing.T) {
 }
 
 func TestPipelineRunV2(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	testClusterID := fixtureconsts.Cluster1
 	type mocks struct {
-		clusters *clusterDSMocks.MockDataStore
-		vmV2     *vmV2DSMocks.MockDataStore
+		clusters          *clusterDSMocks.MockDataStore
+		virtualMachinesV2 *virtualMachineV2DSMocks.MockDataStore
 	}
 	var upsertTestVM = &virtualMachineV1.VirtualMachine{
 		Id:        uuid.NewTestUUID(1).String(),
@@ -310,7 +314,7 @@ func TestPipelineRunV2(t *testing.T) {
 		{
 			name: "V2 removal expects call to v2 datastore delete",
 			setupMocks: func(testMocks *mocks) {
-				testMocks.vmV2.EXPECT().
+				testMocks.virtualMachinesV2.EXPECT().
 					DeleteVirtualMachines(gomock.Any(), "removed_vm_id").
 					Return(nil)
 			},
@@ -324,7 +328,7 @@ func TestPipelineRunV2(t *testing.T) {
 				testMock.clusters.EXPECT().
 					GetClusterName(gomock.Any(), testClusterID).
 					Return("test-cluster", true, nil)
-				testMock.vmV2.EXPECT().
+				testMock.virtualMachinesV2.EXPECT().
 					UpsertVirtualMachine(gomock.Any(), protomock.GoMockMatcherEqualMessage(storedVM)).
 					Return(nil)
 			},
@@ -338,7 +342,7 @@ func TestPipelineRunV2(t *testing.T) {
 				testMock.clusters.EXPECT().
 					GetClusterName(gomock.Any(), testClusterID).
 					Return("", false, nil)
-				testMock.vmV2.EXPECT().
+				testMock.virtualMachinesV2.EXPECT().
 					UpsertVirtualMachine(gomock.Any(), protomock.GoMockMatcherEqualMessage(storedVM)).
 					Return(nil)
 			},
@@ -351,10 +355,10 @@ func TestPipelineRunV2(t *testing.T) {
 			mockCtrl := gomock.NewController(it)
 			defer mockCtrl.Finish()
 			testMocks := &mocks{
-				clusters: clusterDSMocks.NewMockDataStore(mockCtrl),
-				vmV2:     vmV2DSMocks.NewMockDataStore(mockCtrl),
+				clusters:          clusterDSMocks.NewMockDataStore(mockCtrl),
+				virtualMachinesV2: virtualMachineV2DSMocks.NewMockDataStore(mockCtrl),
 			}
-			pipeline := newPipeline(testMocks.clusters, nil, testMocks.vmV2)
+			pipeline := newPipeline(testMocks.clusters, nil, testMocks.virtualMachinesV2)
 			if tt.setupMocks != nil {
 				tt.setupMocks(testMocks)
 			}
@@ -369,11 +373,12 @@ func TestPipelineRunV2(t *testing.T) {
 }
 
 func TestPipelineReconcileV2(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	testClusterID := fixtureconsts.Cluster1
 	tests := []struct {
 		name          string
 		setupStoreMap func(*reconciliation.StoreMap)
-		setupMock     func(*vmV2DSMocks.MockDataStore)
+		setupMock     func(*virtualMachineV2DSMocks.MockDataStore)
 		expectsError  bool
 	}{
 		{
@@ -381,7 +386,7 @@ func TestPipelineReconcileV2(t *testing.T) {
 			setupStoreMap: func(m *reconciliation.StoreMap) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
-			setupMock: func(m *vmV2DSMocks.MockDataStore) {
+			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachineV2{
 						{
@@ -396,7 +401,7 @@ func TestPipelineReconcileV2(t *testing.T) {
 			setupStoreMap: func(m *reconciliation.StoreMap) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
-			setupMock: func(m *vmV2DSMocks.MockDataStore) {
+			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				// Query is now cluster-scoped, so only VMs from testClusterID are returned.
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachineV2{
@@ -412,7 +417,7 @@ func TestPipelineReconcileV2(t *testing.T) {
 			setupStoreMap: func(m *reconciliation.StoreMap) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
-			setupMock: func(m *vmV2DSMocks.MockDataStore) {
+			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				m.EXPECT().
 					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachineV2{
@@ -435,7 +440,7 @@ func TestPipelineReconcileV2(t *testing.T) {
 			setupStoreMap: func(m *reconciliation.StoreMap) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
-			setupMock: func(m *vmV2DSMocks.MockDataStore) {
+			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				m.EXPECT().
 					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return(nil, errox.InvalidArgs)
@@ -449,9 +454,9 @@ func TestPipelineReconcileV2(t *testing.T) {
 			mockCtrl := gomock.NewController(it)
 			defer mockCtrl.Finish()
 
-			mockV2Store := vmV2DSMocks.NewMockDataStore(mockCtrl)
+			mockVMV2Store := virtualMachineV2DSMocks.NewMockDataStore(mockCtrl)
 			if tt.setupMock != nil {
-				tt.setupMock(mockV2Store)
+				tt.setupMock(mockVMV2Store)
 			}
 
 			storeMap := reconciliation.NewStoreMap()
@@ -459,7 +464,7 @@ func TestPipelineReconcileV2(t *testing.T) {
 				tt.setupStoreMap(storeMap)
 			}
 
-			pipeline := newPipeline(nil, nil, mockV2Store)
+			pipeline := newPipeline(nil, nil, mockVMV2Store)
 			err := pipeline.Reconcile(it.Context(), testClusterID, storeMap)
 			if !tt.expectsError {
 				assert.NoError(it, err)

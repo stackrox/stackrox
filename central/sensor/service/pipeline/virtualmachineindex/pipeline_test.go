@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
-	vmV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
+	virtualMachineDSMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
+	virtualMachineV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -35,20 +35,20 @@ func TestPipeline(t *testing.T) {
 type PipelineTestSuite struct {
 	suite.Suite
 
-	vmDatastore *vmDatastoreMocks.MockDataStore
-	enricher    *vmEnricherMocks.MockVirtualMachineEnricher
-	pipeline    *pipelineImpl
+	virtualMachineStore *virtualMachineDSMocks.MockDataStore
+	enricher            *vmEnricherMocks.MockVirtualMachineEnricher
+	pipeline            *pipelineImpl
 
 	mockCtrl *gomock.Controller
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.vmDatastore = vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.virtualMachineStore = virtualMachineDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.enricher = vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
 	suite.pipeline = &pipelineImpl{
-		vmDatastore: suite.vmDatastore,
-		enricher:    suite.enricher,
+		virtualMachineStore: suite.virtualMachineStore,
+		enricher:            suite.enricher,
 	}
 }
 
@@ -112,6 +112,7 @@ func (suite *PipelineTestSuite) TestMatch_VirtualMachineMessage() {
 
 func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -131,6 +132,7 @@ func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 
 func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
@@ -140,7 +142,7 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 		Return(nil)
 
 	expectedError := errors.New("datastore error")
-	suite.vmDatastore.EXPECT().
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(expectedError)
 
@@ -177,20 +179,21 @@ func (suite *PipelineTestSuite) TestGetPipeline() {
 }
 
 func (suite *PipelineTestSuite) TestNewPipeline() {
-	mockDatastore := vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
+	mockDatastore := virtualMachineDSMocks.NewMockDataStore(suite.mockCtrl)
 	mockEnricher := vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
 	pipeline := newPipeline(mockDatastore, mockEnricher, nil)
 	suite.NotNil(pipeline)
 
 	impl, ok := pipeline.(*pipelineImpl)
 	suite.True(ok, "Should return pipelineImpl instance")
-	suite.Equal(mockDatastore, impl.vmDatastore)
+	suite.Equal(mockDatastore, impl.virtualMachineStore)
 	suite.Equal(mockEnricher, impl.enricher)
-	suite.Nil(impl.vmV2Store)
+	suite.Nil(impl.virtualMachineV2Store)
 }
 
 // Test table-driven approach for different actions
 func TestPipelineRun_DifferentActions(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	tests := []struct {
 		name          string
 		action        central.ResourceAction
@@ -231,11 +234,11 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+			virtualMachineStore := virtualMachineDSMocks.NewMockDataStore(ctrl)
 			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
 			pipeline := &pipelineImpl{
-				vmDatastore: vmDatastore,
-				enricher:    enricher,
+				virtualMachineStore: virtualMachineStore,
+				enricher:            enricher,
 			}
 
 			vmID := "vm-1"
@@ -247,7 +250,7 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 					EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 					Return(nil)
 
-				vmDatastore.EXPECT().
+				virtualMachineStore.EXPECT().
 					UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 					Do(func(ctx context.Context, virtualMachineID string, _ *storage.VirtualMachineScan) {
 						assert.Equal(t, vmID, virtualMachineID)
@@ -272,12 +275,13 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 // Test edge cases with malformed messages
 func TestPipelineEdgeCases(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	virtualMachineStore := virtualMachineDSMocks.NewMockDataStore(ctrl)
 	pipeline := &pipelineImpl{
-		vmDatastore: vmDatastore,
+		virtualMachineStore: virtualMachineStore,
 	}
 
 	t.Run("nil message", func(t *testing.T) {
@@ -347,13 +351,14 @@ func (m *mockInjector) HasCapability(cap centralsensor.SensorCapability) bool {
 
 func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-ack-test"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
-	suite.vmDatastore.EXPECT().
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
@@ -377,13 +382,14 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 
 func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-no-cap"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
-	suite.vmDatastore.EXPECT().
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
@@ -398,13 +404,14 @@ func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
 
 func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-error"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
-	suite.vmDatastore.EXPECT().
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(errors.New("db error"))
 
@@ -428,6 +435,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 
 func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-enrich-fail"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
@@ -455,6 +463,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 
 func (suite *PipelineTestSuite) TestRun_NACKOnMissingClusterID() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-no-cluster"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
@@ -478,6 +487,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMissingClusterID() {
 
 func (suite *PipelineTestSuite) TestRun_NACKOnMissingScannerIndexPayload() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	tests := []struct {
 		name  string
 		index *v1.IndexReport
@@ -532,14 +542,15 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMissingScannerIndexPayload() {
 
 func TestPipelineRun_DisabledFeature(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "false")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	virtualMachineStore := virtualMachineDSMocks.NewMockDataStore(ctrl)
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
 	pipeline := &pipelineImpl{
-		vmDatastore: vmDatastore,
-		enricher:    enricher,
+		virtualMachineStore: virtualMachineStore,
+		enricher:            enricher,
 	}
 
 	vmID := "vm-1"
@@ -565,15 +576,16 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 
 func TestPipelineRunV2_StoresScanViaV2Datastore(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
-	vmV2Store := vmV2DSMocks.NewMockDataStore(ctrl)
+	virtualMachineV2Store := virtualMachineV2DSMocks.NewMockDataStore(ctrl)
 
 	pipeline := &pipelineImpl{
-		enricher:  enricher,
-		vmV2Store: vmV2Store,
+		enricher:              enricher,
+		virtualMachineV2Store: virtualMachineV2Store,
 	}
 
 	vmID := "vm-v2-scan"
@@ -590,10 +602,10 @@ func TestPipelineRunV2_StoresScanViaV2Datastore(t *testing.T) {
 			}
 			return nil
 		})
-	vmV2Store.EXPECT().
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(nil)
-	vmV2Store.EXPECT().
+	virtualMachineV2Store.EXPECT().
 		UpsertScan(gomock.Any(), vmID, gomock.Any()).
 		DoAndReturn(func(_ context.Context, id string, parts common.VMScanParts) error {
 			assert.Equal(t, vmID, id)
@@ -619,15 +631,16 @@ func TestPipelineRunV2_StoresScanViaV2Datastore(t *testing.T) {
 
 func TestPipelineRunV2_NACKOnEnsureError(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
-	vmV2Store := vmV2DSMocks.NewMockDataStore(ctrl)
+	virtualMachineV2Store := virtualMachineV2DSMocks.NewMockDataStore(ctrl)
 
 	pipeline := &pipelineImpl{
-		enricher:  enricher,
-		vmV2Store: vmV2Store,
+		enricher:              enricher,
+		virtualMachineV2Store: virtualMachineV2Store,
 	}
 
 	vmID := "vm-v2-ensure-fail"
@@ -636,7 +649,7 @@ func TestPipelineRunV2_NACKOnEnsureError(t *testing.T) {
 	enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
-	vmV2Store.EXPECT().
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(errors.New("ensure failed"))
 
@@ -659,15 +672,16 @@ func TestPipelineRunV2_NACKOnEnsureError(t *testing.T) {
 
 func TestPipelineRunV2_NilScanNoUpsert(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
-	vmV2Store := vmV2DSMocks.NewMockDataStore(ctrl)
+	virtualMachineV2Store := virtualMachineV2DSMocks.NewMockDataStore(ctrl)
 
 	pipeline := &pipelineImpl{
-		enricher:  enricher,
-		vmV2Store: vmV2Store,
+		enricher:              enricher,
+		virtualMachineV2Store: virtualMachineV2Store,
 	}
 
 	vmID := "vm-v2-nil-scan"
@@ -677,7 +691,7 @@ func TestPipelineRunV2_NilScanNoUpsert(t *testing.T) {
 	enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
-	vmV2Store.EXPECT().
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(nil)
 	// UpsertScan should NOT be called because ScanPartsFromV1Scan returns nil for a nil scan.
@@ -699,15 +713,16 @@ func TestPipelineRunV2_NilScanNoUpsert(t *testing.T) {
 
 func TestPipelineRunV2_NACKOnUpsertScanError(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
-	vmV2Store := vmV2DSMocks.NewMockDataStore(ctrl)
+	virtualMachineV2Store := virtualMachineV2DSMocks.NewMockDataStore(ctrl)
 
 	pipeline := &pipelineImpl{
-		enricher:  enricher,
-		vmV2Store: vmV2Store,
+		enricher:              enricher,
+		virtualMachineV2Store: virtualMachineV2Store,
 	}
 
 	vmID := "vm-v2-upsert-fail"
@@ -724,10 +739,10 @@ func TestPipelineRunV2_NACKOnUpsertScanError(t *testing.T) {
 			}
 			return nil
 		})
-	vmV2Store.EXPECT().
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(nil)
-	vmV2Store.EXPECT().
+	virtualMachineV2Store.EXPECT().
 		UpsertScan(gomock.Any(), vmID, gomock.Any()).
 		Return(errors.New("upsert scan failed"))
 
