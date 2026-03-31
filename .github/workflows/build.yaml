@@ -241,7 +241,9 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
         with:
-          key-suffix: ${{ matrix.name }}
+          # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
+          # Default and prerelease share 93% of entries and should use the same cache.
+          key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
