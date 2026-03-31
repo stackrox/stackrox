@@ -309,8 +309,8 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
 
       - name: Generate the swagger docs
         run: |
