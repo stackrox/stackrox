@@ -78,13 +78,13 @@ func TestGetAll(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, matching)
 
-	matching, err = headers.GetAll(glob.Pattern("Key-[1-]"), glob.Pattern("nope"))
+	_, err = headers.GetAll(glob.Pattern("Key-[1-]"), glob.Pattern("nope"))
 	assert.Error(t, err)
 
-	matching, err = headers.GetAll(glob.Pattern("Key-1"), glob.Pattern("value [1-]"))
+	_, err = headers.GetAll(glob.Pattern("Key-1"), glob.Pattern("value [1-]"))
 	assert.Error(t, err)
 
-	matching, err = headers.GetAll(glob.Pattern("*"), glob.Pattern("value [2-3]"))
+	_, err = headers.GetAll(glob.Pattern("*"), glob.Pattern("value [2-3]"))
 	assert.NoError(t, err)
 	assert.Equal(t, map[string][]string{"Something-Else": {"value 2", "value 3"}, "Key-2": {"value 2"}}, matching)
 }
