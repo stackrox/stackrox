@@ -87,9 +87,14 @@ func (s *profileSuite) TestParseCipherSuites() {
 			want:  []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
 		},
 		{
-			name:    "unknown suite",
+			name:    "all unknown suites",
 			input:   "TLS_DOES_NOT_EXIST",
 			wantErr: true,
+		},
+		{
+			name:  "unknown suites are skipped",
+			input: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_DOES_NOT_EXIST,TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+			want:  []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
 		},
 		{
 			name:    "empty string",
