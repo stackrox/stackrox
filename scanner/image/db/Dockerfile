@@ -39,8 +39,17 @@ RUN dnf install \
     perl-libs \
     python3 \
     systemd-sysv \
-    zstd \
-    tzdata && \
+    zstd && \
+    # Reinstall tzdata without --nodocs to populate /usr/share/zoneinfo directory.
+    # ubi9-micro ships with tzdata pre-installed but /usr/share/zoneinfo is empty.
+    # Regular install won't work since package is already present, must use reinstall.
+    # PostgreSQL requires timezone files at runtime.
+    dnf reinstall \
+        --installroot=/out/ \
+        --releasever=9 \
+        --setopt=reposdir=/etc/yum.repos.d \
+        -y \
+        tzdata && \
     if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
         dnf install --installroot=/out/ --releasever=8 --setopt=install_weak_deps=0 --nodocs -y uuid; \
     fi && \
