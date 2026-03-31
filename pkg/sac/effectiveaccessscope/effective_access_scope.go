@@ -6,7 +6,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -63,48 +62,6 @@ func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
 	}
 }
 
-type selectors struct {
-	clustersByName  set.StringSet
-	clustersByLabel []labels.Selector
-
-	namespacesByClusterName map[string]set.StringSet
-	namespacesByLabel       []labels.Selector
-}
-
-func (s *selectors) matchCluster(cluster Cluster) scopeState {
-	if s == nil {
-		return Excluded
-	}
-
-	clusterName := cluster.GetName()
-	if s.clustersByName != nil && s.clustersByName.Contains(clusterName) {
-		return Included
-	}
-
-	// Augment cluster labels with cluster's name.
-	augmentedClusterLabels := augmentLabels(cluster.GetLabels(), clusterNameLabel, clusterName)
-	return matchLabels(s.clustersByLabel, augmentedClusterLabels)
-}
-
-func (s *selectors) matchNamespace(namespace Namespace) scopeState {
-	if s == nil {
-		return Excluded
-	}
-
-	namespaceName := namespace.GetName()
-
-	clusterName := namespace.GetClusterName()
-	if clusterName != "" && matchNamespaceByClusterKey(s.namespacesByClusterName, clusterName, namespaceName) {
-		return Included
-	}
-
-	// Augment namespace labels with namespace's FQSN.
-	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)
-	namespaceLabels := augmentLabels(namespace.GetLabels(), namespaceNameLabel, namespaceFQSN)
-
-	return matchLabels(s.namespacesByLabel, namespaceLabels)
-}
-
 // Cluster is the interface for clusters in the access scope computation
 type Cluster interface {
 	GetId() string
@@ -116,6 +73,7 @@ var _ Cluster = (*storage.Cluster)(nil)
 
 // Namespace is the interface for namespaces in the access scope computation
 type Namespace interface {
+	GetClusterId() string
 	GetClusterName() string
 	GetId() string
 	GetName() string
@@ -435,17 +393,6 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 
 	// Update the tree.
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(namespaceState, nodeAttributesForNamespace(namespace, detail))
-}
-
-func matchNamespaceByClusterKey(targetMap map[string]set.StringSet, clusterKey string, namespaceKey string) bool {
-	if targetMap == nil {
-		return false
-	}
-	if _, clusterFound := targetMap[clusterKey]; !clusterFound {
-		return false
-	}
-	clusterNamespaces := targetMap[clusterKey]
-	return clusterNamespaces.Contains(namespaceKey)
 }
 
 func newEffectiveAccessScopeTree(state scopeState) *ScopeTree {
