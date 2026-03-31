@@ -16,30 +16,11 @@ runs:
       id: cache-paths
       run: |
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-        echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
-
-    # Save caches only on pushes to the default branch.
-    # All other events (PRs, etc.) restore only.
-    - name: Cache Go Dependencies (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
-      uses: actions/cache@v5
-      with:
-        path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
-
-    - name: Cache Go Dependencies (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@v5
-      with:
-        path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
 
     - name: Cache Go Build (save)
       if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
@@ -101,11 +82,5 @@ runs:
         # Risk: if a non-.go testdata file changes content but not size between
         # commits, the test cache could return a stale result. This is extremely
         # rare and Go's own test cache has the same inherent limitation.
-        #
-        # Runs before make deps so downloaded modules keep their natural mtimes.
         find . -not -path '*/.*' -exec touch -t 200101010000 {} +
-      shell: bash
-
-    - name: Download Go modules
-      run: make deps --always-make
       shell: bash

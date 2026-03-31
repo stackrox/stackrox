@@ -1,0 +1,201 @@
+package tokens
+
+import (
+	"encoding/json"
+	"slices"
+	"strings"
+
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/set"
+)
+
+// ClusterScopes is a representation of an access scope tree.
+// The tree root is the map itself.
+// Each cluster in the access scope is identified by its cluster ID
+// The accessible namespaces within a cluster are represented
+// by the map entry for the cluster ID. The map entry is a list
+// of namespace names. If the list contains the wildcard value ("*"),
+// then all namespaces within that cluster should be accessible.
+//
+// Assuming an environment with two clusters (dev and prod), each
+// containing two namespaces (backend and frontend), the expression
+// of full access to the dev cluster and access to the frontend
+// namespace only in the prod cluster would result in the following
+// ClusterScopes object:
+//
+//	{
+//	  "prod_cluster_id": []string{"frontend"},
+//	  "dev_cluster_id":  []string{"*"},
+//	}
+type ClusterScopes map[string][]string
+
+var _ permissions.ResolvedRole = (*InternalRole)(nil)
+
+// InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
+// Internal use means that the claims are set for token requests originating from rox services
+// (possibly on behalf of users). The APIs that set these claims are either not exposed publicly
+// or the access to these APIs is restricted to rox services.
+type InternalRole struct {
+	RoleName    string                      `json:"name,omitempty"`
+	Permissions map[storage.Access][]string `json:"permissions,omitempty"`
+	// The key for this cluster scope map is the cluster ID.
+	Clusters ClusterScopes `json:"clusters,omitempty"`
+}
+
+// MarshalJSON implements json.Marshaler for InternalRole.
+// This is necessary because go-jose doesn't support map[storage.Access][]string directly.
+func (r *InternalRole) MarshalJSON() ([]byte, error) {
+	// Create a temporary struct with string-keyed permissions map.
+	//
+	// The Alias type allows to stop the type recursion during encoding.
+	// Using InternalRole directly in the struct would end in infinite
+	// recursion loop and stack overflow.
+	type Alias InternalRole
+	aux := &struct {
+		Permissions map[string][]string `json:"permissions,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	// Convert map[storage.Access][]string to map[string][]string
+	// Validate and normalize access levels during marshaling
+	if r.Permissions != nil {
+		aux.Permissions = make(map[string][]string, len(r.Permissions))
+		for k, v := range r.Permissions {
+			validatedAccess := validateAccessLevel(k)
+			key := "none"
+			if validatedAccess != storage.Access_NO_ACCESS {
+				key = validatedAccess.String()
+				key = strings.TrimSuffix(key, "_ACCESS")
+				key = strings.ToLower(key)
+				key = strings.ReplaceAll(key, "_", "-")
+			}
+			aux.Permissions[key] = v
+		}
+	}
+
+	return json.Marshal(aux)
+}
+
+// UnmarshalJSON implements json.Unmarshaler for InternalRole.
+func (r *InternalRole) UnmarshalJSON(data []byte) error {
+	// Create a temporary struct with string-keyed permissions map
+	type Alias InternalRole
+	aux := &struct {
+		Permissions map[string][]string `json:"permissions,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	// Convert map[string][]string to map[storage.Access][]string
+	if aux.Permissions != nil {
+		r.Permissions = make(map[storage.Access][]string, len(aux.Permissions))
+		for k, v := range aux.Permissions {
+			// Parse the access level from string
+			access := storage.Access_NO_ACCESS
+			key := k
+			key = strings.ReplaceAll(key, "-", "_")
+			key = strings.ToUpper(key)
+			key += "_ACCESS"
+			if asInt, found := storage.Access_value[key]; found {
+				access = storage.Access(asInt)
+			}
+			r.Permissions[access] = v
+		}
+	}
+
+	return nil
+}
+
+func (r *InternalRole) GetRoleName() string {
+	if r == nil {
+		return ""
+	}
+	return r.RoleName
+}
+
+func (r *InternalRole) GetPermissions() map[string]storage.Access {
+	if r == nil {
+		return nil
+	}
+	permissionCount := 0
+	for _, targetResources := range r.Permissions {
+		permissionCount += len(targetResources)
+	}
+	rolePermissions := make(map[string]storage.Access, permissionCount)
+	for level, resources := range r.Permissions {
+		// Validate that the access level is a known enum value, default to NO_ACCESS
+		accessLevel := validateAccessLevel(level)
+		for _, resource := range resources {
+			prevLevel := rolePermissions[resource]
+			if prevLevel <= accessLevel {
+				rolePermissions[resource] = accessLevel
+			}
+		}
+	}
+	return rolePermissions
+}
+
+// validateAccessLevel ensures the access level is a valid storage.Access enum value.
+// Returns the access level if valid (READ_ACCESS or READ_WRITE_ACCESS), otherwise NO_ACCESS.
+func validateAccessLevel(access storage.Access) storage.Access {
+	switch access {
+	case storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS:
+		return access
+	default:
+		return storage.Access_NO_ACCESS
+	}
+}
+
+func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
+	if r == nil {
+		return nil
+	}
+	includedClusterIDs := set.NewStringSet()
+	includedNamespacesByClusterID := make(map[string]set.StringSet)
+	for clusterID, namespaces := range r.Clusters {
+		fullAccess := false
+		for _, ns := range namespaces {
+			if ns == "*" {
+				fullAccess = true
+				break
+			}
+		}
+		if fullAccess {
+			includedClusterIDs.Add(clusterID)
+			continue
+		}
+		clusterNamespaces := set.NewStringSet(namespaces...)
+		includedNamespacesByClusterID[clusterID] = clusterNamespaces
+	}
+
+	includedNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0, len(includedNamespacesByClusterID))
+	sortedPartialClusterIDs := make([]string, 0, len(includedNamespacesByClusterID))
+	for clusterID := range includedNamespacesByClusterID {
+		sortedPartialClusterIDs = append(sortedPartialClusterIDs, clusterID)
+	}
+	slices.Sort(sortedPartialClusterIDs)
+	stringSort := func(i, j string) bool { return i < j }
+	for _, clusterID := range sortedPartialClusterIDs {
+		for _, ns := range includedNamespacesByClusterID[clusterID].AsSortedSlice(stringSort) {
+			includedNamespaces = append(includedNamespaces, &storage.SimpleAccessScope_Rules_Namespace{
+				ClusterId:     clusterID,
+				NamespaceName: ns,
+			})
+		}
+	}
+
+	return &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusterIds: includedClusterIDs.AsSortedSlice(stringSort),
+			IncludedNamespaces: includedNamespaces,
+		},
+	}
+}
