@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Switch, ToolbarItem } from '@patternfly/react-core';
+import { ToolbarItem } from '@patternfly/react-core';
+
+import useDeploymentStatus from 'hooks/useDeploymentStatus';
+import { getDeploymentStatusQueryString } from '../../utils/searchUtils';
+import DeploymentStatusFilter from '../components/DeploymentStatusFilter';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
@@ -45,14 +48,14 @@ function DeploymentsTableContainer({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
 
-    const [showDeleted, setShowDeleted] = useState(false);
+    const deploymentStatus = useDeploymentStatus();
 
     const { sortOption, getSortParams } = sort;
 
-    const deploymentsQueryString =
-        isTombstonesEnabled && showDeleted
-            ? [workloadCvesScopedQueryString, 'Tombstone Deleted At:*'].filter(Boolean).join('+')
-            : workloadCvesScopedQueryString;
+    const deploymentsQueryString = getDeploymentStatusQueryString(
+        workloadCvesScopedQueryString,
+        isTombstonesEnabled ? deploymentStatus : 'DEPLOYED'
+    );
 
     const { error, loading, data } = useDeployments({
         query: deploymentsQueryString,
@@ -85,15 +88,7 @@ function DeploymentsTableContainer({
             >
                 {isTombstonesEnabled && (
                     <ToolbarItem>
-                        <Switch
-                            id="vm-show-deleted-deployments"
-                            label="Show deleted"
-                            isChecked={showDeleted}
-                            onChange={(_event, checked) => {
-                                setShowDeleted(checked);
-                                pagination.setPage(1);
-                            }}
-                        />
+                        <DeploymentStatusFilter onChange={() => pagination.setPage(1)} />
                     </ToolbarItem>
                 )}
                 <ToolbarItem align={{ default: 'alignEnd' }}>
