@@ -113,8 +113,19 @@ jobs:
 
   # style-slim sub-targets split by dependency type for parallelism.
   # The monolithic style-check took ~17m running all sub-targets serially.
+  # roxvet (~15m) is further sharded by package scope.
 
-  style-go-checks:
+  style-roxvet:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - name: central
+            scope: ./central/...
+          - name: pkg
+            scope: ./pkg/...
+          - name: rest
+            scope: ./sensor/... ./roxctl/... ./tools/... ./migrator/... ./operator/... ./scanner/... ./compliance/... ./generated/... ./config-controller/... ./scale/... ./govulncheck/... ./image/...
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -139,7 +150,31 @@ jobs:
         uses: ./.github/actions/cache-go-dependencies
 
       - name: roxvet
-        run: make roxvet
+        run: ROXVET_SCOPE="${{ matrix.shard.scope }}" make roxvet
+
+  style-proto-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: proto-style
         run: make proto-style
@@ -399,7 +434,8 @@ jobs:
     needs:
       - check-generated-files
       - misc-checks
-      - style-go-checks
+      - style-roxvet
+      - style-proto-checks
       - style-ui-lint
       - style-qa-tests
       - style-shell-checks
