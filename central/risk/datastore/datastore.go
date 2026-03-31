@@ -32,11 +32,13 @@ func New(riskStore store.Store) DataStore {
 	d := &datastoreImpl{
 		storage: riskStore,
 		entityTypeToRanker: map[string]*ranking.Ranker{
-			storage.RiskSubjectType_CLUSTER.String():    ranking.ClusterRanker(),
-			storage.RiskSubjectType_NAMESPACE.String():  ranking.NamespaceRanker(),
-			storage.RiskSubjectType_NODE.String():       ranking.NodeRanker(),
-			storage.RiskSubjectType_DEPLOYMENT.String(): ranking.DeploymentRanker(),
-			storage.RiskSubjectType_IMAGE.String():      ranking.ImageRanker(),
+			storage.RiskSubjectType_CLUSTER.String():         ranking.ClusterRanker(),
+			storage.RiskSubjectType_NAMESPACE.String():       ranking.NamespaceRanker(),
+			storage.RiskSubjectType_NODE.String():            ranking.NodeRanker(),
+			storage.RiskSubjectType_NODE_COMPONENT.String():  ranking.NodeComponentRanker(),
+			storage.RiskSubjectType_DEPLOYMENT.String():      ranking.DeploymentRanker(),
+			storage.RiskSubjectType_IMAGE.String():           ranking.ImageRanker(),
+			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ComponentRanker(),
 		},
 	}
 	return d
