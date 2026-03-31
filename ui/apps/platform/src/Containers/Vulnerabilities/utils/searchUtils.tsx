@@ -7,6 +7,7 @@ import {
 } from 'routePaths';
 import { vulnerabilitySeverities } from 'types/cve.proto';
 import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
+import type { DeploymentStatus } from 'types/deploymentStatus';
 import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import {
@@ -232,6 +233,23 @@ export function getVulnStateScopedQueryString(
         ...searchFilterWithRegex,
         ...vulnerabilityStateFilter,
     });
+}
+
+/**
+ * Wraps a base query string to scope results by deployment status.
+ * DELETED appends '+Tombstone Deleted At:*' to opt into tombstoned records.
+ * DEPLOYED returns the base query unchanged — tombstone exclusion is applied
+ * by the backend view layer.
+ * The '+' character is the backend's AND-conjunction separator.
+ */
+export function getDeploymentStatusQueryString(
+    baseQuery: string,
+    deploymentStatus: DeploymentStatus
+): string {
+    if (deploymentStatus === 'DELETED') {
+        return [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+');
+    }
+    return baseQuery;
 }
 
 export function getZeroCveScopedQueryString(searchFilter: QuerySearchFilter): string {

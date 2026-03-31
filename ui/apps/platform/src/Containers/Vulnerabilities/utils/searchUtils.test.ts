@@ -2,6 +2,7 @@ import {
     getNodeEntityPagePath,
     getPlatformEntityPagePath,
     getWorkloadEntityPagePath,
+    getDeploymentStatusQueryString,
 } from './searchUtils';
 
 describe('getWorkloadEntityPagePath', () => {
@@ -119,5 +120,27 @@ describe('getNodeEntityPagePath', () => {
         ).toEqual(
             `${nodeUrlBase}/nodes/node-123-456?s[SEVERITY][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
         );
+    });
+});
+
+describe('getDeploymentStatusQueryString', () => {
+    it('returns baseQuery unchanged when status is DEPLOYED', () => {
+        expect(getDeploymentStatusQueryString('CVE:CVE-2025-1234', 'DEPLOYED')).toBe(
+            'CVE:CVE-2025-1234'
+        );
+    });
+
+    it('appends tombstone filter when status is DELETED', () => {
+        expect(getDeploymentStatusQueryString('CVE:CVE-2025-1234', 'DELETED')).toBe(
+            'CVE:CVE-2025-1234+Tombstone Deleted At:*'
+        );
+    });
+
+    it('handles empty baseQuery for DELETED (no leading +)', () => {
+        expect(getDeploymentStatusQueryString('', 'DELETED')).toBe('Tombstone Deleted At:*');
+    });
+
+    it('handles empty baseQuery for DEPLOYED', () => {
+        expect(getDeploymentStatusQueryString('', 'DEPLOYED')).toBe('');
     });
 });
