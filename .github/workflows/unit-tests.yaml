@@ -181,7 +181,7 @@ jobs:
         key-suffix: ${{ matrix.gotags }}-operator-integration
 
     - name: Go Operator Integration Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-integration
+      run: ${{ matrix.gotags }} BUILD_TAG=0.0.0-test make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
       run: ${{ matrix.gotags }} BUILD_TAG=0.0.0-test make -C operator/ test-helm
