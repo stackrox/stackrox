@@ -2,12 +2,12 @@
 {{- include "srox.init" . -}}
 
 {{- /*
-  ConsolePlugin is only deployed on OpenShift 4.19+ (Kubernetes 1.32+).
+  ConsolePlugin is only deployed on OpenShift 4.19 - 4.21 (Kubernetes 1.32 - 1.34).
   For the mapping between OpenShift and Kubernetes versions, see:
   https://access.redhat.com/solutions/4870701
 */ -}}
 {{- $kubeVersion := semver $.Capabilities.KubeVersion.Version -}}
-{{- if and (eq ._rox.env.installMethod "operator") ._rox.consolePlugin.enabled (ge (int $kubeVersion.Minor) 32) -}}
+{{- if and (eq ._rox.env.installMethod "operator") ._rox.consolePlugin.enabled (ge (int $kubeVersion.Minor) 32) (lt (int $kubeVersion.Minor) 35) -}}
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
