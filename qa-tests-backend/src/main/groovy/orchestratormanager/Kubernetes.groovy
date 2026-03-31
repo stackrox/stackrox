@@ -1013,7 +1013,7 @@ class Kubernetes {
             }
         }
         if (loadBalancerIP == null) {
-            log.warn "Could not get loadBalancer IP for ${serviceName} " +
+            log.warn "Could not get loadBalancer IP for ${serviceName} in namespace ${namespace} " +
                 "in ${t.SecondsSince()} seconds and ${iterations} iterations"
         }
         return loadBalancerIP
