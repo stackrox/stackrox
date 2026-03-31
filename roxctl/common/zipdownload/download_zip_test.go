@@ -212,6 +212,6 @@ func TestExtractZipToFolder_PreventPathTraversal(t *testing.T) {
 		// File must not exist. On non-root runners, paths under /root/ return
 		// ErrPermission instead of ErrNotExist — both confirm the file wasn't written.
 		assert.True(t, errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrPermission),
-			"Malicious file should not be accessible at %s, got: %v", path, err)
+			"Malicious file should not exist at %s, got: %v", path, err)
 	}
 }
