@@ -286,7 +286,9 @@ func buildMetricsServerTLSOpts(enableHTTP2 bool) (*tlsprofile.ClusterTLSProfile,
 		return nil, nil, errors.Wrap(err, "unable to create bootstrap client for TLS profile")
 	}
 
-	fetchCtx, fetchCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use a longer timeout because a TLS profile change causes the OpenShift API server itself to restart,
+	// so the kube API may be unavailable for an extended period right when we need to read it.
+	fetchCtx, fetchCancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer fetchCancel()
 	clusterTLSProfile, err := tlsprofile.FetchProfile(fetchCtx, bootstrapClient)
 	if err != nil {
