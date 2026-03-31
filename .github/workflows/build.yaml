@@ -324,6 +324,40 @@ jobs:
           path: |
             image/rhel/docs
 
+  pre-build-oss-notice:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Fetch UI deps
+      run: make -C ui deps
+
+    - name: Generate OSS notice
+      run: make ossls-notice
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: oss-notice
+        path: image/rhel/THIRD_PARTY_NOTICES
+
   build-operator-bundle:
     runs-on: ubuntu-latest
     env:
@@ -376,10 +410,11 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-      - pre-build-ui
       - pre-build-cli
-      - pre-build-go-binaries
       - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-oss-notice
+      - pre-build-ui
     # This step will run even if required pre-* steps failed. By following this
     # approach as much of the build matrix as possible is completed despite
     # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
@@ -499,15 +534,10 @@ jobs:
           name: docs-build
           path: image/rhel/docs
 
-      # needed to restore node_modules for ossls-nostice
-      - uses: ./.github/actions/cache-ui-dependencies
-
-      # explicitly fetch deps just in case cache was not ready
-      - name: Fetch UI deps
-        run: make -C ui deps
-
-      - name: Generate OSS notice
-        run: make ossls-notice
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
@@ -969,15 +999,15 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - pre-build-ui
-      - pre-build-cli
-      - pre-build-go-binaries
-      - pre-build-docs
-      - build-operator-bundle
       - build-and-push-main
       - build-and-push-operator
-      - scan-images-with-roxctl
+      - build-operator-bundle
+      - pre-build-cli
+      - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-ui
       - scan-go-binaries
+      - scan-images-with-roxctl
     permissions:
       actions: read
     steps:
