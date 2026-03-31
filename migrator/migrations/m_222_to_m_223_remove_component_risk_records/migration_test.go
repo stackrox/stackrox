@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/m_222_to_m_223_remove_component_risk_records/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -33,7 +33,7 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTableRisksStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), frozenSchema.CreateTableRisksStmt)
 }
 
 func (s *migrationTestSuite) TestMigration() {
