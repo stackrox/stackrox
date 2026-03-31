@@ -28,6 +28,7 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - modernize
     - nolintlint
     - protogetter
     - revive # replaces golint
@@ -166,6 +167,23 @@ linters:
         - retry\.WithRetry
         - status\.Error
         - utils\.Should
+    modernize:
+      disable:
+        - any
+        - fmtappendf
+        - mapsloop
+        - minmax
+        - rangeint
+        - reflecttypefor
+        - slicescontains
+        - slicessort
+        - stditerators
+        - stringsbuilder
+        - stringscut
+        - stringscutprefix
+        - stringsseq
+        - testingcontext
+        - waitgroup
   exclusions:
     generated: lax
     rules:

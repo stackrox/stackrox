@@ -196,25 +196,23 @@ function RuleGroups({
                                 {!isDisabled(group) && (
                                     <FlexItem>
                                         <Button
+                                            icon={<TrashIcon />}
                                             variant="plain"
                                             aria-label="Delete rule"
                                             style={{ transform: 'translate(0, 42px)' }}
                                             onClick={() => arrayHelpers.remove(index)}
-                                        >
-                                            <TrashIcon />
-                                        </Button>
+                                        />
                                     </FlexItem>
                                 )}
                                 {!isUserResource(group?.props?.traits) && (
                                     <FlexItem>
                                         <Tooltip content="This rule is managed declaratively and can only be edited declaratively.">
                                             <Button
+                                                icon={<InfoCircleIcon />}
                                                 variant="plain"
                                                 aria-label="Information button"
                                                 style={{ transform: 'translate(0, 42px)' }}
-                                            >
-                                                <InfoCircleIcon />
-                                            </Button>
+                                            />
                                         </Tooltip>
                                     </FlexItem>
                                 )}
@@ -227,7 +225,7 @@ function RuleGroups({
                                     variant="link"
                                     isInline
                                     isDisabled={!!errors?.length}
-                                    icon={<PlusCircleIcon className="pf-v5-u-mr-sm" />}
+                                    icon={<PlusCircleIcon className="pf-v6-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
                                             roleName: '',

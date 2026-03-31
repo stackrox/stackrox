@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -29,13 +30,16 @@ type CompiledPolicy interface {
 	MatchAgainstNodeAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) (booleanpolicy.Violations, error)
 
+	RequiresImageEnrichment() bool
+
 	Predicate
 }
 
 // newCompiledPolicy creates and returns a compiled policy from the policy and legacySearchBasedMatcher.
 func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) (CompiledPolicy, error) {
 	compiled := &compiledPolicy{
-		policy: policy,
+		policy:                  policy,
+		requiresImageEnrichment: policyfields.ContainsImageEnrichmentRequiredFields(policy),
 	}
 
 	exclusions := make([]*compiledExclusion, 0, len(policy.GetExclusions()))
@@ -60,10 +64,9 @@ func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.Cl
 		if err := compiled.setRuntimeMatchers(policy); err != nil {
 			return nil, err
 		}
-		// There should be exactly one defined
 		if !compiled.exactlyOneRuntimeMatcherDefined() {
-			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
-				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
+			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have "+
+				"compatible runtime constraints.", policy.GetName())
 		}
 
 		// set predicates
@@ -182,7 +185,9 @@ func (cp *compiledPolicy) setAuditLogEventMatcher(policy *storage.Policy) error 
 
 func (cp *compiledPolicy) setProcessEventMatcher(policy *storage.Policy) error {
 	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process)
+		// Only include sections that have Process fields but NO FileAccess fields
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process) &&
+			!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess)
 	})
 	if len(filtered.GetPolicySections()) > 0 {
 		cp.hasProcessSection = true
@@ -292,11 +297,12 @@ type compiledPolicy struct {
 	auditLogEventMatcher             booleanpolicy.AuditLogEventMatcher
 	nodeMatcher                      booleanpolicy.NodeEventMatcher
 
-	hasProcessSection     bool
-	hasKubeEventsSection  bool
-	hasNetworkFlowSection bool
-	hasAuditEventsSection bool
-	hasFileAccessSection  bool
+	hasProcessSection       bool
+	hasKubeEventsSection    bool
+	hasNetworkFlowSection   bool
+	hasAuditEventsSection   bool
+	hasFileAccessSection    bool
+	requiresImageEnrichment bool
 }
 
 func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
@@ -391,6 +397,10 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndFileAccess(cache *booleanpoli
 // Policy returns the policy that was compiled.
 func (cp *compiledPolicy) Policy() *storage.Policy {
 	return cp.policy
+}
+
+func (cp *compiledPolicy) RequiresImageEnrichment() bool {
+	return cp.requiresImageEnrichment
 }
 
 // AppliesTo returns if the compiled policy applies to the input object.

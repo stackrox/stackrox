@@ -5,26 +5,25 @@ import type { FormikContextType } from 'formik';
 import {
     Alert,
     Bullseye,
+    Content,
     Divider,
     Flex,
     FlexItem,
     Form,
     PageSection,
     Spinner,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
+import { complianceProfileOperatorKindLabels } from '../../compliance.constants';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
-
-// file can be deleted after switching to PF5, more details in the css file
-import './ProfileSelection.css';
 
 export type ProfileSelectionProps = {
     alertRef: RefObject<HTMLDivElement>;
@@ -37,6 +36,9 @@ function ProfileSelection({
     profiles,
     isFetchingProfiles,
 }: ProfileSelectionProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isTailoredProfilesEnabled = isFeatureFlagEnabled('ROX_TAILORED_PROFILES');
+
     const {
         setFieldValue,
         setTouched,
@@ -78,10 +80,14 @@ function ProfileSelection({
     };
 
     const isProfileExpanded = (name: string) => expandedProfileNames.includes(name);
+    const totalColumns = isTailoredProfilesEnabled ? 7 : 6;
 
     function renderTableContent() {
         return profiles?.map(
-            ({ description, name, productType, ruleCount, title, profileVersion }, rowIndex) => (
+            (
+                { description, name, productType, ruleCount, title, profileVersion, operatorKind },
+                rowIndex
+            ) => (
                 <Tbody isExpanded={isProfileExpanded(name)} key={name}>
                     <Tr>
                         <Td
@@ -100,17 +106,25 @@ function ProfileSelection({
                             }}
                         />
                         <Td dataLabel="Profile">{name}</Td>
+                        {isTailoredProfilesEnabled && (
+                            <Td dataLabel="Type">
+                                {(operatorKind &&
+                                    complianceProfileOperatorKindLabels[operatorKind]) ??
+                                    '—'}
+                            </Td>
+                        )}
                         <Td dataLabel="Rule set">{ruleCount}</Td>
                         <Td dataLabel="Applicability">{productType}</Td>
                         <Td dataLabel="Version">{profileVersion || '-'}</Td>
                     </Tr>
                     <Tr isExpanded={isProfileExpanded(name)}>
-                        <Td colSpan={2}></Td>
-                        <Td dataLabel="Profile details" colSpan={4}>
+                        <Td dataLabel="Profile details" colSpan={totalColumns}>
                             <ExpandableRowContent>
-                                <Text className="pf-v5-u-font-weight-bold">{title}</Text>
-                                <Divider component="div" className="pf-v5-u-my-md" />
-                                <Text>{description}</Text>
+                                <Content component="p" className="pf-v6-u-font-weight-bold">
+                                    {title}
+                                </Content>
+                                <Divider component="div" className="pf-v6-u-my-md" />
+                                <Content component="p">{description}</Content>
                             </ExpandableRowContent>
                         </Td>
                     </Tr>
@@ -123,7 +137,7 @@ function ProfileSelection({
         return (
             <Tbody>
                 <Tr>
-                    <Td colSpan={6}>
+                    <Td colSpan={totalColumns}>
                         <Bullseye>
                             <Spinner />
                         </Bullseye>
@@ -137,7 +151,7 @@ function ProfileSelection({
         return (
             <Tbody>
                 <Tr>
-                    <Td colSpan={6}>
+                    <Td colSpan={totalColumns}>
                         <Bullseye>
                             <EmptyStateTemplate
                                 title="No profiles"
@@ -166,8 +180,8 @@ function ProfileSelection({
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Profiles</Title>
                     </FlexItem>
@@ -175,7 +189,7 @@ function ProfileSelection({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
+            <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" ref={alertRef}>
                 {formikTouched.profiles && formikValues.profiles.length === 0 && (
                     <Alert
                         title="At least one profile is required to proceed"
@@ -187,13 +201,10 @@ function ProfileSelection({
                 <Table>
                     <Thead noWrap>
                         <Tr>
-                            <Th>
-                                <span className="pf-v5-screen-reader">Row selection</span>
-                            </Th>
-                            <Th>
-                                <span className="pf-v5-screen-reader">Row expansion</span>
-                            </Th>
+                            <Th screenReaderText="Row selection" />
+                            <Th screenReaderText="Row expansion" />
                             <Th>Profile</Th>
+                            {isTailoredProfilesEnabled && <Th>Type</Th>}
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>
                             <Th>Version</Th>

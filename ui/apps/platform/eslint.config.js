@@ -255,11 +255,11 @@ module.exports = [
                     message: 'Please use Number.isNaN instead',
                 },
                 {
-                    property: '__defineGetter__',
+                    property: 'function __defineGetter__() { [native code] }',
                     message: 'Please use Object.defineProperty instead.',
                 },
                 {
-                    property: '__defineSetter__',
+                    property: 'function __defineSetter__() { [native code] }',
                     message: 'Please use Object.defineProperty instead.',
                 },
                 {
@@ -853,7 +853,6 @@ module.exports = [
             'src/utils/URLParser.ts', // deprecated
             'src/utils/WorkflowState.js', // deprecated
             'src/utils/entityRelationships.ts', // deprecated
-            'src/utils/getSubListFromEntity.js', // deprecated
             'src/utils/queryService.js', // deprecated
         ],
 
@@ -934,6 +933,198 @@ module.exports = [
         rules: {
             'limited/no-Tailwind': 'error',
             'limited/no-feather-icons': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/CheckboxTable.jsx', // deprecated
+            'src/Components/CollapsibleCard.jsx', // deprecated
+            'src/Components/ColorPicker.jsx', // rewrite
+            'src/Components/ExportButton.jsx', // deprecated
+            'src/Components/Popper.jsx', // replace or rewrite
+            'src/Components/SearchInput/SearchInput.jsx', // deprecated
+            'src/Components/Select.jsx', // deprecated
+            'src/Components/Table.jsx', // deprecated
+            'src/Components/Tabs.jsx', // deprecated
+            'src/Components/WorkflowPDFExportButton.jsx', // deprecated
+            'src/Components/visuals/Sunburst.jsx', // deprecated
+            'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite
+            'src/Containers/MainPage/asyncComponent.tsx', // replace
+            'src/Containers/Risk/KeyValuePairs.jsx', // rewrite?
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-Component': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx}'],
+        ignores: [
+            'src/**/*.test.js', // unit test
+            'src/**/*.test.jsx', // unit test
+            'src/**/*.cy.jsx', // component test
+            'src/Components/**', // research
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**', // deferred
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Risk/**', // rewrite in progress
+            'src/Containers/ThemeProvider.jsx', // deleted in PatternFly 6
+            'src/Containers/User/UserPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Violations/useEntitiesByIdsCache.js', // rewrite if still relevant
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+            'src/Containers/configMgmtPaginationContext.js', // deferred
+            'src/Containers/searchContext.js', // research
+            'src/Containers/workflowStateContext.js', // deprecated
+            'src/constants/complianceStates.js', // research
+            'src/constants/componentTypes.js', // research
+            'src/constants/entityPageProps.js', // research
+            'src/constants/lifecycleStages.js', // rewrite
+            'src/constants/listColumns.jsx', // deferred
+            'src/constants/networkStatuses.js', // deferred
+            'src/constants/pageTypes.js', // deprecated
+            'src/constants/reduxFormPropTypes.js', // deprecated
+            'src/constants/searchParams.js', // deferred
+            'src/constants/sortFields.js', // deferred
+            'src/constants/timelineTypes.js', // move into Containers/Risk/EventTimeline
+            'src/constants/url.js', // deprecated
+            'src/constants/useCaseTypes.js', // deprecated
+            'src/hooks/useEntityName.js', // deprecated
+            'src/hooks/useGraphHoverHint.js', // deprecated
+            'src/hooks/useInterval.js', // rewrite
+            'src/hooks/useTabs.js', // deprecated
+            'src/hooks/useWorkflowMatch.js', // deferred
+            'src/init/**', // JavaScript
+            'src/init/initializeAnalytics.js', // JavaScript
+            'src/init/installRaven.js', // JavaScript
+            'src/messages/entity.js', // deprecated
+            'src/messages/standards.js', // deferred
+            'src/messages/timeline.js', // move into Containers/Risk/EventTimeline
+            'src/messages/useCase.js', // deferred
+            'src/queries/**', // deprecated
+            'src/reducers/**', // deprecated
+            'src/sagas/**', // deprecated
+            'src/services/AttributesService.js', // deferred
+            'src/services/AuthService/AccessTokenManager.js', // deferred
+            'src/services/AuthService/RefreshTokenTimeout.js', // deferred
+            'src/services/AuthService/addTokenRefreshInterceptors.js', // deferred
+            'src/services/CLIService.js', // rewrite
+            'src/services/CSVDownloadService.js', // deprecated
+            'src/services/DownloadService.js', // rewrite
+            'src/services/NetworkService.js', // rewrite
+            'src/services/VulnerabilitiesService.js', // deprecated
+            'src/services/instance.js', // JavaScript
+            'src/services/serverErrorHandler.js', // JavaScript
+            'src/*', // JavaScript
+            'src/test-utils/**', // JavaScript
+            'src/utils/URLGenerator.js', // deprecated
+            'src/utils/URLService.js', // deprecated
+            'src/utils/WorkflowEntity.js', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/captureGraphQLErrors.js', // move into Containers/Risk/EventTimeline
+            'src/utils/d3Utils.js', // deprecated
+            'src/utils/download.js', // rewrite
+            'src/utils/flattenObject.js', // deprecated
+            'src/utils/getEntityName.js', // deprecated
+            'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
+            'src/utils/gqlLoading.js', // deferred
+            'src/utils/pdfUtils.js', // deprecated
+            'src/utils/permissionRuleGroupUtils.js', // deferred
+            'src/utils/queryMap.js', // deprecated
+            'src/utils/queryService.js', // deferred
+            'src/utils/sagaEffects.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-JavaScript': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        // Overlaps with preceding non-deprecated rule.
+        ignores: [
+            'src/Components/**', // most or all deprecated
+            'src/constants/entityPageProps.js', // deprecated
+            'src/constants/reduxFormPropTypes.js', // deprecated
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**', // deprecated
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
+            'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite in TypeScript
+            'src/Containers/MainPage/Header/UserMenu.tsx', // rewritten in TypeScript
+            'src/Containers/Risk/EventTimeline/**', // deprecated
+            'src/Containers/Risk/Process/Binaries.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/Process/BinaryCollapsible.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/Process/Signal.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/KeyValuePairs.jsx', // rewrite in TypeScript?
+            'src/Containers/User/UserPage.jsx', // rewrite in TypeScript
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow//**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-PropTypes': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/**', // deprecated
+            'src/Containers/AccessControl/AuthProviders/AuthProviderForm.tsx', // replace
+            'src/Containers/AccessControl/AuthProviders/AuthProviders.tsx', // replace
+            'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
+            'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/Integrations/IntegrationsListPage/IntegrationsListPage.tsx', // replace
+            'src/Containers/Integrations/hooks/useIntegrationPermissions.ts', // replace hook itself
+            'src/Containers/Integrations/hooks/useIntegrations.ts', // replace hook itself
+            'src/Containers/Login/LoginPage.jsx', // replace
+            'src/Containers/Login/TestLoginResultsPage.jsx', // replace
+            'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace
+            'src/Containers/MainPage/AuthenticatedRoutes.tsx', // replace
+            'src/Containers/MainPage/Header/CLIDownloadMenu.tsx', // replace
+            'src/Containers/MainPage/Header/UserMenu.tsx', // replace
+            'src/Containers/MainPage/InviteUsers/InviteUsersModal.tsx', // replace
+            'src/Containers/Policies/PolicyPage.tsx', // replace
+            'src/Containers/ReduxUserPermissionProvider.tsx', // replace
+            'src/Containers/Risk/CreatePolicyFromSearch.tsx', // replace
+            'src/Containers/User/UserPage.jsx', // replace
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/hooks/useAuthStatus.ts', // replace
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-connect': 'error',
+            'limited/no-non-deprecated-reselect': 'error',
         },
     },
     {

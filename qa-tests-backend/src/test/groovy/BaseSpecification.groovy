@@ -26,6 +26,7 @@ import objects.K8sServiceAccount
 import objects.Secret
 import services.BaseService
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
@@ -72,6 +73,8 @@ class BaseSpecification extends Specification {
     private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
+
+    public static boolean scannerV4Enabled = false
 
     private static synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
@@ -127,6 +130,9 @@ class BaseSpecification extends Specification {
                 throw(ex)
             }
         }
+
+        scannerV4Enabled = FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4")
+        LOG.info "Scanner V4 enabled: ${scannerV4Enabled}"
 
         if (ClusterService.isOpenShift4()) {
             assert Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT,

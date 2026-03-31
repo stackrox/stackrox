@@ -1,4 +1,4 @@
-import type { FocusEventHandler, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
@@ -10,8 +10,8 @@ export type DayPickerDropdownProps = {
     handleSelect: (id: string, selection: string[]) => void;
     isEditable?: boolean;
     intervalType: IntervalType | null;
-    onBlur?: FocusEventHandler<HTMLDivElement>;
     toggleId?: string;
+    onBlur?: () => void;
 };
 
 export const daysOfWeek = ['0', '1', '2', '3', '4', '5', '6'] as const;
@@ -41,8 +41,8 @@ function DayPickerDropdown({
     handleSelect,
     isEditable = true,
     intervalType,
-    onBlur,
     toggleId,
+    onBlur,
 }: DayPickerDropdownProps): ReactElement {
     const selectSafeValue = value.map((item) => item.toString());
 
@@ -93,11 +93,11 @@ function DayPickerDropdown({
             id={fieldId}
             selections={selectSafeValue}
             onChange={onChange}
-            onBlur={onBlur}
             ariaLabel="Select one or more days"
             placeholderText={value.length ? 'Selected days' : 'Select days'}
             toggleId={toggleId}
             isDisabled={!isEditable}
+            onBlur={onBlur}
         >
             {selectOptions}
         </CheckboxSelect>

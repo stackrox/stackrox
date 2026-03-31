@@ -127,6 +127,9 @@ var (
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
+
+	// TailoredProfiles enables support for compliance tailored profiles
+	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
 )
 
 // The following feature flags are related to Scanner V4.
@@ -173,4 +176,7 @@ var (
 
 	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
 	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
+
+	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
+	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
 )

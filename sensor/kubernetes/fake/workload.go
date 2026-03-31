@@ -80,6 +80,16 @@ type ServiceWorkload struct {
 	NumLoadBalancers int `yaml:"numLoadBalancers"`
 }
 
+// SecretWorkload defines the workload of Kubernetes secrets.
+// Docker config secrets (image pull secrets) are the primary concern because
+// each one triggers ResolveAllDeployments() in the sensor pipeline, causing
+// O(secrets × deployments) resolver work.
+type SecretWorkload struct {
+	NumDockerCfgSecrets int           `yaml:"numDockerCfgSecrets"`
+	NumOpaqueSecrets    int           `yaml:"numOpaqueSecrets"`
+	UpdateInterval      time.Duration `yaml:"updateInterval"`
+}
+
 // VirtualMachineWorkload defines the workload for VirtualMachine and VirtualMachineInstance CRDs.
 // This is the unified config for both VM/VMI informer events AND VM index reports.
 // Index reports are only generated when ReportInterval > 0, and they follow the VM lifecycle
@@ -114,6 +124,7 @@ type Workload struct {
 	NetworkWorkload        NetworkWorkload         `yaml:"networkWorkload"`
 	RBACWorkload           RBACWorkload            `yaml:"rbacWorkload"`
 	ServiceWorkload        ServiceWorkload         `yaml:"serviceWorkload"`
+	SecretWorkload         SecretWorkload          `yaml:"secretWorkload"`
 	VirtualMachineWorkload VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
 	NumNamespaces          int                     `yaml:"numNamespaces"`
 	MatchLabels            bool                    `yaml:"matchLabels"`

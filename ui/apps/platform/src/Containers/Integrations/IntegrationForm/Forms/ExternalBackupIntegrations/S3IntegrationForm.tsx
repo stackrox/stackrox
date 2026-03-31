@@ -1,6 +1,13 @@
 /* eslint-disable no-void */
 import type { ReactElement } from 'react';
-import { Checkbox, Form, FormSelect, PageSection, Text, TextInput } from '@patternfly/react-core';
+import {
+    Checkbox,
+    Content,
+    Form,
+    FormSelect,
+    PageSection,
+    TextInput,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
@@ -178,7 +185,7 @@ function S3IntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -287,7 +294,7 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Object prefix"
                                 helpText={
@@ -314,18 +321,18 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Endpoint"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="AWS S3 endpoint"
                                 helpText={
                                     <>
-                                        <Text>
+                                        <Content component="p">
                                             Modifies the endpoint under which S3 is reached. Note
                                             that when using a non-AWS service provider, it is
                                             recommended to create an <em>S3 API Compatible</em>{' '}
                                             integration instead.
-                                        </Text>
-                                        <Text>
+                                        </Content>
+                                        <Content component="p">
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -336,7 +343,7 @@ function S3IntegrationForm({
                                                     AWS S3 documentation
                                                 </a>
                                             </ExternalLink>
-                                        </Text>
+                                        </Content>
                                     </>
                                 }
                                 ariaLabel="Help for AWS S3 endpoint"
@@ -359,13 +366,13 @@ function S3IntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Region"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="AWS S3 region"
                                 helpText={
                                     <>
-                                        <Text>Specifies the AWS region.</Text>
-                                        <Text>
+                                        <Content component="p">Specifies the AWS region.</Content>
+                                        <Content component="p">
                                             For a complete list of AWS regions, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -376,7 +383,7 @@ function S3IntegrationForm({
                                                     AWS S3 documentation
                                                 </a>
                                             </ExternalLink>
-                                        </Text>
+                                        </Content>
                                     </>
                                 }
                                 ariaLabel="Help for AWS S3 region"
@@ -398,16 +405,16 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Short-lived tokens"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="AWS container IAM role"
                                 helpText={
                                     <>
-                                        <Text>
+                                        <Content component="p">
                                             Enables authentication via short-lived tokens using AWS
                                             Secure Token Service.
-                                        </Text>
-                                        <Text>
+                                        </Content>
+                                        <Content component="p">
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -421,7 +428,7 @@ function S3IntegrationForm({
                                                     RHACS documentation
                                                 </a>
                                             </ExternalLink>
-                                        </Text>
+                                        </Content>
                                     </>
                                 }
                                 ariaLabel="Help for short-lived tokens"

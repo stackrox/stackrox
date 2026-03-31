@@ -13,7 +13,6 @@ import { severities, severityValues } from 'constants/severities';
 import { policySeverityColorMap } from 'constants/severityColors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
 import { policySeverities } from 'types/policy.proto';
-import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -25,6 +24,11 @@ const legendData = policySeverities.map((severity) => ({
 }));
 
 const passingChartColor = 'var(--base-400)';
+
+const policyStatus = {
+    PASS: 'Pass',
+    FAIL: 'Fail',
+};
 
 const QUERY = gql`
     query policyViolationsBySeverity($query: String) {

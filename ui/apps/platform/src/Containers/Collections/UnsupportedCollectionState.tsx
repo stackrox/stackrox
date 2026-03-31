@@ -17,12 +17,12 @@ function UnsupportedCollectionState({ errors, className = '' }: UnsupportedColle
                 headingLevel="h2"
                 icon={InfoCircleIcon}
             >
-                <p className="pf-v5-u-pb-lg">
+                <p className="pf-v6-u-pb-lg">
                     This collection is valid but cannot be displayed nor edited through the user
                     interface
                 </p>
                 <ExpandableSection toggleText="More info">
-                    <List className="pf-v5-u-text-align-left">
+                    <List className="pf-v6-u-text-align-left">
                         {errors.map((err) => (
                             <ListItem key={err}>{err}</ListItem>
                         ))}

@@ -317,17 +317,16 @@ func (ds *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]s
 
 	clonedQuery.Pagination = q.GetPagination()
 
-	var results []*distinctProfileName
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
+	var profileNames []string
+	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileName](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery, func(r *distinctProfileName) error {
+		profileNames = append(profileNames, r.ProfileName)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
+	if len(profileNames) == 0 {
 		return nil, nil
-	}
-	profileNames := make([]string, 0, len(results))
-	for _, result := range results {
-		profileNames = append(profileNames, result.ProfileName)
 	}
 
 	return profileNames, err
@@ -354,13 +353,13 @@ func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map
 		},
 	}
 
-	result, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
+	countMap := make(map[string]int)
+	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName), func(dp *distinctProfileCount) error {
+		countMap[dp.Name] = dp.TotalCount
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	countMap := make(map[string]int, len(result))
-	for _, dp := range result {
-		countMap[dp.Name] = dp.TotalCount
 	}
 	return countMap, nil
 }

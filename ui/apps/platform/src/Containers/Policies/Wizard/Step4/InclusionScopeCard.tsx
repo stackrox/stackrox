@@ -88,7 +88,7 @@ function InclusionScopeCard({
                             }
                             options={clusterOptions}
                             placeholder="Select a cluster"
-                            className="pf-v5-u-w-100"
+                            className="pf-v6-u-w-100"
                             isClearable
                         />
                     ) : (

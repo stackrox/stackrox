@@ -13,8 +13,11 @@ import LoginPage from 'Containers/Login/LoginPage';
 import TestLoginResultsPage from 'Containers/Login/TestLoginResultsPage';
 import AppPageTitle from 'Containers/AppPageTitle';
 import AppPageFavicon from 'Containers/AppPageFavicon';
+import { useTheme } from 'hooks/useTheme';
 
 function AppPage(): ReactElement {
+    useTheme();
+
     return (
         <>
             <AppPageTitle />

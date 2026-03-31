@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 // Detector is a thin layer atop the other detectors that provides a unified interface.
 type Detector interface {
 	ReconcilePolicies(newList []*storage.Policy)
-	DetectDeployment(ctx deploytime.DetectionContext, deployment booleanpolicy.EnhancedDeployment) []*storage.Alert
+	DetectDeployment(deployment booleanpolicy.EnhancedDeployment) []*storage.Alert
 	DetectProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, processIndicator *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert
 	DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert
 	DetectNetworkFlowForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert
@@ -28,12 +29,9 @@ type Detector interface {
 }
 
 // NewDetector returns a new detector.
-func NewDetector() Detector {
-	// TODO(ROX-33188): Wire cluster and namespace label providers from Sensor's in-memory stores.
-	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
-	// fail closed (not match) in Sensor policy evaluation.
+func NewDetector(clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) Detector {
 	return &detectorImpl{
-		deploytimeDetector: deploytime.NewDetector(detection.NewPolicySet(nil, nil)),
-		runtimeDetector:    runtime.NewDetector(detection.NewPolicySet(nil, nil)),
+		deploytimeDetector: deploytime.NewDetector(detection.NewPolicySet(clusterLabelProvider, namespaceLabelProvider)),
+		runtimeDetector:    runtime.NewDetector(detection.NewPolicySet(clusterLabelProvider, namespaceLabelProvider)),
 	}
 }

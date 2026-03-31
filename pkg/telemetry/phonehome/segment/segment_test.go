@@ -105,10 +105,10 @@ func Test_getIDs(t *testing.T) {
 }
 
 func Test_Group(t *testing.T) {
-	var i int32
+	var i atomic.Int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&i, 1)
+		i.Add(1)
 	}))
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
@@ -116,14 +116,14 @@ func Test_Group(t *testing.T) {
 	tt.Group(telemeter.WithGroup("Test", "test-group-id"))
 	tt.Stop()
 	s.Close()
-	assert.Equal(t, int32(1), i, "Group call had to issue 1 message")
+	assert.Equal(t, int32(1), i.Load(), "Group call had to issue 1 message")
 }
 
 func Test_GroupWithProps(t *testing.T) {
-	var i int32
+	var i atomic.Int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&i, 1)
+		i.Add(1)
 	}))
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
@@ -140,7 +140,7 @@ func Test_GroupWithProps(t *testing.T) {
 	tt.groupFix(options, ti)
 	tt.Stop()
 	s.Close()
-	assert.Equal(t, int32(4), i, "Group call had to issue 4 messages")
+	assert.Equal(t, int32(4), i.Load(), "Group call had to issue 4 messages")
 }
 
 func Test_makeMessageID(t *testing.T) {
@@ -252,10 +252,10 @@ func Test_isDuplicate(t *testing.T) {
 func TestTrackWithNoDuplicates(t *testing.T) {
 	tc := initTestCache()
 
-	var i int32
+	var i atomic.Int32
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&i, 1)
+		i.Add(1)
 	}))
 	defer s.Close()
 
@@ -265,7 +265,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
 		tt.Stop()
-		assert.Equal(t, int32(1), i, "Track calls had to issue 1 message")
+		assert.Equal(t, int32(1), i.Load(), "Track calls had to issue 1 message")
 	})
 	t.Run("one message after cache expiry", func(t *testing.T) {
 		tc.add(time.Hour)
@@ -275,7 +275,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
 		tt.Stop()
-		assert.Equal(t, int32(2), i, "Track calls had to issue one more message")
+		assert.Equal(t, int32(2), i.Load(), "Track calls had to issue one more message")
 	})
 	t.Run("different prefix", func(t *testing.T) {
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
@@ -283,7 +283,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("tomorrow"))
 		}
 		tt.Stop()
-		assert.Equal(t, int32(3), i, "Track calls had to issue one more message")
+		assert.Equal(t, int32(3), i.Load(), "Track calls had to issue one more message")
 	})
 	t.Run("different event", func(t *testing.T) {
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
@@ -291,7 +291,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 			tt.Identify(telemeter.WithNoDuplicates("tomorrow"))
 		}
 		tt.Stop()
-		assert.Equal(t, int32(4), i, "Identify calls had to issue one more message")
+		assert.Equal(t, int32(4), i.Load(), "Identify calls had to issue one more message")
 	})
 }
 

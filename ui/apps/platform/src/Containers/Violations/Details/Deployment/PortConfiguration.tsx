@@ -20,7 +20,7 @@ function PortConfiguration({ deployment }: PortConfigurationProps): ReactElement
             /* eslint-disable react/no-array-index-key */
             return (
                 <Fragment key={i}>
-                    <Title headingLevel="h4" className="pf-v5-u-mb-md">{`ports[${i}]`}</Title>
+                    <Title headingLevel="h4" className="pf-v6-u-mb-md">{`ports[${i}]`}</Title>
                     <PortDescriptionList port={port} />
                 </Fragment>
             );
@@ -29,7 +29,7 @@ function PortConfiguration({ deployment }: PortConfigurationProps): ReactElement
     }
 
     return (
-        <Card isFlat>
+        <Card>
             <CardTitle component="h3">Port configuration</CardTitle>
             <CardBody>{content}</CardBody>
         </Card>

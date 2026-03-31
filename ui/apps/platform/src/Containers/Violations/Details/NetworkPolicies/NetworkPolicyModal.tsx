@@ -1,4 +1,6 @@
-import { Button, Flex, Modal } from '@patternfly/react-core';
+import type { CSSProperties } from 'react';
+import { Button, Flex } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import download from 'utils/download';
@@ -22,7 +24,7 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
             isOpen={isOpen}
             onClose={onClose}
             actions={[
-                <Button className="pf-v5-u-display-inline-block" onClick={exportYAMLHandler}>
+                <Button className="pf-v6-u-display-inline-block" onClick={exportYAMLHandler}>
                     Export YAML
                 </Button>,
             ]}
@@ -31,9 +33,11 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
                 <p>Policy name: {networkPolicy.name}</p>
                 <CodeViewer
                     code={networkPolicy.yaml}
-                    style={{
-                        '--pf-v5-u-max-height--MaxHeight': '450px',
-                    }}
+                    style={
+                        {
+                            '--pf-v6-u-max-height--MaxHeight': '450px',
+                        } as CSSProperties
+                    }
                 />
             </Flex>
         </Modal>

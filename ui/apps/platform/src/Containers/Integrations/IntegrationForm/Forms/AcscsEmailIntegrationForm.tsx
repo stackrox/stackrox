@@ -75,7 +75,7 @@ function AcscsEmailIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -116,7 +116,7 @@ function AcscsEmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Annotation key for recipient"
-                        labelIcon={<AnnotationKeyLabelIcon />}
+                        labelHelp={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         touched={touched}
                         errors={errors}

@@ -6,4 +6,5 @@ set -euo pipefail
 
 [ -d /.init-dirs ] || exit 0
 
-cp -rfP /.init-dirs/* /
+# We use --no-clobber here because we don't need to re-copy files on container restarts.
+cp --recursive --no-dereference --no-clobber /.init-dirs/* /

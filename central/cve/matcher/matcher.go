@@ -12,9 +12,11 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -33,14 +35,16 @@ type CVEMatcher struct {
 	clusters   clusterDataStore.DataStore
 	namespaces nsDataStore.DataStore
 	images     imageDataStore.DataStore
+	imagesV2   imageV2DataStore.DataStore
 }
 
 // NewCVEMatcher returns new instance of CVEMatcher
-func NewCVEMatcher(clusters clusterDataStore.DataStore, namespaces nsDataStore.DataStore, images imageDataStore.DataStore) (*CVEMatcher, error) {
+func NewCVEMatcher(clusters clusterDataStore.DataStore, namespaces nsDataStore.DataStore, images imageDataStore.DataStore, imagesV2 imageV2DataStore.DataStore) (*CVEMatcher, error) {
 	return &CVEMatcher{
 		clusters:   clusters,
 		namespaces: namespaces,
 		images:     images,
+		imagesV2:   imagesV2,
 	}, nil
 }
 
@@ -183,12 +187,22 @@ func (m *CVEMatcher) getAllIstioComponentsVersionsInCluster(ctx context.Context,
 		AddExactMatches(search.ImageRegistry, "docker.io").
 		AddStrings(search.ImageRemote, "istio").
 		ProtoQuery()
-	images, err := m.images.SearchRawImages(ctx, q)
-	if err != nil {
-		return set, err
-	}
-	for _, image := range images {
-		set.Add(image.GetName().GetTag())
+	if features.FlattenImageData.Enabled() {
+		images, err := m.imagesV2.SearchRawImages(ctx, q)
+		if err != nil {
+			return set, err
+		}
+		for _, image := range images {
+			set.Add(image.GetName().GetTag())
+		}
+	} else {
+		images, err := m.images.SearchRawImages(ctx, q)
+		if err != nil {
+			return set, err
+		}
+		for _, image := range images {
+			set.Add(image.GetName().GetTag())
+		}
 	}
 	return set, nil
 }

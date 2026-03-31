@@ -125,7 +125,7 @@ function OcmIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -148,7 +148,7 @@ function OcmIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Endpoint"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="OpenShift Cluster Manager endpoint"
                                 helpText={
@@ -197,7 +197,7 @@ function OcmIntegrationForm({
                     <FormLabelGroup
                         isRequired={values.updateCredentials}
                         label="Client ID"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 hasAutoWidth
                                 helpTitle="Service account client ID"
@@ -263,7 +263,7 @@ function OcmIntegrationForm({
                     <FormLabelGroup
                         isRequired={values.updateCredentials}
                         label="Client secret"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 hasAutoWidth
                                 helpTitle="Service account client secret"
@@ -329,7 +329,7 @@ function OcmIntegrationForm({
                     <FormLabelGroup
                         isRequired={values.updateCredentials}
                         label="API token (deprecated)"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 hasAutoWidth
                                 helpTitle="API token"

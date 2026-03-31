@@ -353,6 +353,17 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 func (s *Sensor) Stop() {
 	s.stoppedSig.Signal()
 
+	// Initiate central communication teardown before stopping components.
+	// Components may block in Stop() waiting to drain channels fed by
+	// central communication; requesting teardown first unblocks them.
+	var cc CentralCommunication
+	concurrency.WithLock(s.centralCommunicationLock, func() {
+		cc = s.centralCommunication
+	})
+	if cc != nil {
+		cc.Stop()
+	}
+
 	for _, c := range s.components {
 		c.Stop()
 	}

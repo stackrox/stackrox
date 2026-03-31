@@ -64,15 +64,15 @@ type mockUpgrader struct {
 
 	done concurrency.Flag
 
-	numRunsDone int32
+	numRunsDone atomic.Int32
 }
 
 func (m *mockUpgrader) incrNumRunsDone() {
-	atomic.AddInt32(&m.numRunsDone, 1)
+	m.numRunsDone.Add(1)
 }
 
 func (m *mockUpgrader) getNumRunsDone() int {
-	return int(atomic.LoadInt32(&m.numRunsDone))
+	return int(m.numRunsDone.Load())
 }
 
 // A simplified version of the logic we expect the upgrader to perform.

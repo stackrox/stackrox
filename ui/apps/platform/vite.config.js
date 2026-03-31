@@ -142,6 +142,7 @@ export default defineConfig(async () => {
             port: 3000,
         },
         test: {
+            dir: './src',
             environment: 'jsdom',
             globals: true,
             reporters: [

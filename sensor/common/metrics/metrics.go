@@ -119,6 +119,13 @@ var (
 		Help:      "Count of process signals dropped due to shutdown or a full output buffer",
 	})
 
+	processPipelineModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_pipeline_mode",
+		Help:      "Indicates the active process pipeline mode (1 for the active mode, 0 for inactive)",
+	}, []string{"mode"})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -302,6 +309,68 @@ var (
 		Name:      "component_process_message_errors_total",
 		Help:      "Number of errors encountered while processing messages from Central in each sensor component",
 	}, []string{ComponentName})
+
+	// InformersRegisteredCurrent is the total number of Kubernetes informers registered by Sensor
+	// during startup. Each informer watches a specific resource type (e.g., Deployments, Pods,
+	// NetworkPolicies). This number is set during initialization and remains constant for the
+	// lifetime of the listener.
+	InformersRegisteredCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informers_registered_current",
+		Help: "Total number of Kubernetes informers registered by Sensor during startup. " +
+			"Each informer watches a specific resource type (e.g., Deployments, Pods, NetworkPolicies). " +
+			"Their number may vary depending on the features enabled and the type of the cluster. " +
+			"This number is set during initialization and remains constant for the lifetime of the listener.",
+	})
+
+	// InformersPendingCurrent is the number of Kubernetes informers that have not yet completed
+	// their initial sync. During normal startup this drops from the total to zero as each informer
+	// finishes loading existing resources from the API server. A value that stays non-zero for an
+	// extended period indicates a stuck informer.
+	InformersPendingCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informers_pending_current",
+		Help: "Number of Kubernetes informers that have not yet completed their initial sync. " +
+			"During normal startup this drops from the total number of informers registered to zero as " +
+			"each informer finishes loading existing resources from the API server. " +
+			"A value that stays non-zero for an extended period indicates a stuck informer.",
+	})
+
+	// informerSyncDurationMs tracks the time each informer has spent syncing. While the informer
+	// is still pending, this value is updated periodically and keeps increasing. Once the informer
+	// completes its initial sync, the value is set to the final sync duration and stops changing.
+	informerSyncDurationMs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informer_sync_duration_ms",
+		Help:      "Time in milliseconds each informer has spent syncing. While the informer is still pending, this value is updated periodically and keeps increasing. Once the informer completes its initial sync, the value is set to the final sync duration and stops changing. Labeled by informer name (e.g., Deployments, Pods). A value that keeps growing indicates a stuck informer.",
+	}, []string{"informer"})
+
+	// informerInitialObjectPopulationDurationSeconds tracks post-sync startup work per informer:
+	// how long Sensor waits for PopulateInitialObjects to finish processing the initial snapshot
+	// loaded from the informer's indexer.
+	//
+	// This is different from informerSyncDurationMs:
+	//   - informerSyncDurationMs measures informer cache sync time (registration -> HasSynced true).
+	//   - informerInitialObjectPopulationDurationSeconds measures the subsequent handoff/processing
+	//     phase (after cache sync -> PopulateInitialObjects completion).
+	//   - Therefore, informerInitialObjectPopulationDurationSeconds does NOT include any time already
+	//     counted in informerSyncDurationMs; the two metrics represent consecutive, non-overlapping phases.
+	informerInitialObjectPopulationDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informer_initial_object_population_duration_seconds",
+		Help: "Time in seconds spent processing and dispatching the initial object snapshot after informer cache sync. " +
+			"Measured per informer from PopulateInitialObjects start until completion. " +
+			"High values indicate slow initial object processing, which can delay full listener readiness.",
+		Buckets: []float64{
+			0.1, 0.25, 0.5, // sub-second startup
+			1, 2.5, 5, 10, // common expected range
+			30, 60, 120, 300, // slow / pathological cases up to 5 minutes
+		},
+	}, []string{"informer"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -397,6 +466,19 @@ func SetProcessEnrichmentCacheSize(size float64) {
 	processEnrichmentLRUCacheSize.Set(size)
 }
 
+const (
+	// ProcessPipelineModePubSub indicates the pub/sub pipeline mode is active.
+	ProcessPipelineModePubSub = "pubsub"
+	// ProcessPipelineModeLegacy indicates the legacy channel pipeline mode is active.
+	ProcessPipelineModeLegacy = "legacy"
+)
+
+// SetProcessPipelineMode sets which process pipeline mode is active.
+func SetProcessPipelineMode(mode string) {
+	processPipelineModeGauge.Reset()
+	processPipelineModeGauge.WithLabelValues(mode).Set(1)
+}
+
 // IncK8sEventCount increments the number of objects we're receiving from k8s
 func IncK8sEventCount(action string, resource string) {
 	k8sObjectCounts.With(prometheus.Labels{
@@ -490,4 +572,22 @@ func IncrementCentralReceiverProcessMessageErrors(componentName string) {
 	componentProcessMessageErrorsCount.With(prometheus.Labels{
 		ComponentName: componentName,
 	}).Inc()
+}
+
+// ObserveInformerSyncDuration sets the sync duration metric for an informer.
+// Called periodically for pending informers (with the elapsed time so far)
+// and once for completed informers (with the final sync duration).
+func ObserveInformerSyncDuration(informerName string, duration time.Duration) {
+	informerSyncDurationMs.WithLabelValues(informerName).Set(float64(duration.Milliseconds()))
+}
+
+// ResetInformerSyncDuration removes all label values from the sync duration gauge,
+// clearing stale per-informer entries from a previous tracker lifecycle.
+func ResetInformerSyncDuration() {
+	informerSyncDurationMs.Reset()
+}
+
+// ObserveInformerInitialObjectPopulationDuration records how long initial object population took for an informer.
+func ObserveInformerInitialObjectPopulationDuration(informerName string, duration time.Duration) {
+	informerInitialObjectPopulationDurationSeconds.WithLabelValues(informerName).Observe(duration.Seconds())
 }

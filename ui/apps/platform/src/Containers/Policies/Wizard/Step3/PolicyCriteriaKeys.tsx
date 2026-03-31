@@ -77,6 +77,7 @@ function PolicyCriteriaKeys({ keys, eventSource }: PolicyCriteriaKeysProps) {
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsNone' }}
+                        className="pf-v6-u-pl-xs"
                     >
                         {Object.entries(categories).map(([category, keys]) => (
                             <PolicyCriteriaCategory

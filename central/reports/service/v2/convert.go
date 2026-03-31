@@ -17,11 +17,12 @@ var (
 		apiV2.ReportSchedule_UNSET:   storage.Schedule_UNSET,
 		apiV2.ReportSchedule_WEEKLY:  storage.Schedule_WEEKLY,
 		apiV2.ReportSchedule_MONTHLY: storage.Schedule_MONTHLY,
+		apiV2.ReportSchedule_DAILY:   storage.Schedule_DAILY,
 	}
 
 	storageIntervalTypeToV2 = map[storage.Schedule_IntervalType]apiV2.ReportSchedule_IntervalType{
 		storage.Schedule_UNSET:   apiV2.ReportSchedule_UNSET,
-		storage.Schedule_DAILY:   apiV2.ReportSchedule_UNSET,
+		storage.Schedule_DAILY:   apiV2.ReportSchedule_DAILY,
 		storage.Schedule_WEEKLY:  apiV2.ReportSchedule_WEEKLY,
 		storage.Schedule_MONTHLY: apiV2.ReportSchedule_MONTHLY,
 	}

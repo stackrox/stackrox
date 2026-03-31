@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import {
     Button,
+    Content,
     Flex,
     FlexItem,
     Form,
@@ -8,9 +9,7 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
-    Text,
     TextArea,
-    TextContent,
     TextInput,
 } from '@patternfly/react-core';
 import type { FormikContextType } from 'formik';
@@ -46,7 +45,7 @@ function EmailTemplateForm({
     const variantForSubject = errors.customSubject && touched.customSubject ? 'error' : 'default';
 
     return (
-        <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" onSubmit={handleSubmit}>
+        <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" onSubmit={handleSubmit}>
             <FormGroup label="Email subject" fieldId="customSubject">
                 <TextInput
                     id="customSubject"
@@ -68,16 +67,16 @@ function EmailTemplateForm({
                 </FormHelperText>
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <TextContent>
-                            <Text component="p" className="pf-v5-u-font-size-sm">
+                        <Content>
+                            <Content component="p" className="pf-v6-u-font-size-sm">
                                 {values.customSubject.length} / {maxCustomSubjectLength} characters
-                            </Text>
-                        </TextContent>
+                            </Content>
+                        </Content>
                     </FlexItem>
                     {!isReadOnly && (
                         <FlexItem>
                             <Button
-                                className="pf-v5-u-mt-sm"
+                                className="pf-v6-u-mt-sm"
                                 variant="link"
                                 isInline
                                 size="sm"
@@ -112,16 +111,16 @@ function EmailTemplateForm({
                 </FormHelperText>
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <TextContent>
-                            <Text component="p" className="pf-v5-u-font-size-sm">
+                        <Content>
+                            <Content component="p" className="pf-v6-u-font-size-sm">
                                 {values.customBody.length} / {maxCustomBodyLength} characters
-                            </Text>
-                        </TextContent>
+                            </Content>
+                        </Content>
                     </FlexItem>
                     {!isReadOnly && (
                         <FlexItem>
                             <Button
-                                className="pf-v5-u-mt-sm"
+                                className="pf-v6-u-mt-sm"
                                 variant="link"
                                 isInline
                                 size="sm"

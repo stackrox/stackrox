@@ -10,7 +10,7 @@ export type VirtualMachineComponentsTableProps = {
 
 function VirtualMachineComponentsTable({ components }: VirtualMachineComponentsTableProps) {
     return (
-        <Table style={{ border: '1px solid var(--pf-v5-c-table--BorderColor)' }}>
+        <Table>
             <Thead noWrap>
                 <Tr>
                     <Th>Component</Th>

@@ -12,12 +12,11 @@ import {
     HelperText,
     HelperTextItem,
     PageSection,
-    Popover,
     SelectOption,
     TextInput,
 } from '@patternfly/react-core';
 import { FieldArray, FormikProvider } from 'formik';
-import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import { ArrowRightIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import merge from 'lodash/merge';
 import * as yup from 'yup';
 
@@ -25,7 +24,6 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import PopoverBodyContent from 'Components/PopoverBodyContent';
 import SelectSingle from 'Components/SelectSingle';
 import { fetchRolesAsArray } from 'services/RolesService';
 import type { Role } from 'services/RolesService';
@@ -36,6 +34,7 @@ import type { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
 import FormLabelGroup from '../FormLabelGroup';
 import IntegrationFormActions from '../IntegrationFormActions';
+import IntegrationHelpIcon from './Components/IntegrationHelpIcon';
 
 export type MachineAccessConfig = {
     id: string;
@@ -122,7 +121,7 @@ function MachineAccessIntegrationForm({
                     {alertRoles}
                 </Alert>
             )}
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -195,7 +194,7 @@ function MachineAccessIntegrationForm({
                                 </HelperText>
                             </FormHelperText>
                         </FormLabelGroup>
-                        <FormSection title="Rules" titleElement="h2" className="pf-v5-u-mt-0">
+                        <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
                             <FieldArray
                                 name="mappings"
                                 render={(arrayHelpers) => (
@@ -230,47 +229,23 @@ function MachineAccessIntegrationForm({
                                                     <FlexItem>
                                                         <FormLabelGroup
                                                             label="Value"
-                                                            labelIcon={
-                                                                <Popover
-                                                                    aria-label="Use regex to enter values"
-                                                                    bodyContent={
-                                                                        <PopoverBodyContent
-                                                                            headerContent="Use regex to enter values"
-                                                                            bodyContent={
-                                                                                <ExternalLink>
-                                                                                    <a
-                                                                                        href="https://golang.org/s/re2syntax"
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                    >
-                                                                                        Learn how to
-                                                                                        use regex
-                                                                                        here
-                                                                                    </a>
-                                                                                </ExternalLink>
-                                                                            }
-                                                                        />
+                                                            labelHelp={
+                                                                <IntegrationHelpIcon
+                                                                    helpTitle="Use regex to enter values"
+                                                                    helpText={
+                                                                        <ExternalLink>
+                                                                            <a
+                                                                                href="https://golang.org/s/re2syntax"
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                            >
+                                                                                Learn how to use
+                                                                                regex here
+                                                                            </a>
+                                                                        </ExternalLink>
                                                                     }
-                                                                >
-                                                                    {
-                                                                        <Button
-                                                                            type="button"
-                                                                            aria-label="More info for name field"
-                                                                            className="pf-v5-c-form__group-label-help"
-                                                                            style={{
-                                                                                backgroundColor:
-                                                                                    'transparent',
-                                                                            }}
-                                                                            isInline
-                                                                        >
-                                                                            <HelpIcon
-                                                                                style={{
-                                                                                    color: 'black',
-                                                                                }}
-                                                                            />
-                                                                        </Button>
-                                                                    }
-                                                                </Popover>
+                                                                    ariaLabel="More info for value field"
+                                                                />
                                                             }
                                                             fieldId={`mappings[${index}].valueExpression`}
                                                             touched={touched}
@@ -342,6 +317,7 @@ function MachineAccessIntegrationForm({
                                                     {isEditable && (
                                                         <FlexItem>
                                                             <Button
+                                                                icon={<TrashIcon />}
                                                                 variant="plain"
                                                                 aria-label="Delete rule"
                                                                 style={{
@@ -350,9 +326,7 @@ function MachineAccessIntegrationForm({
                                                                 onClick={() =>
                                                                     arrayHelpers.remove(index)
                                                                 }
-                                                            >
-                                                                <TrashIcon />
-                                                            </Button>
+                                                            />
                                                         </FlexItem>
                                                     )}
                                                 </Flex>
@@ -364,7 +338,7 @@ function MachineAccessIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

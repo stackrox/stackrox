@@ -171,7 +171,11 @@ func (p *eventPipeline) forwardMessages() {
 				log.Error("Output component channel closed")
 				return
 			}
-			p.eventsC <- msg
+			select {
+			case p.eventsC <- msg:
+			case <-p.stopper.Flow().StopRequested():
+				return
+			}
 		}
 	}
 }

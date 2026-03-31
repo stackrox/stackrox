@@ -9,6 +9,7 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -54,6 +55,22 @@ func getImageCVEID(vuln *storage.EmbeddedVulnerability, component *storage.Embed
 	return cveID
 }
 
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func getSherlockHolmesImageID() string {
+	if features.FlattenImageData.Enabled() {
+		return fixtures.GetImageV2SherlockHolmes1().GetId()
+	}
+	return fixtures.GetImageSherlockHolmes1().GetId()
+}
+
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func getDoctorJekyllImageID() string {
+	if features.FlattenImageData.Enabled() {
+		return fixtures.GetImageV2DoctorJekyll2().GetId()
+	}
+	return fixtures.GetImageDoctorJekyll2().GetId()
+}
+
 func (s *cveV2DataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
 	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
@@ -63,246 +80,249 @@ type cveTestCase struct {
 	expectedCVEFound map[string]bool
 }
 
-var (
-	imageCVETestCases = []cveTestCase{
+func getImageCVETestCases() []cveTestCase {
+	sherlockID := getSherlockHolmesImageID()
+	jekyllID := getDoctorJekyllImageID()
+
+	return []cveTestCase{
 		{
 			contextKey: sacTestUtils.UnrestrictedReadCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     true,
 			},
 		},
 		{
 			contextKey: sacTestUtils.UnrestrictedReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     true,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster1ReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespaceAReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespaceBReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespacesABReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespacesBCReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster2ReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     true,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespaceAReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespaceBReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     true,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespacesACReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespacesBCReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     true,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster3ReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster3NamespaceAReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster3NamespaceBReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
 			contextKey: sacTestUtils.Cluster3NamespacesABReadWriteCtx,
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     false,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     false,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     false,
 			},
 		},
 		{
@@ -311,24 +331,24 @@ var (
 			// Therefore, it should see all vulnerabilities.
 			// (images are in cluster1 namespaceA and cluster2 namespaceB).
 			expectedCVEFound: map[string]bool{
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1): true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 0):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageDoctorJekyll2().GetId(), 0, 1):   true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 0):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1):     true,
-				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1): true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 0):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), jekyllID, 0, 1):   true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 0):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1):     true,
+				getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2):     true,
 			},
 		},
 	}
-)
+}
 
 func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for CVE-1234-0001
-	cveID := getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0)
+	cveID := getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), getSherlockHolmesImageID(), 0, 0)
 	s.runImageTest("TestSACImageCVEExistsSingleScopeOnly", func(c cveTestCase) {
 		testCtx := s.imageTestContexts[c.contextKey]
 		exists, err := s.imageCVEStore.Exists(testCtx, cveID)
@@ -341,7 +361,7 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for CVE-1234-0001
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
-	cveID := getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0)
+	cveID := getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), getSherlockHolmesImageID(), 0, 0)
 	cvss := targetCVE.GetCvss()
 	s.runImageTest("TestSACImageCVEGetSingleScopeOnly", func(c cveTestCase) {
 		testCtx := s.imageTestContexts[c.contextKey]
@@ -359,14 +379,16 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 }
 
 func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEGetBatch() {
+	sherlockID := getSherlockHolmesImageID()
+	jekyllID := getDoctorJekyllImageID()
 	batchCVEs := []string{
-		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 0),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId(), 0, 1),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId(), 1, 0),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 0),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId(), 2, 1),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 1),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId(), 2, 2),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 0),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), sherlockID, 0, 1),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), sherlockID, 1, 0),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 0),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), sherlockID, 2, 1),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 1),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), jekyllID, 2, 2),
 	}
 
 	s.runImageTest("TestSACImageCVEGetBatch", func(c cveTestCase) {
@@ -467,7 +489,7 @@ func (s *cveV2DataStoreSACTestSuite) runImageTest(testName string, testFunc func
 	)
 
 	failed := false
-	for _, c := range imageCVETestCases {
+	for _, c := range getImageCVETestCases() {
 		caseSucceeded := s.Run(c.contextKey, func() {
 			// When triggered in parallel, most tests fail.
 			// TearDownTest is executed before the sub-tests.

@@ -45,6 +45,11 @@ type ImagesV2StoreSuite struct {
 	cvePgStore              cveStore.Store
 }
 
+type timeFields struct {
+	createdAt            *protocompat.Timestamp
+	firstImageOccurrence *protocompat.Timestamp
+}
+
 func TestImagesV2Store(t *testing.T) {
 	suite.Run(t, new(ImagesV2StoreSuite))
 }
@@ -220,8 +225,8 @@ func (s *ImagesV2StoreSuite) TestUpsert_MigrationFromNewCVEModel() {
 		for _, vuln := range comp.GetVulns() {
 			if _, ok := expectedTimestamps[vuln.GetCve()]; !ok {
 				expectedTimestamps[vuln.GetCve()] = &timeFields{
-					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
+					createdAt:            protocompat.ConvertTimeToTimestampOrNil(&nextWeek),
+					firstImageOccurrence: vuln.GetFirstImageOccurrence(),
 				}
 			}
 		}
@@ -232,14 +237,14 @@ func (s *ImagesV2StoreSuite) TestUpsert_MigrationFromNewCVEModel() {
 		for _, vuln := range comp.GetVulns() {
 			if _, ok := actualTimestamps[vuln.GetCve()]; !ok {
 				actualTimestamps[vuln.GetCve()] = &timeFields{
-					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
+					createdAt:            vuln.GetFirstSystemOccurrence(),
+					firstImageOccurrence: vuln.GetFirstImageOccurrence(),
 				}
 			}
 		}
 	}
 
-	// Created at and first image occurrence timestamps should not have changed to the future ones.
+	// FirstImageOccurrence should be preserved from V1, but CreatedAt should use the new value.
 	s.Assert().Equal(expectedTimestamps, actualTimestamps)
 }
 
@@ -261,16 +266,16 @@ func (s *ImagesV2StoreSuite) TestUpsert() {
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	// Add a new component with "cve1" that has new times
-	// Ensure old times are associated with the CVE in the new component.
+	// Ensure FirstImageOccurrence is preserved for the CVE in the new component.
 	image.Scan.Components = append(image.Scan.Components, getComponent3())
 	s.NoError(s.store.Upsert(s.ctx, image))
 	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 
-	// Should pull the old CVE times for CVE1 even though it just appeared in
-	// the component.  The CVE has still existed in the image even though it is
-	// new to the component.
+	// Should pull the old FirstImageOccurrence for CVE1 even though it just appeared in
+	// the component. The CVE has still existed in the image even though it is
+	// new to the component. FirstSystemOccurrence will use the new timestamp.
 	cloned.LastUpdated = foundImage.GetLastUpdated()
 	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
 		Hash: foundImage.GetScan().GetHash(),
@@ -287,9 +292,6 @@ func (s *ImagesV2StoreSuite) TestUpsert() {
 	s.True(exists)
 	cloned = image.CloneVT()
 
-	// Should pull the old CVE times for CVE1 even though it just appeared in
-	// the component.  The CVE has still existed in the image even though it is
-	// new to the component.
 	cloned.LastUpdated = foundImage.GetLastUpdated()
 	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
 		Hash: foundImage.GetScan().GetHash(),
@@ -564,7 +566,7 @@ func getTestImageComponentsVerify() []*storage.EmbeddedImageScanComponent {
 					ScoreVersion:          storage.EmbeddedVulnerability_V3,
 					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
-					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 				},
 			},
 		},
@@ -658,7 +660,7 @@ func getComponent3Verify() *storage.EmbeddedImageScanComponent {
 				ScoreVersion:          storage.EmbeddedVulnerability_V3,
 				PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 				FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
-				FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 			},
 			{
 				Cve:                "cve3",

@@ -3,8 +3,8 @@ package clusterentities
 import (
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
@@ -30,9 +30,9 @@ type endpointsStore struct {
 
 func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
 	store := &endpointsStore{memorySize: numTicks}
-	concurrency.WithLock(&store.mutex, func() {
-		store.initMapsNoLock()
-	})
+	store.mutex.Lock()
+	defer deferUnlock(store.mutex.Unlock, time.Now(), "endpoints", "init")
+	store.initMapsNoLock()
 	return store
 }
 
@@ -46,7 +46,7 @@ func (e *endpointsStore) initMapsNoLock() {
 
 func (e *endpointsStore) resetMaps() {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "reset_maps")
 	// Maps holding historical data must not be wiped on reset! Instead, all entities must be marked as historical.
 	// Must be called before the respective source maps are wiped!
 	// Performance optimization: no need to handle history if history is disabled
@@ -78,7 +78,7 @@ func (e *endpointsStore) updateMetricsNoLock() {
 // there was any endpoint in the history expired in this tick with public IP address.
 func (e *endpointsStore) RecordTick() bool {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "record_tick")
 	removedPublic := false
 	for endpoint, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
@@ -91,12 +91,13 @@ func (e *endpointsStore) RecordTick() bool {
 			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
 		}
 	}
+	e.updateMetricsNoLock()
 	return removedPublic
 }
 
 func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
 	e.applyNoLock(updates, incremental)
 }
 
@@ -121,11 +122,7 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 	// so let's make a temporary copy.
 	endpointsSet := e.reverseEndpointMap[deploymentID]
 	for ep := range endpointsSet {
-		if e.historyEnabled() {
-			e.moveToHistory(deploymentID, ep)
-		} else {
-			e.deleteFromCurrent(deploymentID, ep)
-		}
+		e.moveToHistory(deploymentID, ep)
 	}
 }
 
@@ -172,7 +169,7 @@ type netAddrLookupper interface {
 
 func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup netAddrLookupper) (current, historical, ipLookup, ipLookupHistorical []LookupResult) {
 	e.mutex.RLock()
-	defer e.mutex.RUnlock()
+	defer deferUnlock(e.mutex.RUnlock, time.Now(), "endpoints", "lookup_endpoint")
 	// Phase 1: Search in the current map
 	current = doLookupEndpoint(endpoint, e.endpointMap)
 	// Phase 2: Search in the historical map
@@ -216,9 +213,12 @@ func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.
 	return false
 }
 
-// moveToHistory is a convenience function that removes data from the current map and adds it to history
+// moveToHistory is a convenience function that removes data from the current map and adds it to history.
+// If history is disabled, it just deletes the data from the current map.
 func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoint) {
-	e.addToHistory(deploymentID, ep)
+	if e.historyEnabled() {
+		e.addToHistory(deploymentID, ep)
+	}
 	e.deleteFromCurrent(deploymentID, ep)
 }
 
@@ -254,7 +254,18 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 	}
 }
 
-// addToHistory adds endpoint data to the history, but does not remove it from the current map
+// addToHistory records history for one <deployment, endpoint> pair in linear time relative
+// to the endpoint's target-info cardinality.
+//
+// Complexity:
+//   - O(T) for one call, where T = number of EndpointTargetInfo entries for this endpoint.
+//   - During purge of a deployment with M endpoints, total work scales as O(sum(T_i)) plus O(M)
+//     reverse-map updates, avoiding any M-by-M scan.
+//
+// This routine is performance-critical for large clusters with many nodes and NodePort/LoadBalancer
+// service expansions, where endpoint cardinality can become very high. Its complexity directly
+// impacts how long endpointsStore mutex is held during Apply(), and therefore affects Sensor
+// throughput and event pipeline latency.
 func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoint) {
 	// Prepare maps if empty
 	if _, ok := e.historicalEndpoints[ep]; !ok {
@@ -270,14 +281,12 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
 		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
 	}
-	for numEp := range e.reverseEndpointMap[deploymentID] {
-		e.reverseHistoricalEndpoints[deploymentID][numEp] = newHistoricalEntity(e.memorySize)
-	}
+	e.reverseHistoricalEndpoints[deploymentID][ep] = newHistoricalEntity(e.memorySize)
 }
 
 func (e *endpointsStore) String() string {
 	e.mutex.RLock()
-	defer e.mutex.RUnlock()
+	defer deferUnlock(e.mutex.RUnlock, time.Now(), "endpoints", "string")
 	currentStr := "map is empty"
 	if len(e.endpointMap) > 0 {
 		fragments1 := make([]string, 0, len(e.endpointMap))

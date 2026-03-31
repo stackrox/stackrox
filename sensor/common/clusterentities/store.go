@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 	"github.com/stackrox/rox/sensor/common/heritage"
 )
 
@@ -352,13 +354,27 @@ func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 	return s
 }
 
+var slowRecordTickLogThreshold = env.ClusterEntitiesSlowRecordTickLogThreshold.DurationSetting()
+
+func logStoreRecordTickDuration(storeName string, duration time.Duration) {
+	if duration < slowRecordTickLogThreshold {
+		return
+	}
+	log.Infof("%s took %s; this can happen during larger update bursts and is not necessarily an error", storeName, duration)
+}
+
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	e.track("Tick")
 	// Avoid or-statements like "a.RecordTick() || b.RecordTick()"
 	// because there is no guarantee that b.RecordTick() will be called.
+	podTickStart := time.Now()
 	removedPubIP := e.podIPsStore.RecordTick()
+	logStoreRecordTickDuration("podIPsStore.RecordTick", time.Since(podTickStart))
+
+	endpointsTickStart := time.Now()
 	removedEpWithPubIP := e.endpointsStore.RecordTick()
+	logStoreRecordTickDuration("endpointsStore.RecordTick", time.Since(endpointsTickStart))
 	if removedPubIP || removedEpWithPubIP {
 		// If there are any public IPs expiring in this tick, then we need to update the listeners.
 		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
@@ -459,4 +475,12 @@ func prettyPrintHistoricalData[M ~map[K1]map[K2]*entityStatus, K1 comparable, K2
 		}
 	}
 	return strings.Join(fragments, "\n")
+}
+
+// deferUnlock captures the lock-held duration before releasing the lock, then records the metric.
+// Usage: defer deferUnlock(mu.Unlock, time.Now(), store, op)
+func deferUnlock(unlock func(), start time.Time, store, operation string) {
+	duration := time.Since(start)
+	unlock()
+	metrics.ObserveStoreLockHeldDurationWithOperation(store, operation, duration)
 }

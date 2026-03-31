@@ -1396,11 +1396,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules", []string{
 		"clusterLabelSelectors: [SetBasedLabelSelector]!",
+		"includedClusterIds: [String!]!",
 		"includedClusters: [String!]!",
 		"includedNamespaces: [SimpleAccessScope_Rules_Namespace]!",
 		"namespaceLabelSelectors: [SetBasedLabelSelector]!",
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules_Namespace", []string{
+		"clusterId: String!",
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
@@ -15161,6 +15163,11 @@ func (resolver *simpleAccessScope_RulesResolver) ClusterLabelSelectors(ctx conte
 	return resolver.root.wrapSetBasedLabelSelectors(value, nil)
 }
 
+func (resolver *simpleAccessScope_RulesResolver) IncludedClusterIds(ctx context.Context) []string {
+	value := resolver.data.GetIncludedClusterIds()
+	return value
+}
+
 func (resolver *simpleAccessScope_RulesResolver) IncludedClusters(ctx context.Context) []string {
 	value := resolver.data.GetIncludedClusters()
 	return value
@@ -15216,6 +15223,11 @@ func (resolver *Resolver) wrapSimpleAccessScope_Rules_NamespacesWithContext(ctx 
 		output[i] = &simpleAccessScope_Rules_NamespaceResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
 }
 
 func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx context.Context) string {

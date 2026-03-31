@@ -48,6 +48,11 @@ func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
 	return nil
 }
 
+// UpsertCompiledPolicy adds or updates an already-compiled policy in the set
+func (p *setImpl) UpsertCompiledPolicy(compiled CompiledPolicy) {
+	p.policyIDToCompiled.Set(compiled.Policy().GetId(), compiled)
+}
+
 // RemovePolicy removes a policy from the set.
 func (p *setImpl) RemovePolicy(policyID string) {
 	p.policyIDToCompiled.Delete(policyID)

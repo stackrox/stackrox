@@ -7,6 +7,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -50,6 +51,9 @@ func (s *virtualMachineSuite) SetupSubTest() {
 
 func (s *virtualMachineSuite) TearDownSubTest() {
 	s.mockCtrl.Finish()
+	// Reset global capability state to prevent test pollution.
+	// If not reset, subsequent tests may incorrectly assume capabilities are present/absent,
+	// leading to false negatives that could hide regressions.
 	centralcaps.Set(nil)
 }
 
@@ -89,7 +93,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -122,7 +126,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -155,7 +159,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -176,7 +180,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -224,7 +228,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						VsockCid:    int32(runningVSockCID),
 						VsockCidSet: true,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -260,7 +264,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						VsockCid:    int32(runningVSockCID),
 						VsockCidSet: true,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -269,7 +273,19 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().AddOrUpdate(gomock.Any()).Times(0)
 				centralcaps.Set(nil)
+			},
+			expectedMsg: nil,
+		},
+		"feature flag disabled": {
+			action: central.ResourceAction_CREATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
+			expectFn: func() {
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().AddOrUpdate(gomock.Any()).Times(0)
+				s.T().Setenv(features.VirtualMachines.EnvVar(), "false")
 			},
 			expectedMsg: nil,
 		},
