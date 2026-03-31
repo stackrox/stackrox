@@ -1,6 +1,8 @@
 package unified
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -24,8 +26,8 @@ func (d *detectorImpl) ReconcilePolicies(newList []*storage.Policy) {
 	})
 }
 
-func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment) []*storage.Alert {
-	alerts, err := d.deploytimeDetector.Detect(ctx, enhancedDeployment)
+func (d *detectorImpl) DetectDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment) []*storage.Alert {
+	alerts, err := d.deploytimeDetector.Detect(context.Background(), enhancedDeployment)
 	if err != nil {
 		log.Errorf("Error running detection on deployment %q: %v", enhancedDeployment.Deployment.GetName(), err)
 	}
@@ -33,7 +35,7 @@ func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, enhance
 }
 
 func (d *detectorImpl) DetectProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndProcess(enhancedDeployment, process, processNotInBaseline)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndProcess(context.Background(), enhancedDeployment, process, processNotInBaseline)
 	if err != nil {
 		log.Errorf("Error running runtime policies for deployment %q and process %q: %v", enhancedDeployment.Deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
 	}
@@ -41,7 +43,7 @@ func (d *detectorImpl) DetectProcess(enhancedDeployment booleanpolicy.EnhancedDe
 }
 
 func (d *detectorImpl) DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(enhancedDeployment, kubeEvent)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, kubeEvent)
 	if err != nil {
 		log.Errorf("Error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)
 	}
@@ -52,7 +54,7 @@ func (d *detectorImpl) DetectNetworkFlowForDeployment(
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(enhancedDeployment, flow)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(context.Background(), enhancedDeployment, flow)
 	if err != nil {
 		log.Errorf("Error running runtime policies for network flow %v: %v", flow, err)
 	}
@@ -60,7 +62,7 @@ func (d *detectorImpl) DetectNetworkFlowForDeployment(
 }
 
 func (d *detectorImpl) DetectAuditLogEvents(auditEvents *sensor.AuditEvents) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForAuditEvents(auditEvents.GetEvents())
+	alerts, err := d.runtimeDetector.DetectForAuditEvents(context.Background(), auditEvents.GetEvents())
 	if err != nil {
 		log.Errorf("Error evaluating runtime policies for audit events: %q", err)
 		return nil
@@ -69,7 +71,7 @@ func (d *detectorImpl) DetectAuditLogEvents(auditEvents *sensor.AuditEvents) []*
 }
 
 func (d *detectorImpl) DetectNodeFileAccess(node *storage.Node, access *storage.FileAccess) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForNodeAndFileAccess(node, access)
+	alerts, err := d.runtimeDetector.DetectForNodeAndFileAccess(context.Background(), node, access)
 	if err != nil {
 		log.Errorf("Error evaluating runtime policies for node file accesses: %q", err)
 		return nil
@@ -78,7 +80,7 @@ func (d *detectorImpl) DetectNodeFileAccess(node *storage.Node, access *storage.
 }
 
 func (d *detectorImpl) DetectFileAccessForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, fileAccess *storage.FileAccess) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndFileAccess(enhancedDeployment, fileAccess)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndFileAccess(context.Background(), enhancedDeployment, fileAccess)
 	if err != nil {
 		log.Errorf("Error evaluating runtime policies for deployment file accesses: %q", err)
 		return nil

@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	testClockTime = time.Date(1989, time.November, 9, 18, 05, 35, 987654321, time.UTC)
 	// testExpirationDuration is the constant token expiration duration.
 	testExpirationDuration = &durationpb.Duration{Seconds: 300}
 	// testTokenExpiry is the timestamp of the token expiration.
@@ -19,7 +20,7 @@ var (
 
 // testClock is the clock function injection for testing purposes.
 func testClock() time.Time {
-	return time.Date(1989, time.November, 9, 18, 05, 35, 987654321, time.UTC)
+	return testClockTime
 }
 
 func Test_clock(t *testing.T) {

@@ -9,8 +9,8 @@ import {
 import { Field } from 'formik';
 
 type RenamePolicySectionProps = {
-    changeRadio: (handler, name, value) => () => void;
-    changeText: (handler, name) => (_, value) => void;
+    changeRadio: (handler, name: string, value: string) => () => void;
+    changeText: (handler, name: string) => (_, value) => void;
 };
 
 const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionProps) => {
@@ -34,7 +34,7 @@ const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionPro
                     const validated =
                         form.touched.newName && form.errors.newName ? 'error' : 'default';
                     return (
-                        <FormGroup fieldId="policy-rename" className="pf-v5-u-pt-sm">
+                        <FormGroup fieldId="policy-rename">
                             <TextInput
                                 name={field.name}
                                 value={field.value}

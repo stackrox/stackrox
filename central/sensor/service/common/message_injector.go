@@ -2,6 +2,7 @@ package common
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -9,4 +10,5 @@ import (
 type MessageInjector interface {
 	InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error
 	InjectMessageIntoQueue(msg *central.MsgFromSensor)
+	HasCapability(capability centralsensor.SensorCapability) bool
 }

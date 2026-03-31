@@ -102,9 +102,9 @@ function DeploymentFlows({
         : DEFAULT_DEPLOYMENT_FLOWS_TOGGLE;
 
     return (
-        <div className="pf-v5-u-h-100">
+        <div className="pf-v6-u-h-100">
             <Stack>
-                <StackItem className="pf-v5-u-p-md">
+                <StackItem className="pf-v6-u-p-md">
                     <ToggleGroup aria-label="Toggle between internal flows and external flows views">
                         <ToggleGroupItem
                             text="Internal flows"
@@ -122,7 +122,7 @@ function DeploymentFlows({
                 </StackItem>
                 <Divider component="hr" />
                 <StackItem isFilled style={{ overflow: 'auto' }}>
-                    <Stack className="pf-v5-u-p-md">
+                    <Stack className="pf-v6-u-p-md">
                         {selectedView === 'INTERNAL_FLOWS' ? (
                             <InternalFlows
                                 nodes={nodes}

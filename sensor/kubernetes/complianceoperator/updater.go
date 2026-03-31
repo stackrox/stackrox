@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
+	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -61,6 +62,20 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 		}, k8sintrospect.ObjectConfig{
 			GVK: complianceoperator.Rule.GroupVersionKind(),
 		})
+		for _, resource := range complianceoperator.GetOptionalResources() {
+			isAvailable, err := utils.HasAPI(u.client, complianceoperator.GetGroupVersion().String(), resource.Kind)
+			if err != nil {
+				log.Warnf("Error checking whether CRD %q exists in cluster, skipping adding to diagnostic bundles. Error: %s", resource.Name, err)
+				continue
+			}
+			if !isAvailable {
+				log.Infof("Optional Compliance Operator CRD %q not found, skipping adding to diagnostic bundles", resource.Name)
+				continue
+			}
+			cfg.Objects = append(cfg.Objects, k8sintrospect.ObjectConfig{
+				GVK: resource.GroupVersionKind(),
+			})
+		}
 		cfg.Namespaces = append(cfg.Namespaces, info.GetNamespace())
 		return cfg
 	}

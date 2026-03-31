@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func TestVirtualMachine(t *testing.T) {
 				Name:      "virtual-machine-name",
 				ClusterId: uuid.NewTestUUID(1).String(),
 				Facts: map[string]string{
-					"guestOS": "Red Hat Enterprise Linux",
+					virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
 				},
 				VsockCid: 42,
 				State:    virtualMachineV1.VirtualMachine_RUNNING,
@@ -40,7 +41,7 @@ func TestVirtualMachine(t *testing.T) {
 				Name:      "virtual-machine-name",
 				ClusterId: uuid.NewTestUUID(1).String(),
 				Facts: map[string]string{
-					"guestOS": "Red Hat Enterprise Linux",
+					virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
 				},
 				VsockCid: 42,
 				State:    storage.VirtualMachine_RUNNING,
@@ -54,10 +55,10 @@ func TestVirtualMachine(t *testing.T) {
 				Name:      "virtual-machine-name-2",
 				ClusterId: uuid.NewTestUUID(2).String(),
 				Facts: map[string]string{
-					"guestOS":     "Red Hat Enterprise Linux",
-					"nodeName":    "node-1",
-					"ipAddresses": "10.0.0.1",
-					"description": "test description",
+					virtualmachine.GuestOSKey:     "Red Hat Enterprise Linux",
+					virtualmachine.NodeNameKey:    "node-1",
+					virtualmachine.IPAddressesKey: "10.0.0.1",
+					virtualmachine.DescriptionKey: "test description",
 				},
 				VsockCid: 84,
 				State:    virtualMachineV1.VirtualMachine_STOPPED,
@@ -68,10 +69,10 @@ func TestVirtualMachine(t *testing.T) {
 				Name:      "virtual-machine-name-2",
 				ClusterId: uuid.NewTestUUID(2).String(),
 				Facts: map[string]string{
-					"guestOS":     "Red Hat Enterprise Linux",
-					"nodeName":    "node-1",
-					"ipAddresses": "10.0.0.1",
-					"description": "test description",
+					virtualmachine.GuestOSKey:     "Red Hat Enterprise Linux",
+					virtualmachine.NodeNameKey:    "node-1",
+					virtualmachine.IPAddressesKey: "10.0.0.1",
+					virtualmachine.DescriptionKey: "test description",
 				},
 				VsockCid: 84,
 				State:    storage.VirtualMachine_STOPPED,

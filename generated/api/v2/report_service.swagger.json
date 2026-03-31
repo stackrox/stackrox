@@ -1113,7 +1113,8 @@
       "enum": [
         "UNSET",
         "WEEKLY",
-        "MONTHLY"
+        "MONTHLY",
+        "DAILY"
       ],
       "default": "UNSET"
     },

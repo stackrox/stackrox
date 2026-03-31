@@ -17,7 +17,7 @@ type controller struct {
 	clusterID      string
 	netEntityMgr   common.NetworkEntityManager
 	graphEvaluator graph.Evaluator
-	requestSeqID   int64
+	requestSeqID   atomic.Int64
 
 	stopSig  concurrency.ReadOnlyErrorSignal
 	injector common.MessageInjector
@@ -46,7 +46,7 @@ func (c *controller) SyncNow(ctx context.Context) error {
 	}
 
 	// Stop early if the request message is outdated.
-	if msg.GetPushNetworkEntitiesRequest().GetSeqID() != atomic.LoadInt64(&c.requestSeqID) {
+	if msg.GetPushNetworkEntitiesRequest().GetSeqID() != c.requestSeqID.Load() {
 		return nil
 	}
 
@@ -63,7 +63,7 @@ func (c *controller) getPushNetworkEntitiesRequestMsg(ctx context.Context) (*cen
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	requestSeqID := atomic.AddInt64(&c.requestSeqID, 1)
+	requestSeqID := c.requestSeqID.Add(1)
 
 	netEntities, err := c.netEntityMgr.GetAllEntitiesForCluster(ctx, c.clusterID)
 	if err != nil {

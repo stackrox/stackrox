@@ -121,7 +121,6 @@ function VulnerabilitiesOverview({
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
-            className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
             additionalContextFilter={{
@@ -151,13 +150,12 @@ function VulnerabilitiesOverview({
     );
 
     return (
-        <>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             {additionalHeaderItems && (
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                    className="pf-v5-u-px-md pf-v5-u-pb-sm"
                 >
                     {additionalHeaderItems}
                 </Flex>
@@ -209,7 +207,7 @@ function VulnerabilitiesOverview({
                     deploymentTableColumnOverrides={deploymentTableColumnOverrides}
                 />
             )}
-        </>
+        </Flex>
     );
 }
 

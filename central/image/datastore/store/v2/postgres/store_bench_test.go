@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -16,8 +17,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO(ROX-30117): Remove this benchmark when FlattenImageData feature flag is removed.
 // BenchmarkWalkComparison benchmarks both Walk functions for comparison
 func BenchmarkWalkComparison(b *testing.B) {
+	if features.FlattenImageData.Enabled() {
+		b.Skip("Skipping benchmark - FlattenImageData is enabled.")
+	}
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(b)
 

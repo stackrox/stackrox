@@ -52,7 +52,7 @@ function VirtualMachineComponentsPageTable({
                                     <Td dataLabel="Name">{componentRow.name} </Td>
                                     <Td dataLabel="Version">{componentRow.version}</Td>
                                     <Td dataLabel="Status">
-                                        {componentRow.isScannable ? 'Scanned' : 'Not scanned'}
+                                        {componentRow.isScanned ? 'Scanned' : 'Not scanned'}
                                     </Td>
                                 </Tr>
                             );

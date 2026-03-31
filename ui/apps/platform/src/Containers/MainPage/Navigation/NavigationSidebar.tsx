@@ -346,7 +346,7 @@ function NavigationSidebar({
                                         return (
                                             <NavItemSeparator
                                                 key={childDescription.key}
-                                                role="listitem"
+                                                role="separator"
                                             />
                                         );
                                     })}

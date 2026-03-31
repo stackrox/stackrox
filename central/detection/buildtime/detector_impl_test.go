@@ -1,6 +1,7 @@
 package buildtime
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/detection"
@@ -25,7 +26,7 @@ func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *st
 
 func TestDetector(t *testing.T) {
 	controller := gomock.NewController(t)
-	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller))
+	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller), nil, nil)
 	detector := NewDetector(policySet)
 
 	defaultPolicies, err := policies.DefaultPolicies()
@@ -70,7 +71,7 @@ func TestDetector(t *testing.T) {
 	} {
 		t.Run(protocompat.MarshalTextString(testCase.image), func(t *testing.T) {
 			filter, getUnusedCategories := detection.MakeCategoryFilter(testCase.allowedCategories)
-			alerts, err := detector.Detect(testCase.image, filter)
+			alerts, err := detector.Detect(context.Background(), testCase.image, filter)
 			require.NoError(t, err)
 			require.ElementsMatch(t, testCase.expectedUnusedCategories, getUnusedCategories())
 			assert.Len(t, alerts, testCase.expectedAlerts)

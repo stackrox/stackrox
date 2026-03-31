@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -106,6 +107,7 @@ type serviceImpl struct {
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
+	namespaces         namespaceDatastore.DataStore
 	connManager        connection.Manager
 
 	netpols            networkPolicyDS.DataStore
@@ -235,7 +237,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(req.GetPolicyCategories())
-	alerts, err := s.buildTimeDetector.Detect(img, filter)
+	alerts, err := s.buildTimeDetector.Detect(ctx, img, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -292,10 +294,6 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		}
 	}
 
-	detectionCtx := deploytimePkg.DetectionContext{
-		EnforcementOnly: enrichmentContext.EnforcementOnly,
-	}
-
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	if enrichmentContext.ClusterID != "" {
 		var err error
@@ -308,11 +306,16 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+	var opts []deploytimePkg.DetectOption
+	if enrichmentContext.EnforcementOnly {
+		opts = append(opts, deploytimePkg.WithEnforcementOnly())
+	}
+	opts = append(opts, deploytimePkg.WithPolicyFilters(filter))
+	alerts, err := s.detector.Detect(ctx, booleanpolicy.EnhancedDeployment{
 		Deployment:             deployment,
 		Images:                 images,
 		NetworkPoliciesApplied: appliedNetpols,
-	}, filter)
+	}, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -478,6 +481,13 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 	if len(deployments) > 0 && errs != nil {
 		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
+	}
+
+	// Populate cluster ID on all deployments for label-based scope matching
+	for _, d := range deployments {
+		if eCtx.ClusterID != "" {
+			d.ClusterId = eCtx.ClusterID
+		}
 	}
 
 	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor

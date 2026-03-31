@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -13,12 +15,12 @@ import (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	DetectForDeploymentAndProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
-	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
-	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
-	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
-	DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error)
-	DetectForDeploymentAndFileAccess(enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) ([]*storage.Alert, error)
+	DetectForDeploymentAndProcess(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
+	DetectForDeploymentAndKubeEvent(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForDeploymentAndNetworkFlow(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
+	DetectForAuditEvents(ctx context.Context, auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForNodeAndFileAccess(ctx context.Context, node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error)
+	DetectForDeploymentAndFileAccess(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -37,10 +39,10 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
 
-func (d *detectorImpl) DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error) {
+func (d *detectorImpl) DetectForAuditEvents(ctx context.Context, auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error) {
 	alerts := make([]*storage.Alert, 0)
 	for _, auditEvent := range auditEvents {
-		alert, err := d.detectForAuditEvent(auditEvent)
+		alert, err := d.detectForAuditEvent(ctx, auditEvent)
 		if err != nil {
 			return nil, errors.Wrap(err, "detection on audit events failed")
 		}
@@ -50,35 +52,39 @@ func (d *detectorImpl) DetectForAuditEvents(auditEvents []*storage.KubernetesEve
 }
 
 func (d *detectorImpl) DetectForDeploymentAndProcess(
+	ctx context.Context,
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	process *storage.ProcessIndicator,
 	processNotInBaseline bool,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, process, processNotInBaseline, nil, nil, nil)
+	return d.detectForDeployment(ctx, enhancedDeployment, process, processNotInBaseline, nil, nil, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndKubeEvent(
+	ctx context.Context,
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	kubeEvent *storage.KubernetesEvent,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, nil, false, kubeEvent, nil, nil)
+	return d.detectForDeployment(ctx, enhancedDeployment, nil, false, kubeEvent, nil, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
+	ctx context.Context,
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow, nil)
+	return d.detectForDeployment(ctx, enhancedDeployment, nil, false, nil, flow, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndFileAccess(
+	ctx context.Context,
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	fileAccess *storage.FileAccess,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, nil, false, nil, nil, fileAccess)
+	return d.detectForDeployment(ctx, enhancedDeployment, nil, false, nil, nil, fileAccess)
 }
 
-func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error) {
+func (d *detectorImpl) DetectForNodeAndFileAccess(ctx context.Context, node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle
 
@@ -89,7 +95,7 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 
 		if access != nil {
 			// Check predicate on file access.
-			if !compiled.AppliesTo(access) {
+			if !compiled.AppliesTo(ctx, access) {
 				return nil
 			}
 
@@ -115,6 +121,7 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 
 // detectForDeployment runs detection on a deployment, returning any generated alerts.
 func (d *detectorImpl) detectForDeployment(
+	ctx context.Context,
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	process *storage.ProcessIndicator,
 	processNotInBaseline bool,
@@ -137,7 +144,7 @@ func (d *detectorImpl) detectForDeployment(
 		}
 
 		// Check predicate on deployment.
-		if !compiled.AppliesTo(deployment) {
+		if !compiled.AppliesTo(ctx, deployment) {
 			return nil
 		}
 
@@ -198,7 +205,7 @@ func (d *detectorImpl) detectForDeployment(
 }
 
 // detectForAuditEvent runs detection on an audit log event, returning any generated alerts.
-func (d *detectorImpl) detectForAuditEvent(auditEvent *storage.KubernetesEvent) ([]*storage.Alert, error) {
+func (d *detectorImpl) detectForAuditEvent(ctx context.Context, auditEvent *storage.KubernetesEvent) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptable booleanpolicy.CacheReceptacle
 
@@ -209,7 +216,7 @@ func (d *detectorImpl) detectForAuditEvent(auditEvent *storage.KubernetesEvent) 
 
 		if auditEvent != nil {
 			// Check predicate on audit event.
-			if !compiled.AppliesTo(auditEvent) {
+			if !compiled.AppliesTo(ctx, auditEvent) {
 				return nil
 			}
 

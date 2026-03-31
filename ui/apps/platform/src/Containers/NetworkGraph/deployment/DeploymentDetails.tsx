@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -6,15 +5,12 @@ import {
     DescriptionListTerm,
     Divider,
     EmptyState,
-    EmptyStateHeader,
-    ExpandableSection,
     Flex,
     FlexItem,
     Label,
     LabelGroup,
     Stack,
     StackItem,
-    TextContent,
     Title,
 } from '@patternfly/react-core';
 
@@ -36,8 +32,6 @@ import type { CustomEdgeModel, CustomNodeModel, NetworkPolicyState } from '../ty
 
 import AnomalousTraffic from './AnomalousTraffic';
 
-import './DeploymentDetails.css';
-
 type DeploymentDetailsProps = {
     deployment: Deployment;
     deploymentId: string;
@@ -49,25 +43,11 @@ type DeploymentDetailsProps = {
 };
 
 function DetailSection({ title, children }) {
-    const [isExpanded, setIsExpanded] = useState(true);
-
-    const onToggle = (_isExpanded: boolean) => {
-        setIsExpanded(_isExpanded);
-    };
-
-    // TextContent so heading has black instead of blue color.
     return (
-        <ExpandableSection
-            isExpanded={isExpanded}
-            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
-            toggleContent={
-                <TextContent>
-                    <Title headingLevel="h2">{title}</Title>
-                </TextContent>
-            }
-        >
-            <div className="pf-v5-u-px-sm pf-v5-u-pb-md">{children}</div>
-        </ExpandableSection>
+        <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+            <Title headingLevel="h2">{title}</Title>
+            <div className="pf-v6-u-px-sm pf-v6-u-pb-md">{children}</div>
+        </Flex>
     );
 }
 
@@ -87,7 +67,7 @@ function DeploymentDetails({
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             <ul>
                 <li>
                     <DetailSection title="Network security">
@@ -189,7 +169,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Deployment overview">
                         <Stack hasGutter>
                             <StackItem>
@@ -282,7 +262,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Port configurations">
                         {deployment.ports.length ? (
                             <Stack hasGutter>
@@ -295,17 +275,16 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant="xs">
-                                <EmptyStateHeader
-                                    titleText="No ports available"
-                                    headingLevel="h4"
-                                />
-                            </EmptyState>
+                            <EmptyState
+                                headingLevel="h4"
+                                titleText="No ports available"
+                                variant="xs"
+                            ></EmptyState>
                         )}
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Container configurations">
                         {deployment.containers.length ? (
                             <Stack hasGutter>
@@ -318,12 +297,11 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant="xs">
-                                <EmptyStateHeader
-                                    titleText="No containers available"
-                                    headingLevel="h4"
-                                />
-                            </EmptyState>
+                            <EmptyState
+                                headingLevel="h4"
+                                titleText="No containers available"
+                                variant="xs"
+                            ></EmptyState>
                         )}
                     </DetailSection>
                 </li>

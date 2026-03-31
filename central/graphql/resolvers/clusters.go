@@ -696,7 +696,7 @@ func (resolver *clusterResolver) getApplicablePolicies(ctx context.Context, q *v
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewClusterMatcher(resolver.data, namespaces).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewClusterMatcher(resolver.data, namespaces).FilterApplicablePolicies(ctx, policies)
 	return applicable, nil
 }
 

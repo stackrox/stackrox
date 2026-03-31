@@ -63,6 +63,7 @@ func ConvertImageToListImage(i *storage.Image) *storage.ListImage {
 		Name:        i.GetName().GetFullName(),
 		Created:     i.GetMetadata().GetV1().GetCreated(),
 		LastUpdated: i.GetLastUpdated(),
+		Priority:    i.GetPriority(),
 	}
 	if i.GetSetComponents() != nil {
 		listImage.SetComponents = &storage.ListImage_Components{

@@ -1,6 +1,8 @@
 package buildtime
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
 )
@@ -9,7 +11,7 @@ import (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	Detect(image *storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error)
+	Detect(ctx context.Context, image *storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.

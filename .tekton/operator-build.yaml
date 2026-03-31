@@ -50,7 +50,11 @@ spec:
   - name: hermetic
     value: "true"
   - name: prefetch-input
-    value: '{"type": "gomod", "path": "."}'
+    value: |
+      [
+        { "type": "gomod", "path": "." },
+        { "type": "rpm", "path": "." }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth
@@ -60,7 +64,7 @@ spec:
   - name: extra-labels
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
-    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el8"
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el9"
 
   pipelineRef:
     name: basic-component-pipeline

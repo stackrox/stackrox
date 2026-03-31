@@ -78,6 +78,146 @@ gh_summary() {
 }
 export -f gh_summary
 
+##########
+## JIRA ##
+##########
+jira_check_not_empty() {
+    check_not_empty \
+        JIRA_USER \
+        JIRA_TOKEN \
+        JIRA_BASE_URL
+}
+export -f jira_check_not_empty
+
+# Retrieves issues from JIRA using JQL and stores them in JSON format in the OUTPUT_FILE.
+# If additional fields are needed, they can be added to the "fields" array.
+#
+# Example:
+#   get_issues "project = ROX AND fixVersion = 4.9.0" "issues.json"
+get_issues() {
+    jira_check_not_empty
+    local JQL="$1"
+    local OUTPUT_FILE="$2"
+
+    # Initializations
+    PAGE_SIZE=20
+    next_page_token=""
+    echo "[]" > "${OUTPUT_FILE}"
+
+    # Paginate through the results
+    while true; do
+        cat <<EOF > /tmp/request.json
+{
+    "jql": "$JQL",
+    "maxResults": "${PAGE_SIZE}",
+    "nextPageToken": "${next_page_token}",
+    "fields": [
+        "key",
+        "assignee",
+        "issuetype",
+        "status",
+        "summary"
+    ]
+}
+EOF
+
+        response=$(curl --fail -sSL --request POST \
+            --url "https://${JIRA_BASE_URL}/rest/api/3/search/jql" \
+            --user "${JIRA_USER}:${JIRA_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            --data-binary @/tmp/request.json \
+            --retry 5 --retry-all-errors
+        )
+        if [ -z "${response}" ]; then
+            gh_log error "Failed to retrieve issues from JIRA."
+            exit 1
+        fi
+
+        # Append the issues from the current page to $OUTPUT_FILE
+        # Need to use a temporary file as jq does not support in-place editing.
+        jq --argjson new_issues "$(echo "$response" | jq '.issues')" '. + $new_issues' "${OUTPUT_FILE}" > "${OUTPUT_FILE}.tmp"
+        mv "${OUTPUT_FILE}.tmp" "${OUTPUT_FILE}"
+
+        if [[ "$(echo "${response}" | jq '.isLast')" = "true" ]]; then
+            # No more pages, exit the loop.
+            break
+        else
+            next_page_token="$(echo "${response}" | jq -r '.nextPageToken')"
+        fi
+    done
+}
+export -f get_issues
+
+# Retrieves a JIRA issue with ISSUE_KEY and returns it in JSON format.
+#
+# Example:
+#   get_issue "ROX-29997" > rox-29997.json
+get_issue() {
+    jira_check_not_empty
+    local ISSUE_KEY="$1"
+
+    curl --fail -sSL --request GET \
+    --user "${JIRA_USER}:${JIRA_TOKEN}" \
+    --header "Accept: application/json" \
+    --retry 5 --retry-all-errors \
+    "https://${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}"
+}
+export -f get_issue
+
+# Adds COMMENT to a JIRA issue with ISSUE_KEY.
+#
+# Example:
+#   comment_on_issue "ROX-29997" "Please update the status of this issue and notify the release engineer."
+comment_on_issue() {
+    jira_check_not_empty
+    local ISSUE_KEY="$1"
+    local COMMENT="$2"
+
+    ## Commenting on a single issue
+    cat <<EOF > /tmp/request.json
+{
+    "body": {
+        "version": 1,
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                    "type": "text",
+                    "text": "${COMMENT}"
+                    }
+                ]
+            }
+        ]
+    }
+}
+EOF
+
+    curl --fail --output /dev/null -sSL --request POST \
+    --user "${JIRA_USER}:${JIRA_TOKEN}" \
+    --header "Accept: application/json" \
+    --header "Content-Type: application/json" \
+    --data-binary @/tmp/request.json \
+    "https://${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
+
+    gh_log debug "Commented on issue ${ISSUE_KEY}"
+}
+export -f comment_on_issue
+
+get_jira_release() {
+    jira_check_not_empty
+    local PROJECT="$1"
+    local VERSION="$2"
+
+    curl --fail -sSL --request GET \
+    --user "${JIRA_USER}:${JIRA_TOKEN}" \
+    --header "Accept: application/json" \
+    --retry 5 --retry-all-errors \
+    "https://${JIRA_BASE_URL}/rest/api/3/project/${PROJECT}/versions" | jq -r ".[] | select(.name == \"${VERSION}\")"
+}
+export -f get_jira_release
 
 # Fetches the CHANGELOG from a release branch
 # and returns the content of the section for a given version.

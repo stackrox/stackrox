@@ -6,6 +6,7 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	v2Datastore "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
+	ruleutils "github.com/stackrox/rox/central/complianceoperator/v2/rules/utils"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -80,7 +81,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	rule := event.GetComplianceOperatorRuleV2()
 
-	if val := rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]; val == "" {
+	if ruleutils.CustomRuleEffectiveOperatorKind(rule.GetOperatorKind()) == central.ComplianceOperatorRuleV2_RULE && rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey] == "" {
 		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
 	}
 

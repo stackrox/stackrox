@@ -12,9 +12,9 @@ func TestPoller(t *testing.T) {
 	a := assert.New(t)
 
 	const numPollsBeforeTrue int64 = 3
-	var conditionCounter int64
+	var conditionCounter atomic.Int64
 	condition := func() bool {
-		return atomic.AddInt64(&conditionCounter, 1) >= numPollsBeforeTrue
+		return conditionCounter.Add(1) >= numPollsBeforeTrue
 	}
 	duration := 100 * time.Millisecond
 
@@ -23,14 +23,14 @@ func TestPoller(t *testing.T) {
 		a.False(p.Stop())
 	}()
 	a.False(p.IsDone())
-	a.True(atomic.LoadInt64(&conditionCounter) < 3)
+	a.True(conditionCounter.Load() < 3)
 	p.Wait()
 	a.True(p.IsDone())
-	a.Equal(numPollsBeforeTrue, atomic.LoadInt64(&conditionCounter))
+	a.Equal(numPollsBeforeTrue, conditionCounter.Load())
 
 	// Make sure there are no unnecessary polls.
 	time.Sleep(2 * duration)
-	a.Equal(numPollsBeforeTrue, atomic.LoadInt64(&conditionCounter))
+	a.Equal(numPollsBeforeTrue, conditionCounter.Load())
 }
 
 func TestPollerWaitWithTimeout(t *testing.T) {
@@ -50,21 +50,21 @@ func TestPollWithTimeout(t *testing.T) {
 	assert.False(t, PollWithTimeout(func() bool {
 		return false
 	}, 5*time.Millisecond, 50*time.Millisecond))
-	var ctr int32
+	var ctr atomic.Int32
 	assert.True(t, PollWithTimeout(func() bool {
-		return atomic.AddInt32(&ctr, 1) > 2
+		return ctr.Add(1) > 2
 	}, 5*time.Millisecond, 50*time.Millisecond))
-	assert.Equal(t, int32(3), atomic.LoadInt32(&ctr))
+	assert.Equal(t, int32(3), ctr.Load())
 }
 
 func TestPollerStops(t *testing.T) {
 	a := assert.New(t)
 
 	calledSig := NewSignal()
-	var count int64
+	var count atomic.Int64
 	p := NewPoller(func() bool {
 		calledSig.Signal()
-		atomic.AddInt64(&count, 1)
+		count.Add(1)
 		return false
 	}, 10*time.Millisecond)
 
@@ -75,5 +75,5 @@ func TestPollerStops(t *testing.T) {
 	// Make sure it stops polling beyond the first time.
 	time.Sleep(100 * time.Millisecond)
 
-	a.Equal(int64(1), atomic.LoadInt64(&count))
+	a.Equal(int64(1), count.Load())
 }

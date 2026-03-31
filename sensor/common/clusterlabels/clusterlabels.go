@@ -1,6 +1,8 @@
 package clusterlabels
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -19,6 +21,10 @@ func (s *Store) Get() map[string]string {
 	defer s.mutex.RUnlock()
 
 	return s.clusterLabels
+}
+
+func (s *Store) GetClusterLabels(_ context.Context, _ string) (map[string]string, error) {
+	return s.Get(), nil
 }
 
 func (s *Store) Set(labels map[string]string) {

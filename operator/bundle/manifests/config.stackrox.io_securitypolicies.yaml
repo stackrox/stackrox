@@ -101,6 +101,13 @@ spec:
                               description: Cluster is either the name or the ID of
                                 the cluster that this scope applies to
                               type: string
+                            clusterLabel:
+                              properties:
+                                key:
+                                  type: string
+                                value:
+                                  type: string
+                              type: object
                             label:
                               properties:
                                 key:
@@ -110,6 +117,13 @@ spec:
                               type: object
                             namespace:
                               type: string
+                            namespaceLabel:
+                              properties:
+                                key:
+                                  type: string
+                                value:
+                                  type: string
+                              type: object
                           type: object
                       type: object
                     expiration:
@@ -231,6 +245,13 @@ spec:
                       description: Cluster is either the name or the ID of the cluster
                         that this scope applies to
                       type: string
+                    clusterLabel:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      type: object
                     label:
                       properties:
                         key:
@@ -240,6 +261,13 @@ spec:
                       type: object
                     namespace:
                       type: string
+                    namespaceLabel:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      type: object
                   type: object
                 type: array
               severity:

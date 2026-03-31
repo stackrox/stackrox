@@ -6,12 +6,12 @@ import {
     Divider,
     Flex,
     FlexItem,
-    Modal,
     Tab,
     TabContent,
     TabTitleText,
     Tabs,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';
@@ -62,7 +62,7 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
                         <Tab
                             eventKey="Helm"
                             tabContentId={idHelm}
-                            title={<TabTitleText>Helm chart</TabTitleText>}
+                            title={<TabTitleText>Helm chart (deprecated)</TabTitleText>}
                         />
                     </Tabs>
                     <Divider component="div" />

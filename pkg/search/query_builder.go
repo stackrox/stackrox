@@ -40,6 +40,9 @@ const (
 	// TimeRangePrefix is the prefix for a time range query
 	TimeRangePrefix = "tr/"
 
+	// GlobPrefix is the prefix for a path glob query
+	GlobPrefix = "g/"
+
 	// MaxQueryParameters is the maximum number of query parameters for a single statement
 	MaxQueryParameters = math.MaxUint16
 )

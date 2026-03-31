@@ -13,7 +13,7 @@ func ConvertToCronTab(schedule *storage.Schedule) (string, error) {
 	if schedule.GetHour() < 0 || schedule.GetHour() > 23 {
 		return "", errors.New("Schedule hour must be within 0-23")
 	}
-	if schedule.GetMinute() < 0 || schedule.GetMinute() > 60 {
+	if schedule.GetMinute() < 0 || schedule.GetMinute() > 59 {
 		return "", errors.New("Schedule hour must be within 0-59")
 	}
 

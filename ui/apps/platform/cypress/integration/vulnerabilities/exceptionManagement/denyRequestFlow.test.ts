@@ -28,7 +28,7 @@ describe('Exception Management Request Details Page', () => {
 
     it('should be able to see how many CVEs will be affected by a denial', () => {
         deferAndVisitRequestDetails(deferralProps);
-        cy.get('table tbody tr:not(".pf-v5-c-table__expandable-row")').then((rows) => {
+        cy.get('table tbody tr:not(".pf-v6-c-table__expandable-row")').then((rows) => {
             const numCVEs = rows.length;
             cy.get('button:contains("Deny request")').click();
             cy.get('div[role="dialog"]').should('exist');

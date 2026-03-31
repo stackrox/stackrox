@@ -13,6 +13,7 @@ const (
 	cacheResultHit     = "hit"
 	cacheResultMiss    = "miss"
 	cacheResultExpired = "expired"
+	cacheResultSkip    = "skip"
 
 	reviewResultAllowed  = "allowed"
 	reviewResultDenied   = "denied"
@@ -95,6 +96,11 @@ func observeCacheMiss() {
 
 func observeCacheExpired() {
 	imageCacheOperations.WithLabelValues(cacheResultExpired).Inc()
+}
+
+// observeCacheSkip records lookups bypassed because the image has no ID to use as cache key.
+func observeCacheSkip() {
+	imageCacheOperations.WithLabelValues(cacheResultSkip).Inc()
 }
 
 func observeImageFetch(source string, duration time.Duration, err error) {

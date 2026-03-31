@@ -119,6 +119,21 @@ func (mr *MockDataStoreMockRecorder) GetNamespace(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockDataStore)(nil).GetNamespace), ctx, id)
 }
 
+// GetNamespaceLabels mocks base method.
+func (m *MockDataStore) GetNamespaceLabels(ctx context.Context, clusterID, namespaceName string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNamespaceLabels", ctx, clusterID, namespaceName)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNamespaceLabels indicates an expected call of GetNamespaceLabels.
+func (mr *MockDataStoreMockRecorder) GetNamespaceLabels(ctx, clusterID, namespaceName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockDataStore)(nil).GetNamespaceLabels), ctx, clusterID, namespaceName)
+}
+
 // GetNamespacesForSAC mocks base method.
 func (m *MockDataStore) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
 	m.ctrl.T.Helper()

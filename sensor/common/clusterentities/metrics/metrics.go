@@ -1,8 +1,7 @@
 package metrics
 
 import (
-	"slices"
-	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -31,13 +30,26 @@ var (
 	}, []string{"type"})
 
 	// This metric is ideally always 0 - we do not expect one IP to have multiple owners,
-	// but if that happens in the wild, we want to know
+	// but if that happens in the wild, we want to know.
+	// However, it is possible that one IP is assigned to multiple containers for a short transition period.
+	// This metric is used to track such cases and can give insights into the level of churn in the cluster.
 	ipsHavingMultipleContainers = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "ips_having_multiple_containers_total",
 		Help:      "Count how many times a single IP was assigned to more than one container",
-	}, []string{"ip", "containers"})
+	}, []string{"ip"})
+
+	storeLockHeldDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "clusterentities_store_lock_held_duration_seconds",
+		Help:      "Duration for which cluster entities store mutexes are held",
+		// Normal operation (healthy contention): ~10 ms
+		// High load (degraded, worth investigating): ~50–500 ms
+		// Critical (severely degraded or near-deadlock): 2–30 s
+		Buckets: []float64{0.01, 0.05, 0.2, 0.5, 2, 10, 30},
+	}, []string{"store", "operation"})
 )
 
 // UpdateNumberOfContainerIDs updates the metric tracking the number of containers stored in-memory store
@@ -59,17 +71,14 @@ func UpdateNumberOfEndpoints(current, historical int) {
 }
 
 // ObserveManyDeploymentsSharingSingleIP records a situation when one IP belongs to more than one container
-func ObserveManyDeploymentsSharingSingleIP(ip string, containers []string) {
-	// Prevent labels being doubled in form of:
-	// metric{containers=[A,B]} 20, metric{containers=[B,A]} 5
-	// instead of the expected:
-	// metric{containers=[A,B]} 25
-	slices.Sort(containers)
-	ipsHavingMultipleContainers.With(
-		prometheus.Labels{
-			"ip":         ip,
-			"containers": strings.Join(containers, ","),
-		}).Inc()
+func ObserveManyDeploymentsSharingSingleIP(ip string) {
+	ipsHavingMultipleContainers.WithLabelValues(ip).Inc()
+}
+
+// ObserveStoreLockHeldDurationWithOperation records how long a store mutex was held
+// for the given high-level operation.
+func ObserveStoreLockHeldDurationWithOperation(store, operation string, duration time.Duration) {
+	storeLockHeldDurationSeconds.WithLabelValues(store, operation).Observe(duration.Seconds())
 }
 
 func init() {
@@ -77,4 +86,5 @@ func init() {
 	prometheus.MustRegister(ipsStored)
 	prometheus.MustRegister(endpointsStored)
 	prometheus.MustRegister(ipsHavingMultipleContainers)
+	prometheus.MustRegister(storeLockHeldDurationSeconds)
 }

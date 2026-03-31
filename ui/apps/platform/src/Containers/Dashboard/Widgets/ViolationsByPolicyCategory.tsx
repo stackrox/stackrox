@@ -91,7 +91,7 @@ function ViolationsByPolicyCategory() {
                                     <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
                                         <ToggleGroup aria-label="Sort data by highest severity counts or highest total violations">
                                             <ToggleGroupItem
-                                                className="pf-v5-u-font-weight-normal"
+                                                className="pf-v6-u-font-weight-normal"
                                                 text="Severity"
                                                 buttonId={`${fieldIdPrefix}-sort-by-severity`}
                                                 isSelected={sortType === 'Severity'}

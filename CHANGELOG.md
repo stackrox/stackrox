@@ -18,8 +18,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
   roxctl's "central crs generate" supports specifying a maximum number of cluster registrations
   using the new parameter "--max-clusters".
 - ROX-24311: Detection and enforcement for pods/attach Kubernetes event.
+- ROX-33099: New Operator Helm Chart is now the only recommended way to install on non-OpenShift clusters.
 - ROX-33098 (Tech Preview): Effective path and Actual Path have been combined into a single File Path policy criterion.
 - ROX-33156 (Tech Preview): A new default policy category called "File Activity Monitoring" is now available.
+- ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
 
 ### Removed Features
 
@@ -39,6 +41,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-31738: Added the `spec.customize.deploymentDefaults` field to Central and SecuredCluster CRDs, for configuring global default scheduling constraints for Deployments. This was previously possible on a per-component basis.
 - ROX-30094, ROX-30610, ROX-30740: Add new namespaces to Layered Products default config regex.
 - ROX-31960, ROX-32449: include and exclude filters for custom metrics.
+- ROX-33603: Switch to UBI9/rhel9 base images.
 - ROX-30641: Added a new policy criteria "Days Since CVE Fix Was Available".
 - ROX-32630: The OpenShift console plugin integrates the ACS vulnerability management view into OpenShift console. It is enabled by default for operator-deployed secured clusters.
 - Tech preview: operator-based installation available for community StackRox build. More information in [a separate README file](operator/install/README.md).
@@ -59,6 +62,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
   - The Compliance Configuration Management Board
 
 ### Technical Changes
+- ROX-32239: Process indicator filtering is now configurable via environment variables. `ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES` is the maximum number of times an exact path (same deployment+container+process+args) can appear before being filtered. `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` is the maximum number of unique process executable paths per container. `ROX_PROCESS_FILTER_MAX_PROCESS_PATHS` is an integer array where each value represents the number of distinct child arguments for that arg position.
+- ROX-32679: Added preset process filtering modes via `ROX_PROCESS_FILTER_MODE` environment variable. Available modes: `default`, `aggressive`, and `minimal`. Setting this environment variables controls the same parameters as the `ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES`, `ROX_PROCESS_FILTER_FAN_OUT_LEVELS`, and `ROX_PROCESS_FILTER_MAX_PROCESS_PATHS` environment variables. Individual filter settings can override preset values.
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0
 - ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reduced to one (from 10).
 - ROX-32125: The operator now adopts secrets that have the `app.stackrox.io/managed-by: operator` label but no `ownerReferences`. This fixes reconciliation failures after backup/restore operations that strip `ownerReferences` from secrets.

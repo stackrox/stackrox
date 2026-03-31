@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Badge,
     Button,
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     ExpandableSection,
     ExpandableSectionToggle,
     Flex,
@@ -44,8 +42,6 @@ import type {
 } from './types';
 import type { CollectionConfigError } from './errorUtils';
 
-import './CollectionForm.css';
-
 const ruleSectionContentId = 'expandable-rules-section-contentId';
 const attachmentSectionContentId = 'expandable-attachment-section-contentId';
 
@@ -74,8 +70,7 @@ function AttachedCollectionTable({
             </Tbody>
         </Table>
     ) : (
-        <EmptyState>
-            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+        <EmptyState icon={CubesIcon}>
             <EmptyStateFooter>
                 <p>There are no other collections attached to this collection</p>
             </EmptyStateFooter>
@@ -318,24 +313,9 @@ function CollectionForm({
     const ruleCount = getRuleCount(values.resourceSelector);
 
     return (
-        <Form
-            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-h-100"
-            style={
-                {
-                    '--pf-v5-c-form--GridGap': 0,
-                } as CSSProperties
-            }
-        >
-            <Flex
-                className="pf-v5-u-p-lg pf-v5-u-flex-grow-1 pf-v5-u-background-color-200"
-                spaceItems={{ default: 'spaceItemsMd' }}
-                direction={{ default: 'column' }}
-            >
-                <Flex
-                    className="pf-v5-u-background-color-100 pf-v5-u-p-lg"
-                    direction={{ default: 'column' }}
-                    spaceItems={{ default: 'spaceItemsMd' }}
-                >
+        <Form>
+            <Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <Title headingLevel="h2">Collection details</Title>
                     <Flex direction={{ default: 'column', lg: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
@@ -380,160 +360,152 @@ function CollectionForm({
                         </FlexItem>
                     </Flex>
                 </Flex>
-                <div className="collection-form-expandable-section">
-                    <ExpandableSectionToggle
-                        contentId={ruleSectionContentId}
-                        toggleId={ruleSectionToggleId}
-                        isExpanded={isRuleSectionOpen}
-                        onToggle={ruleSectionOnToggle}
+                <ExpandableSectionToggle
+                    contentId={ruleSectionContentId}
+                    toggleId={ruleSectionToggleId}
+                    isExpanded={isRuleSectionOpen}
+                    onToggle={ruleSectionOnToggle}
+                >
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
                     >
-                        <Flex
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            spaceItems={{ default: 'spaceItemsSm' }}
+                        <Title
+                            className={isReadOnly ? 'pf-v6-u-mb-0' : 'pf-v6-u-mb-xs'}
+                            headingLevel="h2"
                         >
-                            <Title
-                                className={isReadOnly ? 'pf-v5-u-mb-0' : 'pf-v5-u-mb-xs'}
-                                headingLevel="h2"
+                            Collection rules
+                        </Title>
+                        <Badge isRead>{ruleCount}</Badge>
+                    </Flex>
+                    {!isReadOnly && <p>Select deployments using names or labels</p>}
+                </ExpandableSectionToggle>
+
+                <ExpandableSection
+                    isDetached
+                    contentId={ruleSectionContentId}
+                    toggleId={ruleSectionToggleId}
+                    isExpanded={isRuleSectionOpen}
+                >
+                    <Flex
+                        className="pf-v6-u-p-md"
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        {configError?.type === 'EmptyCollection' && (
+                            <Alert
+                                title="At least one rule must be configured or one collection must be attached from the section below"
+                                component="p"
+                                variant="danger"
+                                isInline
+                            />
+                        )}
+                        {configError?.type === 'InvalidRule' && (
+                            <Alert
+                                title={configError.message}
+                                component="p"
+                                variant="danger"
+                                isInline
                             >
-                                Collection rules
-                            </Title>
-                            <Badge isRead>{ruleCount}</Badge>
-                        </Flex>
-                        {!isReadOnly && <p>Select deployments using names or labels</p>}
-                    </ExpandableSectionToggle>
-
-                    <ExpandableSection
-                        isDetached
-                        contentId={ruleSectionContentId}
-                        toggleId={ruleSectionToggleId}
-                        isExpanded={isRuleSectionOpen}
+                                {configError.details}
+                            </Alert>
+                        )}
+                        <RuleSelector
+                            entityType="Deployment"
+                            scopedResourceSelector={values.resourceSelector.Deployment}
+                            handleChange={onResourceSelectorChange}
+                            validationErrors={errors.resourceSelector?.Deployment}
+                            isDisabled={isReadOnly}
+                        />
+                        <Label className="pf-v6-u-px-md pf-v6-u-font-size-md pf-v6-u-align-self-center">
+                            in
+                        </Label>
+                        <RuleSelector
+                            entityType="Namespace"
+                            scopedResourceSelector={values.resourceSelector.Namespace}
+                            handleChange={onResourceSelectorChange}
+                            validationErrors={errors.resourceSelector?.Namespace}
+                            isDisabled={isReadOnly}
+                        />
+                        <Label className="pf-v6-u-px-md pf-v6-u-font-size-md pf-v6-u-align-self-center">
+                            in
+                        </Label>
+                        <RuleSelector
+                            entityType="Cluster"
+                            scopedResourceSelector={values.resourceSelector.Cluster}
+                            handleChange={onResourceSelectorChange}
+                            validationErrors={errors.resourceSelector?.Cluster}
+                            isDisabled={isReadOnly}
+                        />
+                    </Flex>
+                </ExpandableSection>
+                <ExpandableSectionToggle
+                    contentId={attachmentSectionContentId}
+                    toggleId={attachmentSectionToggleId}
+                    isExpanded={isAttachmentSectionOpen}
+                    onToggle={attachmentSectionOnToggle}
+                >
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
                     >
-                        <Flex
-                            className="pf-v5-u-p-md"
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                        >
-                            {configError?.type === 'EmptyCollection' && (
-                                <Alert
-                                    title="At least one rule must be configured or one collection must be attached from the section below"
-                                    component="p"
-                                    variant="danger"
-                                    isInline
-                                />
-                            )}
-                            {configError?.type === 'InvalidRule' && (
-                                <Alert
-                                    title={configError.message}
-                                    component="p"
-                                    variant="danger"
-                                    isInline
-                                >
-                                    {configError.details}
-                                </Alert>
-                            )}
-                            <RuleSelector
-                                entityType="Deployment"
-                                scopedResourceSelector={values.resourceSelector.Deployment}
-                                handleChange={onResourceSelectorChange}
-                                validationErrors={errors.resourceSelector?.Deployment}
-                                isDisabled={isReadOnly}
-                            />
-                            <Label className="pf-v5-u-px-md pf-v5-u-font-size-md pf-v5-u-align-self-center">
-                                in
-                            </Label>
-                            <RuleSelector
-                                entityType="Namespace"
-                                scopedResourceSelector={values.resourceSelector.Namespace}
-                                handleChange={onResourceSelectorChange}
-                                validationErrors={errors.resourceSelector?.Namespace}
-                                isDisabled={isReadOnly}
-                            />
-                            <Label className="pf-v5-u-px-md pf-v5-u-font-size-md pf-v5-u-align-self-center">
-                                in
-                            </Label>
-                            <RuleSelector
-                                entityType="Cluster"
-                                scopedResourceSelector={values.resourceSelector.Cluster}
-                                handleChange={onResourceSelectorChange}
-                                validationErrors={errors.resourceSelector?.Cluster}
-                                isDisabled={isReadOnly}
-                            />
-                        </Flex>
-                    </ExpandableSection>
-                </div>
-
-                <div className="collection-form-expandable-section">
-                    <ExpandableSectionToggle
-                        contentId={attachmentSectionContentId}
-                        toggleId={attachmentSectionToggleId}
-                        isExpanded={isAttachmentSectionOpen}
-                        onToggle={attachmentSectionOnToggle}
+                        <Title className="pf-v6-u-mb-xs" headingLevel="h2">
+                            Attached collections
+                        </Title>
+                        <Badge isRead>{values.embeddedCollectionIds.length}</Badge>
+                    </Flex>
+                    {!isReadOnly && <p>Extend this collection by attaching other sets.</p>}
+                </ExpandableSectionToggle>
+                <ExpandableSection
+                    isDetached
+                    contentId={attachmentSectionContentId}
+                    toggleId={attachmentSectionToggleId}
+                    isExpanded={isAttachmentSectionOpen}
+                >
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
                     >
-                        <Flex
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                        >
-                            <Title className="pf-v5-u-mb-xs" headingLevel="h2">
-                                Attached collections
-                            </Title>
-                            <Badge isRead>{values.embeddedCollectionIds.length}</Badge>
-                        </Flex>
-                        {!isReadOnly && <p>Extend this collection by attaching other sets.</p>}
-                    </ExpandableSectionToggle>
-
-                    <ExpandableSection
-                        isDetached
-                        contentId={attachmentSectionContentId}
-                        toggleId={attachmentSectionToggleId}
-                        isExpanded={isAttachmentSectionOpen}
-                    >
-                        <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                        >
-                            {configError?.type === 'EmptyCollection' && (
-                                <Alert
-                                    title="At least one collection must be attached or one rule must be configured from the section above"
-                                    component="p"
-                                    variant="danger"
-                                    isInline
-                                />
-                            )}
-                            {configError?.type === 'CollectionLoop' && (
-                                <Alert
-                                    title={configError.message}
-                                    component="p"
-                                    variant="danger"
-                                    isInline
-                                >
-                                    {configError.details}
-                                </Alert>
-                            )}
-                            {isReadOnly ? (
-                                <AttachedCollectionTable
-                                    collections={initialEmbeddedCollections}
-                                    collectionTableCells={collectionTableCells}
-                                />
-                            ) : (
-                                <div className="pf-v5-u-p-md">
-                                    <CollectionAttacher
-                                        excludedCollectionId={
-                                            action.type === 'edit' ? action.collectionId : null
-                                        }
-                                        initialEmbeddedCollections={initialEmbeddedCollections}
-                                        onSelectionChange={onEmbeddedCollectionsChange}
-                                        collectionTableCells={collectionTableCells}
-                                    />
-                                </div>
-                            )}
-                        </Flex>
-                    </ExpandableSection>
-                </div>
+                        {configError?.type === 'EmptyCollection' && (
+                            <Alert
+                                title="At least one collection must be attached or one rule must be configured from the section above"
+                                component="p"
+                                variant="danger"
+                                isInline
+                            />
+                        )}
+                        {configError?.type === 'CollectionLoop' && (
+                            <Alert
+                                title={configError.message}
+                                component="p"
+                                variant="danger"
+                                isInline
+                            >
+                                {configError.details}
+                            </Alert>
+                        )}
+                        {isReadOnly ? (
+                            <AttachedCollectionTable
+                                collections={initialEmbeddedCollections}
+                                collectionTableCells={collectionTableCells}
+                            />
+                        ) : (
+                            <CollectionAttacher
+                                excludedCollectionId={
+                                    action.type === 'edit' ? action.collectionId : null
+                                }
+                                initialEmbeddedCollections={initialEmbeddedCollections}
+                                onSelectionChange={onEmbeddedCollectionsChange}
+                                collectionTableCells={collectionTableCells}
+                            />
+                        )}
+                    </Flex>
+                </ExpandableSection>
             </Flex>
             {action.type !== 'view' && (
-                <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg pf-v5-u-py-md">
+                <div className="pf-v6-u-p-lg pf-v6-u-py-md">
                     <Button
-                        className="pf-v5-u-mr-md"
+                        className="pf-v6-u-mr-md"
                         onClick={submitForm}
                         isDisabled={isSubmitting || !!configError || !isValid}
                         isLoading={isSubmitting}

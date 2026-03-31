@@ -413,7 +413,7 @@ func TestListTagsTimeoutManyPages(t *testing.T) {
 		allTags = append(allTags, fmt.Sprintf("v1.0.%d", i))
 	}
 
-	var pagesServed int32
+	var pagesServed atomic.Int32
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v2/" {
 			w.WriteHeader(http.StatusOK)
@@ -421,7 +421,7 @@ func TestListTagsTimeoutManyPages(t *testing.T) {
 		}
 		if r.URL.Path == "/v2/large/repo/tags/list" {
 			time.Sleep(pageDelay)
-			atomic.AddInt32(&pagesServed, 1)
+			pagesServed.Add(1)
 
 			lastTag := r.URL.Query().Get("last")
 			startIdx := 0
@@ -484,7 +484,7 @@ func TestListTagsTimeoutManyPages(t *testing.T) {
 	assert.Contains(t, err.Error(), "context deadline exceeded")
 
 	// Verify only some pages were served before timeout.
-	served := atomic.LoadInt32(&pagesServed)
+	served := pagesServed.Load()
 	assert.Less(t, served, int32(10), "Should have timed out before serving all 10 pages")
 
 	// Verify we didn't wait for all pages.

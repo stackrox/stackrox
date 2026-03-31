@@ -15,6 +15,7 @@ import (
 type Store interface {
 	GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)
 	GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error)
+	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
 
 	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)

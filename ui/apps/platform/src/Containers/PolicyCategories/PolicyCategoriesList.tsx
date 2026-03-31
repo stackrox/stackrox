@@ -7,6 +7,7 @@ type PolicyCategoriesListProps = {
     setSelectedCategory: (selectedCategory: PolicyCategory) => void;
 };
 
+// TODO Evaluate whether or not we should switch from SimpleList here - the disabled style is almost indistinguishable from the default style.
 function PolicyCategoriesList({
     policyCategories,
     setSelectedCategory,

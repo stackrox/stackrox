@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package storage;
+
+import "storage/image.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// VirtualMachineComponentV2 represents a software component (package)
+// found during a VM scan. Components belong to a scan, not directly to a VM.
+// Next tag: 11
+message VirtualMachineComponentV2 {
+  string id = 1; // @gotags: search:"Component ID,hidden" sql:"pk,type(uuid)"
+
+  // FK to VirtualMachineScanV2.id. CASCADE DELETE ensures cleanup when scan is replaced.
+  string vm_scan_id = 2; // @gotags: sql:"fk(VirtualMachineScanV2:id),type(uuid),index=btree"
+
+  string name = 3; // @gotags: search:"Component" sql:"index=btree"
+  string version = 4; // @gotags: search:"Component Version"
+  SourceType source = 5; // @gotags: search:"Component Source"
+  string operating_system = 6; // @gotags: search:"Operating System" sql:"index=btree"
+
+  // Cached highest CVSS score across all CVEs affecting this component.
+  oneof set_top_cvss {
+    float top_cvss = 7; // @gotags: search:"Component Top CVSS" sql:"index=btree"
+  }
+
+  // Component version that fixes all fixable vulnerabilities in this component.
+  string fixed_by = 8;
+
+  // Cached CVE count to avoid joining on the CVE table.
+  int32 cve_count = 9;
+
+  enum Note {
+    UNSPECIFIED = 0;
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 10;
+}

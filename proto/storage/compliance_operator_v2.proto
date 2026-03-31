@@ -39,7 +39,7 @@ message ProfileShim {
   string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
 }
 
-// Next Tag: 15
+// Next Tag: 17
 message ComplianceOperatorProfileV2 {
   // The primary key is name-profile_version as that is guaranteed unique in the operator and how
   // the profile is referenced in scans and settings
@@ -61,8 +61,16 @@ message ComplianceOperatorProfileV2 {
   repeated string values = 13;
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    PROFILE = 1;
+    TAILORED_PROFILE = 2;
+  }
+  OperatorKind operator_kind = 16;
 }
 
+// Next tag: 19
 message ComplianceOperatorRuleV2 {
   string id = 1; // @gotags: sql:"pk"
   string rule_id = 2;
@@ -85,6 +93,13 @@ message ComplianceOperatorRuleV2 {
   string rule_ref_id = 15; // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
   string parent_rule = 16;
   string instructions = 17;
+
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    RULE = 1;
+    CUSTOM_RULE = 2;
+  }
+  OperatorKind operator_kind = 18;
 }
 
 // Next Tag: 4
@@ -94,7 +109,7 @@ message RuleControls {
   string control = 3; // @gotags: search:"Compliance Control,hidden"
 }
 
-// Next Tag: 18
+// Next Tag: 19
 message ComplianceOperatorScanConfigurationV2 {
   string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
@@ -107,6 +122,17 @@ message ComplianceOperatorScanConfigurationV2 {
     string profile_name = 1; // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
   }
   repeated ProfileName profiles = 8;
+  // ProfileReference stores a profile name together with its compliance operator kind.
+  // Used during scan config sync to Sensor so it can create SSBs with the correct resource kind
+  // (Profile vs TailoredProfile) without a k8s API probe.
+  message ProfileReference {
+    string name = 1;
+    ComplianceOperatorProfileV2.OperatorKind kind = 2;
+  }
+  // profile_refs persists profile name + kind alongside the legacy profiles field.
+  // Stored in the serialized blob only (not indexed); populated on create/update so the
+  // startup sync path can forward correct kinds to Sensor on reconnect.
+  repeated ProfileReference profile_refs = 18;
   repeated NodeRole node_roles = 9;
   // Will be configurable via env var
   bool strict_node_scan = 10;

@@ -28,12 +28,40 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+      build-tag: ${{ steps.build-tag.outputs.tag }}
+      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
+      gotags: ${{ steps.gotags.outputs.gotags }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Compute build tag
+        id: build-tag
+        run: |
+          TAG=$(make --quiet --no-print-directory tag)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute short commit
+        id: short-commit
+        run: |
+          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
+          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute GOTAGS
+        id: gotags
+        run: |
+          GOTAGS=""
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+            # Tag builds (release or nightly) get release GOTAGS
+            GOTAGS="release"
+          fi
+          echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -131,8 +159,6 @@ jobs:
 
       - uses: ./.github/actions/cache-ui-dependencies
 
-      - uses: ./.github/actions/handle-tagged-build
-
       - name: Fetch UI deps
         run: make -C ui deps
 
@@ -147,7 +173,12 @@ jobs:
             ui/apps/platform/package-lock.json
 
   pre-build-cli:
+    needs: define-job-matrix
     runs-on: ubuntu-latest
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -157,7 +188,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -166,8 +196,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
 
       - name: Build CLI
         run: make cli
@@ -183,12 +211,16 @@ jobs:
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
-      # default - built with environment defaults (see handle-tagged-build & env.mk)
+      # default - built with environment defaults (see env.mk)
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -198,7 +230,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -209,8 +240,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
@@ -278,8 +309,6 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - uses: ./.github/actions/handle-tagged-build
-
       - name: Resolve mods for protos
         run: go mod tidy
 
@@ -319,6 +348,9 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -367,7 +399,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -375,7 +406,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -385,16 +416,14 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Checkout submodules
         run: |
             git submodule update --init
-
-      - uses: ./.github/actions/handle-tagged-build
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -503,6 +532,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -543,7 +575,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -553,8 +584,6 @@ jobs:
     - name: Checkout submodules
       run: |
         git submodule update --init
-
-    - uses: ./.github/actions/handle-tagged-build
 
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
@@ -614,27 +643,29 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: 30
+          free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Cache Go dependencies
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - name: Resolve mods for protos
         run: go mod tidy
@@ -667,11 +698,6 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
-        run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
-
       - name: Build Operator image
         run: |
           # The first invocation builds native architecture dependencies, which helps avoid the following error,
@@ -686,7 +712,7 @@ jobs:
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -696,7 +722,7 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable
         run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
@@ -760,6 +786,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -776,14 +805,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - uses: ./.github/actions/handle-tagged-build
 
     - name: Push operator manifest lists
       # Skip for external contributions.
@@ -850,6 +876,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       if: always()
       with:
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
@@ -875,14 +902,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: ./.github/actions/handle-tagged-build
 
       - name: Central login
         uses: stackrox/central-login@v1
@@ -896,6 +920,10 @@ jobs:
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
+        env:
+          BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+          SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+          GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then

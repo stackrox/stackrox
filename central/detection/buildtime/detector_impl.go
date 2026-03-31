@@ -1,6 +1,8 @@
 package buildtime
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -21,7 +23,7 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 
 // Detect runs detection on an image, returning any generated alerts.  If policy categories are specified, we will only
 // run policies with the specified categories
-func (d *detectorImpl) Detect(image *storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {
+func (d *detectorImpl) Detect(ctx context.Context, image *storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {
 	if image == nil {
 		return nil, errors.New("cannot detect on a nil image")
 	}
@@ -37,7 +39,7 @@ func (d *detectorImpl) Detect(image *storage.Image, policyFilters ...detection.F
 				return nil
 			}
 		}
-		if !compiled.AppliesTo(image) {
+		if !compiled.AppliesTo(ctx, image) {
 			return nil
 		}
 		violations, err := compiled.MatchAgainstImage(&cacheReceptacle, image)

@@ -13,7 +13,6 @@ import (
 	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -184,15 +183,9 @@ func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Qu
 	alertsQuery := search.ConjunctionQuery(resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 
-	alertsQuery = paginated.FillDefaultSortOption(alertsQuery, paginated.GetViolationTimeSortOption())
-	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery, true)
+	deploymentIDs, err := resolver.root.ViolationsDataStore.SearchAlertDeploymentIDs(ctx, alertsQuery, true)
 	if err != nil {
 		return nil, err
-	}
-
-	deploymentIDs := make([]string, 0, len(listAlerts))
-	for _, alert := range listAlerts {
-		deploymentIDs = append(deploymentIDs, alert.GetDeployment().GetId())
 	}
 
 	deploymentQuery := search.ConjunctionQuery(q, search.NewQueryBuilder().AddDocIDs(deploymentIDs...).ProtoQuery())

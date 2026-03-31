@@ -113,6 +113,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	roxClaims := tokens.RoxClaims{
 		RoleNames: []string{roleName},
 		Name:      claimName,
+		Requester: req.GetRequester(),
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {

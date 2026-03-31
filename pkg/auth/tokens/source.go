@@ -2,6 +2,8 @@ package tokens
 
 import "context"
 
+//go:generate mockgen-wrapper
+
 // SourceLayer is a single component in a Source, implementing claim validation logic.
 type SourceLayer interface {
 	Validate(ctx context.Context, claims *Claims) error

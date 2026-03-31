@@ -40,6 +40,18 @@ func TestToProtobuf(t *testing.T) {
 					Scope: Scope{
 						Namespace: "stackrox",
 						Cluster:   "test-cluster",
+						Label: Label{
+							Key:   "app",
+							Value: "collector",
+						},
+						ClusterLabel: Label{
+							Key:   "env",
+							Value: "dev",
+						},
+						NamespaceLabel: Label{
+							Key:   "team",
+							Value: "platform",
+						},
 					},
 				},
 				Expiration: expirationTS,
@@ -64,6 +76,18 @@ func TestToProtobuf(t *testing.T) {
 		Scope: []Scope{
 			{
 				Cluster: "test-cluster",
+				Label: Label{
+					Key:   "component",
+					Value: "backend",
+				},
+				ClusterLabel: Label{
+					Key:   "region",
+					Value: "us-east",
+				},
+				NamespaceLabel: Label{
+					Key:   "tier",
+					Value: "production",
+				},
 			},
 		},
 	}
@@ -87,6 +111,18 @@ func TestToProtobuf(t *testing.T) {
 					Scope: &storage.Scope{
 						Namespace: "stackrox",
 						Cluster:   clusterID,
+						Label: &storage.Scope_Label{
+							Key:   "app",
+							Value: "collector",
+						},
+						ClusterLabel: &storage.Scope_Label{
+							Key:   "env",
+							Value: "dev",
+						},
+						NamespaceLabel: &storage.Scope_Label{
+							Key:   "team",
+							Value: "platform",
+						},
 					},
 				},
 				Expiration: protoconv.ConvertTimeString(expirationTS),
@@ -113,6 +149,18 @@ func TestToProtobuf(t *testing.T) {
 		Scope: []*storage.Scope{
 			{
 				Cluster: clusterID,
+				Label: &storage.Scope_Label{
+					Key:   "component",
+					Value: "backend",
+				},
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "region",
+					Value: "us-east",
+				},
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "tier",
+					Value: "production",
+				},
 			},
 		},
 	}

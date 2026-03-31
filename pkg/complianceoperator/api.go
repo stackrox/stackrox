@@ -13,6 +13,9 @@ var (
 
 	// List of required compliance operator CRDs.
 	requiredAPIResources []k8sapi.APIResource
+
+	// List of optional compliance operator CRDs.
+	optionalAPIResources []k8sapi.APIResource
 )
 
 // APIResources for compliance operator resources.
@@ -71,6 +74,12 @@ var (
 		Group:   GetGroupVersion().Group,
 		Version: GetGroupVersion().Version,
 	})
+	CustomRule = registerOptionalAPIResource(v1.APIResource{
+		Name:    "customrules",
+		Kind:    "CustomRule",
+		Group:   GetGroupVersion().Group,
+		Version: GetGroupVersion().Version,
+	})
 )
 
 // GetGroupVersion return the group version that uniquely represents the API set of compliance operator CRs.
@@ -83,8 +92,19 @@ func GetRequiredResources() []k8sapi.APIResource {
 	return requiredAPIResources
 }
 
+// GetOptionalResources returns the compliance operator API resources optionally used by ACS.
+func GetOptionalResources() []k8sapi.APIResource {
+	return optionalAPIResources
+}
+
 func registerAPIResource(resource v1.APIResource) k8sapi.APIResource {
-	r := k8sapi.APIResource{resource}
+	r := k8sapi.APIResource{APIResource: resource}
 	requiredAPIResources = append(requiredAPIResources, r)
+	return r
+}
+
+func registerOptionalAPIResource(resource v1.APIResource) k8sapi.APIResource {
+	r := k8sapi.APIResource{APIResource: resource}
+	optionalAPIResources = append(optionalAPIResources, r)
 	return r
 }

@@ -81,7 +81,7 @@ func NewTestManager(t *testing.T, opts TestManagerOptions) manager.Manager {
 	imageServiceClient := testingImageServiceClient{GetImageResponse: opts.ImageServiceResponse, t: t}
 	deploymentServiceClient := testingDeploymentServiceClient{GetDeploymentForPodResponse: opts.GetDeploymentForPodResponse, t: t}
 
-	mgr := manager.NewManager("stackrox", 20*size.MB, imageServiceClient, deploymentServiceClient)
+	mgr := manager.NewManager("stackrox", 20*size.MB, true, imageServiceClient, deploymentServiceClient)
 
 	addPolicyToSettings(t, settings, opts.Policy)
 	mgr.ProcessNewSettings(settings)

@@ -425,4 +425,4 @@ export type SearchFieldLabel =
     // Virtual Machine fields.
     | 'Virtual Machine ID'
     | 'Virtual Machine Name'
-    | 'SCANNABLE'; // frontend only pending backend TODO replace SCANNABLE with Scan Status
+    | 'Scan Status'; // frontend only pending backend

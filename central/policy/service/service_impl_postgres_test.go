@@ -75,7 +75,7 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 
 	s.connectionManager = connectionMocks.NewMockManager(s.mockCtrl)
 
-	s.tested = New(s.policies, s.clusters, nil, nil, notifierDS, s.mitreVectorStore, nil, s.lifecycleManager, nil, nil, s.connectionManager)
+	s.tested = New(s.policies, s.clusters, nil, nil, nil, notifierDS, s.mitreVectorStore, nil, s.lifecycleManager, nil, nil, s.connectionManager)
 }
 
 // TestPostPolicy tests posting and then immediately after putting the same policy, as this discovered a bug in the

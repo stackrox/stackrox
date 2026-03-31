@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// VirtualMachineV2 represents the VM identity and cluster placement.
+// Scan-specific data (scan_os, scan_time, stats) lives in VirtualMachineScanV2.
+// The serialized column contains VM-specific metadata only (facts, vsock_cid, notes);
+// components and CVEs are removed prior to storage.
+message VirtualMachineV2 {
+  // VM identifier
+  string id = 1; // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"
+  string name = 2; // @gotags: search:"Virtual Machine Name"
+  string namespace = 3; // @gotags: search:"Namespace"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string cluster_name = 5; // @gotags: search:"Cluster"
+
+  // KubeVirt facts about the VM.
+  map<string, string> facts = 6;
+
+  // Guest OS reported by KubeVirt facts, extracted as a queryable column.
+  string guest_os = 7; // @gotags: search:"Guest OS" sql:"index=btree"
+
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
+  }
+  State state = 8; // @gotags: search:"Virtual Machine State"
+
+  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"
+
+  enum Note {
+    MISSING_METADATA = 0;
+    MISSING_SCAN_DATA = 1;
+    MISSING_SIGNATURE = 2;
+    MISSING_SIGNATURE_VERIFICATION_DATA = 3;
+  }
+  repeated Note notes = 10; // @gotags: hash:"set"
+
+  int32 vsock_cid = 11;
+
+  // Hash of VM data fields for change detection (excludes last_updated).
+  uint64 hash = 12; // @gotags: hash:"ignore"
+}

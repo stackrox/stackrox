@@ -5,7 +5,7 @@ import PageTitle from 'Components/PageTitle';
 
 function ComplianceNotFoundPage() {
     return (
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Compliance - Not Found" />
             <PageNotFound />
         </PageSection>

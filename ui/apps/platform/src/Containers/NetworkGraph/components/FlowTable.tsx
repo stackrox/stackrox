@@ -40,7 +40,7 @@ export function FlowTable({
     return (
         <>
             <ToolbarContent>
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         itemCount={flowCount}
                         page={page}
@@ -63,9 +63,7 @@ export function FlowTable({
                         <Th>Entity</Th>
                         <Th>Direction</Th>
                         <Th>Port / protocol</Th>
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
+                        <Th screenReaderText="Row actions" />
                     </Tr>
                 </Thead>
 

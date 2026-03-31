@@ -180,7 +180,7 @@ function AuthProviders(): ReactElement {
                         actionComponent={
                             hasWriteAccessForPage && (
                                 <MenuDropdown
-                                    toggleClassName="auth-provider-dropdown pf-v5-u-ml-md"
+                                    toggleClassName="auth-provider-dropdown pf-v6-u-ml-md"
                                     toggleText="Create auth provider"
                                     toggleVariant="primary"
                                     onSelect={onClickCreate}
@@ -193,7 +193,7 @@ function AuthProviders(): ReactElement {
                             )
                         }
                     />
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <Alert
                             isInline
                             variant="info"
@@ -268,13 +268,13 @@ function AuthProviders(): ReactElement {
                     }
                 />
             )}
-            <PageSection variant={isList ? 'default' : 'light'}>
+            <PageSection>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
                         <Spinner />
                     </Bullseye>
                 ) : isList ? (
-                    <PageSection variant="light">
+                    <PageSection>
                         <Title headingLevel="h2">
                             {pluralize(authProvidersWithRules.length, 'result')} found
                         </Title>
@@ -284,10 +284,7 @@ function AuthProviders(): ReactElement {
                             </EmptyStateTemplate>
                         )}
                         {authProvidersWithRules.length > 0 && (
-                            <AuthProvidersList
-                                entityId={entityId}
-                                authProviders={authProvidersWithRules}
-                            />
+                            <AuthProvidersList authProviders={authProvidersWithRules} />
                         )}
                     </PageSection>
                 ) : typeof entityId === 'string' && !selectedAuthProvider ? (

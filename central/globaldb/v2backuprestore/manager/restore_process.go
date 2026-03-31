@@ -71,7 +71,7 @@ type restoreProcess struct {
 
 	// For statistics (atomic access; approximate only)
 	bytesRead      int64
-	filesProcessed int64
+	filesProcessed atomic.Int64
 
 	// Informs whether processing a RocksDB or Postgres backup bundle
 	postgresBundle bool
@@ -416,7 +416,7 @@ func (p *restoreProcess) processSingleFile(ctx *restoreProcessContext, file *res
 		return errors.New("not all bytes in file chunk were read")
 	}
 
-	atomic.AddInt64(&p.filesProcessed, 1)
+	p.filesProcessed.Add(1)
 
 	return nil
 }
@@ -425,7 +425,7 @@ func (p *restoreProcess) ProtoStatus() *v1.DBRestoreProcessStatus {
 	status := &v1.DBRestoreProcessStatus{
 		Metadata:       p.Metadata(),
 		BytesRead:      atomic.LoadInt64(&p.bytesRead),
-		FilesProcessed: atomic.LoadInt64(&p.filesProcessed),
+		FilesProcessed: p.filesProcessed.Load(),
 	}
 
 	if !p.started.Get() {

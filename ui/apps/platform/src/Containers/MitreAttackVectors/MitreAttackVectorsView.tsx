@@ -20,7 +20,7 @@ function MitreAttackVectorsView({
 }: MitreAttackVectorsViewProps): ReactElement {
     if (isLoading) {
         return (
-            <Flex className="pf-v5-u-my-md" justifyContent={{ default: 'justifyContentCenter' }}>
+            <Flex className="pf-v6-u-my-md" justifyContent={{ default: 'justifyContentCenter' }}>
                 <FlexItem>
                     <Spinner />
                 </FlexItem>
@@ -31,7 +31,7 @@ function MitreAttackVectorsView({
     if (errorMessage) {
         return (
             <Alert
-                className="pf-v5-u-my-md"
+                className="pf-v6-u-my-md"
                 title="Request failed"
                 component="p"
                 variant="warning"
@@ -43,7 +43,7 @@ function MitreAttackVectorsView({
     }
 
     if (policyMitreAttackVectors.length === 0) {
-        return <div className="pf-v5-u-my-md">Policy has no MITRE ATT&CK vectors</div>;
+        return <div className="pf-v6-u-my-md">Policy has no MITRE ATT&CK vectors</div>;
     }
 
     return <TreeView data={getData(policyMitreAttackVectors)} variant="compactNoBackground" />;

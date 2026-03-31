@@ -22,8 +22,8 @@ describe('Discovered clusters', () => {
     it('visits clusters from breadcrumb link', () => {
         visitDiscoveredClusters();
 
-        cy.get('.pf-v5-c-breadcrumb__item:nth-child(2):contains("Discovered clusters")');
-        cy.get('.pf-v5-c-breadcrumb__item:nth-child(1) a:contains("Clusters")').click();
+        cy.get('.pf-v6-c-breadcrumb__item:nth-child(2):contains("Discovered clusters")');
+        cy.get('.pf-v6-c-breadcrumb__item:nth-child(1) a:contains("Clusters")').click();
 
         assertClustersPage();
     });

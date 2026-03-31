@@ -46,7 +46,7 @@ type googleClaims struct {
 type extraClaims struct {
 	Email  string       `json:"email,omitempty"`
 	Hd     string       `json:"hd,omitempty"`
-	Google googleClaims `json:"google,omitempty"`
+	Google googleClaims `json:"google,omitzero"`
 }
 
 type backendImpl struct {

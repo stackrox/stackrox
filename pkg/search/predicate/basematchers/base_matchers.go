@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	globstar "github.com/bmatcuk/doublestar/v4"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -23,6 +25,8 @@ func ForString(value string) (func(string) bool, error) {
 		return forStringRegexMatch(value, negated)
 	} else if stringutils.ConsumePrefix(&value, `"`) && stringutils.ConsumeSuffix(&value, `"`) && len(value) > 1 {
 		return forStringExactMatch(value, negated)
+	} else if stringutils.ConsumePrefix(&value, search.GlobPrefix) {
+		return forStringGlobMatch(value, negated)
 	}
 	return forStringPrefixMatch(value, negated)
 }
@@ -234,5 +238,17 @@ func forStringPrefixMatch(value string, negated bool) (func(string) bool, error)
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
 		return (value == search.WildcardString || strings.HasPrefix(strings.ToLower(instance), lowerValue)) != negated
+	}, nil
+}
+
+func forStringGlobMatch(value string, negated bool) (func(string) bool, error) {
+	return func(instance string) bool {
+		matched, err := globstar.Match(value, instance)
+		if err != nil {
+			return false
+		}
+
+		// matched != negated is equivalent to (matched XOR negated), which is what we want here
+		return matched != negated
 	}, nil
 }

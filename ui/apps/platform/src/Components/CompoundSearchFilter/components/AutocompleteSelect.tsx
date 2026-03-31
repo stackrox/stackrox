@@ -286,6 +286,7 @@ function AutocompleteSelect({
                 <TextInputGroupUtilities>
                     {!!value && (
                         <Button
+                            icon={<TimesIcon aria-hidden />}
                             variant="plain"
                             onClick={() => {
                                 onChange('');
@@ -294,9 +295,7 @@ function AutocompleteSelect({
                             }}
                             aria-label="Clear input value"
                             isDisabled={isDisabled}
-                        >
-                            <TimesIcon aria-hidden />
-                        </Button>
+                        />
                     )}
                 </TextInputGroupUtilities>
             </TextInputGroup>

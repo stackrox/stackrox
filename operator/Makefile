@@ -12,8 +12,8 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.9).
-# The Konflux build uses Python 3.9, so using python3.9 locally ensures compatibility.
+# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.12).
+# The Konflux build uses Python 3.12, so using python3.12 locally ensures compatibility.
 PYTHON ?= python3
 
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
@@ -82,6 +82,14 @@ INDEX_IMG ?= $(INDEX_IMG_BASE):$(INDEX_IMG_TAG)
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+
+# RELATED_IMAGES_MODE controls how container image references are handled in the operator bundle CSV.
+# Valid values:
+#   omit (default)   - No related images in CSV (upstream builds)
+#   downstream       - Inject RELATED_IMAGE_* env vars for Red Hat builds (no spec.relatedImages)
+#   konflux          - Add explicit spec.relatedImages section for Konflux builds
+# Used by bundle-post-process target to support image mirroring and disconnected environments.
+RELATED_IMAGES_MODE ?= omit
 
 # Set up the so-called "storage image" for executing scorecard test suite.
 # By default a busybox image is pulled from docker.io. In order to rule out timing issues related to rate limiting
@@ -262,6 +270,10 @@ test: manifests generate fmt vet  ## Run go unit tests
 test-integration: manifests generate fmt vet envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./tests/... -coverprofile cover-integration.out
 
+test-helm: ## Run operator helm chart tests.
+	ROX_PRODUCT_BRANDING=RHACS_BRANDING $(MAKE) chart # Setting the env var to produce the rhacs- flavor assumed by the subsequent test.
+	go test -tags operator_helmtest -count=1 -v ./tests/chart/...
+
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
 validate-crs: yq
@@ -287,8 +299,12 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 .PHONY: test-bundle-helpers
 test-bundle-helpers: ## Run Python unit tests against helper scripts.
 	set -euo pipefail ;\
-	$(ACTIVATE_PYTHON) ;\
-	pytest -v bundle_helpers
+	if [ "$${USE_GO_BUNDLE_HELPER:-true}" != "true" ]; then \
+		$(ACTIVATE_PYTHON) ;\
+		pytest -v bundle_helpers ;\
+	else \
+		echo "Skipping Python tests (USE_GO_BUNDLE_HELPER=true)" ;\
+	fi
 
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
@@ -323,7 +339,12 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
 # The dependency above makes sure protos are up to date, so we can skip this time-consuming process below
 # by specifying the SKIP env var. Otherwise each target that kubebuilder invokes (and there is a bunch) would regen protos.
-	ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
+	rm -rf dist/chart
+# Run the sed and kubebuilder as a single command, propagating the VERSION from when the directory is still pristine, to prevent -dirty suffix while PROJECT is modified.
+	set -e; \
+	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then sed -i'.bak' -e 's,^projectName: rhacs-operator,projectName: stackrox-operator,' PROJECT; fi; \
+	VERSION=$(VERSION) ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
+	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then mv PROJECT.bak PROJECT; fi
 	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
 	rm -f dist/chart/Chart.yaml.bak
 
@@ -438,11 +459,13 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
-# pip 21.3.1 and setuptools 59.6.0 use pkgutil.ImpImporter, removed in Python 3.12.
-# The required Python version is tracked in bundle_helpers/.python-version.
+# We rely on the venv's default pip and setuptools, which are automatically compatible
+# with the Python version used to create the venv:
+# - Python 3.12 venvs come with pip/setuptools that handle Python 3.12 correctly
+# - Older Python venvs come with pip/setuptools appropriate for those versions
+# This avoids compatibility issues when trying to upgrade to specific pip versions.
 ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
@@ -471,10 +494,11 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # Yet we want most of the contents autogenerated from the Makefile variables as a single source of truth.
 # Therefore we append ".extra" file to the end of bundle's dockerfile.
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
-# Run a python script to fix the orders in the specDescriptors (children must not appear before their parents).
+# Fix the orders in the specDescriptors (children must not appear before their parents).
+# Note: Python venv is always needed because the Go implementation uses yaml-normalizer.py
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
-	bundle_helpers/fix-spec-descriptor-order.py \
+	./bundle_helpers/dispatch.sh fix-spec-descriptor-order \
 	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
 	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
@@ -483,10 +507,11 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+# Note: Python venv is always needed because dispatch.sh may use yaml-normalizer.py
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
-	candidate_version=$$(./bundle_helpers/patch-csv.py \
+	candidate_version=$$(./bundle_helpers/dispatch.sh patch-csv \
 		--use-version $(VERSION) \
 		--first-version $${first_version} \
 		--operator-image $(IMG) \
@@ -504,7 +529,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--use-version=$(VERSION) \
 		--first-version=$${first_version} \
 		--operator-image=$(IMG) \
-		--related-images-mode=omit \
+		--related-images-mode=$(RELATED_IMAGES_MODE) \
 		$${unreleased_opt:-}
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Sets some necessary variables up for local testing.
-# JIRA_TOKEN still has to be set manually.
+# JIRA_TOKEN, JIRA_USER and JIRA_BASE_URL still have to be set manually.
 #
 # Usage example:
 #     bash local-env.sh check-jira-release 3.73.0 ROX

@@ -430,8 +430,8 @@ type EmbeddedVirtualMachineScanComponent struct {
 	//
 	//	*EmbeddedVirtualMachineScanComponent_TopCvss
 	SetTopCvss      isEmbeddedVirtualMachineScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore       float32                                          `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
-	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
+	RiskScore       float32                                          `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
+	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty" hash:"set"`        // @gotags: hash:"set"
 	Source          SourceType                                       `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty"`
 	Notes           []EmbeddedVirtualMachineScanComponent_Note       `protobuf:"varint,7,rep,packed,name=notes,proto3,enum=storage.EmbeddedVirtualMachineScanComponent_Note" json:"notes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -531,7 +531,7 @@ type isEmbeddedVirtualMachineScanComponent_SetTopCvss interface {
 }
 
 type EmbeddedVirtualMachineScanComponent_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,3,opt,name=top_cvss,json=topCvss,proto3,oneof"`
+	TopCvss float32 `protobuf:"fixed32,3,opt,name=top_cvss,json=topCvss,proto3,oneof" hash:"ignore"` // @gotags: hash:"ignore"
 }
 
 func (*EmbeddedVirtualMachineScanComponent_TopCvss) isEmbeddedVirtualMachineScanComponent_SetTopCvss() {
@@ -636,7 +636,7 @@ type VirtualMachineCVEInfo struct {
 	// This indicates the timestamp when the cve was first published in the cve feeds.
 	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty"`
 	// Time when the CVE was first seen in the system.
-	CreatedAt    *timestamppb.Timestamp             `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedAt    *timestamppb.Timestamp             `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
 	LastModified *timestamppb.Timestamp             `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
 	References   []*VirtualMachineCVEInfo_Reference `protobuf:"bytes,7,rep,name=references,proto3" json:"references,omitempty"`
 	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc

@@ -256,5 +256,66 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_NewInfo() {
 	s.Equal(now.Unix(), result.GetFixAvailableTimestamp().AsTime().Unix())
 }
 
+// TestSearchRawImageCVEInfos tests that SearchRawImageCVEInfos can query by CVE name.
+func (s *ImageCVEInfoDataStoreSuite) TestSearchRawImageCVEInfos() {
+	now := time.Now()
+
+	// Insert test data with different CVE names
+	infos := []*storage.ImageCVEInfo{
+		{
+			Id:                    "CVE-2024-1234#package-a#datasource-1",
+			Cve:                   "CVE-2024-1234",
+			FirstSystemOccurrence: timestamppb.New(now.Add(-24 * time.Hour)),
+		},
+		{
+			Id:                    "CVE-2024-1234#package-b#datasource-2",
+			Cve:                   "CVE-2024-1234",
+			FirstSystemOccurrence: timestamppb.New(now.Add(-12 * time.Hour)),
+		},
+		{
+			Id:                    "CVE-2024-5678#package-a#datasource-1",
+			Cve:                   "CVE-2024-5678",
+			FirstSystemOccurrence: timestamppb.New(now),
+		},
+		{
+			Id:                    "CVE-2024-9999#package-c#datasource-3",
+			Cve:                   "CVE-2024-9999",
+			FirstSystemOccurrence: timestamppb.New(now.Add(-6 * time.Hour)),
+		},
+	}
+
+	err := s.datastore.UpsertMany(s.ctx, infos)
+	s.NoError(err)
+
+	// Test 1: Query for single CVE name
+	results, err := s.datastore.GetByCVENames(s.ctx, []string{"CVE-2024-1234"})
+	s.NoError(err)
+	s.Len(results, 2, "Should return 2 records for CVE-2024-1234")
+	for _, result := range results {
+		s.Equal("CVE-2024-1234", result.GetCve())
+	}
+
+	// Test 2: Query for multiple CVE names
+	results, err = s.datastore.GetByCVENames(s.ctx, []string{"CVE-2024-5678", "CVE-2024-9999"})
+	s.NoError(err)
+	s.Len(results, 2, "Should return 2 records (one for each CVE)")
+	cveNames := map[string]bool{}
+	for _, result := range results {
+		cveNames[result.GetCve()] = true
+	}
+	s.True(cveNames["CVE-2024-5678"])
+	s.True(cveNames["CVE-2024-9999"])
+
+	// Test 3: Query for non-existent CVE
+	results, err = s.datastore.GetByCVENames(s.ctx, []string{"CVE-2024-NONEXISTENT"})
+	s.NoError(err)
+	s.Len(results, 0, "Should return empty for non-existent CVE")
+
+	// Test 4: Query with empty list
+	results, err = s.datastore.GetByCVENames(s.ctx, []string{})
+	s.NoError(err)
+	s.Len(results, 0, "Should return empty for empty query")
+}
+
 // Ensure protocompat is used (to satisfy import)
 var _ = protocompat.TimestampNow

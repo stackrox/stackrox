@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { ComponentType, ReactElement, SVGProps } from 'react';
 import {
     Badge,
     Card,
@@ -9,58 +9,60 @@ import {
     GalleryItem,
     Truncate,
 } from '@patternfly/react-core';
-import { Link } from 'react-router-dom-v5-compat';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabel';
 
 type IntegrationTileProps = {
     categories?: string;
-    image: string;
+    Logo: ComponentType<SVGProps<SVGSVGElement>>;
     label: string;
     linkTo: string;
     numIntegrations: number;
     isTechPreview?: boolean;
 };
 
-const styleCard = {
-    cursor: 'pointer',
-} as CSSProperties;
-
 function IntegrationTile({
     categories,
-    image,
+    Logo,
     label,
     linkTo,
     numIntegrations,
     isTechPreview = false,
 }: IntegrationTileProps): ReactElement {
+    const navigate = useNavigate();
+
     return (
         <GalleryItem>
-            <Link to={linkTo} data-testid="integration-tile">
-                <Card isSelectable isCompact isFlat style={styleCard}>
-                    <CardHeader
-                        actions={{
-                            actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>,
-                            hasNoOffset: false,
-                            className: undefined,
-                        }}
-                        className="pf-v5-u-mb-lg"
-                    >
-                        <>
-                            <img src={image} alt="" style={{ height: '100px' }} />
-                        </>
-                    </CardHeader>
-                    <CardTitle className="pf-v5-u-color-100" style={{ whiteSpace: 'nowrap' }}>
-                        <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                            <Truncate position="middle" content={label} />
-                            {isTechPreview && <TechPreviewLabel />}
-                        </Flex>
-                    </CardTitle>
-                    {categories && (
-                        <CardFooter className="pf-v5-u-color-200">{categories}</CardFooter>
-                    )}
-                </Card>
-            </Link>
+            <Card isClickable isCompact data-testid="integration-tile">
+                <CardHeader
+                    selectableActions={{
+                        onClickAction: () => navigate(linkTo),
+                        selectableActionAriaLabel: `View ${label} integrations`,
+                    }}
+                    className="pf-v6-u-mb-lg"
+                >
+                    <>
+                        {numIntegrations > 0 && (
+                            <Badge style={{ position: 'absolute', top: '0.5rem', right: '1rem' }}>
+                                {numIntegrations}
+                            </Badge>
+                        )}
+                        <Logo
+                            aria-label="Integration logo"
+                            role="img"
+                            style={{ height: '100px', width: 'auto', maxWidth: '100%' }}
+                        />
+                    </>
+                </CardHeader>
+                <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                    <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                        <Truncate position="middle" content={label} />
+                        {isTechPreview && <TechPreviewLabel />}
+                    </Flex>
+                </CardTitle>
+                {categories && <CardFooter className="pf-v6-u-color-200">{categories}</CardFooter>}
+            </Card>
         </GalleryItem>
     );
 }
