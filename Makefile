@@ -489,10 +489,12 @@ main-build-nodeps:
 		compliance/cmd/compliance \
 		config-controller \
 		migrator \
+		operator/cmd \
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
 		compliance/virtualmachines/roxagent
+	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
