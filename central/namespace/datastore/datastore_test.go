@@ -631,9 +631,9 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespaceLabels() {
 		},
 		{
 			name:            "namespace exists with no labels",
-			namespaceLabels: map[string]string{},
+			namespaceLabels: nil,
 			namespaceExists: true,
-			expectedLabels:  map[string]string{},
+			expectedLabels:  nil,
 			expectError:     false,
 		},
 		{
@@ -646,24 +646,28 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespaceLabels() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			var nsID string
+			var clusterID, namespaceName string
 			ctx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 
 			if tc.namespaceExists {
 				// Create a namespace with the specified labels
-				ns := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA)
+				// Use unique namespace name to avoid test isolation issues
+				uniqueNamespaceName := fmt.Sprintf("test-ns-%s", uuid.NewV4().String())
+				ns := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, uniqueNamespaceName)
 				ns.Labels = tc.namespaceLabels
 				err := s.datastore.AddNamespace(ctx, ns)
 				s.Require().NoError(err)
-				nsID = ns.GetId()
-				s.testNamespaceIDs = append(s.testNamespaceIDs, nsID)
+				clusterID = ns.GetClusterId()
+				namespaceName = ns.GetName()
+				s.testNamespaceIDs = append(s.testNamespaceIDs, ns.GetId())
 			} else {
-				// Use a non-existent ID
-				nsID = uuid.NewV4().String()
+				// Use non-existent cluster and namespace
+				clusterID = uuid.NewV4().String()
+				namespaceName = "non-existent-namespace"
 			}
 
 			// Call GetNamespaceLabels
-			labels, err := s.datastore.GetNamespaceLabels(ctx, nsID)
+			labels, err := s.datastore.GetNamespaceLabels(ctx, clusterID, namespaceName)
 
 			// Verify results
 			if tc.expectError {

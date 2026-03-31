@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/fixtures"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stretchr/testify/require"
@@ -32,7 +31,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 	images := fixtures.DeploymentImages()
 
 	for b.Loop() {
-		_, err := detection.Detect(context.Background(), deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
+		_, err := detection.Detect(context.Background(), booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     images,
 		})

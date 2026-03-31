@@ -1,3 +1,5 @@
+import { PageSection } from '@patternfly/react-core';
+
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 
 import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';
@@ -11,7 +13,9 @@ export function ProjectSecurityTab() {
 
     return (
         <WorkloadCveViewContext.Provider value={context}>
-            <VulnerabilitiesOverviewContainer />
+            <PageSection>
+                <VulnerabilitiesOverviewContainer />
+            </PageSection>
         </WorkloadCveViewContext.Provider>
     );
 }

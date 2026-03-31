@@ -130,7 +130,7 @@ func (VirtualMachineV2_Note) EnumDescriptor() ([]byte, []int) {
 type VirtualMachineV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// VM identifier
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)"
+	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"`                                      // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"
 	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name"`                                  // @gotags: search:"Virtual Machine Name"
 	Namespace   string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                        // @gotags: search:"Namespace"
 	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
@@ -138,10 +138,10 @@ type VirtualMachineV2 struct {
 	// KubeVirt facts about the VM.
 	Facts map[string]string `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Guest OS reported by KubeVirt facts, extracted as a queryable column.
-	GuestOs     string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                   // @gotags: search:"Guest OS" sql:"index=btree"
-	State       VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"` // @gotags: search:"Virtual Machine State"
-	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"type(timestamptz)"`       // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)"
-	Notes       []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty"`
+	GuestOs     string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                          // @gotags: search:"Guest OS" sql:"index=btree"
+	State       VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"`        // @gotags: search:"Virtual Machine State"
+	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"`              // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"
+	Notes       []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty" hash:"set"` // @gotags: hash:"set"
 	VsockCid    int32                   `protobuf:"varint,11,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
 	// Hash of VM data fields for change detection (excludes last_updated).
 	Hash          uint64 `protobuf:"varint,12,opt,name=hash,proto3" json:"hash,omitempty" hash:"ignore"` // @gotags: hash:"ignore"

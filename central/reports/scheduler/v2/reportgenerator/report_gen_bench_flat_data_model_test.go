@@ -18,6 +18,8 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -92,17 +94,30 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 	bts.testDB = pgtest.ForT(bts.b)
 
 	// set up tables
-	imageDataStore := resolvers.CreateTestImageV2Datastore(bts.b, bts.testDB, mockCtrl)
 	bts.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(bts.b, bts.testDB.DB)
 	var schema *graphql.Schema
-	bts.resolver, schema = resolvers.SetupTestResolver(bts.b,
-		imagesView.NewImageView(bts.testDB.DB),
-		imageDataStore,
-		resolvers.CreateTestImageComponentV2Datastore(bts.b, bts.testDB, mockCtrl),
-		resolvers.CreateTestImageCVEV2Datastore(bts.b, bts.testDB),
-		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, mockCtrl, imageDataStore),
-		deploymentsView.NewDeploymentView(bts.testDB.DB),
-	)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		imgV2DataStore := resolvers.CreateTestImageV2Datastore(bts.b, bts.testDB, mockCtrl)
+		bts.resolver, schema = resolvers.SetupTestResolver(bts.b,
+			imagesView.NewImageView(bts.testDB.DB),
+			imgV2DataStore,
+			resolvers.CreateTestImageComponentV2Datastore(bts.b, bts.testDB, mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(bts.b, bts.testDB),
+			resolvers.CreateTestDeploymentDatastoreWithImageV2(bts.b, bts.testDB, mockCtrl, imgV2DataStore),
+			deploymentsView.NewDeploymentView(bts.testDB.DB),
+		)
+	} else {
+		imageDataStore := resolvers.CreateTestImageDatastore(bts.b, bts.testDB, mockCtrl)
+		bts.resolver, schema = resolvers.SetupTestResolver(bts.b,
+			imagesView.NewImageView(bts.testDB.DB),
+			imageDataStore,
+			resolvers.CreateTestImageComponentV2Datastore(bts.b, bts.testDB, mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(bts.b, bts.testDB),
+			resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, mockCtrl, imageDataStore),
+			deploymentsView.NewDeploymentView(bts.testDB.DB),
+		)
+	}
 	collectionStore := collectionPostgres.New(bts.testDB)
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
@@ -115,9 +130,17 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 }
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {
-	for _, img := range images {
-		err := bts.resolver.ImageDataStore.UpsertImage(bts.ctx, img)
-		require.NoError(bts.b, err)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, img := range images {
+			err := bts.resolver.ImageV2DataStore.UpsertImage(bts.ctx, imageUtils.ConvertToV2(img))
+			require.NoError(bts.b, err)
+		}
+	} else {
+		for _, img := range images {
+			err := bts.resolver.ImageDataStore.UpsertImage(bts.ctx, img)
+			require.NoError(bts.b, err)
+		}
 	}
 }
 

@@ -127,7 +127,7 @@ function DeploymentVulnerabilitiesTable({
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
@@ -216,20 +216,13 @@ function DeploymentVulnerabilitiesTable({
 
                         const isExpanded = expandedRowSet.has(vulnerabilityId);
 
-                        // Table borders={false} prop above and Tbody style prop below
-                        // to prevent unwanted border between main row and conditional labels row.
-                        //
-                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
-                        // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody
-                                key={vulnerabilityId}
-                                style={{
-                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                }}
-                                isExpanded={isExpanded}
-                            >
-                                <Tr>
+                            <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td
                                         className={getVisibilityClass('rowExpansion')}
                                         expand={{
@@ -301,7 +294,7 @@ function DeploymentVulnerabilitiesTable({
                                     </Td>
                                 </Tr>
                                 {labels.length !== 0 && (
-                                    <Tr>
+                                    <Tr style={isExpanded ? { borderBlockEnd: 'none' } : undefined}>
                                         <Td />
                                         <Td colSpan={colSpan - 1} style={{ paddingTop: 0 }}>
                                             <LabelGroup numLabels={labels.length}>
@@ -316,7 +309,7 @@ function DeploymentVulnerabilitiesTable({
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (
-                                                    <p className="pf-v5-u-mb-md">{summary}</p>
+                                                    <p className="pf-v6-u-mb-md">{summary}</p>
                                                 )}
                                                 {images.length > 0 ? (
                                                     <DeploymentComponentVulnerabilitiesTable

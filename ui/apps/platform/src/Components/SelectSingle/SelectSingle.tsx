@@ -1,6 +1,11 @@
 import type { FocusEventHandler, ReactElement, ReactNode, Ref } from 'react';
 import { MenuFooter, MenuToggle, Select, SelectList } from '@patternfly/react-core';
-import type { MenuToggleElement, MenuToggleProps, SelectOptionProps } from '@patternfly/react-core';
+import type {
+    MenuToggleElement,
+    MenuToggleProps,
+    SelectOptionProps,
+    SelectProps,
+} from '@patternfly/react-core';
 
 import useSelectToggleState from './useSelectToggleState';
 
@@ -16,7 +21,7 @@ export type SelectSingleProps = {
     direction?: 'up' | 'down';
     placeholderText?: string;
     onBlur?: FocusEventHandler<HTMLDivElement>;
-    menuAppendTo?: () => HTMLElement;
+    menuAppendTo?: NonNullable<SelectProps['popperProps']>['appendTo'];
     footer?: ReactNode;
     maxHeight?: string;
     maxWidth?: string;
@@ -71,8 +76,8 @@ function SelectSingle({
             id={id}
             variant={variant}
         >
-            <span className="pf-v5-u-display-flex pf-v5-u-align-items-center">
-                {toggleIcon && <span className="pf-v5-u-mr-sm">{toggleIcon}</span>}
+            <span className="pf-v6-u-display-flex pf-v6-u-align-items-center">
+                {toggleIcon && <span className="pf-v6-u-mr-sm">{toggleIcon}</span>}
                 <span>{getDisplayText()}</span>
             </span>
         </MenuToggle>

@@ -3,7 +3,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Button,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -55,15 +54,14 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
     return (
         <>
             <PageTitle title={title} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{title}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     {(name || getIsMachineAccessConfig(source, type)) && (
                         <FlexItem>

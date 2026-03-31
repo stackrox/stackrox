@@ -172,6 +172,55 @@ func (ds *datastoreImpl) SearchAlertPolicyGroups(ctx context.Context, q *v1.Quer
 	return results, nil
 }
 
+// SearchAlertTimeseriesEvents returns lightweight alert event data for timeseries display.
+// Uses a SQL projection query to avoid deserializing full alert protobuf blobs.
+func (ds *datastoreImpl) SearchAlertTimeseriesEvents(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertTimeseriesEvent, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertTimeseriesEvents")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	timeseriesQuery := alertviews.WithAlertTimeseriesQuery(q)
+
+	var results []*alertviews.AlertTimeseriesEvent
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, timeseriesQuery, func(r *alertviews.AlertTimeseriesEvent) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// SearchAlertDeploymentIDs returns distinct deployment IDs from alerts matching the query.
+// Uses a SQL projection to avoid deserializing full alert protobuf blobs.
+func (ds *datastoreImpl) SearchAlertDeploymentIDs(ctx context.Context, q *v1.Query, excludeResolved bool) ([]string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertDeploymentIDs")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
+	}
+	// No sorting needed — we only collect unique IDs.
+	clonedQuery.Pagination = nil
+
+	var ids []string
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.DeploymentIDResult) error {
+		if id := r.GetDeploymentID(); id != "" {
+			ids = append(ids, id)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")

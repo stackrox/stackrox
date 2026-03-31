@@ -99,14 +99,14 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                     location.length !== 0 && (
                                         <div
                                             aria-label={getLocationLabelForCategory(category)}
-                                            className="pf-v5-u-color-200"
+                                            className="pf-v6-u-color-200"
                                         >
                                             {locationTextForCategory}
                                         </div>
                                     )}
                             </Td>
                             {hasLocationColumn && (
-                                <Td dataLabel={locationColumnHeading} className="pf-v5-u-color-200">
+                                <Td dataLabel={locationColumnHeading} className="pf-v6-u-color-200">
                                     {locationTextForCategory}
                                 </Td>
                             )}

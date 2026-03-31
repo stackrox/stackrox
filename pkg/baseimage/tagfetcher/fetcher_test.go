@@ -213,14 +213,14 @@ func TestTagFetcher_ContextCancellationDuringFetch(t *testing.T) {
 	}
 
 	// Track how many metadata calls started.
-	var callsStarted int32
+	var callsStarted atomic.Int32
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
 	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
 	// Mock returns with a short delay. Goroutines will be in-flight when we cancel.
 	reg.EXPECT().Metadata(gomock.Any()).AnyTimes().DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
-		atomic.AddInt32(&callsStarted, 1)
+		callsStarted.Add(1)
 		time.Sleep(100 * time.Millisecond)
 		return &storage.ImageMetadata{
 			V1: &storage.V1Metadata{Created: protoTime},
@@ -245,10 +245,10 @@ func TestTagFetcher_ContextCancellationDuringFetch(t *testing.T) {
 	}
 
 	// Verify at least some calls started before cancellation.
-	assert.Greater(t, atomic.LoadInt32(&callsStarted), int32(0), "Expected some metadata calls to start")
+	assert.Greater(t, callsStarted.Load(), int32(0), "Expected some metadata calls to start")
 
 	// Results may be partial due to cancellation - that's expected.
-	t.Logf("Collected %d results, %d calls started", len(collected), atomic.LoadInt32(&callsStarted))
+	t.Logf("Collected %d results, %d calls started", len(collected), callsStarted.Load())
 }
 
 func TestTagFetcher_SkipsUnchangedDigests(t *testing.T) {

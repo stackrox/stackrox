@@ -741,6 +741,17 @@ func getTestImages(imageCount int) []*storage.Image {
 	return images
 }
 
+func getTestImagesV2(imageCount int) []*storage.ImageV2 {
+	images := make([]*storage.ImageV2, 0, imageCount)
+	for i := 0; i < imageCount; i++ {
+		img := fixtures.GetImageV2WithUniqueComponents(100)
+		img.Digest = fmt.Sprintf("%d", i)
+		img.Id = uuid.NewV5FromNonUUIDs(img.GetName().GetFullName(), img.GetDigest()).String()
+		images = append(images, img)
+	}
+	return images
+}
+
 func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()

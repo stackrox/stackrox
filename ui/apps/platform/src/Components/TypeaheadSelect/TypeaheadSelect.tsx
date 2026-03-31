@@ -170,7 +170,7 @@ function TypeaheadSelect({
             id={menuToggleId}
             className={className}
         >
-            <TextInputGroup>
+            <TextInputGroup isPlain>
                 <TextInputGroupMain
                     value={isOpen ? inputValue : getDisplayValue()}
                     placeholder={placeholder}

@@ -44,7 +44,7 @@ function SystemHealthPage() {
 
     return (
         <>
-            <PageSection variant="light" component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 <Flex>
                     <FlexItem>
                         <Title headingLevel="h1">System Health</Title>
@@ -63,7 +63,7 @@ function SystemHealthPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Grid hasGutter>
                     {hasReadAccessForCluster && (
                         <ClustersHealthCards pollingCount={pollingCountFaster} />

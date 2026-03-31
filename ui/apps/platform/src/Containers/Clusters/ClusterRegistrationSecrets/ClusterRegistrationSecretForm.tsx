@@ -4,7 +4,6 @@ import {
     ActionGroup,
     Alert,
     Button,
-    Divider,
     Flex,
     Form,
     PageSection,
@@ -90,8 +89,7 @@ function ClusterRegistrationSecretForm(): ReactElement {
     return (
         <>
             <ClusterRegistrationSecretsHeader title="Create cluster registration secret" />
-            <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection>
                 <Flex direction={{ default: 'column' }}>
                     <Form>
                         <FormLabelGroup

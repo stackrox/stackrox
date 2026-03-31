@@ -7,7 +7,6 @@ import {
     BreadcrumbItem,
     Card,
     CardBody,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -140,7 +139,7 @@ function ViewScanConfigDetail({
     return (
         <>
             <PageTitle title="Compliance Scan Schedule Details" />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
@@ -150,14 +149,10 @@ function ViewScanConfigDetail({
                     )}
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection>
                 {!isLoading && !error && scanConfig && (
                     <>
-                        <Flex
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
-                        >
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
                             </FlexItem>
@@ -180,7 +175,7 @@ function ViewScanConfigDetail({
                                 component="p"
                                 variant={alertObj.type}
                                 isInline
-                                className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
+                                className="pf-v6-u-mt-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
                                 {alertObj.children}
@@ -189,7 +184,7 @@ function ViewScanConfigDetail({
                     </>
                 )}
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection type="tabs">
                 <Tabs
                     activeKey={activeScanConfigTab}
                     onSelect={(_e, tab) => {
@@ -199,6 +194,7 @@ function ViewScanConfigDetail({
                         }
                     }}
                     aria-label="Scan schedule details tabs"
+                    usePageInsets
                 >
                     <Tab
                         tabContentId={configDetailsTabId}
@@ -214,8 +210,8 @@ function ViewScanConfigDetail({
                 </Tabs>
             </PageSection>
             {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
-                <PageSection isCenterAligned id={configDetailsTabId}>
-                    <Card isFlat>
+                <PageSection hasBodyWrapper={false} isCenterAligned id={configDetailsTabId}>
+                    <Card>
                         <CardBody>
                             <ConfigDetails
                                 isLoading={isLoading}
@@ -227,7 +223,7 @@ function ViewScanConfigDetail({
                 </PageSection>
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
-                <PageSection isCenterAligned id={allReportJobsTabId}>
+                <PageSection id={allReportJobsTabId}>
                     <ReportJobs scanConfigId={scanConfig.id} />
                 </PageSection>
             )}

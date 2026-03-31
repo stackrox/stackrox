@@ -7,7 +7,11 @@ import {
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
+import {
+    compoundFiltersSelectors,
+    selectAttribute,
+    selectEntity,
+} from '../../../helpers/compoundFilters';
 
 export function getDateString(date) {
     return format(date, 'MMM DD, YYYY');
@@ -95,23 +99,6 @@ function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
 }
 
-export function selectEntitySearchOption(entity) {
-    cy.get(selectors.searchEntityDropdown).click();
-    cy.get(selectors.searchEntityMenuItem)
-        .contains(new RegExp(`^${entity}$`))
-        .click();
-
-    cy.get(selectors.searchEntityDropdown).click();
-}
-
-export function selectAttributeSearchOption(searchAttribute) {
-    cy.get(selectors.searchAttributeDropdown).click();
-    cy.get(selectors.searchAttributeMenuItem)
-        .contains(new RegExp(`^${searchAttribute}$`))
-        .click();
-    cy.get(selectors.searchAttributeDropdown).click();
-}
-
 /**
  * Type a value into the search filter typeahead and select the first matching value.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
@@ -125,16 +112,6 @@ export function typeAndSelectCustomSearchFilterValue(searchOption, value) {
     cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
-export function typeAndEnterSearchFilterValue(entity, searchTerm, value) {
-    selectEntitySearchOption(entity);
-    selectAttributeSearchOption(searchTerm);
-    cy.get(selectors.searchValueTypeahead).click();
-    cy.get(selectors.searchValueTypeahead).type(value);
-    cy.get(selectors.searchValueMenuItem)
-        .contains(new RegExp(`^${value}$`))
-        .click();
-}
-
 /**
  * Type and enter custom text into the search filter typeahead
  * @param {string} entity
@@ -142,8 +119,8 @@ export function typeAndEnterSearchFilterValue(entity, searchTerm, value) {
  * @param {string} value
  */
 export function typeAndEnterCustomSearchFilterValue(entity, searchTerm, value) {
-    selectEntitySearchOption(entity);
-    selectAttributeSearchOption(searchTerm);
+    selectEntity(entity);
+    selectAttribute(searchTerm);
     cy.get(selectors.searchValueTypeahead).click();
     cy.get(selectors.searchValueTypeahead).type(value);
     cy.get(selectors.searchValueApplyButton).click();

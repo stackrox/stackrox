@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom-v5-compat';
-import { Text } from '@patternfly/react-core';
+import { Content } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -124,11 +124,7 @@ function CVEsTable({
                         Affected clusters
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    {canSelectRows && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    {canSelectRows && <Th screenReaderText="Row actions" />}
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -196,7 +192,7 @@ function CVEsTable({
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             {summary ? (
-                                                <Text>{summary}</Text>
+                                                <Content component="p">{summary}</Content>
                                             ) : (
                                                 <PartialCVEDataAlert />
                                             )}

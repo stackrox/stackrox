@@ -6,10 +6,13 @@ import (
 	"reflect"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -26,8 +29,10 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEInfo)(nil)), "image_cve_infos")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_CVE_INFOS, "imagecveinfo", (*storage.ImageCVEInfo)(nil)))
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImageCveInfosStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_CVE_INFOS, schema)
 		return schema
 	}()
 )

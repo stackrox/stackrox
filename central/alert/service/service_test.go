@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
@@ -726,40 +727,36 @@ type getAlertTimeseriesTests struct {
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
-	alerts := []*storage.ListAlert{
+	time1 := time.Unix(1, 0)
+	time6 := time.Unix(6, 0)
+	events := []*alertviews.AlertTimeseriesEvent{
 		{
-			Id:   "id1",
-			Time: protocompat.GetProtoTimestampFromSeconds(1),
-
-			State:            storage.ViolationState_RESOLVED,
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "dev"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "dev"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
+			AlertID:     "id1",
+			ClusterName: "dev",
+			Severity:    int(storage.Severity_CRITICAL_SEVERITY),
+			Time:        &time1,
+			State:       int(storage.ViolationState_RESOLVED),
 		},
 		{
-			Id:   "id2",
-			Time: protocompat.GetProtoTimestampFromSeconds(6),
-
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "dev"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "dev"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
+			AlertID:     "id2",
+			ClusterName: "dev",
+			Severity:    int(storage.Severity_HIGH_SEVERITY),
+			Time:        &time6,
+			State:       int(storage.ViolationState_ACTIVE),
 		},
 		{
-			Id:   "id3",
-			Time: protocompat.GetProtoTimestampFromSeconds(1),
-
-			State:            storage.ViolationState_RESOLVED,
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "prod"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "prod"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
+			AlertID:     "id3",
+			ClusterName: "prod",
+			Severity:    int(storage.Severity_LOW_SEVERITY),
+			Time:        &time1,
+			State:       int(storage.ViolationState_RESOLVED),
 		},
 		{
-			Id:   "id4",
-			Time: protocompat.GetProtoTimestampFromSeconds(6),
-
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "prod"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "prod"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
+			AlertID:     "id4",
+			ClusterName: "prod",
+			Severity:    int(storage.Severity_MEDIUM_SEVERITY),
+			Time:        &time6,
+			State:       int(storage.ViolationState_ACTIVE),
 		},
 	}
 
@@ -829,7 +826,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	}
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(alerts, nil)
+	s.datastoreMock.EXPECT().SearchAlertTimeseriesEvents(fakeContext, protoQuery, true).Return(events, nil)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -842,7 +839,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchAlertTimeseriesEvents(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",

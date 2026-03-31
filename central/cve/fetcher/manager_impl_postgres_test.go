@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/cve/matcher"
 	mockImageDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
+	mockImageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	mockNSDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -133,9 +134,10 @@ func TestReconcileIstioCVEsInPostgres(t *testing.T) {
 	mockClusters := mockClusterDataStore.NewMockDataStore(ctrl)
 	mockNamespaces := mockNSDataStore.NewMockDataStore(ctrl)
 	mockImages := mockImageDataStore.NewMockDataStore(ctrl)
+	mockImagesV2 := mockImageV2DataStore.NewMockDataStore(ctrl)
 	mockCVEs := mockCVEDataStore.NewMockDataStore(ctrl)
 
-	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages)
+	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages, mockImagesV2)
 	require.NoError(t, err)
 
 	cveManager := &orchestratorIstioCVEManagerImpl{
@@ -404,9 +406,10 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 	mockClusters := mockClusterDataStore.NewMockDataStore(ctrl)
 	mockNamespaces := mockNSDataStore.NewMockDataStore(ctrl)
 	mockImages := mockImageDataStore.NewMockDataStore(ctrl)
+	mockImagesV2 := mockImageV2DataStore.NewMockDataStore(ctrl)
 	mockCVEs := mockCVEDataStore.NewMockDataStore(ctrl)
 
-	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages)
+	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages, mockImagesV2)
 	require.NoError(t, err)
 
 	cveManager := &orchestratorIstioCVEManagerImpl{
@@ -436,6 +439,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 	clusterCVEDatastore clusterCVEDataStore.DataStore
 	mockNamespaces      *mockNSDataStore.MockDataStore
 	mockImages          *mockImageDataStore.MockDataStore
+	mockImagesV2        *mockImageV2DataStore.MockDataStore
 	cveManager          *orchestratorCVEManager
 }
 
@@ -447,6 +451,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	// Create cluster datastore
 	s.mockNamespaces = mockNSDataStore.NewMockDataStore(s.mockCtrl)
 	s.mockImages = mockImageDataStore.NewMockDataStore(s.mockCtrl)
+	s.mockImagesV2 = mockImageV2DataStore.NewMockDataStore(s.mockCtrl)
 
 	// Create cluster cve datastore
 	clusterCVEDatastore, err := clusterCVEDataStore.GetTestPostgresDataStore(s.T(), s.testPostgres.DB)
@@ -458,7 +463,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.clusterDataStore = clusterDataStore
 
 	// Create cve manager
-	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, s.mockNamespaces, s.mockImages)
+	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, s.mockNamespaces, s.mockImages, s.mockImagesV2)
 	s.NoError(err)
 
 	s.cveManager = &orchestratorCVEManager{

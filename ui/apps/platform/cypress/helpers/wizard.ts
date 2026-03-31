@@ -1,9 +1,11 @@
+import pf6 from '../selectors/pf6';
+
 export function getWizardNavStep(step: number | string) {
     if (typeof step === 'number') {
-        return cy.get('*[data-ouia-component-type="PF5/WizardNavItem"]').eq(step - 1);
+        return cy.get(pf6.wizardNavItem).eq(step - 1);
     }
 
-    return cy.get('*[data-ouia-component-type="PF5/WizardNavItem"]').contains(step);
+    return cy.contains(pf6.wizardNavItem, step);
 }
 
 export function goToWizardStep(step: number | string) {
@@ -11,7 +13,7 @@ export function goToWizardStep(step: number | string) {
 }
 
 export function getWizardStepTitle(title: string) {
-    return cy.get('.pf-v5-c-wizard [data-ouia-component-type="PF5/Title"]').contains(title);
+    return cy.get(pf6.title).contains(title);
 }
 
 export function navigateWizardNext() {

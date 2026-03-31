@@ -1,4 +1,4 @@
-import { Card, CardBody, Flex, PageSection, Text, Title } from '@patternfly/react-core';
+import { Content, Flex, PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
@@ -10,24 +10,20 @@ function VirtualMachineCvesOverviewPage() {
     return (
         <>
             <PageTitle title="Virtual Machine CVEs Overview" />
-            <PageSection component="div" variant="light">
+            <PageSection component="div">
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <Title headingLevel="h1">Virtual machine vulnerabilities</Title>
                         <TechnologyPreviewLabel />
                     </Flex>
-                    <Text>Prioritize and remediate observed CVEs across virtual machines</Text>
+                    <Content component="p">
+                        Prioritize and remediate observed CVEs across virtual machines
+                    </Content>
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
-                <PageSection isCenterAligned>
-                    <Card>
-                        <CardBody>
-                            <VirtualMachineScanScopeAlert />
-                            <VirtualMachinesCvesTable />
-                        </CardBody>
-                    </Card>
-                </PageSection>
+            <PageSection hasBodyWrapper={false}>
+                <VirtualMachineScanScopeAlert />
+                <VirtualMachinesCvesTable />
             </PageSection>
         </>
     );

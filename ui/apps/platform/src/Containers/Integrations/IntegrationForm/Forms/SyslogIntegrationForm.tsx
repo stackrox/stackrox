@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 /* eslint-disable react/no-array-index-key */
 import type { ReactElement } from 'react';
 import {
@@ -31,8 +30,6 @@ import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
-
-import './SyslogIntegrationForm.css';
 
 export const validationSchema = yup.object().shape({
     name: yup.string().required('Integration name is required'),
@@ -118,7 +115,7 @@ function SyslogIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll aria-label="Syslog Form Section">
+            <PageSection isFilled hasOverflowScroll aria-label="Syslog Form Section">
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -233,26 +230,21 @@ function SyslogIntegrationForm({
                             helperText="For new integrations, choose CEF. If you have an existing integration that relies on the old behavior, leave Legacy selected."
                         >
                             <ToggleGroup id="messageFormat" areAllGroupsDisabled={!isEditable}>
-                                        <ToggleGroupItem
-                                            // The HTML ID and custom CSS rule are required to make the shorter option similar in size to the longer option
-                                            // because PatternFly does not allow the inner width of the toggle button to be expanded easily
-                                            // (setting a min-witch on Toggle Item just adds space to the right of the outlined button)
-                                            id="CEF-option"
-                                            key='CEF'
-                                            text="CEF"
-                                            isSelected={values.syslog.messageFormat === 'CEF'}
-                                            onChange={() =>
-                                                setFieldValue('syslog.messageFormat', 'CEF')
-                                            }
-                                        />
-                                        <ToggleGroupItem
-                                            key='LEGACY'
-                                            text="CEF (legacy field order)"
-                                            isSelected={values.syslog.messageFormat === 'LEGACY' || !values.syslog.messageFormat}
-                                            onChange={() =>
-                                                setFieldValue('syslog.messageFormat', 'LEGACY')
-                                            }
-                                        />
+                                <ToggleGroupItem
+                                    key="CEF"
+                                    text="CEF"
+                                    isSelected={values.syslog.messageFormat === 'CEF'}
+                                    onChange={() => setFieldValue('syslog.messageFormat', 'CEF')}
+                                />
+                                <ToggleGroupItem
+                                    key="LEGACY"
+                                    text="CEF (legacy field order)"
+                                    isSelected={
+                                        values.syslog.messageFormat === 'LEGACY' ||
+                                        !values.syslog.messageFormat
+                                    }
+                                    onChange={() => setFieldValue('syslog.messageFormat', 'LEGACY')}
+                                />
                             </ToggleGroup>
                         </FormLabelGroup>
                         <FormLabelGroup fieldId="syslog.tcpConfig.useTls" errors={errors}>
@@ -275,7 +267,11 @@ function SyslogIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v5-u-mt-0">
+                        <FormSection
+                            title="Extra Fields"
+                            titleElement="h3"
+                            className="pf-v6-u-mt-0"
+                        >
                             <FieldArray
                                 name="syslog.extraFields"
                                 render={(arrayHelpers) => (
@@ -299,11 +295,13 @@ function SyslogIntegrationForm({
                                                                     type="text"
                                                                     id={`syslog.extraFields[${index}].key`}
                                                                     value={
-                                                                        values.syslog
-                                                                            .extraFields[`${index}`]
-                                                                            .key
+                                                                        values.syslog.extraFields[
+                                                                            `${index}`
+                                                                        ].key
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -321,11 +319,13 @@ function SyslogIntegrationForm({
                                                                     type="text"
                                                                     id={`syslog.extraFields[${index}].value`}
                                                                     value={
-                                                                        values.syslog
-                                                                            .extraFields[`${index}`]
-                                                                            .value
+                                                                        values.syslog.extraFields[
+                                                                            `${index}`
+                                                                        ].value
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -334,6 +334,7 @@ function SyslogIntegrationForm({
                                                         {isEditable && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete extra field key/value pair"
                                                                     style={{
@@ -343,9 +344,7 @@ function SyslogIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>
@@ -358,7 +357,7 @@ function SyslogIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

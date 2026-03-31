@@ -5,12 +5,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
@@ -44,11 +46,19 @@ var (
 
 type state struct {
 	*sensor.AdmissionControlSettings
-	deploytimeDetector deploytime.Detector
 
-	allRuntimePoliciesDetector                    runtime.Detector
-	runtimeDetectorForPoliciesWithoutDeployFields runtime.Detector
-	runtimeDetectorForPoliciesWithDeployFields    runtime.Detector
+	// specOnlyDeployDetector evaluates deploy policies that only reference
+	// deployment spec fields (privileged, capabilities, labels, etc.) and
+	// can produce a review response without requiring image enrichment data.
+	specOnlyDeployDetector deploytime.Detector
+
+	// enrichmentRequiredDeployDetector evaluates deploy policies that require image
+	// enrichment data (scan results, image metadata, signatures).
+	enrichmentRequiredDeployDetector deploytime.Detector
+
+	allK8sEventDetector    runtime.Detector
+	deployFieldK8sDetector runtime.Detector
+	eventOnlyK8sDetector   runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
 	enforcedOps                     map[admission.Operation]struct{}
@@ -64,16 +74,39 @@ func (s *state) clusterID() string {
 	return clusterID
 }
 
+func (s *state) admissionTimeoutCtx() (context.Context, context.CancelFunc) {
+	timeout := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
+	return context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+}
+
 func (s *state) activeForOperation(op admission.Operation) bool {
 	_, active := s.enforcedOps[op]
 	return active
 }
+
+const (
+	// imageNameCacheSize is the maximum number of entries in the image name-to-cache-key
+	// LRU. Each entry maps a full image name (e.g. "docker.io/library/nginx:1.25") to its
+	// resolved cache key in imageCache. 8192 covers large clusters with aggressive CI/CD
+	// while bounding memory to ~1.6MB. Dead entries (old tags never referenced again) are
+	// naturally evicted by LRU pressure from new entries.
+	imageNameCacheSize = 8192
+)
 
 type manager struct {
 	stopper concurrency.Stopper
 
 	client     sensor.ImageServiceClient
 	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
+	// imageNameToImageCacheKey resolves image full names (e.g. "docker.io/library/nginx:1.25")
+	// to their cache keys in imageCache. This is needed because admission requests for CREATE/UPDATE
+	// operations only contain image names (no digest/ID), so imageKey() returns the full name as the
+	// cache key. After a scan, the cache stores the result under the image's resolved digest. Without this
+	// map, subsequent requests for the same image by name would miss the cache and trigger redundant scans.
+	// Bounded by imageNameCacheSize to prevent unbounded growth during long-lived Sensor sessions.
+	imageNameToImageCacheKey *lru.Cache[string, string]
+	imageNameCacheEnabled    bool
+	imageFetchGroup          *coalescer.Coalescer[*storage.Image]
 
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
@@ -100,10 +133,13 @@ type manager struct {
 }
 
 // NewManager creates a new manager
-func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
+func NewManager(namespace string, maxImageCacheSize int64, imageNameCacheEnabled bool, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
 	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value imageCacheEntry) int64 {
 		return int64(len(key) + value.SizeVT())
 	})
+	utils.CrashOnError(err)
+
+	nameCache, err := lru.New[string, string](imageNameCacheSize)
 	utils.CrashOnError(err)
 
 	podStore := resources.NewPodStore()
@@ -115,8 +151,11 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 		stopper:        concurrency.NewStopper(),
 		syncC:          make(chan *concurrency.Signal),
 
-		client:     imageServiceClient,
-		imageCache: cache,
+		client:                   imageServiceClient,
+		imageCache:               cache,
+		imageNameToImageCacheKey: nameCache,
+		imageNameCacheEnabled:    imageNameCacheEnabled,
+		imageFetchGroup:          coalescer.New[*storage.Image](),
 
 		alertsC: make(chan []*storage.Alert),
 
@@ -239,27 +278,27 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	// TODO(ROX-33188): Wire cluster and namespace label providers from Sensor's in-memory stores.
+	// TODO: Wire cluster and namespace label providers.
 	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
 	// fail closed (not match) in admission control.
-	allRuntimePolicySet := detection.NewPolicySet(nil, nil)
-	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
+	allK8sEventPolicies := detection.NewPolicySet(nil, nil)
+	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
-		if policyfields.ContainsEnrichmentRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+		if policyfields.AlertsOnMissingEnrichment(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
 
-		if err := allRuntimePolicySet.UpsertPolicy(policy); err != nil {
+		if err := allK8sEventPolicies.UpsertPolicy(policy); err != nil {
 			log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 		}
 
 		if booleanpolicy.ContainsDeployTimeFields(policy) {
-			if err := runtimePoliciesWithDeployFields.UpsertPolicy(policy); err != nil {
+			if err := deployFieldK8sEventPolicies.UpsertPolicy(policy); err != nil {
 				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 			}
 		} else {
-			if err := runtimePoliciesWithoutDeployFields.UpsertPolicy(policy); err != nil {
+			if err := k8sEventOnlyPolicies.UpsertPolicy(policy); err != nil {
 				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 			}
 		}
@@ -269,17 +308,24 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 
-	// TODO(ROX-33188): Wire cluster and namespace label providers.
-	deployTimePolicySet := detection.NewPolicySet(nil, nil)
+	specOnlyPolicies := detection.NewPolicySet(nil, nil)
+	enrichmentRequiredPolicies := detection.NewPolicySet(nil, nil)
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
-			if policyfields.ContainsEnrichmentRequiredFields(policy) &&
+			if policyfields.AlertsOnMissingEnrichment(policy) &&
 				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 				log.Warn(errors.ImageScanUnavailableMsg(policy))
 				continue
 			}
-			if err := deployTimePolicySet.UpsertPolicy(policy); err != nil {
-				log.Errorf("Unable to upsert policy %q (%s), will not be able to enforce", policy.GetName(), policy.GetId())
+			compiled, err := detection.CompilePolicy(policy, nil, nil)
+			if err != nil {
+				log.Errorf("Unable to compile policy %q (%s): %v", policy.GetName(), policy.GetId(), err)
+				continue
+			}
+			if compiled.RequiresImageEnrichment() {
+				enrichmentRequiredPolicies.UpsertCompiledPolicy(compiled)
+			} else {
+				specOnlyPolicies.UpsertCompiledPolicy(compiled)
 			}
 		}
 	}
@@ -295,14 +341,15 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	oldState := m.currentState()
 	newState := &state{
-		AdmissionControlSettings:                      newSettings,
-		deploytimeDetector:                            deploytime.NewDetector(deployTimePolicySet),
-		allRuntimePoliciesDetector:                    runtime.NewDetector(allRuntimePolicySet),
-		runtimeDetectorForPoliciesWithDeployFields:    runtime.NewDetector(runtimePoliciesWithDeployFields),
-		runtimeDetectorForPoliciesWithoutDeployFields: runtime.NewDetector(runtimePoliciesWithoutDeployFields),
-		bypassForUsers:                                allowAlwaysUsers,
-		bypassForGroups:                               allowAlwaysGroups,
-		enforcedOps:                                   enforcedOperations,
+		AdmissionControlSettings:         newSettings,
+		specOnlyDeployDetector:           deploytime.NewDetector(specOnlyPolicies),
+		enrichmentRequiredDeployDetector: deploytime.NewDetector(enrichmentRequiredPolicies),
+		allK8sEventDetector:              runtime.NewDetector(allK8sEventPolicies),
+		deployFieldK8sDetector:           runtime.NewDetector(deployFieldK8sEventPolicies),
+		eventOnlyK8sDetector:             runtime.NewDetector(k8sEventOnlyPolicies),
+		bypassForUsers:                   allowAlwaysUsers,
+		bypassForGroups:                  allowAlwaysGroups,
+		enforcedOps:                      enforcedOperations,
 	}
 
 	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {
@@ -330,6 +377,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	if newSettings.GetCacheVersion() != m.cacheVersion {
 		m.imageCache.Purge()
+		m.imageNameToImageCacheKey.Purge()
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
@@ -340,17 +388,19 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	m.lastSettingsUpdate = protocompat.ConvertTimestampToTimeOrNil(newSettings.GetTimestamp())
 
 	enforceablePolicies := 0
-	for _, policy := range allRuntimePolicySet.GetCompiledPolicies() {
+	for _, policy := range allK8sEventPolicies.GetCompiledPolicies() {
 		if len(policy.Policy().GetEnforcementActions()) > 0 {
 			enforceablePolicies++
 		}
 	}
 	log.Infof("Applied new admission control settings "+
-		"(enforcing on %d deploy-time policies; "+
+		"(enforcing on %d deploy-time policies: %d deployment metadata only, %d image enrichment data required; "+
 		"detecting on %d run-time policies; "+
 		"enforcing on %d run-time policies).",
-		len(deployTimePolicySet.GetCompiledPolicies()),
-		len(allRuntimePolicySet.GetCompiledPolicies()),
+		len(specOnlyPolicies.GetCompiledPolicies())+len(enrichmentRequiredPolicies.GetCompiledPolicies()),
+		len(specOnlyPolicies.GetCompiledPolicies()),
+		len(enrichmentRequiredPolicies.GetCompiledPolicies()),
+		len(allK8sEventPolicies.GetCompiledPolicies()),
 		enforceablePolicies)
 
 	m.settingsStream.Push(newSettings)

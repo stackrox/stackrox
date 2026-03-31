@@ -3,9 +3,11 @@ import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Button, Modal } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { getIsAuthProviderImmutable } from 'services/AuthService';
@@ -14,12 +16,6 @@ import { getOriginLabel } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 
-// TODO import from where?
-const unselectedRowStyle = {};
-const selectedRowStyle = {
-    borderLeft: '3px solid var(--pf-v5-global--primary-color--100)',
-};
-
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
     return availableTypes.find(({ value }) => value === type)?.label ?? '';
 }
@@ -27,7 +23,6 @@ function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo
 const entityType = 'AUTH_PROVIDER';
 
 export type AuthProvidersListProps = {
-    entityId?: string;
     authProviders: AuthProvider[];
 };
 
@@ -41,11 +36,14 @@ const authProviderState = createStructuredSelector<AuthProviderState>({
     availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
-function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps): ReactElement {
+function AuthProvidersList({ authProviders }: AuthProvidersListProps): ReactElement {
     const [authProviderToDelete, setAuthProviderToDelete] = useState('');
     const [idToDelete, setIdToDelete] = useState('');
     const dispatch = useDispatch();
     const { currentUser, availableProviderTypes } = useSelector(authProviderState);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(name: string, id: string) {
         setIdToDelete(id);
@@ -72,9 +70,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                         <Th width={15}>Type</Th>
                         <Th width={20}>Minimum access role</Th>
                         <Th width={25}>Assigned rules</Th>
-                        <Th width={10}>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
+                        <Th width={10} screenReaderText="Row actions" />
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -84,10 +80,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                         const isImmutable = getIsAuthProviderImmutable(authProvider);
 
                         return (
-                            <Tr
-                                key={id}
-                                style={id === entityId ? selectedRowStyle : unselectedRowStyle}
-                            >
+                            <Tr key={id}>
                                 <Td dataLabel="Name">
                                     <AccessControlEntityLink
                                         entityType={entityType}
@@ -109,6 +102,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                 </Td>
                                 <Td isActionCell>
                                     <ActionsColumn
+                                        isDisabled={!hasWriteAccessForPage || idToDelete === id}
                                         items={[
                                             {
                                                 title: 'Delete auth provider',

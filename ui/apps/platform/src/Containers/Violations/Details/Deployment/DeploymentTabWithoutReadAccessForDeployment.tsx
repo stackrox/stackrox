@@ -21,7 +21,7 @@ function DeploymentTabWithoutReadAccessForDeployment({
             <Flex flex={{ default: 'flex_1' }}>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                     <FlexItem>
-                        <Card isFlat>
+                        <Card>
                             <CardTitle component="h3">Deployment overview</CardTitle>
                             <CardBody>
                                 <DeploymentOverview

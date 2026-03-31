@@ -10,7 +10,7 @@ import {
 } from '../utils/integrationsList';
 import IntegrationTile from './IntegrationTile';
 
-const { image, label, type } = descriptor;
+const { Logo, label, type } = descriptor;
 
 function MachineAccessTile(): ReactElement {
     const { data } = useRestQuery(fetchMachineAccessConfigs);
@@ -18,7 +18,7 @@ function MachineAccessTile(): ReactElement {
 
     return (
         <IntegrationTile
-            image={image}
+            Logo={Logo}
             label={label}
             linkTo={getIntegrationsListPath(source, type)}
             numIntegrations={integrations.length}

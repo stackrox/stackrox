@@ -47,7 +47,7 @@
       "isDefault": true
     },
     {
-      "id": "32d770b9-c6ba-4398-b48a-0c3e807644ed",
+      "id": "dae95df3-ce8e-435c-8e16-c5197943db6e",
       "name": "Deployments should have at least one egress Network Policy",
       "description": "Alerts if deployments are missing an egress Network Policy",
       "rationale": "",
@@ -66,7 +66,7 @@
       "enforcementActions": [],
       "notifiers": [],
       "lastUpdated": "2022-07-20T07:29:24.578090548Z",
-      "SORTName": "Deployments should have at least one ingress Network Policy",
+      "SORTName": "Deployments should have at least one egress Network Policy",
       "SORTLifecycleStage": "DEPLOY",
       "SORTEnforcement": false,
       "policyVersion": "1.1",

@@ -60,17 +60,13 @@ function ReportJobsTable<T extends Snapshot>({
         <Table aria-label="Jobs table" variant="compact">
             <Thead>
                 <Tr>
-                    <Th>
-                        <span className="pf-v5-screen-reader">Row expansion</span>
-                    </Th>
+                    <Th screenReaderText="Row expansion" />
                     <Th width={25} sort={getSortParams('Compliance Report Completed Time')}>
                         Completed
                     </Th>
                     <Th>Status</Th>
                     <Th>Requester</Th>
-                    <Th>
-                        <span className="pf-v5-screen-reader">Row actions</span>
-                    </Th>
+                    <Th screenReaderText="Row actions" />
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -93,7 +89,7 @@ function ReportJobsTable<T extends Snapshot>({
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v5-u-danger-color-100">
+                                    <span className="pf-v6-u-text-color-status-danger">
                                         Delete download
                                     </span>
                                 ),

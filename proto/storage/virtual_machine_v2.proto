@@ -13,7 +13,7 @@ option java_package = "io.stackrox.proto.storage";
 // components and CVEs are removed prior to storage.
 message VirtualMachineV2 {
   // VM identifier
-  string id = 1; // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"
   string name = 2; // @gotags: search:"Virtual Machine Name"
   string namespace = 3; // @gotags: search:"Namespace"
   string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
@@ -32,7 +32,7 @@ message VirtualMachineV2 {
   }
   State state = 8; // @gotags: search:"Virtual Machine State"
 
-  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)"
+  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"
 
   enum Note {
     MISSING_METADATA = 0;
@@ -40,7 +40,7 @@ message VirtualMachineV2 {
     MISSING_SIGNATURE = 2;
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
-  repeated Note notes = 10;
+  repeated Note notes = 10; // @gotags: hash:"set"
 
   int32 vsock_cid = 11;
 

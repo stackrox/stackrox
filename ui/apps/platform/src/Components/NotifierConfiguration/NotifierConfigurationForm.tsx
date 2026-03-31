@@ -98,7 +98,11 @@ function NotifierConfigurationForm({
 
     return (
         <>
-            <ul>
+            <Flex
+                direction={{ default: 'column' }}
+                gap={{ default: 'gapMd' }}
+                aria-label="Delivery destinations"
+            >
                 {notifierConfigurations.map((notifierConfiguration, index) => {
                     const { emailConfig, notifierName } = notifierConfiguration;
                     const { customBody, customSubject, mailingLists, notifierId } = emailConfig;
@@ -108,7 +112,7 @@ function NotifierConfigurationForm({
                         customSubject,
                     });
                     return (
-                        <li key={keyFor(index)} className="pf-v5-u-mb-md">
+                        <FlexItem key={keyFor(index)}>
                             <Card>
                                 <CardTitle>
                                     <Flex
@@ -121,6 +125,7 @@ function NotifierConfigurationForm({
                                         </FlexItem>
                                         <FlexItem>
                                             <Button
+                                                icon={<TrashIcon />}
                                                 variant="plain"
                                                 aria-label="Delete delivery destination"
                                                 onClick={() => {
@@ -147,51 +152,59 @@ function NotifierConfigurationForm({
                                                         onDeleteLastNotifierConfiguration();
                                                     }
                                                 }}
-                                            >
-                                                <TrashIcon />
-                                            </Button>
+                                            />
                                         </FlexItem>
                                     </Flex>
                                 </CardTitle>
                                 <CardBody>
-                                    <NotifierMailingLists
-                                        errors={errors}
-                                        fieldIdPrefixForFormikAndPatternFly={fieldId}
-                                        hasWriteAccessForIntegration={hasWriteAccessForIntegration}
-                                        isLoadingNotifiers={isLoadingNotifiers}
-                                        mailingListsString={mailingListsStrings[index]}
-                                        notifierId={notifierId}
-                                        notifierName={notifierName}
-                                        notifiers={notifiers}
-                                        setMailingLists={(mailingListsString: string) => {
-                                            setFieldValue(
-                                                `${fieldId}.emailConfig.mailingLists`,
-                                                splitAndTrimMailingListsString(mailingListsString)
-                                            );
-                                            updateMailingListsString(index, mailingListsString);
-                                        }}
-                                        setNotifier={(notifier: NotifierIntegrationBase) => {
-                                            setFieldValue(fieldId, {
-                                                emailConfig: {
-                                                    ...emailConfig,
-                                                    notifierId: notifier.id,
-                                                    mailingLists:
-                                                        mailingLists.length === 0
-                                                            ? splitAndTrimMailingListsString(
-                                                                  notifier.labelDefault
-                                                              )
-                                                            : mailingLists,
-                                                },
-                                                notifierName: notifier.name,
-                                            });
-                                            updateMailingListsString(index, notifier.labelDefault);
-                                        }}
-                                        setNotifiers={setNotifiers}
-                                    />
-                                    <div className="pf-v5-u-mt-md">
+                                    <Flex
+                                        direction={{ default: 'column' }}
+                                        spaceItems={{ default: 'spaceItemsMd' }}
+                                    >
+                                        <NotifierMailingLists
+                                            errors={errors}
+                                            fieldIdPrefixForFormikAndPatternFly={fieldId}
+                                            hasWriteAccessForIntegration={
+                                                hasWriteAccessForIntegration
+                                            }
+                                            isLoadingNotifiers={isLoadingNotifiers}
+                                            mailingListsString={mailingListsStrings[index]}
+                                            notifierId={notifierId}
+                                            notifierName={notifierName}
+                                            notifiers={notifiers}
+                                            setMailingLists={(mailingListsString: string) => {
+                                                setFieldValue(
+                                                    `${fieldId}.emailConfig.mailingLists`,
+                                                    splitAndTrimMailingListsString(
+                                                        mailingListsString
+                                                    )
+                                                );
+                                                updateMailingListsString(index, mailingListsString);
+                                            }}
+                                            setNotifier={(notifier: NotifierIntegrationBase) => {
+                                                setFieldValue(fieldId, {
+                                                    emailConfig: {
+                                                        ...emailConfig,
+                                                        notifierId: notifier.id,
+                                                        mailingLists:
+                                                            mailingLists.length === 0
+                                                                ? splitAndTrimMailingListsString(
+                                                                      notifier.labelDefault
+                                                                  )
+                                                                : mailingLists,
+                                                    },
+                                                    notifierName: notifier.name,
+                                                });
+                                                updateMailingListsString(
+                                                    index,
+                                                    notifier.labelDefault
+                                                );
+                                            }}
+                                            setNotifiers={setNotifiers}
+                                        />
                                         <FormLabelGroup
                                             label="Email template"
-                                            labelIcon={
+                                            labelHelp={
                                                 <Tooltip
                                                     content={
                                                         isDefaultEmailTemplateApplied ? (
@@ -208,12 +221,13 @@ function NotifierConfigurationForm({
                                                     }
                                                 >
                                                     <Button
+                                                        icon={
+                                                            <HelpIcon aria-label="More info for email template field" />
+                                                        }
                                                         variant="plain"
                                                         aria-label="More info for email template field"
                                                         aria-describedby={`${fieldId}.customSubject`}
-                                                    >
-                                                        <HelpIcon aria-label="More info for email template field" />
-                                                    </Button>
+                                                    />
                                                 </Tooltip>
                                             }
                                             fieldId={`${fieldId}.customSubject`}
@@ -236,13 +250,13 @@ function NotifierConfigurationForm({
                                                     : 'Custom template applied'}
                                             </Button>
                                         </FormLabelGroup>
-                                    </div>
+                                    </Flex>
                                 </CardBody>
                             </Card>
-                        </li>
+                        </FlexItem>
                     );
                 })}
-                <li>
+                <FlexItem>
                     <Button
                         variant="link"
                         icon={<PlusCircleIcon />}
@@ -265,8 +279,8 @@ function NotifierConfigurationForm({
                     >
                         Add delivery destination
                     </Button>
-                </li>
-            </ul>
+                </FlexItem>
+            </Flex>
             {notifierConfigurationSelected && (
                 <EmailTemplateModal
                     customBodyDefault={customBodyDefault}

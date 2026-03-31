@@ -13,7 +13,7 @@ import (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	Detect(goctx context.Context, ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, policyFilters ...detection.FilterOption) ([]*storage.Alert, error)
+	Detect(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, opts ...deploytime.DetectOption) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.

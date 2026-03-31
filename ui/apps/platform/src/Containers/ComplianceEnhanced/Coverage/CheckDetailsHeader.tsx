@@ -73,7 +73,7 @@ function CheckDetailsHeader({
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
             <FlexItem>
-                <Title headingLevel="h1" className="pf-v5-u-w-100">
+                <Title headingLevel="h1" className="pf-v6-u-w-100">
                     {checkName}
                 </Title>
             </FlexItem>

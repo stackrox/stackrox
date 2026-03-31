@@ -7,7 +7,6 @@ import {
     Bullseye,
     Button,
     PageSection,
-    PageSectionVariants,
     Spinner,
 } from '@patternfly/react-core';
 
@@ -260,7 +259,7 @@ function Roles(): ReactElement {
                     entityName={action === 'create' ? 'Create role' : role?.name}
                 />
             )}
-            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+            <PageSection>
                 {alertRoles}
                 {alertPermissionSets}
                 {alertAccessScopes}

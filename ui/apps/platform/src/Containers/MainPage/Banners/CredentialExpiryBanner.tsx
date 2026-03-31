@@ -53,7 +53,7 @@ function CredentialExpiryBanner({
     const name = nameOfComponent[component];
 
     return (
-        <Banner className="pf-v5-u-text-align-center" variant={getBannerVariant(type)}>
+        <Banner className="pf-v6-u-text-align-center" color={getBannerVariant(type)}>
             {`${name} certificate ${getCredentialExpiryPhrase(expirationDate, now)}. `}
             {showCertGenerateAction ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>

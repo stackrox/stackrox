@@ -26,7 +26,7 @@ describe('Integrations Dashboard', () => {
         visitIntegrationsDashboard();
 
         let value = null;
-        cy.get('a[data-testid="integration-tile"]').each(($el) => {
+        cy.get('[data-testid="integration-tile"]').each(($el) => {
             if (value) {
                 expect($el[0].clientHeight).to.equal(value);
             } else {

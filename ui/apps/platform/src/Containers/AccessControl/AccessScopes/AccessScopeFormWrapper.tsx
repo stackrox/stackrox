@@ -6,6 +6,7 @@ import {
     Alert,
     Button,
     Label,
+    Stack,
     Title,
     Toolbar,
     ToolbarContent,
@@ -121,8 +122,8 @@ function AccessScopeFormWrapper({
     const hasAction = Boolean(action);
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
+        <Stack hasGutter>
+            <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">
@@ -135,7 +136,7 @@ function AccessScopeFormWrapper({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
@@ -162,9 +163,9 @@ function AccessScopeFormWrapper({
                 // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
+                <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup variant="button-group">
+                        <ToolbarGroup variant="action-group">
                             <ToolbarItem>
                                 <Button
                                     variant="primary"
@@ -179,13 +180,12 @@ function AccessScopeFormWrapper({
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}
-                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
+                                <Button variant="tertiary" onClick={onClickCancel}>
                                     Cancel
                                 </Button>
                             </ToolbarItem>
@@ -193,7 +193,7 @@ function AccessScopeFormWrapper({
                     </ToolbarContent>
                 </Toolbar>
             )}
-        </>
+        </Stack>
     );
 }
 

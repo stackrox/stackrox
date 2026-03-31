@@ -111,11 +111,27 @@ func ContainsMemResourceLimit(p *storage.Policy) bool {
 	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.ContainerMemLimit)
 }
 
-// ContainsEnrichmentRequiredFields returns whether the policy contains fields
-// that alert on the absence of image enrichment data (i.e., fields whose
-// violation signal IS the lack of enrichment). Currently: UnscannedImage and
-// ImageSignatureVerifiedBy.
-func ContainsEnrichmentRequiredFields(p *storage.Policy) bool {
+// AlertsOnMissingEnrichment returns whether the policy contains fields that
+// fire on the absence of image enrichment data (i.e., fields whose violation
+// signal IS the lack of enrichment). Currently: UnscannedImage and
+// ImageSignatureVerifiedBy. These produce transient false positives while the webhook
+// awaits image enrichment data to be fetched.
+func AlertsOnMissingEnrichment(p *storage.Policy) bool {
 	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.UnscannedImage) ||
 		booleanpolicy.ContainsValueWithFieldName(p, fieldnames.ImageSignatureVerifiedBy)
+}
+
+// ContainsImageEnrichmentRequiredFields returns whether the policy contains
+// any fields that require image enrichment data (scan results, image metadata,
+// signatures).
+func ContainsImageEnrichmentRequiredFields(p *storage.Policy) bool {
+	fm := booleanpolicy.FieldMetadataSingleton()
+	for _, section := range p.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if fm.ImageEnrichmentRequired(group.GetFieldName()) {
+				return true
+			}
+		}
+	}
+	return false
 }

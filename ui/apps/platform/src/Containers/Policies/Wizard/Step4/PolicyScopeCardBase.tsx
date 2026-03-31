@@ -18,9 +18,12 @@ function PolicyScopeCardBase({
             <CardHeader
                 actions={{
                     actions: (
-                        <Button variant="plain" onClick={onDelete} title={`Delete ${title}`}>
-                            <TrashIcon />
-                        </Button>
+                        <Button
+                            variant="plain"
+                            onClick={onDelete}
+                            title={`Delete ${title}`}
+                            icon={<TrashIcon />}
+                        />
                     ),
                 }}
             >

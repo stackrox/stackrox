@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
@@ -46,6 +47,10 @@ func (s *virtualMachineHandlerSuite) SetupTest() {
 }
 
 func (s *virtualMachineHandlerSuite) TearDownTest() {
+	// Reset global capability state to prevent test pollution.
+	// If not reset, subsequent tests may incorrectly assume capabilities are present/absent,
+	// leading to false negatives that could hide regressions.
+	centralcaps.Set(nil)
 	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
@@ -325,4 +330,19 @@ func (s *virtualMachineHandlerSuite) TestResponsesC_AfterStart() {
 
 	ch := s.handler.ResponsesC()
 	s.Require().NotNil(ch)
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
+	// Remove capability to simulate old Central version
+	centralcaps.Set(nil)
+
+	cid := "1"
+	vm := &v1.IndexReport{VsockCid: cid}
+
+	// Send should return errCapabilityNotSupported when capability is absent
+	err := s.handler.Send(context.Background(), vm)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, errCapabilityNotSupported)
+	s.Require().ErrorIs(err, errox.NotImplemented)
+	s.Assert().ErrorContains(err, "Central does not have virtual machine capability")
 }

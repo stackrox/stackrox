@@ -19,6 +19,7 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageCVEInfo, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEInfo, error)
+	GetByCVENames(ctx context.Context, cveNames []string) ([]*storage.ImageCVEInfo, error)
 	Upsert(ctx context.Context, cve *storage.ImageCVEInfo) error
 	UpsertMany(ctx context.Context, cve []*storage.ImageCVEInfo) error
 }

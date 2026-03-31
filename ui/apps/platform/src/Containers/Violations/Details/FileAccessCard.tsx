@@ -25,8 +25,8 @@ function FileAccessCard({ fileAccess, message }: FileAccessCardProps): ReactElem
     }
 
     return (
-        <div className="pf-v5-u-pb-md">
-            <Card isExpanded={isExpanded} isFlat>
+        <div className="pf-v6-u-pb-md">
+            <Card isExpanded={isExpanded}>
                 <CardHeader
                     onExpand={onExpand}
                     toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}
@@ -34,7 +34,7 @@ function FileAccessCard({ fileAccess, message }: FileAccessCardProps): ReactElem
                     <CardTitle>{message}</CardTitle>
                 </CardHeader>
                 <CardExpandableContent>
-                    <CardBody className="pf-v5-u-mt-lg">
+                    <CardBody className="pf-v6-u-mt-lg">
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}

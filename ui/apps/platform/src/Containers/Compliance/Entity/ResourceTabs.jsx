@@ -7,7 +7,7 @@ import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'utils/queryService';
-import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
+import { getResourceCountFromAggregatedResults } from '../complianceUtils';
 
 const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType }) => {
     const match = useWorkflowMatch();

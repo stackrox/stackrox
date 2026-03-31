@@ -8,7 +8,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/virtualmachine"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	vmInfo "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -56,6 +56,9 @@ func (s *virtualMachineInstanceSuite) SetupSubTest() {
 
 func (s *virtualMachineInstanceSuite) TearDownSubTest() {
 	s.mockCtrl.Finish()
+	// Reset global capability state to prevent test pollution.
+	// If not reset, subsequent tests may incorrectly assume capabilities are present/absent,
+	// leading to false negatives that could hide regressions.
 	centralcaps.Set(nil)
 }
 
@@ -113,7 +116,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -145,7 +148,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -169,7 +172,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -217,7 +220,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -253,7 +256,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -274,7 +277,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -310,7 +313,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -363,7 +366,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VsockCid:    int32(vsockVal),
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -372,7 +375,21 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().Has(gomock.Any()).Times(0)
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).Times(0)
 				centralcaps.Set(nil)
+			},
+			expectedMsg: nil,
+		},
+		"feature flag disabled": {
+			action: central.ResourceAction_CREATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
+			expectFn: func() {
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().Has(gomock.Any()).Times(0)
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).Times(0)
+				s.T().Setenv(features.VirtualMachines.EnvVar(), "false")
 			},
 			expectedMsg: nil,
 		},
@@ -414,7 +431,7 @@ func newVirtualMachineInstanceWithOwnerKind(uid, name, namespace, owner, kind st
 }
 
 func newVirtualMachineInstance(uid, name, namespace, owner string, vsock *uint32, phase v1.VirtualMachineInstancePhase) *v1.VirtualMachineInstance {
-	return newVirtualMachineInstanceWithOwnerKind(uid, name, namespace, owner, virtualmachine.VirtualMachine.Kind, vsock, phase)
+	return newVirtualMachineInstanceWithOwnerKind(uid, name, namespace, owner, pkgVM.VirtualMachine.Kind, vsock, phase)
 }
 
 func toUnstructured(obj any) *unstructured.Unstructured {
