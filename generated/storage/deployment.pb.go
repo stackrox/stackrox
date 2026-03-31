@@ -22,6 +22,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type DeploymentStatus int32
+
+const (
+	DeploymentStatus_DEPLOYMENT_STATUS_UNSPECIFIED DeploymentStatus = 0 // Zero value; retained for backward compatibility.
+	DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED    DeploymentStatus = 1 // Deployment is active.
+	DeploymentStatus_DEPLOYMENT_STATUS_DELETED     DeploymentStatus = 2 // Deployment has been soft-deleted (tombstoned).
+)
+
+// Enum value maps for DeploymentStatus.
+var (
+	DeploymentStatus_name = map[int32]string{
+		0: "DEPLOYMENT_STATUS_UNSPECIFIED",
+		1: "DEPLOYMENT_STATUS_DEPLOYED",
+		2: "DEPLOYMENT_STATUS_DELETED",
+	}
+	DeploymentStatus_value = map[string]int32{
+		"DEPLOYMENT_STATUS_UNSPECIFIED": 0,
+		"DEPLOYMENT_STATUS_DEPLOYED":    1,
+		"DEPLOYMENT_STATUS_DELETED":     2,
+	}
+)
+
+func (x DeploymentStatus) Enum() *DeploymentStatus {
+	p := new(DeploymentStatus)
+	*p = x
+	return p
+}
+
+func (x DeploymentStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DeploymentStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_deployment_proto_enumTypes[0].Descriptor()
+}
+
+func (DeploymentStatus) Type() protoreflect.EnumType {
+	return &file_storage_deployment_proto_enumTypes[0]
+}
+
+func (x DeploymentStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DeploymentStatus.Descriptor instead.
+func (DeploymentStatus) EnumDescriptor() ([]byte, []int) {
+	return file_storage_deployment_proto_rawDescGZIP(), []int{0}
+}
+
 type Volume_MountPropagation int32
 
 const (
@@ -55,11 +104,11 @@ func (x Volume_MountPropagation) String() string {
 }
 
 func (Volume_MountPropagation) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_deployment_proto_enumTypes[0].Descriptor()
+	return file_storage_deployment_proto_enumTypes[1].Descriptor()
 }
 
 func (Volume_MountPropagation) Type() protoreflect.EnumType {
-	return &file_storage_deployment_proto_enumTypes[0]
+	return &file_storage_deployment_proto_enumTypes[1]
 }
 
 func (x Volume_MountPropagation) Number() protoreflect.EnumNumber {
@@ -113,11 +162,11 @@ func (x PortConfig_ExposureLevel) String() string {
 }
 
 func (PortConfig_ExposureLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_deployment_proto_enumTypes[1].Descriptor()
+	return file_storage_deployment_proto_enumTypes[2].Descriptor()
 }
 
 func (PortConfig_ExposureLevel) Type() protoreflect.EnumType {
-	return &file_storage_deployment_proto_enumTypes[1]
+	return &file_storage_deployment_proto_enumTypes[2]
 }
 
 func (x PortConfig_ExposureLevel) Number() protoreflect.EnumNumber {
@@ -175,11 +224,11 @@ func (x ContainerConfig_EnvironmentConfig_EnvVarSource) String() string {
 }
 
 func (ContainerConfig_EnvironmentConfig_EnvVarSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_deployment_proto_enumTypes[2].Descriptor()
+	return file_storage_deployment_proto_enumTypes[3].Descriptor()
 }
 
 func (ContainerConfig_EnvironmentConfig_EnvVarSource) Type() protoreflect.EnumType {
-	return &file_storage_deployment_proto_enumTypes[2]
+	return &file_storage_deployment_proto_enumTypes[3]
 }
 
 func (x ContainerConfig_EnvironmentConfig_EnvVarSource) Number() protoreflect.EnumNumber {
@@ -224,11 +273,11 @@ func (x SecurityContext_SeccompProfile_ProfileType) String() string {
 }
 
 func (SecurityContext_SeccompProfile_ProfileType) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_deployment_proto_enumTypes[3].Descriptor()
+	return file_storage_deployment_proto_enumTypes[4].Descriptor()
 }
 
 func (SecurityContext_SeccompProfile_ProfileType) Type() protoreflect.EnumType {
-	return &file_storage_deployment_proto_enumTypes[3]
+	return &file_storage_deployment_proto_enumTypes[4]
 }
 
 func (x SecurityContext_SeccompProfile_ProfileType) Number() protoreflect.EnumNumber {
@@ -240,7 +289,7 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
 }
 
-// Next available tag: 37
+// Next available tag: 38
 type Deployment struct {
 	state                         protoimpl.MessageState `protogen:"open.v1"`
 	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
@@ -276,9 +325,10 @@ type Deployment struct {
 	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
 	// The tombstone, if set, marks the deployment as soft-deleted but retained for audit.
 	// A nil tombstone indicates an active deployment.
-	Tombstone     *Tombstone `protobuf:"bytes,36,opt,name=tombstone,proto3" json:"tombstone,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Tombstone        *Tombstone       `protobuf:"bytes,36,opt,name=tombstone,proto3" json:"tombstone,omitempty"`
+	DeploymentStatus DeploymentStatus `protobuf:"varint,37,opt,name=deployment_status,json=deploymentStatus,proto3,enum=storage.DeploymentStatus" json:"deployment_status,omitempty" search:"Deployment Status,hidden"` // @gotags: search:"Deployment Status,hidden"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Deployment) Reset() {
@@ -533,6 +583,13 @@ func (x *Deployment) GetTombstone() *Tombstone {
 		return x.Tombstone
 	}
 	return nil
+}
+
+func (x *Deployment) GetDeploymentStatus() DeploymentStatus {
+	if x != nil {
+		return x.DeploymentStatus
+	}
+	return DeploymentStatus_DEPLOYMENT_STATUS_UNSPECIFIED
 }
 
 // Next tag: 13
@@ -2029,7 +2086,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\x1a\x17storage/tombstone.proto\"\xa8\f\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\x1a\x17storage/tombstone.proto\"\xf0\f\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2069,7 +2126,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"risk_score\x18\x1d \x01(\x02R\triskScore\x12-\n" +
 	"\x12platform_component\x18# \x01(\bR\x11platformComponent\x120\n" +
-	"\ttombstone\x18$ \x01(\v2\x12.storage.TombstoneR\ttombstone\x1a9\n" +
+	"\ttombstone\x18$ \x01(\v2\x12.storage.TombstoneR\ttombstone\x12F\n" +
+	"\x11deployment_status\x18% \x01(\x0e2\x19.storage.DeploymentStatusR\x10deploymentStatus\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a<\n" +
@@ -2230,7 +2288,11 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x124\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x1a\n" +
 	"\bpriority\x18\a \x01(\x03R\bpriority\x12L\n" +
-	"\x14tombstone_deleted_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x12tombstoneDeletedAtB.\n" +
+	"\x14tombstone_deleted_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x12tombstoneDeletedAt*t\n" +
+	"\x10DeploymentStatus\x12!\n" +
+	"\x1dDEPLOYMENT_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aDEPLOYMENT_STATUS_DEPLOYED\x10\x01\x12\x1d\n" +
+	"\x19DEPLOYMENT_STATUS_DELETED\x10\x02B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -2245,89 +2307,91 @@ func file_storage_deployment_proto_rawDescGZIP() []byte {
 	return file_storage_deployment_proto_rawDescData
 }
 
-var file_storage_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_storage_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_storage_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_storage_deployment_proto_goTypes = []any{
-	(Volume_MountPropagation)(0),                        // 0: storage.Volume.MountPropagation
-	(PortConfig_ExposureLevel)(0),                       // 1: storage.PortConfig.ExposureLevel
-	(ContainerConfig_EnvironmentConfig_EnvVarSource)(0), // 2: storage.ContainerConfig.EnvironmentConfig.EnvVarSource
-	(SecurityContext_SeccompProfile_ProfileType)(0),     // 3: storage.SecurityContext.SeccompProfile.ProfileType
-	(*Deployment)(nil),                                  // 4: storage.Deployment
-	(*ContainerImage)(nil),                              // 5: storage.ContainerImage
-	(*Container)(nil),                                   // 6: storage.Container
-	(*Resources)(nil),                                   // 7: storage.Resources
-	(*Volume)(nil),                                      // 8: storage.Volume
-	(*LivenessProbe)(nil),                               // 9: storage.LivenessProbe
-	(*ReadinessProbe)(nil),                              // 10: storage.ReadinessProbe
-	(*Pod)(nil),                                         // 11: storage.Pod
-	(*ContainerInstance)(nil),                           // 12: storage.ContainerInstance
-	(*ContainerInstanceID)(nil),                         // 13: storage.ContainerInstanceID
-	(*EmbeddedSecret)(nil),                              // 14: storage.EmbeddedSecret
-	(*PortConfig)(nil),                                  // 15: storage.PortConfig
-	(*ContainerConfig)(nil),                             // 16: storage.ContainerConfig
-	(*SecurityContext)(nil),                             // 17: storage.SecurityContext
-	(*ListDeployment)(nil),                              // 18: storage.ListDeployment
-	nil,                                                 // 19: storage.Deployment.LabelsEntry
-	nil,                                                 // 20: storage.Deployment.PodLabelsEntry
-	nil,                                                 // 21: storage.Deployment.AnnotationsEntry
-	(*Pod_ContainerInstanceList)(nil),                   // 22: storage.Pod.ContainerInstanceList
-	(*PortConfig_ExposureInfo)(nil),                     // 23: storage.PortConfig.ExposureInfo
-	(*ContainerConfig_EnvironmentConfig)(nil),           // 24: storage.ContainerConfig.EnvironmentConfig
-	(*SecurityContext_SELinux)(nil),                     // 25: storage.SecurityContext.SELinux
-	(*SecurityContext_SeccompProfile)(nil),              // 26: storage.SecurityContext.SeccompProfile
-	(*LabelSelector)(nil),                               // 27: storage.LabelSelector
-	(*timestamppb.Timestamp)(nil),                       // 28: google.protobuf.Timestamp
-	(PermissionLevel)(0),                                // 29: storage.PermissionLevel
-	(*Toleration)(nil),                                  // 30: storage.Toleration
-	(*Tombstone)(nil),                                   // 31: storage.Tombstone
-	(*ImageName)(nil),                                   // 32: storage.ImageName
-	(ContainerRuntime)(0),                               // 33: storage.ContainerRuntime
+	(DeploymentStatus)(0),                               // 0: storage.DeploymentStatus
+	(Volume_MountPropagation)(0),                        // 1: storage.Volume.MountPropagation
+	(PortConfig_ExposureLevel)(0),                       // 2: storage.PortConfig.ExposureLevel
+	(ContainerConfig_EnvironmentConfig_EnvVarSource)(0), // 3: storage.ContainerConfig.EnvironmentConfig.EnvVarSource
+	(SecurityContext_SeccompProfile_ProfileType)(0),     // 4: storage.SecurityContext.SeccompProfile.ProfileType
+	(*Deployment)(nil),                                  // 5: storage.Deployment
+	(*ContainerImage)(nil),                              // 6: storage.ContainerImage
+	(*Container)(nil),                                   // 7: storage.Container
+	(*Resources)(nil),                                   // 8: storage.Resources
+	(*Volume)(nil),                                      // 9: storage.Volume
+	(*LivenessProbe)(nil),                               // 10: storage.LivenessProbe
+	(*ReadinessProbe)(nil),                              // 11: storage.ReadinessProbe
+	(*Pod)(nil),                                         // 12: storage.Pod
+	(*ContainerInstance)(nil),                           // 13: storage.ContainerInstance
+	(*ContainerInstanceID)(nil),                         // 14: storage.ContainerInstanceID
+	(*EmbeddedSecret)(nil),                              // 15: storage.EmbeddedSecret
+	(*PortConfig)(nil),                                  // 16: storage.PortConfig
+	(*ContainerConfig)(nil),                             // 17: storage.ContainerConfig
+	(*SecurityContext)(nil),                             // 18: storage.SecurityContext
+	(*ListDeployment)(nil),                              // 19: storage.ListDeployment
+	nil,                                                 // 20: storage.Deployment.LabelsEntry
+	nil,                                                 // 21: storage.Deployment.PodLabelsEntry
+	nil,                                                 // 22: storage.Deployment.AnnotationsEntry
+	(*Pod_ContainerInstanceList)(nil),                   // 23: storage.Pod.ContainerInstanceList
+	(*PortConfig_ExposureInfo)(nil),                     // 24: storage.PortConfig.ExposureInfo
+	(*ContainerConfig_EnvironmentConfig)(nil),           // 25: storage.ContainerConfig.EnvironmentConfig
+	(*SecurityContext_SELinux)(nil),                     // 26: storage.SecurityContext.SELinux
+	(*SecurityContext_SeccompProfile)(nil),              // 27: storage.SecurityContext.SeccompProfile
+	(*LabelSelector)(nil),                               // 28: storage.LabelSelector
+	(*timestamppb.Timestamp)(nil),                       // 29: google.protobuf.Timestamp
+	(PermissionLevel)(0),                                // 30: storage.PermissionLevel
+	(*Toleration)(nil),                                  // 31: storage.Toleration
+	(*Tombstone)(nil),                                   // 32: storage.Tombstone
+	(*ImageName)(nil),                                   // 33: storage.ImageName
+	(ContainerRuntime)(0),                               // 34: storage.ContainerRuntime
 }
 var file_storage_deployment_proto_depIdxs = []int32{
-	19, // 0: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
-	20, // 1: storage.Deployment.pod_labels:type_name -> storage.Deployment.PodLabelsEntry
-	27, // 2: storage.Deployment.label_selector:type_name -> storage.LabelSelector
-	28, // 3: storage.Deployment.created:type_name -> google.protobuf.Timestamp
-	6,  // 4: storage.Deployment.containers:type_name -> storage.Container
-	21, // 5: storage.Deployment.annotations:type_name -> storage.Deployment.AnnotationsEntry
-	29, // 6: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
-	30, // 7: storage.Deployment.tolerations:type_name -> storage.Toleration
-	15, // 8: storage.Deployment.ports:type_name -> storage.PortConfig
-	31, // 9: storage.Deployment.tombstone:type_name -> storage.Tombstone
-	32, // 10: storage.ContainerImage.name:type_name -> storage.ImageName
-	16, // 11: storage.Container.config:type_name -> storage.ContainerConfig
-	5,  // 12: storage.Container.image:type_name -> storage.ContainerImage
-	17, // 13: storage.Container.security_context:type_name -> storage.SecurityContext
-	8,  // 14: storage.Container.volumes:type_name -> storage.Volume
-	15, // 15: storage.Container.ports:type_name -> storage.PortConfig
-	14, // 16: storage.Container.secrets:type_name -> storage.EmbeddedSecret
-	7,  // 17: storage.Container.resources:type_name -> storage.Resources
-	9,  // 18: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
-	10, // 19: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
-	0,  // 20: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
-	12, // 21: storage.Pod.live_instances:type_name -> storage.ContainerInstance
-	22, // 22: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
-	28, // 23: storage.Pod.started:type_name -> google.protobuf.Timestamp
-	13, // 24: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
-	28, // 25: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
-	28, // 26: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
-	33, // 27: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
-	1,  // 28: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
-	23, // 29: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
-	24, // 30: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
-	25, // 31: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
-	26, // 32: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
-	28, // 33: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
-	28, // 34: storage.ListDeployment.tombstone_deleted_at:type_name -> google.protobuf.Timestamp
-	12, // 35: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
-	1,  // 36: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
-	2,  // 37: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
-	3,  // 38: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
-	39, // [39:39] is the sub-list for method output_type
-	39, // [39:39] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	20, // 0: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
+	21, // 1: storage.Deployment.pod_labels:type_name -> storage.Deployment.PodLabelsEntry
+	28, // 2: storage.Deployment.label_selector:type_name -> storage.LabelSelector
+	29, // 3: storage.Deployment.created:type_name -> google.protobuf.Timestamp
+	7,  // 4: storage.Deployment.containers:type_name -> storage.Container
+	22, // 5: storage.Deployment.annotations:type_name -> storage.Deployment.AnnotationsEntry
+	30, // 6: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
+	31, // 7: storage.Deployment.tolerations:type_name -> storage.Toleration
+	16, // 8: storage.Deployment.ports:type_name -> storage.PortConfig
+	32, // 9: storage.Deployment.tombstone:type_name -> storage.Tombstone
+	0,  // 10: storage.Deployment.deployment_status:type_name -> storage.DeploymentStatus
+	33, // 11: storage.ContainerImage.name:type_name -> storage.ImageName
+	17, // 12: storage.Container.config:type_name -> storage.ContainerConfig
+	6,  // 13: storage.Container.image:type_name -> storage.ContainerImage
+	18, // 14: storage.Container.security_context:type_name -> storage.SecurityContext
+	9,  // 15: storage.Container.volumes:type_name -> storage.Volume
+	16, // 16: storage.Container.ports:type_name -> storage.PortConfig
+	15, // 17: storage.Container.secrets:type_name -> storage.EmbeddedSecret
+	8,  // 18: storage.Container.resources:type_name -> storage.Resources
+	10, // 19: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
+	11, // 20: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
+	1,  // 21: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
+	13, // 22: storage.Pod.live_instances:type_name -> storage.ContainerInstance
+	23, // 23: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
+	29, // 24: storage.Pod.started:type_name -> google.protobuf.Timestamp
+	14, // 25: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
+	29, // 26: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
+	29, // 27: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
+	34, // 28: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
+	2,  // 29: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
+	24, // 30: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
+	25, // 31: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
+	26, // 32: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
+	27, // 33: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
+	29, // 34: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
+	29, // 35: storage.ListDeployment.tombstone_deleted_at:type_name -> google.protobuf.Timestamp
+	13, // 36: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
+	2,  // 37: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
+	3,  // 38: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
+	4,  // 39: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
+	40, // [40:40] is the sub-list for method output_type
+	40, // [40:40] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_storage_deployment_proto_init() }
@@ -2346,7 +2410,7 @@ func file_storage_deployment_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_deployment_proto_rawDesc), len(file_storage_deployment_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,

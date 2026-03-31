@@ -961,9 +961,22 @@
         "tombstone": {
           "$ref": "#/definitions/storageTombstone",
           "description": "The tombstone, if set, marks the deployment as soft-deleted but retained for audit.\nA nil tombstone indicates an active deployment."
+        },
+        "deploymentStatus": {
+          "$ref": "#/definitions/storageDeploymentStatus"
         }
       },
-      "title": "Next available tag: 37"
+      "title": "Next available tag: 38"
+    },
+    "storageDeploymentStatus": {
+      "type": "string",
+      "enum": [
+        "DEPLOYMENT_STATUS_UNSPECIFIED",
+        "DEPLOYMENT_STATUS_DEPLOYED",
+        "DEPLOYMENT_STATUS_DELETED"
+      ],
+      "default": "DEPLOYMENT_STATUS_UNSPECIFIED",
+      "description": " - DEPLOYMENT_STATUS_UNSPECIFIED: Zero value; retained for backward compatibility.\n - DEPLOYMENT_STATUS_DEPLOYED: Deployment is active.\n - DEPLOYMENT_STATUS_DELETED: Deployment has been soft-deleted (tombstoned)."
     },
     "storageEmbeddedSecret": {
       "type": "object",

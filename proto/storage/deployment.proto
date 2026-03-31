@@ -13,7 +13,13 @@ import "storage/tombstone.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 37
+enum DeploymentStatus {
+    DEPLOYMENT_STATUS_UNSPECIFIED = 0; // Zero value; retained for backward compatibility.
+    DEPLOYMENT_STATUS_DEPLOYED    = 1; // Deployment is active.
+    DEPLOYMENT_STATUS_DELETED     = 2; // Deployment has been soft-deleted (tombstoned).
+}
+
+// Next available tag: 38
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -56,6 +62,7 @@ message Deployment {
   // The tombstone, if set, marks the deployment as soft-deleted but retained for audit.
   // A nil tombstone indicates an active deployment.
   Tombstone tombstone = 36;
+  DeploymentStatus deployment_status = 37; // @gotags: search:"Deployment Status,hidden"
 }
 
 // Next tag: 13

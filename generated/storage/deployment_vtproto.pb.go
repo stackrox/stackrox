@@ -54,6 +54,7 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.RiskScore = m.RiskScore
 	r.PlatformComponent = m.PlatformComponent
 	r.Tombstone = m.Tombstone.CloneVT()
+	r.DeploymentStatus = m.DeploymentStatus
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -764,6 +765,9 @@ func (this *Deployment) EqualVT(that *Deployment) bool {
 		return false
 	}
 	if !this.Tombstone.EqualVT(that.Tombstone) {
+		return false
+	}
+	if this.DeploymentStatus != that.DeploymentStatus {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1554,6 +1558,13 @@ func (m *Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.DeploymentStatus != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DeploymentStatus))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa8
 	}
 	if m.Tombstone != nil {
 		size, err := m.Tombstone.MarshalToSizedBufferVT(dAtA[:i])
@@ -3432,6 +3443,9 @@ func (m *Deployment) SizeVT() (n int) {
 		l = m.Tombstone.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.DeploymentStatus != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.DeploymentStatus))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5204,6 +5218,25 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentStatus", wireType)
+			}
+			m.DeploymentStatus = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeploymentStatus |= DeploymentStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10263,6 +10296,25 @@ func (m *Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentStatus", wireType)
+			}
+			m.DeploymentStatus = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeploymentStatus |= DeploymentStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
