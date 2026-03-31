@@ -11,7 +11,7 @@ import (
 const (
 	// The header is set by the RHACS ServiceNow integration.
 	// See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
-	snowIntegrationHeader = "Rh-ServiceNow-Integration"
+	snowIntegrationHeader = "Rh-Servicenow-Integration"
 
 	userAgentHeaderKey = "User-Agent"
 )
@@ -21,7 +21,7 @@ var (
 
 	permanentTelemetryCampaign = phonehome.APICallCampaign{
 		{
-			Headers: map[string]glob.Pattern{
+			Headers: phonehome.GlobMap{
 				userAgentHeaderKey:                  "*roxctl*",
 				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValue,
 				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValue,
@@ -30,7 +30,7 @@ var (
 		},
 		{
 			Path: glob.Pattern("/v1/clusters").Ptr(),
-			Headers: map[string]glob.Pattern{
+			Headers: phonehome.GlobMap{
 				// ServiceNow default User-Agent includes "ServiceNow", but
 				// customers are free to change it.
 				// See https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1511513.
@@ -46,7 +46,7 @@ var (
 			// Capture SBOM generation requests. Corresponding handler in central/image/service/http_handler.go.
 			Path:    glob.Pattern("/api/v1/images/sbom").Ptr(),
 			Method:  glob.Pattern("POST").Ptr(),
-			Headers: map[string]glob.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
+			Headers: phonehome.GlobMap{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
 		},
 		// Capture Jenkins Plugin requests
 		phonehome.HeaderPattern(userAgentHeaderKey, "*stackrox-container-image-scanner*"),
@@ -61,7 +61,7 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
 			Path: glob.Pattern("{" + pattern + "}").Ptr(),
-			Headers: map[string]glob.Pattern{
+			Headers: phonehome.GlobMap{
 				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
 			},
 		}
@@ -107,7 +107,7 @@ func addCustomHeaders(rp *phonehome.RequestParams, cc *phonehome.APICallCampaign
 		return
 	}
 	for header := range cc.Headers {
-		values := rp.Headers(header)
+		values := rp.Headers.Get(header)
 		if len(values) != 0 {
 			props[header] = strings.Join(values, "; ")
 		}

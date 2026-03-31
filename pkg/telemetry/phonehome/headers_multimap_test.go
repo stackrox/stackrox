@@ -44,14 +44,3 @@ func TestKeyCase(t *testing.T) {
 		testKeys(t, Headers(h))
 	})
 }
-
-func TestGetFirst(t *testing.T) {
-	h := make(http.Header)
-	h.Add("key", "value1")
-	h.Add("key", "value2")
-	assert.Equal(t, []string{"value1", "value2"}, h.Values("key"))
-
-	assert.Equal(t, "value1", GetFirst(Headers(h).Get, "key"))
-	assert.Equal(t, "", GetFirst(Headers(h).Get, "nokey"))
-	assert.Equal(t, "", GetFirst(nil, "nokey"))
-}

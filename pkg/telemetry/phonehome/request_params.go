@@ -21,13 +21,15 @@ type RequestParams struct {
 	GRPCReq any
 	HTTPReq *http.Request
 	// HTTP Headers or, for pure gRPC, the metadata. Includes the User-Agent.
-	Headers func(string) []string
+	Headers Headers
 }
+
+type GlobMap map[string]glob.Pattern
 
 // HasHeader returns true if for each header pattern there is at least one
 // request header with at least one matching value. A request without the
 // expected header matches NoHeaderOrAnyValue pattern for this header.
-func (rp *RequestParams) HasHeader(patterns map[string]glob.Pattern) bool {
+func (rp *RequestParams) HasHeader(patterns GlobMap) bool {
 	for header, expression := range patterns {
 		if expression == NoHeaderOrAnyValue {
 			continue
@@ -35,7 +37,7 @@ func (rp *RequestParams) HasHeader(patterns map[string]glob.Pattern) bool {
 		if rp.Headers == nil {
 			return false
 		}
-		values := rp.Headers(header)
+		values := rp.Headers.Get(header)
 		if len(values) == 0 || !slices.ContainsFunc(values, expression.Match) {
 			return false
 		}

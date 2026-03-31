@@ -1,7 +1,6 @@
 package phonehome
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/glob"
@@ -9,13 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
-	return func(s string) []string {
-		if http.CanonicalHeaderKey(s) == userAgentHeaderKey {
-			return []string{ua}
-		}
-		return headers[s]
-	}
+func withUserAgent(ua string) Headers {
+	return Headers{userAgentHeaderKey: {ua}}
 }
 
 func TestCampaignFulfilled(t *testing.T) {
@@ -23,7 +17,7 @@ func TestCampaignFulfilled(t *testing.T) {
 	t.Run("Empty campaign", func(t *testing.T) {
 		campaign := APICallCampaign{}
 		rp := &RequestParams{
-			Headers: withUserAgent(t, nil, "some test user-agent"),
+			Headers: withUserAgent("some test user-agent"),
 			Method:  "GeT",
 			Path:    "/some/test/path",
 			Code:    202,
@@ -35,7 +29,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			&APICallCampaignCriterion{},
 		}
 		rp := &RequestParams{
-			Headers: withUserAgent(t, nil, "some test user-agent"),
+			Headers: withUserAgent("some test user-agent"),
 			Method:  "GeT",
 			Path:    "/some/test/path",
 			Code:    202,
@@ -47,7 +41,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			nil,
 		}
 		rp := &RequestParams{
-			Headers: withUserAgent(t, nil, "some test user-agent"),
+			Headers: withUserAgent("some test user-agent"),
 			Method:  "GET",
 			Path:    "/some/test/path",
 			Code:    202,
@@ -72,7 +66,7 @@ func TestCampaignFulfilled(t *testing.T) {
 
 		t.Run("Test fulfilled", func(t *testing.T) {
 			rp := &RequestParams{
-				Headers: withUserAgent(t, nil, "some test user-agent"),
+				Headers: withUserAgent("some test user-agent"),
 				Method:  "GET",
 				Path:    "/some/test/path",
 				Code:    202,
@@ -87,7 +81,7 @@ func TestCampaignFulfilled(t *testing.T) {
 
 		t.Run("Test not fulfilled", func(t *testing.T) {
 			rp := &RequestParams{
-				Headers: withUserAgent(t, nil, "some user-agent"),
+				Headers: withUserAgent("some user-agent"),
 				Method:  "DELETE",
 				Path:    "/test/path",
 				Code:    305,
@@ -101,7 +95,7 @@ func TestCampaignFulfilled(t *testing.T) {
 	})
 	t.Run("Test mutiple fulfilled", func(t *testing.T) {
 		rp := &RequestParams{
-			Headers: withUserAgent(t, nil, "some test user-agent"),
+			Headers: withUserAgent("some test user-agent"),
 			Method:  "GET",
 			Path:    "/v1/test/path",
 			Code:    202,
@@ -117,33 +111,34 @@ func TestCampaignFulfilled(t *testing.T) {
 		require.NoError(t, campaign.Compile())
 		assert.Equal(t, 2, campaign.CountFulfilled(rp, doNothing))
 	})
+
 	t.Run("All criteria", func(t *testing.T) {
 		campaign := APICallCampaign{
 			{
 				Codes:   []int32{200, 400},
 				Method:  glob.Pattern("{GET,POST}").Ptr(),
 				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]glob.Pattern{"User-Agent": "*test*"},
+				Headers: GlobMap{"User-Agent": "*test*"},
 			},
 			{
 				Codes:   []int32{200, 400},
 				Method:  glob.Pattern("{GET,POST}").Ptr(),
 				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]glob.Pattern{"User-Agent": "*toast*"},
+				Headers: GlobMap{"User-Agent": "*toast*"},
 			},
 			{
 				Codes:   []int32{300, 500},
 				Method:  glob.Pattern("{DELETE,OPTIONS}").Ptr(),
 				Path:    glob.Pattern("{/v3/test*,/v4/test*}").Ptr(),
-				Headers: map[string]glob.Pattern{"User-Agent": "{*tooth*,*teeth*}"},
+				Headers: GlobMap{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
 				Codes:  []int32{100},
 				Method: glob.Pattern("PUT").Ptr(),
 				Path:   glob.Pattern("/v5/*").Ptr(),
-				Headers: map[string]glob.Pattern{
+				Headers: GlobMap{
 					"User-Agent": "*another*",
-					"header":     "val*",
+					"Header":     "val*",
 				},
 			},
 		}
@@ -151,25 +146,25 @@ func TestCampaignFulfilled(t *testing.T) {
 		t.Run("All pass", func(t *testing.T) {
 			rps := []RequestParams{
 				{
-					Headers: withUserAgent(t, nil, "some test user-agent 1"),
+					Headers: withUserAgent("some test user-agent 1"),
 					Method:  "GET",
 					Path:    "/v1/test/path",
 					Code:    200,
 				},
 				{
-					Headers: withUserAgent(t, nil, "some toast user-agent 2"),
+					Headers: withUserAgent("some toast user-agent 2"),
 					Method:  "POST",
 					Path:    "/v2/test/path",
 					Code:    400,
 				},
 				{
-					Headers: withUserAgent(t, nil, "some teeth user-agent 3"),
+					Headers: withUserAgent("some teeth user-agent 3"),
 					Method:  "DELETE",
 					Path:    "/v3/test/path",
 					Code:    300,
 				},
 				{
-					Headers: withUserAgent(t, nil, "some teeth user-agent 4"),
+					Headers: withUserAgent("some teeth user-agent 4"),
 					Method:  "OPTIONS",
 					Path:    "/v4/test/path",
 					Code:    500,
@@ -178,41 +173,39 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method: "PUT",
 					Code:   100,
 					Path:   "/v5/test",
-					Headers: func(h string) []string {
-						return map[string][]string{
-							userAgentHeaderKey: {"some another user-agent"},
-							"header":           {"value"},
-						}[h]
+					Headers: Headers{
+						userAgentHeaderKey: {"some another user-agent"},
+						"Header":           {"value"},
 					},
 				},
 			}
 			for _, rp := range rps {
-				assert.Equal(t, 1, campaign.CountFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
+				assert.Equal(t, 1, campaign.CountFulfilled(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
 			}
 		})
 
 		t.Run("All not pass", func(t *testing.T) {
 			rps := []RequestParams{
 				{
-					Headers: withUserAgent(t, nil, "some test user-agent 1"),
+					Headers: withUserAgent("some test user-agent 1"),
 					Method:  "GET",
 					Path:    "/v1/test/path",
 					Code:    300,
 				},
 				{
-					Headers: withUserAgent(t, nil, "some toast user-agent 2"),
+					Headers: withUserAgent("some toast user-agent 2"),
 					Method:  "DELETE",
 					Path:    "/v2/test/path",
 					Code:    400,
 				},
 				{
-					Headers: withUserAgent(t, nil, "some teeth user-agent 3"),
+					Headers: withUserAgent("some teeth user-agent 3"),
 					Method:  "DELETE",
 					Path:    "/v3/test/path",
 					Code:    200,
 				},
 				{
-					Headers: withUserAgent(t, nil, "some tooth user-agent 4"),
+					Headers: withUserAgent("some tooth user-agent 4"),
 					Method:  "GET",
 					Path:    "/v4/test/path",
 					Code:    500,
@@ -221,13 +214,14 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method: "PUT",
 					Path:   "/v5/test/path",
 					Code:   100,
-					Headers: withUserAgent(t,
-						map[string][]string{"h": {"---"}},
-						"some another user-agent 5"),
+					Headers: Headers{
+						userAgentHeaderKey: {"some another user-agent 5"},
+						"h":                {"---"},
+					},
 				},
 			}
 			for _, rp := range rps {
-				assert.Zero(t, campaign.CountFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
+				assert.Zero(t, campaign.CountFulfilled(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
 			}
 		})
 	})
