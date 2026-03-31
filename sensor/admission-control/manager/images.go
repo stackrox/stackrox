@@ -172,9 +172,9 @@ func (m *manager) imageKey(img *storage.ContainerImage, s *state) string {
 	return id
 }
 
-func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
+func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *atomic.Int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
 	defer func() {
-		if atomic.AddInt32(pendingCount, -1) == 0 {
+		if pendingCount.Add(-1) == 0 {
 			close(resultChan)
 		}
 	}()
@@ -215,7 +215,8 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	imgChan := make(chan fetchImageResult, len(deployment.GetContainers()))
 
-	pendingCount := int32(1)
+	var pendingCount atomic.Int32
+	pendingCount.Store(1)
 	fetchCount := 0
 
 	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
@@ -228,7 +229,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 				images[idx] = cachedImage
 			}
 			if shouldFetch && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
-				atomic.AddInt32(&pendingCount, 1)
+				pendingCount.Add(1)
 				fetchCount++
 				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 			}
@@ -240,7 +241,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 
 	observeImageFetchesPerReview(fetchCount)
 
-	if atomic.AddInt32(&pendingCount, -1) == 0 {
+	if pendingCount.Add(-1) == 0 {
 		close(imgChan)
 	}
 	return images, imgChan

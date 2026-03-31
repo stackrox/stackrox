@@ -540,7 +540,7 @@ class Services extends BaseService {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             def found = ImageService.getImages().find { it.name.endsWith(imageName) }
-            if (found.hasCves() || found.hasFixableCves()) {
+            if (found?.hasCves() || found?.hasFixableCves()) {
                 LOG.info "SR found vulnerabilities for the image ${imageName} within ${t.SecondsSince()}s"
                 return true
             }

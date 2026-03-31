@@ -16337,6 +16337,12 @@
                 "name": "Rules",
                 "fields": [
                   {
+                    "id": 5,
+                    "name": "included_cluster_ids",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
                     "id": 1,
                     "name": "included_clusters",
                     "type": "string",
@@ -16365,6 +16371,11 @@
                   {
                     "name": "Namespace",
                     "fields": [
+                      {
+                        "id": 3,
+                        "name": "cluster_id",
+                        "type": "string"
+                      },
                       {
                         "id": 1,
                         "name": "cluster_name",

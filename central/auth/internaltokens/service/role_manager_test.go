@@ -145,6 +145,7 @@ func TestCreateAccessScope(t *testing.T) {
 	}
 	for name, tc := range map[string]struct {
 		input               *v1.GenerateTokenForPermissionsAndScopeRequest
+		clusterIdNameMap    map[string]string
 		expectedAccessScope *storage.SimpleAccessScope
 		expectedStoreError  error
 	}{
@@ -186,6 +187,7 @@ func TestCreateAccessScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				ClusterScopes: []*v1.ClusterScope{requestFullCluster},
 			},
+			clusterIdNameMap:    map[string]string{targetCluster1: targetCluster1},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{requestFullCluster}),
 			expectedStoreError:  nil,
 		},
@@ -193,6 +195,7 @@ func TestCreateAccessScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				ClusterScopes: []*v1.ClusterScope{requestFullCluster},
 			},
+			clusterIdNameMap:    map[string]string{targetCluster1: targetCluster1},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{requestFullCluster}),
 			expectedStoreError:  errDummy,
 		},
@@ -200,6 +203,7 @@ func TestCreateAccessScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 			},
+			clusterIdNameMap:    map[string]string{targetCluster2: targetCluster2},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{requestSingleNamespace}),
 			expectedStoreError:  nil,
 		},
@@ -207,6 +211,7 @@ func TestCreateAccessScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 			},
+			clusterIdNameMap:    map[string]string{targetCluster2: targetCluster2},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{requestSingleNamespace}),
 			expectedStoreError:  errDummy,
 		},
@@ -214,6 +219,7 @@ func TestCreateAccessScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				ClusterScopes: []*v1.ClusterScope{requestMultipleNamespaces},
 			},
+			clusterIdNameMap:    map[string]string{targetCluster3: targetCluster3},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{requestMultipleNamespaces}),
 			expectedStoreError:  nil,
 		},
@@ -221,6 +227,7 @@ func TestCreateAccessScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				ClusterScopes: []*v1.ClusterScope{requestMultipleNamespaces},
 			},
+			clusterIdNameMap:    map[string]string{targetCluster3: targetCluster3},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{requestMultipleNamespaces}),
 			expectedStoreError:  errDummy,
 		},
@@ -230,6 +237,10 @@ func TestCreateAccessScope(t *testing.T) {
 					requestSingleNamespace,
 					requestMultipleNamespaces,
 				},
+			},
+			clusterIdNameMap: map[string]string{
+				targetCluster2: targetCluster2,
+				targetCluster3: targetCluster3,
 			},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{
 				requestSingleNamespace,
@@ -243,6 +254,10 @@ func TestCreateAccessScope(t *testing.T) {
 					requestSingleNamespace,
 					requestMultipleNamespaces,
 				},
+			},
+			clusterIdNameMap: map[string]string{
+				targetCluster2: targetCluster2,
+				targetCluster3: targetCluster3,
 			},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{
 				requestSingleNamespace,
@@ -258,6 +273,11 @@ func TestCreateAccessScope(t *testing.T) {
 					requestMultipleNamespaces,
 				},
 			},
+			clusterIdNameMap: map[string]string{
+				targetCluster1: targetCluster1,
+				targetCluster2: targetCluster2,
+				targetCluster3: targetCluster3,
+			},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{
 				requestFullCluster,
 				requestSingleNamespace,
@@ -272,6 +292,11 @@ func TestCreateAccessScope(t *testing.T) {
 					requestSingleNamespace,
 					requestMultipleNamespaces,
 				},
+			},
+			clusterIdNameMap: map[string]string{
+				targetCluster1: targetCluster1,
+				targetCluster2: targetCluster2,
+				targetCluster3: targetCluster3,
 			},
 			expectedAccessScope: testAccessScope([]*v1.ClusterScope{
 				requestFullCluster,
@@ -290,7 +315,7 @@ func TestCreateAccessScope(t *testing.T) {
 				clusterStore: mockClusterStore,
 				roleStore:    mockRoleStore,
 			}
-			setClusterStoreExpectations(tc.input, mockClusterStore)
+			setClusterStoreExpectations(mockClusterStore, tc.clusterIdNameMap)
 			mockRoleStore.EXPECT().
 				UpsertAccessScope(gomock.Any(), protomock.GoMockMatcherEqualMessage(tc.expectedAccessScope)).
 				Times(1).
@@ -380,6 +405,7 @@ func TestCreateRole(t *testing.T) {
 	}
 	for name, tc := range map[string]struct {
 		input                  *v1.GenerateTokenForPermissionsAndScopeRequest
+		clusterIdNameMap       map[string]string
 		expectedPermissionSet  *storage.PermissionSet
 		expectedAccessScope    *storage.SimpleAccessScope
 		expectedRole           *storage.Role
@@ -404,6 +430,7 @@ func TestCreateRole(t *testing.T) {
 				Permissions:   deploymentPermission,
 				ClusterScopes: []*v1.ClusterScope{requestFullCluster},
 			},
+			clusterIdNameMap:       map[string]string{targetCluster1: targetCluster1},
 			expectedPermissionSet:  testPermissionSet(deploymentPermission),
 			expectedAccessScope:    testAccessScope([]*v1.ClusterScope{requestFullCluster}),
 			expectedRole:           testRole(deploymentPermission, []*v1.ClusterScope{requestFullCluster}),
@@ -414,6 +441,7 @@ func TestCreateRole(t *testing.T) {
 				Permissions:   deploymentPermission,
 				ClusterScopes: []*v1.ClusterScope{requestFullCluster},
 			},
+			clusterIdNameMap:       map[string]string{targetCluster1: targetCluster1},
 			expectedPermissionSet:  testPermissionSet(deploymentPermission),
 			expectedAccessScope:    testAccessScope([]*v1.ClusterScope{requestFullCluster}),
 			expectedRole:           testRole(deploymentPermission, []*v1.ClusterScope{requestFullCluster}),
@@ -424,6 +452,7 @@ func TestCreateRole(t *testing.T) {
 				Permissions:   deploymentPermission,
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 			},
+			clusterIdNameMap:       map[string]string{targetCluster2: targetCluster2},
 			expectedPermissionSet:  testPermissionSet(deploymentPermission),
 			expectedAccessScope:    testAccessScope([]*v1.ClusterScope{requestSingleNamespace}),
 			expectedRole:           testRole(deploymentPermission, []*v1.ClusterScope{requestSingleNamespace}),
@@ -434,6 +463,7 @@ func TestCreateRole(t *testing.T) {
 				Permissions:   deploymentPermission,
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 			},
+			clusterIdNameMap:       map[string]string{targetCluster2: targetCluster2},
 			expectedPermissionSet:  testPermissionSet(deploymentPermission),
 			expectedAccessScope:    testAccessScope([]*v1.ClusterScope{requestSingleNamespace}),
 			expectedRole:           testRole(deploymentPermission, []*v1.ClusterScope{requestSingleNamespace}),
@@ -449,7 +479,7 @@ func TestCreateRole(t *testing.T) {
 				clusterStore: mockClusterStore,
 				roleStore:    mockRoleStore,
 			}
-			setClusterStoreExpectations(tc.input, mockClusterStore)
+			setClusterStoreExpectations(mockClusterStore, tc.clusterIdNameMap)
 			setNormalRoleStoreExpectations(
 				tc.expectedPermissionSet,
 				tc.expectedAccessScope,
@@ -496,7 +526,7 @@ func TestCreateRole(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 		}
 
-		setClusterStoreExpectations(input, mockClusterStore)
+		setClusterStoreExpectations(mockClusterStore, map[string]string{targetCluster2: targetCluster2})
 
 		roleName, err := roleMgr.createRole(ctx, input, testExpiredTraits)
 
@@ -674,15 +704,14 @@ func testRole(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope)
 }
 
 func setClusterStoreExpectations(
-	input *v1.GenerateTokenForPermissionsAndScopeRequest,
 	mockClusterStore *clusterDataStoreMocks.MockDataStore,
+	clusterIdToNameMap map[string]string,
 ) {
-	for _, clusterScope := range input.GetClusterScopes() {
-		clusterIdName := clusterScope.GetClusterId()
+	for clusterID, clusterName := range clusterIdToNameMap {
 		mockClusterStore.EXPECT().
-			GetClusterName(gomock.Any(), clusterIdName).
+			GetClusterName(gomock.Any(), clusterID).
 			Times(1).
-			Return(clusterIdName, true, nil)
+			Return(clusterName, true, nil)
 	}
 }
 

@@ -85,6 +85,8 @@ var (
 )
 
 var supportedVersions = map[string]uint16{
+	"TLSv1.0": tls.VersionTLS10,
+	"TLSv1.1": tls.VersionTLS11,
 	"TLSv1.2": tls.VersionTLS12,
 	"TLSv1.3": tls.VersionTLS13,
 }

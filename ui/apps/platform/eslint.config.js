@@ -1038,7 +1038,6 @@ module.exports = [
             'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
             'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite in TypeScript
             'src/Containers/MainPage/Header/UserMenu.tsx', // rewritten in TypeScript
-            'src/Containers/Policies/Modal/KeepBothSection.tsx', // rewritten in TypeScript
             'src/Containers/Risk/EventTimeline/**', // deprecated
             'src/Containers/Risk/Process/Binaries.jsx', // rewrite in TypeScript?
             'src/Containers/Risk/Process/BinaryCollapsible.jsx', // rewrite in TypeScript?
@@ -1057,6 +1056,44 @@ module.exports = [
         },
         rules: {
             'limited/no-non-deprecated-PropTypes': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/**', // deprecated
+            'src/Containers/AccessControl/AuthProviders/AuthProviderForm.tsx', // replace
+            'src/Containers/AccessControl/AuthProviders/AuthProviders.tsx', // replace
+            'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
+            'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/Integrations/IntegrationsListPage/IntegrationsListPage.tsx', // replace
+            'src/Containers/Integrations/hooks/useIntegrationPermissions.ts', // replace hook itself
+            'src/Containers/Integrations/hooks/useIntegrations.ts', // replace hook itself
+            'src/Containers/Login/LoginPage.jsx', // replace
+            'src/Containers/Login/TestLoginResultsPage.jsx', // replace
+            'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace
+            'src/Containers/MainPage/AuthenticatedRoutes.tsx', // replace
+            'src/Containers/MainPage/Header/CLIDownloadMenu.tsx', // replace
+            'src/Containers/MainPage/Header/UserMenu.tsx', // replace
+            'src/Containers/MainPage/InviteUsers/InviteUsersModal.tsx', // replace
+            'src/Containers/Policies/PolicyPage.tsx', // replace
+            'src/Containers/ReduxUserPermissionProvider.tsx', // replace
+            'src/Containers/Risk/CreatePolicyFromSearch.tsx', // replace
+            'src/Containers/User/UserPage.jsx', // replace
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/hooks/useAuthStatus.ts', // replace
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-connect': 'error',
+            'limited/no-non-deprecated-reselect': 'error',
         },
     },
     {

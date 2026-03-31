@@ -3,14 +3,20 @@ package processsignal
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -26,19 +32,21 @@ const (
 	outputChannelSize = 2
 )
 
+type pipelineAssertFunc = func(*testing.T, *Pipeline, chan *message.ExpiringMessage)
+
 func TestProcessPipelineOfflineV3(t *testing.T) {
 	// With event buffering enabled, going from online to offline and vice-versa won't do anything.
 	// The tests add the functions online and offline to illustrate how the pipeline would be called in a real scenario.
 	cases := map[string]struct {
 		entities []clusterentities.ContainerMetadata
-		events   []func(*testing.T, *Pipeline)
+		events   []pipelineAssertFunc
 	}{
 		"Online -> signal -> read -> offline -> signal -> online -> read": {
 			entities: []clusterentities.ContainerMetadata{
 				newEntity(containerID1, deploymentID1),
 				newEntity(containerID2, deploymentID2),
 			},
-			events: []func(*testing.T, *Pipeline){
+			events: []pipelineAssertFunc{
 				online,
 				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
 				assertSize(1),
@@ -57,7 +65,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				newEntity(containerID1, deploymentID1),
 				newEntity(containerID2, deploymentID2),
 			},
-			events: []func(*testing.T, *Pipeline){
+			events: []pipelineAssertFunc{
 				offline,
 				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
 				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
@@ -74,7 +82,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				newEntity(containerID2, deploymentID2),
 				newEntity(containerID3, deploymentID3),
 			},
-			events: []func(*testing.T, *Pipeline){
+			events: []pipelineAssertFunc{
 				offline,
 				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
 				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
@@ -94,9 +102,10 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
 			mockStore := clusterentities.NewStore(0, nil, false)
 			mockDetector := mocks.NewMockDetector(mockCtrl)
-			pipeline := NewProcessPipeline(sensorEvents, mockStore,
+			pipeline, err := NewProcessPipeline(sensorEvents, mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
-				mockDetector)
+				mockDetector, nil)
+			require.NoError(t, err)
 			t.Cleanup(func() {
 				pipeline.Shutdown()
 				for _, entity := range tc.entities {
@@ -109,7 +118,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				updateStore(entity.ContainerID, entity.DeploymentID, entity, mockStore)
 			}
 			for _, fn := range tc.events {
-				fn(t, pipeline)
+				fn(t, pipeline, sensorEvents)
 			}
 		})
 	}
@@ -122,34 +131,34 @@ func newEntity(containerID, deploymentID string) clusterentities.ContainerMetada
 	}
 }
 
-func online(_ *testing.T, pipeline *Pipeline) {
+func online(_ *testing.T, pipeline *Pipeline, _ chan *message.ExpiringMessage) {
 	pipeline.Notify(common.SensorComponentEventCentralReachable)
 }
 
-func offline(_ *testing.T, pipeline *Pipeline) {
+func offline(_ *testing.T, pipeline *Pipeline, _ chan *message.ExpiringMessage) {
 	pipeline.Notify(common.SensorComponentEventOfflineMode)
 }
 
-func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T, *Pipeline) {
-	return func(t *testing.T, pipeline *Pipeline) {
-		previousLen := len(pipeline.indicators)
+func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T, *Pipeline, chan *message.ExpiringMessage) {
+	return func(t *testing.T, pipeline *Pipeline, indicators chan *message.ExpiringMessage) {
+		previousLen := len(indicators)
 		pipeline.Process(signal)
 		if shouldBeDropped {
 			assert.Never(t, func() bool {
-				return previousLen < len(pipeline.indicators)
+				return previousLen < len(indicators)
 			}, 500*time.Millisecond, 10*time.Millisecond, "the indicator should be dropped")
 		} else {
 			assert.Eventually(t, func() bool {
-				return previousLen < len(pipeline.indicators)
+				return previousLen < len(indicators)
 			}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for indicator")
 		}
 	}
 }
 
-func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
-	return func(t *testing.T, pipeline *Pipeline) {
+func read(containerID, deploymentID string) func(*testing.T, *Pipeline, chan *message.ExpiringMessage) {
+	return func(t *testing.T, pipeline *Pipeline, indicators chan *message.ExpiringMessage) {
 		select {
-		case msg, ok := <-pipeline.indicators:
+		case msg, ok := <-indicators:
 			if !ok {
 				t.Error("The indicators channel should not be closed")
 			}
@@ -163,9 +172,9 @@ func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
 	}
 }
 
-func assertSize(size int) func(*testing.T, *Pipeline) {
-	return func(t *testing.T, pipeline *Pipeline) {
-		assert.Len(t, pipeline.indicators, size)
+func assertSize(size int) func(*testing.T, *Pipeline, chan *message.ExpiringMessage) {
+	return func(t *testing.T, pipeline *Pipeline, indicators chan *message.ExpiringMessage) {
+		assert.Len(t, indicators, size)
 	}
 }
 
@@ -178,8 +187,9 @@ func TestProcessPipelineOnline(t *testing.T) {
 	mockStore := clusterentities.NewStore(0, nil, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector)
+	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector, nil)
+	require.NoError(t, err)
 	p.Notify(common.SensorComponentEventCentralReachable)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -276,6 +286,140 @@ func deleteStore(deploymentID string, mockStore *clusterentities.Store) {
 	mockStore.Apply(updates, false)
 }
 
+// fakeDispatcher is a test-local implementation of common.PubSubDispatcher
+// that allows injecting errors for RegisterConsumerToLane and Publish.
+type fakeDispatcher struct {
+	registerErr error
+	publishErr  error
+}
+
+func (f *fakeDispatcher) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
+	return f.registerErr
+}
+
+func (f *fakeDispatcher) RegisterConsumerToLane(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.LaneID, _ pubsub.EventCallback) error {
+	return f.registerErr
+}
+
+func (f *fakeDispatcher) Publish(_ pubsub.Event) error {
+	return f.publishErr
+}
+
+func (f *fakeDispatcher) Stop() {}
+
+func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
+	t.Helper()
+	d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+		[]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
+			lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
+		},
+	))
+	require.NoError(t, err)
+	t.Cleanup(d.Stop)
+	return d
+}
+
+func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	synctest.Test(t, func(t *testing.T) {
+		sensorEvents := make(chan *message.ExpiringMessage, 1)
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockStore := clusterentities.NewStore(0, nil, false)
+		mockDetector := mocks.NewMockDetector(mockCtrl)
+		dispatcher := newTestDispatcher(t)
+
+		p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+			mockDetector, dispatcher)
+		require.NoError(t, err)
+		t.Cleanup(p.Shutdown)
+
+		containerID := "pubsub-container"
+		deploymentID := "pubsub-deployment"
+		containerMetadata := clusterentities.ContainerMetadata{
+			DeploymentID: deploymentID,
+			ContainerID:  containerID,
+		}
+		updateStore(containerID, deploymentID, containerMetadata, mockStore)
+
+		mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
+			assert.Equal(t, deploymentID, ind.GetDeploymentId())
+		})
+
+		p.Process(&storage.ProcessSignal{ContainerId: containerID})
+
+		// Wait for all goroutines in the bubble to settle.
+		synctest.Wait()
+
+		msg := <-sensorEvents
+		require.NotNil(t, msg)
+		assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
+		assert.Equal(t, containerID, msg.GetEvent().GetProcessIndicator().GetSignal().GetContainerId())
+	})
+}
+
+func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	sensorEvents := make(chan *message.ExpiringMessage, 1)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockStore := clusterentities.NewStore(0, nil, false)
+	mockDetector := mocks.NewMockDetector(mockCtrl)
+	failingDispatcher := &fakeDispatcher{registerErr: errors.New("registration failed")}
+
+	_, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector, failingDispatcher)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "registration failed")
+}
+
+func TestPubSubPipelineDropsSignalOnPublishFailure(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	synctest.Test(t, func(t *testing.T) {
+		sensorEvents := make(chan *message.ExpiringMessage, 1)
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockStore := clusterentities.NewStore(0, nil, false)
+		mockDetector := mocks.NewMockDetector(mockCtrl)
+		failingDispatcher := &fakeDispatcher{publishErr: errors.New("publish failed")}
+
+		p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+			mockDetector, failingDispatcher)
+		require.NoError(t, err)
+		t.Cleanup(p.Shutdown)
+
+		containerID := "fail-container"
+		containerMetadata := clusterentities.ContainerMetadata{
+			DeploymentID: "fail-deployment",
+			ContainerID:  containerID,
+		}
+		updateStore(containerID, "fail-deployment", containerMetadata, mockStore)
+
+		// Process should not panic; the signal should be dropped.
+		require.NotPanics(t, func() {
+			p.Process(&storage.ProcessSignal{ContainerId: containerID})
+		})
+
+		// Wait for all goroutines to settle — if the signal were
+		// delivered it would be in the channel by now.
+		synctest.Wait()
+
+		select {
+		case msg := <-sensorEvents:
+			t.Errorf("Expected no message after publish failure, got: %v", msg)
+		default:
+			// Expected: nothing delivered.
+		}
+	})
+}
+
 // TestProcessPipelineShutdownRace tests that Process() does not panic when called after Shutdown()
 // This prevents the "send on closed channel" panic that occurs when fake workload goroutines
 // continue sending signals after the pipeline has been shut down.
@@ -288,8 +432,9 @@ func TestProcessPipelineShutdownRace(t *testing.T) {
 	mockStore := clusterentities.NewStore(0, nil, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector)
+	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector, nil)
+	require.NoError(t, err)
 
 	containerID := "test-container-id"
 	containerMetadata := clusterentities.ContainerMetadata{
