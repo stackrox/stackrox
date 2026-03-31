@@ -409,11 +409,11 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-      - pre-build-ui
       - pre-build-cli
-      - pre-build-go-binaries
       - pre-build-docs
+      - pre-build-go-binaries
       - pre-build-oss-notice
+      - pre-build-ui
     # This step will run even if required pre-* steps failed. By following this
     # approach as much of the build matrix as possible is completed despite
     # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
@@ -1005,15 +1005,15 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - pre-build-ui
-      - pre-build-cli
-      - pre-build-go-binaries
-      - pre-build-docs
-      - build-operator-bundle
       - build-and-push-main
       - build-and-push-operator
-      - scan-images-with-roxctl
+      - build-operator-bundle
+      - pre-build-cli
+      - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-ui
       - scan-go-binaries
+      - scan-images-with-roxctl
     permissions:
       actions: read
     steps:
