@@ -644,6 +644,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      # Proto sources freshness is checked in another workflow.
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
