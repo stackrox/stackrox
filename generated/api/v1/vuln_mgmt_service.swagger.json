@@ -875,9 +875,12 @@
         },
         "architecture": {
           "type": "string"
+        },
+        "layerType": {
+          "$ref": "#/definitions/storageLayerType"
         }
       },
-      "title": "Next Tag: 14"
+      "title": "Next Tag: 15"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1305,6 +1308,14 @@
         "NOT_EXISTS"
       ],
       "default": "UNKNOWN"
+    },
+    "storageLayerType": {
+      "type": "string",
+      "enum": [
+        "APPLICATION",
+        "BASE_IMAGE"
+      ],
+      "default": "APPLICATION"
     },
     "storageLicense": {
       "type": "object",

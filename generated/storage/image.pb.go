@@ -86,6 +86,52 @@ func (SourceType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_image_proto_rawDescGZIP(), []int{0}
 }
 
+type LayerType int32
+
+const (
+	LayerType_APPLICATION LayerType = 0
+	LayerType_BASE_IMAGE  LayerType = 1
+)
+
+// Enum value maps for LayerType.
+var (
+	LayerType_name = map[int32]string{
+		0: "APPLICATION",
+		1: "BASE_IMAGE",
+	}
+	LayerType_value = map[string]int32{
+		"APPLICATION": 0,
+		"BASE_IMAGE":  1,
+	}
+)
+
+func (x LayerType) Enum() *LayerType {
+	p := new(LayerType)
+	*p = x
+	return p
+}
+
+func (x LayerType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LayerType) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_image_proto_enumTypes[1].Descriptor()
+}
+
+func (LayerType) Type() protoreflect.EnumType {
+	return &file_storage_image_proto_enumTypes[1]
+}
+
+func (x LayerType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LayerType.Descriptor instead.
+func (LayerType) EnumDescriptor() ([]byte, []int) {
+	return file_storage_image_proto_rawDescGZIP(), []int{1}
+}
+
 type Image_Note int32
 
 const (
@@ -122,11 +168,11 @@ func (x Image_Note) String() string {
 }
 
 func (Image_Note) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_image_proto_enumTypes[1].Descriptor()
+	return file_storage_image_proto_enumTypes[2].Descriptor()
 }
 
 func (Image_Note) Type() protoreflect.EnumType {
-	return &file_storage_image_proto_enumTypes[1]
+	return &file_storage_image_proto_enumTypes[2]
 }
 
 func (x Image_Note) Number() protoreflect.EnumNumber {
@@ -183,11 +229,11 @@ func (x ImageScan_Note) String() string {
 }
 
 func (ImageScan_Note) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_image_proto_enumTypes[2].Descriptor()
+	return file_storage_image_proto_enumTypes[3].Descriptor()
 }
 
 func (ImageScan_Note) Type() protoreflect.EnumType {
-	return &file_storage_image_proto_enumTypes[2]
+	return &file_storage_image_proto_enumTypes[3]
 }
 
 func (x ImageScan_Note) Number() protoreflect.EnumNumber {
@@ -248,11 +294,11 @@ func (x ImageSignatureVerificationResult_Status) String() string {
 }
 
 func (ImageSignatureVerificationResult_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_image_proto_enumTypes[3].Descriptor()
+	return file_storage_image_proto_enumTypes[4].Descriptor()
 }
 
 func (ImageSignatureVerificationResult_Status) Type() protoreflect.EnumType {
-	return &file_storage_image_proto_enumTypes[3]
+	return &file_storage_image_proto_enumTypes[4]
 }
 
 func (x ImageSignatureVerificationResult_Status) Number() protoreflect.EnumNumber {
@@ -848,7 +894,7 @@ func (x *ImageSignatureVerificationResult) GetVerifierName() string {
 	return ""
 }
 
-// Next Tag: 14
+// Next Tag: 15
 type EmbeddedImageScanComponent struct {
 	state   protoimpl.MessageState   `protogen:"open.v1"`
 	Name    string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component"`       // @gotags: search:"Component"
@@ -872,6 +918,7 @@ type EmbeddedImageScanComponent struct {
 	// Values are cleared after moving to cache, remove them from the grpc return as well
 	Executables   []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-"` // @gotags: json:"-"
 	Architecture  string                                   `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
+	LayerType     LayerType                                `protobuf:"varint,14,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Component Layer Type"` // @gotags: search:"Component Layer Type"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1013,6 +1060,13 @@ func (x *EmbeddedImageScanComponent) GetArchitecture() string {
 		return x.Architecture
 	}
 	return ""
+}
+
+func (x *EmbeddedImageScanComponent) GetLayerType() LayerType {
+	if x != nil {
+		return x.LayerType
+	}
+	return LayerType_APPLICATION
 }
 
 type isEmbeddedImageScanComponent_HasLayerIndex interface {
@@ -2091,7 +2145,7 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x13FAILED_VERIFICATION\x10\x02\x12\x1a\n" +
 	"\x16INVALID_SIGNATURE_ALGO\x10\x03\x12\x17\n" +
 	"\x13CORRUPTED_SIGNATURE\x10\x04\x12\x11\n" +
-	"\rGENERIC_ERROR\x10\x05\"\xea\x04\n" +
+	"\rGENERIC_ERROR\x10\x05\"\x9d\x05\n" +
 	"\x1aEmbeddedImageScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12*\n" +
@@ -2108,7 +2162,9 @@ const file_storage_image_proto_rawDesc = "" +
 	" \x01(\x02R\triskScore\x12\x19\n" +
 	"\bfixed_by\x18\v \x01(\tR\afixedBy\x12P\n" +
 	"\vexecutables\x18\f \x03(\v2..storage.EmbeddedImageScanComponent.ExecutableR\vexecutables\x12\"\n" +
-	"\farchitecture\x18\r \x01(\tR\farchitecture\x1aD\n" +
+	"\farchitecture\x18\r \x01(\tR\farchitecture\x121\n" +
+	"\n" +
+	"layer_type\x18\x0e \x01(\x0e2\x12.storage.LayerTypeR\tlayerType\x1aD\n" +
 	"\n" +
 	"Executable\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
@@ -2208,7 +2264,11 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x06NODEJS\x10\x04\x12\x06\n" +
 	"\x02GO\x10\a\x12\x15\n" +
 	"\x11DOTNETCORERUNTIME\x10\x05\x12\x12\n" +
-	"\x0eINFRASTRUCTURE\x10\x06B.\n" +
+	"\x0eINFRASTRUCTURE\x10\x06*,\n" +
+	"\tLayerType\x12\x0f\n" +
+	"\vAPPLICATION\x10\x00\x12\x0e\n" +
+	"\n" +
+	"BASE_IMAGE\x10\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -2223,75 +2283,77 @@ func file_storage_image_proto_rawDescGZIP() []byte {
 	return file_storage_image_proto_rawDescData
 }
 
-var file_storage_image_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_storage_image_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_storage_image_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_storage_image_proto_goTypes = []any{
 	(SourceType)(0),     // 0: storage.SourceType
-	(Image_Note)(0),     // 1: storage.Image.Note
-	(ImageScan_Note)(0), // 2: storage.ImageScan.Note
-	(ImageSignatureVerificationResult_Status)(0), // 3: storage.ImageSignatureVerificationResult.Status
-	(*Image)(nil),                                 // 4: storage.Image
-	(*DataSource)(nil),                            // 5: storage.DataSource
-	(*ImageScan)(nil),                             // 6: storage.ImageScan
-	(*ImageSignatureVerificationData)(nil),        // 7: storage.ImageSignatureVerificationData
-	(*ImageSignatureVerificationResult)(nil),      // 8: storage.ImageSignatureVerificationResult
-	(*EmbeddedImageScanComponent)(nil),            // 9: storage.EmbeddedImageScanComponent
-	(*License)(nil),                               // 10: storage.License
-	(*ImageMetadata)(nil),                         // 11: storage.ImageMetadata
-	(*ImageSignature)(nil),                        // 12: storage.ImageSignature
-	(*Signature)(nil),                             // 13: storage.Signature
-	(*CosignSignature)(nil),                       // 14: storage.CosignSignature
-	(*V2Metadata)(nil),                            // 15: storage.V2Metadata
-	(*V1Metadata)(nil),                            // 16: storage.V1Metadata
-	(*ImageLayer)(nil),                            // 17: storage.ImageLayer
-	(*ImageName)(nil),                             // 18: storage.ImageName
-	(*ListImage)(nil),                             // 19: storage.ListImage
-	(*WatchedImage)(nil),                          // 20: storage.WatchedImage
-	(*BaseImageInfo)(nil),                         // 21: storage.BaseImageInfo
-	(*EmbeddedImageScanComponent_Executable)(nil), // 22: storage.EmbeddedImageScanComponent.Executable
-	nil,                           // 23: storage.V1Metadata.LabelsEntry
-	(*timestamppb.Timestamp)(nil), // 24: google.protobuf.Timestamp
-	(*EmbeddedVulnerability)(nil), // 25: storage.EmbeddedVulnerability
+	(LayerType)(0),      // 1: storage.LayerType
+	(Image_Note)(0),     // 2: storage.Image.Note
+	(ImageScan_Note)(0), // 3: storage.ImageScan.Note
+	(ImageSignatureVerificationResult_Status)(0), // 4: storage.ImageSignatureVerificationResult.Status
+	(*Image)(nil),                                 // 5: storage.Image
+	(*DataSource)(nil),                            // 6: storage.DataSource
+	(*ImageScan)(nil),                             // 7: storage.ImageScan
+	(*ImageSignatureVerificationData)(nil),        // 8: storage.ImageSignatureVerificationData
+	(*ImageSignatureVerificationResult)(nil),      // 9: storage.ImageSignatureVerificationResult
+	(*EmbeddedImageScanComponent)(nil),            // 10: storage.EmbeddedImageScanComponent
+	(*License)(nil),                               // 11: storage.License
+	(*ImageMetadata)(nil),                         // 12: storage.ImageMetadata
+	(*ImageSignature)(nil),                        // 13: storage.ImageSignature
+	(*Signature)(nil),                             // 14: storage.Signature
+	(*CosignSignature)(nil),                       // 15: storage.CosignSignature
+	(*V2Metadata)(nil),                            // 16: storage.V2Metadata
+	(*V1Metadata)(nil),                            // 17: storage.V1Metadata
+	(*ImageLayer)(nil),                            // 18: storage.ImageLayer
+	(*ImageName)(nil),                             // 19: storage.ImageName
+	(*ListImage)(nil),                             // 20: storage.ListImage
+	(*WatchedImage)(nil),                          // 21: storage.WatchedImage
+	(*BaseImageInfo)(nil),                         // 22: storage.BaseImageInfo
+	(*EmbeddedImageScanComponent_Executable)(nil), // 23: storage.EmbeddedImageScanComponent.Executable
+	nil,                           // 24: storage.V1Metadata.LabelsEntry
+	(*timestamppb.Timestamp)(nil), // 25: google.protobuf.Timestamp
+	(*EmbeddedVulnerability)(nil), // 26: storage.EmbeddedVulnerability
 }
 var file_storage_image_proto_depIdxs = []int32{
-	18, // 0: storage.Image.name:type_name -> storage.ImageName
-	18, // 1: storage.Image.names:type_name -> storage.ImageName
-	11, // 2: storage.Image.metadata:type_name -> storage.ImageMetadata
-	6,  // 3: storage.Image.scan:type_name -> storage.ImageScan
-	7,  // 4: storage.Image.signature_verification_data:type_name -> storage.ImageSignatureVerificationData
-	12, // 5: storage.Image.signature:type_name -> storage.ImageSignature
-	24, // 6: storage.Image.last_updated:type_name -> google.protobuf.Timestamp
-	1,  // 7: storage.Image.notes:type_name -> storage.Image.Note
-	21, // 8: storage.Image.base_image_info:type_name -> storage.BaseImageInfo
-	24, // 9: storage.ImageScan.scan_time:type_name -> google.protobuf.Timestamp
-	9,  // 10: storage.ImageScan.components:type_name -> storage.EmbeddedImageScanComponent
-	5,  // 11: storage.ImageScan.data_source:type_name -> storage.DataSource
-	2,  // 12: storage.ImageScan.notes:type_name -> storage.ImageScan.Note
-	8,  // 13: storage.ImageSignatureVerificationData.results:type_name -> storage.ImageSignatureVerificationResult
-	24, // 14: storage.ImageSignatureVerificationResult.verification_time:type_name -> google.protobuf.Timestamp
-	3,  // 15: storage.ImageSignatureVerificationResult.status:type_name -> storage.ImageSignatureVerificationResult.Status
-	10, // 16: storage.EmbeddedImageScanComponent.license:type_name -> storage.License
-	25, // 17: storage.EmbeddedImageScanComponent.vulns:type_name -> storage.EmbeddedVulnerability
+	19, // 0: storage.Image.name:type_name -> storage.ImageName
+	19, // 1: storage.Image.names:type_name -> storage.ImageName
+	12, // 2: storage.Image.metadata:type_name -> storage.ImageMetadata
+	7,  // 3: storage.Image.scan:type_name -> storage.ImageScan
+	8,  // 4: storage.Image.signature_verification_data:type_name -> storage.ImageSignatureVerificationData
+	13, // 5: storage.Image.signature:type_name -> storage.ImageSignature
+	25, // 6: storage.Image.last_updated:type_name -> google.protobuf.Timestamp
+	2,  // 7: storage.Image.notes:type_name -> storage.Image.Note
+	22, // 8: storage.Image.base_image_info:type_name -> storage.BaseImageInfo
+	25, // 9: storage.ImageScan.scan_time:type_name -> google.protobuf.Timestamp
+	10, // 10: storage.ImageScan.components:type_name -> storage.EmbeddedImageScanComponent
+	6,  // 11: storage.ImageScan.data_source:type_name -> storage.DataSource
+	3,  // 12: storage.ImageScan.notes:type_name -> storage.ImageScan.Note
+	9,  // 13: storage.ImageSignatureVerificationData.results:type_name -> storage.ImageSignatureVerificationResult
+	25, // 14: storage.ImageSignatureVerificationResult.verification_time:type_name -> google.protobuf.Timestamp
+	4,  // 15: storage.ImageSignatureVerificationResult.status:type_name -> storage.ImageSignatureVerificationResult.Status
+	11, // 16: storage.EmbeddedImageScanComponent.license:type_name -> storage.License
+	26, // 17: storage.EmbeddedImageScanComponent.vulns:type_name -> storage.EmbeddedVulnerability
 	0,  // 18: storage.EmbeddedImageScanComponent.source:type_name -> storage.SourceType
-	22, // 19: storage.EmbeddedImageScanComponent.executables:type_name -> storage.EmbeddedImageScanComponent.Executable
-	16, // 20: storage.ImageMetadata.v1:type_name -> storage.V1Metadata
-	15, // 21: storage.ImageMetadata.v2:type_name -> storage.V2Metadata
-	5,  // 22: storage.ImageMetadata.data_source:type_name -> storage.DataSource
-	13, // 23: storage.ImageSignature.signatures:type_name -> storage.Signature
-	24, // 24: storage.ImageSignature.fetched:type_name -> google.protobuf.Timestamp
-	14, // 25: storage.Signature.cosign:type_name -> storage.CosignSignature
-	24, // 26: storage.V1Metadata.created:type_name -> google.protobuf.Timestamp
-	17, // 27: storage.V1Metadata.layers:type_name -> storage.ImageLayer
-	23, // 28: storage.V1Metadata.labels:type_name -> storage.V1Metadata.LabelsEntry
-	24, // 29: storage.ImageLayer.created:type_name -> google.protobuf.Timestamp
-	24, // 30: storage.ListImage.created:type_name -> google.protobuf.Timestamp
-	24, // 31: storage.ListImage.last_updated:type_name -> google.protobuf.Timestamp
-	24, // 32: storage.BaseImageInfo.created:type_name -> google.protobuf.Timestamp
-	33, // [33:33] is the sub-list for method output_type
-	33, // [33:33] is the sub-list for method input_type
-	33, // [33:33] is the sub-list for extension type_name
-	33, // [33:33] is the sub-list for extension extendee
-	0,  // [0:33] is the sub-list for field type_name
+	23, // 19: storage.EmbeddedImageScanComponent.executables:type_name -> storage.EmbeddedImageScanComponent.Executable
+	1,  // 20: storage.EmbeddedImageScanComponent.layer_type:type_name -> storage.LayerType
+	17, // 21: storage.ImageMetadata.v1:type_name -> storage.V1Metadata
+	16, // 22: storage.ImageMetadata.v2:type_name -> storage.V2Metadata
+	6,  // 23: storage.ImageMetadata.data_source:type_name -> storage.DataSource
+	14, // 24: storage.ImageSignature.signatures:type_name -> storage.Signature
+	25, // 25: storage.ImageSignature.fetched:type_name -> google.protobuf.Timestamp
+	15, // 26: storage.Signature.cosign:type_name -> storage.CosignSignature
+	25, // 27: storage.V1Metadata.created:type_name -> google.protobuf.Timestamp
+	18, // 28: storage.V1Metadata.layers:type_name -> storage.ImageLayer
+	24, // 29: storage.V1Metadata.labels:type_name -> storage.V1Metadata.LabelsEntry
+	25, // 30: storage.ImageLayer.created:type_name -> google.protobuf.Timestamp
+	25, // 31: storage.ListImage.created:type_name -> google.protobuf.Timestamp
+	25, // 32: storage.ListImage.last_updated:type_name -> google.protobuf.Timestamp
+	25, // 33: storage.BaseImageInfo.created:type_name -> google.protobuf.Timestamp
+	34, // [34:34] is the sub-list for method output_type
+	34, // [34:34] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_proto_init() }
@@ -2326,7 +2388,7 @@ func file_storage_image_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_image_proto_rawDesc), len(file_storage_image_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,

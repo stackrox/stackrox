@@ -120,7 +120,7 @@ message ImageSignatureVerificationResult {
   string verifier_name = 6;
 }
 
-// Next Tag: 14
+// Next Tag: 15
 message EmbeddedImageScanComponent {
   string name = 1; // @gotags: search:"Component"
   string version = 2; // @gotags: search:"Component Version"
@@ -145,6 +145,7 @@ message EmbeddedImageScanComponent {
   // Values are cleared after moving to cache, remove them from the grpc return as well
   repeated Executable executables = 12; // @gotags: json:"-"
   string architecture = 13;
+  LayerType layer_type = 14; // @gotags: search:"Component Layer Type"
 }
 
 enum SourceType {
@@ -156,6 +157,11 @@ enum SourceType {
   GO = 7;
   DOTNETCORERUNTIME = 5;
   INFRASTRUCTURE = 6;
+}
+
+enum LayerType {
+  APPLICATION = 0;
+  BASE_IMAGE = 1;
 }
 
 message License {

@@ -23,6 +23,7 @@ var (
 		fieldnames.AllowPrivilegeEscalation:       {{required: set.NewStringSet(search.AllowPrivilegeEscalation.String()), printerFuncKey: printer.AllowPrivilegeEscalationKey}},
 		fieldnames.AppArmorProfile:                {{required: set.NewStringSet(search.AppArmorProfile.String()), printerFuncKey: printer.AppArmorProfileKey}},
 		fieldnames.AutomountServiceAccountToken:   {{required: set.NewStringSet(search.AutomountServiceAccountToken.String()), printerFuncKey: printer.AutomountServiceAccountTokenKey}},
+		fieldnames.BaseImageLayerType:             {{required: set.NewStringSet(search.ComponentLayerType.String()), printerFuncKey: printer.LayerTypeKey}},
 		fieldnames.CVE:                            {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.CVSS:                           {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.ContainerCPULimit:              {{required: set.NewStringSet(search.CPUCoresLimit.String()), printerFuncKey: printer.ResourceKey}},

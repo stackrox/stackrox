@@ -520,3 +520,149 @@ func (suite *ImageCriteriaTestSuite) TestImageVerified_WithDeployment() {
 		})
 	}
 }
+
+func (suite *ImageCriteriaTestSuite) TestBaseImageLayerType() {
+	// Create images with components of different layer types
+	imageWithBaseComponents := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "openssl", Version: "1.1.1", LayerType: storage.LayerType_BASE_IMAGE},
+		{Name: "glibc", Version: "2.31", LayerType: storage.LayerType_BASE_IMAGE},
+	})
+	imageWithBaseComponents.Name.FullName = "image-with-base"
+
+	imageWithAppComponents := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "myapp", Version: "1.0.0", LayerType: storage.LayerType_APPLICATION},
+		{Name: "node", Version: "16.0.0", LayerType: storage.LayerType_APPLICATION},
+	})
+	imageWithAppComponents.Name.FullName = "image-with-app"
+
+	imageWithMixedComponents := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "openssl", Version: "1.1.1", LayerType: storage.LayerType_BASE_IMAGE},
+		{Name: "myapp", Version: "1.0.0", LayerType: storage.LayerType_APPLICATION},
+	})
+	imageWithMixedComponents.Name.FullName = "image-with-mixed"
+
+	imageWithNoLayerType := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "legacy", Version: "1.0.0"}, // LayerType defaults to APPLICATION (0)
+	})
+	imageWithNoLayerType.Name.FullName = "image-legacy"
+
+	images := []*storage.Image{
+		imageWithBaseComponents,
+		imageWithAppComponents,
+		imageWithMixedComponents,
+		imageWithNoLayerType,
+	}
+
+	testCases := []struct {
+		desc            string
+		value           string
+		negate          bool
+		expectBuildErr  bool
+		expectedMatches []string
+	}{
+		{
+			desc:            "Match APPLICATION components",
+			value:           "APPLICATION",
+			negate:          false,
+			expectedMatches: []string{"image-with-app", "image-with-mixed", "image-legacy"},
+		},
+		{
+			desc:            "Match BASE_IMAGE components",
+			value:           "BASE_IMAGE",
+			negate:          false,
+			expectedMatches: []string{"image-with-base", "image-with-mixed"},
+		},
+		{
+			desc:            "Match BASE shorthand",
+			value:           "BASE",
+			negate:          false,
+			expectedMatches: []string{"image-with-base", "image-with-mixed"},
+		},
+		{
+			desc:            "Negated APPLICATION (matches if has any non-app component)",
+			value:           "APPLICATION",
+			negate:          true,
+			expectedMatches: []string{"image-with-base", "image-with-mixed"},
+		},
+		{
+			desc:            "Negated BASE_IMAGE (matches if has any non-base component)",
+			value:           "BASE_IMAGE",
+			negate:          true,
+			expectedMatches: []string{"image-with-app", "image-with-mixed", "image-legacy"},
+		},
+		{
+			desc:            "Case insensitive - lowercase",
+			value:           "application",
+			negate:          false,
+			expectedMatches: []string{"image-with-app", "image-with-mixed", "image-legacy"},
+		},
+		{
+			desc:            "Case insensitive - mixed case",
+			value:           "Base_Image",
+			negate:          false,
+			expectedMatches: []string{"image-with-base", "image-with-mixed"},
+		},
+		{
+			desc:           "Invalid value",
+			value:          "INVALID_LAYER",
+			expectBuildErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			policyGroup := &storage.PolicyGroup{
+				FieldName: fieldnames.BaseImageLayerType,
+				Values: []*storage.PolicyValue{
+					{Value: tc.value},
+				},
+				Negate: tc.negate,
+			}
+
+			policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, policyGroup)
+
+			// Test ImageMatcher
+			imgMatcher, err := BuildImageMatcher(policy)
+			if tc.expectBuildErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			matchedImages := set.NewStringSet()
+			for _, img := range images {
+				violations, err := imgMatcher.MatchImage(nil, img)
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					matchedImages.Add(img.GetName().GetFullName())
+				}
+			}
+
+			assert.ElementsMatch(t, tc.expectedMatches, matchedImages.AsSlice(),
+				"Expected %v but got %v", tc.expectedMatches, matchedImages.AsSlice())
+
+			// Test DeploymentMatcher
+			depMatcher, err := BuildDeploymentMatcher(policy)
+			require.NoError(t, err)
+
+			matchedDeployments := set.NewStringSet()
+			for _, img := range images {
+				dep := fixtures.GetDeployment().CloneVT()
+				dep.Containers = []*storage.Container{
+					{
+						Name:  img.GetName().GetFullName(),
+						Image: types.ToContainerImage(img),
+					},
+				}
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					matchedDeployments.Add(img.GetName().GetFullName())
+				}
+			}
+
+			assert.ElementsMatch(t, tc.expectedMatches, matchedDeployments.AsSlice(),
+				"Expected %v but got %v", tc.expectedMatches, matchedDeployments.AsSlice())
+		})
+	}
+}

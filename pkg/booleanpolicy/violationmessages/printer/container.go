@@ -88,6 +88,24 @@ func imageOSPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
+	layerTypeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has{{else}}Image has{{end}} component with layer type '{{.LayerType}}'`
+)
+
+func layerTypePrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName string
+		LayerType     string
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	var err error
+	if r.LayerType, err = getSingleValueFromFieldMap(search.ComponentLayerType.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	return executeTemplate(layerTypeTemplate, r)
+}
+
+const (
 	imageDetailsTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
 )
 

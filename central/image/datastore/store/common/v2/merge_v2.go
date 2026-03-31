@@ -46,6 +46,7 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 		FixedBy:      cp.ComponentV2.GetFixedBy(),
 		RiskScore:    cp.ComponentV2.GetRiskScore(),
 		Priority:     cp.ComponentV2.GetPriority(),
+		LayerType:    cp.ComponentV2.GetLayerType(),
 		Vulns:        vulns,
 	}
 

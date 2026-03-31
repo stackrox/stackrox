@@ -113,6 +113,12 @@ func (s *PolicyValueValidator) TestRegex() {
 			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS"},
 			r:       fileOperationRegex,
 		},
+		{
+			name:    "layer type",
+			valid:   []string{"APPLICATION", "BASE_IMAGE", "BASE", "application", "base_image", "base", "Application", "Base_Image"},
+			invalid: []string{"", " ", "APP", "LAYER", "IMAGE", "CONTAINER"},
+			r:       layerTypeValueRegex,
+		},
 	}
 
 	for _, c := range cases {

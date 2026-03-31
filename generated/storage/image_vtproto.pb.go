@@ -266,6 +266,7 @@ func (m *EmbeddedImageScanComponent) CloneVT() *EmbeddedImageScanComponent {
 	r.RiskScore = m.RiskScore
 	r.FixedBy = m.FixedBy
 	r.Architecture = m.Architecture
+	r.LayerType = m.LayerType
 	if rhs := m.Vulns; rhs != nil {
 		tmpContainer := make([]*EmbeddedVulnerability, len(rhs))
 		for k, v := range rhs {
@@ -1160,6 +1161,9 @@ func (this *EmbeddedImageScanComponent) EqualVT(that *EmbeddedImageScanComponent
 		}
 	}
 	if this.Architecture != that.Architecture {
+		return false
+	}
+	if this.LayerType != that.LayerType {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2381,6 +2385,11 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
+	}
+	if m.LayerType != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LayerType))
+		i--
+		dAtA[i] = 0x70
 	}
 	if len(m.Architecture) > 0 {
 		i -= len(m.Architecture)
@@ -3672,6 +3681,9 @@ func (m *EmbeddedImageScanComponent) SizeVT() (n int) {
 	l = len(m.Architecture)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.LayerType != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.LayerType))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5901,6 +5913,25 @@ func (m *EmbeddedImageScanComponent) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Architecture = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerType", wireType)
+			}
+			m.LayerType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LayerType |= LayerType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10079,6 +10110,25 @@ func (m *EmbeddedImageScanComponent) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Architecture = stringValue
 			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerType", wireType)
+			}
+			m.LayerType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LayerType |= LayerType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

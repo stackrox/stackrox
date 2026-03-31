@@ -11,6 +11,7 @@ var (
 	AllowPrivilegeEscalation       = newFieldName("Allow Privilege Escalation")
 	AppArmorProfile                = newFieldName("AppArmor Profile")
 	AutomountServiceAccountToken   = newFieldName("Automount Service Account Token")
+	BaseImageLayerType             = newFieldName("Base Image Layer Type")
 	CVE                            = newFieldName("CVE")
 	CVSS                           = newFieldName("CVSS")
 	ContainerCPULimit              = newFieldName("Container CPU Limit")

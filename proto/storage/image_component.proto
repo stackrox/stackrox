@@ -55,8 +55,3 @@ message ImageComponentV2 {
 
   LayerType layer_type = 16; // @gotags: search:"Component Layer Type"
 }
-
-enum LayerType {
-  APPLICATION = 0;
-  BASE_IMAGE = 1;
-}

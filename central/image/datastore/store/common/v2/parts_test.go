@@ -562,7 +562,8 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 1,
 					},
-					Vulns: []*storage.EmbeddedVulnerability{},
+					LayerType: storage.LayerType_BASE_IMAGE,
+					Vulns:     []*storage.EmbeddedVulnerability{},
 				},
 				{
 					Name:    "comp1",
@@ -570,6 +571,7 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 3,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:                   "cve1",
@@ -606,6 +608,7 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 2,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:                "cve1",
@@ -632,6 +635,7 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 2,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:                "cve1",
@@ -654,5 +658,39 @@ func dedupedImage() *storage.Image {
 				},
 			},
 		},
+	}
+}
+
+func TestGenerateEmbeddedComponentV2LayerType(t *testing.T) {
+	testCases := []struct {
+		name      string
+		layerType storage.LayerType
+	}{
+		{
+			name:      "APPLICATION layer type",
+			layerType: storage.LayerType_APPLICATION,
+		},
+		{
+			name:      "BASE_IMAGE layer type",
+			layerType: storage.LayerType_BASE_IMAGE,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			componentParts := ComponentParts{
+				ComponentV2: &storage.ImageComponentV2{
+					Name:      "test-component",
+					Version:   "1.0.0",
+					LayerType: tc.layerType,
+				},
+				Children: []CVEParts{},
+			}
+
+			embedded := generateEmbeddedComponentV2(componentParts)
+
+			assert.Equal(t, tc.layerType, embedded.GetLayerType(),
+				"LayerType should be copied from ImageComponentV2 to EmbeddedImageScanComponent")
+		})
 	}
 }
