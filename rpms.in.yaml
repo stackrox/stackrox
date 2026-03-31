@@ -4,8 +4,7 @@
 packages:
 # builder stage in image/rhel/konflux.Dockerfile
 - jq
-# final stage in image/rhel/konflux.Dockerfile
-- findutils
+# package_installer stage in image/rhel/konflux.Dockerfile
 - postgresql
 # builder stage in operator/konflux.bundle.Dockerfile
 - python3.12-pyyaml

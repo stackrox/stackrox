@@ -79,7 +79,6 @@ RUN dnf module enable -y \
         --setopt=install_weak_deps=0 \
         --nodocs \
         ca-certificates \
-        findutils \
         openssl \
         postgresql && \
     dnf clean all --installroot=/out/ && \

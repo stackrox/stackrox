@@ -37,7 +37,6 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
         --releasever=9 \
         --setopt=install_weak_deps=0 \
         --nodocs \
-        findutils \
         ca-certificates \
         /tmp/postgres-libs.rpm \
         /tmp/postgres.rpm && \
