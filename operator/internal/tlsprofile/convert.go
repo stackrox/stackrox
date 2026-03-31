@@ -49,7 +49,7 @@ func convertCiphersToIANA(opensslCiphers []string) string {
 	tls12Only := filterTLS13(opensslCiphers)
 	iana := libgocrypto.OpenSSLToIANACipherSuites(tls12Only)
 	if len(iana) < len(tls12Only) {
-		log.Info("some ciphers from cluster TLS profile have no IANA equivalent and were dropped",
+		log.Info("Some ciphers from cluster TLS profile have no IANA equivalent and were dropped.",
 			"inputCount", len(tls12Only), "outputCount", len(iana))
 	}
 	return strings.Join(iana, ",")

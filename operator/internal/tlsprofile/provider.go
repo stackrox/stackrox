@@ -88,7 +88,7 @@ func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfil
 
 	minVersion, known := convertMinVersion(clusterTLS.ProfileSpec.MinTLSVersion)
 	if !known {
-		log.Info("unsupported TLS version in cluster profile, clamping to highest known version",
+		log.Info("Unsupported TLS version in cluster profile, clamping to highest known version.",
 			"requestedVersion", clusterTLS.ProfileSpec.MinTLSVersion,
 			"clampedVersion", minVersion)
 	}

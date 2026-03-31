@@ -22,7 +22,7 @@ func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS ClusterTLSProfile, canc
 		InitialTLSAdherencePolicy: clusterTLS.Adherence,
 		OnProfileChange: func(_ context.Context, oldSpec, newSpec configv1.TLSProfileSpec) {
 			logger.Info(
-				"cluster TLS profile changed, restarting Operator to apply new settings",
+				"Cluster TLS profile changed, restarting Operator to apply new settings.",
 				"oldMinTLSVersion", oldSpec.MinTLSVersion,
 				"newMinTLSVersion", newSpec.MinTLSVersion,
 			)
@@ -30,7 +30,7 @@ func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS ClusterTLSProfile, canc
 		},
 		OnAdherencePolicyChange: func(_ context.Context, oldPolicy, newPolicy configv1.TLSAdherencePolicy) {
 			logger.Info(
-				"cluster TLS adherence policy changed, restarting Operator to apply new settings",
+				"Cluster TLS adherence policy changed, restarting Operator to apply new settings.",
 				"oldPolicy", oldPolicy,
 				"newPolicy", newPolicy,
 			)
