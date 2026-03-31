@@ -270,6 +270,10 @@ test: manifests generate fmt vet  ## Run go unit tests
 test-integration: manifests generate fmt vet envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./tests/... -coverprofile cover-integration.out
 
+test-helm: ## Run operator helm chart tests.
+	ROX_PRODUCT_BRANDING=RHACS_BRANDING $(MAKE) chart # Setting the env var to produce the rhacs- flavor assumed by the subsequent test.
+	go test -tags operator_helmtest -count=1 -v ./tests/chart/...
+
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
 validate-crs: yq
@@ -373,10 +377,19 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator (build binary inside Docker).
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
+		-f $< \
+		..
+
+.PHONY: docker-build-prebuilt
+docker-build-prebuilt: prebuilt.Dockerfile ## Build docker image with pre-built operator binary.
+	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
+		-t ${IMG} \
+		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		-f $< \
 		..
 
