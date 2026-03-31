@@ -119,6 +119,13 @@ var (
 		Help:      "Count of process signals dropped due to shutdown or a full output buffer",
 	})
 
+	processPipelineModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_pipeline_mode",
+		Help:      "Indicates the active process pipeline mode (1 for the active mode, 0 for inactive)",
+	}, []string{"mode"})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -457,6 +464,19 @@ func IncrementProcessEnrichmentHits() {
 // SetProcessEnrichmentCacheSize sets the enrichment cache size.
 func SetProcessEnrichmentCacheSize(size float64) {
 	processEnrichmentLRUCacheSize.Set(size)
+}
+
+const (
+	// ProcessPipelineModePubSub indicates the pub/sub pipeline mode is active.
+	ProcessPipelineModePubSub = "pubsub"
+	// ProcessPipelineModeLegacy indicates the legacy channel pipeline mode is active.
+	ProcessPipelineModeLegacy = "legacy"
+)
+
+// SetProcessPipelineMode sets which process pipeline mode is active.
+func SetProcessPipelineMode(mode string) {
+	processPipelineModeGauge.Reset()
+	processPipelineModeGauge.WithLabelValues(mode).Set(1)
 }
 
 // IncK8sEventCount increments the number of objects we're receiving from k8s

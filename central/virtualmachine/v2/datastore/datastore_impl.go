@@ -47,6 +47,32 @@ func (ds *datastoreImpl) GetManyVirtualMachines(ctx context.Context, ids []strin
 	return ds.store.GetMany(ctx, ids)
 }
 
+func (ds *datastoreImpl) EnsureVirtualMachineExists(ctx context.Context, vmID string, clusterID string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "EnsureVirtualMachineExists")
+
+	if vmID == "" {
+		return errors.New("cannot ensure VM exists without an id")
+	}
+	if clusterID == "" {
+		return errors.New("cannot ensure VM exists without a cluster id")
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmID).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	count, err := ds.store.Count(ctx, query)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
+	// VM not found; create a minimal record with only ID and cluster association.
+	return ds.store.UpsertVM(ctx, &storage.VirtualMachineV2{
+		Id:        vmID,
+		ClusterId: clusterID,
+	})
+}
+
 func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, vm *storage.VirtualMachineV2) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "UpsertVirtualMachine")
 
