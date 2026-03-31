@@ -101,6 +101,8 @@ func (s *storeImpl) UpsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 }
 
 func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) error {
+	vm = vm.CloneVT() // Defensive copy — callers may share the pointer across goroutines
+
 	// Calculate hash to see if anything changed
 	hash, err := hashVM(vm)
 	if err != nil {
