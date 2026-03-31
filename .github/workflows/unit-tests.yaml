@@ -79,7 +79,7 @@ jobs:
           EXCLUDE="${EXCLUDE}|${{ matrix.shard.exclude-pattern }}"
         fi
         PACKAGES=$(go list ${{ matrix.shard.packages }} | grep -Ev "$EXCLUDE")
-        # shellcheck disable=SC2086 -- deliberate word splitting of package list
+        # shellcheck disable=SC2086
         GOTAGS="${GOTAGS:+$GOTAGS,}test" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
           scripts/go-test.sh -timeout 25m -race -cover \
           -coverprofile test-output/coverage.out -v \
@@ -141,7 +141,7 @@ jobs:
         mkdir -p test-output
         set -o pipefail
         PACKAGES=$(go list ./... | grep -E 'registries|scanners|notifiers')
-        # shellcheck disable=SC2086 -- deliberate word splitting of package list
+        # shellcheck disable=SC2086
         ${{ matrix.gotags }} GOTAGS="${GOTAGS:+$GOTAGS,}test,integration" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
           scripts/go-test.sh -v $PACKAGES | tee test-output/test.log
 
