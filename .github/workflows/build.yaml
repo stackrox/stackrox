@@ -1034,6 +1034,7 @@ jobs:
       - pre-build-docs
       - pre-build-go-binaries
       - pre-build-ui
+      - push-matching-collector-scanner
       - scan-go-binaries
       - scan-images-with-roxctl
     permissions:
