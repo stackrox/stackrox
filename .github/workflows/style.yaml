@@ -191,6 +191,9 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
       - name: Cache QA Test dependencies
         uses: ./.github/actions/cache-gradle-dependencies
 
