@@ -86,11 +86,12 @@ func PathPattern(pattern string) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{Path: glob.Pattern(pattern).Ptr()}
 }
 
-// HeaderPattern builds a header pattern criterion.
-func HeaderPattern(header string, pattern string) *APICallCampaignCriterion {
+// HeaderPattern builds a header pattern criterion. Both header and value are
+// glob patterns.
+func HeaderPattern(header string, value string) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{
 		Headers: map[glob.Pattern]glob.Pattern{
-			glob.Pattern(header): glob.Pattern(pattern),
+			glob.Pattern(header): glob.Pattern(value),
 		},
 	}
 }
