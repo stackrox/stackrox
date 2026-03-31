@@ -43,7 +43,7 @@ func (m *NamespaceStore) ProcessEvent(action central.ResourceAction, obj interfa
 		defer m.lock.Unlock()
 		m.namespaces[ns.GetName()] = ns
 		if action == central.ResourceAction_CREATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
-			log.Infof("Synced namespace %q to admission control", ns.GetName())
+			log.Debugf("Synced namespace %q to admission control", ns.GetName())
 		}
 	case central.ResourceAction_REMOVE_RESOURCE:
 		// Namespace remove event contains full namespace metadata.

@@ -101,7 +101,6 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	}
 
 	p.currSettings = newSettings
-	p.pushClusterLabelsIfChangedNoLock()
 }
 
 func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
@@ -133,7 +132,6 @@ func (p *settingsManager) FlushCache() {
 		p.settingsStream.Push(newSettings)
 	}
 	p.currSettings = newSettings
-	p.pushClusterLabelsIfChangedNoLock()
 }
 
 // pushClusterLabelsIfChangedNoLock pushes cluster labels to admission control if they've changed.
