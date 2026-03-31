@@ -206,6 +206,8 @@ var (
 	// Tombstone search fields.
 	TombstoneDeletedAt = newFieldLabel("Tombstone Deleted At")
 	TombstoneExpiresAt = newFieldLabel("Tombstone Expires At")
+	// DeploymentStatus tracks whether a deployment is active or soft-deleted.
+	DeploymentStatus = newFieldLabel("Deployment Status")
 
 	AlertID        = newFieldLabel("Alert ID")
 	Violation      = newFieldLabel("Violation")

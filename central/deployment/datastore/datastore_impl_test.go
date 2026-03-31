@@ -196,6 +196,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:                "id",
 		Namespace:         "my-namespace",
 		PlatformComponent: false,
+		DeploymentStatus:  storage.DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED,
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
@@ -212,6 +213,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:                "id",
 		Namespace:         "kube-123",
 		PlatformComponent: true,
+		DeploymentStatus:  storage.DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED,
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)

@@ -369,6 +369,8 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		log.Warnf("Resurrecting tombstoned deployment %s (name: %s) — clearing tombstone fields", deployment.GetId(), deployment.GetName())
 		deployment.Tombstone = nil
 	}
+	// Mark as active, clearing any previous DELETED status from before resurrection.
+	deployment.DeploymentStatus = storage.DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED
 
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
@@ -501,6 +503,7 @@ func (ds *datastoreImpl) TombstoneDeployment(ctx context.Context, clusterID, dep
 			DeletedAt: timestamppb.New(now),
 			ExpiresAt: timestamppb.New(expiresAt),
 		}
+		deployment.DeploymentStatus = storage.DeploymentStatus_DEPLOYMENT_STATUS_DELETED
 		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 			return errors.Wrapf(err, "upserting tombstoned deployment %s", deploymentID)
 		}
