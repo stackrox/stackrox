@@ -50,7 +50,30 @@ function SecureClusterUsingOperator({
                             Installing RHACS on secured clusters by using the Operator (OpenShift)
                         </a>
                     </ExternalLink>
-                    {/* TODO ROX-33550: Add non-OpenShift operator documentation links when available */}
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-other-platforms#init-bundle-other'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Generating and applying an init bundle for RHACS on other platforms
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-other-platforms#install-secured-cluster-other'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Installing secured cluster services for RHACS on other platforms
+                        </a>
+                    </ExternalLink>
                 </>
             )}
             <p>
