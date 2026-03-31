@@ -2,7 +2,6 @@ import { MemoryRouter, useLocation } from 'react-router-dom-v5-compat';
 import { renderHook } from '@testing-library/react';
 import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
 
-import { URLSearchParams } from 'url';
 import useDeploymentStatus from './useDeploymentStatus';
 
 test('defaults to DEPLOYED when no URL param is set', async () => {

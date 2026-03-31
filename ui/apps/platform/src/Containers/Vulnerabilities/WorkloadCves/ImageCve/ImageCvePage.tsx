@@ -327,7 +327,7 @@ function ImageCvePage({
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
     // Use the count from the deployment data request when available, since it reflects
-    // the tombstone-extended query (i.e. the count changes with the "Show deleted" toggle).
+    // the tombstone-extended query (i.e. the count changes with the Deployment status filter).
     // While loading, show 0 so the pagination doesn't show a stale total from a previous query.
     const deploymentTableRowCount = deploymentDataRequest.loading
         ? 0
