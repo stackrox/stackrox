@@ -936,6 +936,37 @@ module.exports = [
         },
     },
     {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/CheckboxTable.jsx', // deprecated
+            'src/Components/CollapsibleCard.jsx', // deprecated
+            'src/Components/ColorPicker.jsx', // rewrite
+            'src/Components/ExportButton.jsx', // deprecated
+            'src/Components/Popper.jsx', // replace or rewrite
+            'src/Components/SearchInput/SearchInput.jsx', // deprecated
+            'src/Components/Select.jsx', // deprecated
+            'src/Components/Table.jsx', // deprecated
+            'src/Components/Tabs.jsx', // deprecated
+            'src/Components/WorkflowPDFExportButton.jsx', // deprecated
+            'src/Components/visuals/Sunburst.jsx', // deprecated
+            'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite
+            'src/Containers/MainPage/asyncComponent.tsx', // replace
+            'src/Containers/Risk/KeyValuePairs.jsx', // rewrite?
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-Component': 'error',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx}'],
         ignores: [
             'src/**/*.test.js', // unit test
