@@ -27,9 +27,12 @@ func (c *APICallCampaignCriterion) Compile() error {
 	if c == nil {
 		return nil
 	}
-	for _, pattern := range c.Headers {
-		if err := pattern.Compile(); err != nil {
-			return errors.WithMessage(err, "error parsing header pattern")
+	for name, value := range c.Headers {
+		if err := name.Compile(); err != nil {
+			return errors.WithMessage(err, "error parsing header name pattern")
+		}
+		if err := value.Compile(); err != nil {
+			return errors.WithMessage(err, "error parsing header value pattern")
 		}
 	}
 	if err := c.Path.Compile(); err != nil {
@@ -93,10 +96,10 @@ func PathPattern(pattern glob.Pattern) *APICallCampaignCriterion {
 // HeaderPattern builds an APICallCampaignCriterion that matches a single
 // request header against the provided glob pattern. The returned criterion's
 // Headers map contains exactly one entry: the header name mapped to pattern.
-func HeaderPattern(header string, pattern glob.Pattern) *APICallCampaignCriterion {
+func HeaderPattern(header glob.Pattern, value glob.Pattern) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{
 		Headers: GlobMap{
-			header: pattern,
+			header: value,
 		},
 	}
 }

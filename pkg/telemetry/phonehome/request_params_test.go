@@ -1,6 +1,7 @@
 package phonehome
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,11 +18,11 @@ func TestMatchHeaders(t *testing.T) {
 	})
 
 	rp := RequestParams{
-		Headers: Headers{
+		Headers: Headers(http.Header{
 			"Empty": {},
 			"One":   {"one"},
 			"Two":   {"one", "two"},
-		},
+		}),
 	}
 
 	tests := map[string]struct {
@@ -88,6 +89,13 @@ func TestMatchHeaders(t *testing.T) {
 				"Three": "th*",
 			},
 			expected: nil,
+		},
+		"multiple matching": {
+			headers: GlobMap{
+				"Tw?": "one",
+				"?wo": "two",
+			},
+			expected: Headers{"Two": {"one", "two"}},
 		},
 	}
 	for name, test := range tests {
