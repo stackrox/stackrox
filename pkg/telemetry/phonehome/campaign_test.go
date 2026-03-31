@@ -9,13 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
-	return func(s string) []string {
-		if http.CanonicalHeaderKey(s) == userAgentHeaderKey {
-			return []string{ua}
-		}
-		return headers[s]
+func withUserAgent(_ *testing.T, headers http.Header, ua string) Headers {
+	if headers == nil {
+		headers = make(http.Header)
 	}
+	headers.Set(userAgentHeaderKey, ua)
+	return Headers(headers)
 }
 
 func TestCampaignFulfilled(t *testing.T) {
@@ -124,11 +123,10 @@ func TestCampaignFulfilled(t *testing.T) {
 			"X-Other":      {"gamma"},
 		})
 		rp := &RequestParams{
-			Headers:       headers.Get,
-			HeadersFilter: headers.GetAll,
-			Method:        "GET",
-			Path:          "/test",
-			Code:          200,
+			Headers: headers,
+			Method:  "GET",
+			Path:    "/test",
+			Code:    200,
 		}
 
 		t.Run("Glob header name matches", func(t *testing.T) {
@@ -187,11 +185,10 @@ func TestCampaignFulfilled(t *testing.T) {
 			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
 
 			rpPost := &RequestParams{
-				Headers:       headers.Get,
-				HeadersFilter: headers.GetAll,
-				Method:        "POST",
-				Path:          "/test",
-				Code:          200,
+				Headers: headers,
+				Method:  "POST",
+				Path:    "/test",
+				Code:    200,
 			}
 			assert.Zero(t, campaign.CountFulfilled(rpPost, doNothing))
 		})
@@ -223,7 +220,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				Path:   glob.Pattern("/v5/*").Ptr(),
 				Headers: map[glob.Pattern]glob.Pattern{
 					"User-Agent": "*another*",
-					"header":     "val*",
+					"Header":     "val*",
 				},
 			},
 		}
@@ -258,16 +255,14 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method: "PUT",
 					Code:   100,
 					Path:   "/v5/test",
-					Headers: func(h string) []string {
-						return map[string][]string{
-							userAgentHeaderKey: {"some another user-agent"},
-							"header":           {"value"},
-						}[h]
-					},
+					Headers: Headers(http.Header{
+						userAgentHeaderKey: {"some another user-agent"},
+						"Header":           {"value"},
+					}),
 				},
 			}
 			for _, rp := range rps {
-				assert.Equal(t, 1, campaign.CountFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
+				assert.Equal(t, 1, campaign.CountFulfilled(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
 			}
 		})
 
@@ -302,12 +297,12 @@ func TestCampaignFulfilled(t *testing.T) {
 					Path:   "/v5/test/path",
 					Code:   100,
 					Headers: withUserAgent(t,
-						map[string][]string{"h": {"---"}},
+						http.Header{"H": {"---"}},
 						"some another user-agent 5"),
 				},
 			}
 			for _, rp := range rps {
-				assert.Zero(t, campaign.CountFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
+				assert.Zero(t, campaign.CountFulfilled(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
 			}
 		})
 	})

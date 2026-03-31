@@ -46,17 +46,6 @@ func TestKeyCase(t *testing.T) {
 	})
 }
 
-func TestGetFirst(t *testing.T) {
-	h := make(http.Header)
-	h.Add("key", "value1")
-	h.Add("key", "value2")
-	assert.Equal(t, []string{"value1", "value2"}, h.Values("key"))
-
-	assert.Equal(t, "value1", GetFirst(Headers(h).Get, "key"))
-	assert.Equal(t, "", GetFirst(Headers(h).Get, "nokey"))
-	assert.Equal(t, "", GetFirst(nil, "nokey"))
-}
-
 func TestGetAll(t *testing.T) {
 	h := make(http.Header)
 	h.Add("key-1", "value 1")
@@ -84,7 +73,7 @@ func TestGetAll(t *testing.T) {
 	_, err = headers.GetAll(glob.Pattern("Key-1"), glob.Pattern("value [1-]"))
 	assert.Error(t, err)
 
-	_, err = headers.GetAll(glob.Pattern("*"), glob.Pattern("value [2-3]"))
+	matching, err = headers.GetAll(glob.Pattern("*"), glob.Pattern("value [2-3]"))
 	assert.NoError(t, err)
 	assert.Equal(t, map[string][]string{"Something-Else": {"value 2", "value 3"}, "Key-2": {"value 2"}}, matching)
 }

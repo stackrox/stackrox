@@ -3,7 +3,6 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"slices"
 
 	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -21,10 +20,7 @@ type RequestParams struct {
 	GRPCReq any
 	HTTPReq *http.Request
 	// HTTP Headers or, for pure gRPC, the metadata. Includes the User-Agent.
-	Headers func(string) []string
-
-	// HeadersFilter returns a map of matching keys and values.
-	HeadersFilter func(glob.Pattern, glob.Pattern) (map[string][]string, error)
+	Headers Headers
 }
 
 // HasHeader returns true if for each header pattern there is at least one
@@ -35,18 +31,8 @@ func (rp *RequestParams) HasHeader(patterns map[glob.Pattern]glob.Pattern) bool 
 		if expression == NoHeaderOrAnyValue {
 			continue
 		}
-		if rp.HeadersFilter != nil {
-			values, err := rp.HeadersFilter(header, expression)
-			if err != nil || len(values) == 0 {
-				return false
-			}
-			continue
-		}
-		if rp.Headers == nil {
-			return false
-		}
-		values := rp.Headers(string(header))
-		if len(values) == 0 || !slices.ContainsFunc(values, expression.Match) {
+		values, err := rp.Headers.GetAll(header, expression)
+		if err != nil || len(values) == 0 {
 			return false
 		}
 	}

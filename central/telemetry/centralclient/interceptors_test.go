@@ -14,13 +14,12 @@ import (
 // See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
 const snowIntegrationHeader = "Rh-Servicenow-Integration"
 
-func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
-	return func(key string) []string {
-		if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
-			return []string{ua}
-		}
-		return headers[key]
+func withUserAgent(_ *testing.T, headers http.Header, ua string) phonehome.Headers {
+	if headers == nil {
+		headers = make(http.Header)
 	}
+	headers.Set(userAgentHeaderKey, ua)
+	return phonehome.Headers(headers)
 }
 
 func Test_apiCall(t *testing.T) {
@@ -92,10 +91,10 @@ func Test_apiCall(t *testing.T) {
 		},
 		"ServiceNow from integration": {
 			rp: &phonehome.RequestParams{
-				HeadersFilter: phonehome.Headers(http.Header{
+				Headers: phonehome.Headers(http.Header{
 					snowIntegrationHeader: {"v1.0.3"},
 					"User-Agent":          {"RHACS Integration ServiceNow client"},
-				}).GetAll,
+				}),
 				Method: "GET",
 				Path:   "/v1/clusters",
 				Code:   200,
@@ -163,10 +162,10 @@ func Test_addCustomHeaders(t *testing.T) {
 			Method: "GET",
 			Path:   "/v1/clusters",
 			Code:   200,
-			HeadersFilter: phonehome.Headers(http.Header{
+			Headers: phonehome.Headers(http.Header{
 				userAgentHeaderKey:    {"RHACS Integration ServiceNow client"},
 				snowIntegrationHeader: {"v1.0.3", "beta"},
-			}).GetAll,
+			}),
 		}
 		props := map[string]any{}
 		addCustomHeaders(rp, tc[1], props)
@@ -180,12 +179,10 @@ func Test_addCustomHeaders(t *testing.T) {
 			Method: "GET",
 			Path:   "/v1/clusters",
 			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey:      {"ServiceNow"},
-					"3rd-party-integration": {"v1.0.3", "beta"},
-				}[h]
-			},
+			Headers: phonehome.Headers(http.Header{
+				userAgentHeaderKey:      {"ServiceNow"},
+				"3rd-Party-Integration": {"v1.0.3", "beta"},
+			}),
 		}
 		props := map[string]any{}
 		addCustomHeaders(rp, tc[1], props)
@@ -198,14 +195,12 @@ func Test_addCustomHeaders(t *testing.T) {
 			Method: "GET",
 			Path:   "/v1/clusters",
 			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey:                  {"roxctl"},
-					clientconn.RoxctlCommandHeader:      {"central"},
-					clientconn.RoxctlCommandIndexHeader: {"1"},
-					clientconn.ExecutionEnvironment:     {"github"},
-				}[h]
-			},
+			Headers: phonehome.Headers(http.Header{
+				userAgentHeaderKey:                  {"roxctl"},
+				clientconn.RoxctlCommandHeader:      {"central"},
+				clientconn.RoxctlCommandIndexHeader: {"1"},
+				clientconn.ExecutionEnvironment:     {"github"},
+			}),
 		}
 		props := map[string]any{}
 		addCustomHeaders(rp, tc[0], props)
@@ -223,11 +218,9 @@ func Test_addCustomHeaders(t *testing.T) {
 			Method: "GET",
 			Path:   "/v1/config",
 			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey: {"roxctl"},
-				}[h]
-			},
+			Headers: phonehome.Headers(http.Header{
+				userAgentHeaderKey: {"roxctl"},
+			}),
 		}
 		props := map[string]any{}
 		addCustomHeaders(rp, tc[0], props)

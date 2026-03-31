@@ -1,6 +1,7 @@
 package phonehome
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/glob"
@@ -18,14 +19,11 @@ func TestHasHeader(t *testing.T) {
 	})
 
 	rp := RequestParams{
-		Headers: func(s string) []string {
-			headers := map[string][]string{
-				"empty": {},
-				"one":   {"one"},
-				"two":   {"one", "two"},
-			}
-			return headers[s]
-		},
+		Headers: Headers(http.Header{
+			"Empty": {},
+			"One":   {"one"},
+			"Two":   {"one", "two"},
+		}),
 	}
 
 	tests := map[string]struct {
@@ -37,59 +35,59 @@ func TestHasHeader(t *testing.T) {
 		},
 		"empty not matching": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"empty": "with value",
+				"Empty": "with value",
 			},
 			expected: false,
 		},
 		"empty matching": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"empty": NoHeaderOrAnyValue,
+				"Empty": NoHeaderOrAnyValue,
 			},
 			expected: true,
 		},
 		"unknown empty": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"third": NoHeaderOrAnyValue,
+				"Third": NoHeaderOrAnyValue,
 			},
 			expected: true,
 		},
 		"one": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"one": "on?",
+				"One": "on?",
 			},
 			expected: true,
 		},
 		"one-two": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"two": "two",
+				"Two": "two",
 			},
 			expected: true,
 		},
 		"no match": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"three": "x*",
+				"Three": "x*",
 			},
 			expected: false,
 		},
 		"one of multiple match": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"one": "on?",
-				"two": "x",
+				"One": "on?",
+				"Two": "x",
 			},
 			expected: false,
 		},
 		"all of multiple match": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"one": "on?",
-				"two": "two",
+				"One": "on?",
+				"Two": "two",
 			},
 			expected: true,
 		},
 		"one of multiple doesn't exist": {
 			headers: map[glob.Pattern]glob.Pattern{
-				"one":   "on?",
-				"two":   "two",
-				"three": "th*",
+				"One":   "on?",
+				"Two":   "two",
+				"Three": "th*",
 			},
 			expected: false,
 		},

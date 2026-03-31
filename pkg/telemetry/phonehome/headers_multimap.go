@@ -4,10 +4,23 @@ import (
 	"net/http"
 
 	"github.com/stackrox/rox/pkg/glob"
+	"google.golang.org/grpc/metadata"
 )
 
 // Headers wraps http.Header with a metadata.MD-like interface.
 type Headers http.Header
+
+// NewHeaders creates Headers from gRPC metadata, canonicalizing the lowercase
+// keys used by metadata.MD into the format expected by http.Header.
+func NewHeaders(m metadata.MD) Headers {
+	h := make(http.Header, len(m))
+	for k, vs := range m {
+		for _, v := range vs {
+			h.Add(k, v)
+		}
+	}
+	return Headers(h)
+}
 
 // Get implements the getter interface.
 func (h Headers) Get(key string) []string {
@@ -44,15 +57,4 @@ func (h Headers) Set(key string, values ...string) {
 			http.Header(h).Add(key, value)
 		}
 	}
-}
-
-// GetFirst returns the first value of the header by key, or empty string.
-func GetFirst(headers func(string) []string, key string) string {
-	if headers == nil {
-		return ""
-	}
-	if values := headers(key); len(values) > 0 {
-		return values[0]
-	}
-	return ""
 }

@@ -100,27 +100,13 @@ func addCustomHeaders(rp *phonehome.RequestParams, cc *phonehome.APICallCampaign
 	if cc == nil {
 		return
 	}
-	if rp.HeadersFilter != nil {
-		for header := range cc.Headers {
-			values, err := rp.HeadersFilter(header, "*")
-			if err != nil {
-				return
-			}
-			for h, v := range values {
-				if len(values) != 0 {
-					props[h] = strings.Join(v, "; ")
-				}
-			}
-		}
-		return
-	}
-	if rp.Headers == nil {
-		return
-	}
 	for header := range cc.Headers {
-		values := rp.Headers(string(header))
-		if len(values) != 0 {
-			props[string(header)] = strings.Join(values, "; ")
+		values, err := rp.Headers.GetAll(header, "*")
+		if err != nil {
+			return
+		}
+		for h, v := range values {
+			props[h] = strings.Join(v, "; ")
 		}
 	}
 }
