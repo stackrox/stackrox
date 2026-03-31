@@ -151,6 +151,10 @@ func (p *settingsManager) pushSettings(newSettings *sensor.AdmissionControlSetti
 	if config, err := settingsToConfigMap(newSettings); err != nil {
 		log.Errorf("failed to create config map: %v", err)
 	} else {
+		// the priority is the grpc messages (handled by consumers of the settingsStream)
+		// we make no guarantee the config map and the grpc messages will remain in sync.
+		// however, under normal operation, failures here or in persisting the config map
+		// are unlikely.
 		p.configStream.Push(config)
 	}
 }
