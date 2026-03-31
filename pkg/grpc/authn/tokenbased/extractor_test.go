@@ -258,6 +258,30 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 			},
 			errMsg: "malformed token: uses both 'roles' and deprecated 'role' claims",
 		},
+		"Error: Token with both InternalRoles and RoleNames claims": {
+			request: makeRequestInfoWithBearerToken("both-internal-role-and-role-names"),
+			setupMocks: func(te *testExtractor) {
+				source := createEnabledMockAuthProvider(te.mockCtrl)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{source},
+					Claims: &tokens.Claims{
+						RoxClaims: tokens.RoxClaims{
+							RoleNames: []string{roleName1},
+							InternalRoles: []*tokens.InternalRole{
+								{
+									RoleName: roleName2,
+								},
+							},
+						},
+					},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "both-internal-role-and-role-names").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			errMsg: "malformed token: uses both 'access' and one of 'roles' or 'role' claims",
+		},
 		"Error: Failed role resolution for role tokens": {
 			request: makeRequestInfoWithBearerToken("failed-role-resolution"),
 			setupMocks: func(te *testExtractor) {

@@ -69,6 +69,9 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		}
 		roleNames = []string{token.RoleName}
 	}
+	if len(token.InternalRoles) > 0 && len(roleNames) > 0 {
+		return nil, getExtractorError("malformed token: uses both 'access' and one of 'roles' or 'role' claims", nil)
+	}
 
 	// Anonymous role-based tokens.
 	if len(roleNames) > 0 {

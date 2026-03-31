@@ -7,9 +7,7 @@ import (
 	"testing"
 	"time"
 
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,8 +24,6 @@ import (
 )
 
 const (
-	testSensorClusterID = "cluster 1"
-
 	deploymentResource   = "Deployment"
 	imageResource        = "Image"
 	networkGraphResource = "NetworkGraph"
@@ -126,8 +122,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	createService := func(
 		t testing.TB,
 		issuer tokens.Issuer,
-		clusterStore clusterDataStore.DataStore,
-		roleStore roleDataStore.DataStore,
 		policy *tokenPolicy,
 	) *serviceImpl {
 		t.Helper()
@@ -244,7 +238,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(mocks)
 			}
-			svc := createService(it, mocks.issuer, mocks.clusterStore, mocks.roleStore, permissivePolicy)
+			svc := createService(it, mocks.issuer, permissivePolicy)
 			ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
 
 			rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, tc.input)
@@ -321,11 +315,13 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					Name: fmt.Sprintf(
 						claimNameFormat,
 						internalRoleName,
+						// This part of the user claims passed to the issuer validate
+						// that the token lifetime was reduced to match the policy.
 						cappedExpiry.Format(time.RFC3339Nano),
 					),
 				}
 				mocks.issuer.EXPECT().
-					Issue(gomock.Any(), expectedClaims, gomock.Any()). // TODO: use some form of validation of the withExpiry parameters
+					Issue(gomock.Any(), expectedClaims, gomock.Any()).
 					Times(1).Return(&tokens.TokenInfo{Token: "capped-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{
@@ -488,7 +484,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				roleStore:    roleDataStoreMocks.NewMockDataStore(mockCtrl),
 				issuer:       tokensMocks.NewMockIssuer(mockCtrl),
 			}
-			svc := createService(it, mocks.issuer, mocks.clusterStore, mocks.roleStore, tc.policy)
+			svc := createService(it, mocks.issuer, tc.policy)
 			if tc.setup != nil {
 				tc.setup(it, mocks)
 			}
