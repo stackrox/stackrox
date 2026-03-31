@@ -253,13 +253,6 @@ push_image_manifest_lists() {
               "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
         fi
     done
-
-    # Push manifest lists for scanner, fact and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "fact")
-    for image in "${amd64_image_set[@]}"; do
-        retry 5 true \
-          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
-    done
 }
 
 registry_from_branding() {
@@ -516,26 +509,20 @@ registry_ro_login() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
+    info "Pushing collector & scanner images tagged with main-version using buildx imagetools"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_matching_collector_scanner_images <brand>"
     fi
 
     local brand="$1"
-    local arch="$2"
 
     local registry
     registry="$(registry_from_branding "$brand")"
 
     _retag() {
-        retry 5 true "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+        retry 5 true docker buildx imagetools create -t "$2" "$1"
     }
-
-    if [[ "$arch" != "amd64" ]]; then
-        echo "Skipping rebundling for non-amd64 arch"
-        exit 0
-    fi
 
     local main_tag
     main_tag="$(make --quiet --no-print-directory tag)"
@@ -548,14 +535,14 @@ push_matching_collector_scanner_images() {
 
     registry_rw_login "${registry}"
 
-    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}-${arch}"
-    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}-${arch}"
-    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}-${arch}"
-    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}"
+    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}"
+    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}"
+    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}"
 
-    _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
+    _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}"
 
-    _retag "${registry}/fact:${fact_version}" "${registry}/fact:${main_tag}-${arch}"
+    _retag "${registry}/fact:${fact_version}" "${registry}/fact:${main_tag}"
 }
 
 poll_for_system_test_images() {
