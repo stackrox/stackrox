@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/filesystem"
 	filesystemPipeline "github.com/stackrox/rox/sensor/common/filesystem/pipeline"
 	filesystemService "github.com/stackrox/rox/sensor/common/filesystem/service"
 	"github.com/stackrox/rox/sensor/common/heritage"
@@ -98,6 +99,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		namespaces = storeProvider.Namespaces()
 	}
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
+	var factSettingsMgr filesystem.SettingsManager
+	if features.SensitiveFileActivity.Enabled() {
+		factSettingsMgr = filesystem.NewFactSettingsManager()
+	}
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
@@ -148,7 +153,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels())
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels(), factSettingsMgr)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {
@@ -236,6 +241,17 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 				sensorNamespace,
 				cfg.k8sClient.Kubernetes(),
 				admCtrlSettingsMgr.ConfigMapStream().Iterator(false),
+			),
+		)
+	}
+
+	if features.SensitiveFileActivity.Enabled() && factSettingsMgr != nil {
+		components = append(components,
+			configmap.NewConfigMapPersister(
+				"fact",
+				sensorNamespace,
+				cfg.k8sClient.Kubernetes(),
+				factSettingsMgr.ConfigMapStream().Iterator(false),
 			),
 		)
 	}
