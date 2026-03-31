@@ -111,7 +111,10 @@ jobs:
     - name: Check dependabot gomod configurations match go.mod files
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
-  style-check:
+  # style-slim sub-targets split by dependency type for parallelism.
+  # The monolithic style-check took ~17m running all sub-targets serially.
+
+  style-go-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -122,7 +125,6 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: actions/setup-go@v6
@@ -130,43 +132,104 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
-      # with newer go directives (e.g. tools/proto) can auto-download.
       - name: Override GOTOOLCHAIN
         run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: roxvet
+        run: make roxvet
+
+      - name: proto-style
+        run: make proto-style
+
+      - name: check-service-protos
+        run: make check-service-protos
+
+      - name: storage-protos-compatible
+        run: make storage-protos-compatible
+
+  style-ui-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: actions/setup-node@v6
         with:
           node-version-file: ui/package.json
 
-      - name: Install xmlstarlet for shellcheck output to junit
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
-
-      - name: Install pycodestyle
-        run: |
-          python3 -m pip install -r .openshift-ci/dev-requirements.txt
-
-      - name: Verify tools
-        run: |
-          yq --version
-          xmlstarlet --version
-          pycodestyle --version
-
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
-
-      - name: Cache QA Test dependencies
-        uses: ./.github/actions/cache-gradle-dependencies
 
       - name: Fetch UI deps
         run: make -C ui deps
 
-      - name: make style-slim
-        run: make style-slim
+      - name: ui-lint
+        run: make ui-lint
+
+  style-qa-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Cache QA Test dependencies
+        uses: ./.github/actions/cache-gradle-dependencies
+
+      - name: qa-tests-style
+        run: make qa-tests-style
+
+  style-shell-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install xmlstarlet
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
+
+      - name: Install pycodestyle
+        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
+
+      - name: blanks
+        run: make blanks
+
+      - name: newlines
+        run: make newlines
+
+      - name: no-large-files
+        run: make no-large-files
+
+      - name: shell-style
+        run: make shell-style
+
+      - name: openshift-ci-style
+        run: make openshift-ci-style
 
   golangci-lint:
     timeout-minutes: 240
@@ -333,7 +396,10 @@ jobs:
     needs:
       - check-generated-files
       - misc-checks
-      - style-check
+      - style-go-checks
+      - style-ui-lint
+      - style-qa-tests
+      - style-shell-checks
       - golangci-lint
       - check-dependent-images-exist
       - github-actions-lint
