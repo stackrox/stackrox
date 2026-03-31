@@ -25,12 +25,20 @@ type deploymentViewImpl struct {
 
 // withTombstoneExclusion adds a filter to exclude soft-deleted (tombstoned) deployments,
 // unless the caller has already explicitly referenced the TombstoneDeletedAt field.
+// Pagination is stripped from the inner query and hoisted to the outer conjunction so
+// that the SQL layer applies LIMIT/OFFSET from the top-level query as expected.
 func withTombstoneExclusion(q *v1.Query) *v1.Query {
 	if search.QueryMentionsField(q, search.TombstoneDeletedAt) {
 		return q
 	}
 	excludeFilter := search.NewQueryBuilder().AddNullField(search.TombstoneDeletedAt).ProtoQuery()
-	return search.ConjunctionQuery(excludeFilter, q)
+	// Clone and strip pagination from the inner query before wrapping.
+	inner := q.CloneVT()
+	pagination := inner.GetPagination()
+	inner.Pagination = nil
+	outer := search.ConjunctionQuery(excludeFilter, inner)
+	outer.Pagination = pagination
+	return outer
 }
 
 func (v *deploymentViewImpl) Get(ctx context.Context, query *v1.Query) ([]DeploymentCore, error) {
