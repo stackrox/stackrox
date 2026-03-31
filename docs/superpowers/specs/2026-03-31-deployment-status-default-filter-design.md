@@ -32,16 +32,16 @@ The goal is to redesign deployment status to fully follow the CVE severity / CVE
 
 ## Query Semantics
 
-| Selected values | Backend query effect |
-|----------------|---------------------|
-| `['Deployed']` (default) | No tombstone query addition. `withTombstoneExclusion` in the view adds `tombstone_deleted_at IS NULL` → only active deployments. |
-| `['Deleted']` | Appends `+Tombstone Deleted At:*` (`IS NOT NULL`). `withTombstoneExclusion` bypasses. Only tombstoned. |
-| `['Deployed', 'Deleted']` | Appends `+Tombstone Deleted At:*+Tombstone Deleted At:-*`. The `-*` negation means `IS NULL`. Multiple values for the same field form a **disjunction**: `(IS NOT NULL OR IS NULL)` = all rows. `withTombstoneExclusion` bypasses because the field is mentioned. All records returned. |
-| `[]` (empty, not reachable by default) | No tombstone addition. Treated same as `['Deployed']` — `withTombstoneExclusion` adds null filter → only active. |
+| Selected values | Appended to base query | Backend effect |
+|----------------|------------------------|----------------|
+| `['Deployed']` (default) | nothing | `withTombstoneExclusion` adds `tombstone_deleted_at IS NULL` → only active. |
+| `['Deleted']` | `+Tombstone Deleted At:*` | Field mentioned → exclusion bypassed; IS NOT NULL applied → only tombstoned. |
+| `['Deployed', 'Deleted']` | `+Tombstone Deleted At:*,-*` | Field mentioned → exclusion bypassed. Comma-separated values for one field form a **disjunction**: `(IS NOT NULL OR IS NULL)` = all rows. |
+| `[]` (empty; not reachable with default filter) | nothing | Treated as `['Deployed']` — exclusion adds null filter → only active. |
 
-The `+` character is the AND-conjunction separator for the backend search string. Multiple values for the same field key (e.g., two `Tombstone Deleted At` values) form a disjunction within that field.
+**Important:** Two separate `+`-joined entries for the same field (`+Tombstone Deleted At:*+Tombstone Deleted At:-*`) would overwrite in the parser. The correct encoding for a multi-value disjunction is **comma-separated values within a single field entry**: `Tombstone Deleted At:*,-*`. The `+` is the AND-conjunction separator between fields; commas within one field value produce a disjunction.
 
-**No backend changes are required.** The existing `withTombstoneExclusion` disjunction/negation semantics handle all cases.
+The `+` character is the AND-conjunction separator for the backend search string. No backend Go changes are required.
 
 ---
 
@@ -62,65 +62,83 @@ export function isDeploymentStatusLabel(value: unknown): value is DeploymentStat
 Extend the Yup schema for `VulnMgmtLocalStorage` to include `DEPLOYMENT_STATUS`:
 
 ```typescript
-// In vulnMgmtLocalStorageSchema:
-defaultFilters: yup.object({
-    SEVERITY: yup.array(yup.string().required().oneOf(vulnerabilitySeverityLabels)).required(),
-    FIXABLE: yup.array(yup.string().required().oneOf(fixableStatuses)).required(),
-    DEPLOYMENT_STATUS: yup.array(yup.string().required().oneOf(deploymentStatusLabels)).required(),
-}),
+// In vulnMgmtLocalStorageSchema > preferences > defaultFilters:
+DEPLOYMENT_STATUS: yup.array(yup.string().required().oneOf(deploymentStatusLabels)).required(),
 ```
 
 `DefaultFilters` is inferred from this schema and gains `DEPLOYMENT_STATUS: DeploymentStatusLabel[]` automatically.
 
 ### 2. `Containers/Vulnerabilities/utils/searchUtils.tsx`
 
-Add `getDeploymentStatusScopedQueryString` (replaces the deleted `getDeploymentStatusQueryString`):
+Add `getDeploymentStatusScopedQueryString` (replaces the deleted `getDeploymentStatusQueryString`).
+
+**Expected outputs for all cases:**
+
+| Input `selectedStatuses` | Output (given `baseQuery = 'CVE:X'`) |
+|--------------------------|---------------------------------------|
+| `['Deployed']` | `'CVE:X'` (unchanged) |
+| `['Deleted']` | `'CVE:X+Tombstone Deleted At:*'` |
+| `['Deployed', 'Deleted']` | `'CVE:X+Tombstone Deleted At:*,-*'` |
+| `undefined` | `'CVE:X'` (treated as Deployed-only, same as default) |
+| `[]` | `'CVE:X'` (treated as Deployed-only) |
 
 ```typescript
 export function getDeploymentStatusScopedQueryString(
     baseQuery: string,
     selectedStatuses: DeploymentStatusLabel[] | undefined
 ): string {
-    // When both or unset — no tombstone addition (view default handles active-only)
-    const showDeployed = !selectedStatuses || selectedStatuses.includes('Deployed');
+    const showDeployed = !selectedStatuses || selectedStatuses.length === 0
+        || selectedStatuses.includes('Deployed');
     const showDeleted = selectedStatuses?.includes('Deleted') ?? false;
 
     if (showDeployed && showDeleted) {
-        // Disjunction: IS NOT NULL OR IS NULL = all rows.
-        // Multiple values for same field form a disjunction in the backend parser.
-        return [baseQuery, 'Tombstone Deleted At:*', 'Tombstone Deleted At:-*']
-            .filter(Boolean)
-            .join('+');
+        // Comma-separated values for one field form a disjunction in the backend parser:
+        // (IS NOT NULL OR IS NULL) = all rows; field mention bypasses withTombstoneExclusion.
+        return [baseQuery, 'Tombstone Deleted At:*,-*'].filter(Boolean).join('+');
     }
     if (showDeleted) {
         return [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+');
     }
-    // 'Deployed' only or empty: no addition.
+    // 'Deployed' only, empty, or undefined: no addition.
     return baseQuery;
 }
 ```
 
 Remove `getDeploymentStatusQueryString` (the old single-value function).
 
+**Important:** `DEPLOYMENT_STATUS` values (`'Deployed'`, `'Deleted'`) are human-readable labels consumed exclusively by `getDeploymentStatusScopedQueryString` and must **not** be passed to `getVulnStateScopedQueryString` or `getRequestQueryStringForSearchFilter`. When spreading `querySearchFilter` into the scoped query call, `DEPLOYMENT_STATUS` must be excluded. See the `WorkloadCvesOverviewPage` and `ImageCvePage` sections below for the exact pattern.
+
 ### 3. `WorkloadCves/Overview/WorkloadCvesOverviewPage.tsx`
+
+**Add `isTombstonesEnabled`:** `isFeatureFlagEnabled` is already available from `useFeatureFlags()` (line 130) but `isTombstonesEnabled` is not yet declared as a local constant. Add:
+
+```typescript
+const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
+```
 
 **Default storage:** Add `DEPLOYMENT_STATUS: ['Deployed']` to `defaultStorage.preferences.defaultFilters`.
 
-**`mergeDefaultAndLocalFilters`:** Add `DEPLOYMENT_STATUS` merge logic following the same `difference/concat` pattern as `SEVERITY` and `FIXABLE`:
+**`mergeDefaultAndLocalFilters`:** Add `DEPLOYMENT_STATUS` merge logic following the same `difference/concat` pattern as `SEVERITY` and `FIXABLE`. Note that `filter` is typed as `SearchFilter` which stores `string | string[]`; the `difference()` call uses the same loose cast already accepted by `SEVERITY` and `FIXABLE`:
 
 ```typescript
-let DEPLOYMENT_STATUS = filter.DEPLOYMENT_STATUS ?? [];
+let DEPLOYMENT_STATUS = (filter.DEPLOYMENT_STATUS as string[] | undefined) ?? [];
 DEPLOYMENT_STATUS = difference(DEPLOYMENT_STATUS, oldDefaults.DEPLOYMENT_STATUS, newDefaults.DEPLOYMENT_STATUS);
 DEPLOYMENT_STATUS = DEPLOYMENT_STATUS.concat(newDefaults.DEPLOYMENT_STATUS);
 return { ...filter, SEVERITY, FIXABLE, DEPLOYMENT_STATUS };
 ```
 
-**`workloadCvesScopedQueryString`:** Wrap the existing query string with `getDeploymentStatusScopedQueryString`:
+**`workloadCvesScopedQueryString`:** Wrap the existing query string. `DEPLOYMENT_STATUS` is read directly from `searchFilter` (not from `querySearchFilter`, to avoid it leaking into the base query):
 
 ```typescript
+// Strip DEPLOYMENT_STATUS from the filter passed to getVulnStateScopedQueryString:
+const { DEPLOYMENT_STATUS: _deploymentStatus, ...querySearchFilterWithoutStatus } = querySearchFilter;
+
 const rawScopedQuery = isViewingWithCves
-    ? getVulnStateScopedQueryString({ ...baseSearchFilter, ...querySearchFilter }, currentVulnerabilityState)
-    : getZeroCveScopedQueryString({ ...baseSearchFilter, ...querySearchFilter });
+    ? getVulnStateScopedQueryString(
+          { ...baseSearchFilter, ...querySearchFilterWithoutStatus },
+          currentVulnerabilityState
+      )
+    : getZeroCveScopedQueryString({ ...baseSearchFilter, ...querySearchFilterWithoutStatus });
 
 const workloadCvesScopedQueryString = isTombstonesEnabled
     ? getDeploymentStatusScopedQueryString(
@@ -130,7 +148,15 @@ const workloadCvesScopedQueryString = isTombstonesEnabled
     : rawScopedQuery;
 ```
 
-`isTombstonesEnabled` is already read from `useFeatureFlags` in `WorkloadCvesOverviewPage`.
+**Pass `isTombstonesEnabled` to `DefaultFilterModal`** at its call site (line ~431). Add the prop:
+
+```tsx
+<DefaultFilterModal
+    defaultFilters={localStorageValue.preferences.defaultFilters}
+    setLocalStorage={updateDefaultFilters}
+    isTombstonesEnabled={isTombstonesEnabled}
+/>
+```
 
 ### 4. `WorkloadCves/components/DefaultFilterModal.tsx`
 
@@ -164,11 +190,9 @@ The form group appears after "CVE status":
 )}
 ```
 
-Pass `isTombstonesEnabled` from `WorkloadCvesOverviewPage` to `DefaultFilterModal` at its call site.
-
 ### 5. `WorkloadCves/ImageCve/ImageCvePage.tsx`
 
-Replace hook-based filter with URL search filter:
+Replace hook-based filter with URL search filter.
 
 **Remove:**
 - `import useDeploymentStatus from 'hooks/useDeploymentStatus'`
@@ -179,6 +203,15 @@ Replace hook-based filter with URL search filter:
 
 **Add:**
 - `import { getDeploymentStatusScopedQueryString } from '../../utils/searchUtils'`
+- Add `DeploymentStatusLabel` to the existing `import type { ... } from '../../types'` line (do not create a second import from the same module).
+
+**Exclude `DEPLOYMENT_STATUS` from `querySearchFilter`** before passing to query builders. Add this after `const querySearchFilter = parseQuerySearchFilter(searchFilter)`:
+
+```typescript
+const { DEPLOYMENT_STATUS: _deploymentStatus, ...querySearchFilterWithoutStatus } = querySearchFilter;
+```
+
+Use `querySearchFilterWithoutStatus` in place of `querySearchFilter` in all calls to `getVulnStateScopedQueryString`.
 
 **Update `query` (top-level, used by summary + image requests):**
 
@@ -186,13 +219,13 @@ Replace hook-based filter with URL search filter:
 const query = isTombstonesEnabled
     ? getDeploymentStatusScopedQueryString(
           getVulnStateScopedQueryString(
-              { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter },
+              { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilterWithoutStatus },
               vulnerabilityState
           ),
           searchFilter.DEPLOYMENT_STATUS as DeploymentStatusLabel[] | undefined
       )
     : getVulnStateScopedQueryString(
-          { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter },
+          { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilterWithoutStatus },
           vulnerabilityState
       );
 ```
@@ -201,7 +234,7 @@ const query = isTombstonesEnabled
 
 ```typescript
 function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-    const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter };
+    const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilterWithoutStatus };
     if (severity) filters.SEVERITY = [severity];
     const base = getVulnStateScopedQueryString(filters, vulnerabilityState);
     return isTombstonesEnabled
@@ -213,6 +246,8 @@ function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
 }
 ```
 
+**Fallback behavior when `DEPLOYMENT_STATUS` is absent from URL:** When navigating directly to a CVE detail page without prior use of the overview page, `searchFilter.DEPLOYMENT_STATUS` is `undefined`. `getDeploymentStatusScopedQueryString` treats `undefined` as `['Deployed']` (no tombstone addition). This is intentional — the correct default is to show only active deployments. No default-filter sync is needed on `ImageCvePage`.
+
 ### 6. `WorkloadCves/Overview/DeploymentsTableContainer.tsx`
 
 **Remove:**
@@ -220,16 +255,17 @@ function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
 - `import { getDeploymentStatusQueryString } from '../../utils/searchUtils'`
 - `import DeploymentStatusFilter from '../components/DeploymentStatusFilter'`
 - `const deploymentStatus = useDeploymentStatus()`
-- The `getDeploymentStatusQueryString(...)` call
+- The `getDeploymentStatusQueryString(...)` call and its result variable
 - The `DeploymentStatusFilter` `ToolbarItem` JSX block
+- `isTombstonesEnabled` local variable if it was only used for the filter (check if used elsewhere)
 
-The deployment status filter is now applied at the `workloadCvesScopedQueryString` level in `WorkloadCvesOverviewPage`, before it reaches `DeploymentsTableContainer`. `deploymentsQueryString` becomes simply:
+`deploymentsQueryString` becomes simply:
 
 ```typescript
 const deploymentsQueryString = workloadCvesScopedQueryString;
 ```
 
-(No per-container tombstone logic needed — it is handled upstream.)
+The deployment status filter is applied upstream in `WorkloadCvesOverviewPage` before `workloadCvesScopedQueryString` reaches this container.
 
 ---
 
@@ -241,6 +277,8 @@ const deploymentsQueryString = workloadCvesScopedQueryString;
 | `WorkloadCves/components/DeploymentStatusFilter.test.tsx` | Component deleted |
 | `hooks/useDeploymentStatus.ts` | No longer needed |
 | `hooks/useDeploymentStatus.test.tsx` | Hook deleted |
+| `types/deploymentStatus.ts` | Merged into `Containers/Vulnerabilities/types.ts` |
+| `types/deploymentStatus.test.ts` | Deleted with the above |
 
 ---
 
@@ -250,11 +288,11 @@ const deploymentsQueryString = workloadCvesScopedQueryString;
 |------|--------|
 | `Containers/Vulnerabilities/types.ts` | Add `deploymentStatusLabels`, type, guard; extend Yup schema and `DefaultFilters` |
 | `Containers/Vulnerabilities/utils/searchUtils.tsx` | Add `getDeploymentStatusScopedQueryString`; remove `getDeploymentStatusQueryString` |
-| `Containers/Vulnerabilities/utils/searchUtils.test.ts` | Update tests: replace old function tests with new function tests |
-| `WorkloadCves/Overview/WorkloadCvesOverviewPage.tsx` | Extend `defaultStorage`, `mergeDefaultAndLocalFilters`, wrap `workloadCvesScopedQueryString` |
+| `Containers/Vulnerabilities/utils/searchUtils.test.ts` | Replace old function tests with new ones (5 cases: Deployed, Deleted, both, undefined, empty) |
+| `WorkloadCves/Overview/WorkloadCvesOverviewPage.tsx` | Add `isTombstonesEnabled`, extend `defaultStorage` + `mergeDefaultAndLocalFilters`, wrap `workloadCvesScopedQueryString`, pass prop to `DefaultFilterModal` |
 | `WorkloadCves/components/DefaultFilterModal.tsx` | Add `isTombstonesEnabled` prop, "Deployment status" form group, extend badge count |
-| `WorkloadCves/ImageCve/ImageCvePage.tsx` | Replace hook-based filter with URL search filter, remove `DeploymentStatusFilter` SplitItem |
-| `WorkloadCves/Overview/DeploymentsTableContainer.tsx` | Remove per-container tombstone logic |
+| `WorkloadCves/ImageCve/ImageCvePage.tsx` | Replace hook-based filter with URL search filter, strip DEPLOYMENT_STATUS from querySearchFilter, remove `DeploymentStatusFilter` SplitItem |
+| `WorkloadCves/Overview/DeploymentsTableContainer.tsx` | Remove per-container tombstone logic; `deploymentsQueryString = workloadCvesScopedQueryString` |
 
 ---
 
