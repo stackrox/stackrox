@@ -14,7 +14,7 @@ func TestConvertMinVersion(t *testing.T) {
 		want      string
 		wantKnown bool
 	}{
-		"TLS 1.0":                      {configv1.VersionTLS10, "TLSv1.0", true},
+		"TLS 1.0":                      {configv1.VersionTLS10, "TLSv1", true},
 		"TLS 1.1":                      {configv1.VersionTLS11, "TLSv1.1", true},
 		"TLS 1.2":                      {configv1.VersionTLS12, "TLSv1.2", true},
 		"TLS 1.3":                      {configv1.VersionTLS13, "TLSv1.3", true},

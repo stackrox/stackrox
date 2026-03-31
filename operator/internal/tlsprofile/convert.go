@@ -11,7 +11,7 @@ import (
 // version strings. This format is understood by ROX_TLS_MIN_VERSION,
 // PostgreSQL ssl_min_protocol_version, and OpenSSL-based runtimes alike.
 var versionToOpenSSL = map[configv1.TLSProtocolVersion]string{
-	configv1.VersionTLS10: "TLSv1.0",
+	configv1.VersionTLS10: "TLSv1",
 	configv1.VersionTLS11: "TLSv1.1",
 	configv1.VersionTLS12: "TLSv1.2",
 	configv1.VersionTLS13: "TLSv1.3",
