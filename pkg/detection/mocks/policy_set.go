@@ -109,6 +109,18 @@ func (mr *MockPolicySetMockRecorder) RemovePolicy(policyID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockPolicySet)(nil).RemovePolicy), policyID)
 }
 
+// UpsertCompiledPolicy mocks base method.
+func (m *MockPolicySet) UpsertCompiledPolicy(compiled detection.CompiledPolicy) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpsertCompiledPolicy", compiled)
+}
+
+// UpsertCompiledPolicy indicates an expected call of UpsertCompiledPolicy.
+func (mr *MockPolicySetMockRecorder) UpsertCompiledPolicy(compiled any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertCompiledPolicy", reflect.TypeOf((*MockPolicySet)(nil).UpsertCompiledPolicy), compiled)
+}
+
 // UpsertPolicy mocks base method.
 func (m *MockPolicySet) UpsertPolicy(arg0 *storage.Policy) error {
 	m.ctrl.T.Helper()

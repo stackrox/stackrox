@@ -20,6 +20,7 @@ type PolicySet interface {
 
 	Exists(id string) bool
 	UpsertPolicy(*storage.Policy) error
+	UpsertCompiledPolicy(compiled CompiledPolicy)
 	RemovePolicy(policyID string)
 }
 

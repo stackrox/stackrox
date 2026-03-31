@@ -49,6 +49,7 @@ type option int
 const (
 	negationForbidden option = iota
 	operatorsForbidden
+	imageEnrichmentRequired
 )
 
 // RuntimeFieldType is the type of a runtime policy criteria field
@@ -68,13 +69,14 @@ const (
 )
 
 type metadataAndQB struct {
-	operatorsForbidden bool
-	negationForbidden  bool
-	qb                 querybuilders.QueryBuilder
-	valueRegex         func(*validateConfiguration) *regexp.Regexp
-	contextFields      violationmessages.ContextQueryFields
-	eventSourceContext []storage.EventSource
-	fieldTypes         []RuntimeFieldType
+	operatorsForbidden      bool
+	negationForbidden       bool
+	imageEnrichmentRequired bool
+	qb                      querybuilders.QueryBuilder
+	valueRegex              func(*validateConfiguration) *regexp.Regexp
+	contextFields           violationmessages.ContextQueryFields
+	eventSourceContext      []storage.EventSource
+	fieldTypes              []RuntimeFieldType
 }
 
 func (m *metadataAndQB) IsOfType(expectedType RuntimeFieldType) bool {
@@ -159,6 +161,15 @@ func (f *FieldMetadata) IsNotApplicableEventSource(fieldName string) bool {
 	return false
 }
 
+// ImageEnrichmentRequired returns whether the given policy criteria field
+// requires image enrichment data (scan results, image metadata, signatures)
+func (f *FieldMetadata) ImageEnrichmentRequired(fieldName string) bool {
+	if field := f.findField(fieldName); field != nil {
+		return field.imageEnrichmentRequired
+	}
+	return false
+}
+
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
 func (f *FieldMetadata) findFieldMetadata(fieldName string, _ *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
@@ -184,6 +195,8 @@ func newFieldMetadata(qb querybuilders.QueryBuilder, contextFields violationmess
 			m.negationForbidden = true
 		case operatorsForbidden:
 			m.operatorsForbidden = true
+		case imageEnrichmentRequired:
+			m.imageEnrichmentRequired = true
 		}
 	}
 
@@ -256,7 +269,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+		[]RuntimeFieldType{},
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.CVSS, querybuilders.ForCVSS(),
 		violationmessages.VulnContextFields,
@@ -265,7 +279,8 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
-		negationForbidden)
+		negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ContainerCPULimit,
 		querybuilders.ForFieldLabel(search.CPUCoresLimit),
@@ -319,7 +334,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return integerValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.DaysSinceSystemFirstDiscovered,
 		querybuilders.ForDays(search.FirstSystemOccurrenceTimestamp),
@@ -328,7 +344,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return integerValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.DaysSincePublished,
 		querybuilders.ForDays(search.CVEPublishedOn),
@@ -337,7 +354,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return integerValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	if features.CVEFixTimestampCriteria.Enabled() {
 		f.registerFieldMetadata(fieldnames.DaysSinceFixAvailable,
@@ -347,7 +365,8 @@ func initializeFieldMetadata() FieldMetadata {
 				return integerValueRegex
 			},
 			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-			[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+			[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+			imageEnrichmentRequired)
 	}
 
 	f.registerFieldMetadata(fieldnames.DisallowedAnnotation,
@@ -366,7 +385,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return keyValueValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden)
+		[]RuntimeFieldType{}, negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.DockerfileLine,
 		querybuilders.ForCompound(augmentedobjs.DockerfileLineCustomTag, 2),
@@ -378,7 +398,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return dockerfileLineValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden)
+		[]RuntimeFieldType{}, negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.DropCaps,
 		querybuilders.ForDropCaps(),
@@ -409,7 +430,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return booleanValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.FixedBy,
 		querybuilders.ForFixedBy(),
@@ -418,7 +440,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+		[]RuntimeFieldType{},
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.HostIPC,
 		querybuilders.ForFieldLabel(search.HostIPC),
@@ -453,7 +476,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return integerValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ImageComponent,
 		querybuilders.ForCompound(augmentedobjs.ComponentAndVersionCustomTag, 2),
@@ -462,7 +486,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return keyValueValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden)
+		[]RuntimeFieldType{}, negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ImageOS,
 		querybuilders.ForFieldLabelRegex(search.ImageOS),
@@ -471,7 +496,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+		[]RuntimeFieldType{},
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ImageRegistry,
 		querybuilders.ForFieldLabelRegex(search.ImageRegistry),
@@ -498,7 +524,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return integerValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
 		querybuilders.ForImageSignatureVerificationStatus(),
@@ -507,7 +534,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return signatureIntegrationIDValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden)
+		[]RuntimeFieldType{}, negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),
@@ -525,7 +553,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+		[]RuntimeFieldType{},
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.MinimumRBACPermissions,
 		querybuilders.ForK8sRBAC(), nil,
@@ -560,7 +589,8 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
-		negationForbidden)
+		negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.ExposedNodePort,
 		querybuilders.ForFieldLabel(search.ExposedNodePort),
@@ -678,7 +708,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return keyValueValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden)
+		[]RuntimeFieldType{}, negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.RequiredLabel,
 		querybuilders.ForFieldLabelMap(search.DeploymentLabel, query.MapShouldNotContain),
@@ -714,7 +745,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return severityValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden)
+		[]RuntimeFieldType{}, negationForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.UnscannedImage,
 		querybuilders.ForFieldLabelNil(augmentedobjs.ImageScanCustomTag),
@@ -723,7 +755,8 @@ func initializeFieldMetadata() FieldMetadata {
 			return booleanValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
 
 	f.registerFieldMetadata(fieldnames.VolumeDestination,
 		querybuilders.ForFieldLabelRegex(search.VolumeDestination),

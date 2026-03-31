@@ -1865,7 +1865,7 @@ spec:
     \ vulnerability management information in the OpenShift web console. Install a\
     \ SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators*\
     \ > *Installed Operators* or by modifying the console Operator configuration.\n\
-    **Important:** The Console Plugin requires OpenShift 4.19 or later.\n\n### Central\
+    **Important:** The Console Plugin requires OpenShift 4.19 to 4.21.\n\n### Central\
     \ Services Explained\n\n| Service                          | Deployment Type |\
     \ Description     |\n| :------------------------------- | :-------------- | :--------------\
     \ |\n| Central                          | Deployment      | Users interact with\

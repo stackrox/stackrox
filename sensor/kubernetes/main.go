@@ -78,6 +78,17 @@ func main() {
 	// Workload manager is only non-nil when we are mocking out the k8s client
 	workloadManager := fake.NewWorkloadManager(fake.ConfigDefaults())
 	if workloadManager != nil {
+		// The fake Kubernetes clientset does not support WatchList semantics
+		// (streaming initial events + bookmark). With WatchListClient enabled
+		// (the default since client-go v0.35 / k8s 1.35), reflectors expect a
+		// bookmark event that the fake client never sends, causing informers to
+		// hang indefinitely. Disable the feature when running with fake workloads.
+		// See: https://github.com/kubernetes/kubernetes/issues/135895
+		if err := os.Setenv("KUBE_FEATURE_WatchListClient", "false"); err != nil {
+			log.Errorf("Failed to disable WatchListClient feature gate: %v", err)
+		} else {
+			log.Info("Disabled WatchListClient feature gate for fake workload compatibility")
+		}
 		sharedClientInterface = workloadManager.Client()
 		sharedClientInterfaceForFetchingPodOwnership = client.MustCreateInterface()
 	} else {
