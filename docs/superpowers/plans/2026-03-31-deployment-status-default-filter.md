@@ -20,6 +20,7 @@
 | `src/Containers/Vulnerabilities/utils/searchUtils.tsx` | Add `getDeploymentStatusScopedQueryString`; remove old function |
 | `src/Containers/Vulnerabilities/utils/searchUtils.test.ts` | Replace old tests with new 5-case tests |
 | `src/Containers/Vulnerabilities/WorkloadCves/Overview/WorkloadCvesOverviewPage.tsx` | Add flag, extend defaultStorage + merge, wrap query, pass prop |
+| `src/hooks/useAnalytics.ts` | Extend `WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED` event properties type |
 | `src/Containers/Vulnerabilities/WorkloadCves/components/DefaultFilterModal.tsx` | Add `isTombstonesEnabled` prop + "Deployment status" form group |
 | `src/Containers/Vulnerabilities/WorkloadCves/ImageCve/ImageCvePage.tsx` | Replace hook with URL filter; strip DEPLOYMENT_STATUS |
 | `src/Containers/Vulnerabilities/WorkloadCves/Overview/DeploymentsTableContainer.tsx` | Remove per-container tombstone logic |
