@@ -15,6 +15,7 @@ import (
 	permissionMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -257,6 +258,30 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 			},
 			errMsg: "malformed token: uses both 'roles' and deprecated 'role' claims",
 		},
+		"Error: Token with both InternalRoles and RoleNames claims": {
+			request: makeRequestInfoWithBearerToken("both-internal-role-and-role-names"),
+			setupMocks: func(te *testExtractor) {
+				source := createEnabledMockAuthProvider(te.mockCtrl)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{source},
+					Claims: &tokens.Claims{
+						RoxClaims: tokens.RoxClaims{
+							RoleNames: []string{roleName1},
+							InternalRoles: []*tokens.InternalRole{
+								{
+									RoleName: roleName2,
+								},
+							},
+						},
+					},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "both-internal-role-and-role-names").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			errMsg: "malformed token: uses both 'access' and one of 'roles' or 'role' claims",
+		},
 		"Error: Failed role resolution for role tokens": {
 			request: makeRequestInfoWithBearerToken("failed-role-resolution"),
 			setupMocks: func(te *testExtractor) {
@@ -328,6 +353,17 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 	}
 
 	friendlyName := fmt.Sprintf("%s (%s)", externalUserFullName, externalUserEmail)
+
+	internalRole := &tokens.InternalRole{
+		RoleName: "test internal role",
+		Permissions: map[storage.Access][]string{
+			storage.Access_READ_ACCESS: {deploymentResource},
+		},
+		Clusters: tokens.ClusterScopes{
+			fixtureconsts.Cluster1: []string{"*"},
+			fixtureconsts.Cluster2: []string{namespaceA},
+		},
+	}
 
 	// Success paths
 	for name, tc := range map[string]struct {
@@ -474,6 +510,31 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 				permissions:  bothTestRolePermissions,
 				roles:        []permissions.ResolvedRole{testRole1, testRole2},
 				user:         buildUserInfo(externalUserEmail, friendlyName, []permissions.ResolvedRole{testRole1, testRole2}),
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
+		"Valid token with internal role": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-internal-role"),
+			setupMocks: func(te *testExtractor) {
+				setupMockAuthProvider(te.authProvider)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{te.authProvider},
+					Claims:  buildInternalRoleClaims(testName, testSubject, testID, internalRole, testExpiresAt),
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-internal-role").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
+				permissions:  map[string]storage.Access{deploymentResource: storage.Access_READ_ACCESS},
+				roles:        []permissions.ResolvedRole{internalRole},
+				user:         buildUserInfo(emptyUserName, testSubject, []permissions.ResolvedRole{internalRole}),
+				attributes:   map[string][]string{"role": {"test internal role"}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},
@@ -1074,6 +1135,27 @@ func buildRoleNamesClaimsWithExternalUser(
 	claimsWithExternalUser := buildExternalUserClaims(userMail, missingFullName, missingUserID)
 	claimsFromRoles.RoxClaims.ExternalUser = claimsWithExternalUser.ExternalUser
 	return claimsFromRoles
+}
+
+func buildInternalRoleClaims(
+	name string,
+	subject string,
+	id string,
+	role *tokens.InternalRole,
+	expiry time.Time,
+) *tokens.Claims {
+	return &tokens.Claims{
+		Claims: jwt.Claims{
+			Subject:  subject,
+			ID:       id,
+			IssuedAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
+			Expiry:   jwt.NewNumericDate(expiry),
+		},
+		RoxClaims: tokens.RoxClaims{
+			Name:          name,
+			InternalRoles: []*tokens.InternalRole{role},
+		},
+	}
 }
 
 func buildUserInfo(userName string, friendlyName string, roles []permissions.ResolvedRole) *storage.UserInfo {
