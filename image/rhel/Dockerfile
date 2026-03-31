@@ -50,7 +50,7 @@ RUN mkdir -p /out/stackrox && \
     chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
 COPY static-bin/* /out/stackrox/
-RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl
+RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust/source /etc/ssl
 
 FROM ubi-micro-base
 
