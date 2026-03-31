@@ -1,12 +1,10 @@
 import type { ReactElement } from 'react';
 import {
-    Alert,
     ClipboardCopy,
     ClipboardCopyButton,
     CodeBlock,
     CodeBlockAction,
     CodeBlockCode,
-    Content,
     Flex,
     FlexItem,
     List,
@@ -15,9 +13,11 @@ import {
 } from '@patternfly/react-core';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useClipboardCopy from 'hooks/useClipboardCopy';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
-import useClipboardCopy from 'hooks/useClipboardCopy';
+
+import InstallMethodDeprecationAlert from '../Components/InstallMethodDeprecationAlert';
 
 const codeBlock = [
     'helm install -n stackrox --create-namespace \\',
@@ -56,15 +56,14 @@ function SecureClusterUsingHelmChart({
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem spacer={{ default: 'spacerLg' }}>
-                <Alert title="Deprecation notice" component="p" variant="warning" isInline>
-                    <Content component="p">
-                        The <strong>rhacs/secured-cluster-services</strong> Helm chart is deprecated
-                        since version 4.11 and will be removed in 5.1.
-                    </Content>
-                    <Content component="p">
-                        Use the Kubernetes operator to install secured cluster services instead.
-                    </Content>
-                </Alert>
+                <InstallMethodDeprecationAlert
+                    deprecationMessage={
+                        <>
+                            The <strong>rhacs/secured-cluster-services</strong> Helm chart is
+                            deprecated since version 4.11 and will be removed in 5.1.
+                        </>
+                    }
+                />
             </FlexItem>
             <Title headingLevel={headingLevel}>
                 Secure a cluster using Helm chart installation method

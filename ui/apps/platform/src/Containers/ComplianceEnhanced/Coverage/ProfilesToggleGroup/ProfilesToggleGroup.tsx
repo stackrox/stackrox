@@ -1,9 +1,15 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { PageSection, Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
-import { getProfileTab, getStandardTabs } from './ProfilesToggleGroup.utils';
+import {
+    getDefaultProfile,
+    getProfileTab,
+    getProfilesByTab,
+    getTabsFromProfiles,
+} from './ProfilesToggleGroup.utils';
+import type { ProfileTab } from './ProfilesToggleGroup.utils';
 
 const tabContentId = 'profiles-toggle-group';
 
@@ -18,52 +24,40 @@ function ProfilesToggleGroup({
     profiles,
     handleToggleChange,
 }: ProfilesToggleGroupProps) {
-    const standardTabs = useMemo(() => getStandardTabs(profiles), [profiles]);
-    const selectedProfile = useMemo(
-        () => profiles.find((profile) => profile.name === profileName),
-        [profiles, profileName]
-    );
-
-    const selectedStandard = useMemo(() => {
-        if (selectedProfile) {
-            return getProfileTab(selectedProfile);
-        }
-        return standardTabs[0];
-    }, [selectedProfile, standardTabs]);
+    const profileTabs = getTabsFromProfiles(profiles);
+    const selectedProfile = profiles.find((profile) => profile.name === profileName);
+    const activeTab = selectedProfile ? getProfileTab(selectedProfile) : profileTabs[0];
 
     useEffect(() => {
-        // URL profileName is not in the list of profiles from the response (e.g. scan config filter changed)
-        // then jump to first list entry
-        if (!selectedProfile && profiles[0]?.name) {
-            handleToggleChange(profiles[0].name);
+        // URL profileName is not in the list (e.g. scan config filter changed): first tab + first profile by name
+        if (!selectedProfile) {
+            const fallback = getDefaultProfile(profiles);
+            if (fallback) {
+                handleToggleChange(fallback.name);
+            }
         }
     }, [selectedProfile, profiles, handleToggleChange]);
 
-    function handleStandardSelection(standardShortName: string) {
-        const firstProfileInStandard = profiles.find(
-            (profile) => getProfileTab(profile) === standardShortName
-        );
-
-        if (firstProfileInStandard) {
-            handleToggleChange(firstProfileInStandard.name);
+    function handleTabSelection(tab: ProfileTab) {
+        const first = getProfilesByTab(profiles, tab)[0];
+        if (first) {
+            handleToggleChange(first.name);
         }
     }
 
-    const filteredProfiles: ComplianceProfileSummary[] = useMemo(() => {
-        return profiles.filter((profile) => getProfileTab(profile) === selectedStandard);
-    }, [profiles, selectedStandard]);
+    const profilesByTab = getProfilesByTab(profiles, activeTab);
 
     return (
         <>
             <PageSection type="tabs">
                 <Tabs
-                    activeKey={selectedStandard ?? ''}
+                    activeKey={activeTab ?? ''}
                     onSelect={(_e, key) => {
-                        handleStandardSelection(String(key));
+                        handleTabSelection(String(key));
                     }}
                     isBox
                 >
-                    {standardTabs.map((standardShortName) => (
+                    {profileTabs.map((standardShortName) => (
                         <Tab
                             key={standardShortName}
                             eventKey={standardShortName}
@@ -75,7 +69,7 @@ function ProfilesToggleGroup({
             </PageSection>
             <PageSection>
                 <ToggleGroup id={tabContentId} aria-label="Toggle for selected profile view">
-                    {filteredProfiles.map(({ name }) => (
+                    {profilesByTab.map(({ name }) => (
                         <ToggleGroupItem
                             key={name}
                             text={name}
