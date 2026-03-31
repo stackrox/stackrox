@@ -14,7 +14,10 @@ import (
 // adherence policy changes, it cancels ctx, causing the Operator process to
 // exit and be restarted by Kubernetes with the new TLS configuration applied
 // to its metrics server and the updated profile propagated to managed workloads.
-func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS ClusterTLSProfile, cancel context.CancelFunc) error {
+func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS *ClusterTLSProfile, cancel context.CancelFunc) error {
+	if clusterTLS == nil {
+		return nil
+	}
 	logger := mgr.GetLogger()
 	watcher := &tlspkg.SecurityProfileWatcher{
 		Client:                    mgr.GetClient(),

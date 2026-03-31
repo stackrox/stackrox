@@ -18,7 +18,7 @@ var _ translation.Enricher = &enricher{}
 // variables into the Helm values. When profile is nil (legacy mode),
 // no environment variables are injected and services use their compiled-in
 // defaults.
-func NewEnricher(profile *TLSProfile) translation.Enricher {
+func NewEnricher(profile *TLSProfile) *enricher {
 	return &enricher{profile: profile}
 }
 

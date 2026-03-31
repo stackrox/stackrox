@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/zapr"
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/console/v1"
-	tlspkg "github.com/openshift/controller-runtime-common/pkg/tls"
+	openshiftTLS "github.com/openshift/controller-runtime-common/pkg/tls"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
@@ -147,40 +147,9 @@ func run() error {
 	}
 	defer restore()
 
-	// Read the cluster TLS profile once at startup. The TLSProfileWatcher
-	// restarts the Operator when this changes, so a single read is always current.
-	// The result is used for both the Operator's own metrics server TLS and the
-	// enricher that propagates the profile to managed workloads.
-	bootstrapClient, err := ctrlClient.New(utils.GetRHACSConfigOrDie(), ctrlClient.Options{Scheme: scheme})
+	clusterTLSProfile, tlsOpts, err := buildMetricsServerTLSOpts(enableHTTP2)
 	if err != nil {
-		return errors.Wrap(err, "unable to create bootstrap client for TLS profile")
-	}
-
-	clusterTLSProfile, err := tlsprofile.FetchProfile(context.Background(), bootstrapClient)
-	if err != nil {
-		return errors.Wrap(err, "unable to fetch cluster TLS profile")
-	}
-	var tlsOpts []func(c *tls.Config)
-	if clusterTLSProfile != nil {
-		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
-		if len(unsupported) > 0 {
-			setupLog.Info("some ciphers from cluster TLS profile are not supported by Go, skipping them", "ciphers", unsupported)
-		}
-		tlsOpts = append(tlsOpts, tlsConfigFn)
-	}
-
-	if !enableHTTP2 {
-		// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
-		// the Go standard library and golang.org/x/net are fully fixed.
-		// Right now, it is possible for authenticated and unauthenticated users to
-		// hold open HTTP2 connections and consume huge amounts of memory.
-		// See:
-		// * https://github.com/kubernetes/kubernetes/pull/121120
-		// * https://github.com/kubernetes/kubernetes/issues/121197
-		// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
-		tlsOpts = append(tlsOpts, func(c *tls.Config) {
-			c.NextProtos = []string{"http/1.1"}
-		})
+		return err
 	}
 
 	req, err := labels.NewRequirement(
@@ -297,10 +266,8 @@ func run() error {
 	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
 	defer cancel()
 
-	if clusterTLSProfile != nil {
-		if err = tlsprofile.SetupTLSProfileWatcher(mgr, *clusterTLSProfile, cancel); err != nil {
-			return errors.Wrap(err, "unable to set up TLS profile watcher")
-		}
+	if err = tlsprofile.SetupTLSProfileWatcher(mgr, clusterTLSProfile, cancel); err != nil {
+		return errors.Wrap(err, "unable to set up TLS profile watcher")
 	}
 
 	setupLog.Info("starting manager")
@@ -308,4 +275,44 @@ func run() error {
 		return errors.Wrap(err, "problem running manager")
 	}
 	return nil
+}
+
+// buildMetricsServerTLSOpts reads the cluster TLS profile and returns the
+// TLS options for the Operator's metrics server along with the cluster profile
+// for later use by the watcher and operand enricher.
+func buildMetricsServerTLSOpts(enableHTTP2 bool) (*tlsprofile.ClusterTLSProfile, []func(c *tls.Config), error) {
+	bootstrapClient, err := ctrlClient.New(utils.GetRHACSConfigOrDie(), ctrlClient.Options{Scheme: scheme})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to create bootstrap client for TLS profile")
+	}
+
+	fetchCtx, fetchCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer fetchCancel()
+	clusterTLSProfile, err := tlsprofile.FetchProfile(fetchCtx, bootstrapClient)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to fetch cluster TLS profile")
+	}
+
+	var tlsOpts []func(c *tls.Config)
+	if clusterTLSProfile != nil {
+		tlsConfigFn, unsupported := openshiftTLS.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
+		if len(unsupported) > 0 {
+			setupLog.Info("Some ciphers from cluster TLS profile are not supported by Go, skipping them.", "ciphers", unsupported)
+		}
+		tlsOpts = append(tlsOpts, tlsConfigFn)
+	}
+
+	if !enableHTTP2 {
+		// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
+		// the Go standard library and golang.org/x/net are fully fixed.
+		// See:
+		// * https://github.com/kubernetes/kubernetes/pull/121120
+		// * https://github.com/kubernetes/kubernetes/issues/121197
+		// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
+		tlsOpts = append(tlsOpts, func(c *tls.Config) {
+			c.NextProtos = []string{"http/1.1"}
+		})
+	}
+
+	return clusterTLSProfile, tlsOpts, nil
 }

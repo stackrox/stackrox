@@ -21,11 +21,11 @@ var versionToOpenSSL = map[configv1.TLSProtocolVersion]string{
 // conventions. They appear in the OpenShift TLS profile spec alongside TLS 1.2
 // ciphers but must be excluded from ROX_TLS_CIPHER_SUITES and
 // ROX_OPENSSL_TLS_CIPHER_SUITES because Go and OpenSSL handle them separately.
-var tls13Ciphers = map[string]bool{
+var tls13Ciphers = map[string]struct{}{
 	// OpenSSL / OpenShift API format (as returned by configv1.TLSProfiles).
-	"TLS_AES_128_GCM_SHA256":       true,
-	"TLS_AES_256_GCM_SHA384":       true,
-	"TLS_CHACHA20_POLY1305_SHA256": true,
+	"TLS_AES_128_GCM_SHA256":       {},
+	"TLS_AES_256_GCM_SHA384":       {},
+	"TLS_CHACHA20_POLY1305_SHA256": {},
 }
 
 // maxKnownVersion is the highest TLS version the Operator currently understands.
@@ -65,7 +65,7 @@ func convertCiphersToOpenSSL(opensslCiphers []string) string {
 func filterTLS13(ciphers []string) []string {
 	result := make([]string, 0, len(ciphers))
 	for _, c := range ciphers {
-		if !tls13Ciphers[c] {
+		if _, ok := tls13Ciphers[c]; !ok {
 			result = append(result, c)
 		}
 	}
