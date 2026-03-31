@@ -40,10 +40,7 @@ type InternalRole struct {
 	RoleName    string                      `json:"name,omitempty"`
 	Permissions map[storage.Access][]string `json:"permissions,omitempty"`
 	// The key for this cluster scope map is the cluster ID.
-	// TODO: Uncomment when access scope selection rules allow Cluster ID.
-	// Clusters ClusterScopes `json:"clusters,omitempty"`
-	// The key for this cluster scope map is the cluster Name.
-	ClustersByName ClusterScopes `json:"named_clusters,omitempty"`
+	Clusters ClusterScopes `json:"clusters,omitempty"`
 }
 
 // MarshalJSON implements json.Marshaler for InternalRole.
@@ -161,9 +158,9 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 	if r == nil {
 		return nil
 	}
-	includedClusterNames := set.NewStringSet()
-	includedNamespacesByClusterNames := make(map[string]set.StringSet)
-	for clusterName, namespaces := range r.ClustersByName {
+	includedClusterIDs := set.NewStringSet()
+	includedNamespacesByClusterID := make(map[string]set.StringSet)
+	for clusterID, namespaces := range r.Clusters {
 		fullAccess := false
 		for _, ns := range namespaces {
 			if ns == "*" {
@@ -172,24 +169,24 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 			}
 		}
 		if fullAccess {
-			includedClusterNames.Add(clusterName)
+			includedClusterIDs.Add(clusterID)
 			continue
 		}
 		clusterNamespaces := set.NewStringSet(namespaces...)
-		includedNamespacesByClusterNames[clusterName] = clusterNamespaces
+		includedNamespacesByClusterID[clusterID] = clusterNamespaces
 	}
 
-	includedNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0, len(includedNamespacesByClusterNames))
-	sortedPartialClusterNames := make([]string, 0, len(includedNamespacesByClusterNames))
-	for clusterName := range includedNamespacesByClusterNames {
-		sortedPartialClusterNames = append(sortedPartialClusterNames, clusterName)
+	includedNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0, len(includedNamespacesByClusterID))
+	sortedPartialClusterIDs := make([]string, 0, len(includedNamespacesByClusterID))
+	for clusterID := range includedNamespacesByClusterID {
+		sortedPartialClusterIDs = append(sortedPartialClusterIDs, clusterID)
 	}
-	slices.Sort(sortedPartialClusterNames)
+	slices.Sort(sortedPartialClusterIDs)
 	stringSort := func(i, j string) bool { return i < j }
-	for _, clusterName := range sortedPartialClusterNames {
-		for _, ns := range includedNamespacesByClusterNames[clusterName].AsSortedSlice(stringSort) {
+	for _, clusterID := range sortedPartialClusterIDs {
+		for _, ns := range includedNamespacesByClusterID[clusterID].AsSortedSlice(stringSort) {
 			includedNamespaces = append(includedNamespaces, &storage.SimpleAccessScope_Rules_Namespace{
-				ClusterName:   clusterName,
+				ClusterId:     clusterID,
 				NamespaceName: ns,
 			})
 		}
@@ -197,7 +194,7 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 
 	return &storage.SimpleAccessScope{
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters:   includedClusterNames.AsSortedSlice(stringSort),
+			IncludedClusterIds: includedClusterIDs.AsSortedSlice(stringSort),
 			IncludedNamespaces: includedNamespaces,
 		},
 	}

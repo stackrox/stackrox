@@ -123,8 +123,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		FullClusterAccess: true,
 	}
 
-	clusterIDNameMap := map[string]string{fixtureconsts.Cluster1: testSensorClusterID}
-
 	createService := func(
 		t testing.TB,
 		issuer tokens.Issuer,
@@ -134,13 +132,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	) *serviceImpl {
 		t.Helper()
 		return &serviceImpl{
-			issuer: issuer,
-			roleManager: &roleManager{
-				clusterStore: clusterStore,
-				roleStore:    roleStore,
-			},
-			now:    testClock,
-			policy: policy,
+			issuer:      issuer,
+			roleManager: &roleManager{},
+			now:         testClock,
+			policy:      policy,
 		}
 	}
 
@@ -166,22 +161,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			expectedErr: errox.InvalidArgs,
 		},
-		"failed role creation": {
-			// The input is valid, the error returned by the (mocked) role store
-			// is propagated.
-			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				Permissions:   deploymentPermission,
-				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:      testExpirationDuration,
-			},
-			setup: func(mocks *mockContainer) {
-				mocks.clusterStore.EXPECT().
-					GetClusterName(gomock.Any(), fixtureconsts.Cluster1).
-					Times(1).
-					Return("", false, errDummy)
-			},
-			expectedErr: errDummy,
-		},
 		"token issuer failure": {
 			// The input is valid. The mock setup lets the flow succeed
 			// up to the point where the (mocked) token issuer is called.
@@ -193,7 +172,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime:      testExpirationDuration,
 			},
 			setup: func(mocks *mockContainer) {
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
@@ -201,8 +179,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 							Permissions: map[storage.Access][]string{
 								storage.Access_READ_ACCESS: {deploymentResource},
 							},
-							ClustersByName: tokens.ClusterScopes{
-								testSensorClusterID: []string{"namespace A"},
+							Clusters: tokens.ClusterScopes{
+								fixtureconsts.Cluster1: {"namespace A"},
 							},
 						},
 					},
@@ -290,7 +268,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
@@ -298,8 +275,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 							Permissions: map[storage.Access][]string{
 								storage.Access_READ_ACCESS: {deploymentResource},
 							},
-							ClustersByName: tokens.ClusterScopes{
-								testSensorClusterID: []string{"namespace A"},
+							Clusters: tokens.ClusterScopes{
+								fixtureconsts.Cluster1: {"namespace A"},
 							},
 						},
 					},
@@ -328,7 +305,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				deploymentResource: v1.Access_READ_ACCESS,
 			}),
 			setup: func(st *testing.T, mocks *mockContainer) {
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				cappedExpiry := testClock().Add(10 * time.Second)
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
@@ -337,8 +313,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 							Permissions: map[storage.Access][]string{
 								storage.Access_READ_ACCESS: {deploymentResource},
 							},
-							ClustersByName: tokens.ClusterScopes{
-								testSensorClusterID: []string{"namespace A"},
+							Clusters: tokens.ClusterScopes{
+								fixtureconsts.Cluster1: {"namespace A"},
 							},
 						},
 					},
@@ -367,7 +343,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
@@ -375,8 +350,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 							Permissions: map[storage.Access][]string{
 								storage.Access_READ_ACCESS: {deploymentResource},
 							},
-							ClustersByName: tokens.ClusterScopes{
-								testSensorClusterID: []string{"namespace A"},
+							Clusters: tokens.ClusterScopes{
+								fixtureconsts.Cluster1: {"namespace A"},
 							},
 						},
 					},
@@ -404,13 +379,12 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							ClustersByName: tokens.ClusterScopes{
-								testSensorClusterID: []string{"namespace A"},
+							Clusters: tokens.ClusterScopes{
+								fixtureconsts.Cluster1: {"namespace A"},
 							},
 						},
 					},
@@ -444,7 +418,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 							Permissions: map[storage.Access][]string{
 								storage.Access_READ_ACCESS: {deploymentResource},
 							},
-							ClustersByName: nil,
+							Clusters: nil,
 						},
 					},
 					Name: fmt.Sprintf(
@@ -478,8 +452,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				imageResource:      v1.Access_READ_WRITE_ACCESS,
 			}),
 			setup: func(t *testing.T, mocks *mockContainer) {
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
@@ -488,8 +460,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 								storage.Access_READ_ACCESS:       {deploymentResource},
 								storage.Access_READ_WRITE_ACCESS: {imageResource},
 							},
-							ClustersByName: tokens.ClusterScopes{
-								testSensorClusterID: []string{"*"},
+							Clusters: tokens.ClusterScopes{
+								fixtureconsts.Cluster1: {"*"},
 							},
 						},
 					},
@@ -527,17 +499,5 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			protoassert.Equal(it, tc.expectedRsp, rsp)
 			assert.NoError(it, err)
 		})
-	}
-}
-
-func setClusterStoreExpectations(
-	mockClusterStore *clusterDataStoreMocks.MockDataStore,
-	clusterIDNameMap map[string]string,
-) {
-	for clusterID, clusterName := range clusterIDNameMap {
-		mockClusterStore.EXPECT().
-			GetClusterName(gomock.Any(), clusterID).
-			Times(1).
-			Return(clusterName, true, nil)
 	}
 }

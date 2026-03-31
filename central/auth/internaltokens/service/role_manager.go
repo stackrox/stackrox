@@ -3,9 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -15,13 +12,10 @@ const (
 	internalRoleName = "internal role"
 )
 
-type roleManager struct {
-	clusterStore clusterDatastore.DataStore
-	roleStore    roleDatastore.DataStore
-}
+type roleManager struct{}
 
 func (rm *roleManager) createRoleForRoxClaims(
-	ctx context.Context,
+	_ context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
 	role := &tokens.InternalRole{
@@ -39,21 +33,15 @@ func (rm *roleManager) createRoleForRoxClaims(
 		role.Permissions[access] = append(role.Permissions[access], resource)
 	}
 	if len(req.GetClusterScopes()) > 0 {
-		role.ClustersByName = make(tokens.ClusterScopes)
+		role.Clusters = make(tokens.ClusterScopes)
 	}
 	for _, requestedScope := range req.GetClusterScopes() {
-		clusterName, found, err := rm.clusterStore.GetClusterName(ctx, requestedScope.GetClusterId())
-		if err != nil {
-			return nil, errors.Wrap(err, "getting cluster name")
-		}
-		if !found {
-			continue
-		}
+		clusterID := requestedScope.GetClusterId()
 		if requestedScope.GetFullClusterAccess() {
-			role.ClustersByName[clusterName] = []string{"*"}
+			role.Clusters[clusterID] = []string{"*"}
 			continue
 		}
-		role.ClustersByName[clusterName] = append(role.ClustersByName[clusterName], requestedScope.GetNamespaces()...)
+		role.Clusters[clusterID] = append(role.Clusters[clusterID], requestedScope.GetNamespaces()...)
 	}
 	return role, nil
 }

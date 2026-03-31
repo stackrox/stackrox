@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
@@ -158,8 +159,6 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 }
 
 func TestInternalRoleGetAccessScope(t *testing.T) {
-	const clusterName1 = "Cluster1"
-	const clusterName2 = "Cluster2"
 	const namespaceA = "namespace-A"
 	const namespaceB = "namespace-B"
 	emptyScope := &storage.SimpleAccessScope{
@@ -182,44 +181,44 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Input with empty scope": {
 			role: &InternalRole{
-				ClustersByName: make(ClusterScopes),
+				Clusters: make(ClusterScopes),
 			},
 			expectedScope: emptyScope,
 		},
 		"Input with one cluster but no access": {
 			role: &InternalRole{
-				ClustersByName: ClusterScopes{
-					clusterName1: []string{},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {},
 				},
 			},
 			expectedScope: emptyScope,
 		},
 		"Input with multiple clusters but no access": {
 			role: &InternalRole{
-				ClustersByName: ClusterScopes{
-					clusterName1: []string{},
-					clusterName2: nil,
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {},
+					fixtureconsts.Cluster2: nil,
 				},
 			},
 			expectedScope: emptyScope,
 		},
 		"Input with one cluster and full access": {
 			role: &InternalRole{
-				ClustersByName: ClusterScopes{
-					clusterName1: []string{"*"},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {"*"},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
 				Rules: &storage.SimpleAccessScope_Rules{
-					IncludedClusters:   []string{clusterName1},
+					IncludedClusterIds: []string{fixtureconsts.Cluster1},
 					IncludedNamespaces: make([]*storage.SimpleAccessScope_Rules_Namespace, 0),
 				},
 			},
 		},
 		"Input with single namespace access": {
 			role: &InternalRole{
-				ClustersByName: ClusterScopes{
-					clusterName1: []string{namespaceB},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceB},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
@@ -227,7 +226,7 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 					IncludedClusters: make([]string, 0),
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
 						{
-							ClusterName:   clusterName1,
+							ClusterId:     fixtureconsts.Cluster1,
 							NamespaceName: namespaceB,
 						},
 					},
@@ -236,21 +235,21 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Multiple clusters with access level mix": {
 			role: &InternalRole{
-				ClustersByName: ClusterScopes{
-					clusterName1: []string{namespaceB, namespaceA},
-					clusterName2: []string{"*"},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceB, namespaceA},
+					fixtureconsts.Cluster2: {"*"},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
 				Rules: &storage.SimpleAccessScope_Rules{
-					IncludedClusters: []string{clusterName2},
+					IncludedClusterIds: []string{fixtureconsts.Cluster2},
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
 						{
-							ClusterName:   clusterName1,
+							ClusterId:     fixtureconsts.Cluster1,
 							NamespaceName: namespaceA,
 						},
 						{
-							ClusterName:   clusterName1,
+							ClusterId:     fixtureconsts.Cluster1,
 							NamespaceName: namespaceB,
 						},
 					},
@@ -265,8 +264,6 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 }
 
 func TestInternalRoleJSONEncoding(t *testing.T) {
-	const clusterName1 = "production-cluster"
-	const clusterName2 = "staging-cluster"
 	const namespaceA = "namespace-a"
 	const namespaceB = "namespace-b"
 	const deploymentResource = "Deployment"
@@ -312,12 +309,12 @@ func TestInternalRoleJSONEncoding(t *testing.T) {
 		"Role with cluster scopes": {
 			role: &InternalRole{
 				RoleName: "scoped-role",
-				ClustersByName: ClusterScopes{
-					clusterName1: {namespaceA, namespaceB},
-					clusterName2: {"*"},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceA, namespaceB},
+					fixtureconsts.Cluster2: {"*"},
 				},
 			},
-			expectedJSON: `{"name":"scoped-role","named_clusters":{"production-cluster":["namespace-a","namespace-b"],"staging-cluster":["*"]}}`,
+			expectedJSON: `{"name":"scoped-role","clusters":{"caaaaaaa-bbbb-4011-0000-111111111111":["namespace-a","namespace-b"],"caaaaaaa-bbbb-4011-0000-222222222222":["*"]}}`,
 		},
 		"Complete role with all fields": {
 			role: &InternalRole{
@@ -326,11 +323,11 @@ func TestInternalRoleJSONEncoding(t *testing.T) {
 					storage.Access_READ_ACCESS:       {deploymentResource},
 					storage.Access_READ_WRITE_ACCESS: {imageResource},
 				},
-				ClustersByName: ClusterScopes{
-					clusterName1: {namespaceA},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: {namespaceA},
 				},
 			},
-			expectedJSON: `{"name":"complete-role","permissions":{"read":["Deployment"],"read-write":["Image"]},"named_clusters":{"production-cluster":["namespace-a"]}}`,
+			expectedJSON: `{"name":"complete-role","permissions":{"read":["Deployment"],"read-write":["Image"]},"clusters":{"caaaaaaa-bbbb-4011-0000-111111111111":["namespace-a"]}}`,
 		},
 		"Role with NO_ACCESS permission normalizes to NO_ACCESS": {
 			role: &InternalRole{

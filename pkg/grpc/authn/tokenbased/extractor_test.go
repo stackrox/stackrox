@@ -15,6 +15,7 @@ import (
 	permissionMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -334,9 +335,9 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 		Permissions: map[storage.Access][]string{
 			storage.Access_READ_ACCESS: {deploymentResource},
 		},
-		ClustersByName: tokens.ClusterScopes{
-			cluster1: []string{"*"},
-			cluster2: []string{namespaceA},
+		Clusters: tokens.ClusterScopes{
+			fixtureconsts.Cluster1: []string{"*"},
+			fixtureconsts.Cluster2: []string{namespaceA},
 		},
 	}
 
