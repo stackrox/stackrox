@@ -65,8 +65,8 @@ jobs:
 
     - name: Cache timing debug
       run: |
-        echo "GOCACHE size: $(du -sm $(go env GOCACHE) 2>/dev/null | cut -f1)MB"
-        echo "GOMODCACHE size: $(du -sm $(go env GOMODCACHE) 2>/dev/null | cut -f1)MB"
+        echo "GOCACHE size: $(du -sm "$(go env GOCACHE)" 2>/dev/null | cut -f1)MB"
+        echo "GOMODCACHE size: $(du -sm "$(go env GOMODCACHE)" 2>/dev/null | cut -f1)MB"
       shell: bash
 
     - name: Go Unit Tests
@@ -79,6 +79,7 @@ jobs:
           EXCLUDE="${EXCLUDE}|${{ matrix.shard.exclude-pattern }}"
         fi
         PACKAGES=$(go list ${{ matrix.shard.packages }} | grep -Ev "$EXCLUDE")
+        # shellcheck disable=SC2086 -- deliberate word splitting of package list
         GOTAGS="${GOTAGS:+$GOTAGS,}test" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
           scripts/go-test.sh -timeout 25m -race -cover \
           -coverprofile test-output/coverage.out -v \
@@ -140,6 +141,7 @@ jobs:
         mkdir -p test-output
         set -o pipefail
         PACKAGES=$(go list ./... | grep -E 'registries|scanners|notifiers')
+        # shellcheck disable=SC2086 -- deliberate word splitting of package list
         ${{ matrix.gotags }} GOTAGS="${GOTAGS:+$GOTAGS,}test,integration" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
           scripts/go-test.sh -v $PACKAGES | tee test-output/test.log
 
@@ -233,7 +235,7 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        for i in $(seq 1 60); do
+        for _ in $(seq 1 60); do
           docker exec postgres pg_isready -h 127.0.0.1 && exit 0
           sleep 1
         done
@@ -306,7 +308,7 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        for i in $(seq 1 60); do
+        for _ in $(seq 1 60); do
           docker exec postgres pg_isready -h 127.0.0.1 && exit 0
           sleep 1
         done
@@ -472,7 +474,8 @@ jobs:
 
     - name: Local roxctl tests
       run: |
-        export MAIN_TAG=$(make --quiet --no-print-directory tag)
+        MAIN_TAG=$(make --quiet --no-print-directory tag)
+        export MAIN_TAG
         export SKIP_DEPS=1
         mkdir -p roxctl-test-output
         bats --print-output-on-failure --verbose-run \
