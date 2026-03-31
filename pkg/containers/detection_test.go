@@ -2,12 +2,13 @@ package containers
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-// Smoke test: IsRunningInContainer should not panic regardless of environment.
-// The result depends on whether CI runs in a container or on a host runner —
-// both are valid configurations.
 func TestContainerDetection(t *testing.T) {
-	result := IsRunningInContainer()
-	t.Logf("IsRunningInContainer() = %v", result)
+	if !IsRunningInContainer() {
+		t.Skip("not running in a container")
+	}
+	assert.True(t, IsRunningInContainer())
 }
