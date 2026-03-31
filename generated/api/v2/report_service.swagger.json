@@ -920,6 +920,36 @@
     "v2Empty": {
       "type": "object"
     },
+    "v2EntityScope": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2EntityScopeRule"
+          }
+        }
+      }
+    },
+    "v2EntityScopeRule": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/v2ScopeEntity"
+        },
+        "field": {
+          "$ref": "#/definitions/v2ScopeField"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2RuleValue"
+          }
+        }
+      }
+    },
     "v2ListReportConfigurationsResponse": {
       "type": "object",
       "properties": {
@@ -931,6 +961,14 @@
           }
         }
       }
+    },
+    "v2MatchType": {
+      "type": "string",
+      "enum": [
+        "EXACT",
+        "REGEX"
+      ],
+      "default": "EXACT"
     },
     "v2NotificationMethod": {
       "type": "string",
@@ -1163,6 +1201,9 @@
         },
         "areaOfConcern": {
           "type": "string"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
         }
       }
     },
@@ -1219,6 +1260,21 @@
       "properties": {
         "collectionScope": {
           "$ref": "#/definitions/v2CollectionReference"
+        },
+        "entityScope": {
+          "$ref": "#/definitions/v2EntityScope",
+          "title": "scope for deployment, namespace, cluster"
+        }
+      }
+    },
+    "v2RuleValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/v2MatchType"
         }
       }
     },
@@ -1254,6 +1310,27 @@
           "type": "string"
         }
       }
+    },
+    "v2ScopeEntity": {
+      "type": "string",
+      "enum": [
+        "SCOPE_ENTITY_UNSET",
+        "SCOPE_ENTITY_DEPLOYMENT",
+        "SCOPE_ENTITY_NAMESPACE",
+        "SCOPE_ENTITY_CLUSTER"
+      ],
+      "default": "SCOPE_ENTITY_UNSET"
+    },
+    "v2ScopeField": {
+      "type": "string",
+      "enum": [
+        "FIELD_UNSET",
+        "FIELD_ID",
+        "FIELD_NAME",
+        "FIELD_LABEL",
+        "FIELD_ANNOTATION"
+      ],
+      "default": "FIELD_UNSET"
     },
     "v2SlimUser": {
       "type": "object",
@@ -1326,6 +1403,10 @@
         },
         "includeAdvisory": {
           "type": "boolean"
+        },
+        "query": {
+          "type": "string",
+          "title": "Filters related to image, cve etc for non-collection-based scopes"
         }
       }
     },
