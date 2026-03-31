@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
     Breadcrumb,
@@ -10,7 +10,6 @@ import {
     Skeleton,
     Split,
     SplitItem,
-    Switch,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom-v5-compat';
 
@@ -40,12 +39,15 @@ import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
+import useDeploymentStatus from 'hooks/useDeploymentStatus';
 import {
     getHiddenSeverities,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
+    getDeploymentStatusQueryString,
 } from '../../utils/searchUtils';
+import DeploymentStatusFilter from '../components/DeploymentStatusFilter';
 import CvePageHeader from '../../components/CvePageHeader';
 import type { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -195,7 +197,7 @@ function ImageCvePage({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
-    const [showDeleted, setShowDeleted] = useState(false);
+    const deploymentStatus = useDeploymentStatus();
 
     const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
 
@@ -204,13 +206,16 @@ function ImageCvePage({
     const exactCveIdSearchRegex = `^${cveId}$`;
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const query = getVulnStateScopedQueryString(
-        {
-            CVE: [exactCveIdSearchRegex],
-            ...baseSearchFilter,
-            ...querySearchFilter,
-        },
-        vulnerabilityState
+    const query = getDeploymentStatusQueryString(
+        getVulnStateScopedQueryString(
+            {
+                CVE: [exactCveIdSearchRegex],
+                ...baseSearchFilter,
+                ...querySearchFilter,
+            },
+            vulnerabilityState
+        ),
+        isTombstonesEnabled ? deploymentStatus : 'DEPLOYED'
     );
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
@@ -266,10 +271,11 @@ function ImageCvePage({
         if (severity) {
             filters.SEVERITY = [severity];
         }
-        const baseQuery = getVulnStateScopedQueryString(filters, vulnerabilityState);
-        return isTombstonesEnabled && showDeleted
-            ? [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+')
-            : baseQuery;
+        const base = getVulnStateScopedQueryString(filters, vulnerabilityState);
+        return getDeploymentStatusQueryString(
+            base,
+            isTombstonesEnabled ? deploymentStatus : 'DEPLOYED'
+        );
     }
 
     const deploymentDataRequest = useQuery<
@@ -506,17 +512,9 @@ function ImageCvePage({
                             />
                         )}
                     </SplitItem>
-                    {entityTab === 'Deployment' && isTombstonesEnabled && (
+                    {isTombstonesEnabled && (
                         <SplitItem>
-                            <Switch
-                                id="cve-show-deleted-deployments"
-                                label="Show deleted"
-                                isChecked={showDeleted}
-                                onChange={(_event, checked) => {
-                                    setShowDeleted(checked);
-                                    setPage(1);
-                                }}
-                            />
+                            <DeploymentStatusFilter onChange={() => setPage(1)} />
                         </SplitItem>
                     )}
                     <SplitItem>
