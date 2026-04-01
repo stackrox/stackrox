@@ -87,6 +87,20 @@ func (mr *MockStoreMockRecorder) DeleteMany(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ctx, ids)
 }
 
+// EnsureExists mocks base method.
+func (m *MockStore) EnsureExists(ctx context.Context, vmID, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnsureExists", ctx, vmID, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnsureExists indicates an expected call of EnsureExists.
+func (mr *MockStoreMockRecorder) EnsureExists(ctx, vmID, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureExists", reflect.TypeOf((*MockStore)(nil).EnsureExists), ctx, vmID, clusterID)
+}
+
 // Get mocks base method.
 func (m *MockStore) Get(ctx context.Context, id string) (*storage.VirtualMachineV2, bool, error) {
 	m.ctrl.T.Helper()

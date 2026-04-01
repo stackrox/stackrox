@@ -25,6 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    # Stable version ldflags for test caching: Go's test cache keys include
+    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
+    # prevent per-commit cache misses.
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -103,6 +109,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    # Stable version ldflags for test caching: Go's test cache keys include
+    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
+    # prevent per-commit cache misses.
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -396,6 +408,9 @@ jobs:
   sensor-integration-tests:
     env:
       KUBECONFIG: "/tmp/kubeconfig"
+      # Stable version ldflags for test caching (see go job comment).
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}

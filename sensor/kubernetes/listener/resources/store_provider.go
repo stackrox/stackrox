@@ -168,3 +168,8 @@ func (p *StoreProvider) ClusterLabels() *clusterlabels.Store {
 func (p *StoreProvider) NamespaceLabels() scopecomp.NamespaceLabelProvider {
 	return p.nsStore
 }
+
+// Namespaces returns the namespace store public interface
+func (p *StoreProvider) Namespaces() store.NamespaceStore {
+	return p.nsStore
+}
