@@ -1,6 +1,7 @@
 package phonehome
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/glob"
@@ -14,6 +15,11 @@ func withUserAgent(ua string) Headers {
 
 func TestCampaignFulfilled(t *testing.T) {
 	doNothing := func(*APICallCampaignCriterion, Headers) {}
+	captureFulfilled := func(fcc *APICallCampaign) func(*APICallCampaignCriterion, Headers) {
+		return func(cc *APICallCampaignCriterion, _ Headers) {
+			*fcc = append(*fcc, cc)
+		}
+	}
 	t.Run("Empty campaign", func(t *testing.T) {
 		campaign := APICallCampaign{}
 		rp := &RequestParams{
@@ -34,7 +40,10 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+		var fulfilled APICallCampaign
+		if assert.Equal(t, 1, campaign.CountFulfilled(rp, captureFulfilled(&fulfilled))) {
+			assert.Same(t, campaign[0], fulfilled[0])
+		}
 	})
 	t.Run("Nil criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
@@ -94,6 +103,58 @@ func TestCampaignFulfilled(t *testing.T) {
 		})
 	})
 
+	t.Run("Test the list of fulfilled criteria", func(t *testing.T) {
+		rp := &RequestParams{
+			Headers: Headers{
+				userAgentHeaderKey: {"some test user-agent"},
+				"X-Header-1":       {"value 1", "value 2"},
+				"X-Header-2":       {"value 1", "value 2"},
+				"X-Header-3":       {"value 3", "value 4"},
+			},
+			Method: "GET",
+			Path:   "/some/test/path",
+			Code:   202,
+		}
+		campaign := APICallCampaign{
+			HeaderPattern(userAgentHeaderKey, "CI"),     // 0 - no
+			HeaderPattern(userAgentHeaderKey, "*test*"), // 1 - yes
+			MethodPattern("GET"),                        // 2 - yes
+			MethodPattern("POST"),                       // 3 - no
+			{ // 4 - no
+				Codes:   []int32{203},
+				Headers: GlobMap{"X-Header-1": "value ?"},
+			},
+			{ // 5 - yes
+				Codes: []int32{404, 202},
+				Headers: GlobMap{
+					"X-Header-1": "value 2",
+					"X-Header-2": NoHeaderOrAnyValue,
+				},
+			},
+			{
+				Codes:   []int32{500}, // 6 - no
+				Headers: GlobMap{"X-Header-3": NoHeaderOrAnyValue},
+			},
+		}
+		expected := APICallCampaign{campaign[1], campaign[2], campaign[5]}
+		expecedHeaders := Headers{
+			userAgentHeaderKey: rp.Headers[userAgentHeaderKey],
+			"X-Header-1":       {"value 2"}, // "value 1" is not matched
+			"X-Header-2":       {"value 1", "value 2"},
+		}
+
+		var fulfilled APICallCampaign
+		matchedHeaders := Headers{}
+
+		assert.Equal(t, len(expected), campaign.CountFulfilled(rp,
+			func(cc *APICallCampaignCriterion, h Headers) {
+				fulfilled = append(fulfilled, cc)
+				maps.Copy(matchedHeaders, h)
+			}))
+		assert.Equal(t, expected, fulfilled)
+		assert.Equal(t, expecedHeaders, matchedHeaders)
+	})
+
 	t.Run("Missing headers", func(t *testing.T) {
 		campaign := APICallCampaign{
 			HeaderPattern("X-Header", NoHeaderOrAnyValue),
@@ -123,7 +184,11 @@ func TestCampaignFulfilled(t *testing.T) {
 			},
 		}
 		require.NoError(t, campaign.Compile())
-		assert.Equal(t, 2, campaign.CountFulfilled(rp, doNothing))
+		var fulfilled APICallCampaign
+		if assert.Equal(t, 2, campaign.CountFulfilled(rp, captureFulfilled(&fulfilled))) {
+			assert.Same(t, campaign[0], fulfilled[0])
+			assert.Same(t, campaign[1], fulfilled[1])
+		}
 	})
 
 	t.Run("All criteria", func(t *testing.T) {
