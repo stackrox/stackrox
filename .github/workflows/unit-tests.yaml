@@ -196,16 +196,6 @@ jobs:
     - name: Go Operator Helm Tests
       run: ${{ matrix.gotags }} make -C operator/ test-helm
 
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
   go-postgres:
     strategy:
       fail-fast: false
