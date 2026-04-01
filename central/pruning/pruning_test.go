@@ -570,7 +570,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, pods,
-				nil, nil, nil, config, nil, nil,
+				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 
@@ -863,7 +863,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			}
 
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
-				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
@@ -990,7 +990,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
-				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
@@ -1168,7 +1168,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
-				nil, nil, nil, config, nil, nil,
+				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil).(*garbageCollectorImpl)
 

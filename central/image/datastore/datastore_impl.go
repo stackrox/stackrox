@@ -298,7 +298,7 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 			return err
 		}
 	}
-	// removing component risk handled by pruning
+	// Component risks are not stored in the risk datastore (only embedded in components).
 	return errorList.ToError()
 }
 
