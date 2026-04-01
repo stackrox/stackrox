@@ -73,7 +73,7 @@ message VulnerabilityReportFilters {
   bool include_nvd_cvss = 9;
   bool include_epss_probability = 10;
   bool include_advisory = 11;
-  //this field stores enhanced filters related to image, cve etc for non collection based scopes
+  // this field stores enhanced filters related to image, cve etc for non collection based scopes
   string query = 12;
 }
 
