@@ -475,6 +475,13 @@ upgrade-via-olm: kuttl
 upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
+.PHONY: upgrade-via-helm
+upgrade-via-chart:
+# TODO(ROX-33128): drop --take-ownership (and possibly replace with deploy-via-chart) after 4.11 release
+	helm install --take-ownership --namespace $(TEST_NAMESPACE) --wait \
+		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
+		rhacs-operator ./dist/chart
+
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
