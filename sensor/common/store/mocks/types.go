@@ -241,6 +241,44 @@ func (mr *MockPodStoreMockRecorder) GetByName(podName, namespace any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPodStore)(nil).GetByName), podName, namespace)
 }
 
+// MockNamespaceStore is a mock of NamespaceStore interface.
+type MockNamespaceStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockNamespaceStoreMockRecorder
+	isgomock struct{}
+}
+
+// MockNamespaceStoreMockRecorder is the mock recorder for MockNamespaceStore.
+type MockNamespaceStoreMockRecorder struct {
+	mock *MockNamespaceStore
+}
+
+// NewMockNamespaceStore creates a new mock instance.
+func NewMockNamespaceStore(ctrl *gomock.Controller) *MockNamespaceStore {
+	mock := &MockNamespaceStore{ctrl: ctrl}
+	mock.recorder = &MockNamespaceStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNamespaceStore) EXPECT() *MockNamespaceStoreMockRecorder {
+	return m.recorder
+}
+
+// GetAll mocks base method.
+func (m *MockNamespaceStore) GetAll() []*storage.NamespaceMetadata {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll")
+	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	return ret0
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockNamespaceStoreMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNamespaceStore)(nil).GetAll))
+}
+
 // MockNetworkPolicyStore is a mock of NetworkPolicyStore interface.
 type MockNetworkPolicyStore struct {
 	ctrl     *gomock.Controller
@@ -547,6 +585,20 @@ func (m *MockProvider) Entities() *clusterentities.Store {
 func (mr *MockProviderMockRecorder) Entities() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Entities", reflect.TypeOf((*MockProvider)(nil).Entities))
+}
+
+// Namespaces mocks base method.
+func (m *MockProvider) Namespaces() store.NamespaceStore {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Namespaces")
+	ret0, _ := ret[0].(store.NamespaceStore)
+	return ret0
+}
+
+// Namespaces indicates an expected call of Namespaces.
+func (mr *MockProviderMockRecorder) Namespaces() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Namespaces", reflect.TypeOf((*MockProvider)(nil).Namespaces))
 }
 
 // NetworkPolicies mocks base method.
