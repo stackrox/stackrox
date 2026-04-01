@@ -57,7 +57,8 @@ spec:
           cpu: 2
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-go-mod-validation
+    # TODO: Change to build-pipeline-go-mod-validation once created
+    serviceAccountName: build-pipeline-roxctl
 
   timeouts:
     tasks: 10m
