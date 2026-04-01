@@ -93,6 +93,331 @@ func TestGetVMDashboardCounts(t *testing.T) {
 	}
 }
 
+func TestGetVMVulnSummary(t *testing.T) {
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		request       *v2.GetVMVulnSummaryRequest
+		setupMock     func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
+		expectedError string
+	}{
+		"empty id": {
+			request: &v2.GetVMVulnSummaryRequest{
+				Id: "",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+			},
+			expectedError: "id must be specified",
+		},
+		"vm not found": {
+			request: &v2.GetVMVulnSummaryRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(nil, false, nil)
+			},
+			expectedError: "not found",
+		},
+		"successful with severity counts": {
+			request: &v2.GetVMVulnSummaryRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(&storage.VirtualMachineV2{
+					Id:   "vm-1",
+					Name: "test-vm",
+				}, true, nil)
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
+					CriticalSeverityCount:         2,
+					FixableCriticalSeverityCount:  1,
+					ImportantSeverityCount:        3,
+					FixableImportantSeverityCount: 2,
+				}, nil)
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockVM := vmDSMocks.NewMockDataStore(ctrl)
+			mockCVE := cveDSMocks.NewMockDataStore(ctrl)
+			mockComp := componentDSMocks.NewMockDataStore(ctrl)
+			mockScan := scanDSMocks.NewMockDataStore(ctrl)
+			mockView := cveViewMocks.NewMockCveView(ctrl)
+
+			service := &serviceImpl{
+				vmDS:        mockVM,
+				cveDS:       mockCVE,
+				componentDS: mockComp,
+				scanDS:      mockScan,
+				cveView:     mockView,
+			}
+
+			tt.setupMock(mockVM, mockCVE, mockComp, mockScan, mockView)
+
+			result, err := service.GetVMVulnSummary(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.NotNil(t, result.GetSeverityCounts())
+			}
+		})
+	}
+}
+
+func TestListVMCVEsByVM(t *testing.T) {
+	ctx := context.Background()
+
+	cve1 := &storage.VirtualMachineCVEV2{
+		Id:            "cve-uuid-1",
+		VmV2Id:        "vm-1",
+		VmComponentId: "comp-1",
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:     "CVE-2024-1234",
+			Summary: "test vuln 1",
+			Link:    "https://example.com/1",
+		},
+		PreferredCvss:   7.5,
+		Severity:        storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		IsFixable:       true,
+		EpssProbability: 0.5,
+	}
+
+	tests := map[string]struct {
+		request       *v2.ListVMCVEsByVMRequest
+		setupMock     func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
+		expectedError string
+		expectedCount int32
+	}{
+		"empty vm_id": {
+			request: &v2.ListVMCVEsByVMRequest{
+				VmId: "",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+			},
+			expectedError: "vm_id must be specified",
+		},
+		"successful list with CVEs": {
+			request: &v2.ListVMCVEsByVMRequest{
+				VmId: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockCVE.EXPECT().Count(ctx, gomock.Any()).Return(1, nil)
+				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+			},
+			expectedCount: 1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockVM := vmDSMocks.NewMockDataStore(ctrl)
+			mockCVE := cveDSMocks.NewMockDataStore(ctrl)
+			mockComp := componentDSMocks.NewMockDataStore(ctrl)
+			mockScan := scanDSMocks.NewMockDataStore(ctrl)
+			mockView := cveViewMocks.NewMockCveView(ctrl)
+
+			service := &serviceImpl{
+				vmDS:        mockVM,
+				cveDS:       mockCVE,
+				componentDS: mockComp,
+				scanDS:      mockScan,
+				cveView:     mockView,
+			}
+
+			tt.setupMock(mockVM, mockCVE, mockComp, mockScan, mockView)
+
+			result, err := service.ListVMCVEsByVM(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedCount, result.GetTotalCount())
+			}
+		})
+	}
+}
+
+func TestGetVMCVEComponents(t *testing.T) {
+	ctx := context.Background()
+
+	cve1 := &storage.VirtualMachineCVEV2{
+		Id:            "cve-uuid-1",
+		VmV2Id:        "vm-1",
+		VmComponentId: "comp-1",
+		CveBaseInfo: &storage.CVEInfo{
+			Cve: "CVE-2024-1234",
+		},
+		HasFixedBy: &storage.VirtualMachineCVEV2_FixedBy{FixedBy: "1.2.3"},
+		Advisory: &storage.Advisory{
+			Name: "RHSA-2024:1234",
+			Link: "https://access.redhat.com",
+		},
+	}
+
+	comp1 := &storage.VirtualMachineComponentV2{
+		Id:      "comp-1",
+		Name:    "openssl",
+		Version: "1.1.1",
+		Source:  storage.SourceType_OS,
+	}
+
+	tests := map[string]struct {
+		request       *v2.GetVMCVEComponentsRequest
+		setupMock     func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
+		expectedError string
+	}{
+		"empty vm_id": {
+			request: &v2.GetVMCVEComponentsRequest{
+				VmId:  "",
+				CveId: "cve-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+			},
+			expectedError: "vm_id and cve_id must be specified",
+		},
+		"empty cve_id": {
+			request: &v2.GetVMCVEComponentsRequest{
+				VmId:  "vm-1",
+				CveId: "",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+			},
+			expectedError: "vm_id and cve_id must be specified",
+		},
+		"successful with components": {
+			request: &v2.GetVMCVEComponentsRequest{
+				VmId:  "vm-1",
+				CveId: "CVE-2024-1234",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				mockComp.EXPECT().GetBatch(ctx, []string{"comp-1"}).Return([]*storage.VirtualMachineComponentV2{comp1}, nil)
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockVM := vmDSMocks.NewMockDataStore(ctrl)
+			mockCVE := cveDSMocks.NewMockDataStore(ctrl)
+			mockComp := componentDSMocks.NewMockDataStore(ctrl)
+			mockScan := scanDSMocks.NewMockDataStore(ctrl)
+			mockView := cveViewMocks.NewMockCveView(ctrl)
+
+			service := &serviceImpl{
+				vmDS:        mockVM,
+				cveDS:       mockCVE,
+				componentDS: mockComp,
+				scanDS:      mockScan,
+				cveView:     mockView,
+			}
+
+			tt.setupMock(mockVM, mockCVE, mockComp, mockScan, mockView)
+
+			result, err := service.GetVMCVEComponents(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, result)
+			}
+		})
+	}
+}
+
+func TestListVMComponents(t *testing.T) {
+	ctx := context.Background()
+
+	comp1 := &storage.VirtualMachineComponentV2{
+		Id:       "comp-1",
+		Name:     "openssl",
+		Version:  "1.1.1",
+		Source:   storage.SourceType_OS,
+		CveCount: 2,
+	}
+
+	tests := map[string]struct {
+		request       *v2.ListVMComponentsRequest
+		setupMock     func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
+		expectedError string
+		expectedCount int32
+	}{
+		"empty vm_id": {
+			request: &v2.ListVMComponentsRequest{
+				VmId: "",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+			},
+			expectedError: "vm_id must be specified",
+		},
+		"successful list": {
+			request: &v2.ListVMComponentsRequest{
+				VmId: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockComp.EXPECT().Count(ctx, gomock.Any()).Return(1, nil)
+				mockComp.EXPECT().SearchRawVMComponents(ctx, gomock.Any()).Return([]*storage.VirtualMachineComponentV2{comp1}, nil)
+			},
+			expectedCount: 1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockVM := vmDSMocks.NewMockDataStore(ctrl)
+			mockCVE := cveDSMocks.NewMockDataStore(ctrl)
+			mockComp := componentDSMocks.NewMockDataStore(ctrl)
+			mockScan := scanDSMocks.NewMockDataStore(ctrl)
+			mockView := cveViewMocks.NewMockCveView(ctrl)
+
+			service := &serviceImpl{
+				vmDS:        mockVM,
+				cveDS:       mockCVE,
+				componentDS: mockComp,
+				scanDS:      mockScan,
+				cveView:     mockView,
+			}
+
+			tt.setupMock(mockVM, mockCVE, mockComp, mockScan, mockView)
+
+			result, err := service.ListVMComponents(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedCount, result.GetTotalCount())
+			}
+		})
+	}
+}
+
 func TestListVMs(t *testing.T) {
 	ctx := context.Background()
 
