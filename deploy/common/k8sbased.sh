@@ -381,6 +381,12 @@ function launch_central {
         )
       fi
 
+      if [[ -n "${ROX_LABEL_BASED_POLICY_SCOPING:-}" ]]; then
+        helm_args+=(
+          --set customize.central.envVars.ROX_LABEL_BASED_POLICY_SCOPING="${ROX_LABEL_BASED_POLICY_SCOPING}"
+        )
+      fi
+
       if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
           --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"

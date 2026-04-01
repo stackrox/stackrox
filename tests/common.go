@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/search"
@@ -292,6 +293,31 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
 		}
 	}
+}
+
+// waitForAlert waits for the desired number of alerts to appear in Central.
+// It polls the AlertService every 2 seconds for up to 90 seconds (45 attempts).
+func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
+	var alerts []*storage.ListAlert
+	// Retry until desired alert count is reached when sensor(s) resync
+	for i := 0; i < 45; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		resp, err := service.ListAlerts(ctx, req)
+		cancel()
+		require.NoError(t, err)
+		alerts = resp.GetAlerts()
+		if len(alerts) == desired {
+			return
+		}
+		time.Sleep(2 * time.Second)
+	}
+	var alertStrings strings.Builder
+	for _, alert := range alerts {
+		alertStrings.WriteString(protocompat.MarshalTextString(alert))
+		alertStrings.WriteString("\n")
+	}
+	t.Logf("Received alerts:\n%s", alertStrings.String())
+	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 
 func waitForTermination(t testutils.T, deploymentName string) {
@@ -702,6 +728,119 @@ func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.I
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
+}
+
+// getClusterID returns the ID of the cluster in Central.
+// Fails if there is not exactly one cluster (E2E tests assume single-cluster environment).
+func getClusterID(t *testing.T) string {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	clusterService := v1.NewClustersServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	resp, err := clusterService.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err, "getting clusters")
+	require.Len(t, resp.GetClusters(), 1, "expected exactly one cluster, found %d", len(resp.GetClusters()))
+
+	return resp.GetClusters()[0].GetId()
+}
+
+// setClusterLabels sets cluster labels using Central's Cluster API.
+// Pass nil to remove all labels.
+// Works for both operator-managed and helm-managed deployments.
+func setClusterLabels(t *testing.T, clusterID string, labels map[string]string) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	clusterService := v1.NewClustersServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Get current cluster
+	resp, err := clusterService.GetCluster(ctx, &v1.ResourceByID{Id: clusterID})
+	require.NoError(t, err, "getting cluster %s", clusterID)
+
+	cluster := resp.GetCluster()
+	require.NotNil(t, cluster, "GetCluster returned nil cluster for ID %s", clusterID)
+
+	// Update labels
+	cluster.Labels = labels
+
+	// Put updated cluster
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel2()
+
+	_, err = clusterService.PutCluster(ctx2, cluster)
+	require.NoError(t, err, "updating cluster %s with labels %v", clusterID, labels)
+
+	if labels == nil {
+		t.Logf("Removed cluster labels")
+	} else {
+		t.Logf("Set cluster labels: %v", labels)
+	}
+}
+
+// createNamespaceWithLabels creates a namespace with the specified labels.
+func createNamespaceWithLabels(t *testing.T, name string, labels map[string]string) {
+	client := createK8sClient(t)
+
+	namespace := &coreV1.Namespace{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := client.CoreV1().Namespaces().Create(ctx, namespace, metaV1.CreateOptions{})
+	require.NoError(t, err, "creating namespace %q with labels %v", name, labels)
+
+	t.Logf("Created namespace %q with labels: %v", name, labels)
+}
+
+// deleteNamespace deletes a namespace.
+func deleteNamespace(t *testing.T, name string) {
+	client := createK8sClient(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := client.CoreV1().Namespaces().Delete(ctx, name, metaV1.DeleteOptions{})
+	if err != nil && !apiErrors.IsNotFound(err) {
+		t.Logf("Failed to delete namespace %q: %v", name, err)
+	} else {
+		t.Logf("Deleted namespace %q", name)
+	}
+}
+
+// execInDeployment executes a command in a pod from the given deployment.
+// Assumes deployment pods have label app=<deploymentName> (set by privilegedDeploymentSpec).
+func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName, namespace string, command ...string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	podList, err := client.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{
+		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+	})
+	require.NoError(t, err, "listing pods for deployment %q", deploymentName)
+	require.NotEmpty(t, podList.Items, "no pods found for deployment %q", deploymentName)
+
+	podName := podList.Items[0].Name
+
+	args := make([]string, 0, 5+len(command))
+	args = append(args, "exec", "-n", namespace, podName, "--")
+	args = append(args, command...)
+
+	cmd := exec.CommandContext(ctx, "kubectl", args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("kubectl exec output: %s", string(output))
+	}
+	require.NoError(t, err, "executing command %v in pod %q", command, podName)
+
+	t.Logf("Executed command %v in pod %q (deployment %q)", command, podName, deploymentName)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {

@@ -208,4 +208,262 @@ class AdmissionControllerTest extends BaseSpecification {
         }
     }
 
+    // Helper method to set cluster labels using Central API
+    // Works for both operator-managed and helm-managed deployments
+    private void setClusterLabels(String key, String value) {
+        def cluster = ClusterService.getCluster()
+        def updatedCluster = cluster.toBuilder()
+                .putLabels(key, value)
+                .build()
+
+        def success = ClusterService.updateCluster(updatedCluster)
+        if (!success) {
+            throw new RuntimeException("Failed to set cluster labels")
+        }
+
+        log.info "Set cluster label ${key}=${value}"
+        // Wait for cluster label change to propagate to Sensor
+        sleep(5000)
+    }
+
+    // Helper method to remove all cluster labels using Central API
+    // Works for both operator-managed and helm-managed deployments
+    private void clearClusterLabels() {
+        def cluster = ClusterService.getCluster()
+        def updatedCluster = cluster.toBuilder()
+                .clearLabels()
+                .build()
+
+        def success = ClusterService.updateCluster(updatedCluster)
+        if (!success) {
+            throw new RuntimeException("Failed to clear cluster labels")
+        }
+
+        log.info "Cleared cluster labels"
+        // Wait for cluster label removal to propagate to Sensor
+        sleep(5000)
+    }
+
+    // Helper method to create namespace with labels using fabric8 client
+    private void ensureNamespaceWithLabels(String namespaceName, String labelKey, String labelValue) {
+        def labels = labelKey ? [(labelKey): labelValue] : [:]
+        def namespace = new io.fabric8.kubernetes.api.model.NamespaceBuilder()
+                .withNewMetadata()
+                .withName(namespaceName)
+                .withLabels(labels)
+                .endMetadata()
+                .build()
+
+        orchestrator.client.namespaces().createOrReplace(namespace)
+        log.info "Created namespace ${namespaceName} with labels: ${labels}"
+    }
+
+    @Unroll
+    @Tag("BAT")
+    def "Verify AC enforcement with label scoping: #desc"() {
+        given:
+        "Set up namespace with labels"
+        def testNs = "qa-label-scope-${desc.replaceAll(' ', '-')}"
+        ensureNamespaceWithLabels(testNs, nsKey, nsLabel)
+
+        and:
+        "Set cluster labels if needed"
+        if (clusterLabel) {
+            setClusterLabels("env", clusterLabel)
+        }
+
+        and:
+        "Create policy with label scoping"
+        def policyBuilder = PolicyOuterClass.Policy.newBuilder()
+                .setName("Test - AC Label Scoping ${desc}")
+                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+                .addCategories("Test")
+
+        def scopeBuilder = ScopeOuterClass.Scope.newBuilder()
+
+        if (policyCluster) {
+            scopeBuilder.setClusterLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                    .setKey("env")
+                    .setValue(policyCluster))
+        }
+
+        if (policyNs) {
+            scopeBuilder.setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                    .setKey("team")
+                    .setValue(policyNs))
+        }
+
+        policyBuilder.addScope(scopeBuilder)
+        policyBuilder.addPolicySections(
+                PolicyOuterClass.PolicySection.newBuilder()
+                        .addPolicyGroups(
+                                PolicyOuterClass.PolicyGroup.newBuilder()
+                                        .setFieldName("Privileged Container")
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true"))
+                        )
+        )
+
+        def policyId = PolicyService.createNewPolicy(policyBuilder.build())
+        // Wait for policy propagation to Sensor and Admission Controller
+        sleep(10000)
+
+        when:
+        "Create a privileged deployment"
+        def deployment = new Deployment()
+                .setName("priv-deploy-${desc.replaceAll(' ', '-')}")
+                .setNamespace(testNs)
+                .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                .setPrivileged(true)
+                .addLabel("app", "test")
+
+        def created = orchestrator.createDeploymentNoWait(deployment)
+
+        then:
+        "Verify deployment blocked/allowed based on label matching"
+        assert created == !blocked
+
+        cleanup:
+        if (created) {
+            deleteDeploymentWithCaution(deployment)
+        }
+        orchestrator.deleteNamespace(testNs, false)
+        if (clusterLabel) {
+            clearClusterLabels()
+        }
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+
+        where:
+        desc                        | clusterLabel | nsKey  | nsLabel    | policyCluster | policyNs   | blocked
+        "cluster match"             | "prod"       | null   | null       | "prod"        | null       | true
+        "cluster mismatch"          | "dev"        | null   | null       | "prod"        | null       | false
+        "namespace match"           | null         | "team" | "backend"  | null          | "backend"  | true
+        "namespace mismatch"        | null         | "team" | "frontend" | null          | "backend"  | false
+        "combined match"            | "prod"       | "team" | "backend"  | "prod"        | "backend"  | true
+        "combined cluster mismatch" | "dev"        | "team" | "backend"  | "prod"        | "backend"  | false
+        "combined ns mismatch"      | "prod"       | "team" | "frontend" | "prod"        | "backend"  | false
+    }
+
+    @Unroll
+    @Tag("BAT")
+    def "Verify AC respects label hot-reload: #desc"() {
+        given:
+        "Set up initial labels"
+        def testNs = "qa-label-hotreload-${desc.replaceAll(' ', '-')}"
+
+        if (labelType == "cluster") {
+            setClusterLabels("env", initialValue)
+            ensureNamespaceWithLabels(testNs, null, null)
+        } else {
+            ensureNamespaceWithLabels(testNs, "team", initialValue)
+        }
+
+        and:
+        "Create policy scoped to initial label value"
+        def policyBuilder = PolicyOuterClass.Policy.newBuilder()
+                .setName("Test - AC Hot-Reload ${desc}")
+                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+                .addCategories("Test")
+
+        def scopeBuilder = ScopeOuterClass.Scope.newBuilder()
+
+        if (labelType == "cluster") {
+            scopeBuilder.setClusterLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                    .setKey("env")
+                    .setValue(initialValue))
+        } else {
+            scopeBuilder.setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                    .setKey("team")
+                    .setValue(initialValue))
+        }
+
+        policyBuilder.addScope(scopeBuilder)
+        policyBuilder.addPolicySections(
+                PolicyOuterClass.PolicySection.newBuilder()
+                        .addPolicyGroups(
+                                PolicyOuterClass.PolicyGroup.newBuilder()
+                                        .setFieldName("Privileged Container")
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true"))
+                        )
+        )
+
+        def policyId = PolicyService.createNewPolicy(policyBuilder.build())
+        // Wait for policy propagation to Sensor and Admission Controller
+        sleep(10000)
+
+        when:
+        "Create privileged deployment with initial labels - should be blocked"
+        def deployment1 = new Deployment()
+                .setName("priv-before-${desc.replaceAll(' ', '-')}")
+                .setNamespace(testNs)
+                .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                .setPrivileged(true)
+                .addLabel("app", "test")
+
+        def created1 = orchestrator.createDeploymentNoWait(deployment1)
+
+        then:
+        "Verify initial deployment is blocked"
+        assert !created1
+
+        when:
+        "Change or remove labels"
+        if (labelType == "cluster") {
+            if (changedValue == null) {
+                clearClusterLabels()
+            } else {
+                setClusterLabels("env", changedValue)
+            }
+        } else {
+            def ns = orchestrator.client.namespaces().withName(testNs).get()
+            if (changedValue == null) {
+                ns.metadata.labels = [:]
+            } else {
+                ns.metadata.labels = ["team": changedValue]
+            }
+            orchestrator.client.namespaces().withName(testNs).replace(ns)
+            // Wait for namespace label change to propagate to Sensor
+            sleep(5000)
+        }
+
+        and:
+        "Create another privileged deployment - should be allowed"
+        def deployment2 = new Deployment()
+                .setName("priv-after-${desc.replaceAll(' ', '-')}")
+                .setNamespace(testNs)
+                .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
+                .setPrivileged(true)
+                .addLabel("app", "test")
+
+        def created2 = orchestrator.createDeploymentNoWait(deployment2)
+
+        then:
+        "Verify deployment is allowed after label change"
+        assert created2
+
+        cleanup:
+        if (created2) {
+            deleteDeploymentWithCaution(deployment2)
+        }
+        orchestrator.deleteNamespace(testNs, false)
+        if (labelType == "cluster") {
+            clearClusterLabels()
+        }
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+
+        where:
+        desc               | labelType   | initialValue | changedValue
+        "cluster reload"   | "cluster"   | "prod"       | "dev"
+        "namespace reload" | "namespace" | "backend"    | "frontend"
+        "cluster removal"  | "cluster"   | "prod"       | null
+        "namespace removal"| "namespace" | "backend"    | null
+    }
+
 }
