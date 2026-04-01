@@ -47,6 +47,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/store"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
@@ -91,7 +92,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
 	storeProvider := resources.InitializeStore(hm)
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.Deployments(), storeProvider.Pods())
+
+	var namespaces store.NamespaceStore
+	if features.LabelBasedPolicyScoping.Enabled() {
+		namespaces = storeProvider.Namespaces()
+	}
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
