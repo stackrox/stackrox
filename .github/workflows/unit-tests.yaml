@@ -242,6 +242,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    # trust: allow passwordless TCP connections (replaces unix socket peer auth from CI container)
+    # locale=C: deterministic collation matching CI container's default
     - name: Run Postgres
       run: |
         docker run --rm -d --name postgres \
@@ -318,6 +320,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    # trust: allow passwordless TCP connections (replaces unix socket peer auth from CI container)
+    # locale=C: deterministic collation matching CI container's default
     - name: Run Postgres
       run: |
         docker run --rm -d --name postgres \
