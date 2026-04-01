@@ -35,6 +35,10 @@ updates:
       include: scope
       prefix: chore
 
+  # NOTE: Using 'directories' (plural) to consolidate entries with identical configuration.
+  # See: https://github.blog/changelog/2024-04-29-dependabot-multi-directory-configuration-public-beta-now-available/
+
+  # Root module with special configuration (daily updates, custom ignore/groups)
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
@@ -71,283 +75,69 @@ updates:
           - "github.com/aws/aws-sdk-go-v2"
           - "github.com/aws/aws-sdk-go-v2/*"
 
+  # Consolidated all tool modules
   - package-ecosystem: 'gomod'
-    directory: '/tools/linters/'
+    directories:
+      - '/operator/tools/controller-gen'
+      - '/operator/tools/envtest/'
+      - '/operator/tools/kubebuilder/'
+      - '/operator/tools/kustomize/'
+      - '/operator/tools/kuttl/'
+      - '/operator/tools/operator-sdk/'
+      - '/operator/tools/yq/'
+      - '/scanner/hack/quay'
+      - '/tests/performance/scale'
+      - '/tools/check-workflow-run'
+      - '/tools/linters/'
+      - '/tools/proto/'
+      - '/tools/test/'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
     labels:
-    - "dependencies"
-    - "auto-merge"
-    - "auto-retest"
+      - "dependencies"
+      - "auto-merge"
+      - "auto-retest"
     commit-message:
       include: scope
       prefix: chore
 
-  - package-ecosystem: 'gomod'
-    directory: '/tools/proto/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/tools/test/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/tools/check-workflow-run'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/controller-gen'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/envtest/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/kubebuilder/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/kustomize/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/kuttl/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/operator-sdk/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      operator-framework:
-        patterns:
-        - "github.com/operator-framework/*"
-
-  - package-ecosystem: 'gomod'
-    directory: '/operator/tools/yq/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/scanner/hack/quay'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/scanner"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
-    directory: '/tests/performance/scale'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
+  # Consolidated all docker images
   - package-ecosystem: 'docker'
-    directory: 'operator/'
+    directories:
+      - 'ci/splunk'
+      - 'image/postgres'
+      - 'image/rhel'
+      - 'image/roxctl'
+      - 'operator/'
+      - 'operator/tests/controller/metrics'
+      - 'scale/image'
+      - 'scanner/image/db'
+      - 'scanner/image/scanner'
+      - 'scanner/image/scannerctl'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
     labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
+      - "dependencies"
     commit-message:
       include: scope
       prefix: chore
 
-  - package-ecosystem: 'docker'
-    directory: 'operator/tests/controller/metrics'
-    schedule:
-      interval: 'monthly'
-    open-pull-requests-limit: 3
-    labels:
-    - "dependencies"
-    - "area/operator"
-    - "auto-merge"
-    - "auto-retest"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'docker'
-    directory: 'image/rhel'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "ci-all-qa-tests"
-    - "dependencies"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'docker'
-    directory: 'image/postgres'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "ci-all-qa-tests"
-    - "dependencies"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'docker'
-    directory: 'scanner/image/scanner'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "ci-all-qa-tests"
-    - "dependencies"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'docker'
-    directory: 'scanner/image/db'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    labels:
-    - "ci-all-qa-tests"
-    - "dependencies"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  # Consolidated all github-actions (including workaround for local actions issue #6345)
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/cache-go-dependencies
+      - /.github/actions/cache-gradle-dependencies
+      - /.github/actions/cache-ui-dependencies
+      - /.github/actions/download-artifact-with-retry
+      - /.github/actions/handle-tagged-build
+      - /.github/actions/job-preamble
+      - /.github/actions/junit2jira
+      - /.github/actions/upload-artifact-with-retry
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -359,120 +149,3 @@ updates:
       actions:
         patterns:
           - "actions/*"
-
-  # Below configuration is workaround for dependabot issue
-  # about local actions in .github/actions/ are not checked
-  # https://github.com/dependabot/dependabot-core/issues/6345
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/cache-go-dependencies
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/cache-gradle-dependencies
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/cache-ui-dependencies
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/download-artifact-with-retry
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/handle-tagged-build
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/job-preamble
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/junit2jira
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/upload-artifact-with-retry
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 3
-    commit-message:
-      include: scope
-      prefix: chore
-    groups:
-      actions:
-        patterns:
-        - "actions/*"

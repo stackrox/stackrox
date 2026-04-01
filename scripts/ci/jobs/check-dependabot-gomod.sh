@@ -4,6 +4,9 @@ set -euo pipefail
 # This script checks that all go.mod files in the repository have a corresponding
 # dependabot configuration, and that there are no orphaned dependabot configurations
 # for go.mod files that no longer exist.
+#
+# NOTE: Supports both 'directory' (singular) and 'directories' (plural) field formats
+# in dependabot.yaml to accommodate multi-directory configuration feature.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 cd "$ROOT"
@@ -31,9 +34,14 @@ find . -name "go.mod" -type f | while read -r gomod_file; do
     echo "${dir%/}" | sed 's|^$|/|'
 done | sort -u > "$gomod_dirs_file"
 
-# Extract all gomod directories from dependabot.yaml and normalize
-yq e '.updates[] | select(.package-ecosystem=="gomod") | .directory' .github/dependabot.yaml | \
-    sed 's|/$||' | sed 's|^$|/|' | sort -u > "$dependabot_dirs_file"
+# Extract all gomod directories from dependabot.yaml (both singular and plural formats) and normalize
+{
+    # Extract singular directory entries
+    yq e '.updates[] | select(.package-ecosystem=="gomod") | select(has("directory")) | .directory' .github/dependabot.yaml
+
+    # Extract plural directories entries (array elements)
+    yq e '.updates[] | select(.package-ecosystem=="gomod") | select(has("directories")) | .directories[]' .github/dependabot.yaml
+} | sed 's|/$||' | sed 's|^$|/|' | sort -u > "$dependabot_dirs_file"
 
 # Use comm to find differences
 # comm -23: lines only in file 1 (missing from dependabot)
