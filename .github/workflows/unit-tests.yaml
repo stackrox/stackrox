@@ -330,6 +330,8 @@ jobs:
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
+    - uses: bats-core/bats-action@v4.0.0
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -408,6 +410,9 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install pycodestyle
+        run: python3 -m pip install pycodestyle
 
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
