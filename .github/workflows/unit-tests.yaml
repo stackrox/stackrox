@@ -330,7 +330,7 @@ jobs:
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
-    - uses: bats-core/bats-action@v4.0.0
+    - uses: bats-core/bats-action@4.0.0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -372,7 +372,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: bats-core/bats-action@v4.0.0
+    - uses: bats-core/bats-action@4.0.0
 
     - uses: ./.github/actions/job-preamble
       with:
