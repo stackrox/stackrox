@@ -9,7 +9,6 @@ package tools
 import (
 	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/mailru/easyjson/easyjson"
-	_ "github.com/stackrox/ossls"
 	_ "go.uber.org/mock/mockgen"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
