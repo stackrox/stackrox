@@ -185,8 +185,10 @@ function WorkloadCvesOverviewPage() {
 
     // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
     // not by getVulnStateScopedQueryString.
+    // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
+    // not by getVulnStateScopedQueryString.
     const {
-        DEPLOYMENT_STATUS: _deploymentStatus,
+        DEPLOYMENT_STATUS: deploymentStatusFilter,
         ...querySearchFilterWithoutStatus
     } = querySearchFilter;
 
@@ -209,7 +211,7 @@ function WorkloadCvesOverviewPage() {
     const workloadCvesScopedQueryString = isTombstonesEnabled
         ? getDeploymentStatusScopedQueryString(
               rawScopedQuery,
-              searchFilter.DEPLOYMENT_STATUS as DeploymentStatusLabel[] | undefined
+              deploymentStatusFilter as DeploymentStatusLabel[] | undefined
           )
         : rawScopedQuery;
 

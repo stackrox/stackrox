@@ -39,15 +39,13 @@ import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
-import useDeploymentStatus from 'hooks/useDeploymentStatus';
 import {
     getHiddenSeverities,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
-    getDeploymentStatusQueryString,
+    getDeploymentStatusScopedQueryString,
 } from '../../utils/searchUtils';
-import DeploymentStatusFilter from '../components/DeploymentStatusFilter';
 import CvePageHeader from '../../components/CvePageHeader';
 import type { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -60,7 +58,7 @@ import AffectedImagesTable, {
 import type { ImageForCve } from '../Tables/AffectedImagesTable';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import type { VulnerabilitySeverityLabel, WorkloadEntityTab } from '../../types';
+import type { DeploymentStatusLabel, VulnerabilitySeverityLabel, WorkloadEntityTab } from '../../types';
 import AffectedDeploymentsTable, {
     deploymentsForCveFragment,
     tableId as affectedDeploymentsTableId,
@@ -197,7 +195,6 @@ function ImageCvePage({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
-    const deploymentStatus = useDeploymentStatus();
 
     const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
 
@@ -206,17 +203,34 @@ function ImageCvePage({
     const exactCveIdSearchRegex = `^${cveId}$`;
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const query = getDeploymentStatusQueryString(
-        getVulnStateScopedQueryString(
-            {
-                CVE: [exactCveIdSearchRegex],
-                ...baseSearchFilter,
-                ...querySearchFilter,
-            },
-            vulnerabilityState
-        ),
-        isTombstonesEnabled ? deploymentStatus : 'DEPLOYED'
-    );
+    // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
+    // not by getVulnStateScopedQueryString.
+    // Strip DEPLOYMENT_STATUS from querySearchFilter — it's consumed by
+    // getDeploymentStatusScopedQueryString, not by getVulnStateScopedQueryString.
+    const {
+        DEPLOYMENT_STATUS: deploymentStatusFilter,
+        ...querySearchFilterWithoutStatus
+    } = querySearchFilter;
+    const query = isTombstonesEnabled
+        ? getDeploymentStatusScopedQueryString(
+              getVulnStateScopedQueryString(
+                  {
+                      CVE: [exactCveIdSearchRegex],
+                      ...baseSearchFilter,
+                      ...querySearchFilterWithoutStatus,
+                  },
+                  vulnerabilityState
+              ),
+              deploymentStatusFilter as DeploymentStatusLabel[] | undefined
+          )
+        : getVulnStateScopedQueryString(
+              {
+                  CVE: [exactCveIdSearchRegex],
+                  ...baseSearchFilter,
+                  ...querySearchFilterWithoutStatus,
+              },
+              vulnerabilityState
+          );
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
@@ -267,15 +281,21 @@ function ImageCvePage({
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter };
+        const filters = {
+            CVE: [exactCveIdSearchRegex],
+            ...baseSearchFilter,
+            ...querySearchFilterWithoutStatus,
+        };
         if (severity) {
             filters.SEVERITY = [severity];
         }
         const base = getVulnStateScopedQueryString(filters, vulnerabilityState);
-        return getDeploymentStatusQueryString(
-            base,
-            isTombstonesEnabled ? deploymentStatus : 'DEPLOYED'
-        );
+        return isTombstonesEnabled
+            ? getDeploymentStatusScopedQueryString(
+                  base,
+                  deploymentStatusFilter as DeploymentStatusLabel[] | undefined
+              )
+            : base;
     }
 
     const deploymentDataRequest = useQuery<
@@ -512,11 +532,6 @@ function ImageCvePage({
                             />
                         )}
                     </SplitItem>
-                    {isTombstonesEnabled && (
-                        <SplitItem>
-                            <DeploymentStatusFilter onChange={() => setPage(1)} />
-                        </SplitItem>
-                    )}
                     <SplitItem>
                         <Pagination
                             itemCount={tableRowCount}
