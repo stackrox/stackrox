@@ -24,11 +24,18 @@ type settingsManager struct {
 	sensorEventsStream            *concurrency.ValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
+	lastClusterLabels             map[string]string
 
-	clusterID clusterIDWaiter
+	clusterID     clusterIDWaiter
+	clusterLabels clusterLabelsGetter
 
 	deployments store.DeploymentStore
 	pods        store.PodStore
+	namespaces  store.NamespaceStore
+}
+
+type clusterLabelsGetter interface {
+	Get() map[string]string
 }
 
 type clusterIDWaiter interface {
@@ -36,16 +43,18 @@ type clusterIDWaiter interface {
 }
 
 // NewSettingsManager creates a new settings manager for admission control settings.
-func NewSettingsManager(clusterID clusterIDWaiter, deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
+func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGetter, deployments store.DeploymentStore, pods store.PodStore, namespaces store.NamespaceStore) SettingsManager {
 	return &settingsManager{
 		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 
-		clusterID: clusterID,
+		clusterID:     clusterID,
+		clusterLabels: clusterLabels,
 
 		deployments: deployments,
 		pods:        pods,
+		namespaces:  namespaces,
 	}
 }
 
@@ -109,6 +118,7 @@ func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
 		p.settingsStream.Push(newSettings)
 	}
 	p.currSettings = newSettings
+	p.pushClusterLabelsIfChangedNoLock()
 }
 
 func (p *settingsManager) FlushCache() {
@@ -122,6 +132,50 @@ func (p *settingsManager) FlushCache() {
 		p.settingsStream.Push(newSettings)
 	}
 	p.currSettings = newSettings
+}
+
+// pushClusterLabelsIfChangedNoLock pushes cluster labels to admission control if they've changed.
+// Must be called with p.mutex held.
+func (p *settingsManager) pushClusterLabelsIfChangedNoLock() {
+	if p.clusterLabels == nil {
+		return
+	}
+
+	currentLabels := p.clusterLabels.Get()
+	if mapsEqual(p.lastClusterLabels, currentLabels) {
+		return
+	}
+
+	p.lastClusterLabels = copyMap(currentLabels)
+	p.sensorEventsStream.Push(&sensor.AdmCtrlUpdateResourceRequest{
+		Action: central.ResourceAction_SYNC_RESOURCE,
+		Resource: &sensor.AdmCtrlUpdateResourceRequest_ClusterLabels{
+			ClusterLabels: &sensor.ClusterLabels{Labels: currentLabels},
+		},
+	})
+}
+
+func mapsEqual(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func copyMap(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	result := make(map[string]string, len(m))
+	for k, v := range m {
+		result[k] = v
+	}
+	return result
 }
 
 func (p *settingsManager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
@@ -151,6 +205,27 @@ func (p *settingsManager) GetResourcesForSync() []*sensor.AdmCtrlUpdateResourceR
 			},
 		})
 	}
+
+	if p.namespaces != nil {
+		for _, ns := range p.namespaces.GetAll() {
+			ret = append(ret, &sensor.AdmCtrlUpdateResourceRequest{
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &sensor.AdmCtrlUpdateResourceRequest_Namespace{
+					Namespace: ns,
+				},
+			})
+		}
+	}
+
+	if p.clusterLabels != nil {
+		ret = append(ret, &sensor.AdmCtrlUpdateResourceRequest{
+			Action: central.ResourceAction_SYNC_RESOURCE,
+			Resource: &sensor.AdmCtrlUpdateResourceRequest_ClusterLabels{
+				ClusterLabels: &sensor.ClusterLabels{Labels: p.clusterLabels.Get()},
+			},
+		})
+	}
+
 	return ret
 }
 
@@ -160,10 +235,8 @@ func (p *settingsManager) UpdateResources(events ...*central.SensorEvent) {
 		case *central.SensorEvent_Synced, *central.SensorEvent_Deployment, *central.SensorEvent_Pod:
 			p.convertAndPush(event)
 		case *central.SensorEvent_Namespace:
-			// Track namespace deletion to removal sub-resources from admission control.
-			if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-				p.convertAndPush(event)
-			}
+			// Forward all namespace events so admission control can track namespace labels.
+			p.convertAndPush(event)
 		}
 	}
 }
