@@ -35,7 +35,8 @@ jobs:
             packages: ./central/...
             exclude-pattern: /central/[a-n]
           - name: rest
-            packages: ./roxctl/... ./sensor/... ./operator/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./config-controller/... ./scale/... ./govulncheck/... ./image/...
+            packages: ./...
+            exclude-pattern: /pkg/|/central/
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
