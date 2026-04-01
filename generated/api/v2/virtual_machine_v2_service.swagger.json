@@ -92,7 +92,7 @@
         ]
       }
     },
-    "/v2/virtualmachines/cves/{id}": {
+    "/v2/virtualmachines/cves/{cveId}": {
       "get": {
         "summary": "Single CVE detail (across all VMs)",
         "operationId": "VirtualMachineV2Service_GetVMCVEDetail",
@@ -112,7 +112,7 @@
         },
         "parameters": [
           {
-            "name": "id",
+            "name": "cveId",
             "in": "path",
             "required": true,
             "type": "string"
@@ -123,7 +123,7 @@
         ]
       }
     },
-    "/v2/virtualmachines/cves/{id}/vms": {
+    "/v2/virtualmachines/cves/{cveId}/vms": {
       "get": {
         "summary": "VMs affected by a specific CVE",
         "operationId": "VirtualMachineV2Service_ListVMCVEAffectedVMs",
@@ -143,7 +143,7 @@
         },
         "parameters": [
           {
-            "name": "id",
+            "name": "cveId",
             "in": "path",
             "required": true,
             "type": "string"
@@ -359,7 +359,7 @@
     },
     "/v2/virtualmachines/{id}": {
       "get": {
-        "summary": "Single VM detail",
+        "summary": "Single VM detail — registered first so literal paths below take priority.",
         "operationId": "VirtualMachineV2Service_GetVM",
         "responses": {
           "200": {
@@ -634,7 +634,7 @@
         ]
       }
     },
-    "/v2/virtualmachines/{vmId}/cves/{id}/components": {
+    "/v2/virtualmachines/{vmId}/cves/{cveId}/components": {
       "get": {
         "summary": "Components for a specific CVE on a specific VM (expanded row)",
         "operationId": "VirtualMachineV2Service_GetVMCVEComponents",
@@ -660,7 +660,7 @@
             "type": "string"
           },
           {
-            "name": "id",
+            "name": "cveId",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1189,7 +1189,7 @@
         "notes": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/v2VMNote"
           }
         },
         "latestScan": {
@@ -1240,6 +1240,16 @@
         }
       }
     },
+    "v2VMNote": {
+      "type": "string",
+      "enum": [
+        "VM_NOTE_MISSING_METADATA",
+        "VM_NOTE_MISSING_SCAN_DATA",
+        "VM_NOTE_MISSING_SIGNATURE",
+        "VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA"
+      ],
+      "default": "VM_NOTE_MISSING_METADATA"
+    },
     "v2VMScanInfo": {
       "type": "object",
       "properties": {
@@ -1260,10 +1270,19 @@
         "scanNotes": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/v2VMScanNote"
           }
         }
       }
+    },
+    "v2VMScanNote": {
+      "type": "string",
+      "enum": [
+        "VM_SCAN_NOTE_UNSET",
+        "VM_SCAN_NOTE_OS_UNKNOWN",
+        "VM_SCAN_NOTE_OS_UNSUPPORTED"
+      ],
+      "default": "VM_SCAN_NOTE_UNSET"
     },
     "v2VMVulnSummary": {
       "type": "object",

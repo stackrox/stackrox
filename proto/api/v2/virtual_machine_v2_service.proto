@@ -102,12 +102,25 @@ message VMDashboardCountsResponse {
 
 // ─── Endpoint 4: GetVM ───
 
+enum VMScanNote {
+  VM_SCAN_NOTE_UNSET = 0;
+  VM_SCAN_NOTE_OS_UNKNOWN = 1;
+  VM_SCAN_NOTE_OS_UNSUPPORTED = 2;
+}
+
 message VMScanInfo {
   string scan_id = 1;
   string scan_os = 2;
   google.protobuf.Timestamp scan_time = 3;
   float top_cvss = 4;
-  repeated string scan_notes = 5;
+  repeated VMScanNote scan_notes = 5;
+}
+
+enum VMNote {
+  VM_NOTE_MISSING_METADATA = 0;
+  VM_NOTE_MISSING_SCAN_DATA = 1;
+  VM_NOTE_MISSING_SIGNATURE = 2;
+  VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA = 3;
 }
 
 // Agent status enriched from a separate data source (not on VirtualMachineV2 storage).
@@ -130,7 +143,7 @@ message VMDetail {
   map<string, string> annotations = 10;
   map<string, string> labels = 11;
   int32 vsock_cid = 12;
-  repeated string notes = 13;
+  repeated VMNote notes = 13;
   VMScanInfo latest_scan = 14;
   AgentStatus agent_status = 15;
 }
@@ -190,7 +203,7 @@ message VMCVEComponentRow {
 
 message GetVMCVEComponentsRequest {
   string vm_id = 1;
-  string id = 2;
+  string cve_id = 2;
 }
 
 message GetVMCVEComponentsResponse {
@@ -244,7 +257,7 @@ message VMCVEDetail {
 }
 
 message GetVMCVEDetailRequest {
-  string id = 1;
+  string cve_id = 1;
 }
 
 // ─── Endpoint 10: ListVMCVEAffectedVMs ───
@@ -260,7 +273,7 @@ message VMCVEAffectedVMRow {
 }
 
 message ListVMCVEAffectedVMsRequest {
-  string id = 1;
+  string cve_id = 1;
   RawQuery query = 2;
 }
 
@@ -271,23 +284,12 @@ message ListVMCVEAffectedVMsResponse {
 
 // ─── Service Definition ───
 
+// NOTE: RPC ordering matters for grpc-gateway routing. The gateway prepends
+// each handler (last registered = first matched), so wildcard routes like
+// {id} must be defined FIRST to end up at the back of the matching list.
+// Literal routes defined after will match before the wildcard.
 service VirtualMachineV2Service {
-  // VM List View
-  rpc ListVMs(ListVMsRequest) returns (ListVMsResponse) {
-    option (google.api.http) = {get: "/v2/virtualmachines/vms"};
-  }
-
-  // CVE List View
-  rpc ListVMCVEs(ListVMCVEsRequest) returns (ListVMCVEsResponse) {
-    option (google.api.http) = {get: "/v2/virtualmachines/cves"};
-  }
-
-  // Dashboard tab counts
-  rpc GetVMDashboardCounts(VMDashboardCountsRequest) returns (VMDashboardCountsResponse) {
-    option (google.api.http) = {get: "/v2/virtualmachines/summary"};
-  }
-
-  // Single VM detail
+  // Single VM detail — registered first so literal paths below take priority.
   rpc GetVM(GetVMRequest) returns (VMDetail) {
     option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
   }
@@ -304,7 +306,7 @@ service VirtualMachineV2Service {
 
   // Components for a specific CVE on a specific VM (expanded row)
   rpc GetVMCVEComponents(GetVMCVEComponentsRequest) returns (GetVMCVEComponentsResponse) {
-    option (google.api.http) = {get: "/v2/virtualmachines/{vm_id}/cves/{id}/components"};
+    option (google.api.http) = {get: "/v2/virtualmachines/{vm_id}/cves/{cve_id}/components"};
   }
 
   // Single VM component list
@@ -312,13 +314,28 @@ service VirtualMachineV2Service {
     option (google.api.http) = {get: "/v2/virtualmachines/{vm_id}/components"};
   }
 
+  // VM List View
+  rpc ListVMs(ListVMsRequest) returns (ListVMsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/vms"};
+  }
+
+  // CVE List View
+  rpc ListVMCVEs(ListVMCVEsRequest) returns (ListVMCVEsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/cves"};
+  }
+
+  // Dashboard tab counts
+  rpc GetVMDashboardCounts(VMDashboardCountsRequest) returns (VMDashboardCountsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/summary"};
+  }
+
   // Single CVE detail (across all VMs)
   rpc GetVMCVEDetail(GetVMCVEDetailRequest) returns (VMCVEDetail) {
-    option (google.api.http) = {get: "/v2/virtualmachines/cves/{id}"};
+    option (google.api.http) = {get: "/v2/virtualmachines/cves/{cve_id}"};
   }
 
   // VMs affected by a specific CVE
   rpc ListVMCVEAffectedVMs(ListVMCVEAffectedVMsRequest) returns (ListVMCVEAffectedVMsResponse) {
-    option (google.api.http) = {get: "/v2/virtualmachines/cves/{id}/vms"};
+    option (google.api.http) = {get: "/v2/virtualmachines/cves/{cve_id}/vms"};
   }
 }

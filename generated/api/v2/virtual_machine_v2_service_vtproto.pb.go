@@ -259,7 +259,7 @@ func (m *VMScanInfo) CloneVT() *VMScanInfo {
 	r.ScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ScanTime).CloneVT())
 	r.TopCvss = m.TopCvss
 	if rhs := m.ScanNotes; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
+		tmpContainer := make([]VMScanNote, len(rhs))
 		copy(tmpContainer, rhs)
 		r.ScanNotes = tmpContainer
 	}
@@ -312,7 +312,7 @@ func (m *VMDetail) CloneVT() *VMDetail {
 		r.Labels = tmpContainer
 	}
 	if rhs := m.Notes; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
+		tmpContainer := make([]VMNote, len(rhs))
 		copy(tmpContainer, rhs)
 		r.Notes = tmpContainer
 	}
@@ -477,7 +477,7 @@ func (m *GetVMCVEComponentsRequest) CloneVT() *GetVMCVEComponentsRequest {
 	}
 	r := new(GetVMCVEComponentsRequest)
 	r.VmId = m.VmId
-	r.Id = m.Id
+	r.CveId = m.CveId
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -609,7 +609,7 @@ func (m *GetVMCVEDetailRequest) CloneVT() *GetVMCVEDetailRequest {
 		return (*GetVMCVEDetailRequest)(nil)
 	}
 	r := new(GetVMCVEDetailRequest)
-	r.Id = m.Id
+	r.CveId = m.CveId
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -649,7 +649,7 @@ func (m *ListVMCVEAffectedVMsRequest) CloneVT() *ListVMCVEAffectedVMsRequest {
 		return (*ListVMCVEAffectedVMsRequest)(nil)
 	}
 	r := new(ListVMCVEAffectedVMsRequest)
-	r.Id = m.Id
+	r.CveId = m.CveId
 	r.Query = m.Query.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -1345,7 +1345,7 @@ func (this *GetVMCVEComponentsRequest) EqualVT(that *GetVMCVEComponentsRequest) 
 	if this.VmId != that.VmId {
 		return false
 	}
-	if this.Id != that.Id {
+	if this.CveId != that.CveId {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1541,7 +1541,7 @@ func (this *GetVMCVEDetailRequest) EqualVT(that *GetVMCVEDetailRequest) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Id != that.Id {
+	if this.CveId != that.CveId {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1597,7 +1597,7 @@ func (this *ListVMCVEAffectedVMsRequest) EqualVT(that *ListVMCVEAffectedVMsReque
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Id != that.Id {
+	if this.CveId != that.CveId {
 		return false
 	}
 	if !this.Query.EqualVT(that.Query) {
@@ -2330,13 +2330,25 @@ func (m *VMScanInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if len(m.ScanNotes) > 0 {
-		for iNdEx := len(m.ScanNotes) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ScanNotes[iNdEx])
-			copy(dAtA[i:], m.ScanNotes[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScanNotes[iNdEx])))
-			i--
-			dAtA[i] = 0x2a
+		var pksize2 int
+		for _, num := range m.ScanNotes {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
 		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.ScanNotes {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.TopCvss != 0 {
 		i -= 4
@@ -2417,13 +2429,25 @@ func (m *VMDetail) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x72
 	}
 	if len(m.Notes) > 0 {
-		for iNdEx := len(m.Notes) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Notes[iNdEx])
-			copy(dAtA[i:], m.Notes[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Notes[iNdEx])))
-			i--
-			dAtA[i] = 0x6a
+		var pksize2 int
+		for _, num := range m.Notes {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
 		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.Notes {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0x6a
 	}
 	if m.VsockCid != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.VsockCid))
@@ -3001,10 +3025,10 @@ func (m *GetVMCVEComponentsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
+	if len(m.CveId) > 0 {
+		i -= len(m.CveId)
+		copy(dAtA[i:], m.CveId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.CveId)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3383,10 +3407,10 @@ func (m *GetVMCVEDetailRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
+	if len(m.CveId) > 0 {
+		i -= len(m.CveId)
+		copy(dAtA[i:], m.CveId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.CveId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -3513,10 +3537,10 @@ func (m *ListVMCVEAffectedVMsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
+	if len(m.CveId) > 0 {
+		i -= len(m.CveId)
+		copy(dAtA[i:], m.CveId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.CveId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -3844,10 +3868,11 @@ func (m *VMScanInfo) SizeVT() (n int) {
 		n += 5
 	}
 	if len(m.ScanNotes) > 0 {
-		for _, s := range m.ScanNotes {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		l = 0
+		for _, e := range m.ScanNotes {
+			l += protohelpers.SizeOfVarint(uint64(e))
 		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3918,10 +3943,11 @@ func (m *VMDetail) SizeVT() (n int) {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.VsockCid))
 	}
 	if len(m.Notes) > 0 {
-		for _, s := range m.Notes {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		l = 0
+		for _, e := range m.Notes {
+			l += protohelpers.SizeOfVarint(uint64(e))
 		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
 	}
 	if m.LatestScan != nil {
 		l = m.LatestScan.SizeVT()
@@ -4110,7 +4136,7 @@ func (m *GetVMCVEComponentsRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.Id)
+	l = len(m.CveId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -4261,7 +4287,7 @@ func (m *GetVMCVEDetailRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Id)
+	l = len(m.CveId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -4309,7 +4335,7 @@ func (m *ListVMCVEAffectedVMsRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Id)
+	l = len(m.CveId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -6101,37 +6127,74 @@ func (m *VMScanInfo) UnmarshalVT(dAtA []byte) error {
 			iNdEx += 4
 			m.TopCvss = float32(math.Float32frombits(v))
 		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanNotes", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
+			if wireType == 0 {
+				var v VMScanNote
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VMScanNote(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.ScanNotes = append(m.ScanNotes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				if elementCount != 0 && len(m.ScanNotes) == 0 {
+					m.ScanNotes = make([]VMScanNote, 0, elementCount)
 				}
+				for iNdEx < postIndex {
+					var v VMScanNote
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VMScanNote(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.ScanNotes = append(m.ScanNotes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanNotes", wireType)
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ScanNotes = append(m.ScanNotes, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6831,37 +6894,74 @@ func (m *VMDetail) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 		case 13:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
+			if wireType == 0 {
+				var v VMNote
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VMNote(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]VMNote, 0, elementCount)
 				}
+				for iNdEx < postIndex {
+					var v VMNote
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VMNote(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Notes = append(m.Notes, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LatestScan", wireType)
@@ -8064,7 +8164,7 @@ func (m *GetVMCVEComponentsRequest) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8092,7 +8192,7 @@ func (m *GetVMCVEComponentsRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Id = string(dAtA[iNdEx:postIndex])
+			m.CveId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -9029,7 +9129,7 @@ func (m *GetVMCVEDetailRequest) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -9057,7 +9157,7 @@ func (m *GetVMCVEDetailRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Id = string(dAtA[iNdEx:postIndex])
+			m.CveId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -9328,7 +9428,7 @@ func (m *ListVMCVEAffectedVMsRequest) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -9356,7 +9456,7 @@ func (m *ListVMCVEAffectedVMsRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Id = string(dAtA[iNdEx:postIndex])
+			m.CveId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -11321,41 +11421,74 @@ func (m *VMScanInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx += 4
 			m.TopCvss = float32(math.Float32frombits(v))
 		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanNotes", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
+			if wireType == 0 {
+				var v VMScanNote
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VMScanNote(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.ScanNotes = append(m.ScanNotes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				if elementCount != 0 && len(m.ScanNotes) == 0 {
+					m.ScanNotes = make([]VMScanNote, 0, elementCount)
 				}
+				for iNdEx < postIndex {
+					var v VMScanNote
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VMScanNote(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.ScanNotes = append(m.ScanNotes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanNotes", wireType)
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ScanNotes = append(m.ScanNotes, stringValue)
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -12103,41 +12236,74 @@ func (m *VMDetail) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 		case 13:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
+			if wireType == 0 {
+				var v VMNote
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VMNote(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]VMNote, 0, elementCount)
 				}
+				for iNdEx < postIndex {
+					var v VMNote
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VMNote(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.Notes = append(m.Notes, stringValue)
-			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LatestScan", wireType)
@@ -13380,7 +13546,7 @@ func (m *GetVMCVEComponentsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -13412,7 +13578,7 @@ func (m *GetVMCVEComponentsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Id = stringValue
+			m.CveId = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -14377,7 +14543,7 @@ func (m *GetVMCVEDetailRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -14409,7 +14575,7 @@ func (m *GetVMCVEDetailRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Id = stringValue
+			m.CveId = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -14692,7 +14858,7 @@ func (m *ListVMCVEAffectedVMsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -14724,7 +14890,7 @@ func (m *ListVMCVEAffectedVMsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Id = stringValue
+			m.CveId = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {

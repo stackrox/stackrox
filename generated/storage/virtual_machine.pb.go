@@ -218,7 +218,6 @@ func (EmbeddedVirtualMachineScanComponent_Note) EnumDescriptor() ([]byte, []int)
 	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{2, 0}
 }
 
-// TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)" search:"Virtual Machine ID"`                                      // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID"
@@ -352,8 +351,6 @@ func (x *VirtualMachine) GetScan() *VirtualMachineScan {
 // This trade-off was made in order to be able to deliver the data flow, and to
 // avoid leaving dead data in customer databases, should
 // the virtual machine data model have to be re-visited later on.
-//
-// TODO(ROX-30352): Adjust the data model here or remove the comment above.
 type VirtualMachineScan struct {
 	state           protoimpl.MessageState                 `protogen:"open.v1"`
 	ScanTime        *timestamppb.Timestamp                 `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`

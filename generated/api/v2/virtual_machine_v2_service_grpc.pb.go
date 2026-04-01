@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VirtualMachineV2Service_ListVMs_FullMethodName              = "/v2.VirtualMachineV2Service/ListVMs"
-	VirtualMachineV2Service_ListVMCVEs_FullMethodName           = "/v2.VirtualMachineV2Service/ListVMCVEs"
-	VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName = "/v2.VirtualMachineV2Service/GetVMDashboardCounts"
 	VirtualMachineV2Service_GetVM_FullMethodName                = "/v2.VirtualMachineV2Service/GetVM"
 	VirtualMachineV2Service_GetVMVulnSummary_FullMethodName     = "/v2.VirtualMachineV2Service/GetVMVulnSummary"
 	VirtualMachineV2Service_ListVMCVEsByVM_FullMethodName       = "/v2.VirtualMachineV2Service/ListVMCVEsByVM"
 	VirtualMachineV2Service_GetVMCVEComponents_FullMethodName   = "/v2.VirtualMachineV2Service/GetVMCVEComponents"
 	VirtualMachineV2Service_ListVMComponents_FullMethodName     = "/v2.VirtualMachineV2Service/ListVMComponents"
+	VirtualMachineV2Service_ListVMs_FullMethodName              = "/v2.VirtualMachineV2Service/ListVMs"
+	VirtualMachineV2Service_ListVMCVEs_FullMethodName           = "/v2.VirtualMachineV2Service/ListVMCVEs"
+	VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName = "/v2.VirtualMachineV2Service/GetVMDashboardCounts"
 	VirtualMachineV2Service_GetVMCVEDetail_FullMethodName       = "/v2.VirtualMachineV2Service/GetVMCVEDetail"
 	VirtualMachineV2Service_ListVMCVEAffectedVMs_FullMethodName = "/v2.VirtualMachineV2Service/ListVMCVEAffectedVMs"
 )
@@ -34,14 +34,13 @@ const (
 // VirtualMachineV2ServiceClient is the client API for VirtualMachineV2Service service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NOTE: RPC ordering matters for grpc-gateway routing. The gateway prepends
+// each handler (last registered = first matched), so wildcard routes like
+// {id} must be defined FIRST to end up at the back of the matching list.
+// Literal routes defined after will match before the wildcard.
 type VirtualMachineV2ServiceClient interface {
-	// VM List View
-	ListVMs(ctx context.Context, in *ListVMsRequest, opts ...grpc.CallOption) (*ListVMsResponse, error)
-	// CVE List View
-	ListVMCVEs(ctx context.Context, in *ListVMCVEsRequest, opts ...grpc.CallOption) (*ListVMCVEsResponse, error)
-	// Dashboard tab counts
-	GetVMDashboardCounts(ctx context.Context, in *VMDashboardCountsRequest, opts ...grpc.CallOption) (*VMDashboardCountsResponse, error)
-	// Single VM detail
+	// Single VM detail — registered first so literal paths below take priority.
 	GetVM(ctx context.Context, in *GetVMRequest, opts ...grpc.CallOption) (*VMDetail, error)
 	// Single VM vulnerability summary cards
 	GetVMVulnSummary(ctx context.Context, in *GetVMVulnSummaryRequest, opts ...grpc.CallOption) (*VMVulnSummary, error)
@@ -51,6 +50,12 @@ type VirtualMachineV2ServiceClient interface {
 	GetVMCVEComponents(ctx context.Context, in *GetVMCVEComponentsRequest, opts ...grpc.CallOption) (*GetVMCVEComponentsResponse, error)
 	// Single VM component list
 	ListVMComponents(ctx context.Context, in *ListVMComponentsRequest, opts ...grpc.CallOption) (*ListVMComponentsResponse, error)
+	// VM List View
+	ListVMs(ctx context.Context, in *ListVMsRequest, opts ...grpc.CallOption) (*ListVMsResponse, error)
+	// CVE List View
+	ListVMCVEs(ctx context.Context, in *ListVMCVEsRequest, opts ...grpc.CallOption) (*ListVMCVEsResponse, error)
+	// Dashboard tab counts
+	GetVMDashboardCounts(ctx context.Context, in *VMDashboardCountsRequest, opts ...grpc.CallOption) (*VMDashboardCountsResponse, error)
 	// Single CVE detail (across all VMs)
 	GetVMCVEDetail(ctx context.Context, in *GetVMCVEDetailRequest, opts ...grpc.CallOption) (*VMCVEDetail, error)
 	// VMs affected by a specific CVE
@@ -63,36 +68,6 @@ type virtualMachineV2ServiceClient struct {
 
 func NewVirtualMachineV2ServiceClient(cc grpc.ClientConnInterface) VirtualMachineV2ServiceClient {
 	return &virtualMachineV2ServiceClient{cc}
-}
-
-func (c *virtualMachineV2ServiceClient) ListVMs(ctx context.Context, in *ListVMsRequest, opts ...grpc.CallOption) (*ListVMsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListVMsResponse)
-	err := c.cc.Invoke(ctx, VirtualMachineV2Service_ListVMs_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *virtualMachineV2ServiceClient) ListVMCVEs(ctx context.Context, in *ListVMCVEsRequest, opts ...grpc.CallOption) (*ListVMCVEsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListVMCVEsResponse)
-	err := c.cc.Invoke(ctx, VirtualMachineV2Service_ListVMCVEs_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *virtualMachineV2ServiceClient) GetVMDashboardCounts(ctx context.Context, in *VMDashboardCountsRequest, opts ...grpc.CallOption) (*VMDashboardCountsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(VMDashboardCountsResponse)
-	err := c.cc.Invoke(ctx, VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *virtualMachineV2ServiceClient) GetVM(ctx context.Context, in *GetVMRequest, opts ...grpc.CallOption) (*VMDetail, error) {
@@ -145,6 +120,36 @@ func (c *virtualMachineV2ServiceClient) ListVMComponents(ctx context.Context, in
 	return out, nil
 }
 
+func (c *virtualMachineV2ServiceClient) ListVMs(ctx context.Context, in *ListVMsRequest, opts ...grpc.CallOption) (*ListVMsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListVMsResponse)
+	err := c.cc.Invoke(ctx, VirtualMachineV2Service_ListVMs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *virtualMachineV2ServiceClient) ListVMCVEs(ctx context.Context, in *ListVMCVEsRequest, opts ...grpc.CallOption) (*ListVMCVEsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListVMCVEsResponse)
+	err := c.cc.Invoke(ctx, VirtualMachineV2Service_ListVMCVEs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *virtualMachineV2ServiceClient) GetVMDashboardCounts(ctx context.Context, in *VMDashboardCountsRequest, opts ...grpc.CallOption) (*VMDashboardCountsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VMDashboardCountsResponse)
+	err := c.cc.Invoke(ctx, VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *virtualMachineV2ServiceClient) GetVMCVEDetail(ctx context.Context, in *GetVMCVEDetailRequest, opts ...grpc.CallOption) (*VMCVEDetail, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VMCVEDetail)
@@ -168,14 +173,13 @@ func (c *virtualMachineV2ServiceClient) ListVMCVEAffectedVMs(ctx context.Context
 // VirtualMachineV2ServiceServer is the server API for VirtualMachineV2Service service.
 // All implementations should embed UnimplementedVirtualMachineV2ServiceServer
 // for forward compatibility.
+//
+// NOTE: RPC ordering matters for grpc-gateway routing. The gateway prepends
+// each handler (last registered = first matched), so wildcard routes like
+// {id} must be defined FIRST to end up at the back of the matching list.
+// Literal routes defined after will match before the wildcard.
 type VirtualMachineV2ServiceServer interface {
-	// VM List View
-	ListVMs(context.Context, *ListVMsRequest) (*ListVMsResponse, error)
-	// CVE List View
-	ListVMCVEs(context.Context, *ListVMCVEsRequest) (*ListVMCVEsResponse, error)
-	// Dashboard tab counts
-	GetVMDashboardCounts(context.Context, *VMDashboardCountsRequest) (*VMDashboardCountsResponse, error)
-	// Single VM detail
+	// Single VM detail — registered first so literal paths below take priority.
 	GetVM(context.Context, *GetVMRequest) (*VMDetail, error)
 	// Single VM vulnerability summary cards
 	GetVMVulnSummary(context.Context, *GetVMVulnSummaryRequest) (*VMVulnSummary, error)
@@ -185,6 +189,12 @@ type VirtualMachineV2ServiceServer interface {
 	GetVMCVEComponents(context.Context, *GetVMCVEComponentsRequest) (*GetVMCVEComponentsResponse, error)
 	// Single VM component list
 	ListVMComponents(context.Context, *ListVMComponentsRequest) (*ListVMComponentsResponse, error)
+	// VM List View
+	ListVMs(context.Context, *ListVMsRequest) (*ListVMsResponse, error)
+	// CVE List View
+	ListVMCVEs(context.Context, *ListVMCVEsRequest) (*ListVMCVEsResponse, error)
+	// Dashboard tab counts
+	GetVMDashboardCounts(context.Context, *VMDashboardCountsRequest) (*VMDashboardCountsResponse, error)
 	// Single CVE detail (across all VMs)
 	GetVMCVEDetail(context.Context, *GetVMCVEDetailRequest) (*VMCVEDetail, error)
 	// VMs affected by a specific CVE
@@ -198,15 +208,6 @@ type VirtualMachineV2ServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedVirtualMachineV2ServiceServer struct{}
 
-func (UnimplementedVirtualMachineV2ServiceServer) ListVMs(context.Context, *ListVMsRequest) (*ListVMsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListVMs not implemented")
-}
-func (UnimplementedVirtualMachineV2ServiceServer) ListVMCVEs(context.Context, *ListVMCVEsRequest) (*ListVMCVEsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListVMCVEs not implemented")
-}
-func (UnimplementedVirtualMachineV2ServiceServer) GetVMDashboardCounts(context.Context, *VMDashboardCountsRequest) (*VMDashboardCountsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetVMDashboardCounts not implemented")
-}
 func (UnimplementedVirtualMachineV2ServiceServer) GetVM(context.Context, *GetVMRequest) (*VMDetail, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetVM not implemented")
 }
@@ -221,6 +222,15 @@ func (UnimplementedVirtualMachineV2ServiceServer) GetVMCVEComponents(context.Con
 }
 func (UnimplementedVirtualMachineV2ServiceServer) ListVMComponents(context.Context, *ListVMComponentsRequest) (*ListVMComponentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListVMComponents not implemented")
+}
+func (UnimplementedVirtualMachineV2ServiceServer) ListVMs(context.Context, *ListVMsRequest) (*ListVMsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListVMs not implemented")
+}
+func (UnimplementedVirtualMachineV2ServiceServer) ListVMCVEs(context.Context, *ListVMCVEsRequest) (*ListVMCVEsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListVMCVEs not implemented")
+}
+func (UnimplementedVirtualMachineV2ServiceServer) GetVMDashboardCounts(context.Context, *VMDashboardCountsRequest) (*VMDashboardCountsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetVMDashboardCounts not implemented")
 }
 func (UnimplementedVirtualMachineV2ServiceServer) GetVMCVEDetail(context.Context, *GetVMCVEDetailRequest) (*VMCVEDetail, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetVMCVEDetail not implemented")
@@ -246,60 +256,6 @@ func RegisterVirtualMachineV2ServiceServer(s grpc.ServiceRegistrar, srv VirtualM
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&VirtualMachineV2Service_ServiceDesc, srv)
-}
-
-func _VirtualMachineV2Service_ListVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListVMsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VirtualMachineV2ServiceServer).ListVMs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VirtualMachineV2Service_ListVMs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VirtualMachineV2ServiceServer).ListVMs(ctx, req.(*ListVMsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VirtualMachineV2Service_ListVMCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListVMCVEsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VirtualMachineV2ServiceServer).ListVMCVEs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VirtualMachineV2Service_ListVMCVEs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VirtualMachineV2ServiceServer).ListVMCVEs(ctx, req.(*ListVMCVEsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VirtualMachineV2Service_GetVMDashboardCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VMDashboardCountsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VirtualMachineV2ServiceServer).GetVMDashboardCounts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VirtualMachineV2ServiceServer).GetVMDashboardCounts(ctx, req.(*VMDashboardCountsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _VirtualMachineV2Service_GetVM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -392,6 +348,60 @@ func _VirtualMachineV2Service_ListVMComponents_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VirtualMachineV2Service_ListVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVMsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VirtualMachineV2ServiceServer).ListVMs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VirtualMachineV2Service_ListVMs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VirtualMachineV2ServiceServer).ListVMs(ctx, req.(*ListVMsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VirtualMachineV2Service_ListVMCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVMCVEsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VirtualMachineV2ServiceServer).ListVMCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VirtualMachineV2Service_ListVMCVEs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VirtualMachineV2ServiceServer).ListVMCVEs(ctx, req.(*ListVMCVEsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VirtualMachineV2Service_GetVMDashboardCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VMDashboardCountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VirtualMachineV2ServiceServer).GetVMDashboardCounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VirtualMachineV2ServiceServer).GetVMDashboardCounts(ctx, req.(*VMDashboardCountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _VirtualMachineV2Service_GetVMCVEDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVMCVEDetailRequest)
 	if err := dec(in); err != nil {
@@ -436,18 +446,6 @@ var VirtualMachineV2Service_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*VirtualMachineV2ServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ListVMs",
-			Handler:    _VirtualMachineV2Service_ListVMs_Handler,
-		},
-		{
-			MethodName: "ListVMCVEs",
-			Handler:    _VirtualMachineV2Service_ListVMCVEs_Handler,
-		},
-		{
-			MethodName: "GetVMDashboardCounts",
-			Handler:    _VirtualMachineV2Service_GetVMDashboardCounts_Handler,
-		},
-		{
 			MethodName: "GetVM",
 			Handler:    _VirtualMachineV2Service_GetVM_Handler,
 		},
@@ -466,6 +464,18 @@ var VirtualMachineV2Service_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListVMComponents",
 			Handler:    _VirtualMachineV2Service_ListVMComponents_Handler,
+		},
+		{
+			MethodName: "ListVMs",
+			Handler:    _VirtualMachineV2Service_ListVMs_Handler,
+		},
+		{
+			MethodName: "ListVMCVEs",
+			Handler:    _VirtualMachineV2Service_ListVMCVEs_Handler,
+		},
+		{
+			MethodName: "GetVMDashboardCounts",
+			Handler:    _VirtualMachineV2Service_GetVMDashboardCounts_Handler,
 		},
 		{
 			MethodName: "GetVMCVEDetail",

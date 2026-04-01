@@ -35,111 +35,6 @@ var (
 	_ = metadata.Join
 )
 
-var filter_VirtualMachineV2Service_ListVMs_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-
-func request_VirtualMachineV2Service_ListVMs_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq ListVMsRequest
-		metadata runtime.ServerMetadata
-	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMs_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	msg, err := client.ListVMs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-}
-
-func local_request_VirtualMachineV2Service_ListVMs_0(ctx context.Context, marshaler runtime.Marshaler, server VirtualMachineV2ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq ListVMsRequest
-		metadata runtime.ServerMetadata
-	)
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMs_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	msg, err := server.ListVMs(ctx, &protoReq)
-	return msg, metadata, err
-}
-
-var filter_VirtualMachineV2Service_ListVMCVEs_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-
-func request_VirtualMachineV2Service_ListVMCVEs_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq ListVMCVEsRequest
-		metadata runtime.ServerMetadata
-	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMCVEs_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	msg, err := client.ListVMCVEs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-}
-
-func local_request_VirtualMachineV2Service_ListVMCVEs_0(ctx context.Context, marshaler runtime.Marshaler, server VirtualMachineV2ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq ListVMCVEsRequest
-		metadata runtime.ServerMetadata
-	)
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMCVEs_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	msg, err := server.ListVMCVEs(ctx, &protoReq)
-	return msg, metadata, err
-}
-
-var filter_VirtualMachineV2Service_GetVMDashboardCounts_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-
-func request_VirtualMachineV2Service_GetVMDashboardCounts_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq VMDashboardCountsRequest
-		metadata runtime.ServerMetadata
-	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_GetVMDashboardCounts_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	msg, err := client.GetVMDashboardCounts(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-}
-
-func local_request_VirtualMachineV2Service_GetVMDashboardCounts_0(ctx context.Context, marshaler runtime.Marshaler, server VirtualMachineV2ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq VMDashboardCountsRequest
-		metadata runtime.ServerMetadata
-	)
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_GetVMDashboardCounts_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	msg, err := server.GetVMDashboardCounts(ctx, &protoReq)
-	return msg, metadata, err
-}
-
 func request_VirtualMachineV2Service_GetVM_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetVMRequest
@@ -302,13 +197,13 @@ func request_VirtualMachineV2Service_GetVMCVEComponents_0(ctx context.Context, m
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "vm_id", err)
 	}
-	val, ok = pathParams["id"]
+	val, ok = pathParams["cve_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cve_id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
 	}
 	msg, err := client.GetVMCVEComponents(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -328,13 +223,13 @@ func local_request_VirtualMachineV2Service_GetVMCVEComponents_0(ctx context.Cont
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "vm_id", err)
 	}
-	val, ok = pathParams["id"]
+	val, ok = pathParams["cve_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cve_id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
 	}
 	msg, err := server.GetVMCVEComponents(ctx, &protoReq)
 	return msg, metadata, err
@@ -393,6 +288,111 @@ func local_request_VirtualMachineV2Service_ListVMComponents_0(ctx context.Contex
 	return msg, metadata, err
 }
 
+var filter_VirtualMachineV2Service_ListVMs_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
+func request_VirtualMachineV2Service_ListVMs_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListVMsRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMs_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := client.ListVMs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_VirtualMachineV2Service_ListVMs_0(ctx context.Context, marshaler runtime.Marshaler, server VirtualMachineV2ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListVMsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMs_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.ListVMs(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+var filter_VirtualMachineV2Service_ListVMCVEs_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
+func request_VirtualMachineV2Service_ListVMCVEs_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListVMCVEsRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMCVEs_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := client.ListVMCVEs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_VirtualMachineV2Service_ListVMCVEs_0(ctx context.Context, marshaler runtime.Marshaler, server VirtualMachineV2ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListVMCVEsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_ListVMCVEs_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.ListVMCVEs(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+var filter_VirtualMachineV2Service_GetVMDashboardCounts_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
+func request_VirtualMachineV2Service_GetVMDashboardCounts_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq VMDashboardCountsRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_GetVMDashboardCounts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := client.GetVMDashboardCounts(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_VirtualMachineV2Service_GetVMDashboardCounts_0(ctx context.Context, marshaler runtime.Marshaler, server VirtualMachineV2ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq VMDashboardCountsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineV2Service_GetVMDashboardCounts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.GetVMDashboardCounts(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_VirtualMachineV2Service_GetVMCVEDetail_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetVMCVEDetailRequest
@@ -402,13 +402,13 @@ func request_VirtualMachineV2Service_GetVMCVEDetail_0(ctx context.Context, marsh
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
-	val, ok := pathParams["id"]
+	val, ok := pathParams["cve_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cve_id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
 	}
 	msg, err := client.GetVMCVEDetail(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -420,19 +420,19 @@ func local_request_VirtualMachineV2Service_GetVMCVEDetail_0(ctx context.Context,
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["id"]
+	val, ok := pathParams["cve_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cve_id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
 	}
 	msg, err := server.GetVMCVEDetail(ctx, &protoReq)
 	return msg, metadata, err
 }
 
-var filter_VirtualMachineV2Service_ListVMCVEAffectedVMs_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+var filter_VirtualMachineV2Service_ListVMCVEAffectedVMs_0 = &utilities.DoubleArray{Encoding: map[string]int{"cve_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_VirtualMachineV2Service_ListVMCVEAffectedVMs_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineV2ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -443,13 +443,13 @@ func request_VirtualMachineV2Service_ListVMCVEAffectedVMs_0(ctx context.Context,
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
-	val, ok := pathParams["id"]
+	val, ok := pathParams["cve_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cve_id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
 	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -467,13 +467,13 @@ func local_request_VirtualMachineV2Service_ListVMCVEAffectedVMs_0(ctx context.Co
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["id"]
+	val, ok := pathParams["cve_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cve_id")
 	}
-	protoReq.Id, err = runtime.String(val)
+	protoReq.CveId, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cve_id", err)
 	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -491,66 +491,6 @@ func local_request_VirtualMachineV2Service_ListVMCVEAffectedVMs_0(ctx context.Co
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterVirtualMachineV2ServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterVirtualMachineV2ServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server VirtualMachineV2ServiceServer) error {
-	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/vms"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_VirtualMachineV2Service_ListVMs_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_VirtualMachineV2Service_ListVMs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
-	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
-	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVMDashboardCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMDashboardCounts", runtime.WithHTTPPathPattern("/v2/virtualmachines/summary"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
 	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVM_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -617,7 +557,7 @@ func RegisterVirtualMachineV2ServiceHandlerServer(ctx context.Context, mux *runt
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEComponents", runtime.WithHTTPPathPattern("/v2/virtualmachines/{vm_id}/cves/{id}/components"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEComponents", runtime.WithHTTPPathPattern("/v2/virtualmachines/{vm_id}/cves/{cve_id}/components"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -651,13 +591,73 @@ func RegisterVirtualMachineV2ServiceHandlerServer(ctx context.Context, mux *runt
 		}
 		forward_VirtualMachineV2Service_ListVMComponents_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/vms"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_VirtualMachineV2Service_ListVMs_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_VirtualMachineV2Service_ListVMs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVMDashboardCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMDashboardCounts", runtime.WithHTTPPathPattern("/v2/virtualmachines/summary"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVMCVEDetail_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEDetail", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEDetail", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{cve_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -677,7 +677,7 @@ func RegisterVirtualMachineV2ServiceHandlerServer(ctx context.Context, mux *runt
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEAffectedVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{id}/vms"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEAffectedVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{cve_id}/vms"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -731,57 +731,6 @@ func RegisterVirtualMachineV2ServiceHandler(ctx context.Context, mux *runtime.Se
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "VirtualMachineV2ServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterVirtualMachineV2ServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client VirtualMachineV2ServiceClient) error {
-	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/vms"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_VirtualMachineV2Service_ListVMs_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_VirtualMachineV2Service_ListVMs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
-	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
-	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVMDashboardCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMDashboardCounts", runtime.WithHTTPPathPattern("/v2/virtualmachines/summary"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
 	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVM_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -837,7 +786,7 @@ func RegisterVirtualMachineV2ServiceHandlerClient(ctx context.Context, mux *runt
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEComponents", runtime.WithHTTPPathPattern("/v2/virtualmachines/{vm_id}/cves/{id}/components"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEComponents", runtime.WithHTTPPathPattern("/v2/virtualmachines/{vm_id}/cves/{cve_id}/components"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -867,11 +816,62 @@ func RegisterVirtualMachineV2ServiceHandlerClient(ctx context.Context, mux *runt
 		}
 		forward_VirtualMachineV2Service_ListVMComponents_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/vms"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_VirtualMachineV2Service_ListVMs_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_VirtualMachineV2Service_ListVMs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_ListVMCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_VirtualMachineV2Service_ListVMCVEs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVMDashboardCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMDashboardCounts", runtime.WithHTTPPathPattern("/v2/virtualmachines/summary"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_VirtualMachineV2Service_GetVMDashboardCounts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_VirtualMachineV2Service_GetVMCVEDetail_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEDetail", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/GetVMCVEDetail", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{cve_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -888,7 +888,7 @@ func RegisterVirtualMachineV2ServiceHandlerClient(ctx context.Context, mux *runt
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEAffectedVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{id}/vms"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineV2Service/ListVMCVEAffectedVMs", runtime.WithHTTPPathPattern("/v2/virtualmachines/cves/{cve_id}/vms"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -905,27 +905,27 @@ func RegisterVirtualMachineV2ServiceHandlerClient(ctx context.Context, mux *runt
 }
 
 var (
-	pattern_VirtualMachineV2Service_ListVMs_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "virtualmachines", "vms"}, ""))
-	pattern_VirtualMachineV2Service_ListVMCVEs_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "virtualmachines", "cves"}, ""))
-	pattern_VirtualMachineV2Service_GetVMDashboardCounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "virtualmachines", "summary"}, ""))
 	pattern_VirtualMachineV2Service_GetVM_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v2", "virtualmachines", "id"}, ""))
 	pattern_VirtualMachineV2Service_GetVMVulnSummary_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v2", "virtualmachines", "id", "vuln-summary"}, ""))
 	pattern_VirtualMachineV2Service_ListVMCVEsByVM_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v2", "virtualmachines", "vm_id", "cves"}, ""))
-	pattern_VirtualMachineV2Service_GetVMCVEComponents_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v2", "virtualmachines", "vm_id", "cves", "id", "components"}, ""))
+	pattern_VirtualMachineV2Service_GetVMCVEComponents_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v2", "virtualmachines", "vm_id", "cves", "cve_id", "components"}, ""))
 	pattern_VirtualMachineV2Service_ListVMComponents_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v2", "virtualmachines", "vm_id", "components"}, ""))
-	pattern_VirtualMachineV2Service_GetVMCVEDetail_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "virtualmachines", "cves", "id"}, ""))
-	pattern_VirtualMachineV2Service_ListVMCVEAffectedVMs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "virtualmachines", "cves", "id", "vms"}, ""))
+	pattern_VirtualMachineV2Service_ListVMs_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "virtualmachines", "vms"}, ""))
+	pattern_VirtualMachineV2Service_ListVMCVEs_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "virtualmachines", "cves"}, ""))
+	pattern_VirtualMachineV2Service_GetVMDashboardCounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "virtualmachines", "summary"}, ""))
+	pattern_VirtualMachineV2Service_GetVMCVEDetail_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "virtualmachines", "cves", "cve_id"}, ""))
+	pattern_VirtualMachineV2Service_ListVMCVEAffectedVMs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "virtualmachines", "cves", "cve_id", "vms"}, ""))
 )
 
 var (
-	forward_VirtualMachineV2Service_ListVMs_0              = runtime.ForwardResponseMessage
-	forward_VirtualMachineV2Service_ListVMCVEs_0           = runtime.ForwardResponseMessage
-	forward_VirtualMachineV2Service_GetVMDashboardCounts_0 = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_GetVM_0                = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_GetVMVulnSummary_0     = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_ListVMCVEsByVM_0       = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_GetVMCVEComponents_0   = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_ListVMComponents_0     = runtime.ForwardResponseMessage
+	forward_VirtualMachineV2Service_ListVMs_0              = runtime.ForwardResponseMessage
+	forward_VirtualMachineV2Service_ListVMCVEs_0           = runtime.ForwardResponseMessage
+	forward_VirtualMachineV2Service_GetVMDashboardCounts_0 = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_GetVMCVEDetail_0       = runtime.ForwardResponseMessage
 	forward_VirtualMachineV2Service_ListVMCVEAffectedVMs_0 = runtime.ForwardResponseMessage
 )

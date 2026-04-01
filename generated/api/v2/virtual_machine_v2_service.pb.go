@@ -72,6 +72,107 @@ func (VirtualMachineV2State) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{0}
 }
 
+type VMScanNote int32
+
+const (
+	VMScanNote_VM_SCAN_NOTE_UNSET          VMScanNote = 0
+	VMScanNote_VM_SCAN_NOTE_OS_UNKNOWN     VMScanNote = 1
+	VMScanNote_VM_SCAN_NOTE_OS_UNSUPPORTED VMScanNote = 2
+)
+
+// Enum value maps for VMScanNote.
+var (
+	VMScanNote_name = map[int32]string{
+		0: "VM_SCAN_NOTE_UNSET",
+		1: "VM_SCAN_NOTE_OS_UNKNOWN",
+		2: "VM_SCAN_NOTE_OS_UNSUPPORTED",
+	}
+	VMScanNote_value = map[string]int32{
+		"VM_SCAN_NOTE_UNSET":          0,
+		"VM_SCAN_NOTE_OS_UNKNOWN":     1,
+		"VM_SCAN_NOTE_OS_UNSUPPORTED": 2,
+	}
+)
+
+func (x VMScanNote) Enum() *VMScanNote {
+	p := new(VMScanNote)
+	*p = x
+	return p
+}
+
+func (x VMScanNote) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VMScanNote) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_virtual_machine_v2_service_proto_enumTypes[1].Descriptor()
+}
+
+func (VMScanNote) Type() protoreflect.EnumType {
+	return &file_api_v2_virtual_machine_v2_service_proto_enumTypes[1]
+}
+
+func (x VMScanNote) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VMScanNote.Descriptor instead.
+func (VMScanNote) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{1}
+}
+
+type VMNote int32
+
+const (
+	VMNote_VM_NOTE_MISSING_METADATA                    VMNote = 0
+	VMNote_VM_NOTE_MISSING_SCAN_DATA                   VMNote = 1
+	VMNote_VM_NOTE_MISSING_SIGNATURE                   VMNote = 2
+	VMNote_VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA VMNote = 3
+)
+
+// Enum value maps for VMNote.
+var (
+	VMNote_name = map[int32]string{
+		0: "VM_NOTE_MISSING_METADATA",
+		1: "VM_NOTE_MISSING_SCAN_DATA",
+		2: "VM_NOTE_MISSING_SIGNATURE",
+		3: "VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA",
+	}
+	VMNote_value = map[string]int32{
+		"VM_NOTE_MISSING_METADATA":                    0,
+		"VM_NOTE_MISSING_SCAN_DATA":                   1,
+		"VM_NOTE_MISSING_SIGNATURE":                   2,
+		"VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA": 3,
+	}
+)
+
+func (x VMNote) Enum() *VMNote {
+	p := new(VMNote)
+	*p = x
+	return p
+}
+
+func (x VMNote) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VMNote) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_virtual_machine_v2_service_proto_enumTypes[2].Descriptor()
+}
+
+func (VMNote) Type() protoreflect.EnumType {
+	return &file_api_v2_virtual_machine_v2_service_proto_enumTypes[2]
+}
+
+func (x VMNote) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VMNote.Descriptor instead.
+func (VMNote) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{2}
+}
+
 // Agent status enriched from a separate data source (not on VirtualMachineV2 storage).
 type AgentStatus int32
 
@@ -103,11 +204,11 @@ func (x AgentStatus) String() string {
 }
 
 func (AgentStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_virtual_machine_v2_service_proto_enumTypes[1].Descriptor()
+	return file_api_v2_virtual_machine_v2_service_proto_enumTypes[3].Descriptor()
 }
 
 func (AgentStatus) Type() protoreflect.EnumType {
-	return &file_api_v2_virtual_machine_v2_service_proto_enumTypes[1]
+	return &file_api_v2_virtual_machine_v2_service_proto_enumTypes[3]
 }
 
 func (x AgentStatus) Number() protoreflect.EnumNumber {
@@ -116,7 +217,7 @@ func (x AgentStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AgentStatus.Descriptor instead.
 func (AgentStatus) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{1}
+	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{3}
 }
 
 type ScanStatus int32
@@ -158,11 +259,11 @@ func (x ScanStatus) String() string {
 }
 
 func (ScanStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_virtual_machine_v2_service_proto_enumTypes[2].Descriptor()
+	return file_api_v2_virtual_machine_v2_service_proto_enumTypes[4].Descriptor()
 }
 
 func (ScanStatus) Type() protoreflect.EnumType {
-	return &file_api_v2_virtual_machine_v2_service_proto_enumTypes[2]
+	return &file_api_v2_virtual_machine_v2_service_proto_enumTypes[4]
 }
 
 func (x ScanStatus) Number() protoreflect.EnumNumber {
@@ -171,7 +272,7 @@ func (x ScanStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ScanStatus.Descriptor instead.
 func (ScanStatus) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{2}
+	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{4}
 }
 
 // Counts for a single severity level, split by fixability.
@@ -875,7 +976,7 @@ type VMScanInfo struct {
 	ScanOs        string                 `protobuf:"bytes,2,opt,name=scan_os,json=scanOs,proto3" json:"scan_os,omitempty"`
 	ScanTime      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
 	TopCvss       float32                `protobuf:"fixed32,4,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty"`
-	ScanNotes     []string               `protobuf:"bytes,5,rep,name=scan_notes,json=scanNotes,proto3" json:"scan_notes,omitempty"`
+	ScanNotes     []VMScanNote           `protobuf:"varint,5,rep,packed,name=scan_notes,json=scanNotes,proto3,enum=v2.VMScanNote" json:"scan_notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -938,7 +1039,7 @@ func (x *VMScanInfo) GetTopCvss() float32 {
 	return 0
 }
 
-func (x *VMScanInfo) GetScanNotes() []string {
+func (x *VMScanInfo) GetScanNotes() []VMScanNote {
 	if x != nil {
 		return x.ScanNotes
 	}
@@ -960,7 +1061,7 @@ type VMDetail struct {
 	Annotations   map[string]string `protobuf:"bytes,10,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Labels        map[string]string `protobuf:"bytes,11,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	VsockCid      int32             `protobuf:"varint,12,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
-	Notes         []string          `protobuf:"bytes,13,rep,name=notes,proto3" json:"notes,omitempty"`
+	Notes         []VMNote          `protobuf:"varint,13,rep,packed,name=notes,proto3,enum=v2.VMNote" json:"notes,omitempty"`
 	LatestScan    *VMScanInfo       `protobuf:"bytes,14,opt,name=latest_scan,json=latestScan,proto3" json:"latest_scan,omitempty"`
 	AgentStatus   AgentStatus       `protobuf:"varint,15,opt,name=agent_status,json=agentStatus,proto3,enum=v2.AgentStatus" json:"agent_status,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1081,7 +1182,7 @@ func (x *VMDetail) GetVsockCid() int32 {
 	return 0
 }
 
-func (x *VMDetail) GetNotes() []string {
+func (x *VMDetail) GetNotes() []VMNote {
 	if x != nil {
 		return x.Notes
 	}
@@ -1565,7 +1666,7 @@ func (x *VMCVEComponentRow) GetAdvisory() *Advisory {
 type GetVMCVEComponentsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	CveId         string                 `protobuf:"bytes,2,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1607,9 +1708,9 @@ func (x *GetVMCVEComponentsRequest) GetVmId() string {
 	return ""
 }
 
-func (x *GetVMCVEComponentsRequest) GetId() string {
+func (x *GetVMCVEComponentsRequest) GetCveId() string {
 	if x != nil {
-		return x.Id
+		return x.CveId
 	}
 	return ""
 }
@@ -1980,7 +2081,7 @@ func (x *VMCVEDetail) GetTopCvss() float32 {
 
 type GetVMCVEDetailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CveId         string                 `protobuf:"bytes,1,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2015,9 +2116,9 @@ func (*GetVMCVEDetailRequest) Descriptor() ([]byte, []int) {
 	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *GetVMCVEDetailRequest) GetId() string {
+func (x *GetVMCVEDetailRequest) GetCveId() string {
 	if x != nil {
-		return x.Id
+		return x.CveId
 	}
 	return ""
 }
@@ -2116,7 +2217,7 @@ func (x *VMCVEAffectedVMRow) GetAffectedComponentCount() int32 {
 
 type ListVMCVEAffectedVMsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CveId         string                 `protobuf:"bytes,1,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty"`
 	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2152,9 +2253,9 @@ func (*ListVMCVEAffectedVMsRequest) Descriptor() ([]byte, []int) {
 	return file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *ListVMCVEAffectedVMsRequest) GetId() string {
+func (x *ListVMCVEAffectedVMsRequest) GetCveId() string {
 	if x != nil {
-		return x.Id
+		return x.CveId
 	}
 	return ""
 }
@@ -2275,15 +2376,15 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\v2\f.v2.RawQueryR\x05query\"S\n" +
 	"\x19VMDashboardCountsResponse\x12\x19\n" +
 	"\bvm_count\x18\x01 \x01(\x05R\avmCount\x12\x1b\n" +
-	"\tcve_count\x18\x02 \x01(\x05R\bcveCount\"\xb1\x01\n" +
+	"\tcve_count\x18\x02 \x01(\x05R\bcveCount\"\xc1\x01\n" +
 	"\n" +
 	"VMScanInfo\x12\x17\n" +
 	"\ascan_id\x18\x01 \x01(\tR\x06scanId\x12\x17\n" +
 	"\ascan_os\x18\x02 \x01(\tR\x06scanOs\x127\n" +
 	"\tscan_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12\x19\n" +
-	"\btop_cvss\x18\x04 \x01(\x02R\atopCvss\x12\x1d\n" +
+	"\btop_cvss\x18\x04 \x01(\x02R\atopCvss\x12-\n" +
 	"\n" +
-	"scan_notes\x18\x05 \x03(\tR\tscanNotes\"\x88\x06\n" +
+	"scan_notes\x18\x05 \x03(\x0e2\x0e.v2.VMScanNoteR\tscanNotes\"\x94\x06\n" +
 	"\bVMDetail\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -2298,8 +2399,9 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\vannotations\x18\n" +
 	" \x03(\v2\x1d.v2.VMDetail.AnnotationsEntryR\vannotations\x120\n" +
 	"\x06labels\x18\v \x03(\v2\x18.v2.VMDetail.LabelsEntryR\x06labels\x12\x1b\n" +
-	"\tvsock_cid\x18\f \x01(\x05R\bvsockCid\x12\x14\n" +
-	"\x05notes\x18\r \x03(\tR\x05notes\x12/\n" +
+	"\tvsock_cid\x18\f \x01(\x05R\bvsockCid\x12 \n" +
+	"\x05notes\x18\r \x03(\x0e2\n" +
+	".v2.VMNoteR\x05notes\x12/\n" +
 	"\vlatest_scan\x18\x0e \x01(\v2\x0e.v2.VMScanInfoR\n" +
 	"latestScan\x122\n" +
 	"\fagent_status\x18\x0f \x01(\x0e2\x0f.v2.AgentStatusR\vagentStatus\x1a8\n" +
@@ -2348,10 +2450,10 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\x11component_version\x18\x02 \x01(\tR\x10componentVersion\x12&\n" +
 	"\x06source\x18\x03 \x01(\x0e2\x0e.v2.SourceTypeR\x06source\x12\x19\n" +
 	"\bfixed_by\x18\x04 \x01(\tR\afixedBy\x12(\n" +
-	"\badvisory\x18\x05 \x01(\v2\f.v2.AdvisoryR\badvisory\"@\n" +
+	"\badvisory\x18\x05 \x01(\v2\f.v2.AdvisoryR\badvisory\"G\n" +
 	"\x19GetVMCVEComponentsRequest\x12\x13\n" +
-	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"S\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x15\n" +
+	"\x06cve_id\x18\x02 \x01(\tR\x05cveId\"S\n" +
 	"\x1aGetVMCVEComponentsResponse\x125\n" +
 	"\n" +
 	"components\x18\x01 \x03(\v2\x15.v2.VMCVEComponentRowR\n" +
@@ -2386,9 +2488,9 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\x17affected_guest_os_count\x18\t \x01(\x05R\x14affectedGuestOsCount\x12E\n" +
 	"\x12vm_severity_counts\x18\n" +
 	" \x01(\v2\x17.v2.VulnCountBySeverityR\x10vmSeverityCounts\x12\x19\n" +
-	"\btop_cvss\x18\v \x01(\x02R\atopCvss\"'\n" +
-	"\x15GetVMCVEDetailRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x81\x02\n" +
+	"\btop_cvss\x18\v \x01(\x02R\atopCvss\".\n" +
+	"\x15GetVMCVEDetailRequest\x12\x15\n" +
+	"\x06cve_id\x18\x01 \x01(\tR\x05cveId\"\x81\x02\n" +
 	"\x12VMCVEAffectedVMRow\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x17\n" +
 	"\avm_name\x18\x02 \x01(\tR\x06vmName\x125\n" +
@@ -2397,9 +2499,9 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"is_fixable\x18\x04 \x01(\bR\tisFixable\x12\x12\n" +
 	"\x04cvss\x18\x05 \x01(\x02R\x04cvss\x12\x19\n" +
 	"\bguest_os\x18\x06 \x01(\tR\aguestOs\x128\n" +
-	"\x18affected_component_count\x18\a \x01(\x05R\x16affectedComponentCount\"Q\n" +
-	"\x1bListVMCVEAffectedVMsRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
+	"\x18affected_component_count\x18\a \x01(\x05R\x16affectedComponentCount\"X\n" +
+	"\x1bListVMCVEAffectedVMsRequest\x12\x15\n" +
+	"\x06cve_id\x18\x01 \x01(\tR\x05cveId\x12\"\n" +
 	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"i\n" +
 	"\x1cListVMCVEAffectedVMsResponse\x12(\n" +
 	"\x03vms\x18\x01 \x03(\v2\x16.v2.VMCVEAffectedVMRowR\x03vms\x12\x1f\n" +
@@ -2408,7 +2510,17 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\x15VirtualMachineV2State\x12\x14\n" +
 	"\x10VM_STATE_UNKNOWN\x10\x00\x12\x14\n" +
 	"\x10VM_STATE_STOPPED\x10\x01\x12\x14\n" +
-	"\x10VM_STATE_RUNNING\x10\x02*@\n" +
+	"\x10VM_STATE_RUNNING\x10\x02*b\n" +
+	"\n" +
+	"VMScanNote\x12\x16\n" +
+	"\x12VM_SCAN_NOTE_UNSET\x10\x00\x12\x1b\n" +
+	"\x17VM_SCAN_NOTE_OS_UNKNOWN\x10\x01\x12\x1f\n" +
+	"\x1bVM_SCAN_NOTE_OS_UNSUPPORTED\x10\x02*\x95\x01\n" +
+	"\x06VMNote\x12\x1c\n" +
+	"\x18VM_NOTE_MISSING_METADATA\x10\x00\x12\x1d\n" +
+	"\x19VM_NOTE_MISSING_SCAN_DATA\x10\x01\x12\x1d\n" +
+	"\x19VM_NOTE_MISSING_SIGNATURE\x10\x02\x12/\n" +
+	"+VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03*@\n" +
 	"\vAgentStatus\x12\x18\n" +
 	"\x14AGENT_STATUS_UNKNOWN\x10\x00\x12\x17\n" +
 	"\x13AGENT_STATUS_ACTIVE\x10\x01*_\n" +
@@ -2418,19 +2530,19 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\fSCAN_PENDING\x10\x01\x12\x0f\n" +
 	"\vCPE_MISSING\x10\x02\x12\x10\n" +
 	"\fREPO_UNKNOWN\x10\x03\x12\v\n" +
-	"\aSCANNED\x10\x042\xf3\b\n" +
-	"\x17VirtualMachineV2Service\x12S\n" +
+	"\aSCANNED\x10\x042\xff\b\n" +
+	"\x17VirtualMachineV2Service\x12I\n" +
+	"\x05GetVM\x12\x10.v2.GetVMRequest\x1a\f.v2.VMDetail\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/{id}\x12q\n" +
+	"\x10GetVMVulnSummary\x12\x1b.v2.GetVMVulnSummaryRequest\x1a\x11.v2.VMVulnSummary\"-\x82\xd3\xe4\x93\x02'\x12%/v2/virtualmachines/{id}/vuln-summary\x12q\n" +
+	"\x0eListVMCVEsByVM\x12\x19.v2.ListVMCVEsByVMRequest\x1a\x1a.v2.ListVMCVEsByVMResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v2/virtualmachines/{vm_id}/cves\x12\x91\x01\n" +
+	"\x12GetVMCVEComponents\x12\x1d.v2.GetVMCVEComponentsRequest\x1a\x1e.v2.GetVMCVEComponentsResponse\"<\x82\xd3\xe4\x93\x026\x124/v2/virtualmachines/{vm_id}/cves/{cve_id}/components\x12}\n" +
+	"\x10ListVMComponents\x12\x1b.v2.ListVMComponentsRequest\x1a\x1c.v2.ListVMComponentsResponse\".\x82\xd3\xe4\x93\x02(\x12&/v2/virtualmachines/{vm_id}/components\x12S\n" +
 	"\aListVMs\x12\x12.v2.ListVMsRequest\x1a\x13.v2.ListVMsResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v2/virtualmachines/vms\x12]\n" +
 	"\n" +
 	"ListVMCVEs\x12\x15.v2.ListVMCVEsRequest\x1a\x16.v2.ListVMCVEsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/cves\x12x\n" +
-	"\x14GetVMDashboardCounts\x12\x1c.v2.VMDashboardCountsRequest\x1a\x1d.v2.VMDashboardCountsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v2/virtualmachines/summary\x12I\n" +
-	"\x05GetVM\x12\x10.v2.GetVMRequest\x1a\f.v2.VMDetail\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/{id}\x12q\n" +
-	"\x10GetVMVulnSummary\x12\x1b.v2.GetVMVulnSummaryRequest\x1a\x11.v2.VMVulnSummary\"-\x82\xd3\xe4\x93\x02'\x12%/v2/virtualmachines/{id}/vuln-summary\x12q\n" +
-	"\x0eListVMCVEsByVM\x12\x19.v2.ListVMCVEsByVMRequest\x1a\x1a.v2.ListVMCVEsByVMResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v2/virtualmachines/{vm_id}/cves\x12\x8d\x01\n" +
-	"\x12GetVMCVEComponents\x12\x1d.v2.GetVMCVEComponentsRequest\x1a\x1e.v2.GetVMCVEComponentsResponse\"8\x82\xd3\xe4\x93\x022\x120/v2/virtualmachines/{vm_id}/cves/{id}/components\x12}\n" +
-	"\x10ListVMComponents\x12\x1b.v2.ListVMComponentsRequest\x1a\x1c.v2.ListVMComponentsResponse\".\x82\xd3\xe4\x93\x02(\x12&/v2/virtualmachines/{vm_id}/components\x12c\n" +
-	"\x0eGetVMCVEDetail\x12\x19.v2.GetVMCVEDetailRequest\x1a\x0f.v2.VMCVEDetail\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v2/virtualmachines/cves/{id}\x12\x84\x01\n" +
-	"\x14ListVMCVEAffectedVMs\x12\x1f.v2.ListVMCVEAffectedVMsRequest\x1a .v2.ListVMCVEAffectedVMsResponse\")\x82\xd3\xe4\x93\x02#\x12!/v2/virtualmachines/cves/{id}/vmsB'\n" +
+	"\x14GetVMDashboardCounts\x12\x1c.v2.VMDashboardCountsRequest\x1a\x1d.v2.VMDashboardCountsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v2/virtualmachines/summary\x12g\n" +
+	"\x0eGetVMCVEDetail\x12\x19.v2.GetVMCVEDetailRequest\x1a\x0f.v2.VMCVEDetail\")\x82\xd3\xe4\x93\x02#\x12!/v2/virtualmachines/cves/{cve_id}\x12\x88\x01\n" +
+	"\x14ListVMCVEAffectedVMs\x12\x1f.v2.ListVMCVEAffectedVMsRequest\x1a .v2.ListVMCVEAffectedVMsResponse\"-\x82\xd3\xe4\x93\x02'\x12%/v2/virtualmachines/cves/{cve_id}/vmsB'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x03b\x06proto3"
 
 var (
@@ -2445,123 +2557,127 @@ func file_api_v2_virtual_machine_v2_service_proto_rawDescGZIP() []byte {
 	return file_api_v2_virtual_machine_v2_service_proto_rawDescData
 }
 
-var file_api_v2_virtual_machine_v2_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_api_v2_virtual_machine_v2_service_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_api_v2_virtual_machine_v2_service_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_api_v2_virtual_machine_v2_service_proto_goTypes = []any{
 	(VirtualMachineV2State)(0),           // 0: v2.VirtualMachineV2State
-	(AgentStatus)(0),                     // 1: v2.AgentStatus
-	(ScanStatus)(0),                      // 2: v2.ScanStatus
-	(*VulnFixableCount)(nil),             // 3: v2.VulnFixableCount
-	(*VulnCountBySeverity)(nil),          // 4: v2.VulnCountBySeverity
-	(*ComponentScanCount)(nil),           // 5: v2.ComponentScanCount
-	(*VMListItem)(nil),                   // 6: v2.VMListItem
-	(*ListVMsRequest)(nil),               // 7: v2.ListVMsRequest
-	(*ListVMsResponse)(nil),              // 8: v2.ListVMsResponse
-	(*VMCVEListItem)(nil),                // 9: v2.VMCVEListItem
-	(*ListVMCVEsRequest)(nil),            // 10: v2.ListVMCVEsRequest
-	(*ListVMCVEsResponse)(nil),           // 11: v2.ListVMCVEsResponse
-	(*VMDashboardCountsRequest)(nil),     // 12: v2.VMDashboardCountsRequest
-	(*VMDashboardCountsResponse)(nil),    // 13: v2.VMDashboardCountsResponse
-	(*VMScanInfo)(nil),                   // 14: v2.VMScanInfo
-	(*VMDetail)(nil),                     // 15: v2.VMDetail
-	(*GetVMRequest)(nil),                 // 16: v2.GetVMRequest
-	(*VMVulnSummary)(nil),                // 17: v2.VMVulnSummary
-	(*GetVMVulnSummaryRequest)(nil),      // 18: v2.GetVMVulnSummaryRequest
-	(*VMCVERow)(nil),                     // 19: v2.VMCVERow
-	(*ListVMCVEsByVMRequest)(nil),        // 20: v2.ListVMCVEsByVMRequest
-	(*ListVMCVEsByVMResponse)(nil),       // 21: v2.ListVMCVEsByVMResponse
-	(*VMCVEComponentRow)(nil),            // 22: v2.VMCVEComponentRow
-	(*GetVMCVEComponentsRequest)(nil),    // 23: v2.GetVMCVEComponentsRequest
-	(*GetVMCVEComponentsResponse)(nil),   // 24: v2.GetVMCVEComponentsResponse
-	(*VMComponentRow)(nil),               // 25: v2.VMComponentRow
-	(*ListVMComponentsRequest)(nil),      // 26: v2.ListVMComponentsRequest
-	(*ListVMComponentsResponse)(nil),     // 27: v2.ListVMComponentsResponse
-	(*VMCVEDetail)(nil),                  // 28: v2.VMCVEDetail
-	(*GetVMCVEDetailRequest)(nil),        // 29: v2.GetVMCVEDetailRequest
-	(*VMCVEAffectedVMRow)(nil),           // 30: v2.VMCVEAffectedVMRow
-	(*ListVMCVEAffectedVMsRequest)(nil),  // 31: v2.ListVMCVEAffectedVMsRequest
-	(*ListVMCVEAffectedVMsResponse)(nil), // 32: v2.ListVMCVEAffectedVMsResponse
-	nil,                                  // 33: v2.VMDetail.FactsEntry
-	nil,                                  // 34: v2.VMDetail.AnnotationsEntry
-	nil,                                  // 35: v2.VMDetail.LabelsEntry
-	(*timestamppb.Timestamp)(nil),        // 36: google.protobuf.Timestamp
-	(*RawQuery)(nil),                     // 37: v2.RawQuery
-	(VulnerabilitySeverity)(0),           // 38: v2.VulnerabilitySeverity
-	(*Advisory)(nil),                     // 39: v2.Advisory
-	(SourceType)(0),                      // 40: v2.SourceType
+	(VMScanNote)(0),                      // 1: v2.VMScanNote
+	(VMNote)(0),                          // 2: v2.VMNote
+	(AgentStatus)(0),                     // 3: v2.AgentStatus
+	(ScanStatus)(0),                      // 4: v2.ScanStatus
+	(*VulnFixableCount)(nil),             // 5: v2.VulnFixableCount
+	(*VulnCountBySeverity)(nil),          // 6: v2.VulnCountBySeverity
+	(*ComponentScanCount)(nil),           // 7: v2.ComponentScanCount
+	(*VMListItem)(nil),                   // 8: v2.VMListItem
+	(*ListVMsRequest)(nil),               // 9: v2.ListVMsRequest
+	(*ListVMsResponse)(nil),              // 10: v2.ListVMsResponse
+	(*VMCVEListItem)(nil),                // 11: v2.VMCVEListItem
+	(*ListVMCVEsRequest)(nil),            // 12: v2.ListVMCVEsRequest
+	(*ListVMCVEsResponse)(nil),           // 13: v2.ListVMCVEsResponse
+	(*VMDashboardCountsRequest)(nil),     // 14: v2.VMDashboardCountsRequest
+	(*VMDashboardCountsResponse)(nil),    // 15: v2.VMDashboardCountsResponse
+	(*VMScanInfo)(nil),                   // 16: v2.VMScanInfo
+	(*VMDetail)(nil),                     // 17: v2.VMDetail
+	(*GetVMRequest)(nil),                 // 18: v2.GetVMRequest
+	(*VMVulnSummary)(nil),                // 19: v2.VMVulnSummary
+	(*GetVMVulnSummaryRequest)(nil),      // 20: v2.GetVMVulnSummaryRequest
+	(*VMCVERow)(nil),                     // 21: v2.VMCVERow
+	(*ListVMCVEsByVMRequest)(nil),        // 22: v2.ListVMCVEsByVMRequest
+	(*ListVMCVEsByVMResponse)(nil),       // 23: v2.ListVMCVEsByVMResponse
+	(*VMCVEComponentRow)(nil),            // 24: v2.VMCVEComponentRow
+	(*GetVMCVEComponentsRequest)(nil),    // 25: v2.GetVMCVEComponentsRequest
+	(*GetVMCVEComponentsResponse)(nil),   // 26: v2.GetVMCVEComponentsResponse
+	(*VMComponentRow)(nil),               // 27: v2.VMComponentRow
+	(*ListVMComponentsRequest)(nil),      // 28: v2.ListVMComponentsRequest
+	(*ListVMComponentsResponse)(nil),     // 29: v2.ListVMComponentsResponse
+	(*VMCVEDetail)(nil),                  // 30: v2.VMCVEDetail
+	(*GetVMCVEDetailRequest)(nil),        // 31: v2.GetVMCVEDetailRequest
+	(*VMCVEAffectedVMRow)(nil),           // 32: v2.VMCVEAffectedVMRow
+	(*ListVMCVEAffectedVMsRequest)(nil),  // 33: v2.ListVMCVEAffectedVMsRequest
+	(*ListVMCVEAffectedVMsResponse)(nil), // 34: v2.ListVMCVEAffectedVMsResponse
+	nil,                                  // 35: v2.VMDetail.FactsEntry
+	nil,                                  // 36: v2.VMDetail.AnnotationsEntry
+	nil,                                  // 37: v2.VMDetail.LabelsEntry
+	(*timestamppb.Timestamp)(nil),        // 38: google.protobuf.Timestamp
+	(*RawQuery)(nil),                     // 39: v2.RawQuery
+	(VulnerabilitySeverity)(0),           // 40: v2.VulnerabilitySeverity
+	(*Advisory)(nil),                     // 41: v2.Advisory
+	(SourceType)(0),                      // 42: v2.SourceType
 }
 var file_api_v2_virtual_machine_v2_service_proto_depIdxs = []int32{
-	3,  // 0: v2.VulnCountBySeverity.critical:type_name -> v2.VulnFixableCount
-	3,  // 1: v2.VulnCountBySeverity.important:type_name -> v2.VulnFixableCount
-	3,  // 2: v2.VulnCountBySeverity.moderate:type_name -> v2.VulnFixableCount
-	3,  // 3: v2.VulnCountBySeverity.low:type_name -> v2.VulnFixableCount
-	3,  // 4: v2.VulnCountBySeverity.unknown:type_name -> v2.VulnFixableCount
+	5,  // 0: v2.VulnCountBySeverity.critical:type_name -> v2.VulnFixableCount
+	5,  // 1: v2.VulnCountBySeverity.important:type_name -> v2.VulnFixableCount
+	5,  // 2: v2.VulnCountBySeverity.moderate:type_name -> v2.VulnFixableCount
+	5,  // 3: v2.VulnCountBySeverity.low:type_name -> v2.VulnFixableCount
+	5,  // 4: v2.VulnCountBySeverity.unknown:type_name -> v2.VulnFixableCount
 	0,  // 5: v2.VMListItem.state:type_name -> v2.VirtualMachineV2State
-	36, // 6: v2.VMListItem.scan_time:type_name -> google.protobuf.Timestamp
-	36, // 7: v2.VMListItem.last_updated:type_name -> google.protobuf.Timestamp
-	4,  // 8: v2.VMListItem.cve_severity_counts:type_name -> v2.VulnCountBySeverity
-	5,  // 9: v2.VMListItem.component_scan_count:type_name -> v2.ComponentScanCount
-	37, // 10: v2.ListVMsRequest.query:type_name -> v2.RawQuery
-	6,  // 11: v2.ListVMsResponse.vms:type_name -> v2.VMListItem
-	4,  // 12: v2.VMCVEListItem.vm_severity_counts:type_name -> v2.VulnCountBySeverity
-	36, // 13: v2.VMCVEListItem.published_on:type_name -> google.protobuf.Timestamp
-	37, // 14: v2.ListVMCVEsRequest.query:type_name -> v2.RawQuery
-	9,  // 15: v2.ListVMCVEsResponse.cves:type_name -> v2.VMCVEListItem
-	37, // 16: v2.VMDashboardCountsRequest.query:type_name -> v2.RawQuery
-	36, // 17: v2.VMScanInfo.scan_time:type_name -> google.protobuf.Timestamp
-	0,  // 18: v2.VMDetail.state:type_name -> v2.VirtualMachineV2State
-	36, // 19: v2.VMDetail.last_updated:type_name -> google.protobuf.Timestamp
-	33, // 20: v2.VMDetail.facts:type_name -> v2.VMDetail.FactsEntry
-	34, // 21: v2.VMDetail.annotations:type_name -> v2.VMDetail.AnnotationsEntry
-	35, // 22: v2.VMDetail.labels:type_name -> v2.VMDetail.LabelsEntry
-	14, // 23: v2.VMDetail.latest_scan:type_name -> v2.VMScanInfo
-	1,  // 24: v2.VMDetail.agent_status:type_name -> v2.AgentStatus
-	4,  // 25: v2.VMVulnSummary.severity_counts:type_name -> v2.VulnCountBySeverity
-	37, // 26: v2.GetVMVulnSummaryRequest.query:type_name -> v2.RawQuery
-	38, // 27: v2.VMCVERow.severity:type_name -> v2.VulnerabilitySeverity
-	36, // 28: v2.VMCVERow.published_on:type_name -> google.protobuf.Timestamp
-	39, // 29: v2.VMCVERow.advisory:type_name -> v2.Advisory
-	37, // 30: v2.ListVMCVEsByVMRequest.query:type_name -> v2.RawQuery
-	19, // 31: v2.ListVMCVEsByVMResponse.cves:type_name -> v2.VMCVERow
-	40, // 32: v2.VMCVEComponentRow.source:type_name -> v2.SourceType
-	39, // 33: v2.VMCVEComponentRow.advisory:type_name -> v2.Advisory
-	22, // 34: v2.GetVMCVEComponentsResponse.components:type_name -> v2.VMCVEComponentRow
-	40, // 35: v2.VMComponentRow.source:type_name -> v2.SourceType
-	2,  // 36: v2.VMComponentRow.scan_status:type_name -> v2.ScanStatus
-	36, // 37: v2.VMComponentRow.last_scanned:type_name -> google.protobuf.Timestamp
-	37, // 38: v2.ListVMComponentsRequest.query:type_name -> v2.RawQuery
-	25, // 39: v2.ListVMComponentsResponse.components:type_name -> v2.VMComponentRow
-	36, // 40: v2.VMCVEDetail.published_on:type_name -> google.protobuf.Timestamp
-	36, // 41: v2.VMCVEDetail.first_discovered:type_name -> google.protobuf.Timestamp
-	4,  // 42: v2.VMCVEDetail.vm_severity_counts:type_name -> v2.VulnCountBySeverity
-	38, // 43: v2.VMCVEAffectedVMRow.severity:type_name -> v2.VulnerabilitySeverity
-	37, // 44: v2.ListVMCVEAffectedVMsRequest.query:type_name -> v2.RawQuery
-	30, // 45: v2.ListVMCVEAffectedVMsResponse.vms:type_name -> v2.VMCVEAffectedVMRow
-	7,  // 46: v2.VirtualMachineV2Service.ListVMs:input_type -> v2.ListVMsRequest
-	10, // 47: v2.VirtualMachineV2Service.ListVMCVEs:input_type -> v2.ListVMCVEsRequest
-	12, // 48: v2.VirtualMachineV2Service.GetVMDashboardCounts:input_type -> v2.VMDashboardCountsRequest
-	16, // 49: v2.VirtualMachineV2Service.GetVM:input_type -> v2.GetVMRequest
-	18, // 50: v2.VirtualMachineV2Service.GetVMVulnSummary:input_type -> v2.GetVMVulnSummaryRequest
-	20, // 51: v2.VirtualMachineV2Service.ListVMCVEsByVM:input_type -> v2.ListVMCVEsByVMRequest
-	23, // 52: v2.VirtualMachineV2Service.GetVMCVEComponents:input_type -> v2.GetVMCVEComponentsRequest
-	26, // 53: v2.VirtualMachineV2Service.ListVMComponents:input_type -> v2.ListVMComponentsRequest
-	29, // 54: v2.VirtualMachineV2Service.GetVMCVEDetail:input_type -> v2.GetVMCVEDetailRequest
-	31, // 55: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:input_type -> v2.ListVMCVEAffectedVMsRequest
-	8,  // 56: v2.VirtualMachineV2Service.ListVMs:output_type -> v2.ListVMsResponse
-	11, // 57: v2.VirtualMachineV2Service.ListVMCVEs:output_type -> v2.ListVMCVEsResponse
-	13, // 58: v2.VirtualMachineV2Service.GetVMDashboardCounts:output_type -> v2.VMDashboardCountsResponse
-	15, // 59: v2.VirtualMachineV2Service.GetVM:output_type -> v2.VMDetail
-	17, // 60: v2.VirtualMachineV2Service.GetVMVulnSummary:output_type -> v2.VMVulnSummary
-	21, // 61: v2.VirtualMachineV2Service.ListVMCVEsByVM:output_type -> v2.ListVMCVEsByVMResponse
-	24, // 62: v2.VirtualMachineV2Service.GetVMCVEComponents:output_type -> v2.GetVMCVEComponentsResponse
-	27, // 63: v2.VirtualMachineV2Service.ListVMComponents:output_type -> v2.ListVMComponentsResponse
-	28, // 64: v2.VirtualMachineV2Service.GetVMCVEDetail:output_type -> v2.VMCVEDetail
-	32, // 65: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:output_type -> v2.ListVMCVEAffectedVMsResponse
-	56, // [56:66] is the sub-list for method output_type
-	46, // [46:56] is the sub-list for method input_type
-	46, // [46:46] is the sub-list for extension type_name
-	46, // [46:46] is the sub-list for extension extendee
-	0,  // [0:46] is the sub-list for field type_name
+	38, // 6: v2.VMListItem.scan_time:type_name -> google.protobuf.Timestamp
+	38, // 7: v2.VMListItem.last_updated:type_name -> google.protobuf.Timestamp
+	6,  // 8: v2.VMListItem.cve_severity_counts:type_name -> v2.VulnCountBySeverity
+	7,  // 9: v2.VMListItem.component_scan_count:type_name -> v2.ComponentScanCount
+	39, // 10: v2.ListVMsRequest.query:type_name -> v2.RawQuery
+	8,  // 11: v2.ListVMsResponse.vms:type_name -> v2.VMListItem
+	6,  // 12: v2.VMCVEListItem.vm_severity_counts:type_name -> v2.VulnCountBySeverity
+	38, // 13: v2.VMCVEListItem.published_on:type_name -> google.protobuf.Timestamp
+	39, // 14: v2.ListVMCVEsRequest.query:type_name -> v2.RawQuery
+	11, // 15: v2.ListVMCVEsResponse.cves:type_name -> v2.VMCVEListItem
+	39, // 16: v2.VMDashboardCountsRequest.query:type_name -> v2.RawQuery
+	38, // 17: v2.VMScanInfo.scan_time:type_name -> google.protobuf.Timestamp
+	1,  // 18: v2.VMScanInfo.scan_notes:type_name -> v2.VMScanNote
+	0,  // 19: v2.VMDetail.state:type_name -> v2.VirtualMachineV2State
+	38, // 20: v2.VMDetail.last_updated:type_name -> google.protobuf.Timestamp
+	35, // 21: v2.VMDetail.facts:type_name -> v2.VMDetail.FactsEntry
+	36, // 22: v2.VMDetail.annotations:type_name -> v2.VMDetail.AnnotationsEntry
+	37, // 23: v2.VMDetail.labels:type_name -> v2.VMDetail.LabelsEntry
+	2,  // 24: v2.VMDetail.notes:type_name -> v2.VMNote
+	16, // 25: v2.VMDetail.latest_scan:type_name -> v2.VMScanInfo
+	3,  // 26: v2.VMDetail.agent_status:type_name -> v2.AgentStatus
+	6,  // 27: v2.VMVulnSummary.severity_counts:type_name -> v2.VulnCountBySeverity
+	39, // 28: v2.GetVMVulnSummaryRequest.query:type_name -> v2.RawQuery
+	40, // 29: v2.VMCVERow.severity:type_name -> v2.VulnerabilitySeverity
+	38, // 30: v2.VMCVERow.published_on:type_name -> google.protobuf.Timestamp
+	41, // 31: v2.VMCVERow.advisory:type_name -> v2.Advisory
+	39, // 32: v2.ListVMCVEsByVMRequest.query:type_name -> v2.RawQuery
+	21, // 33: v2.ListVMCVEsByVMResponse.cves:type_name -> v2.VMCVERow
+	42, // 34: v2.VMCVEComponentRow.source:type_name -> v2.SourceType
+	41, // 35: v2.VMCVEComponentRow.advisory:type_name -> v2.Advisory
+	24, // 36: v2.GetVMCVEComponentsResponse.components:type_name -> v2.VMCVEComponentRow
+	42, // 37: v2.VMComponentRow.source:type_name -> v2.SourceType
+	4,  // 38: v2.VMComponentRow.scan_status:type_name -> v2.ScanStatus
+	38, // 39: v2.VMComponentRow.last_scanned:type_name -> google.protobuf.Timestamp
+	39, // 40: v2.ListVMComponentsRequest.query:type_name -> v2.RawQuery
+	27, // 41: v2.ListVMComponentsResponse.components:type_name -> v2.VMComponentRow
+	38, // 42: v2.VMCVEDetail.published_on:type_name -> google.protobuf.Timestamp
+	38, // 43: v2.VMCVEDetail.first_discovered:type_name -> google.protobuf.Timestamp
+	6,  // 44: v2.VMCVEDetail.vm_severity_counts:type_name -> v2.VulnCountBySeverity
+	40, // 45: v2.VMCVEAffectedVMRow.severity:type_name -> v2.VulnerabilitySeverity
+	39, // 46: v2.ListVMCVEAffectedVMsRequest.query:type_name -> v2.RawQuery
+	32, // 47: v2.ListVMCVEAffectedVMsResponse.vms:type_name -> v2.VMCVEAffectedVMRow
+	18, // 48: v2.VirtualMachineV2Service.GetVM:input_type -> v2.GetVMRequest
+	20, // 49: v2.VirtualMachineV2Service.GetVMVulnSummary:input_type -> v2.GetVMVulnSummaryRequest
+	22, // 50: v2.VirtualMachineV2Service.ListVMCVEsByVM:input_type -> v2.ListVMCVEsByVMRequest
+	25, // 51: v2.VirtualMachineV2Service.GetVMCVEComponents:input_type -> v2.GetVMCVEComponentsRequest
+	28, // 52: v2.VirtualMachineV2Service.ListVMComponents:input_type -> v2.ListVMComponentsRequest
+	9,  // 53: v2.VirtualMachineV2Service.ListVMs:input_type -> v2.ListVMsRequest
+	12, // 54: v2.VirtualMachineV2Service.ListVMCVEs:input_type -> v2.ListVMCVEsRequest
+	14, // 55: v2.VirtualMachineV2Service.GetVMDashboardCounts:input_type -> v2.VMDashboardCountsRequest
+	31, // 56: v2.VirtualMachineV2Service.GetVMCVEDetail:input_type -> v2.GetVMCVEDetailRequest
+	33, // 57: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:input_type -> v2.ListVMCVEAffectedVMsRequest
+	17, // 58: v2.VirtualMachineV2Service.GetVM:output_type -> v2.VMDetail
+	19, // 59: v2.VirtualMachineV2Service.GetVMVulnSummary:output_type -> v2.VMVulnSummary
+	23, // 60: v2.VirtualMachineV2Service.ListVMCVEsByVM:output_type -> v2.ListVMCVEsByVMResponse
+	26, // 61: v2.VirtualMachineV2Service.GetVMCVEComponents:output_type -> v2.GetVMCVEComponentsResponse
+	29, // 62: v2.VirtualMachineV2Service.ListVMComponents:output_type -> v2.ListVMComponentsResponse
+	10, // 63: v2.VirtualMachineV2Service.ListVMs:output_type -> v2.ListVMsResponse
+	13, // 64: v2.VirtualMachineV2Service.ListVMCVEs:output_type -> v2.ListVMCVEsResponse
+	15, // 65: v2.VirtualMachineV2Service.GetVMDashboardCounts:output_type -> v2.VMDashboardCountsResponse
+	30, // 66: v2.VirtualMachineV2Service.GetVMCVEDetail:output_type -> v2.VMCVEDetail
+	34, // 67: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:output_type -> v2.ListVMCVEAffectedVMsResponse
+	58, // [58:68] is the sub-list for method output_type
+	48, // [48:58] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_virtual_machine_v2_service_proto_init() }
@@ -2577,7 +2693,7 @@ func file_api_v2_virtual_machine_v2_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_virtual_machine_v2_service_proto_rawDesc), len(file_api_v2_virtual_machine_v2_service_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      5,
 			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
