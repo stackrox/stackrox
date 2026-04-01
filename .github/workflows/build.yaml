@@ -731,15 +731,30 @@ jobs:
         fi
         push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
+    - name: Prepare build comment
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        cat > build-comment.md <<EOT
+        ## 🚀 Build Images Ready
+
+        Images are ready for commit \`${{ needs.define-job-matrix.outputs.short-commit }}\`.
+
+        To use with deploy scripts:
+        \`\`\`bash
+        export MAIN_IMAGE_TAG=${{ needs.define-job-matrix.outputs.build-tag }}
+        \`\`\`
+        EOT
+
     - name: Comment on the PR
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
-      run: |
-        source ./scripts/ci/lib.sh
-        add_build_comment_to_pr
+      uses: mshick/add-pr-comment@v3
+      with:
+        message-id: build-images-ready
+        message-path: build-comment.md
 
   build-and-push-operator:
     runs-on: ubuntu-latest
