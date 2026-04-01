@@ -7,7 +7,6 @@ import {
 } from 'routePaths';
 import { vulnerabilitySeverities } from 'types/cve.proto';
 import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
-import type { DeploymentStatus } from 'types/deploymentStatus';
 import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import {
@@ -21,6 +20,7 @@ import { ensureStringArray } from 'utils/ensure';
 
 import { isFixableStatus, isVulnerabilitySeverityLabel } from '../types';
 import type {
+    DeploymentStatusLabel,
     FixableStatus,
     NodeEntityTab,
     PlatformEntityTab,
@@ -237,14 +237,36 @@ export function getVulnStateScopedQueryString(
 
 /**
  * Wraps a base query string to scope results by deployment status.
- * DELETED appends '+Tombstone Deleted At:*' to opt into tombstoned records.
- * DEPLOYED returns the base query unchanged — tombstone exclusion is applied
- * by the backend view layer.
- * The '+' character is the backend's AND-conjunction separator.
+ * - `['Deployed']` or unset: no addition (view default excludes tombstoned records).
+ * - `['Deleted']`: appends `+Tombstone Deleted At:*` (IS NOT NULL → only tombstoned).
+ * - `['Deployed', 'Deleted']`: appends `+Tombstone Deleted At:*,-*`.
+ *   Comma-separated values for one field form a disjunction: (IS NOT NULL OR IS NULL) = all rows.
+ * The '+' character is the backend's AND-conjunction separator between fields.
+ */
+export function getDeploymentStatusScopedQueryString(
+    baseQuery: string,
+    selectedStatuses: DeploymentStatusLabel[] | undefined
+): string {
+    const showDeployed =
+        !selectedStatuses || selectedStatuses.length === 0 || selectedStatuses.includes('Deployed');
+    const showDeleted = selectedStatuses?.includes('Deleted') ?? false;
+
+    if (showDeployed && showDeleted) {
+        return [baseQuery, 'Tombstone Deleted At:*,-*'].filter(Boolean).join('+');
+    }
+    if (showDeleted) {
+        return [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+');
+    }
+    return baseQuery;
+}
+
+/**
+ * @deprecated Use getDeploymentStatusScopedQueryString instead.
+ * Kept as a compatibility shim until all call sites are migrated (Tasks 4 and 5).
  */
 export function getDeploymentStatusQueryString(
     baseQuery: string,
-    deploymentStatus: DeploymentStatus
+    deploymentStatus: 'DEPLOYED' | 'DELETED'
 ): string {
     if (deploymentStatus === 'DELETED') {
         return [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+');

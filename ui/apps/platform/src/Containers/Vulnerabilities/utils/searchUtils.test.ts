@@ -2,7 +2,7 @@ import {
     getNodeEntityPagePath,
     getPlatformEntityPagePath,
     getWorkloadEntityPagePath,
-    getDeploymentStatusQueryString,
+    getDeploymentStatusScopedQueryString,
 } from './searchUtils';
 
 describe('getWorkloadEntityPagePath', () => {
@@ -123,24 +123,40 @@ describe('getNodeEntityPagePath', () => {
     });
 });
 
-describe('getDeploymentStatusQueryString', () => {
-    it('returns baseQuery unchanged when status is DEPLOYED', () => {
-        expect(getDeploymentStatusQueryString('CVE:CVE-2025-1234', 'DEPLOYED')).toBe(
+describe('getDeploymentStatusScopedQueryString', () => {
+    it('returns baseQuery unchanged when status is Deployed only', () => {
+        expect(getDeploymentStatusScopedQueryString('CVE:CVE-2025-1234', ['Deployed'])).toBe(
             'CVE:CVE-2025-1234'
         );
     });
 
-    it('appends tombstone filter when status is DELETED', () => {
-        expect(getDeploymentStatusQueryString('CVE:CVE-2025-1234', 'DELETED')).toBe(
+    it('appends Tombstone Deleted At:* when status is Deleted only', () => {
+        expect(getDeploymentStatusScopedQueryString('CVE:CVE-2025-1234', ['Deleted'])).toBe(
             'CVE:CVE-2025-1234+Tombstone Deleted At:*'
         );
     });
 
-    it('handles empty baseQuery for DELETED (no leading +)', () => {
-        expect(getDeploymentStatusQueryString('', 'DELETED')).toBe('Tombstone Deleted At:*');
+    it('appends Tombstone Deleted At:*,-* when both Deployed and Deleted are selected', () => {
+        expect(
+            getDeploymentStatusScopedQueryString('CVE:CVE-2025-1234', ['Deployed', 'Deleted'])
+        ).toBe('CVE:CVE-2025-1234+Tombstone Deleted At:*,-*');
     });
 
-    it('handles empty baseQuery for DEPLOYED', () => {
-        expect(getDeploymentStatusQueryString('', 'DEPLOYED')).toBe('');
+    it('returns baseQuery unchanged when selectedStatuses is undefined', () => {
+        expect(getDeploymentStatusScopedQueryString('CVE:CVE-2025-1234', undefined)).toBe(
+            'CVE:CVE-2025-1234'
+        );
+    });
+
+    it('returns baseQuery unchanged when selectedStatuses is empty', () => {
+        expect(getDeploymentStatusScopedQueryString('CVE:CVE-2025-1234', [])).toBe(
+            'CVE:CVE-2025-1234'
+        );
+    });
+
+    it('handles empty baseQuery for Deleted only', () => {
+        expect(getDeploymentStatusScopedQueryString('', ['Deleted'])).toBe(
+            'Tombstone Deleted At:*'
+        );
     });
 });
