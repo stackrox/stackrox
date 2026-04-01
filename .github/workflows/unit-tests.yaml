@@ -55,8 +55,9 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
-    # with newer go directives can auto-download.
+    # setup-go reads go.mod to install Go, then exports GOTOOLCHAIN=local
+    # to force that version. Override to auto so sub-module tools with
+    # newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
@@ -127,8 +128,9 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
-    # with newer go directives can auto-download.
+    # setup-go reads go.mod to install Go, then exports GOTOOLCHAIN=local
+    # to force that version. Override to auto so sub-module tools with
+    # newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
@@ -179,8 +181,9 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
-    # with newer go directives can auto-download.
+    # setup-go reads go.mod to install Go, then exports GOTOOLCHAIN=local
+    # to force that version. Override to auto so sub-module tools with
+    # newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
@@ -229,8 +232,9 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
-    # with newer go directives can auto-download.
+    # setup-go reads go.mod to install Go, then exports GOTOOLCHAIN=local
+    # to force that version. Override to auto so sub-module tools with
+    # newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
@@ -304,8 +308,9 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
-    # with newer go directives can auto-download.
+    # setup-go reads go.mod to install Go, then exports GOTOOLCHAIN=local
+    # to force that version. Override to auto so sub-module tools with
+    # newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
