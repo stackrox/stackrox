@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -50,6 +51,45 @@ type storeImpl struct {
 	keyFence concurrency.KeyFence
 }
 
+// region EnsureExists
+
+func (s *storeImpl) EnsureExists(ctx context.Context, vmID, clusterID string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "VirtualMachineV2")
+
+	return pgutils.Retry(ctx, func() error {
+		iTime := time.Now()
+		vm := &storage.VirtualMachineV2{
+			Id:          vmID,
+			ClusterId:   clusterID,
+			LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&iTime),
+		}
+		serialized, marshalErr := vm.MarshalVT()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		const stmt = "INSERT INTO " + vmTable +
+			" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, serialized)" +
+			" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)" +
+			" ON CONFLICT(Id) DO NOTHING"
+
+		_, err := s.db.Exec(ctx, stmt,
+			pgutils.NilOrUUID(vmID),
+			vm.GetName(),
+			vm.GetNamespace(),
+			pgutils.NilOrUUID(clusterID),
+			vm.GetClusterName(),
+			vm.GetGuestOs(),
+			vm.GetState(),
+			protocompat.NilOrTime(vm.GetLastUpdated()),
+			serialized,
+		)
+		return err
+	})
+}
+
+// endregion EnsureExists
+
 // region UpsertVM
 
 func (s *storeImpl) UpsertVM(ctx context.Context, vm *storage.VirtualMachineV2) error {
@@ -61,6 +101,8 @@ func (s *storeImpl) UpsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 }
 
 func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) error {
+	vm = vm.CloneVT() // Defensive copy — callers may share the pointer across goroutines
+
 	// Calculate hash to see if anything changed
 	hash, err := hashVM(vm)
 	if err != nil {
@@ -269,7 +311,7 @@ func (s *storeImpl) touchVMLastUpdated(ctx context.Context, tx *postgres.Tx, vmI
 		return errors.Wrapf(err, "reading VM %s for timestamp update", vmID)
 	}
 	if existingVM == nil {
-		return errors.Errorf("VM %s not found", vmID)
+		return errox.NotFound.Newf("VM %s not found", vmID)
 	}
 	existingVM.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&t)
 	return s.updateVMTimestamp(ctx, tx, existingVM)

@@ -40,7 +40,7 @@ javax-mail = { module = "com.sun.mail:javax.mail", version = "1.6.2" }
 slack-api-client = { module = "com.slack.api:slack-api-client", version = "1.46.0" }
 jaxb-api = { module = "javax.xml.bind:jaxb-api", version = "2.3.1" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version = "4.0.6" }
-javers-core = { module = "org.javers:javers-core", version = "7.9.0" }
+javers-core = { module = "org.javers:javers-core", version = "7.11.0" }
 picocontainer = { module = "org.picocontainer:picocontainer", version = "2.15.2" }
 commons-codec = { module = "commons-codec:commons-codec", version = "1.20.0" }
 
