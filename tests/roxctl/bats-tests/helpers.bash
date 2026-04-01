@@ -14,7 +14,7 @@ load "${bats_helpers_root}/bats-assert/load.bash"
 yq_multidoc() {
   local output
   output=$(yq "$@") || return $?
-  grep -v '^---$' <<< "$output"
+  sed '/^---$/d' <<< "$output"
 }
 
 # luname outputs uname in lowercase
