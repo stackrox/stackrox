@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/convert/storagetov2"
 	commonViews "github.com/stackrox/rox/central/views/common"
 	"github.com/stackrox/rox/central/views/vmcve"
 	cveViewMocks "github.com/stackrox/rox/central/views/vmcve/mocks"
@@ -13,9 +14,11 @@ import (
 	cveDSMocks "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore/mocks"
 	scanDSMocks "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore/mocks"
 	vmDSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -525,6 +528,110 @@ func TestGetVMCVEDetail(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
+			}
+		})
+	}
+}
+
+func TestGetVM(t *testing.T) {
+	ctx := context.Background()
+
+	vm1 := &storage.VirtualMachineV2{
+		Id:          "vm-1",
+		Name:        "test-vm-1",
+		Namespace:   "ns-1",
+		ClusterId:   "cluster-1",
+		ClusterName: "test-cluster",
+		GuestOs:     "rhel-9",
+		State:       storage.VirtualMachineV2_RUNNING,
+	}
+
+	scan1 := &storage.VirtualMachineScanV2{
+		Id:      "scan-1",
+		VmV2Id:  "vm-1",
+		ScanOs:  "rhel-9",
+		TopCvss: 9.8,
+	}
+
+	tests := map[string]struct {
+		request        *v2.GetVMRequest
+		setupMock      func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
+		expectedError  string
+		expectedResult *v2.VMDetail
+	}{
+		"empty id": {
+			request: &v2.GetVMRequest{
+				Id: "",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+			},
+			expectedError: "id must be specified",
+		},
+		"vm not found": {
+			request: &v2.GetVMRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(nil, false, nil)
+			},
+			expectedError: "not found",
+		},
+		"successful with scan data": {
+			request: &v2.GetVMRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(vm1, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).DoAndReturn(func(ctx context.Context, q *v1.Query) ([]*storage.VirtualMachineScanV2, error) {
+					// Verify query includes VM ID filter and pagination
+					assert.NotNil(t, q.GetPagination())
+					assert.Equal(t, int32(1), q.GetPagination().GetLimit())
+					return []*storage.VirtualMachineScanV2{scan1}, nil
+				})
+			},
+			expectedResult: func() *v2.VMDetail {
+				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
+				detail.LatestScan = &v2.VMScanInfo{
+					ScanId:    "scan-1",
+					ScanOs:    "rhel-9",
+					TopCvss:   9.8,
+					ScanNotes: []v2.VMScanNote{},
+				}
+				return detail
+			}(),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockVM := vmDSMocks.NewMockDataStore(ctrl)
+			mockCVE := cveDSMocks.NewMockDataStore(ctrl)
+			mockComp := componentDSMocks.NewMockDataStore(ctrl)
+			mockScan := scanDSMocks.NewMockDataStore(ctrl)
+			mockView := cveViewMocks.NewMockCveView(ctrl)
+
+			service := &serviceImpl{
+				vmDS:        mockVM,
+				cveDS:       mockCVE,
+				componentDS: mockComp,
+				scanDS:      mockScan,
+				cveView:     mockView,
+			}
+
+			tt.setupMock(mockVM, mockCVE, mockComp, mockScan, mockView)
+
+			result, err := service.GetVM(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				protoassert.Equal(t, tt.expectedResult, result)
 			}
 		})
 	}

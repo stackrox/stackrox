@@ -678,9 +678,9 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 	}
 	if len(scans) > 0 {
 		scan := scans[0]
-		scanNotes := make([]string, 0, len(scan.GetNotes()))
+		scanNotes := make([]v2.VMScanNote, 0, len(scan.GetNotes()))
 		for _, n := range scan.GetNotes() {
-			scanNotes = append(scanNotes, n.String())
+			scanNotes = append(scanNotes, convertScanNote(n))
 		}
 		detail.LatestScan = &v2.VMScanInfo{
 			ScanId:    scan.GetId(),
@@ -692,4 +692,15 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 	}
 
 	return detail, nil
+}
+
+func convertScanNote(note storage.VirtualMachineScanV2_Note) v2.VMScanNote {
+	switch note {
+	case storage.VirtualMachineScanV2_OS_UNKNOWN:
+		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNKNOWN
+	case storage.VirtualMachineScanV2_OS_UNSUPPORTED:
+		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNSUPPORTED
+	default:
+		return v2.VMScanNote_VM_SCAN_NOTE_UNSET
+	}
 }
