@@ -31,16 +31,19 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -115,20 +118,17 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -136,8 +136,11 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
+          -p 5432:5432 \
+          docker.io/library/postgres:${{ matrix.pg }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -145,7 +148,14 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for _ in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
+          sleep 1
+        done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -177,21 +187,21 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -199,14 +209,24 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
+          -p 5432:5432 \
+          docker.io/library/postgres:15
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for _ in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
+          sleep 1
+        done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
