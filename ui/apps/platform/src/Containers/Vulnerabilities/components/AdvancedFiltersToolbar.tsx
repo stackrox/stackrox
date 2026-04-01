@@ -16,6 +16,7 @@ import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 import type { DefaultFilters } from '../types';
 import {
     attributeForClusterCveFixableInFrontend,
+    attributeForDeploymentStatusInFrontendAndLocalStorage,
     attributeForFixableInFrontendAndLocalStorage,
     attributeForSeverityInFrontendAndLocalStorage,
     attributeForSnoozed,
@@ -36,6 +37,7 @@ type AdvancedFiltersToolbarProps = {
     defaultFilters?: DefaultFilters;
     includeCveSeverityFilters?: boolean;
     includeCveStatusFilters?: boolean;
+    includeDeploymentStatusFilters?: boolean;
     defaultSearchFilterEntity?: string;
     additionalContextFilter?: SearchFilter;
     children?: ReactNode;
@@ -50,6 +52,7 @@ function AdvancedFiltersToolbar({
     defaultFilters = emptyDefaultFilters,
     includeCveSeverityFilters = true,
     includeCveStatusFilters = true,
+    includeDeploymentStatusFilters = false,
     defaultSearchFilterEntity,
     additionalContextFilter,
     children,
@@ -63,6 +66,9 @@ function AdvancedFiltersToolbar({
             attributeForFixableInFrontendAndLocalStorage,
             attributeForClusterCveFixableInFrontend
         );
+    }
+    if (includeDeploymentStatusFilters) {
+        attributesSeparateFromConfig.push(attributeForDeploymentStatusInFrontendAndLocalStorage);
     }
 
     function isGlobalPredicate(category: string, value: string) {
@@ -84,7 +90,7 @@ function AdvancedFiltersToolbar({
                     onSearch={onFilterApplied}
                     defaultEntity={defaultSearchFilterEntity}
                 />
-                {(includeCveSeverityFilters || includeCveStatusFilters) && (
+                {(includeCveSeverityFilters || includeCveStatusFilters || includeDeploymentStatusFilters) && (
                     <ToolbarGroup variant="filter-group">
                         {includeCveSeverityFilters && (
                             <SearchFilterSelectInclusive
@@ -101,6 +107,14 @@ function AdvancedFiltersToolbar({
                                         ? attributeForFixableInFrontendAndLocalStorage
                                         : attributeForClusterCveFixableInFrontend
                                 }
+                                isSeparate
+                                onSearch={onFilterApplied}
+                                searchFilter={searchFilter}
+                            />
+                        )}
+                        {includeDeploymentStatusFilters && (
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForDeploymentStatusInFrontendAndLocalStorage}
                                 isSeparate
                                 onSearch={onFilterApplied}
                                 searchFilter={searchFilter}

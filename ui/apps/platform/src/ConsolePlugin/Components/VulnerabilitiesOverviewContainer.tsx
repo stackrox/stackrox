@@ -110,6 +110,7 @@ export function VulnerabilitiesOverviewContainer() {
             additionalToolbarItems={undefined}
             additionalHeaderItems={undefined}
             showDeferralUI={false}
+            includeDeploymentStatusFilters={false}
             cveTableColumnOverrides={{
                 cveSelection: hideColumnIf(true),
                 rowActions: hideColumnIf(true),

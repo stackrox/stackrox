@@ -466,6 +466,7 @@ function WorkloadCvesOverviewPage() {
                         </>
                     }
                     showDeferralUI={showDeferralUI}
+                    includeDeploymentStatusFilters={isTombstonesEnabled}
                     cveTableColumnOverrides={{
                         cveSelection: hideColumnIf(!showDeferralUI),
                         topNvdCvss: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
