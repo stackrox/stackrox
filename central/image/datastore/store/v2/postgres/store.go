@@ -581,29 +581,30 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 		return err
 	}
 
+	componentIDs := make([]string, 0, len(components))
+	for _, c := range components {
+		componentIDs = append(componentIDs, c.GetId())
+	}
+
+	cvesByComponent, err := getAllImageComponentCVEs(ctx, tx, componentIDs)
+	if err != nil {
+		return err
+	}
+
 	imageParts := common.ImageParts{
 		Image:    image,
-		Children: []common.ComponentParts{},
+		Children: make([]common.ComponentParts, 0, len(components)),
 	}
 	for _, component := range components {
-		cves, err := getImageComponentCVEs(ctx, tx, component.GetId())
-		if err != nil {
-			return err
-		}
-
+		cves := cvesByComponent[component.GetId()]
 		cveParts := make([]common.CVEParts, 0, len(cves))
 		for _, cve := range cves {
-			cvePart := common.CVEParts{
-				CVEV2: cve,
-			}
-			cveParts = append(cveParts, cvePart)
+			cveParts = append(cveParts, common.CVEParts{CVEV2: cve})
 		}
-
-		child := common.ComponentParts{
+		imageParts.Children = append(imageParts.Children, common.ComponentParts{
 			ComponentV2: component,
 			Children:    cveParts,
-		}
-		imageParts.Children = append(imageParts.Children, child)
+		})
 	}
 	common.MergeV2(imageParts)
 	return nil
@@ -653,6 +654,29 @@ func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID str
 		return nil, err
 	}
 	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+}
+
+func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.ImageCVEV2, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
+
+	if len(componentIDs) == 0 {
+		return nil, nil
+	}
+
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE componentid = ANY($1)", componentIDs)
+	if err != nil {
+		return nil, err
+	}
+	cves, err := pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string][]*storage.ImageCVEV2, len(componentIDs))
+	for _, cve := range cves {
+		result[cve.GetComponentId()] = append(result[cve.GetComponentId()], cve)
+	}
+	return result, nil
 }
 
 func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
