@@ -82,14 +82,14 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 			log.Errorf("Failed to register consumer for enriched process indicators, falling back to legacy mode: %v", err)
 			p.pubSubDispatcher = nil
 		} else {
-			log.Info("File system pipeline using pub/sub mode for process enrichment")
+			log.Debug("File system pipeline using pub/sub mode for process enrichment")
 			p.wg.Add(1)
 			go p.cleanupExpiredBuffers()
 		}
 	}
 
 	if p.pubSubDispatcher == nil {
-		log.Info("File system pipeline using legacy mode (direct enrichment)")
+		log.Debug("File system pipeline using legacy mode (direct enrichment)")
 	}
 
 	p.wg.Add(1)
@@ -199,7 +199,7 @@ func (p *Pipeline) buildIndicator(fs *sensorAPI.FileActivity) *storage.ProcessIn
 }
 
 func cacheKey(containerID, processSignalID string) string {
-	return fmt.Sprintf("%s:%s", containerID, processSignalID)
+	return containerID + ":" + processSignalID
 }
 
 func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
