@@ -34,7 +34,7 @@ func TestProcessInvalidateImageCache_WithoutFlattenImageData(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockAdmCtrlSettingsMgr := mocks.NewMockSettingsManager(ctrl)
-	mockAdmCtrlSettingsMgr.EXPECT().FlushCache().Times(1)
+	mockAdmCtrlSettingsMgr.EXPECT().InvalidateImageCache(gomock.Any()).Times(1)
 
 	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](1 * time.Hour)
 
@@ -118,7 +118,7 @@ func TestProcessInvalidateImageCache_WithFlattenImageData(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockAdmCtrlSettingsMgr := mocks.NewMockSettingsManager(ctrl)
-	mockAdmCtrlSettingsMgr.EXPECT().FlushCache().Times(1)
+	mockAdmCtrlSettingsMgr.EXPECT().InvalidateImageCache(gomock.Any()).Times(1)
 
 	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](1 * time.Hour)
 
