@@ -668,18 +668,6 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([
 	return pgutils.ScanRows[storage.ImageComponentV2, *storage.ImageComponentV2](rows)
 }
 
-func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID string) ([]*storage.ImageCVEV2, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
-
-	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
-	// the updates.  That may prove to not matter, but for now doing it this way.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE componentid = $1", componentID)
-	if err != nil {
-		return nil, err
-	}
-	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
-}
-
 func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.ImageCVEV2, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
