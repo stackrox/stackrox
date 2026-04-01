@@ -148,7 +148,26 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels())
+	policyDetector, err := detector.NewBuilder().
+		WithClusterID(clusterID).
+		WithEnforcer(enforcer).
+		WithAdmCtrlSettingsMgr(admCtrlSettingsMgr).
+		WithDeploymentStore(storeProvider.Deployments()).
+		WithServiceAccountStore(storeProvider.ServiceAccounts()).
+		WithImageCache(imageCache).
+		WithAuditLogEvents(auditLogEventsInput).
+		WithAuditLogUpdater(auditLogCollectionManager).
+		WithNetworkPolicyStore(storeProvider.NetworkPolicies()).
+		WithRegistryStore(storeProvider.Registries()).
+		WithLocalScan(localScan).
+		WithNodeStore(storeProvider.Nodes()).
+		WithClusterLabelProvider(storeProvider.ClusterLabels()).
+		WithNamespaceLabelProvider(storeProvider.NamespaceLabels()).
+		Build()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating detector")
+	}
+
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {

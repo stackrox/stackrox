@@ -15,15 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/scopecomp"
-	queueScaler "github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
@@ -38,8 +35,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
-	"github.com/stackrox/rox/sensor/common/registry"
-	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"google.golang.org/grpc"
@@ -68,85 +63,6 @@ type Detector interface {
 	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
 	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
-}
-
-// New returns a new detector
-// TODO(ROX-33799): Refactor to use builder pattern to reduce parameter count
-func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
-	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore,
-	clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) Detector {
-	detectorStopper := concurrency.NewStopper()
-	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
-	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
-	fileAccessQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorFileAccessBufferSize)
-	deploymentQueueSize := 0
-	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
-		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
-	}
-	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
-		detectorStopper,
-		"FlowsQueue",
-		netFlowQueueSize,
-		detectorMetrics.DetectorNetworkFlowQueueOperations,
-		detectorMetrics.DetectorNetworkFlowDroppedCount,
-	)
-	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
-		detectorStopper,
-		"PIsQueue",
-		piQueueSize,
-		detectorMetrics.DetectorProcessIndicatorQueueOperations,
-		detectorMetrics.DetectorProcessIndicatorDroppedCount,
-	)
-	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
-	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
-		"DeploymentQueue",
-		deploymentQueueSize,
-		detectorMetrics.DetectorDeploymentQueueOperations,
-		detectorMetrics.DetectorDeploymentDroppedCount,
-	)
-
-	fileAccessQueue := queue.NewQueue[*queue.FileAccessQueueItem](
-		detectorStopper,
-		"FileAccessQueue",
-		fileAccessQueueSize,
-		detectorMetrics.DetectorFileAccessQueueOperations,
-		detectorMetrics.DetectorFileAccessDroppedCount,
-	)
-
-	return &detectorImpl{
-		unifiedDetector: unified.NewDetector(clusterLabelProvider, namespaceLabelProvider),
-
-		output:                    make(chan *message.ExpiringMessage),
-		auditEventsChan:           auditLogEvents,
-		deploymentAlertOutputChan: make(chan outputResult),
-		deploymentProcessingMap:   make(map[string]int64),
-
-		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
-		serviceAccountStore: serviceAccountStore,
-		deploymentStore:     deploymentStore,
-		nodeStore:           nodeStore,
-		extSrcsStore:        externalsrcs.StoreInstance(),
-		baselineEval:        baseline.NewBaselineEvaluator(),
-		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
-		deduper:             newDeduper(),
-		enforcer:            enforcer,
-
-		admCtrlSettingsMgr: admCtrlSettingsMgr,
-		auditLogUpdater:    auditLogUpdater,
-
-		detectorStopper:   detectorStopper,
-		auditStopper:      concurrency.NewStopper(),
-		serializerStopper: concurrency.NewStopper(),
-		alertStopSig:      concurrency.NewSignal(),
-
-		networkPolicyStore: networkPolicyStore,
-
-		networkFlowsQueue: netFlowQueue,
-		indicatorsQueue:   piQueue,
-		deploymentsQueue:  deploymentQueue,
-		fileAccessQueue:   fileAccessQueue,
-	}
 }
 
 type detectorImpl struct {
