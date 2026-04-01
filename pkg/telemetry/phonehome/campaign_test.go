@@ -13,7 +13,7 @@ func withUserAgent(ua string) Headers {
 }
 
 func TestCampaignFulfilled(t *testing.T) {
-	doNothing := func(_ *APICallCampaignCriterion) {}
+	doNothing := func(*APICallCampaignCriterion, Headers) {}
 	t.Run("Empty campaign", func(t *testing.T) {
 		campaign := APICallCampaign{}
 		rp := &RequestParams{
@@ -93,6 +93,20 @@ func TestCampaignFulfilled(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("Missing headers", func(t *testing.T) {
+		campaign := APICallCampaign{
+			HeaderPattern("X-Header", NoHeaderOrAnyValue),
+		}
+		rp := &RequestParams{
+			Headers: withUserAgent("some user-agent"),
+			Method:  "DELETE",
+			Path:    "/test/path",
+			Code:    305,
+		}
+		assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+	})
+
 	t.Run("Test mutiple fulfilled", func(t *testing.T) {
 		rp := &RequestParams{
 			Headers: withUserAgent("some test user-agent"),

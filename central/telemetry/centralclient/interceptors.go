@@ -73,7 +73,7 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 // environment variable.
 func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := userAgentsList.Setting(); pattern != "" {
-		return phonehome.HeaderPattern(userAgentHeaderKey, "{"+pattern+"}")
+		return phonehome.HeaderPattern(userAgentHeaderKey, glob.Pattern("{"+pattern+"}"))
 	}
 	return nil
 }
@@ -94,22 +94,10 @@ func (c *CentralClient) apiCallInterceptor() phonehome.Interceptor {
 		c.campaignMux.RLock()
 		defer c.campaignMux.RUnlock()
 		return !ignoredPaths.Match(rp.Path) && c.telemetryCampaign.CountFulfilled(rp,
-			func(cc *phonehome.APICallCampaignCriterion) {
-				addCustomHeaders(rp, cc, props)
+			func(_ *phonehome.APICallCampaignCriterion, h phonehome.Headers) {
+				for k, values := range h {
+					props[k] = strings.Join(values, "; ")
+				}
 			}) > 0
-	}
-}
-
-// addCustomHeaders adds additional properties to the event if the telemetry
-// campaign criterion contains a header pattern condition.
-func addCustomHeaders(rp *phonehome.RequestParams, cc *phonehome.APICallCampaignCriterion, props map[string]any) {
-	if rp.Headers == nil || cc == nil {
-		return
-	}
-	for header := range cc.Headers {
-		values := rp.Headers.Get(header)
-		if len(values) != 0 {
-			props[header] = strings.Join(values, "; ")
-		}
 	}
 }

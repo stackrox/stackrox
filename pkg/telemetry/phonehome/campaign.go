@@ -41,12 +41,14 @@ func (c *APICallCampaignCriterion) Compile() error {
 	return nil
 }
 
-func (c *APICallCampaignCriterion) isFulfilled(rp *RequestParams) bool {
-	return c != nil &&
+func (c *APICallCampaignCriterion) isFulfilled(rp *RequestParams) Headers {
+	if c != nil &&
 		(len(c.Codes) == 0 || slices.Contains(c.Codes, int32(rp.Code))) &&
 		(c.Path == nil || (*c.Path).Match(rp.Path)) &&
-		(c.Method == nil || (*c.Method).Match(rp.Method)) &&
-		(c.Headers == nil || rp.HasHeader(c.Headers))
+		(c.Method == nil || (*c.Method).Match(rp.Method)) {
+		return rp.MatchHeaders(c.Headers)
+	}
+	return nil
 }
 
 // Compile compiles and caches all glob patterns of the campaign.
@@ -60,11 +62,11 @@ func (c APICallCampaign) Compile() error {
 }
 
 // CountFulfilled calls f on each fulfilled criterion and returns their number.
-func (c APICallCampaign) CountFulfilled(rp *RequestParams, f func(cc *APICallCampaignCriterion)) int {
+func (c APICallCampaign) CountFulfilled(rp *RequestParams, f func(cc *APICallCampaignCriterion, h Headers)) int {
 	fulfilled := 0
 	for _, cc := range c {
-		if cc.isFulfilled(rp) {
-			f(cc)
+		if h := cc.isFulfilled(rp); h != nil {
+			f(cc, h)
 			fulfilled++
 		}
 	}
@@ -77,20 +79,20 @@ func Codes(codes ...int32) *APICallCampaignCriterion {
 }
 
 // MethodPattern builds a method pattern criterion.
-func MethodPattern(pattern string) *APICallCampaignCriterion {
-	return &APICallCampaignCriterion{Method: glob.Pattern(pattern).Ptr()}
+func MethodPattern(pattern glob.Pattern) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Method: pattern.Ptr()}
 }
 
 // PathPattern builds a path pattern criterion.
-func PathPattern(pattern string) *APICallCampaignCriterion {
-	return &APICallCampaignCriterion{Path: glob.Pattern(pattern).Ptr()}
+func PathPattern(pattern glob.Pattern) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Path: pattern.Ptr()}
 }
 
 // HeaderPattern builds a header pattern criterion.
-func HeaderPattern(header string, pattern string) *APICallCampaignCriterion {
+func HeaderPattern(header string, pattern glob.Pattern) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{
 		Headers: GlobMap{
-			header: glob.Pattern(pattern),
+			header: pattern,
 		},
 	}
 }

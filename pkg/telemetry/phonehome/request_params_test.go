@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHasHeader(t *testing.T) {
+func TestMatchHeaders(t *testing.T) {
 
 	t.Run("empty request", func(t *testing.T) {
 		r := &RequestParams{}
-		assert.True(t, r.HasHeader(nil))
-		assert.False(t, r.HasHeader(GlobMap{"header": "value"}))
-		assert.True(t, r.HasHeader(GlobMap{"header": NoHeaderOrAnyValue}))
+		assert.Equal(t, Headers{}, r.MatchHeaders(nil))
+		assert.Nil(t, r.MatchHeaders(GlobMap{"header": "value"}))
+		assert.Equal(t, Headers{}, r.MatchHeaders(GlobMap{"header": NoHeaderOrAnyValue}))
 	})
 
 	rp := RequestParams{
@@ -26,60 +26,60 @@ func TestHasHeader(t *testing.T) {
 
 	tests := map[string]struct {
 		headers  GlobMap
-		expected bool
+		expected Headers
 	}{
 		"empty": {
-			expected: true,
+			expected: Headers{},
 		},
 		"empty not matching": {
 			headers: GlobMap{
 				"Empty": "with value",
 			},
-			expected: false,
+			expected: nil,
 		},
 		"empty matching": {
 			headers: GlobMap{
 				"Empty": NoHeaderOrAnyValue,
 			},
-			expected: true,
+			expected: Headers{"Empty": {}},
 		},
 		"unknown empty": {
 			headers: GlobMap{
 				"Third": NoHeaderOrAnyValue,
 			},
-			expected: true,
+			expected: Headers{},
 		},
 		"one": {
 			headers: GlobMap{
 				"One": "on?",
 			},
-			expected: true,
+			expected: Headers{"One": {"one"}},
 		},
 		"one-two": {
 			headers: GlobMap{
 				"Two": "two",
 			},
-			expected: true,
+			expected: Headers{"Two": {"two"}},
 		},
 		"no match": {
 			headers: GlobMap{
 				"Three": "x*",
 			},
-			expected: false,
+			expected: nil,
 		},
 		"one of multiple match": {
 			headers: GlobMap{
 				"One": "on?",
 				"Two": "x",
 			},
-			expected: false,
+			expected: nil,
 		},
 		"all of multiple match": {
 			headers: GlobMap{
 				"One": "on?",
 				"Two": "two",
 			},
-			expected: true,
+			expected: Headers{"One": {"one"}, "Two": {"two"}},
 		},
 		"one of multiple doesn't exist": {
 			headers: GlobMap{
@@ -87,14 +87,15 @@ func TestHasHeader(t *testing.T) {
 				"Two":   "two",
 				"Three": "th*",
 			},
-			expected: false,
+			expected: nil,
 		},
 	}
 	for name, test := range tests {
 		require.NoError(t, (&APICallCampaignCriterion{Headers: test.headers}).Compile())
 
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, test.expected, rp.HasHeader(test.headers))
+			h := rp.MatchHeaders(test.headers)
+			assert.Equal(t, test.expected, h)
 		})
 	}
 }

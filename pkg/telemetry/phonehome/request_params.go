@@ -3,7 +3,6 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"slices"
 
 	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -26,23 +25,24 @@ type RequestParams struct {
 
 type GlobMap map[string]glob.Pattern
 
-// HasHeader returns true if for each header pattern there is at least one
-// request header with at least one matching value. A request without the
-// expected header matches NoHeaderOrAnyValue pattern for this header.
-func (rp *RequestParams) HasHeader(patterns GlobMap) bool {
+// MatchHeaders checks whether the request headers satisfy all given patterns.
+// Returns nil if any pattern fails to match or if headers are absent. Returns
+// non-nil (possibly empty) Headers containing only the matched values on
+// success. Absent headers satisfy NoHeaderOrAnyValue without appearing in the
+// result.
+func (rp *RequestParams) MatchHeaders(patterns GlobMap) Headers {
+	result := make(Headers)
 	for header, expression := range patterns {
-		if expression == NoHeaderOrAnyValue {
+		values := rp.Headers.GetMatching(header, expression)
+		if values == nil {
+			if expression != NoHeaderOrAnyValue {
+				return nil
+			}
 			continue
 		}
-		if rp.Headers == nil {
-			return false
-		}
-		values := rp.Headers.Get(header)
-		if len(values) == 0 || !slices.ContainsFunc(values, expression.Match) {
-			return false
-		}
+		result[header] = values
 	}
-	return true
+	return result
 }
 
 // GetGRPCRequestBody returns the request body with the type inferred from the
