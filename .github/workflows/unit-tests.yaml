@@ -187,6 +187,9 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    - name: Download scanner module for proto generation
+      run: go mod download github.com/stackrox/scanner
+
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
