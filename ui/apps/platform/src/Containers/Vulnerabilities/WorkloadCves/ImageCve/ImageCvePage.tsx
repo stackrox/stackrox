@@ -203,8 +203,6 @@ function ImageCvePage({
     const exactCveIdSearchRegex = `^${cveId}$`;
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
-    // not by getVulnStateScopedQueryString.
     // Strip DEPLOYMENT_STATUS from querySearchFilter — it's consumed by
     // getDeploymentStatusScopedQueryString, not by getVulnStateScopedQueryString.
     const {

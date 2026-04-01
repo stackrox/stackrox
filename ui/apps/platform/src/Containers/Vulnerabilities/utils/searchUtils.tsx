@@ -260,20 +260,6 @@ export function getDeploymentStatusScopedQueryString(
     return baseQuery;
 }
 
-/**
- * @deprecated Use getDeploymentStatusScopedQueryString instead.
- * Kept as a compatibility shim until all call sites are migrated (Tasks 4 and 5).
- */
-export function getDeploymentStatusQueryString(
-    baseQuery: string,
-    deploymentStatus: 'DEPLOYED' | 'DELETED'
-): string {
-    if (deploymentStatus === 'DELETED') {
-        return [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+');
-    }
-    return baseQuery;
-}
-
 export function getZeroCveScopedQueryString(searchFilter: QuerySearchFilter): string {
     return getRequestQueryStringForSearchFilter({
         'Image CVE Count': '0',

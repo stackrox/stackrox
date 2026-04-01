@@ -1,11 +1,5 @@
 import { ToolbarItem } from '@patternfly/react-core';
 
-import useDeploymentStatus from 'hooks/useDeploymentStatus';
-import { getDeploymentStatusQueryString } from '../../utils/searchUtils';
-import DeploymentStatusFilter from '../components/DeploymentStatusFilter';
-
-import useFeatureFlags from 'hooks/useFeatureFlags';
-
 import type useURLSort from 'hooks/useURLSort';
 import type useURLPagination from 'hooks/useURLPagination';
 
@@ -45,17 +39,11 @@ function DeploymentsTableContainer({
     isFiltered,
     deploymentTableColumnOverrides,
 }: DeploymentsTableContainerProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
-
-    const deploymentStatus = useDeploymentStatus();
-
     const { sortOption, getSortParams } = sort;
 
-    const deploymentsQueryString = getDeploymentStatusQueryString(
-        workloadCvesScopedQueryString,
-        isTombstonesEnabled ? deploymentStatus : 'DEPLOYED'
-    );
+    // Deployment status scoping is handled upstream in WorkloadCvesOverviewPage
+    // via getDeploymentStatusScopedQueryString applied to workloadCvesScopedQueryString.
+    const deploymentsQueryString = workloadCvesScopedQueryString;
 
     const { error, loading, data } = useDeployments({
         query: deploymentsQueryString,
@@ -86,11 +74,6 @@ function DeploymentsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
-                {isTombstonesEnabled && (
-                    <ToolbarItem>
-                        <DeploymentStatusFilter onChange={() => pagination.setPage(1)} />
-                    </ToolbarItem>
-                )}
                 <ToolbarItem align={{ default: 'alignEnd' }}>
                     <ColumnManagementButton
                         columnConfig={columnConfig}

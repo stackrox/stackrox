@@ -185,8 +185,6 @@ function WorkloadCvesOverviewPage() {
 
     // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
     // not by getVulnStateScopedQueryString.
-    // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
-    // not by getVulnStateScopedQueryString.
     const {
         DEPLOYMENT_STATUS: deploymentStatusFilter,
         ...querySearchFilterWithoutStatus
