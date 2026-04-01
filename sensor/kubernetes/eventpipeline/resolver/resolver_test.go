@@ -824,6 +824,10 @@ func (p *fakeProvider) Pods() store.PodStore {
 	return nil
 }
 
+func (p *fakeProvider) Namespaces() store.NamespaceStore {
+	return nil
+}
+
 func (p *fakeProvider) Registries() *registry.Store {
 	return nil
 }
