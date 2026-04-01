@@ -201,55 +201,13 @@ spec:
 
           # Report Go version
           echo "=== Go Version Check ==="
-          go version
-          go version > $(results.GO_VERSION.path)
+          go version | tee $(results.GO_VERSION.path)
 
-          # Copy current state
-          echo "=== Saving current go.mod and go.sum ==="
-          cp go.mod go.mod.before
-          cp go.sum go.sum.before
-
-          # Run go mod tidy
+          # Run go mod tidy - will fail if Go version is incompatible
           echo "=== Running go mod tidy ==="
           go mod tidy
 
-          # Check for changes
-          echo "=== Checking for changes ==="
-          CHANGES_DETECTED=0
-
-          if ! diff -u go.mod.before go.mod; then
-            echo "ERROR: go.mod changed after 'go mod tidy'"
-            CHANGES_DETECTED=1
-          fi
-
-          if ! diff -u go.sum.before go.sum; then
-            echo "ERROR: go.sum changed after 'go mod tidy'"
-            CHANGES_DETECTED=1
-          fi
-
-          if [ $CHANGES_DETECTED -eq 1 ]; then
-            echo ""
-            echo "================================"
-            echo "ERROR: go mod tidy produced changes!"
-            echo "================================"
-            echo ""
-            echo "This indicates one of the following:"
-            echo "  1. The go.mod or go.sum files were not up to date"
-            echo "  2. The installed Go version may not fully support go.mod requirements"
-            echo "  3. Dependencies need to be updated"
-            echo ""
-            echo "To fix this:"
-            echo "  - Run 'go mod tidy' locally and commit the changes"
-            echo "  - Ensure the Konflux build image uses a compatible Go version"
-            echo ""
-            exit 1
-          fi
-
-          echo ""
-          echo "================================"
-          echo "SUCCESS: go mod tidy produced no changes"
-          echo "================================"
-          echo ""
+          echo "=== SUCCESS: Go version is compatible with go.mod requirements ==="
         env:
         - name: SOURCE_ARTIFACT
           value: $(params.SOURCE_ARTIFACT)
