@@ -24,6 +24,11 @@ message AdmissionControlSettings {
   bool flatten_image_data = 8;
 }
 
+// ClusterLabels is a simple wrapper for cluster labels map to enable serialization.
+message ClusterLabels {
+  map<string, string> labels = 1;
+}
+
 message AdmissionControlAlerts {
   repeated central.AlertResults alert_results = 1;
 }
@@ -38,5 +43,6 @@ message AdmCtrlUpdateResourceRequest {
     storage.NamespaceMetadata namespace = 4;
 
     ResourcesSynced synced = 5;
+    ClusterLabels cluster_labels = 6;
   }
 }
