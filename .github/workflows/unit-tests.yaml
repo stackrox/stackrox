@@ -166,7 +166,8 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     env:
-      BUILD_TAG: 0.0.0-test
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     steps:
     - name: Checkout
       uses: actions/checkout@v6
