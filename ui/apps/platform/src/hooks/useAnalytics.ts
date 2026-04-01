@@ -236,6 +236,8 @@ export type AnalyticsEvent =
               SEVERITY_UNKNOWN: AnalyticsBoolean;
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
+              DEPLOYMENT_STATUS_DEPLOYED: AnalyticsBoolean;
+              DEPLOYMENT_STATUS_DELETED: AnalyticsBoolean;
           };
       }
     | {

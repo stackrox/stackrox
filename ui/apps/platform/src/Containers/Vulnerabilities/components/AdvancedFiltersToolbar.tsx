@@ -24,6 +24,7 @@ import {
 const emptyDefaultFilters = {
     SEVERITY: [],
     FIXABLE: [],
+    DEPLOYMENT_STATUS: [],
 };
 
 type AdvancedFiltersToolbarProps = {

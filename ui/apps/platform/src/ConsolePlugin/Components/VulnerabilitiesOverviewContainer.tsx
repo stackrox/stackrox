@@ -36,6 +36,7 @@ import { ALL_NAMESPACES_KEY } from '../constants';
 const emptyDefaultFilters: DefaultFilters = {
     SEVERITY: [],
     FIXABLE: [],
+    DEPLOYMENT_STATUS: [],
 };
 
 export function VulnerabilitiesOverviewContainer() {
