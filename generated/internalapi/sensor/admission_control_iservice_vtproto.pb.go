@@ -74,6 +74,15 @@ func (m *MsgToAdmissionControl_UpdateResourceRequest) CloneVT() isMsgToAdmission
 	return r
 }
 
+func (m *MsgToAdmissionControl_ImageCacheInvalidation) CloneVT() isMsgToAdmissionControl_Msg {
+	if m == nil {
+		return (*MsgToAdmissionControl_ImageCacheInvalidation)(nil)
+	}
+	r := new(MsgToAdmissionControl_ImageCacheInvalidation)
+	r.ImageCacheInvalidation = m.ImageCacheInvalidation.CloneVT()
+	return r
+}
+
 func (this *MsgFromAdmissionControl) EqualVT(that *MsgFromAdmissionControl) bool {
 	if this == that {
 		return true
@@ -160,6 +169,31 @@ func (this *MsgToAdmissionControl_UpdateResourceRequest) EqualVT(thatIface isMsg
 		}
 		if q == nil {
 			q = &AdmCtrlUpdateResourceRequest{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgToAdmissionControl_ImageCacheInvalidation) EqualVT(thatIface isMsgToAdmissionControl_Msg) bool {
+	that, ok := thatIface.(*MsgToAdmissionControl_ImageCacheInvalidation)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ImageCacheInvalidation, that.ImageCacheInvalidation; p != q {
+		if p == nil {
+			p = &AdmCtrlImageCacheInvalidation{}
+		}
+		if q == nil {
+			q = &AdmCtrlImageCacheInvalidation{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -289,6 +323,29 @@ func (m *MsgToAdmissionControl_UpdateResourceRequest) MarshalToSizedBufferVT(dAt
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgToAdmissionControl_ImageCacheInvalidation) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToAdmissionControl_ImageCacheInvalidation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ImageCacheInvalidation != nil {
+		size, err := m.ImageCacheInvalidation.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *MsgFromAdmissionControl) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -334,6 +391,20 @@ func (m *MsgToAdmissionControl_UpdateResourceRequest) SizeVT() (n int) {
 	_ = l
 	if m.UpdateResourceRequest != nil {
 		l = m.UpdateResourceRequest.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *MsgToAdmissionControl_ImageCacheInvalidation) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ImageCacheInvalidation != nil {
+		l = m.ImageCacheInvalidation.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -500,6 +571,47 @@ func (m *MsgToAdmissionControl) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToAdmissionControl_UpdateResourceRequest{UpdateResourceRequest: v}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageCacheInvalidation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToAdmissionControl_ImageCacheInvalidation); ok {
+				if err := oneof.ImageCacheInvalidation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &AdmCtrlImageCacheInvalidation{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToAdmissionControl_ImageCacheInvalidation{ImageCacheInvalidation: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -684,6 +796,47 @@ func (m *MsgToAdmissionControl) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToAdmissionControl_UpdateResourceRequest{UpdateResourceRequest: v}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageCacheInvalidation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToAdmissionControl_ImageCacheInvalidation); ok {
+				if err := oneof.ImageCacheInvalidation.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &AdmCtrlImageCacheInvalidation{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToAdmissionControl_ImageCacheInvalidation{ImageCacheInvalidation: v}
 			}
 			iNdEx = postIndex
 		default:
