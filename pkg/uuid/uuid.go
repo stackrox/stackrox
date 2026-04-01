@@ -131,6 +131,15 @@ func NewV4() UUID {
 	}
 }
 
+// NewV7 returns a time-ordered UUID with millisecond precision (RFC 9562).
+// The high bits encode the current timestamp, making these IDs monotonically
+// increasing and friendly to B-tree indexes.
+func NewV7() UUID {
+	return UUID{
+		uuid: uuid.Must(uuid.NewV7()),
+	}
+}
+
 // NewV5FromNonUUIDs is like NewV5, but accepts non-UUIDs for the name.
 // It converts the name to a UUID using SHA-256 hashing.
 // The output will be deterministic.
