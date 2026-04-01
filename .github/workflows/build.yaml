@@ -311,9 +311,6 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Install protobuf compiler
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
