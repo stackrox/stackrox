@@ -177,6 +177,11 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    # Benchmarks are uncacheable (~20m). Run on master/release pushes
+    # or when a PR has the ci-bench-tests label.
+    if: |
+      github.event_name == 'push' ||
+      contains(github.event.pull_request.labels.*.name, 'ci-bench-tests')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
