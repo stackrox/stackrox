@@ -956,10 +956,11 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
-      - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
+      - define-job-matrix
       - push-main-manifests
+      - push-matching-collector-scanner
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
