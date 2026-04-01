@@ -175,6 +175,11 @@ jobs:
   pre-build-cli:
     needs: define-job-matrix
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -188,12 +193,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: false
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -218,6 +217,11 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -231,12 +235,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: false
 
       - name: Cache Go dependencies
         env:
