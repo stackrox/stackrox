@@ -176,6 +176,13 @@ spec:
           #!/bin/bash
           set -euo pipefail
 
+          # Install oras CLI
+          echo "=== Installing oras ==="
+          curl -LO https://github.com/oras-project/oras/releases/download/v1.1.0/oras_1.1.0_linux_amd64.tar.gz
+          tar -xzf oras_1.1.0_linux_amd64.tar.gz
+          chmod +x oras
+          mv oras /usr/local/bin/
+
           # Extract source and Cachi2 artifacts from OCI storage
           echo "=== Extracting source artifact ==="
           SOURCE_OCI_PATH="${SOURCE_ARTIFACT#oci::}"
