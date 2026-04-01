@@ -491,12 +491,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: false
-
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
         # Skip for external contributions.
@@ -688,12 +682,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
 
@@ -784,12 +772,6 @@ jobs:
         with:
           free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
