@@ -28,9 +28,9 @@ func VirtualMachineV2ToDetail(vm *storage.VirtualMachineV2) *v2.VMDetail {
 	if vm == nil {
 		return nil
 	}
-	notes := make([]string, 0, len(vm.GetNotes()))
+	notes := make([]v2.VMNote, 0, len(vm.GetNotes()))
 	for _, n := range vm.GetNotes() {
-		notes = append(notes, n.String())
+		notes = append(notes, convertVMNote(n))
 	}
 	return &v2.VMDetail{
 		Id:          vm.GetId(),
@@ -44,6 +44,19 @@ func VirtualMachineV2ToDetail(vm *storage.VirtualMachineV2) *v2.VMDetail {
 		Facts:       vm.GetFacts(),
 		VsockCid:    vm.GetVsockCid(),
 		Notes:       notes,
+	}
+}
+
+func convertVMNote(note storage.VirtualMachineV2_Note) v2.VMNote {
+	switch note {
+	case storage.VirtualMachineV2_MISSING_SCAN_DATA:
+		return v2.VMNote_VM_NOTE_MISSING_SCAN_DATA
+	case storage.VirtualMachineV2_MISSING_SIGNATURE:
+		return v2.VMNote_VM_NOTE_MISSING_SIGNATURE
+	case storage.VirtualMachineV2_MISSING_SIGNATURE_VERIFICATION_DATA:
+		return v2.VMNote_VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA
+	default:
+		return v2.VMNote_VM_NOTE_MISSING_METADATA
 	}
 }
 

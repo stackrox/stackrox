@@ -490,11 +490,12 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
-	}
-
-	if features.VirtualMachinesEnhancedDataModel.Enabled() {
-		servicesToRegister = append(servicesToRegister, virtualmachineV2Service.Singleton())
+		if features.VirtualMachinesEnhancedDataModel.Enabled() {
+			// V2 service replaces V1 to avoid route conflicts on /v2/virtualmachines/{id}.
+			servicesToRegister = append(servicesToRegister, virtualmachineV2Service.Singleton())
+		} else {
+			servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+		}
 	}
 
 	if features.BaseImageDetection.Enabled() {
