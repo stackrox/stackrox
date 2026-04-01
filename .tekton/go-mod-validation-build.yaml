@@ -30,7 +30,8 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/go-mod-validation
+    # TODO: Change to quay.io/rhacs-eng/go-mod-validation once dedicated service account is created
+    value: quay.io/rhacs-eng/release-roxctl
   - name: clone-depth
     value: '1'
   - name: clone-fetch-tags
