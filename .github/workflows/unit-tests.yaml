@@ -297,7 +297,6 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
