@@ -9,6 +9,7 @@ import (
 
 	pgStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponent/v2/views"
+	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -50,10 +51,10 @@ func BenchmarkInitializeRankers(b *testing.B) {
 	b.Run("Walk", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
+			ranker := ranking.NewRanker()
 			count := 0
 			err := store.Walk(ctx, func(component *storage.ImageComponentV2) error {
-				_ = component.GetId()
-				_ = component.GetRiskScore()
+				ranker.Add(component.GetId(), component.GetRiskScore())
 				count++
 				return nil
 			})
@@ -72,12 +73,12 @@ func BenchmarkInitializeRankers(b *testing.B) {
 		query.Selects = selects
 
 		for b.Loop() {
+			ranker := ranking.NewRanker()
 			count := 0
 			err := pgSearch.RunSelectRequestForSchemaFn[views.ComponentRiskView](
 				ctx, testDB.DB, pkgSchema.ImageComponentV2Schema, query,
 				func(r *views.ComponentRiskView) error {
-					_ = r.ComponentID
-					_ = r.ComponentRiskScore
+					ranker.Add(r.ComponentID, r.ComponentRiskScore)
 					count++
 					return nil
 				},
