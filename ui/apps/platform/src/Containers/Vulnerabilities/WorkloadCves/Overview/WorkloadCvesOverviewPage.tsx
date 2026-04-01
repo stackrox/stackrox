@@ -45,8 +45,9 @@ import {
     namespaceSearchFilterConfig,
 } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
-import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
+import type { DefaultFilters, DeploymentStatusLabel, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
 import {
+    getDeploymentStatusScopedQueryString,
     getNamespaceViewPagePath,
     getVulnStateScopedQueryString,
     getZeroCveScopedQueryString,
@@ -104,7 +105,15 @@ function mergeDefaultAndLocalFilters(
     FIXABLE = difference(FIXABLE, oldDefaults.FIXABLE, newDefaults.FIXABLE);
     FIXABLE = FIXABLE.concat(newDefaults.FIXABLE);
 
-    return { ...filter, SEVERITY, FIXABLE };
+    let DEPLOYMENT_STATUS = (filter.DEPLOYMENT_STATUS ?? []) as string[];
+    DEPLOYMENT_STATUS = difference(
+        DEPLOYMENT_STATUS,
+        oldDefaults.DEPLOYMENT_STATUS,
+        newDefaults.DEPLOYMENT_STATUS
+    );
+    DEPLOYMENT_STATUS = DEPLOYMENT_STATUS.concat(newDefaults.DEPLOYMENT_STATUS);
+
+    return { ...filter, SEVERITY, FIXABLE, DEPLOYMENT_STATUS };
 }
 
 const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = {
@@ -120,6 +129,7 @@ const defaultStorage: VulnMgmtLocalStorage = {
         defaultFilters: {
             SEVERITY: ['Critical', 'Important'],
             FIXABLE: ['Fixable'],
+            DEPLOYMENT_STATUS: ['Deployed'],
         },
     },
 } as const;
@@ -128,6 +138,7 @@ function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
@@ -172,21 +183,35 @@ function WorkloadCvesOverviewPage() {
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
+    // Strip DEPLOYMENT_STATUS — it's consumed by getDeploymentStatusScopedQueryString,
+    // not by getVulnStateScopedQueryString.
+    const {
+        DEPLOYMENT_STATUS: _deploymentStatus,
+        ...querySearchFilterWithoutStatus
+    } = querySearchFilter;
+
     // If the user is viewing observed CVEs, we need to scope the query based on
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
     // need to scope the query to only show images/deployments with 0 CVEs.
-    const workloadCvesScopedQueryString = isViewingWithCves
+    const rawScopedQuery = isViewingWithCves
         ? getVulnStateScopedQueryString(
               {
                   ...baseSearchFilter,
-                  ...querySearchFilter,
+                  ...querySearchFilterWithoutStatus,
               },
               currentVulnerabilityState
           )
         : getZeroCveScopedQueryString({
               ...baseSearchFilter,
-              ...querySearchFilter,
+              ...querySearchFilterWithoutStatus,
           });
+
+    const workloadCvesScopedQueryString = isTombstonesEnabled
+        ? getDeploymentStatusScopedQueryString(
+              rawScopedQuery,
+              searchFilter.DEPLOYMENT_STATUS as DeploymentStatusLabel[] | undefined
+          )
+        : rawScopedQuery;
 
     const getDefaultSortOption = isViewingWithCves
         ? getWorkloadCveOverviewDefaultSortOption
@@ -433,6 +458,7 @@ function WorkloadCvesOverviewPage() {
                                                     localStorageValue.preferences.defaultFilters
                                                 }
                                                 setLocalStorage={updateDefaultFilters}
+                                                isTombstonesEnabled={isTombstonesEnabled}
                                             />
                                         </Flex>
                                     </FlexItem>
