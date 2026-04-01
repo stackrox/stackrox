@@ -96,3 +96,8 @@ coderabbit-review:
     - roxctl/**/*
     - scripts/ci/**/
     - sensor/**/*
+
+go-mod-check:
+- changed-files:
+  - any-glob-to-any-file:
+    - go.mod

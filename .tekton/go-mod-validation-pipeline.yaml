@@ -1,0 +1,257 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: go-mod-validation-pipeline
+spec:
+
+  finally:
+  - name: slack-notification
+    params:
+    - name: message
+      value: ':x: `{{event_type}}` pipeline for <https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/$(context.pipelineRun.namespace)/pipelinerun/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`go.mod validation`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+    - name: key-name
+      value: 'acs-konflux-notifications'
+    when:
+    - input: $(tasks.status)
+      operator: in
+      values: ["Failed"]
+    taskRef:
+      params:
+      - name: name
+        value: slack-webhook-notification
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:3eff579c511d6c5e846175920e8f184a87337e142bbc4c30107e76bda4a325cb
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: post-metric-end
+    params:
+    - name: AGGREGATE_TASKS_STATUS
+      value: $(tasks.status)
+    taskRef: &post-bigquery-metrics-ref
+      params:
+      - name: name
+        value: post-bigquery-metrics
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
+      - name: kind
+        value: task
+      resolver: bundles
+
+  params:
+  - description: Source Repository URL
+    name: git-url
+    type: string
+  - default: ""
+    description: Revision of the Source Repository
+    name: revision
+    type: string
+  - description: Output Image Repository (for OCI artifacts)
+    name: output-image-repo
+    type: string
+  - default: "1"
+    description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
+    name: clone-depth
+    type: string
+  - default: "false"
+    description: Fetch tags with git clone
+    name: clone-fetch-tags
+    type: string
+  - default: "1d"
+    description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
+    name: oci-artifact-expires-after
+    type: string
+  - default: "false"
+    description: Enable cache proxy configuration
+    name: enable-cache-proxy
+    type: string
+  - default: ""
+    description: Build dependencies to be prefetched by Cachi2
+    name: prefetch-input
+    type: string
+
+  results:
+  - description: ""
+    name: CHAINS-GIT_URL
+    value: $(tasks.clone-repository.results.url)
+  - description: ""
+    name: CHAINS-GIT_COMMIT
+    value: $(tasks.clone-repository.results.commit)
+  - description: ""
+    name: GO_VERSION
+    value: $(tasks.verify-go-mod-tidy.results.GO_VERSION)
+
+  workspaces:
+  - name: git-auth
+
+  tasks:
+
+  - name: post-metric-start
+    taskRef: *post-bigquery-metrics-ref
+
+  - name: init
+    params:
+    - name: enable-cache-proxy
+      value: $(params.enable-cache-proxy)
+    taskRef:
+      params:
+      - name: name
+        value: init
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-init:0.4@sha256:288f3106118edc1d0f0c79a89c960abf5841a4dd8bc3f38feb10527253105b19
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: clone-repository
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.revision)
+    - name: depth
+      value: $(params.clone-depth)
+    - name: fetchTags
+      value: $(params.clone-fetch-tags)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).git
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: git-clone-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:2c388d28651457db60bb90287e7d8c3680303197196e4476878d98d81e8b6dc9
+      - name: kind
+        value: task
+      resolver: bundles
+    workspaces:
+    - name: basic-auth
+      workspace: git-auth
+
+  - name: prefetch-dependencies
+    params:
+    - name: input
+      value: $(params.prefetch-input)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).prefetch
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: prefetch-dependencies-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.3@sha256:a579d00fe370b6d9a1cb1751c883ecd0ec9f663604344e2fd61e1f6d5bf4e990
+      - name: kind
+        value: task
+      resolver: bundles
+    workspaces:
+    - name: git-basic-auth
+      workspace: git-auth
+
+  - name: verify-go-mod-tidy
+    params:
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskSpec:
+      params:
+      - name: SOURCE_ARTIFACT
+        type: string
+      - name: CACHI2_ARTIFACT
+        type: string
+      results:
+      - name: GO_VERSION
+        description: Go version used for validation
+      steps:
+      - name: verify
+        image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+
+          # Extract source and Cachi2 artifacts from OCI storage
+          echo "=== Extracting source artifact ==="
+          SOURCE_OCI_PATH="${SOURCE_ARTIFACT#oci::}"
+          mkdir -p /workspace/source
+          oras pull -o /workspace/source "$SOURCE_OCI_PATH"
+
+          echo "=== Extracting Cachi2 artifact ==="
+          CACHI2_OCI_PATH="${CACHI2_ARTIFACT#oci::}"
+          mkdir -p /workspace/cachi2
+          oras pull -o /workspace/cachi2 "$CACHI2_OCI_PATH"
+
+          cd /workspace/source
+
+          # Inject Cachi2 environment for hermetic build
+          if [ -f /workspace/cachi2/cachi2.env ]; then
+            echo "=== Sourcing Cachi2 environment ==="
+            set +u
+            source /workspace/cachi2/cachi2.env
+            set -u
+          else
+            echo "WARNING: cachi2.env not found, proceeding without hermetic environment"
+          fi
+
+          # Report Go version
+          echo "=== Go Version Check ==="
+          go version
+          go version > $(results.GO_VERSION.path)
+
+          # Copy current state
+          echo "=== Saving current go.mod and go.sum ==="
+          cp go.mod go.mod.before
+          cp go.sum go.sum.before
+
+          # Run go mod tidy
+          echo "=== Running go mod tidy ==="
+          go mod tidy
+
+          # Check for changes
+          echo "=== Checking for changes ==="
+          CHANGES_DETECTED=0
+
+          if ! diff -u go.mod.before go.mod; then
+            echo "ERROR: go.mod changed after 'go mod tidy'"
+            CHANGES_DETECTED=1
+          fi
+
+          if ! diff -u go.sum.before go.sum; then
+            echo "ERROR: go.sum changed after 'go mod tidy'"
+            CHANGES_DETECTED=1
+          fi
+
+          if [ $CHANGES_DETECTED -eq 1 ]; then
+            echo ""
+            echo "================================"
+            echo "ERROR: go mod tidy produced changes!"
+            echo "================================"
+            echo ""
+            echo "This indicates one of the following:"
+            echo "  1. The go.mod or go.sum files were not up to date"
+            echo "  2. The installed Go version may not fully support go.mod requirements"
+            echo "  3. Dependencies need to be updated"
+            echo ""
+            echo "To fix this:"
+            echo "  - Run 'go mod tidy' locally and commit the changes"
+            echo "  - Ensure the Konflux build image uses a compatible Go version"
+            echo ""
+            exit 1
+          fi
+
+          echo ""
+          echo "================================"
+          echo "SUCCESS: go mod tidy produced no changes"
+          echo "================================"
+          echo ""
+        env:
+        - name: SOURCE_ARTIFACT
+          value: $(params.SOURCE_ARTIFACT)
+        - name: CACHI2_ARTIFACT
+          value: $(params.CACHI2_ARTIFACT)
