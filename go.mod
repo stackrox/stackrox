@@ -459,6 +459,7 @@ require (
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
 	github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
 	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
+	github.com/stackrox/ossls v0.0.0-20240813203729-5ad46ced9610 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
