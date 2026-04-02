@@ -78,18 +78,24 @@ git -C RELEASE_REPO_PATH grep -h "tag: \(stackrox-test\|scanner-test\|stackrox-u
 Replace ANY version pattern with the new version:
 ```bash
 git -C RELEASE_REPO_PATH ls-files "$PATTERN" | \
-  xargs -I {} sed -i '' -E \
+  xargs -I {} sed -i.bak -E \
     's/tag: (stackrox-test|scanner-test|stackrox-ui-test)-[0-9]+\.[0-9]+\.[0-9]+$/tag: \1-NEW_VERSION/' \
     "RELEASE_REPO_PATH/{}"
+
+# Clean up backup files
+find RELEASE_REPO_PATH -name '*.bak' -type f -delete
 ```
 
 **If user specified a specific OLD_VERSION:**
 Replace only that specific version:
 ```bash
 git -C RELEASE_REPO_PATH ls-files "$PATTERN" | \
-  xargs -I {} sed -i '' -E \
+  xargs -I {} sed -i.bak -E \
     's/tag: (stackrox-test|scanner-test|stackrox-ui-test)-OLD_VERSION$/tag: \1-NEW_VERSION/' \
     "RELEASE_REPO_PATH/{}"
+
+# Clean up backup files
+find RELEASE_REPO_PATH -name '*.bak' -type f -delete
 ```
 
 ### 6. Verify replacement succeeded

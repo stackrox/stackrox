@@ -71,7 +71,10 @@ git grep -n "apollo-ci.*OLD_VERSION\|stackrox-build-OLD_VERSION" -- \
 ### 5. Bulk replace
 ```bash
 git ls-files '*.yaml' '*.yml' '*.sh' '*.txt' '*.json' 'Dockerfile*' | \
-  xargs sed -i '' 's/apollo-ci:\(stackrox-test\|scanner-test\|stackrox-ui-test\|stackrox-build\)-OLD_VERSION/apollo-ci:\1-NEW_VERSION/g'
+  xargs sed -i.bak 's/apollo-ci:\(stackrox-test\|scanner-test\|stackrox-ui-test\|stackrox-build\)-OLD_VERSION/apollo-ci:\1-NEW_VERSION/g'
+
+# Clean up backup files
+find . -name '*.bak' -type f -delete
 ```
 
 ### 6. Update BUILD_IMAGE_VERSION
