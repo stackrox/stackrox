@@ -545,6 +545,8 @@ jobs:
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
       - name: Build main images
+        env:
+          DOCKER_BUILDX_CACHE: main-${{ matrix.arch }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
@@ -552,6 +554,8 @@ jobs:
         run: make check-debugger
 
       - name: Build roxctl image
+        env:
+          DOCKER_BUILDX_CACHE: roxctl-${{ matrix.arch }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
@@ -809,6 +813,8 @@ jobs:
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
       - name: Build Operator image
+        env:
+          DOCKER_BUILDX_CACHE: operator-${{ matrix.arch }}
         run: |
           GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
