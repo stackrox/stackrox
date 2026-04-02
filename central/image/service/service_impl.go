@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -635,6 +636,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 			if err := s.saveImageV2(imgV2); err != nil {
 				return nil, err
 			}
+			s.invalidateImageCacheOnSensors([]*central.InvalidateImageCache_ImageKey{
+				{
+					ImageId:       imgV2.GetDigest(),
+					ImageIdV2:     imgV2.GetId(),
+					ImageFullName: imgV2.GetName().GetFullName(),
+				},
+			})
 		}
 		if !request.GetIncludeSnoozed() {
 			utils.FilterSuppressedCVEsNoCloneV2(imgV2)
@@ -666,6 +674,12 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		if err := s.saveImage(img); err != nil {
 			return nil, err
 		}
+		s.invalidateImageCacheOnSensors([]*central.InvalidateImageCache_ImageKey{
+			{
+				ImageId:       img.GetId(),
+				ImageFullName: img.GetName().GetFullName(),
+			},
+		})
 	}
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
@@ -1445,4 +1459,32 @@ func (s *serviceImpl) GetWatchedImages(ctx context.Context, _ *v1.Empty) (*v1.Ge
 		return nil, err
 	}
 	return &v1.GetWatchedImagesResponse{WatchedImages: watchedImgs}, nil
+}
+
+// invalidateImageCacheOnSensors sends targeted image cache invalidation to
+// secured clusters that advertise TargetedImageCacheInvalidation. Old
+// sensors are skipped — otherwise they would trigger a full admission
+// controller cache purge for any InvalidateImageCache message.
+func (s *serviceImpl) invalidateImageCacheOnSensors(keys []*central.InvalidateImageCache_ImageKey) {
+	if len(keys) == 0 {
+		return
+	}
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_InvalidateImageCache{
+			InvalidateImageCache: &central.InvalidateImageCache{
+				ImageKeys: keys,
+			},
+		},
+	}
+	for _, conn := range s.connManager.GetActiveConnections() {
+		if !conn.HasCapability(centralsensor.TargetedImageCacheInvalidation) {
+			continue
+		}
+		if err := conn.InjectMessage(concurrency.Never(), msg); err != nil {
+			log.Errorw("Failed to send image cache invalidation",
+				logging.String("cluster", conn.ClusterID()),
+				logging.Err(err),
+			)
+		}
+	}
 }
