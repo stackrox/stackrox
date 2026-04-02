@@ -378,7 +378,7 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 				suite.mockDatastore.EXPECT().UpdateConfiguration(gomock.Any(), "test-id", gomock.Any()).Return(nil, repository.ErrScanInProgress)
 			},
 			expectedError: true,
-			errorContains: "scanning is already in progress",
+			errorContains: "is currently being scanned and cannot be changed",
 			errorIs:       errox.ResourceExhausted,
 		},
 		{
