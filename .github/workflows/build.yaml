@@ -216,12 +216,8 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+    # Native runners for amd64/arm64; cross-compile s390x/ppc64le from amd64.
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -274,12 +270,11 @@ jobs:
 
       - name: Build Go Binaries
         run: |
-          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
-          else
-            echo "Building amd binary"
+          # Use CGO for native builds (amd64, arm64); disable for cross-compiled arches.
+          if [[ "${{ matrix.arch }}" == "amd64" || "${{ matrix.arch }}" == "arm64" ]]; then
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+          else
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
           fi
 
       - name: Bundle the build to preserve permissions
@@ -416,7 +411,8 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   build-and-push-main:
-    runs-on: ubuntu-latest
+    # Native runners avoid QEMU emulation overhead (~2x slower for docker buildx).
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -743,7 +739,7 @@ jobs:
         message-path: build-comment.md
 
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
