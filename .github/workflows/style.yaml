@@ -367,13 +367,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
-    - name: Install latest Go patch
+    - name: Install latest stable Go
       uses: actions/setup-go@v6
       with:
-        go-version: '1.25'
+        go-version: stable
         cache: false
 
-    - name: Check go.mod matches latest patch
+    - name: Check go.mod matches latest Go
       run: |
         current=$(grep '^go ' go.mod | awk '{print $2}')
         latest=$(go version | awk '{print $3}' | sed 's/^go//')
