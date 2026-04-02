@@ -11,6 +11,7 @@ import (
 	repoStore "github.com/stackrox/rox/central/baseimage/store/repository/postgres"
 	tagStore "github.com/stackrox/rox/central/baseimage/store/tag/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -33,7 +34,7 @@ func TestTagDataStoreIntegration(t *testing.T) {
 func (s *TagDataStoreIntegrationSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	s.dataStore = New(tagStore.New(s.testDB.DB))
-	s.repoDS = repoDS.New(repoStore.New(s.testDB.DB))
+	s.repoDS = repoDS.New(repoStore.New(s.testDB.DB), concurrency.NewKeyFence())
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 

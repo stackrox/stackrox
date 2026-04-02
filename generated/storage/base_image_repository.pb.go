@@ -22,6 +22,62 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Asynchronous lifecycle state of this repository resource.
+type BaseImageRepository_Status int32
+
+const (
+	BaseImageRepository_CREATED     BaseImageRepository_Status = 0
+	BaseImageRepository_QUEUED      BaseImageRepository_Status = 1
+	BaseImageRepository_IN_PROGRESS BaseImageRepository_Status = 2
+	BaseImageRepository_READY       BaseImageRepository_Status = 3
+	BaseImageRepository_FAILED      BaseImageRepository_Status = 4
+)
+
+// Enum value maps for BaseImageRepository_Status.
+var (
+	BaseImageRepository_Status_name = map[int32]string{
+		0: "CREATED",
+		1: "QUEUED",
+		2: "IN_PROGRESS",
+		3: "READY",
+		4: "FAILED",
+	}
+	BaseImageRepository_Status_value = map[string]int32{
+		"CREATED":     0,
+		"QUEUED":      1,
+		"IN_PROGRESS": 2,
+		"READY":       3,
+		"FAILED":      4,
+	}
+)
+
+func (x BaseImageRepository_Status) Enum() *BaseImageRepository_Status {
+	p := new(BaseImageRepository_Status)
+	*p = x
+	return p
+}
+
+func (x BaseImageRepository_Status) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BaseImageRepository_Status) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_base_image_repository_proto_enumTypes[0].Descriptor()
+}
+
+func (BaseImageRepository_Status) Type() protoreflect.EnumType {
+	return &file_storage_base_image_repository_proto_enumTypes[0]
+}
+
+func (x BaseImageRepository_Status) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BaseImageRepository_Status.Descriptor instead.
+func (BaseImageRepository_Status) EnumDescriptor() ([]byte, []int) {
+	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{0, 0}
+}
+
 // Health status of this repository pattern.
 type BaseImageRepository_HealthStatus int32
 
@@ -56,11 +112,11 @@ func (x BaseImageRepository_HealthStatus) String() string {
 }
 
 func (BaseImageRepository_HealthStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_base_image_repository_proto_enumTypes[0].Descriptor()
+	return file_storage_base_image_repository_proto_enumTypes[1].Descriptor()
 }
 
 func (BaseImageRepository_HealthStatus) Type() protoreflect.EnumType {
-	return &file_storage_base_image_repository_proto_enumTypes[0]
+	return &file_storage_base_image_repository_proto_enumTypes[1]
 }
 
 func (x BaseImageRepository_HealthStatus) Number() protoreflect.EnumNumber {
@@ -69,12 +125,12 @@ func (x BaseImageRepository_HealthStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BaseImageRepository_HealthStatus.Descriptor instead.
 func (BaseImageRepository_HealthStatus) EnumDescriptor() ([]byte, []int) {
-	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{0, 0}
+	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{0, 1}
 }
 
 // BaseImageRepository configures automatic tag discovery for a base image repository.
 // Defines which repository to watch, what tag patterns to match, and health tracking.
-// Next tag: 9
+// Next tag: 12
 type BaseImageRepository struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique identifier for this repository pattern configuration.
@@ -83,8 +139,9 @@ type BaseImageRepository struct {
 	// Must be unique - one tag pattern per repository.
 	RepositoryPath string `protobuf:"bytes,2,opt,name=repository_path,json=repositoryPath,proto3" json:"repository_path,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	// Glob pattern for tag filtering (e.g., "8.10-*").
-	TagPattern string `protobuf:"bytes,3,opt,name=tag_pattern,json=tagPattern,proto3" json:"tag_pattern,omitempty"`
-	// Timestamp of last update (successful poll or configuration change).
+	TagPattern string                     `protobuf:"bytes,3,opt,name=tag_pattern,json=tagPattern,proto3" json:"tag_pattern,omitempty"`
+	Status     BaseImageRepository_Status `protobuf:"varint,10,opt,name=status,proto3,enum=storage.BaseImageRepository_Status" json:"status,omitempty"`
+	// Timestamp of last configuration update.
 	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Count of consecutive poll failures (for health tracking).
 	FailureCount int32                            `protobuf:"varint,5,opt,name=failure_count,json=failureCount,proto3" json:"failure_count,omitempty"`
@@ -93,9 +150,14 @@ type BaseImageRepository struct {
 	// (when pattern changes, hash differs, triggering cache flush).
 	PatternHash string `protobuf:"bytes,7,opt,name=pattern_hash,json=patternHash,proto3" json:"pattern_hash,omitempty"`
 	// User who created the base image repository.
-	CreatedBy     *SlimUser `protobuf:"bytes,8,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"` // @gotags: sql:"ignore_labels(User ID)
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CreatedBy *SlimUser `protobuf:"bytes,8,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"` // @gotags: sql:"ignore_labels(User ID)
+	// Timestamp of last attempted poll by the watcher.
+	// NULL means never polled (eligible immediately on next scheduler pass).
+	LastPolledAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_polled_at,json=lastPolledAt,proto3" json:"last_polled_at,omitempty"`
+	// Last polling failure message.
+	LastFailureMessage string `protobuf:"bytes,11,opt,name=last_failure_message,json=lastFailureMessage,proto3" json:"last_failure_message,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *BaseImageRepository) Reset() {
@@ -149,6 +211,13 @@ func (x *BaseImageRepository) GetTagPattern() string {
 	return ""
 }
 
+func (x *BaseImageRepository) GetStatus() BaseImageRepository_Status {
+	if x != nil {
+		return x.Status
+	}
+	return BaseImageRepository_CREATED
+}
+
 func (x *BaseImageRepository) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
@@ -182,6 +251,20 @@ func (x *BaseImageRepository) GetCreatedBy() *SlimUser {
 		return x.CreatedBy
 	}
 	return nil
+}
+
+func (x *BaseImageRepository) GetLastPolledAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastPolledAt
+	}
+	return nil
+}
+
+func (x *BaseImageRepository) GetLastFailureMessage() string {
+	if x != nil {
+		return x.LastFailureMessage
+	}
+	return ""
 }
 
 // BaseImageTag stores cached base image tag metadata.
@@ -303,19 +386,31 @@ var File_storage_base_image_repository_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\n" +
-	"#storage/base_image_repository.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xae\x03\n" +
+	"#storage/base_image_repository.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xaa\x05\n" +
 	"\x13BaseImageRepository\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0frepository_path\x18\x02 \x01(\tR\x0erepositoryPath\x12\x1f\n" +
 	"\vtag_pattern\x18\x03 \x01(\tR\n" +
-	"tagPattern\x129\n" +
+	"tagPattern\x12;\n" +
+	"\x06status\x18\n" +
+	" \x01(\x0e2#.storage.BaseImageRepository.StatusR\x06status\x129\n" +
 	"\n" +
 	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12#\n" +
 	"\rfailure_count\x18\x05 \x01(\x05R\ffailureCount\x12N\n" +
 	"\rhealth_status\x18\x06 \x01(\x0e2).storage.BaseImageRepository.HealthStatusR\fhealthStatus\x12!\n" +
 	"\fpattern_hash\x18\a \x01(\tR\vpatternHash\x120\n" +
 	"\n" +
-	"created_by\x18\b \x01(\v2\x11.storage.SlimUserR\tcreatedBy\"8\n" +
+	"created_by\x18\b \x01(\v2\x11.storage.SlimUserR\tcreatedBy\x12@\n" +
+	"\x0elast_polled_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\flastPolledAt\x120\n" +
+	"\x14last_failure_message\x18\v \x01(\tR\x12lastFailureMessage\"I\n" +
+	"\x06Status\x12\v\n" +
+	"\aCREATED\x10\x00\x12\n" +
+	"\n" +
+	"\x06QUEUED\x10\x01\x12\x0f\n" +
+	"\vIN_PROGRESS\x10\x02\x12\t\n" +
+	"\x05READY\x10\x03\x12\n" +
+	"\n" +
+	"\x06FAILED\x10\x04\"8\n" +
 	"\fHealthStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\f\n" +
@@ -346,27 +441,30 @@ func file_storage_base_image_repository_proto_rawDescGZIP() []byte {
 	return file_storage_base_image_repository_proto_rawDescData
 }
 
-var file_storage_base_image_repository_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_storage_base_image_repository_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_base_image_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_base_image_repository_proto_goTypes = []any{
-	(BaseImageRepository_HealthStatus)(0), // 0: storage.BaseImageRepository.HealthStatus
-	(*BaseImageRepository)(nil),           // 1: storage.BaseImageRepository
-	(*BaseImageTag)(nil),                  // 2: storage.BaseImageTag
-	nil,                                   // 3: storage.BaseImageTag.ListDigestsEntry
-	(*timestamppb.Timestamp)(nil),         // 4: google.protobuf.Timestamp
-	(*SlimUser)(nil),                      // 5: storage.SlimUser
+	(BaseImageRepository_Status)(0),       // 0: storage.BaseImageRepository.Status
+	(BaseImageRepository_HealthStatus)(0), // 1: storage.BaseImageRepository.HealthStatus
+	(*BaseImageRepository)(nil),           // 2: storage.BaseImageRepository
+	(*BaseImageTag)(nil),                  // 3: storage.BaseImageTag
+	nil,                                   // 4: storage.BaseImageTag.ListDigestsEntry
+	(*timestamppb.Timestamp)(nil),         // 5: google.protobuf.Timestamp
+	(*SlimUser)(nil),                      // 6: storage.SlimUser
 }
 var file_storage_base_image_repository_proto_depIdxs = []int32{
-	4, // 0: storage.BaseImageRepository.updated_at:type_name -> google.protobuf.Timestamp
-	0, // 1: storage.BaseImageRepository.health_status:type_name -> storage.BaseImageRepository.HealthStatus
-	5, // 2: storage.BaseImageRepository.created_by:type_name -> storage.SlimUser
-	4, // 3: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
-	3, // 4: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0, // 0: storage.BaseImageRepository.status:type_name -> storage.BaseImageRepository.Status
+	5, // 1: storage.BaseImageRepository.updated_at:type_name -> google.protobuf.Timestamp
+	1, // 2: storage.BaseImageRepository.health_status:type_name -> storage.BaseImageRepository.HealthStatus
+	6, // 3: storage.BaseImageRepository.created_by:type_name -> storage.SlimUser
+	5, // 4: storage.BaseImageRepository.last_polled_at:type_name -> google.protobuf.Timestamp
+	5, // 5: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
+	4, // 6: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_storage_base_image_repository_proto_init() }
@@ -380,7 +478,7 @@ func file_storage_base_image_repository_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_base_image_repository_proto_rawDesc), len(file_storage_base_image_repository_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
