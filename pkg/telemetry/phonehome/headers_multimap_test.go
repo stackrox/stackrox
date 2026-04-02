@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 )
@@ -45,13 +46,78 @@ func TestKeyCase(t *testing.T) {
 	})
 }
 
-func TestGetFirst(t *testing.T) {
-	h := make(http.Header)
-	h.Add("key", "value1")
-	h.Add("key", "value2")
-	assert.Equal(t, []string{"value1", "value2"}, h.Values("key"))
-
-	assert.Equal(t, "value1", GetFirst(Headers(h).Get, "key"))
-	assert.Equal(t, "", GetFirst(Headers(h).Get, "nokey"))
-	assert.Equal(t, "", GetFirst(nil, "nokey"))
+func TestGetMatching(t *testing.T) {
+	cases := map[string]struct {
+		headers  http.Header
+		key      string
+		pattern  glob.Pattern
+		expected []string
+	}{
+		"nil": {
+			headers:  nil,
+			key:      "Missing",
+			pattern:  NoHeaderOrAnyValue,
+			expected: nil,
+		},
+		"absent key returns nil regardless of pattern": {
+			headers:  http.Header{},
+			key:      "Missing",
+			pattern:  NoHeaderOrAnyValue,
+			expected: nil,
+		},
+		"key with no values, matching pattern returns empty slice": {
+			headers:  http.Header{"Key": {}},
+			key:      "Key",
+			pattern:  NoHeaderOrAnyValue,
+			expected: []string{},
+		},
+		"key with no values, non-matching pattern returns nil": {
+			headers:  http.Header{"Key": {}},
+			key:      "Key",
+			pattern:  "specific",
+			expected: nil,
+		},
+		"single value matches pattern": {
+			headers:  http.Header{"Key": {"val1"}},
+			key:      "Key",
+			pattern:  "val*",
+			expected: []string{"val1"},
+		},
+		"single value does not match pattern": {
+			headers:  http.Header{"Key": {"val1"}},
+			key:      "Key",
+			pattern:  "other*",
+			expected: nil,
+		},
+		"multiple values, all match NoHeaderOrAnyValue": {
+			headers:  http.Header{"Key": {"a", "b", "c"}},
+			key:      "Key",
+			pattern:  NoHeaderOrAnyValue,
+			expected: []string{"a", "b", "c"},
+		},
+		"multiple values, pattern filters subset": {
+			headers:  http.Header{"Key": {"alpha", "beta", "almond"}},
+			key:      "Key",
+			pattern:  "al*",
+			expected: []string{"alpha", "almond"},
+		},
+		"multiple values, none match": {
+			headers:  http.Header{"Key": {"alpha", "beta"}},
+			key:      "Key",
+			pattern:  "z*",
+			expected: nil,
+		},
+		"key lookup is case-insensitive": {
+			headers:  http.Header{"Content-Type": {"text/html"}},
+			key:      "content-type",
+			pattern:  "text/*",
+			expected: []string{"text/html"},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := Headers(tc.headers).GetMatching(tc.key, tc.pattern)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }

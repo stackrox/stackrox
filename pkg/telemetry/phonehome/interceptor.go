@@ -60,23 +60,23 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		if ri.HTTPRequest.URL != nil {
 			path = ri.HTTPRequest.URL.Path
 		}
-		// This is either the gRPC client or the grpc-gateway user agent:
+		// Override the User-Agent with the gRPC client or the grpc-gateway user
+		// agent.
 		grpcClientAgent := ri.Metadata.Get(userAgentHeaderKey)
 		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentHeaderKey); clientAgent != "" {
 			grpcClientAgent = append(grpcClientAgent, clientAgent)
 		}
+		header := Headers(ri.HTTPRequest.Headers)
+		// The request has already been processed (we've got the result), so the
+		// headers are ok to modify to avoid cloning.
+		header.Set(userAgentHeaderKey, grpcClientAgent...)
 		return &RequestParams{
 			UserID:  id,
 			Method:  ri.HTTPRequest.Method,
 			Path:    path,
 			Code:    grpcError.ErrToHTTPStatus(err),
 			GRPCReq: req,
-			Headers: func(key string) []string {
-				if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
-					return grpcClientAgent
-				}
-				return Headers(ri.HTTPRequest.Headers).Get(key)
-			},
+			Headers: header,
 		}
 	}
 
@@ -86,7 +86,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		Path:    grpcFullMethod,
 		Code:    int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq: req,
-		Headers: ri.Metadata.Get,
+		Headers: NewHeaders(ri.Metadata),
 	}
 }
 
@@ -102,6 +102,6 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 		Path:    r.URL.Path,
 		Code:    status,
 		HTTPReq: r,
-		Headers: Headers(r.Header).Get,
+		Headers: Headers(r.Header),
 	}
 }
