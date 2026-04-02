@@ -7,6 +7,7 @@ import (
 	"time"
 
 	baseImageDSMocks "github.com/stackrox/rox/central/baseimage/datastore/mocks"
+	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	repoDSMocks "github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	tagDSMocks "github.com/stackrox/rox/central/baseimage/datastore/tag/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,6 +20,7 @@ import (
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	registryTypesMocks "github.com/stackrox/rox/pkg/registries/types/mocks"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -54,26 +56,29 @@ func createTestWatcher(
 	mockTagDS.EXPECT().ListTagsByRepository(gomock.Any(), gomock.Any()).Return([]*storage.BaseImageTag{}, nil).AnyTimes()
 	mockTagDS.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	return New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, poll, 10, 0, delegationEnabled)
+	// Allow repository status updates (for new scheduling architecture).
+	mockRepoDS.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+
+	return New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, poll, 10*time.Millisecond, 10, 0, delegationEnabled)
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
 
-	// Polls immediately on start + 1 timed poll after 100ms (with 150ms sleep)
+	// Scheduler runs on cadence tick, number of calls depends on timing.
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{}, nil).
-		Times(2)
+		AnyTimes()
 
 	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond, false)
 
 	// Start watcher
 	w.Start()
 
-	// Let it run briefly (should trigger 2 polls: immediate + 1 timed)
-	time.Sleep(150 * time.Millisecond)
+	// Let it run briefly
+	time.Sleep(50 * time.Millisecond)
 
 	// Stop should complete quickly
 	done := make(chan struct{})
@@ -90,31 +95,34 @@ func TestWatcher_StartsAndStops(t *testing.T) {
 	}
 }
 
-func TestWatcher_PollsImmediately(t *testing.T) {
+func TestWatcher_PollsOnFirstSchedulerTick(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
 
-	pollCalled := make(chan struct{})
+	pollCalled := make(chan struct{}, 1)
 
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		DoAndReturn(func(ctx context.Context) ([]*storage.BaseImageRepository, error) {
-			close(pollCalled)
+			select {
+			case pollCalled <- struct{}{}:
+			default:
+			}
 			return []*storage.BaseImageRepository{}, nil
 		}).
-		Times(1)
+		AnyTimes()
 
 	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour, false)
 
 	w.Start()
 	defer w.Stop()
 
-	// Verify immediate poll happened
+	// Verify poll happened on first scheduler tick (10ms cadence in test)
 	select {
 	case <-pollCalled:
 		// Success
 	case <-time.After(1 * time.Second):
-		t.Fatal("Watcher did not poll immediately on start")
+		t.Fatal("Watcher did not poll on first scheduler tick")
 	}
 }
 
@@ -135,6 +143,14 @@ func TestWatcher_ProcessesMultipleRepositories(t *testing.T) {
 		ListRepositories(gomock.Any()).
 		Return(repos, nil).
 		Times(1)
+
+	// Each repository is claimed for polling (UpdateStatus with OnlyIfStatus).
+	for _, repo := range repos {
+		mockRepoDS.EXPECT().
+			UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+			Return(repo, nil).
+			MinTimes(1)
+	}
 
 	// Each repository will be processed: 3 delegation checks
 	mockDelegator.EXPECT().
@@ -159,7 +175,7 @@ func TestWatcher_ProcessesMultipleRepositories(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -175,7 +191,7 @@ func TestWatcher_HandlesDatastoreError(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour, false)
 
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -183,11 +199,11 @@ func TestWatcher_StartIsIdempotent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
 
-	// Polls immediately + 1 timed poll after 100ms (with 150ms sleep)
+	// Scheduler runs on cadence tick, number of calls depends on timing.
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{}, nil).
-		Times(2)
+		AnyTimes()
 
 	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond, false)
 
@@ -196,7 +212,7 @@ func TestWatcher_StartIsIdempotent(t *testing.T) {
 	w.Start()
 	w.Start()
 
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 
 	// Should stop cleanly
 	w.Stop()
@@ -206,16 +222,16 @@ func TestWatcher_StopIsIdempotent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
 
-	// Polls immediately + 1 timed poll after 100ms (with 150ms sleep)
+	// Scheduler runs on cadence tick, number of calls depends on timing.
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{}, nil).
-		Times(2)
+		AnyTimes()
 
 	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond, false)
 
 	w.Start()
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 
 	// Call Stop multiple times (only first should take effect)
 	w.Stop()
@@ -232,13 +248,17 @@ func TestWatcher_StopsGracefullyDuringPoll(t *testing.T) {
 
 	// Block during ListRepositories
 	blockCh := make(chan struct{})
+	callCount := 0
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		DoAndReturn(func(ctx context.Context) ([]*storage.BaseImageRepository, error) {
-			<-blockCh
+			callCount++
+			if callCount == 1 {
+				<-blockCh
+			}
 			return []*storage.BaseImageRepository{}, nil
 		}).
-		Times(1)
+		AnyTimes()
 
 	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour, false)
 
@@ -286,6 +306,11 @@ func TestWatcher_AccessesAllProtoFields(t *testing.T) {
 		Return([]*storage.BaseImageRepository{repo}, nil).
 		Times(1)
 
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		Times(1)
+
 	// One delegation check for the repository
 	mockDelegator.EXPECT().
 		GetDelegateClusterID(gomock.Any(), gomock.Any()).
@@ -309,7 +334,7 @@ func TestWatcher_AccessesAllProtoFields(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Should not panic when accessing proto fields
-	w.(*watcherImpl).pollOnce()
+	w.(*watcherImpl).schedulerPass()
 
 	// Verify fields are accessible
 	require.NotNil(t, repo)
@@ -338,6 +363,11 @@ func TestWatcher_DelegationError(t *testing.T) {
 		Return([]*storage.BaseImageRepository{repo}, nil).
 		Times(1)
 
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		Times(1)
+
 	// Delegation check returns error - should continue with Central-based processing
 	mockDelegator.EXPECT().
 		GetDelegateClusterID(gomock.Any(), gomock.Any()).
@@ -362,7 +392,7 @@ func TestWatcher_DelegationError(t *testing.T) {
 
 	// Should not panic on delegation error
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -381,6 +411,11 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	// Fetch existing tags from cache
@@ -402,7 +437,7 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 
 	// Should not panic when delegation is required
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -423,6 +458,11 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -454,7 +494,7 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 
 	// Should not panic when no matching registry found
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -475,6 +515,11 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -510,7 +555,7 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 
 	// Should not panic on tag listing error
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -531,6 +576,11 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -585,7 +635,7 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 
 	// Should complete successfully
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -602,16 +652,22 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 		TagPattern:     "*",
 	}
 
+	// Scheduler may call ListRepositories multiple times based on timing.
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
-		Times(1)
+		AnyTimes()
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		AnyTimes()
 
 	// Fetch existing tags from cache (happens before delegation check)
 	mockTagDS.EXPECT().
 		ListTagsByRepository(gomock.Any(), gomock.Any()).
 		Return([]*storage.BaseImageTag{}, nil).
-		Times(1)
+		AnyTimes()
 
 	// Block on GetDelegateClusterID until context is cancelled
 	mockDelegator.EXPECT().
@@ -620,13 +676,13 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 			<-ctx.Done()
 			return "", false, ctx.Err()
 		}).
-		Times(1)
+		AnyTimes()
 
 	// After delegation error, processing continues and scanner calls GetAllUnique
 	mockRegistrySet.EXPECT().
 		GetAllUnique().
 		Return(nil).
-		Times(1)
+		AnyTimes()
 
 	// No tags stored (no matching registry), so no UpsertMany/DeleteMany calls expected
 
@@ -699,6 +755,11 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -777,7 +838,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 
 	// Execute poll
 	require.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -818,6 +879,11 @@ func TestWatcher_IncrementalUpdate_SkipTagsWithLargeCache(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -878,7 +944,7 @@ func TestWatcher_IncrementalUpdate_SkipTagsWithLargeCache(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	require.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -901,6 +967,11 @@ func TestWatcher_TagBatch_FlushAfterScan(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -970,7 +1041,7 @@ func TestWatcher_TagBatch_FlushAfterScan(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	require.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 
 	require.True(t, upsertCalled, "UpsertMany should have been called during Flush")
@@ -1021,6 +1092,11 @@ func TestWatcher_TagBatch_DeleteEvent(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	mockDelegator.EXPECT().
@@ -1088,7 +1164,7 @@ func TestWatcher_TagBatch_DeleteEvent(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	require.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 
 	require.True(t, deleteCalled, "DeleteMany should have been called for deleted tag")
@@ -1386,6 +1462,11 @@ func TestWatcher_DelegatedFeatureFlag_Disabled(t *testing.T) {
 		Return([]*storage.BaseImageRepository{repo}, nil).
 		Times(1)
 
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		Times(1)
+
 	// GetDelegateClusterID should NOT be called when delegation is disabled.
 	// If it were called, this test would fail due to missing expectation.
 
@@ -1404,7 +1485,7 @@ func TestWatcher_DelegatedFeatureFlag_Disabled(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, false)
 
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
 }
 
@@ -1425,6 +1506,11 @@ func TestWatcher_DelegatedFeatureFlag_Enabled(t *testing.T) {
 	mockRepoDS.EXPECT().
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
 		Times(1)
 
 	// GetDelegateClusterID should be called when feature is enabled.
@@ -1448,6 +1534,297 @@ func TestWatcher_DelegatedFeatureFlag_Enabled(t *testing.T) {
 	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	assert.NotPanics(t, func() {
-		w.(*watcherImpl).pollOnce()
+		w.(*watcherImpl).schedulerPass()
 	})
+}
+
+func TestIsRepositoryDue(t *testing.T) {
+	now := time.Now()
+	fiveHoursAgo := now.Add(-5 * time.Hour)
+	threeHoursAgo := now.Add(-3 * time.Hour)
+	pollInterval := 4 * time.Hour
+
+	cases := []struct {
+		name         string
+		status       storage.BaseImageRepository_Status
+		lastPolledAt *time.Time
+		expected     bool
+	}{
+		{"CREATED always due", storage.BaseImageRepository_CREATED, nil, true},
+		{"QUEUED always due", storage.BaseImageRepository_QUEUED, nil, true},
+		{"IN_PROGRESS always due", storage.BaseImageRepository_IN_PROGRESS, nil, true},
+		{"READY nil lastPolled due", storage.BaseImageRepository_READY, nil, true},
+		{"READY recently polled not due", storage.BaseImageRepository_READY, &now, false},
+		{"READY within interval not due", storage.BaseImageRepository_READY, &threeHoursAgo, false},
+		{"READY interval elapsed due", storage.BaseImageRepository_READY, &fiveHoursAgo, true},
+		{"FAILED nil lastPolled due", storage.BaseImageRepository_FAILED, nil, true},
+		{"FAILED recently polled not due", storage.BaseImageRepository_FAILED, &now, false},
+		{"FAILED within interval not due", storage.BaseImageRepository_FAILED, &threeHoursAgo, false},
+		{"FAILED interval elapsed due", storage.BaseImageRepository_FAILED, &fiveHoursAgo, true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &storage.BaseImageRepository{
+				Id:           uuid.NewV4().String(),
+				Status:       tc.status,
+				LastPolledAt: protocompat.ConvertTimeToTimestampOrNil(tc.lastPolledAt),
+			}
+			assert.Equal(t, tc.expected, isRepositoryDue(repo, pollInterval))
+		})
+	}
+}
+
+func TestWatcher_ScanFailure_SetsFailedStatus(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+
+	repo := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-0000000000ff",
+		RepositoryPath: "docker.io/library/nginx",
+		TagPattern:     "*",
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	// First UpdateStatus: claiming (QUEUED).
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		Times(1)
+
+	// Second UpdateStatus: IN_PROGRESS.
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		Times(1)
+
+	// Third UpdateStatus: FAILED with failure message.
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, id string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			assert.Equal(t, storage.BaseImageRepository_FAILED, update.Status)
+			assert.Equal(t, repoDS.FailureCountIncrement, update.FailureCountOp)
+			assert.NotNil(t, update.LastFailureMessage)
+			assert.Contains(t, *update.LastFailureMessage, "failed to list tags")
+			return repo, nil
+		}).
+		Times(1)
+
+	// Delegation check (happens before tag list).
+	mockDelegator.EXPECT().
+		GetDelegateClusterID(gomock.Any(), gomock.Any()).
+		Return("", false, nil).
+		Times(1)
+
+	// ListTagsByRepository fails, causing doScan to return error.
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("database connection failed")).
+		Times(1)
+
+	w := New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, 1*time.Hour, 10*time.Millisecond, 10, 10, true)
+
+	assert.NotPanics(t, func() {
+		w.(*watcherImpl).schedulerPass()
+	})
+}
+
+func TestWatcher_SchedulerCadence_SkipsNotDueRepos(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+
+	// Repository was polled recently, not due for rescan.
+	repo := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-0000000000ff",
+		RepositoryPath: "docker.io/library/nginx",
+		TagPattern:     "*",
+		Status:         storage.BaseImageRepository_READY,
+		LastPolledAt:   protocompat.TimestampNow(),
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	// UpdateStatus should NOT be called because repo is not due.
+	// No expectation set = test fails if called.
+
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 4*time.Hour, false)
+
+	claimed, err := w.(*watcherImpl).doSchedulerPass()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, claimed, "should not claim repos that are not due")
+}
+
+func TestWatcher_RegistryError_SetsFailedStatus(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
+
+	repo := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-0000000000ff",
+		RepositoryPath: "docker.io/library/nginx",
+		TagPattern:     "*",
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	// First UpdateStatus: claiming (QUEUED).
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			assert.Equal(t, storage.BaseImageRepository_QUEUED, update.Status)
+			return repo, nil
+		}).
+		Times(1)
+
+	// Second UpdateStatus: IN_PROGRESS.
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			assert.Equal(t, storage.BaseImageRepository_IN_PROGRESS, update.Status)
+			return repo, nil
+		}).
+		Times(1)
+
+	// Third UpdateStatus: FAILED with registry error message.
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			assert.Equal(t, storage.BaseImageRepository_FAILED, update.Status)
+			assert.Equal(t, repoDS.FailureCountIncrement, update.FailureCountOp)
+			require.NotNil(t, update.LastFailureMessage)
+			assert.Contains(t, *update.LastFailureMessage, "registry connection failed")
+			return repo, nil
+		}).
+		Times(1)
+
+	mockDelegator.EXPECT().
+		GetDelegateClusterID(gomock.Any(), gomock.Any()).
+		Return("", false, nil).
+		Times(1)
+
+	// Fetch existing tags from cache (for incremental scan).
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), gomock.Any()).
+		Return([]*storage.BaseImageTag{}, nil).
+		Times(1)
+
+	// Registry matches but ListTags fails with registry error.
+	mockRegistry.EXPECT().
+		Match(gomock.Any()).
+		Return(true).
+		Times(1)
+
+	mockRegistry.EXPECT().
+		ListTags(gomock.Any(), gomock.Any()).
+		Return(nil, errox.InvariantViolation.New("registry connection failed")).
+		Times(1)
+
+	mockRegistrySet.EXPECT().
+		GetAllUnique().
+		Return([]types.ImageRegistry{mockRegistry}).
+		Times(1)
+
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
+
+	assert.NotPanics(t, func() {
+		w.(*watcherImpl).schedulerPass()
+	})
+}
+
+func TestWatcher_LastPolledAt_SetAtScanCompletion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
+
+	repo := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-0000000000ff",
+		RepositoryPath: "docker.io/library/nginx",
+		TagPattern:     "*",
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	// First UpdateStatus: claiming (QUEUED).
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		Return(repo, nil).
+		Times(1)
+
+	// Capture time before IN_PROGRESS transition.
+	var inProgressTime time.Time
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			assert.Equal(t, storage.BaseImageRepository_IN_PROGRESS, update.Status)
+			inProgressTime = time.Now()
+			return repo, nil
+		}).
+		Times(1)
+
+	// Final UpdateStatus: READY with LastPolledAt.
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), repo.GetId(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			assert.Equal(t, storage.BaseImageRepository_READY, update.Status)
+			require.NotNil(t, update.LastPolledAt)
+			// LastPolledAt should be AFTER inProgressTime (set at scan completion, not start).
+			assert.True(t, update.LastPolledAt.After(inProgressTime) || update.LastPolledAt.Equal(inProgressTime),
+				"LastPolledAt should be >= inProgressTime (set at completion, not start)")
+			return repo, nil
+		}).
+		Times(1)
+
+	mockDelegator.EXPECT().
+		GetDelegateClusterID(gomock.Any(), gomock.Any()).
+		Return("", false, nil).
+		Times(1)
+
+	// Empty tags from cache.
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), gomock.Any()).
+		Return([]*storage.BaseImageTag{}, nil).
+		AnyTimes()
+
+	// Registry matches, returns empty tags (fast scan).
+	mockRegistry.EXPECT().
+		Match(gomock.Any()).
+		Return(true).
+		Times(1)
+
+	mockRegistry.EXPECT().
+		ListTags(gomock.Any(), gomock.Any()).
+		Return([]string{}, nil).
+		Times(1)
+
+	mockRegistrySet.EXPECT().
+		GetAllUnique().
+		Return([]types.ImageRegistry{mockRegistry}).
+		Times(1)
+
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
+
+	w.(*watcherImpl).schedulerPass()
 }
