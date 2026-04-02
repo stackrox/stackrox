@@ -94,7 +94,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.498
+	github.com/openshift-online/ocm-sdk-go v0.1.499
 	github.com/openshift/api v0.0.0-20260317165824-54a3998d81eb
 	github.com/openshift/client-go v0.0.0-20260317180604-743f664b82d1
 	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
@@ -366,7 +366,6 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgtype v1.14.4 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20230811132847-661be99b8267 // indirect
