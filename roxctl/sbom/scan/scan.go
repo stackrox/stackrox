@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,6 +30,8 @@ const (
 
 var (
 	validSeverities = scan.AllSeverities()
+
+	errInvalidSBOM = errox.InvalidArgs.New("invalid or unsupported SBOM")
 )
 
 // Command detects vulnerabilities from SBOM contents.
@@ -68,10 +71,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&sbomScanCmd.sbomFilePath, "file", "", "", "SBOM file to scan. Must be SPDX 2.3 JSON.")
-	c.Flags().StringVarP(&sbomScanCmd.contentType, "content-type", "", "", "Set the content-type for the SBOM file, if unset will be auto-detected.")
+	c.Flags().StringVar(&sbomScanCmd.sbomFilePath, "file", "", "SBOM file to scan. Must be SPDX 2.3 JSON.")
+	c.Flags().StringVar(&sbomScanCmd.contentType, "content-type", "", "Set the content-type for the SBOM file, if unset will be auto-detected.")
 	c.Flags().StringSliceVar(&sbomScanCmd.severities, "severity", validSeverities, "List of severities to include in the output. Use this to filter for specific severities.")
-	c.Flags().BoolVarP(&sbomScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
+	c.Flags().BoolVar(&sbomScanCmd.failOnFinding, "fail", false, "Fail if vulnerabilities have been found.")
 
 	utils.Must(c.MarkFlagRequired("file"))
 
@@ -193,52 +196,50 @@ func (s *sbomScanCommand) ScanSBOM() error {
 	return s.printSBOMScanResults(resp.Body)
 }
 
-// guessMediaType will attempt to guess the media type of the SBOM file based on the first
-// 4KB bytes. If it is unable to guess will return an error.
+// guessMediaType will attempt to guess the media type of the SBOM file.
+// If it is unable to guess will return an error.
 //
-// The backend currently requires SPDX 2.3 JSON, which when detected will return
-// media type `text/spdx+json`.
+// At this time only SPDX 2.3 JSON documents are supported.
 func guessMediaType(sbomFile *os.File) (string, error) {
-	// Read 4KB of the file, should be enough to detect the SPDX metadata.
-	buf := make([]byte, 4096)
-	n, err := sbomFile.Read(buf)
-	if err != nil && err != io.EOF {
-		return "", errors.Wrap(err, "reading SBOM file")
-	}
-
-	// Reset file pointer to beginning so the file can be read again.
-	if _, err := sbomFile.Seek(0, 0); err != nil {
-		return "", errors.Wrap(err, "resetting file position")
-	}
-
-	content := string(buf[:n])
-
-	// Skip UTF-8 BOM if present (0xEF, 0xBB, 0xBF).
-	content = strings.TrimPrefix(content, "\xEF\xBB\xBF")
-
-	// Quick check if content looks like JSON by checking if it starts with { or [.
-	trimmed := strings.TrimLeft(content, " \t\n\r")
-	if !strings.HasPrefix(trimmed, "{") && !strings.HasPrefix(trimmed, "[") {
-		return "", errox.InvalidArgs.New("SBOM file does not appear to be valid JSON")
-	}
-
-	// Look for the spdxVersion field.
-	if idx := strings.Index(content, `"spdxVersion"`); idx != -1 {
-		remaining := content[idx+len(`"spdxVersion"`):]
-		// Find the colon after the field name.
-		colonIdx := strings.Index(remaining, ":")
-		if colonIdx != -1 {
-			// Get content after the colon.
-			afterColon := remaining[colonIdx+1:]
-			// Remove whitespace only.
-			afterColon = strings.TrimLeft(afterColon, " \t\n\r")
-			if strings.HasPrefix(afterColon, `"SPDX-2.3"`) {
-				return "text/spdx+json", nil
+	decoder := json.NewDecoder(sbomFile)
+	for {
+		tok, err := decoder.Token()
+		if err != nil {
+			// io.EOF means the token stream is exhausted without having found
+			// a recognized spdxVersion. This covers both empty files and
+			// valid JSON documents that are not SPDX.
+			if err == io.EOF {
+				return "", errInvalidSBOM
 			}
+			// json.SyntaxError is returned when the decoder encounters bytes
+			// that are not valid JSON (e.g. XML, binary, plain text files).
+			if _, ok := err.(*json.SyntaxError); ok {
+				return "", errInvalidSBOM
+			}
+			return "", errors.Wrap(err, "reading SBOM file")
 		}
-	}
 
-	return "", errox.InvalidArgs.New("unsupported SBOM format")
+		// Skip if not the version field.
+		if val, ok := tok.(string); !ok || val != "spdxVersion" {
+			continue
+		}
+
+		// Read the version value.
+		tok, err = decoder.Token()
+		if err != nil {
+			return "", errors.Wrap(err, "reading SBOM file")
+		}
+
+		// If the version is supported, reset the file position and return the type.
+		if val, ok := tok.(string); ok && val == "SPDX-2.3" {
+			if _, err := sbomFile.Seek(0, 0); err != nil {
+				return "", errors.Wrap(err, "resetting file position")
+			}
+			return "text/spdx+json", nil
+		}
+
+		return "", errox.InvalidArgs.New("unsupported SBOM version")
+	}
 }
 
 // printSBOMScanResults prints the SBOM results using the appropriate format

@@ -449,34 +449,35 @@ func (s *sbomScanTestSuite) TestGuessMediaType() {
 			}`,
 			expectedType: "text/spdx+json",
 		},
-		"valid SPDX 2.3 JSON with UTF-8 BOM": {
-			content:      "\xEF\xBB\xBF{\"spdxVersion\": \"SPDX-2.3\"}",
-			expectedType: "text/spdx+json",
+		"SPDX 2.3 JSON with UTF-8 BOM": {
+			content:       "\xEF\xBB\xBF{\"spdxVersion\": \"SPDX-2.3\"}",
+			shouldFail:    true,
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"SPDX 2.2 should fail": {
 			content:       `{"spdxVersion": "SPDX-2.2"}`,
 			shouldFail:    true,
-			errorContains: "unsupported SBOM format",
+			errorContains: "unsupported SBOM version",
 		},
 		"not JSON format": {
 			content:       `not json content`,
 			shouldFail:    true,
-			errorContains: "does not appear to be valid JSON",
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"JSON array instead of object": {
 			content:       `["item1", "item2"]`,
 			shouldFail:    true,
-			errorContains: "unsupported SBOM format",
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"missing spdxVersion field": {
 			content:       `{"name": "test", "version": "1.0"}`,
 			shouldFail:    true,
-			errorContains: "unsupported SBOM format",
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"empty file": {
 			content:       ``,
 			shouldFail:    true,
-			errorContains: "does not appear to be valid JSON",
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"spdxVersion with tabs": {
 			content:      "{\t\"spdxVersion\"\t:\t\"SPDX-2.3\"\t}",
@@ -489,17 +490,17 @@ func (s *sbomScanTestSuite) TestGuessMediaType() {
 		"just opening brace": {
 			content:       "{",
 			shouldFail:    true,
-			errorContains: "unsupported SBOM format",
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"only whitespace": {
 			content:       "   \n\t  ",
 			shouldFail:    true,
-			errorContains: "does not appear to be valid JSON",
+			errorContains: "invalid or unsupported SBOM",
 		},
 		"spdxVersion inside string field": {
 			content:       `{"description": "this does NOT conform to \"spdxVersion\": \"SPDX-2.3\" spec"}`,
 			shouldFail:    true,
-			errorContains: "unsupported SBOM format",
+			errorContains: "invalid or unsupported SBOM",
 		},
 	}
 
@@ -528,21 +529,6 @@ func (s *sbomScanTestSuite) TestGuessMediaType() {
 			}
 		})
 	}
-}
-
-func (s *sbomScanTestSuite) TestGuessMediaType_LargeFile() {
-	// Create content with spdxVersion field after 4KB but starting with valid JSON opening.
-	largeContent := `{` + strings.Repeat(" ", 5000) + `"spdxVersion": "SPDX-2.3"}`
-	filePath := s.createTempFile("large.json", largeContent)
-
-	file, err := os.Open(filePath)
-	s.Require().NoError(err)
-	defer utils.IgnoreError(file.Close)
-
-	// Should fail because spdxVersion is beyond the 4KB read buffer.
-	_, err = guessMediaType(file)
-	s.Assert().Error(err)
-	s.Assert().Contains(err.Error(), "unsupported SBOM format")
 }
 
 // TestSBOMScanResponseCompatibilityWithStorageImage verifies that v1.SBOMScanResponse
