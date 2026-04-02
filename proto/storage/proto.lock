@@ -1456,6 +1456,30 @@
       "def": {
         "enums": [
           {
+            "name": "BaseImageRepository.Status",
+            "enum_fields": [
+              {
+                "name": "CREATED"
+              },
+              {
+                "name": "QUEUED",
+                "integer": 1
+              },
+              {
+                "name": "IN_PROGRESS",
+                "integer": 2
+              },
+              {
+                "name": "READY",
+                "integer": 3
+              },
+              {
+                "name": "FAILED",
+                "integer": 4
+              }
+            ]
+          },
+          {
             "name": "BaseImageRepository.HealthStatus",
             "enum_fields": [
               {
@@ -1492,6 +1516,11 @@
                 "type": "string"
               },
               {
+                "id": 10,
+                "name": "status",
+                "type": "Status"
+              },
+              {
                 "id": 4,
                 "name": "updated_at",
                 "type": "google.protobuf.Timestamp"
@@ -1515,6 +1544,16 @@
                 "id": 8,
                 "name": "created_by",
                 "type": "SlimUser"
+              },
+              {
+                "id": 9,
+                "name": "last_polled_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "last_failure_message",
+                "type": "string"
               }
             ]
           },

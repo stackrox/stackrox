@@ -163,10 +163,11 @@ const (
 	localFilePathPrefix = "github.com/stackrox/stackrox/"
 	filePathPrefix      = "github.com/stackrox/rox/"
 	githubPathPrefix    = "/__w/stackrox/stackrox/"
+	githubHostPrefix    = "/home/runner/work/stackrox/stackrox/"
 )
 
 func getTrimmedFilePath(path string) string {
-	prefixes := []string{filePathPrefix, localFilePathPrefix, githubPathPrefix}
+	prefixes := []string{filePathPrefix, localFilePathPrefix, githubPathPrefix, githubHostPrefix}
 	for _, prefix := range prefixes {
 		prefixToCut := strings.Index(path, prefix)
 		if prefixToCut >= 0 {
