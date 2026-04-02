@@ -33,7 +33,7 @@ Four variants exist:
 ## Procedure
 
 ### 1. Get versions and scope
-Ask user if not provided:
+Ask the user if not provided:
 - OLD_VERSION (e.g., "0.5.4")
 - NEW_VERSION (e.g., "0.5.5")
 - **Also bump in openshift/release?** If yes, use the `bump-apollo-ci-openshift-release` skill after completing the stackrox repo bump

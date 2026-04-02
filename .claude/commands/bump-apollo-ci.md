@@ -10,7 +10,7 @@ CRITICAL: Follow the comprehensive checklist in `.claude/skills/bump-apollo-ci/S
 Ask the user:
 - OLD_VERSION (current version to replace, e.g., "0.5.4")
 - NEW_VERSION (target version, e.g., "0.5.5")
-- Also bump in openshift/release repository? If yes, use `bump-apollo-ci-openshift-release` skill after completing stackrox bump
+- Also bump in openshift/release repository? If yes, use `bump-apollo-ci-openshift-release` skill after completing the stackrox bump
 
 Then systematically update ALL occurrences following the skill documentation:
 1. Use pattern-based search and replace for standard files
