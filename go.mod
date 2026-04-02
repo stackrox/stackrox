@@ -95,8 +95,10 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/openshift-online/ocm-sdk-go v0.1.499
-	github.com/openshift/api v0.0.0-20251122153900-88cca31a44c9
-	github.com/openshift/client-go v0.0.0-20251123231646-4685125c2287
+	github.com/openshift/api v0.0.0-20260317165824-54a3998d81eb
+	github.com/openshift/client-go v0.0.0-20260317180604-743f664b82d1
+	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
+	github.com/openshift/library-go v0.0.0-20260318142011-72bf34f474bc
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
 	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
 	github.com/owenrumney/go-sarif/v2 v2.3.3
@@ -111,7 +113,7 @@ require (
 	github.com/quay/claircore/toolkit v1.4.0
 	github.com/quay/zlog v1.1.9
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
-	github.com/rs/zerolog v1.35.0
+	github.com/rs/zerolog v1.34.0
 	github.com/russellhaering/gosaml2 v0.11.0
 	github.com/russellhaering/goxmldsig v1.6.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
@@ -171,7 +173,7 @@ require (
 	k8s.io/client-go v0.35.3
 	k8s.io/kubectl v0.35.3
 	k8s.io/kubelet v0.32.13
-	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	kubevirt.io/api v1.8.1
 	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/controller-tools v0.20.1
@@ -305,8 +307,8 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.8.0 // indirect
-	github.com/go-git/go-git/v5 v5.17.1 // indirect
+	github.com/go-git/go-billy/v5 v5.6.2 // indirect
+	github.com/go-git/go-git/v5 v5.16.5 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.24.3 // indirect

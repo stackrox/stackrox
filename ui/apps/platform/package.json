@@ -13,7 +13,7 @@
     },
     "license": "UNLICENSED",
     "dependencies": {
-        "@apollo/client": "^3.6.3",
+        "@apollo/client": "^3.8.10",
         "@lifeomic/axios-fetch": "^3.1.0",
         "@openshift-console/dynamic-plugin-sdk": "4.19.0",
         "@patternfly/patternfly": "^6.4.0",
