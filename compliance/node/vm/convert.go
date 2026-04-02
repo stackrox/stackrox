@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"fmt"
-
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 )
@@ -208,36 +206,4 @@ func toV4Digest(d claircore.Digest) string {
 		return ""
 	}
 	return d.String()
-}
-
-// VersionID returns the distribution version ID.
-// This is a helper function matching the behavior in pkg/scannerv4/mappers.
-func VersionID(d *claircore.Distribution) string {
-	vID := d.VersionID
-	if vID == "" && d.DID == "alpine" {
-		// Alpine doesn't populate VersionID, use Version instead
-		vID = d.Version
-	}
-	return vID
-}
-
-// toV4PackagesList is a helper to convert packages to a simple list.
-func toV4PackagesList(ccPkgs map[string]*claircore.Package) []*v4.Package {
-	if len(ccPkgs) == 0 {
-		return nil
-	}
-
-	packages := make([]*v4.Package, 0, len(ccPkgs))
-	for _, ccPkg := range ccPkgs {
-		packages = append(packages, toV4Package(ccPkg))
-	}
-	return packages
-}
-
-// Helper to format package info for logging
-func formatPackageInfo(pkg *claircore.Package) string {
-	if pkg == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("%s-%s (%s)", pkg.Name, pkg.Version, pkg.PackageDB)
 }

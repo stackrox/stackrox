@@ -52,11 +52,6 @@ func logDebugf(format string, args ...interface{}) {
 	log.Printf("[DEBUG] "+format, args...)
 }
 
-// logErrorf logs error messages
-func logErrorf(format string, args ...interface{}) {
-	log.Printf("[ERROR] "+format, args...)
-}
-
 // ignoreError ignores an error from a function (replaces pkgutils.IgnoreError)
 func ignoreError(f func() error) {
 	if f != nil {
