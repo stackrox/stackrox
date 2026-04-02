@@ -28,9 +28,10 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage pgStore.Store, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
+func New(db postgres.DB, storage pgStore.Store, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
 	ds := &datastoreImpl{
 		storage:              storage,
+		db:                   db,
 		risks:                risks,
 		imageComponentRanker: ranker,
 	}
@@ -43,5 +44,5 @@ func New(storage pgStore.Store, risks riskDataStore.DataStore, ranker *ranking.R
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	riskStore := riskDataStore.GetTestPostgresDataStore(t, pool)
-	return New(dbstore, riskStore, ranking.ComponentRanker())
+	return New(pool, dbstore, riskStore, ranking.ComponentRanker())
 }
