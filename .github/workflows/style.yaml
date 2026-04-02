@@ -357,3 +357,29 @@ jobs:
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
+
+  check-go-version:
+    # Warn if a newer Go patch version is available. The go directive in
+    # go.mod should track the latest patch to match the CI container image.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Check for newer Go patch version
+      run: |
+        # Extract major.minor from go.mod
+        current=$(grep '^go ' go.mod | awk '{print $2}')
+        major_minor="${current%.*}"
+        echo "Current: $current (series: $major_minor)"
+
+        # Query the latest patch version from go.dev
+        latest=$(curl -sS "https://go.dev/dl/?mode=json" | \
+          jq -r "[.[].version | select(startswith(\"go${major_minor}\"))] | first" | \
+          sed 's/^go//')
+
+        echo "Latest:  $latest"
+        if [[ "$current" != "$latest" ]]; then
+          echo "::warning::Go $latest is available but go.mod has $current. Update go.mod and the CI container image."
+        fi
