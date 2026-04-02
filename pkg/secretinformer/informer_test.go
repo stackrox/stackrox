@@ -1,3 +1,5 @@
+//go:build !roxagent
+
 package secretinformer
 
 import (
