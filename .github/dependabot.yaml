@@ -128,6 +128,20 @@ updates:
       prefix: chore
 
   - package-ecosystem: 'gomod'
+    directory: '/tools/build/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "auto-merge"
+    - "auto-retest"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
     directory: '/operator/tools/controller-gen'
     schedule:
       interval: 'weekly'
