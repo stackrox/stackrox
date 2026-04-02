@@ -56,7 +56,9 @@ var (
 )
 
 // apiPathsCampaign constructs an API paths campaign from the apiWhiteList
-// environment variable.
+// apiPathsCampaign constructs an APICallCampaignCriterion from the apiWhiteList setting when that setting is non-empty.
+// The criterion matches requests whose path fits the provided glob pattern and requires only the presence (or any value) of a User-Agent header.
+// Returns nil when the apiWhiteList setting is empty.
 func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
@@ -70,7 +72,8 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 }
 
 // userAgentsCampaign constructs an User-Agent campaign from the userAgentsList
-// environment variable.
+// userAgentsCampaign constructs an APICallCampaignCriterion that matches the "User-Agent" header against the glob pattern defined by the userAgentsList setting.
+// If the setting is empty, it returns nil.
 func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := userAgentsList.Setting(); pattern != "" {
 		return phonehome.HeaderPattern(userAgentHeaderKey, glob.Pattern("{"+pattern+"}"))
