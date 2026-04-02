@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sbom/scan"
 )
 
-// Command defines the image command tree
+// Command defines the sbom command tree.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "sbom",
