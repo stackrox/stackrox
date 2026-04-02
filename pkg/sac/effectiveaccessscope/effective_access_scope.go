@@ -248,8 +248,7 @@ func (root *ScopeTree) GetClusterByID(clusterID string) *clustersScopeSubTree {
 }
 
 // populateStateForCluster adds given cluster as Included or Excluded to root.
-// Only the last observed cluster is considered if multiple ones with the same
-// name exist.
+// The highest selection level across observed clusters with the same name should be kept.
 func (root *ScopeTree) populateStateForCluster(
 	cluster Cluster,
 	ruleSelectors *selectors,
@@ -264,6 +263,15 @@ func (root *ScopeTree) populateStateForCluster(
 
 	// Match the cluster.
 	clusterState := ruleSelectors.matchCluster(cluster)
+
+	// Set the cluster state to the pre-existing state.
+	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil {
+		if clusterSubTree.State < clusterState {
+			clusterSubTree.State = clusterState
+			clusterSubTree.Attributes = nodeAttributesForCluster(cluster, detail)
+		}
+		return
+	}
 
 	// Update the tree.
 	root.Clusters[clusterName] = newClusterScopeSubTree(clusterState, nodeAttributesForCluster(cluster, detail))
@@ -390,6 +398,13 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 	}
 
 	namespaceState := ruleSelectors.matchNamespace(namespace)
+
+	if nsSubTree := cluster.Namespaces[namespaceName]; nsSubTree != nil {
+		if nsSubTree.State < namespaceState {
+			nsSubTree.State = namespaceState
+		}
+		return
+	}
 
 	// Update the tree.
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(namespaceState, nodeAttributesForNamespace(namespace, detail))

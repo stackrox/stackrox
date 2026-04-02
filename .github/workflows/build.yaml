@@ -241,7 +241,9 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
         with:
-          key-suffix: ${{ matrix.name }}
+          # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
+          # Default and prerelease share 93% of entries and should use the same cache.
+          key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
@@ -309,8 +311,8 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
 
       - name: Generate the swagger docs
         run: |
@@ -324,14 +326,97 @@ jobs:
           path: |
             image/rhel/docs
 
+  pre-build-oss-notice:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Fetch UI deps
+      run: make -C ui deps
+
+    - name: Generate OSS notice
+      run: make ossls-notice
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: oss-notice
+        path: image/rhel/THIRD_PARTY_NOTICES
+
+  build-operator-bundle:
+    runs-on: ubuntu-latest
+    env:
+      QUAY_ORG: rhacs-eng
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: operator/bundle_helpers/.python-version
+
+      - name: Build Operator Bundle
+        run: make -C operator/ bundle bundle-build
+
+      - name: Push Operator Bundle and Index
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+          make -C operator/ docker-push-bundle | cat
+          make -C operator/ index-build
+          make -C operator/ docker-push-index | cat
+
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-      - pre-build-ui
       - pre-build-cli
-      - pre-build-go-binaries
       - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-oss-notice
+      - pre-build-ui
     # This step will run even if required pre-* steps failed. By following this
     # approach as much of the build matrix as possible is completed despite
     # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
@@ -451,15 +536,10 @@ jobs:
           name: docs-build
           path: image/rhel/docs
 
-      # needed to restore node_modules for ossls-nostice
-      - uses: ./.github/actions/cache-ui-dependencies
-
-      # explicitly fetch deps just in case cache was not ready
-      - name: Fetch UI deps
-        run: make -C ui deps
-
-      - name: Generate OSS notice
-        run: make ossls-notice
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
@@ -501,15 +581,41 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
+  push-matching-collector-scanner:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [RHACS_BRANDING, STACKROX_BRANDING]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
       - name: Push matching collector and scanner images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
-            # Need to free up some space before push_matching_collector_scanner_images() does its pull.
-            docker system prune --all --force
-            source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+          source ./scripts/ci/lib.sh
+          push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"
 
   push-main-manifests:
     runs-on: ubuntu-latest
@@ -627,6 +733,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
+      - pre-build-go-binaries
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -643,6 +750,8 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      # Proto sources freshness is checked in another workflow.
+      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
@@ -660,15 +769,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Download prebuilt operator binaries
+        uses: ./.github/actions/download-artifact-with-retry
         with:
-          key-suffix: ${{ matrix.name }}
+          name: go-binaries-build-${{ matrix.arch }}-default
+          path: .
 
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Extract prebuilt binaries
+        run: tar xzf go-binaries-build.tgz
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
@@ -692,24 +800,9 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
-      - name: Build Operator Bundle image
-        if: |
-          matrix.name != 'STACKROX_BRANDING'
-        run: |
-          make -C operator/ bundle bundle-build
-
       - name: Build Operator image
         run: |
-          # The first invocation builds native architecture dependencies, which helps avoid the following error,
-          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
-          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
-          # or in a separate intermediate target.
-          #   + protoc-gen-go
-          #   go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
-          # Once the native architecture dependencies are installed by the above command, the following one
-          # simply builds the actual operator binary for the correct target architecture.
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
@@ -744,28 +837,6 @@ jobs:
               exit 1
             fi
             echo "Operator image push completed successfully"
-
-      - name: Push bundle image
-        # Skip for external contributions, and for upstream.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ docker-push-bundle | cat
-
-      # Index image can only be built once bundle was pushed
-      - name: Build index
-        # Skip for external contributions and for upstream, as the build relies on the previous image to be pushed.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ index-build
-
-      - name: Push index image
-        # Skip for external contributions, and for upstream.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ docker-push-index | cat
 
   push-operator-manifests:
     runs-on: ubuntu-latest
@@ -885,10 +956,11 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
-      - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
+      - define-job-matrix
       - push-main-manifests
+      - push-matching-collector-scanner
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -956,14 +1028,16 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - pre-build-ui
-      - pre-build-cli
-      - pre-build-go-binaries
-      - pre-build-docs
       - build-and-push-main
       - build-and-push-operator
-      - scan-images-with-roxctl
+      - build-operator-bundle
+      - pre-build-cli
+      - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-ui
+      - push-matching-collector-scanner
       - scan-go-binaries
+      - scan-images-with-roxctl
     permissions:
       actions: read
     steps:

@@ -124,6 +124,51 @@ func (x *AdmissionControlSettings) GetFlattenImageData() bool {
 	return false
 }
 
+// ClusterLabels is a simple wrapper for cluster labels map to enable serialization.
+type ClusterLabels struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Labels        map[string]string      `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterLabels) Reset() {
+	*x = ClusterLabels{}
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterLabels) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterLabels) ProtoMessage() {}
+
+func (x *ClusterLabels) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterLabels.ProtoReflect.Descriptor instead.
+func (*ClusterLabels) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ClusterLabels) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
 type AdmissionControlAlerts struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	AlertResults  []*central.AlertResults `protobuf:"bytes,1,rep,name=alert_results,json=alertResults,proto3" json:"alert_results,omitempty"`
@@ -133,7 +178,7 @@ type AdmissionControlAlerts struct {
 
 func (x *AdmissionControlAlerts) Reset() {
 	*x = AdmissionControlAlerts{}
-	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[1]
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -145,7 +190,7 @@ func (x *AdmissionControlAlerts) String() string {
 func (*AdmissionControlAlerts) ProtoMessage() {}
 
 func (x *AdmissionControlAlerts) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[1]
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -158,7 +203,7 @@ func (x *AdmissionControlAlerts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdmissionControlAlerts.ProtoReflect.Descriptor instead.
 func (*AdmissionControlAlerts) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{1}
+	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AdmissionControlAlerts) GetAlertResults() []*central.AlertResults {
@@ -177,6 +222,7 @@ type AdmCtrlUpdateResourceRequest struct {
 	//	*AdmCtrlUpdateResourceRequest_Pod
 	//	*AdmCtrlUpdateResourceRequest_Namespace
 	//	*AdmCtrlUpdateResourceRequest_Synced
+	//	*AdmCtrlUpdateResourceRequest_ClusterLabels
 	Resource      isAdmCtrlUpdateResourceRequest_Resource `protobuf_oneof:"resource"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -184,7 +230,7 @@ type AdmCtrlUpdateResourceRequest struct {
 
 func (x *AdmCtrlUpdateResourceRequest) Reset() {
 	*x = AdmCtrlUpdateResourceRequest{}
-	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[2]
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -196,7 +242,7 @@ func (x *AdmCtrlUpdateResourceRequest) String() string {
 func (*AdmCtrlUpdateResourceRequest) ProtoMessage() {}
 
 func (x *AdmCtrlUpdateResourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[2]
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -209,7 +255,7 @@ func (x *AdmCtrlUpdateResourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdmCtrlUpdateResourceRequest.ProtoReflect.Descriptor instead.
 func (*AdmCtrlUpdateResourceRequest) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{2}
+	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AdmCtrlUpdateResourceRequest) GetAction() central.ResourceAction {
@@ -262,6 +308,15 @@ func (x *AdmCtrlUpdateResourceRequest) GetSynced() *AdmCtrlUpdateResourceRequest
 	return nil
 }
 
+func (x *AdmCtrlUpdateResourceRequest) GetClusterLabels() *ClusterLabels {
+	if x != nil {
+		if x, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_ClusterLabels); ok {
+			return x.ClusterLabels
+		}
+	}
+	return nil
+}
+
 type isAdmCtrlUpdateResourceRequest_Resource interface {
 	isAdmCtrlUpdateResourceRequest_Resource()
 }
@@ -282,6 +337,10 @@ type AdmCtrlUpdateResourceRequest_Synced struct {
 	Synced *AdmCtrlUpdateResourceRequest_ResourcesSynced `protobuf:"bytes,5,opt,name=synced,proto3,oneof"`
 }
 
+type AdmCtrlUpdateResourceRequest_ClusterLabels struct {
+	ClusterLabels *ClusterLabels `protobuf:"bytes,6,opt,name=cluster_labels,json=clusterLabels,proto3,oneof"`
+}
+
 func (*AdmCtrlUpdateResourceRequest_Deployment) isAdmCtrlUpdateResourceRequest_Resource() {}
 
 func (*AdmCtrlUpdateResourceRequest_Pod) isAdmCtrlUpdateResourceRequest_Resource() {}
@@ -289,6 +348,55 @@ func (*AdmCtrlUpdateResourceRequest_Pod) isAdmCtrlUpdateResourceRequest_Resource
 func (*AdmCtrlUpdateResourceRequest_Namespace) isAdmCtrlUpdateResourceRequest_Resource() {}
 
 func (*AdmCtrlUpdateResourceRequest_Synced) isAdmCtrlUpdateResourceRequest_Resource() {}
+
+func (*AdmCtrlUpdateResourceRequest_ClusterLabels) isAdmCtrlUpdateResourceRequest_Resource() {}
+
+// AdmCtrlImageCacheInvalidation carries targeted image cache invalidation keys
+// from Sensor to the admission controller. Instead of purging the entire
+// image cache, only the specified entries are removed.
+type AdmCtrlImageCacheInvalidation struct {
+	state         protoimpl.MessageState                   `protogen:"open.v1"`
+	ImageKeys     []*central.InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdmCtrlImageCacheInvalidation) Reset() {
+	*x = AdmCtrlImageCacheInvalidation{}
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdmCtrlImageCacheInvalidation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdmCtrlImageCacheInvalidation) ProtoMessage() {}
+
+func (x *AdmCtrlImageCacheInvalidation) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdmCtrlImageCacheInvalidation.ProtoReflect.Descriptor instead.
+func (*AdmCtrlImageCacheInvalidation) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdmCtrlImageCacheInvalidation) GetImageKeys() []*central.InvalidateImageCache_ImageKey {
+	if x != nil {
+		return x.ImageKeys
+	}
+	return nil
+}
 
 type AdmCtrlUpdateResourceRequest_ResourcesSynced struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -298,7 +406,7 @@ type AdmCtrlUpdateResourceRequest_ResourcesSynced struct {
 
 func (x *AdmCtrlUpdateResourceRequest_ResourcesSynced) Reset() {
 	*x = AdmCtrlUpdateResourceRequest_ResourcesSynced{}
-	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[3]
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -310,7 +418,7 @@ func (x *AdmCtrlUpdateResourceRequest_ResourcesSynced) String() string {
 func (*AdmCtrlUpdateResourceRequest_ResourcesSynced) ProtoMessage() {}
 
 func (x *AdmCtrlUpdateResourceRequest_ResourcesSynced) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[3]
+	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -323,14 +431,14 @@ func (x *AdmCtrlUpdateResourceRequest_ResourcesSynced) ProtoReflect() protorefle
 
 // Deprecated: Use AdmCtrlUpdateResourceRequest_ResourcesSynced.ProtoReflect.Descriptor instead.
 func (*AdmCtrlUpdateResourceRequest_ResourcesSynced) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{2, 0}
+	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{3, 0}
 }
 
 var File_internalapi_sensor_admission_control_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"\n" +
-	"*internalapi/sensor/admission_control.proto\x12\x06sensor\x1a\x1fgoogle/protobuf/timestamp.proto\x1a'internalapi/central/sensor_events.proto\x1a\x15storage/cluster.proto\x1a\x18storage/deployment.proto\x1a storage/namespace_metadata.proto\x1a\x14storage/policy.proto\"\xcf\x03\n" +
+	"*internalapi/sensor/admission_control.proto\x12\x06sensor\x1a\x1fgoogle/protobuf/timestamp.proto\x1a'internalapi/central/sensor_events.proto\x1a)internalapi/central/sensor_iservice.proto\x1a\x15storage/cluster.proto\x1a\x18storage/deployment.proto\x1a storage/namespace_metadata.proto\x1a\x14storage/policy.proto\"\xcf\x03\n" +
 	"\x18AdmissionControlSettings\x12D\n" +
 	"\x0ecluster_config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\rclusterConfig\x12V\n" +
 	"\x1denforced_deploy_time_policies\x18\x02 \x01(\v2\x13.storage.PolicyListR\x1aenforcedDeployTimePolicies\x128\n" +
@@ -340,9 +448,14 @@ const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x06 \x01(\tR\tclusterId\x12>\n" +
 	"\x10runtime_policies\x18\a \x01(\v2\x13.storage.PolicyListR\x0fruntimePolicies\x12,\n" +
-	"\x12flatten_image_data\x18\b \x01(\bR\x10flattenImageData\"T\n" +
+	"\x12flatten_image_data\x18\b \x01(\bR\x10flattenImageData\"\x85\x01\n" +
+	"\rClusterLabels\x129\n" +
+	"\x06labels\x18\x01 \x03(\v2!.sensor.ClusterLabels.LabelsEntryR\x06labels\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"T\n" +
 	"\x16AdmissionControlAlerts\x12:\n" +
-	"\ralert_results\x18\x01 \x03(\v2\x15.central.AlertResultsR\falertResults\"\xd3\x02\n" +
+	"\ralert_results\x18\x01 \x03(\v2\x15.central.AlertResultsR\falertResults\"\x93\x03\n" +
 	"\x1cAdmCtrlUpdateResourceRequest\x12/\n" +
 	"\x06action\x18\x01 \x01(\x0e2\x17.central.ResourceActionR\x06action\x125\n" +
 	"\n" +
@@ -350,10 +463,14 @@ const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"deployment\x12 \n" +
 	"\x03pod\x18\x03 \x01(\v2\f.storage.PodH\x00R\x03pod\x12:\n" +
 	"\tnamespace\x18\x04 \x01(\v2\x1a.storage.NamespaceMetadataH\x00R\tnamespace\x12N\n" +
-	"\x06synced\x18\x05 \x01(\v24.sensor.AdmCtrlUpdateResourceRequest.ResourcesSyncedH\x00R\x06synced\x1a\x11\n" +
+	"\x06synced\x18\x05 \x01(\v24.sensor.AdmCtrlUpdateResourceRequest.ResourcesSyncedH\x00R\x06synced\x12>\n" +
+	"\x0ecluster_labels\x18\x06 \x01(\v2\x15.sensor.ClusterLabelsH\x00R\rclusterLabels\x1a\x11\n" +
 	"\x0fResourcesSyncedB\n" +
 	"\n" +
-	"\bresourceB\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
+	"\bresource\"f\n" +
+	"\x1dAdmCtrlImageCacheInvalidation\x12E\n" +
+	"\n" +
+	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeysB\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
 
 var (
 	file_internalapi_sensor_admission_control_proto_rawDescOnce sync.Once
@@ -367,37 +484,44 @@ func file_internalapi_sensor_admission_control_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_admission_control_proto_rawDescData
 }
 
-var file_internalapi_sensor_admission_control_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_internalapi_sensor_admission_control_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_internalapi_sensor_admission_control_proto_goTypes = []any{
-	(*AdmissionControlSettings)(nil),                     // 0: sensor.AdmissionControlSettings
-	(*AdmissionControlAlerts)(nil),                       // 1: sensor.AdmissionControlAlerts
-	(*AdmCtrlUpdateResourceRequest)(nil),                 // 2: sensor.AdmCtrlUpdateResourceRequest
-	(*AdmCtrlUpdateResourceRequest_ResourcesSynced)(nil), // 3: sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
-	(*storage.DynamicClusterConfig)(nil),                 // 4: storage.DynamicClusterConfig
-	(*storage.PolicyList)(nil),                           // 5: storage.PolicyList
-	(*timestamppb.Timestamp)(nil),                        // 6: google.protobuf.Timestamp
-	(*central.AlertResults)(nil),                         // 7: central.AlertResults
-	(central.ResourceAction)(0),                          // 8: central.ResourceAction
-	(*storage.Deployment)(nil),                           // 9: storage.Deployment
-	(*storage.Pod)(nil),                                  // 10: storage.Pod
-	(*storage.NamespaceMetadata)(nil),                    // 11: storage.NamespaceMetadata
+	(*AdmissionControlSettings)(nil),      // 0: sensor.AdmissionControlSettings
+	(*ClusterLabels)(nil),                 // 1: sensor.ClusterLabels
+	(*AdmissionControlAlerts)(nil),        // 2: sensor.AdmissionControlAlerts
+	(*AdmCtrlUpdateResourceRequest)(nil),  // 3: sensor.AdmCtrlUpdateResourceRequest
+	(*AdmCtrlImageCacheInvalidation)(nil), // 4: sensor.AdmCtrlImageCacheInvalidation
+	nil,                                   // 5: sensor.ClusterLabels.LabelsEntry
+	(*AdmCtrlUpdateResourceRequest_ResourcesSynced)(nil), // 6: sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
+	(*storage.DynamicClusterConfig)(nil),                 // 7: storage.DynamicClusterConfig
+	(*storage.PolicyList)(nil),                           // 8: storage.PolicyList
+	(*timestamppb.Timestamp)(nil),                        // 9: google.protobuf.Timestamp
+	(*central.AlertResults)(nil),                         // 10: central.AlertResults
+	(central.ResourceAction)(0),                          // 11: central.ResourceAction
+	(*storage.Deployment)(nil),                           // 12: storage.Deployment
+	(*storage.Pod)(nil),                                  // 13: storage.Pod
+	(*storage.NamespaceMetadata)(nil),                    // 14: storage.NamespaceMetadata
+	(*central.InvalidateImageCache_ImageKey)(nil),        // 15: central.InvalidateImageCache.ImageKey
 }
 var file_internalapi_sensor_admission_control_proto_depIdxs = []int32{
-	4,  // 0: sensor.AdmissionControlSettings.cluster_config:type_name -> storage.DynamicClusterConfig
-	5,  // 1: sensor.AdmissionControlSettings.enforced_deploy_time_policies:type_name -> storage.PolicyList
-	6,  // 2: sensor.AdmissionControlSettings.timestamp:type_name -> google.protobuf.Timestamp
-	5,  // 3: sensor.AdmissionControlSettings.runtime_policies:type_name -> storage.PolicyList
-	7,  // 4: sensor.AdmissionControlAlerts.alert_results:type_name -> central.AlertResults
-	8,  // 5: sensor.AdmCtrlUpdateResourceRequest.action:type_name -> central.ResourceAction
-	9,  // 6: sensor.AdmCtrlUpdateResourceRequest.deployment:type_name -> storage.Deployment
-	10, // 7: sensor.AdmCtrlUpdateResourceRequest.pod:type_name -> storage.Pod
-	11, // 8: sensor.AdmCtrlUpdateResourceRequest.namespace:type_name -> storage.NamespaceMetadata
-	3,  // 9: sensor.AdmCtrlUpdateResourceRequest.synced:type_name -> sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	7,  // 0: sensor.AdmissionControlSettings.cluster_config:type_name -> storage.DynamicClusterConfig
+	8,  // 1: sensor.AdmissionControlSettings.enforced_deploy_time_policies:type_name -> storage.PolicyList
+	9,  // 2: sensor.AdmissionControlSettings.timestamp:type_name -> google.protobuf.Timestamp
+	8,  // 3: sensor.AdmissionControlSettings.runtime_policies:type_name -> storage.PolicyList
+	5,  // 4: sensor.ClusterLabels.labels:type_name -> sensor.ClusterLabels.LabelsEntry
+	10, // 5: sensor.AdmissionControlAlerts.alert_results:type_name -> central.AlertResults
+	11, // 6: sensor.AdmCtrlUpdateResourceRequest.action:type_name -> central.ResourceAction
+	12, // 7: sensor.AdmCtrlUpdateResourceRequest.deployment:type_name -> storage.Deployment
+	13, // 8: sensor.AdmCtrlUpdateResourceRequest.pod:type_name -> storage.Pod
+	14, // 9: sensor.AdmCtrlUpdateResourceRequest.namespace:type_name -> storage.NamespaceMetadata
+	6,  // 10: sensor.AdmCtrlUpdateResourceRequest.synced:type_name -> sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
+	1,  // 11: sensor.AdmCtrlUpdateResourceRequest.cluster_labels:type_name -> sensor.ClusterLabels
+	15, // 12: sensor.AdmCtrlImageCacheInvalidation.image_keys:type_name -> central.InvalidateImageCache.ImageKey
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_admission_control_proto_init() }
@@ -405,11 +529,12 @@ func file_internalapi_sensor_admission_control_proto_init() {
 	if File_internalapi_sensor_admission_control_proto != nil {
 		return
 	}
-	file_internalapi_sensor_admission_control_proto_msgTypes[2].OneofWrappers = []any{
+	file_internalapi_sensor_admission_control_proto_msgTypes[3].OneofWrappers = []any{
 		(*AdmCtrlUpdateResourceRequest_Deployment)(nil),
 		(*AdmCtrlUpdateResourceRequest_Pod)(nil),
 		(*AdmCtrlUpdateResourceRequest_Namespace)(nil),
 		(*AdmCtrlUpdateResourceRequest_Synced)(nil),
+		(*AdmCtrlUpdateResourceRequest_ClusterLabels)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -417,7 +542,7 @@ func file_internalapi_sensor_admission_control_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_admission_control_proto_rawDesc), len(file_internalapi_sensor_admission_control_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
