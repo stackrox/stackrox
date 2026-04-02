@@ -79,11 +79,8 @@ func TestClusterLabelPolicyScoping(t *testing.T) {
 	// Use random suffix to avoid conflicts between parallel test runs
 	deploymentName := fmt.Sprintf("test-cluster-label-%d", rand.IntN(10000))
 
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, deploymentName, defaultNamespace)
-
-	waitForDeploymentInCentral(t, deploymentName)
 
 	qb := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deploymentName).
@@ -97,11 +94,8 @@ func TestClusterLabelPolicyScoping(t *testing.T) {
 	time.Sleep(5 * time.Second) // Wait for label change to propagate
 
 	deploymentName2 := fmt.Sprintf("test-cluster-label-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName2, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName2, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, deploymentName2, defaultNamespace)
-
-	waitForDeploymentInCentral(t, deploymentName2)
 
 	qb2 := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deploymentName2).
@@ -170,11 +164,8 @@ func TestNamespaceLabelPolicyScoping(t *testing.T) {
 	}()
 
 	backendDeployment := fmt.Sprintf("test-ns-backend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
-
-	waitForDeploymentInCentral(t, backendDeployment)
 
 	qbBackend := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, backendDeployment).
@@ -185,11 +176,8 @@ func TestNamespaceLabelPolicyScoping(t *testing.T) {
 	t.Logf("Alert appeared for deployment in namespace with team=backend")
 
 	frontendDeployment := fmt.Sprintf("test-ns-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
-
-	waitForDeploymentInCentral(t, frontendDeployment)
 
 	qbFrontend := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, frontendDeployment).
@@ -267,11 +255,8 @@ func TestCombinedLabelPolicyScoping(t *testing.T) {
 
 	// Should violate: cluster=prod AND namespace=backend both match
 	backendDeployment := fmt.Sprintf("test-combined-backend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
-
-	waitForDeploymentInCentral(t, backendDeployment)
 
 	qbBackend := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, backendDeployment).
@@ -283,11 +268,8 @@ func TestCombinedLabelPolicyScoping(t *testing.T) {
 
 	// Should NOT violate: namespace=frontend doesn't match
 	frontendDeployment := fmt.Sprintf("test-combined-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
-
-	waitForDeploymentInCentral(t, frontendDeployment)
 
 	qbFrontend := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, frontendDeployment).
@@ -299,11 +281,8 @@ func TestCombinedLabelPolicyScoping(t *testing.T) {
 
 	// Should NOT violate: namespace has no team label
 	defaultDeployment := fmt.Sprintf("test-combined-default-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, defaultDeployment, defaultNamespace)
-
-	waitForDeploymentInCentral(t, defaultDeployment)
 
 	qbDefault := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, defaultDeployment).
@@ -318,11 +297,8 @@ func TestCombinedLabelPolicyScoping(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	backendDeployment2 := fmt.Sprintf("test-combined-backend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment2, backendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment2, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment2, backendNS)
-
-	waitForDeploymentInCentral(t, backendDeployment2)
 
 	qbBackend2 := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, backendDeployment2).
@@ -351,19 +327,20 @@ func TestPolicyDryRunWithClusterLabel(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	backendDeployment := fmt.Sprintf("test-dryrun-backend-%d", rand.IntN(10000))
-	err := createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-dryrun-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	defaultDeployment := fmt.Sprintf("test-dryrun-default-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, defaultDeployment, defaultNamespace)
+
+	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
+	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
+	waitForDeploymentReadyInK8s(t, defaultDeployment, defaultNamespace)
 
 	waitForDeploymentInCentral(t, backendDeployment)
 	waitForDeploymentInCentral(t, frontendDeployment)
@@ -429,19 +406,20 @@ func TestPolicyDryRunWithNamespaceLabel(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	backendDeployment := fmt.Sprintf("test-dryrun-backend-%d", rand.IntN(10000))
-	err := createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-dryrun-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	defaultDeployment := fmt.Sprintf("test-dryrun-default-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, defaultDeployment, defaultNamespace)
+
+	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
+	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
+	waitForDeploymentReadyInK8s(t, defaultDeployment, defaultNamespace)
 
 	waitForDeploymentInCentral(t, backendDeployment)
 	waitForDeploymentInCentral(t, frontendDeployment)
@@ -506,19 +484,20 @@ func TestPolicyDryRunWithCombinedLabels(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	backendDeployment := fmt.Sprintf("test-dryrun-backend-%d", rand.IntN(10000))
-	err := createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-dryrun-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	defaultDeployment := fmt.Sprintf("test-dryrun-default-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, defaultDeployment, defaultNamespace)
+
+	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
+	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
+	waitForDeploymentReadyInK8s(t, defaultDeployment, defaultNamespace)
 
 	waitForDeploymentInCentral(t, backendDeployment)
 	waitForDeploymentInCentral(t, frontendDeployment)
@@ -587,19 +566,20 @@ func TestPolicyDryRunWithLabelMismatch(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	backendDeployment := fmt.Sprintf("test-dryrun-backend-%d", rand.IntN(10000))
-	err := createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-dryrun-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	defaultDeployment := fmt.Sprintf("test-dryrun-default-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, defaultDeployment, defaultNamespace)
+
+	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
+	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
+	waitForDeploymentReadyInK8s(t, defaultDeployment, defaultNamespace)
 
 	waitForDeploymentInCentral(t, backendDeployment)
 	waitForDeploymentInCentral(t, frontendDeployment)
@@ -704,19 +684,13 @@ func TestRuntimeDetectionWithNamespaceLabels(t *testing.T) {
 	}()
 
 	backendDeployment := fmt.Sprintf("test-runtime-backend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, backendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
-
-	waitForDeploymentInCentral(t, backendDeployment)
 	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-runtime-frontend-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, frontendNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
-
-	waitForDeploymentInCentral(t, frontendDeployment)
 	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
 
 	client := createK8sClient(t)
@@ -797,11 +771,8 @@ func TestRuntimeDetectionWithClusterLabels(t *testing.T) {
 	}()
 
 	deployment1 := fmt.Sprintf("test-runtime-cluster-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, deployment1, defaultNamespace)
-
-	waitForDeploymentInCentral(t, deployment1)
 	waitForDeploymentReadyInK8s(t, deployment1, defaultNamespace)
 
 	client := createK8sClient(t)
@@ -822,11 +793,8 @@ func TestRuntimeDetectionWithClusterLabels(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	deployment2 := fmt.Sprintf("test-runtime-cluster-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment2, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment2, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, deployment2, defaultNamespace)
-
-	waitForDeploymentInCentral(t, deployment2)
 	waitForDeploymentReadyInK8s(t, deployment2, defaultNamespace)
 
 	execInDeployment(t, client, deployment2, "default", "apt", "--help")
@@ -894,11 +862,8 @@ func TestLabelRemoval(t *testing.T) {
 	}()
 
 	deployment1 := fmt.Sprintf("test-label-removal-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, deployment1, defaultNamespace)
-
-	waitForDeploymentInCentral(t, deployment1)
 
 	qb1 := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deployment1).
@@ -913,11 +878,8 @@ func TestLabelRemoval(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	deployment2 := fmt.Sprintf("test-label-removal-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment2, defaultNamespace)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment2, 1, defaultNamespace, true)
 	defer teardownDeploymentWithoutCheck(t, deployment2, defaultNamespace)
-
-	waitForDeploymentInCentral(t, deployment2)
 
 	qb2 := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deployment2).
@@ -975,11 +937,8 @@ func TestLabelRemoval(t *testing.T) {
 	}()
 
 	deployment3 := fmt.Sprintf("test-ns-removal-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment3, testNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment3, 1, testNS, true)
 	defer teardownDeploymentWithoutCheck(t, deployment3, testNS)
-
-	waitForDeploymentInCentral(t, deployment3)
 
 	qb3 := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deployment3).
@@ -1004,11 +963,8 @@ func TestLabelRemoval(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	deployment4 := fmt.Sprintf("test-ns-removal-%d", rand.IntN(10000))
-	err = createPrivilegedDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment4, testNS)
-	require.NoError(t, err)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment4, 1, testNS, true)
 	defer teardownDeploymentWithoutCheck(t, deployment4, testNS)
-
-	waitForDeploymentInCentral(t, deployment4)
 
 	qb4 := search.NewQueryBuilder().
 		AddStrings(search.DeploymentName, deployment4).
@@ -1017,54 +973,4 @@ func TestLabelRemoval(t *testing.T) {
 
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{Query: qb4.Query()}, 0)
 	t.Logf("No alert for deployment after namespace labels removed entirely")
-}
-
-// createPrivilegedDeployment creates a deployment with a privileged container.
-func createPrivilegedDeployment(t *testing.T, image, deploymentName, namespace string) error {
-	client := createK8sClient(t)
-
-	t.Logf("Creating privileged deployment %q in namespace %q", deploymentName, namespace)
-
-	deployment := privilegedDeploymentSpec(deploymentName, namespace, image)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	_, err := client.AppsV1().Deployments(namespace).Create(ctx, deployment, metaV1.CreateOptions{})
-	return err
-}
-
-// privilegedDeploymentSpec returns a deployment spec with a privileged container.
-func privilegedDeploymentSpec(name, namespace, image string) *appsV1.Deployment {
-	privileged := true
-	replicas := int32(1)
-
-	return &appsV1.Deployment{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: appsV1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: &metaV1.LabelSelector{
-				MatchLabels: map[string]string{"app": name},
-			},
-			Template: coreV1.PodTemplateSpec{
-				ObjectMeta: metaV1.ObjectMeta{
-					Labels: map[string]string{"app": name},
-				},
-				Spec: coreV1.PodSpec{
-					Containers: []coreV1.Container{
-						{
-							Name:  "nginx",
-							Image: image,
-							SecurityContext: &coreV1.SecurityContext{
-								Privileged: &privileged,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }

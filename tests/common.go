@@ -367,31 +367,50 @@ func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 }
 
 func setupDeploymentInNamespace(t *testing.T, image, deploymentName, namespace string) {
-	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, 1, namespace)
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, 1, namespace, false)
 }
 
 func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
-	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, replicas, "default")
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, replicas, "default", false)
 }
 
-func setupDeploymentWithReplicasInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
-	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, namespace)
+func setupDeploymentWithReplicasInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string, privileged bool) {
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, namespace, privileged)
 	waitForDeploymentReadyInK8s(t, deploymentName, namespace)
 	waitForDeploymentInCentral(t, deploymentName)
 }
 
 func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
-	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, "default")
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, "default", false)
 }
 
-func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
-	require.NoError(t, createDeploymentViaAPI(t, image, deploymentName, replicas, namespace))
+func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string, privileged bool) {
+	require.NoError(t, createDeploymentViaAPI(t, image, deploymentName, replicas, namespace, privileged))
+}
+
+// buildContainer constructs a container spec with optional privileged mode.
+func buildContainer(name, image string, pullPolicy coreV1.PullPolicy, privileged bool) coreV1.Container {
+	container := coreV1.Container{
+		Name:            name,
+		Image:           image,
+		ImagePullPolicy: pullPolicy,
+		Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
+	}
+
+	if privileged {
+		container.SecurityContext = &coreV1.SecurityContext{
+			Privileged: pointers.Bool(true),
+		}
+	}
+
+	return container
 }
 
 // createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
 // Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
 // to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
-func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) error {
+// Set privileged=true to create a deployment with privileged containers.
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string, privileged bool) error {
 	client := createK8sClient(t)
 
 	t.Logf("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
@@ -424,12 +443,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 					Labels: map[string]string{"app": deploymentName},
 				},
 				Spec: coreV1.PodSpec{
-					Containers: []coreV1.Container{{
-						Name:            deploymentName,
-						Image:           image,
-						ImagePullPolicy: pullPolicy,
-						Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
-					}},
+					Containers: []coreV1.Container{buildContainer(deploymentName, image, pullPolicy, privileged)},
 				},
 			},
 		},
