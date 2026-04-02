@@ -270,11 +270,12 @@ jobs:
 
       - name: Build Go Binaries
         run: |
-          # Use CGO for native builds (amd64, arm64); disable for cross-compiled arches.
-          if [[ "${{ matrix.arch }}" == "amd64" || "${{ matrix.arch }}" == "arm64" ]]; then
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
-          else
+          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
+            echo "Building non-amd binary"
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+          else
+            echo "Building amd binary"
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
 
       - name: Bundle the build to preserve permissions
