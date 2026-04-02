@@ -385,9 +385,19 @@ build-prep: deps
 .PHONY: roxctl-build
 roxctl-build: roxctl-linux roxctl-darwin roxctl-windows
 
-roxctl-linux: roxctl_linux-amd64 roxctl_linux-arm64 roxctl_linux-ppc64le roxctl_linux-s390x
+roxctl-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
 roxctl-darwin: roxctl_darwin-amd64 roxctl_darwin-arm64
 roxctl-windows: roxctl_windows-amd64
+
+# Combined Linux builds - more efficient than separate invocations
+cli_linux-%: build-prep
+	$(eval arch := $*)
+ifdef SKIP_CLI_BUILD
+	test -f bin/linux_$(arch)/roxctl -a -f bin/linux_$(arch)/roxagent || \
+		RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=$(arch) $(GOBUILD) ./roxctl ./compliance/virtualmachines/roxagent
+else
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=$(arch) $(GOBUILD) ./roxctl ./compliance/virtualmachines/roxagent
+endif
 
 roxctl_%: build-prep
 	$(eval    w := $(subst -, ,$*))
@@ -413,7 +423,7 @@ roxctl: roxctl-build roxctl-install
 .PHONY: roxagent-build
 roxagent-build: roxagent-linux
 
-roxagent-linux: roxagent_linux-amd64 roxagent_linux-arm64 roxagent_linux-ppc64le roxagent_linux-s390x
+roxagent-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
 
 roxagent_%: build-prep
 	$(eval    w := $(subst -, ,$*))
