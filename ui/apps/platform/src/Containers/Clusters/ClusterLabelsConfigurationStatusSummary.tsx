@@ -73,9 +73,9 @@ function ClusterLabelsConfigurationStatusSummary({
             {selectedCluster.id && (
                 <Flex>
                     <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsXs' }}
-                       >
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsXs' }}
+                    >
                         <div>
                             <strong>Cluster ID:</strong> {selectedCluster.id}
                         </div>
