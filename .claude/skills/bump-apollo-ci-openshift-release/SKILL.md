@@ -132,7 +132,7 @@ EOF
 ### 10. Inform user
 
 Display a summary and exit:
-```
+```text
 ✅ Successfully bumped apollo-ci to version NEW_VERSION!
 
 **Summary:**

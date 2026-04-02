@@ -109,7 +109,7 @@ EOF
 ### 10. Inform user
 
 Display the branch name and next steps:
-```
+```text
 ✅ Changes committed to branch: BRANCH_NAME
 
 Branch: BRANCH_NAME
