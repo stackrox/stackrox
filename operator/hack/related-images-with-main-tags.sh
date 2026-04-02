@@ -41,14 +41,14 @@ function extract_related_images_with_main_tags() {
 }
 
 # Extracts the value of a specific tag from the tags info string.
-# If the tag is present without a value, returns "true".
-# If the tag is absent, returns "false".
-# If the tag is present with an assigned value, returns the value.
+# If the tag is present without a value, echoes "true".
+# If the tag is absent, echoes "false".
+# If the tag is present with an assigned value, echoes the value.
 #
 # Arguments:
 #   $1 - The tags info string (comma-separated key-value pairs).
 #   $2 - The tag key to extract.
-# Returns:
+# Prints:
 #   The value of the specified tag, "true", or "false".
 function extract_tag() {
     local tags_info="$1"
