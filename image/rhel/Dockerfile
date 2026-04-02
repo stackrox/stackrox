@@ -22,7 +22,36 @@ WORKDIR /
 COPY fetch-stackrox-data.sh .
 RUN /fetch-stackrox-data.sh /stackrox-data
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+# Install OS packages in a separate stage so Docker can cache this layer
+# independently of binary changes. Package installs rarely change, but
+# binaries change every commit — this ordering avoids rebuilding packages
+# when only binaries change.
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS base-with-packages
+
+COPY signatures/RPM-GPG-KEY-CentOS-Official /
+COPY --from=downloads /output/rpms/ /tmp/
+
+RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
+    microdnf -y upgrade --nobest && \
+    rpm -i --nodeps /tmp/postgres-libs.rpm && \
+    rpm -i --nodeps /tmp/postgres.rpm && \
+    microdnf install --setopt=install_weak_deps=0 --nodocs -y util-linux && \
+    microdnf clean all -y && \
+    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
+    # (Optional) Remove line below to keep package management utilities
+    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum && \
+    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
+    # by the script `save-dir-contents` during the image build. The directory
+    # contents are then restored by the script `restore-all-dir-contents`
+    # during the container start.
+    chown -R 4000:4000 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source && \
+    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
+    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
+    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
+    chown -R 4000:4000 /tmp
+
+FROM base-with-packages
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -45,31 +74,9 @@ ENV PATH="/stackrox:$PATH" \
     ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
-COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY static-bin /stackrox/
 
-COPY --from=downloads /output/rpms/ /tmp/
 COPY --from=downloads /output/go/ /go/
-
-RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
-    microdnf -y upgrade --nobest && \
-    rpm -i --nodeps /tmp/postgres-libs.rpm && \
-    rpm -i --nodeps /tmp/postgres.rpm && \
-    microdnf install --setopt=install_weak_deps=0 --nodocs -y util-linux && \
-    microdnf clean all -y && \
-    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum && \
-    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
-    # by the script `save-dir-contents` during the image build. The directory
-    # contents are then restored by the script `restore-all-dir-contents`
-    # during the container start.
-    chown -R 4000:4000 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source && \
-    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
-    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
-    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
