@@ -142,7 +142,7 @@ jobs:
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -180,7 +180,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -222,7 +222,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -293,7 +293,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -329,7 +329,7 @@ jobs:
   pre-build-oss-notice:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
@@ -437,7 +437,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -642,7 +642,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -735,7 +735,7 @@ jobs:
       - define-job-matrix
       - pre-build-go-binaries
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -861,7 +861,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -902,7 +902,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.4
     needs:
     - pre-build-cli
     - pre-build-go-binaries
