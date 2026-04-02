@@ -421,9 +421,9 @@ roxagent_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 ifdef SKIP_CLI_BUILD
-	test -f bin/$(os)_$(arch)/roxagent || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) GOTAGS="release,roxagent" $(GOBUILD) ./compliance/virtualmachines/roxagent
+	test -f bin/$(os)_$(arch)/roxagent || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) GOTAGS="release" $(GOBUILD) ./compliance/virtualmachines/roxagent
 else
-	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) GOTAGS="release,roxagent" $(GOBUILD) ./compliance/virtualmachines/roxagent
+	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) GOTAGS="release" $(GOBUILD) ./compliance/virtualmachines/roxagent
 endif
 
 .PHONY: roxagent
