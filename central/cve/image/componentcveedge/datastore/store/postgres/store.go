@@ -14,29 +14,28 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable = "image_cve_infos"
-	storeName = "ImageCVEInfo"
+	baseTable = "component_cve_edges"
+	storeName = "NormalizedComponentCVEEdge"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCveInfosSchema
+	schema         = pkgSchema.ComponentCveEdgesSchema
 	targetResource = resources.Image
 )
 
 type (
-	storeType = storage.ImageCVEInfo
+	storeType = storage.NormalizedComponentCVEEdge
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.ImageCVEInfo
+// Store is the interface to interact with the storage for storage.NormalizedComponentCVEEdge
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -63,18 +62,14 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	// Use of pgSearch.NewGloballyScopedGenericStoreWithCache can be dangerous with high cardinality stores,
-	// and be the source of memory pressure. Think twice about the need for in-memory caching
-	// of the whole store.
-	return pgSearch.NewGloballyScopedGenericStoreWithCache[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
-		insertIntoImageCveInfos,
-		nil,
+		insertIntoComponentCveEdges,
+		copyFromComponentCveEdges,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		metricsSetCacheOperationDurationTime,
 		targetResource,
 		nil,
 		nil,
@@ -95,11 +90,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetCacheOperationDurationTime(start, op, storeName)
-}
-
-func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error {
+func insertIntoComponentCveEdges(batch *pgx.Batch, obj *storage.NormalizedComponentCVEEdge) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -109,14 +100,74 @@ func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-		protocompat.NilOrTime(obj.GetFirstSystemOccurrence()),
-		obj.GetCve(),
+		obj.GetComponentId(),
+		obj.GetCveId(),
+		obj.GetIsFixable(),
+		obj.GetFixedBy(),
+		obj.GetState(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurrence, Cve, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurrence = EXCLUDED.FirstSystemOccurrence, Cve = EXCLUDED.Cve, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO component_cve_edges (Id, ComponentId, CveId, IsFixable, FixedBy, State, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ComponentId = EXCLUDED.ComponentId, CveId = EXCLUDED.CveId, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, State = EXCLUDED.State, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
+
+	return nil
+}
+
+var copyColsComponentCveEdges = []string{
+	"id",
+	"componentid",
+	"cveid",
+	"isfixable",
+	"fixedby",
+	"state",
+	"serialized",
+}
+
+func copyFromComponentCveEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NormalizedComponentCVEEdge) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
+			deletes = append(deletes, obj.GetId())
+		}
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+	}
+
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
+
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return []interface{}{
+			obj.GetId(),
+			obj.GetComponentId(),
+			obj.GetCveId(),
+			obj.GetIsFixable(),
+			obj.GetFixedBy(),
+			obj.GetState(),
+			serialized,
+		}, nil
+	})
+
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"component_cve_edges"}, copyColsComponentCveEdges, inputRows); err != nil {
+		return err
+	}
 
 	return nil
 }

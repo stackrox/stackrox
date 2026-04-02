@@ -8,17 +8,21 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// Store provides storage functionality for CVEs.
+// Store provides storage functionality for normalized CVEs.
 //
 //go:generate mockgen-wrapper
 type Store interface {
+	// Standard generated CRUD methods from pg-table-bindings-wrapper.
+
+	Upsert(ctx context.Context, obj *storage.NormalizedCVE) error
+	UpsertMany(ctx context.Context, objs []*storage.NormalizedCVE) error
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, ids []string) error
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Exists(ctx context.Context, id string) (bool, error)
-
-	Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, []int, error)
-	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ImageCVEV2) error) error
-
-	UpsertMany(ctx context.Context, cves []*storage.ImageCVEV2) error
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Get(ctx context.Context, id string) (*storage.NormalizedCVE, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.NormalizedCVE, []int, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	Walk(ctx context.Context, fn func(*storage.NormalizedCVE) error) error
 }

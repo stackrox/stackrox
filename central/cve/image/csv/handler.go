@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
+	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -230,4 +232,78 @@ func ImageCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQ
 		}
 	}
 	return cveRows, nil
+}
+
+// GetNormalizedCVEsForCSV returns CVE rows from the new normalized cves table
+// for all CVEs currently referenced by at least one image component.
+func GetNormalizedCVEsForCSV(ctx context.Context) ([][]string, error) {
+	ds := cveDS.Singleton()
+	cveRows, err := ds.GetAllReferencedCVEs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Header row.
+	rows := [][]string{
+		{"CVE", "Source", "Severity", "CVSS_V2", "CVSS_V3", "NVD_CVSS_V3", "Summary", "Link", "Published", "Advisory"},
+	}
+
+	for _, c := range cveRows {
+		row := []string{
+			c.GetCveName(),
+			c.GetSource(),
+			c.GetSeverity(),
+			formatFloat32(c.GetCvssV2()),
+			formatFloat32(c.GetCvssV3()),
+			formatFloat32(c.GetNvdCvssV3()),
+			c.GetSummary(),
+			c.GetLink(),
+			formatTimestamp(c.GetPublishedOn()),
+			c.GetAdvisoryName(),
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
+}
+
+// GetCVEsForImageCSV returns CVE rows from the new normalized cves table
+// for all CVEs associated with a specific image.
+func GetCVEsForImageCSV(ctx context.Context, imageID string) ([][]string, error) {
+	ds := cveDS.Singleton()
+	cveRows, err := ds.GetCVEsForImage(ctx, imageID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows := [][]string{
+		{"CVE", "Source", "Severity", "CVSS_V2", "CVSS_V3", "NVD_CVSS_V3", "Summary", "Link", "Published", "Advisory"},
+	}
+	for _, c := range cveRows {
+		row := []string{
+			c.GetCveName(), c.GetSource(), c.GetSeverity(),
+			formatFloat32(c.GetCvssV2()),
+			formatFloat32(c.GetCvssV3()),
+			formatFloat32(c.GetNvdCvssV3()),
+			c.GetSummary(),
+			c.GetLink(),
+			formatTimestamp(c.GetPublishedOn()),
+			c.GetAdvisoryName(),
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
+}
+
+func formatFloat32(f float32) string {
+	if f == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%.2f", f)
+}
+
+func formatTimestamp(t *timestamppb.Timestamp) string {
+	if t == nil {
+		return ""
+	}
+	return t.AsTime().Format(time.RFC3339)
 }

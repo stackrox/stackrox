@@ -58,6 +58,34 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx, q)
 }
 
+// Delete mocks base method.
+func (m *MockStore) Delete(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, id)
+}
+
+// DeleteMany mocks base method.
+func (m *MockStore) DeleteMany(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMany", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMany indicates an expected call of DeleteMany.
+func (mr *MockStoreMockRecorder) DeleteMany(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ctx, ids)
+}
+
 // Exists mocks base method.
 func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
@@ -74,10 +102,10 @@ func (mr *MockStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.NormalizedCVE, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.ImageCVEV2)
+	ret0, _ := ret[0].(*storage.NormalizedCVE)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -89,25 +117,26 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetByQueryFn mocks base method.
-func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ImageCVEV2) error) error {
+// GetIDs mocks base method.
+func (m *MockStore) GetIDs(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetIDs", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// GetByQueryFn indicates an expected call of GetByQueryFn.
-func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+// GetIDs indicates an expected call of GetIDs.
+func (mr *MockStoreMockRecorder) GetIDs(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockStore)(nil).GetIDs), ctx)
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.NormalizedCVE, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
-	ret0, _ := ret[0].([]*storage.ImageCVEV2)
+	ret0, _ := ret[0].([]*storage.NormalizedCVE)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -134,16 +163,44 @@ func (mr *MockStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockStore)(nil).Search), ctx, q)
 }
 
-// UpsertMany mocks base method.
-func (m *MockStore) UpsertMany(ctx context.Context, cves []*storage.ImageCVEV2) error {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, obj *storage.NormalizedCVE) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertMany", ctx, cves)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, obj any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
+}
+
+// UpsertMany mocks base method.
+func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.NormalizedCVE) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, objs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertMany indicates an expected call of UpsertMany.
-func (mr *MockStoreMockRecorder) UpsertMany(ctx, cves any) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpsertMany(ctx, objs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), ctx, cves)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), ctx, objs)
+}
+
+// Walk mocks base method.
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.NormalizedCVE) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk.
+func (mr *MockStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), ctx, fn)
 }

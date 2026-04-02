@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/converter/v2"
 	ImageCVEDataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -24,8 +24,9 @@ func init() {
 // NewImageCVEV2Loader creates a new loader for image cve data.
 func NewImageCVEV2Loader(ds ImageCVEDataStore.DataStore) ImageCVEV2Loader {
 	return &imageCveV2LoaderImpl{
-		loaded: make(map[string]*storage.ImageCVEV2),
-		ds:     ds,
+		loaded:    make(map[string]*storage.ImageCVEV2),
+		ds:        ds,
+		converter: converter.NewImageCVEConverter(),
 	}
 }
 
@@ -50,10 +51,10 @@ type ImageCVEV2Loader interface {
 
 // imageCveV2LoaderImpl implements the ImageCVELoader interface.
 type imageCveV2LoaderImpl struct {
-	lock   sync.RWMutex
-	loaded map[string]*storage.ImageCVEV2
-
-	ds ImageCVEDataStore.DataStore
+	lock      sync.RWMutex
+	loaded    map[string]*storage.ImageCVEV2
+	ds        ImageCVEDataStore.DataStore
+	converter converter.ImageCVEConverter
 }
 
 // FromIDs loads a set of image cves from a set of ids.
@@ -74,47 +75,64 @@ func (idl *imageCveV2LoaderImpl) FromID(ctx context.Context, id string) (*storag
 	return cves[0], nil
 }
 
-// FromQuery loads a set of image cves that match a query.
-func (idl *imageCveV2LoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error) {
-	results, err := idl.ds.Search(ctx, query)
+// FromQuery loads CVEs matching a query, synthesized from NormalizedCVE.
+func (idl *imageCveV2LoaderImpl) FromQuery(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEV2, error) {
+	// Use datastore's SearchRawImageCVEs which handles conversion.
+	cves, err := idl.ds.SearchRawImageCVEs(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+
+	// Cache loaded CVEs.
+	idl.lock.Lock()
+	defer idl.lock.Unlock()
+	for _, cve := range cves {
+		idl.loaded[cve.GetId()] = cve
+	}
+
+	return cves, nil
 }
 
-func (idl *imageCveV2LoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]string, error) {
-	results, err := idl.ds.Search(ctx, query)
+// GetIDs returns IDs matching a query.
+// Note: Uses Search() method which exists in DataStore from storage layer.
+func (idl *imageCveV2LoaderImpl) GetIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	results, err := idl.ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	return search.ResultsToIDs(results), nil
+
+	ids := make([]string, 0, len(results))
+	for _, r := range results {
+		ids = append(ids, r.ID)
+	}
+	return ids, nil
 }
 
-func (idl *imageCveV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	count, err := idl.ds.Count(ctx, query)
+// CountFromQuery returns count matching a query.
+func (idl *imageCveV2LoaderImpl) CountFromQuery(ctx context.Context, q *v1.Query) (int32, error) {
+	count, err := idl.ds.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
 	return int32(count), nil
 }
 
+// CountAll returns total CVE count.
 func (idl *imageCveV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
+	// Empty query matches all CVEs.
+	count, err := idl.ds.Count(ctx, &v1.Query{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(count), nil
 }
 
-func (idl *imageCveV2LoaderImpl) load(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
+func (idl *imageCveV2LoaderImpl) load(_ context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
+	// Load missing CVEs using GetBatch.
+	// Note: GetBatch currently returns empty without component context.
+	// This maintains backward compatibility during migration.
+	// TODO: Update callers to use GetCVEsForImage() for proper CVE+edge data.
 	cves, missing := idl.readAll(ids)
-	if len(missing) > 0 {
-		var err error
-		cves, err = idl.ds.GetBatch(ctx, collectMissing(ids, missing))
-		if err != nil {
-			return nil, err
-		}
-		idl.setAll(cves)
-		cves, missing = idl.readAll(ids)
-	}
 	if len(missing) > 0 {
 		missingIDs := make([]string, 0, len(missing))
 		for _, m := range missing {

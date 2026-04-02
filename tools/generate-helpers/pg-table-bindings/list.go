@@ -85,6 +85,8 @@ func init() {
 		&storage.NodeComponentCVEEdge{}:                         resources.Node,
 		&storage.NodeComponentEdge{}:                            resources.Node,
 		&storage.NodeCVE{}:                                      resources.Node,
+		&storage.NormalizedComponentCVEEdge{}:                   resources.Image,
+		&storage.NormalizedCVE{}:                                resources.Image,
 		&storage.NotificationSchedule{}:                         resources.Notifications,
 		&storage.Notifier{}:                                     resources.Integration,
 		&storage.NotifierEncConfig{}:                            resources.InstallationInfo,

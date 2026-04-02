@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,22 +21,22 @@ import (
 )
 
 const (
-	baseTable = "image_cves_v2"
-	storeName = "ImageCVEV2"
+	baseTable = "cves"
+	storeName = "NormalizedCVE"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCvesV2Schema
+	schema         = pkgSchema.CvesSchema
 	targetResource = resources.Image
 )
 
 type (
-	storeType = storage.ImageCVEV2
+	storeType = storage.NormalizedCVE
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.ImageCVEV2
+// Store is the interface to interact with the storage for storage.NormalizedCVE
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -68,13 +67,13 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoImageCvesV2,
-		copyFromImageCvesV2,
+		insertIntoCves,
+		copyFromCves,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		nil,
-		pkgSchema.ImagesSchema.OptionsMap,
+		nil,
 	)
 }
 
@@ -92,7 +91,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
+func insertIntoCves(batch *pgx.Batch, obj *storage.NormalizedCVE) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -102,57 +101,37 @@ func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetImageId(),
-		obj.GetCveBaseInfo().GetCve(),
-		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-		obj.GetCvss(),
+		obj.GetCveName(),
+		obj.GetSource(),
 		obj.GetSeverity(),
-		obj.GetImpactScore(),
-		obj.GetNvdcvss(),
-		protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-		obj.GetState(),
-		obj.GetIsFixable(),
-		obj.GetFixedBy(),
-		obj.GetComponentId(),
-		obj.GetAdvisory().GetName(),
-		obj.GetAdvisory().GetLink(),
-		pgutils.NilOrString(obj.GetImageIdV2()),
-		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
+		obj.GetCvssV2(),
+		obj.GetCvssV3(),
+		obj.GetNvdCvssV3(),
+		protocompat.NilOrTime(obj.GetPublishedOn()),
+		protocompat.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, Advisory_Name, Advisory_Link, ImageIdV2, FixAvailableTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, ImageIdV2 = EXCLUDED.ImageIdV2, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cves (Id, CveName, Source, Severity, CvssV2, CvssV3, NvdCvssV3, PublishedOn, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveName = EXCLUDED.CveName, Source = EXCLUDED.Source, Severity = EXCLUDED.Severity, CvssV2 = EXCLUDED.CvssV2, CvssV3 = EXCLUDED.CvssV3, NvdCvssV3 = EXCLUDED.NvdCvssV3, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-var copyColsImageCvesV2 = []string{
+var copyColsCves = []string{
 	"id",
-	"imageid",
-	"cvebaseinfo_cve",
-	"cvebaseinfo_publishedon",
-	"cvebaseinfo_createdat",
-	"cvebaseinfo_epss_epssprobability",
-	"cvss",
+	"cvename",
+	"source",
 	"severity",
-	"impactscore",
-	"nvdcvss",
-	"firstimageoccurrence",
-	"state",
-	"isfixable",
-	"fixedby",
-	"componentid",
-	"advisory_name",
-	"advisory_link",
-	"imageidv2",
-	"fixavailabletimestamp",
+	"cvssv2",
+	"cvssv3",
+	"nvdcvssv3",
+	"publishedon",
+	"createdat",
 	"serialized",
 }
 
-func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEV2) error {
+func copyFromCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NormalizedCVE) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -184,29 +163,19 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 
 		return []interface{}{
 			obj.GetId(),
-			obj.GetImageId(),
-			obj.GetCveBaseInfo().GetCve(),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-			obj.GetCvss(),
+			obj.GetCveName(),
+			obj.GetSource(),
 			obj.GetSeverity(),
-			obj.GetImpactScore(),
-			obj.GetNvdcvss(),
-			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-			obj.GetState(),
-			obj.GetIsFixable(),
-			obj.GetFixedBy(),
-			obj.GetComponentId(),
-			obj.GetAdvisory().GetName(),
-			obj.GetAdvisory().GetLink(),
-			pgutils.NilOrString(obj.GetImageIdV2()),
-			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
+			obj.GetCvssV2(),
+			obj.GetCvssV3(),
+			obj.GetNvdCvssV3(),
+			protocompat.NilOrTime(obj.GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCreatedAt()),
 			serialized,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cves_v2"}, copyColsImageCvesV2, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cves"}, copyColsCves, inputRows); err != nil {
 		return err
 	}
 

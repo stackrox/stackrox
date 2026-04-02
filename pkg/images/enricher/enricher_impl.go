@@ -48,7 +48,6 @@ var (
 
 type enricherImpl struct {
 	cvesSuppressorV2 CVESuppressor
-	cveInfoEnricher  CVEInfoEnricher
 	integrations     integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
@@ -98,13 +97,6 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 				return EnrichmentResult{
 					ScanResult: ScanNotDone,
 				}, errors.Wrapf(err, "retrieving image vulnerabilities from %s [%s]", scanner.Name(), scanner.Type())
-			}
-
-			// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
-			if e.cveInfoEnricher != nil {
-				if err := e.cveInfoEnricher.EnrichImageWithCVEInfo(context.Background(), image); err != nil {
-					log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
-				}
 			}
 
 			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
@@ -199,12 +191,6 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	protocompat.Merge(image, scannedImage)
 
 	// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
-	if e.cveInfoEnricher != nil {
-		if err := e.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, image); err != nil {
-			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
-		}
-	}
-
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 	return true, nil
 }
@@ -371,12 +357,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	updated = updated || didUpdateSigVerificationData
 
 	// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
-	if e.cveInfoEnricher != nil {
-		if err := e.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, image); err != nil {
-			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
-		}
-	}
-
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
 	if !errorList.Empty() {

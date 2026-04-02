@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	cvev2pgstore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -55,11 +56,13 @@ func (s *ImagesStoreSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
-	s.cvePgStore = cveStore.New(s.testDB.DB)
+	s.cvePgStore = cvev2pgstore.New(s.testDB.DB)
 }
 
 func (s *ImagesStoreSuite) SetupTest() {
-	_, err := s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesV2TableName+" CASCADE")
+	_, err := s.testDB.DB.Exec(s.ctx, "TRUNCATE component_cve_edges CASCADE")
+	s.Require().NoError(err)
+	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE cves CASCADE")
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentV2TableName+" CASCADE")
 	s.Require().NoError(err)
@@ -163,7 +166,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	imageCve, _, err := s.cvePgStore.Get(s.ctx, id)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(imageCve)
-	s.Equal(float32(10), imageCve.GetNvdcvss())
+	s.Equal(float32(10), imageCve.GetNvdCvssV3())
 	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
 }

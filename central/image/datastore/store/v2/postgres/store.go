@@ -10,6 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
+	edgeStore "github.com/stackrox/rox/central/cve/image/componentcveedge/datastore/store/postgres"
+	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/image/views"
@@ -33,12 +35,8 @@ import (
 )
 
 const (
-	imagesTable                = pkgSchema.ImagesTableName
-	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
-	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
-	// TODO(ROX-29911): really need cache table for the dates.
-	imageCVEsLegacyTable     = "image_cves"
-	imageCVEEdgesLegacyTable = "image_cve_edges"
+	imagesTable            = pkgSchema.ImagesTableName
+	imageComponentsV2Table = pkgSchema.ImageComponentV2TableName
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 )
@@ -46,20 +44,12 @@ const (
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesSchema
-
-	// Assume it exists
-	legacyCVEExists = true
 )
 
 type imagePartsAsSlice struct {
 	image        *storage.Image
 	componentsV2 []*storage.ImageComponentV2
 	cvesV2       []*storage.ImageCVEV2
-}
-
-type timeFields struct {
-	createdAt            time.Time
-	firstImageOccurrence time.Time
 }
 
 // TODO(ROX-28222): Refactor logic operating on other tables out and up to the datastore layer.
@@ -70,6 +60,8 @@ func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence)
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
 		keyFence:           keyFence,
+		cveStore:           cveStore.New(db),
+		edgeStore:          edgeStore.New(db),
 	}
 }
 
@@ -77,6 +69,8 @@ type storeImpl struct {
 	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
+	cveStore           cveStore.Store
+	edgeStore          edgeStore.Store
 }
 
 func (s *storeImpl) insertIntoImages(
@@ -85,62 +79,6 @@ func (s *storeImpl) insertIntoImages(
 	metadataUpdated, scanUpdated bool,
 	iTime time.Time,
 ) error {
-	// First Image Occurrence and Created At are set based on the CVE itself, not the CVE
-	// within the image.  Since a CVE can occur multiple times within an image we can grab
-	// those times for the incoming data and set the times appropriately.  We will later go through the
-	// existing CVEs to make further adjustments if necessary to make sure we do not overwrite
-	// the times of previous occurrences.
-	cveTimeMap := make(map[string]*timeFields)
-	for _, cve := range parts.cvesV2 {
-		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-			if cve.GetCveBaseInfo().GetCreatedAt() != nil && val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
-				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
-			}
-			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
-				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-			}
-		} else {
-			if cve.GetFirstImageOccurrence() == nil {
-				cve.FirstImageOccurrence = timestamppb.New(iTime)
-			}
-			if cve.GetCveBaseInfo().GetCreatedAt() == nil {
-				cve.GetCveBaseInfo().CreatedAt = timestamppb.New(iTime)
-			}
-			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
-				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
-				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
-			}
-		}
-	}
-
-	// Grab all CVEs for the image.
-	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId())
-	if err != nil {
-		return err
-	}
-
-	if len(existingCVEs) == 0 {
-		// If we did not find any existing CVEs for the image, we may have just upgraded to the version using new CVE data model.
-		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
-		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetId())
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, cve := range existingCVEs {
-		// If the existing CVE is not already in the map that implies it no longer exists for this image and
-		// the CVE will be removed.
-		if val, ok := cveTimeMap[cve.GetCve()]; ok {
-			if cve.GetFirstSystemOccurrence() != nil && val.createdAt.After(cve.GetFirstSystemOccurrence().AsTime()) {
-				val.createdAt = cve.GetFirstSystemOccurrence().AsTime()
-			}
-			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
-				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-			}
-		}
-	}
-
 	cloned := parts.image
 	// Since we are converting the component and CVE data embedded within the Image.Scan, we
 	// need to clear that data out so that it is not stored with Image thus greatly duplicating data.
@@ -179,7 +117,7 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
-	_, err = tx.Exec(ctx, finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -212,7 +150,9 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
-	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cvesV2...)
+	// Insert CVEs into the normalized cves and component_cve_edges tables.
+	// first_system_occurrence is preserved by the DB's ON CONFLICT clause in component_cve_edges.
+	return s.upsertCVEsToNormalizedTables(ctx, parts.cvesV2, iTime)
 }
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
@@ -309,89 +249,170 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 	return nil
 }
 
-func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime time.Time, cveTimeMap map[string]*timeFields, objs ...*storage.ImageCVEV2) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
-	inputRows := make([][]interface{}, 0, batchSize)
+// upsertCVEsToNormalizedTables inserts CVEs into the normalized cves and component_cve_edges tables.
+// CVE IDs are derived deterministically from the content hash so ON CONFLICT(id) is idempotent.
+// first_system_occurrence is set from the CVE's created_at on first insert and preserved by the DB's
+// ON CONFLICT clause on subsequent upserts.
+func (s *storeImpl) upsertCVEsToNormalizedTables(
+	ctx context.Context,
+	cvesV2 []*storage.ImageCVEV2,
+	iTime time.Time,
+) error {
+	// Collect CVEs and edges to upsert.
+	normalizedCVEs := make([]*storage.NormalizedCVE, 0, len(cvesV2))
+	edges := make([]*storage.NormalizedComponentCVEEdge, 0, len(cvesV2))
 
-	copyCols := []string{
-		"id",
-		"imageid",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"cvebaseinfo_epss_epssprobability",
-		"cvss",
-		"severity",
-		"impactscore",
-		"nvdcvss",
-		"firstimageoccurrence",
-		"state",
-		"isfixable",
-		"fixedby",
-		"componentid",
-		"advisory_name",
-		"advisory_link",
-		"fixavailabletimestamp",
-		"serialized",
-	}
+	// Group CVEs by component ID to track which CVEs belong to each component.
+	componentCVEMap := make(map[string][]string)
 
-	for idx, obj := range objs {
-		// If we have seen this CVE in the image already, set the times consistently.
-		if cveTimes := cveTimeMap[obj.GetCveBaseInfo().GetCve()]; cveTimes != nil {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt)
-			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence)
-		} else {
-			if obj.GetCveBaseInfo().GetCreatedAt() == nil {
-				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			}
-			if obj.GetFirstImageOccurrence() == nil {
-				obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			}
+	for _, cveV2 := range cvesV2 {
+		// Extract CVSS V3 score.
+		var cvssV3 float32
+		if v3 := cveV2.GetCveBaseInfo().GetCvssV3(); v3 != nil {
+			cvssV3 = v3.GetScore()
 		}
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+		// Determine primary source from CVSS metrics or datasource.
+		source := primarySourceFromImageCVE(cveV2)
+		severity := convertutils.SeverityToString(cveV2.GetSeverity())
+
+		// Compute content hash and derive deterministic UUID.
+		contentHash := convertutils.ComputeCVEContentHash(
+			cveV2.GetCveBaseInfo().GetCve(), source, severity, cvssV3, cveV2.GetCveBaseInfo().GetSummary(),
+		)
+		cveID := convertutils.DeterministicCVEID(contentHash)
+
+		// Build NormalizedCVE proto.
+		normalizedCVE := &storage.NormalizedCVE{
+			Id:           cveID,
+			CveName:      cveV2.GetCveBaseInfo().GetCve(),
+			Source:       source,
+			Severity:     severity,
+			CvssV3:       cvssV3,
+			NvdCvssV3:    cveV2.GetNvdcvss(),
+			Summary:      cveV2.GetCveBaseInfo().GetSummary(),
+			Link:         cveV2.GetCveBaseInfo().GetLink(),
+			PublishedOn:  cveV2.GetCveBaseInfo().GetPublishedOn(),
+			AdvisoryName: cveV2.GetAdvisory().GetName(),
+			AdvisoryLink: cveV2.GetAdvisory().GetLink(),
+			ContentHash:  contentHash,
+			CreatedAt:    cveV2.GetCveBaseInfo().GetCreatedAt(),
+		}
+		if v2 := cveV2.GetCveBaseInfo().GetCvssV2(); v2 != nil {
+			normalizedCVE.CvssV2 = v2.GetScore()
+		}
+		normalizedCVEs = append(normalizedCVEs, normalizedCVE)
+
+		// Track this CVE for the component.
+		componentCVEMap[cveV2.GetComponentId()] = append(componentCVEMap[cveV2.GetComponentId()], cveID)
+
+		// Set first_system_occurrence from the CVE's creation timestamp, falling back to scan time.
+		// The DB's ON CONFLICT clause preserves the earliest value across subsequent upserts.
+		firstSysOccurrenceTS := cveV2.GetCveBaseInfo().GetCreatedAt()
+		if firstSysOccurrenceTS == nil {
+			firstSysOccurrenceTS = timestamppb.New(iTime)
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetImageId(),
-			obj.GetCveBaseInfo().GetCve(),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-			obj.GetCvss(),
-			obj.GetSeverity(),
-			obj.GetImpactScore(),
-			obj.GetNvdcvss(),
-			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-			obj.GetState(),
-			obj.GetIsFixable(),
-			obj.GetFixedBy(),
-			obj.GetComponentId(),
-			obj.GetAdvisory().GetName(),
-			obj.GetAdvisory().GetLink(),
-			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-			serialized,
+		// Build NormalizedComponentCVEEdge proto.
+		// Generate a composite ID for the edge.
+		edge := &storage.NormalizedComponentCVEEdge{
+			Id:                    cveID + "#" + cveV2.GetComponentId(),
+			ComponentId:           cveV2.GetComponentId(),
+			CveId:                 cveID,
+			IsFixable:             cveV2.GetIsFixable(),
+			FixedBy:               cveV2.GetFixedBy(),
+			State:                 cveV2.GetState().String(),
+			FirstSystemOccurrence: firstSysOccurrenceTS,
+			FixAvailableAt:        cveV2.GetFixAvailableTimestamp(),
+		}
+		edges = append(edges, edge)
+	}
+
+	// Batch upsert all CVEs.
+	if len(normalizedCVEs) > 0 {
+		if err := s.cveStore.UpsertMany(ctx, normalizedCVEs); err != nil {
+			return errors.Wrap(err, "batch upserting NormalizedCVEs")
+		}
+	}
+
+	// Batch upsert all edges.
+	if len(edges) > 0 {
+		if err := s.edgeStore.UpsertMany(ctx, edges); err != nil {
+			return errors.Wrap(err, "batch upserting edges")
+		}
+	}
+
+	// Delete stale edges for each component.
+	// For each component, delete edges that aren't in the new CVE list.
+	for componentID, newCVEIDs := range componentCVEMap {
+		// Build a query to find all edges for this component that aren't in newCVEIDs.
+		// Then delete those edges.
+		// Note: This requires walking all edges for the component and checking against newCVEIDs.
+		var edgesToDelete []string
+		err := s.edgeStore.Walk(ctx, func(edge *storage.NormalizedComponentCVEEdge) error {
+			if edge.GetComponentId() != componentID {
+				return nil
+			}
+			// Check if this edge's CVE is in the new list.
+			found := false
+			for _, cveID := range newCVEIDs {
+				if edge.GetCveId() == cveID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				edgesToDelete = append(edgesToDelete, edge.GetId())
+			}
+			return nil
 		})
+		if err != nil {
+			return errors.Wrapf(err, "walking edges for component %q to find stale edges", componentID)
+		}
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{imageComponentsV2CVEsTable}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
+		if len(edgesToDelete) > 0 {
+			if err := s.edgeStore.DeleteMany(ctx, edgesToDelete); err != nil {
+				return errors.Wrapf(err, "deleting stale edges for component %q", componentID)
 			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
 	}
 
 	return nil
+}
+
+// primarySourceFromImageCVE returns the primary source string for an ImageCVEV2
+// based on its CVSS metrics, preferring NVD > RED_HAT > OSV > UNKNOWN.
+func primarySourceFromImageCVE(cveV2 *storage.ImageCVEV2) string {
+	priority := map[storage.Source]int{
+		storage.Source_SOURCE_NVD:     3,
+		storage.Source_SOURCE_RED_HAT: 2,
+		storage.Source_SOURCE_OSV:     1,
+	}
+	best := storage.Source_SOURCE_UNKNOWN
+	bestPrio := -1
+	for _, m := range cveV2.GetCveBaseInfo().GetCvssMetrics() {
+		if p := priority[m.GetSource()]; p > bestPrio {
+			best = m.GetSource()
+			bestPrio = p
+		}
+	}
+	return convertutils.SourceToString(best)
+}
+
+// stringPtr returns a pointer to a string, or nil if the string is empty.
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// float32Ptr returns a pointer to a float32, or nil if the value is zero.
+func float32Ptr(f float32) *float32 {
+	if f == 0 {
+		return nil
+	}
+	return &f
 }
 
 func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error) {
@@ -643,113 +664,76 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([
 	return pgutils.ScanRows[storage.ImageComponentV2, *storage.ImageComponentV2](rows)
 }
 
+// getImageComponentCVEs reads normalized CVEs for a component from the cves and
+// component_cve_edges tables and reconstructs ImageCVEV2 objects for the merge path.
 func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID string) ([]*storage.ImageCVEV2, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
-	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
-	// the updates.  That may prove to not matter, but for now doing it this way.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE componentid = $1", componentID)
+	const querySQL = `
+		SELECT c.serialized, e.is_fixable, e.fixed_by, e.state, e.first_system_occurrence, e.fix_available_at
+		FROM cves c
+		JOIN component_cve_edges e ON c.id = e.cve_id
+		WHERE e.component_id = $1
+	`
+	rows, err := tx.Query(ctx, querySQL, componentID)
 	if err != nil {
 		return nil, err
 	}
-	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
-}
+	defer rows.Close()
 
-func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
-
-	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
-	// the updates.  That may prove to not matter, but for now doing it this way.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageid = $1", imageID)
-	if err != nil {
-		return nil, err
-	}
-
-	var imageCVEs []*storage.ImageCVEV2
-	imageCVEs, err = pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
-	if err != nil {
-		return nil, err
-	}
-
-	vulns := make([]*storage.EmbeddedVulnerability, 0, len(imageCVEs))
-	for _, cve := range imageCVEs {
-		vulns = append(vulns, convertutils.ImageCVEV2ToEmbeddedVulnerability(cve))
-	}
-
-	return vulns, nil
-}
-
-// The purpose of this function is to get legacy CVEs for the given imageID so that we can migrate the CVE created and
-// first image occurrence timestamps to the new CVE data model. So we do not populate the fixedBy and vulnerability state
-// in the returned vulns as that information is not necessary for migrating the timestamps.
-func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
-
-	if !legacyCVEExists {
-		return nil, nil
-	}
-
-	existenceRow := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE "+
-		"table_name = $1 AND table_schema = ANY(current_schemas(FALSE)))", imageCVEsLegacyTable)
-	var exists bool
-	if err := existenceRow.Scan(&exists); err != nil {
-		return nil, err
-	}
-	// Old tables do not exist so newer installation.  Set global var  so we skip these checks.
-	if !exists {
-		legacyCVEExists = false
-		return nil, nil
-	}
-
-	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
-	// would not be initialized when the new data model is enabled
-	cveRows, err := tx.Query(ctx, "SELECT "+imageCVEsLegacyTable+".serialized FROM "+imageCVEsLegacyTable+
-		" INNER JOIN "+imageCVEEdgesLegacyTable+" ON "+imageCVEsLegacyTable+".Id = "+imageCVEEdgesLegacyTable+".ImageCveId"+
-		" WHERE "+imageCVEEdgesLegacyTable+".ImageId = $1", imageID)
-	if err != nil {
-		return nil, err
-	}
-
-	// There should be at most one edge for a given pair of cveID and imageID in the image CVE edges table. And in the above query,
-	// we filter the image CVE edges by a single imageID. So there should be only one row per cveID in the query's result.
-	var imageCVEs []*storage.ImageCVE
-	imageCVEs, err = pgutils.ScanRows[storage.ImageCVE, *storage.ImageCVE](cveRows)
-	if err != nil {
-		return nil, err
-	}
-
-	edgeRows, err := tx.Query(ctx, "SELECT serialized FROM "+imageCVEEdgesLegacyTable+" WHERE ImageId = $1", imageID)
-	if err != nil {
-		return nil, err
-	}
-
-	var imageCVEEdges []*storage.ImageCVEEdge
-	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge, *storage.ImageCVEEdge](edgeRows)
-	if err != nil {
-		return nil, err
-	}
-
-	// There should be at most one edge for a given pair of cveID and imageID in the image CVE edges table. And in the above query,
-	// we filter the image CVE edges by a single imageID. So there should be only one row per cveID in the query's result.
-	edgesByCveID := make(map[string]*storage.ImageCVEEdge)
-	for _, edge := range imageCVEEdges {
-		if _, ok := edgesByCveID[edge.GetImageCveId()]; !ok {
-			edgesByCveID[edge.GetImageCveId()] = edge
+	var result []*storage.ImageCVEV2
+	for rows.Next() {
+		var serialized []byte
+		var isFixable bool
+		var fixedBy, stateStr string
+		var firstSysOcc, fixAvailAt *time.Time
+		if err := rows.Scan(&serialized, &isFixable, &fixedBy, &stateStr, &firstSysOcc, &fixAvailAt); err != nil {
+			return nil, err
 		}
-	}
 
-	vulns := make([]*storage.EmbeddedVulnerability, 0, len(imageCVEs))
-	for _, cve := range imageCVEs {
-		edge, ok := edgesByCveID[cve.GetId()]
-		if !ok {
-			continue
+		n := new(storage.NormalizedCVE)
+		if err := n.UnmarshalVTUnsafe(serialized); err != nil {
+			return nil, err
 		}
-		vuln := convertutils.ImageCVEToEmbeddedVulnerability(cve)
-		vuln.FirstImageOccurrence = edge.GetFirstImageOccurrence()
-		vulns = append(vulns, vuln)
-	}
 
-	return vulns, nil
+		vulnState := storage.VulnerabilityState_OBSERVED
+		switch stateStr {
+		case "DEFERRED":
+			vulnState = storage.VulnerabilityState_DEFERRED
+		case "FALSE_POSITIVE":
+			vulnState = storage.VulnerabilityState_FALSE_POSITIVE
+		}
+
+		cveV2 := &storage.ImageCVEV2{
+			ComponentId: componentID,
+			CveBaseInfo: &storage.CVEInfo{
+				Cve:         n.GetCveName(),
+				Summary:     n.GetSummary(),
+				Link:        n.GetLink(),
+				PublishedOn: n.GetPublishedOn(),
+				CreatedAt:   n.GetCreatedAt(),
+			},
+			Cvss:      n.GetCvssV3(),
+			Severity:  convertutils.SeverityFromString(n.GetSeverity()),
+			Nvdcvss:   n.GetNvdCvssV3(),
+			IsFixable: isFixable,
+			State:     vulnState,
+		}
+		if isFixable && fixedBy != "" {
+			cveV2.HasFixedBy = &storage.ImageCVEV2_FixedBy{FixedBy: fixedBy}
+		}
+		if n.GetAdvisoryName() != "" || n.GetAdvisoryLink() != "" {
+			cveV2.Advisory = &storage.Advisory{Name: n.GetAdvisoryName(), Link: n.GetAdvisoryLink()}
+		}
+		if firstSysOcc != nil {
+			cveV2.FirstImageOccurrence = timestamppb.New(*firstSysOcc)
+		}
+		if fixAvailAt != nil {
+			cveV2.FixAvailableTimestamp = timestamppb.New(*fixAvailAt)
+		}
+		result = append(result, cveV2)
+	}
+	return result, rows.Err()
 }
 
 // Delete removes the specified ID from the store.
@@ -930,95 +914,25 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 		return nil
 	}
 
-	tx, ctx, err := s.begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Collect stored cves for the image.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" "+
-		"WHERE "+imageComponentsV2CVEsTable+".imageid = ANY($1::text[]) AND "+imageComponentsV2CVEsTable+".cvebaseinfo_cve = $2", imageIDs, cve)
-	if err != nil {
-		return err
-	}
-	imageCVEs, err := pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
-	if err != nil {
-		return err
-	}
-
-	// Update state.
-	cveIDs := make([]string, 0, len(imageCVEs))
-	for _, compCVE := range imageCVEs {
-		compCVE.State = state
-		cveIDs = append(cveIDs, compCVE.GetId())
-	}
-
-	// Construct keys to lock.
-	keys := make([][]byte, 0, len(cveIDs)+len(imageIDs))
+	// Update state in component_cve_edges for all components belonging to the given images that
+	// are linked to the CVE with the given name.
+	const updateSQL = `
+		UPDATE component_cve_edges e
+		   SET state = $1
+		WHERE e.cve_id IN (SELECT id FROM cves WHERE cve_name = $2)
+		  AND e.component_id IN (
+		      SELECT ic.id FROM image_component_v2 ic WHERE ic.imageid = ANY($3::text[])
+		  )
+	`
+	keys := make([][]byte, 0, len(imageIDs))
 	for _, id := range imageIDs {
-		keys = append(keys, []byte(id))
-	}
-	for _, id := range cveIDs {
 		keys = append(keys, []byte(id))
 	}
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		err = s.updateCVEVulnState(ctx, tx, imageCVEs...)
-		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
-		}
-		return tx.Commit(ctx)
+		_, err := s.db.Exec(ctx, updateSQL, state.String(), cve, imageIDs)
+		return err
 	})
-}
-
-func (s *storeImpl) updateCVEVulnState(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageCVEV2) error {
-	batch := &pgx.Batch{}
-	for _, obj := range objs {
-		if err := s.insertIntoImageComponentV2Cves(batch, obj); err != nil {
-			return errors.Wrap(err, "error on insertInto")
-		}
-	}
-	batchResults := tx.SendBatch(ctx, batch)
-	if err := batchResults.Close(); err != nil {
-		return errors.Wrap(err, "closing batch")
-	}
-	return nil
-}
-
-func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
-	serialized, marshalErr := obj.MarshalVT()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
-	values := []interface{}{
-		obj.GetId(),
-		obj.GetImageId(),
-		obj.GetCveBaseInfo().GetCve(),
-		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-		obj.GetCvss(),
-		obj.GetSeverity(),
-		obj.GetImpactScore(),
-		obj.GetNvdcvss(),
-		protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-		obj.GetState(),
-		obj.GetIsFixable(),
-		obj.GetFixedBy(),
-		obj.GetComponentId(),
-		obj.GetAdvisory().GetName(),
-		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-		serialized,
-	}
-
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, FixAvailableTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, serialized = EXCLUDED.serialized"
-	batch.Queue(finalStr, values...)
-
-	return nil
 }
 
 func gatherKeys(parts *imagePartsAsSlice) [][]byte {
