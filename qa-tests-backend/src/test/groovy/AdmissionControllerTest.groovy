@@ -247,7 +247,7 @@ class AdmissionControllerTest extends BaseSpecification {
         log.info "Set cluster label ${key}=${value}"
         // Wait for cluster label change to propagate to Sensor
         withRetry(10, 1) {
-            def cluster = ClusterService.getCluster()
+            cluster = ClusterService.getCluster()
             assert cluster.getLabelsMap().get(key) == value
         }
     }
@@ -268,7 +268,7 @@ class AdmissionControllerTest extends BaseSpecification {
         log.info "Cleared cluster labels"
         // Wait for cluster label removal to propagate to Sensor
         withRetry(10, 1) {
-            def cluster = ClusterService.getCluster()
+            cluster = ClusterService.getCluster()
             assert cluster.getLabelsMap().isEmpty()
         }
     }
