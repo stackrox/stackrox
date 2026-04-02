@@ -1108,9 +1108,7 @@ module.exports = [
             'src/Containers/MainPage/Header/CLIDownloadMenu.tsx', // replace
             'src/Containers/MainPage/Header/UserMenu.tsx', // replace
             'src/Containers/MainPage/InviteUsers/InviteUsersModal.tsx', // replace
-            'src/Containers/Policies/PolicyPage.tsx', // replace
             'src/Containers/ReduxUserPermissionProvider.tsx', // replace
-            'src/Containers/Risk/CreatePolicyFromSearch.tsx', // replace
             'src/Containers/User/UserPage.jsx', // replace
             'src/Containers/VulnMgmt/**', // deprecated
             'src/hooks/useAuthStatus.ts', // replace
