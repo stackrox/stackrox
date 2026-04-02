@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,8 +30,14 @@ func BenchmarkInitializeRankers(b *testing.B) {
 	store := pgStore.New(testDB.DB)
 
 	// Insert a parent image row to satisfy the foreign key constraint.
-	_, err := testDB.DB.Exec(ctx, "INSERT INTO images (Id, serialized) VALUES ($1, $2) ON CONFLICT DO NOTHING", "bench-image", []byte{})
-	require.NoError(b, err)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		_, err := testDB.DB.Exec(ctx, "INSERT INTO images_v2 (Id, serialized) VALUES ($1, $2) ON CONFLICT DO NOTHING", "bench-image", []byte{})
+		require.NoError(b, err)
+	} else {
+		_, err := testDB.DB.Exec(ctx, "INSERT INTO images (Id, serialized) VALUES ($1, $2) ON CONFLICT DO NOTHING", "bench-image", []byte{})
+		require.NoError(b, err)
+	}
 
 	// Insert test components with realistic serialized blob sizes.
 	numComponents := 500
@@ -42,8 +49,13 @@ func BenchmarkInitializeRankers(b *testing.B) {
 			RiskScore:       float32(i) / float32(numComponents),
 			Source:          storage.SourceType_OS,
 			OperatingSystem: "linux",
-			ImageId:         "bench-image",
 			Location:        fmt.Sprintf("/usr/lib/pkg-%d", i),
+		}
+		// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+		if features.FlattenImageData.Enabled() {
+			component.ImageIdV2 = "bench-image"
+		} else {
+			component.ImageId = "bench-image"
 		}
 		require.NoError(b, store.Upsert(ctx, component))
 	}
