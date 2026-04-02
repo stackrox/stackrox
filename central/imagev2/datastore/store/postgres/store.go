@@ -605,12 +605,7 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 		return err
 	}
 
-	componentIDs := make([]string, 0, len(components))
-	for _, c := range components {
-		componentIDs = append(componentIDs, c.GetId())
-	}
-
-	cvesByComponent, err := getAllImageComponentCVEs(ctx, tx, componentIDs)
+	cvesByComponent, err := getAllImageComponentCVEs(ctx, tx, image.GetId())
 	if err != nil {
 		return err
 	}
@@ -668,14 +663,10 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([
 	return pgutils.ScanRows[storage.ImageComponentV2, *storage.ImageComponentV2](rows)
 }
 
-func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.ImageCVEV2, error) {
+func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, imageID string) (map[string][]*storage.ImageCVEV2, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
-	if len(componentIDs) == 0 {
-		return nil, nil
-	}
-
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE componentid = ANY($1)", componentIDs)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageidv2 = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
@@ -684,9 +675,10 @@ func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentIDs
 		return nil, err
 	}
 
-	result := make(map[string][]*storage.ImageCVEV2, len(componentIDs))
+	result := make(map[string][]*storage.ImageCVEV2)
 	for _, cve := range cves {
-		result[cve.GetComponentId()] = append(result[cve.GetComponentId()], cve)
+		compID := cve.GetComponentId()
+		result[compID] = append(result[compID], cve)
 	}
 	return result, nil
 }
