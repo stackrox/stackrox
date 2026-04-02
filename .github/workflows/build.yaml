@@ -409,7 +409,8 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   build-and-push-main:
-    runs-on: ubuntu-latest
+    # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -730,7 +731,7 @@ jobs:
         add_build_comment_to_pr
 
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
