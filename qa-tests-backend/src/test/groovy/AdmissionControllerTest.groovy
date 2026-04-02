@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -77,8 +79,6 @@ class AdmissionControllerTest extends BaseSpecification {
             assert policyID
             createdPolicyIds.add(policyID)
         }
-        // Wait for policy propagation to sensor and admission controller
-        sleep(10000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
         // Pre-scan the image so Central has cached scan results for CVE-based policy evaluation.
         ImageService.scanImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
@@ -88,6 +88,26 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
+
+        // Wait for policy propagation to sensor and admission controller
+        // Verify by attempting to create a deployment that should be blocked
+        def testDeployment = new Deployment()
+                .setName("setup-verification")
+                .setNamespace(TEST_NAMESPACE)
+                .setImage(BUSYBOX_LATEST_TAG_IMAGE)
+                .addLabel("app", "test")
+
+        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
+            def created = orchestrator.createDeploymentNoWait(testDeployment)
+            assert !created // Should be blocked by latest tag policy
+        }
+
+        // Clean up if somehow it was created
+        try {
+            orchestrator.deleteDeployment(testDeployment)
+        } catch (Exception ignored) {
+            // Expected - deployment should not exist
+        }
     }
 
     def cleanupSpec() {
@@ -166,9 +186,6 @@ class AdmissionControllerTest extends BaseSpecification {
             .build()
         Services.updatePolicy(scopedLatestTagPolicy)
 
-        // Wait for policy propagation to sensor
-        sleep(5000)
-
         then:
         "Create a deployment with a latest tag"
         def deployment = new Deployment()
@@ -176,7 +193,13 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setNamespace(TEST_NAMESPACE)
                 .setImage(BUSYBOX_LATEST_TAG_IMAGE)
                 .addLabel("app", "test")
-        def created = orchestrator.createDeploymentNoWait(deployment)
+
+        // Wait for policy propagation to sensor and admission controller
+        def created = null
+        withRetry(10, 1) {
+            created = orchestrator.createDeploymentNoWait(deployment)
+            assert created == !(clusterMatch && nsMatch)
+        }
 
         and:
         "Verify that creation was only blocked if all scopes match"
@@ -223,7 +246,10 @@ class AdmissionControllerTest extends BaseSpecification {
 
         log.info "Set cluster label ${key}=${value}"
         // Wait for cluster label change to propagate to Sensor
-        sleep(5000)
+        withRetry(10, 1) {
+            def cluster = ClusterService.getCluster()
+            assert cluster.getLabelsMap().get(key) == value
+        }
     }
 
     // Helper method to remove all cluster labels using Central API
@@ -241,7 +267,10 @@ class AdmissionControllerTest extends BaseSpecification {
 
         log.info "Cleared cluster labels"
         // Wait for cluster label removal to propagate to Sensor
-        sleep(5000)
+        withRetry(10, 1) {
+            def cluster = ClusterService.getCluster()
+            assert cluster.getLabelsMap().isEmpty()
+        }
     }
 
     // Helper method to create namespace with labels using fabric8 client
@@ -306,8 +335,6 @@ class AdmissionControllerTest extends BaseSpecification {
         )
 
         def policyId = PolicyService.createNewPolicy(policyBuilder.build())
-        // Wait for policy propagation to Sensor and Admission Controller
-        sleep(10000)
 
         when:
         "Create a privileged deployment"
@@ -318,7 +345,12 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setPrivileged(true)
                 .addLabel("app", "test")
 
-        def created = orchestrator.createDeploymentNoWait(deployment)
+        // Wait for policy propagation to Sensor and Admission Controller
+        def created = null
+        withRetry(20, 1) {
+            created = orchestrator.createDeploymentNoWait(deployment)
+            assert created == !blocked
+        }
 
         then:
         "Verify deployment blocked/allowed based on label matching"
@@ -393,8 +425,6 @@ class AdmissionControllerTest extends BaseSpecification {
         )
 
         def policyId = PolicyService.createNewPolicy(policyBuilder.build())
-        // Wait for policy propagation to Sensor and Admission Controller
-        sleep(10000)
 
         when:
         "Create privileged deployment with initial labels - should be blocked"
@@ -405,7 +435,12 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setPrivileged(true)
                 .addLabel("app", "test")
 
-        def created1 = orchestrator.createDeploymentNoWait(deployment1)
+        // Wait for policy propagation to Sensor and Admission Controller
+        def created1 = null
+        withRetry(20, 1) {
+            created1 = orchestrator.createDeploymentNoWait(deployment1)
+            assert !created1
+        }
 
         then:
         "Verify initial deployment is blocked"
@@ -428,7 +463,14 @@ class AdmissionControllerTest extends BaseSpecification {
             }
             orchestrator.client.namespaces().withName(testNs).replace(ns)
             // Wait for namespace label change to propagate to Sensor
-            sleep(5000)
+            withRetry(10, 1) {
+                def updatedNs = orchestrator.client.namespaces().withName(testNs).get()
+                if (changedValue == null) {
+                    assert updatedNs.metadata.labels == null || !updatedNs.metadata.labels.containsKey("team")
+                } else {
+                    assert updatedNs.metadata.labels?.get("team") == changedValue
+                }
+            }
         }
 
         and:
@@ -440,7 +482,12 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setPrivileged(true)
                 .addLabel("app", "test")
 
-        def created2 = orchestrator.createDeploymentNoWait(deployment2)
+        // Wait for label changes to propagate to admission controller
+        def created2 = null
+        withRetry(10, 1) {
+            created2 = orchestrator.createDeploymentNoWait(deployment2)
+            assert created2
+        }
 
         then:
         "Verify deployment is allowed after label change"
