@@ -74,22 +74,8 @@ konflux-build:
 
 ai-review:
 - changed-files:
-  - any-glob-to-any-file:
-    - .github/**/*
-    - .openshift-ci/**/*
-    - pkg/auth/**/*
-    - pkg/sac/**/*
-    - roxctl/**/*
-    - scripts/ci/**/
-    - sensor/**/*
+  - any-glob-to-any-file: '**'
 
 coderabbit-review:
 - changed-files:
-  - any-glob-to-any-file:
-    - .github/**/*
-    - .openshift-ci/**/*
-    - pkg/auth/**/*
-    - pkg/sac/**/*
-    - roxctl/**/*
-    - scripts/ci/**/
-    - sensor/**/*
+  - any-glob-to-any-file: '**'
