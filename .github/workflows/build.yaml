@@ -589,8 +589,9 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
-      - name: Push images
-        # Skip for external contributions.
+      - name: Push remaining images
+        # Main image already pushed by build-push-action.
+        # Push roxctl, central-db, and tag main for stackrox-io.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
@@ -600,12 +601,32 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+            local_tag="${BUILD_TAG}"
+
+            # Push roxctl and central-db (built locally via make)
+            for image in roxctl central-db; do
+              # Tag for both registries
+              docker tag "stackrox/${image}:${local_tag}" "quay.io/rhacs-eng/${image}:${local_tag}"
+              docker tag "stackrox/${image}:${local_tag}" "quay.io/stackrox-io/${image}:${local_tag}"
+              docker tag "stackrox/${image}:${local_tag}" "quay.io/rhacs-eng/${image}:${local_tag}-${{ matrix.arch }}"
+              docker tag "stackrox/${image}:${local_tag}" "quay.io/stackrox-io/${image}:${local_tag}-${{ matrix.arch }}"
+
+              registry_rw_login "quay.io/rhacs-eng"
+              retry 5 true docker push "quay.io/rhacs-eng/${image}:${local_tag}" | cat
+              retry 5 true docker push "quay.io/rhacs-eng/${image}:${local_tag}-${{ matrix.arch }}" | cat
+
+              registry_rw_login "quay.io/stackrox-io"
+              retry 5 true docker push "quay.io/stackrox-io/${image}:${local_tag}" | cat
+              retry 5 true docker push "quay.io/stackrox-io/${image}:${local_tag}-${{ matrix.arch }}" | cat
+            done
+
+            # Copy main image from rhacs-eng to stackrox-io (already pushed by buildx)
+            registry_rw_login "quay.io/stackrox-io"
+            for tag in "${local_tag}" "${local_tag}-${{ matrix.arch }}"; do
+              skopeo copy --all \
+                "docker://quay.io/rhacs-eng/main:${tag}" \
+                "docker://quay.io/stackrox-io/main:${tag}" || true
+            done
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
