@@ -5,6 +5,10 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 )
 
+// This package intentionally duplicates conversion logic from pkg/scannerv4/mappers
+// to avoid heavy dependencies (generated/storage, k8s.io) that would bloat roxagent.
+// See convert_sync_test.go for tests ensuring the implementations stay synchronized.
+
 // toProtoV4IndexReport converts claircore.IndexReport to v4.IndexReport.
 // This is a minimal conversion for VM scanning without heavy dependencies.
 func toProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {

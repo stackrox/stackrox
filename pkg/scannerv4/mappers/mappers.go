@@ -231,6 +231,10 @@ func v4Packages(ccPkgs map[string]*claircore.Package, pkgFixedBy map[string]stri
 	return packages, deprecatedPackages, nil
 }
 
+// The following conversion functions (v4Package, v4Distribution, v4Repository, v4Environment)
+// are intentionally duplicated in compliance/node/vm/convert.go to avoid pulling heavy
+// dependencies into the roxagent binary. See compliance/node/vm/convert_sync_test.go
+// for tests that ensure the implementations stay synchronized.
 func v4Package(p *claircore.Package) (*v4.Package, error) {
 	if p == nil {
 		return nil, nil
