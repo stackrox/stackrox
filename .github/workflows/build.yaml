@@ -544,11 +544,29 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
-      - name: Build main images
-        env:
-          DOCKER_BUILDX_CACHE: main-${{ matrix.arch }}
+      - name: Prepare main image build context
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+          GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir central-db-image
+
+      - name: Build main image
+        uses: docker/build-push-action@v6
+        with:
+          context: image/rhel
+          file: image/rhel/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: |
+            stackrox/main:${{ env.BUILD_TAG }}
+            quay.io/stackrox-io/main:${{ env.BUILD_TAG }}
+          build-args: |
+            DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
+            ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
+            TARGET_ARCH=${{ matrix.arch }}
+            ROX_IMAGE_FLAVOR=development_build
+            LABEL_VERSION=${{ env.BUILD_TAG }}
+            LABEL_RELEASE=${{ env.BUILD_TAG }}
+          cache-from: type=gha,scope=main-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=main-${{ matrix.arch }}
 
       - name: Check debugger presence in the main image
         run: make check-debugger
