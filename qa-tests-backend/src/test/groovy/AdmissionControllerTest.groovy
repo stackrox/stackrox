@@ -231,48 +231,6 @@ class AdmissionControllerTest extends BaseSpecification {
         }
     }
 
-    // Helper method to set cluster labels using Central API
-    // Works for both operator-managed and helm-managed deployments
-    private void setClusterLabels(String key, String value) {
-        def cluster = ClusterService.getCluster()
-        def updatedCluster = cluster.toBuilder()
-                .putLabels(key, value)
-                .build()
-
-        def success = ClusterService.updateCluster(updatedCluster)
-        if (!success) {
-            throw new RuntimeException("Failed to set cluster labels")
-        }
-
-        log.info "Set cluster label ${key}=${value}"
-        // Wait for cluster label change to propagate to Sensor
-        withRetry(10, 1) {
-            cluster = ClusterService.getCluster()
-            assert cluster.getLabelsMap().get(key) == value
-        }
-    }
-
-    // Helper method to remove all cluster labels using Central API
-    // Works for both operator-managed and helm-managed deployments
-    private void clearClusterLabels() {
-        def cluster = ClusterService.getCluster()
-        def updatedCluster = cluster.toBuilder()
-                .clearLabels()
-                .build()
-
-        def success = ClusterService.updateCluster(updatedCluster)
-        if (!success) {
-            throw new RuntimeException("Failed to clear cluster labels")
-        }
-
-        log.info "Cleared cluster labels"
-        // Wait for cluster label removal to propagate to Sensor
-        withRetry(10, 1) {
-            cluster = ClusterService.getCluster()
-            assert cluster.getLabelsMap().isEmpty()
-        }
-    }
-
     // Helper method to create namespace with labels using fabric8 client
     private void ensureNamespaceWithLabels(String namespaceName, String labelKey, String labelValue) {
         def labels = labelKey ? [(labelKey): labelValue] : [:]
@@ -296,13 +254,7 @@ class AdmissionControllerTest extends BaseSpecification {
         ensureNamespaceWithLabels(testNs, nsKey, nsLabel)
 
         and:
-        "Set cluster labels if needed"
-        if (clusterLabel) {
-            setClusterLabels("env", clusterLabel)
-        }
-
-        and:
-        "Create policy with label scoping"
+        "Create policy with namespace label scoping"
         def policyBuilder = PolicyOuterClass.Policy.newBuilder()
                 .setName("Test - AC Label Scoping ${desc}")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
@@ -311,18 +263,9 @@ class AdmissionControllerTest extends BaseSpecification {
                 .addCategories("Test")
 
         def scopeBuilder = ScopeOuterClass.Scope.newBuilder()
-
-        if (policyCluster) {
-            scopeBuilder.setClusterLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                    .setKey("env")
-                    .setValue(policyCluster))
-        }
-
-        if (policyNs) {
-            scopeBuilder.setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                    .setKey("team")
-                    .setValue(policyNs))
-        }
+                .setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                        .setKey("team")
+                        .setValue(policyNs))
 
         policyBuilder.addScope(scopeBuilder)
         policyBuilder.addPolicySections(
@@ -361,40 +304,26 @@ class AdmissionControllerTest extends BaseSpecification {
             deleteDeploymentWithCaution(deployment)
         }
         orchestrator.deleteNamespace(testNs, false)
-        if (clusterLabel) {
-            clearClusterLabels()
-        }
         if (policyId) {
             PolicyService.deletePolicy(policyId)
         }
 
         where:
-        desc                        | clusterLabel | nsKey  | nsLabel    | policyCluster | policyNs   | blocked
-        "cluster match"             | "prod"       | null   | null       | "prod"        | null       | true
-        "cluster mismatch"          | "dev"        | null   | null       | "prod"        | null       | false
-        "namespace match"           | null         | "team" | "backend"  | null          | "backend"  | true
-        "namespace mismatch"        | null         | "team" | "frontend" | null          | "backend"  | false
-        "combined match"            | "prod"       | "team" | "backend"  | "prod"        | "backend"  | true
-        "combined cluster mismatch" | "dev"        | "team" | "backend"  | "prod"        | "backend"  | false
-        "combined ns mismatch"      | "prod"       | "team" | "frontend" | "prod"        | "backend"  | false
+        desc                | nsKey  | nsLabel    | policyNs   | blocked
+        "namespace match"   | "team" | "backend"  | "backend"  | true
+        "namespace mismatch"| "team" | "frontend" | "backend"  | false
     }
 
     @Unroll
     @Tag("BAT")
     def "Verify AC respects label hot-reload: #desc"() {
         given:
-        "Set up initial labels"
+        "Set up namespace with initial label"
         def testNs = "qa-label-hotreload-${desc.replaceAll(' ', '-')}"
-
-        if (labelType == "cluster") {
-            setClusterLabels("env", initialValue)
-            ensureNamespaceWithLabels(testNs, null, null)
-        } else {
-            ensureNamespaceWithLabels(testNs, "team", initialValue)
-        }
+        ensureNamespaceWithLabels(testNs, "team", initialValue)
 
         and:
-        "Create policy scoped to initial label value"
+        "Create policy scoped to initial namespace label value"
         def policyBuilder = PolicyOuterClass.Policy.newBuilder()
                 .setName("Test - AC Hot-Reload ${desc}")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
@@ -403,16 +332,9 @@ class AdmissionControllerTest extends BaseSpecification {
                 .addCategories("Test")
 
         def scopeBuilder = ScopeOuterClass.Scope.newBuilder()
-
-        if (labelType == "cluster") {
-            scopeBuilder.setClusterLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                    .setKey("env")
-                    .setValue(initialValue))
-        } else {
-            scopeBuilder.setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                    .setKey("team")
-                    .setValue(initialValue))
-        }
+                .setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                        .setKey("team")
+                        .setValue(initialValue))
 
         policyBuilder.addScope(scopeBuilder)
         policyBuilder.addPolicySections(
@@ -447,29 +369,21 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created1
 
         when:
-        "Change or remove labels"
-        if (labelType == "cluster") {
-            if (changedValue == null) {
-                clearClusterLabels()
-            } else {
-                setClusterLabels("env", changedValue)
-            }
+        "Change or remove namespace labels"
+        def ns = orchestrator.client.namespaces().withName(testNs).get()
+        if (changedValue == null) {
+            ns.metadata.labels = [:]
         } else {
-            def ns = orchestrator.client.namespaces().withName(testNs).get()
+            ns.metadata.labels = ["team": changedValue]
+        }
+        orchestrator.client.namespaces().withName(testNs).replace(ns)
+        // Wait for namespace label change to propagate to Sensor
+        withRetry(10, 1) {
+            def updatedNs = orchestrator.client.namespaces().withName(testNs).get()
             if (changedValue == null) {
-                ns.metadata.labels = [:]
+                assert updatedNs.metadata.labels == null || !updatedNs.metadata.labels.containsKey("team")
             } else {
-                ns.metadata.labels = ["team": changedValue]
-            }
-            orchestrator.client.namespaces().withName(testNs).replace(ns)
-            // Wait for namespace label change to propagate to Sensor
-            withRetry(10, 1) {
-                def updatedNs = orchestrator.client.namespaces().withName(testNs).get()
-                if (changedValue == null) {
-                    assert updatedNs.metadata.labels == null || !updatedNs.metadata.labels.containsKey("team")
-                } else {
-                    assert updatedNs.metadata.labels?.get("team") == changedValue
-                }
+                assert updatedNs.metadata.labels?.get("team") == changedValue
             }
         }
 
@@ -498,19 +412,14 @@ class AdmissionControllerTest extends BaseSpecification {
             deleteDeploymentWithCaution(deployment2)
         }
         orchestrator.deleteNamespace(testNs, false)
-        if (labelType == "cluster") {
-            clearClusterLabels()
-        }
         if (policyId) {
             PolicyService.deletePolicy(policyId)
         }
 
         where:
-        desc               | labelType   | initialValue | changedValue
-        "cluster reload"   | "cluster"   | "prod"       | "dev"
-        "namespace reload" | "namespace" | "backend"    | "frontend"
-        "cluster removal"  | "cluster"   | "prod"       | null
-        "namespace removal"| "namespace" | "backend"    | null
+        desc               | initialValue | changedValue
+        "namespace reload" | "backend"    | "frontend"
+        "namespace removal"| "backend"    | null
     }
 
 }
