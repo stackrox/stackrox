@@ -377,6 +377,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"compliance/virtualmachines/roxagent/app",
 			"config-controller/app",
 			"migrator/app",
+			"roxctl/app",
 			"sensor/admission-control/app",
 			"sensor/kubernetes/app",
 			"sensor/upgrader/app",
