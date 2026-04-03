@@ -194,10 +194,45 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Create CLI stub files
+        run: |
+          cat > stub.txt << 'EOF'
+          This is a placeholder file. CLI binaries were not built for this PR build.
+
+          To build CLI binaries in PR builds:
+          - Add the "ci-build-cli" label to your pull request
+          - Re-push to trigger a new build
+
+          To download the latest roxctl binary:
+          - Visit https://mirror.openshift.com/pub/rhacs/assets/latest/bin/
+
+          EOF
+
+          mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
+
+          for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
+            cp stub.txt bin/${arch}/roxctl
+            cp stub.txt bin/${arch}/roxagent
+          done
+          cp stub.txt bin/windows_amd64/roxctl.exe
+
+      - name: PR labels
+        uses: joerick/pr-labels-action@v1.0.9
+
       - name: Cache Go dependencies
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Build CLI
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         run: make cli
 
       - name: Bundle build to preserve permissions
