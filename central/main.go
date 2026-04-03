@@ -1073,35 +1073,6 @@ func waitForTerminationSignal() {
 	log.Info("Central terminated")
 }
 
-// Dispatcher wrapper functions for BusyBox-style invocation
-func migratorMain() {
-	migratorapp.Run()
-}
-
-func complianceMain() {
-	complianceapp.Run()
-}
-
-func kubernetesSensorMain() {
-	kubernetessensorapp.Run()
-}
-
-func sensorUpgraderMain() {
-	sensorupgraderapp.Run()
-}
-
-func admissionControlMain() {
-	admissioncontrolapp.Run()
-}
-
-func configControllerMain() {
-	configcontrollerapp.Run()
-}
-
-func roxagentMain() {
-	roxagentapp.Run()
-}
-
 func main() {
 	// BusyBox-style dispatcher: check how we were called
 	binaryName := filepath.Base(os.Args[0])
@@ -1110,19 +1081,19 @@ func main() {
 	case "central":
 		Main()
 	case "migrator":
-		migratorMain()
+		migratorapp.Run()
 	case "compliance":
-		complianceMain()
+		complianceapp.Run()
 	case "kubernetes-sensor":
-		kubernetesSensorMain()
+		kubernetessensorapp.Run()
 	case "sensor-upgrader":
-		sensorUpgraderMain()
+		sensorupgraderapp.Run()
 	case "admission-control":
-		admissionControlMain()
+		admissioncontrolapp.Run()
 	case "config-controller":
-		configControllerMain()
+		configcontrollerapp.Run()
 	case "roxagent":
-		roxagentMain()
+		roxagentapp.Run()
 	default:
 		// Default to central if called with unknown name
 		Main()
