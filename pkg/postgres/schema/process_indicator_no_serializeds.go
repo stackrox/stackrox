@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -20,12 +19,7 @@ var (
 	// CreateTableProcessIndicatorNoSerializedsStmt holds the create statement for table `process_indicator_no_serializeds`.
 	CreateTableProcessIndicatorNoSerializedsStmt = &postgres.CreateStmts{
 		GormModel: (*ProcessIndicatorNoSerializeds)(nil),
-		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
-				GormModel: (*ProcessIndicatorNoSerializedsLineageInfos)(nil),
-				Children:  []*postgres.CreateStmts{},
-			},
-		},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ProcessIndicatorNoSerializedsSchema is the go schema for table `process_indicator_no_serializeds`.
@@ -46,39 +40,28 @@ var (
 const (
 	// ProcessIndicatorNoSerializedsTableName specifies the name of the table in postgres.
 	ProcessIndicatorNoSerializedsTableName = "process_indicator_no_serializeds"
-	// ProcessIndicatorNoSerializedsLineageInfosTableName specifies the name of the table in postgres.
-	ProcessIndicatorNoSerializedsLineageInfosTableName = "process_indicator_no_serializeds_lineage_infos"
 )
 
 // ProcessIndicatorNoSerializeds holds the Gorm model for Postgres table `process_indicator_no_serializeds`.
 type ProcessIndicatorNoSerializeds struct {
-	ID                 string          `gorm:"column:id;type:uuid;primaryKey"`
-	DeploymentID       string          `gorm:"column:deploymentid;type:uuid;index:processindicatornoserializeds_deploymentid,type:btree"`
-	ContainerName      string          `gorm:"column:containername;type:varchar"`
-	PodID              string          `gorm:"column:podid;type:varchar"`
-	PodUID             string          `gorm:"column:poduid;type:uuid;index:processindicatornoserializeds_poduid,type:btree"`
-	SignalID           string          `gorm:"column:signal_id;type:varchar"`
-	SignalContainerID  string          `gorm:"column:signal_containerid;type:varchar"`
-	SignalTime         *time.Time      `gorm:"column:signal_time;type:timestamp;index:processindicatornoserializeds_signal_time,type:btree"`
-	SignalName         string          `gorm:"column:signal_name;type:varchar"`
-	SignalArgs         string          `gorm:"column:signal_args;type:varchar"`
-	SignalExecFilePath string          `gorm:"column:signal_execfilepath;type:varchar"`
-	SignalPid          uint32          `gorm:"column:signal_pid;type:bigint"`
-	SignalUID          uint32          `gorm:"column:signal_uid;type:bigint"`
-	SignalGid          uint32          `gorm:"column:signal_gid;type:bigint"`
-	SignalLineage      *pq.StringArray `gorm:"column:signal_lineage;type:text[]"`
-	SignalScraped      bool            `gorm:"column:signal_scraped;type:bool"`
-	ClusterID          string          `gorm:"column:clusterid;type:uuid"`
-	Namespace          string          `gorm:"column:namespace;type:varchar"`
-	ContainerStartTime *time.Time      `gorm:"column:containerstarttime;type:timestamp"`
-	ImageID            string          `gorm:"column:imageid;type:varchar"`
-}
-
-// ProcessIndicatorNoSerializedsLineageInfos holds the Gorm model for Postgres table `process_indicator_no_serializeds_lineage_infos`.
-type ProcessIndicatorNoSerializedsLineageInfos struct {
-	ProcessIndicatorNoSerializedsID  string                        `gorm:"column:process_indicator_no_serializeds_id;type:uuid;primaryKey"`
-	Idx                              int                           `gorm:"column:idx;type:integer;primaryKey;index:processindicatornoserializedslineageinfos_idx,type:btree"`
-	ParentUID                        uint32                        `gorm:"column:parentuid;type:bigint"`
-	ParentExecFilePath               string                        `gorm:"column:parentexecfilepath;type:varchar"`
-	ProcessIndicatorNoSerializedsRef ProcessIndicatorNoSerializeds `gorm:"foreignKey:process_indicator_no_serializeds_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ID                 string     `gorm:"column:id;type:uuid;primaryKey"`
+	DeploymentID       string     `gorm:"column:deploymentid;type:uuid;index:processindicatornoserializeds_deploymentid,type:btree"`
+	ContainerName      string     `gorm:"column:containername;type:varchar"`
+	PodID              string     `gorm:"column:podid;type:varchar"`
+	PodUID             string     `gorm:"column:poduid;type:uuid;index:processindicatornoserializeds_poduid,type:btree"`
+	SignalID           string     `gorm:"column:signal_id;type:varchar"`
+	SignalContainerID  string     `gorm:"column:signal_containerid;type:varchar"`
+	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp;index:processindicatornoserializeds_signal_time,type:btree"`
+	SignalName         string     `gorm:"column:signal_name;type:varchar"`
+	SignalArgs         string     `gorm:"column:signal_args;type:varchar"`
+	SignalExecFilePath string     `gorm:"column:signal_execfilepath;type:varchar"`
+	SignalPid          uint32     `gorm:"column:signal_pid;type:bigint"`
+	SignalUID          uint32     `gorm:"column:signal_uid;type:bigint"`
+	SignalGid          uint32     `gorm:"column:signal_gid;type:bigint"`
+	SignalScraped      bool       `gorm:"column:signal_scraped;type:bool"`
+	SignalLineageInfo  []byte     `gorm:"column:signal_lineageinfo;type:bytea"`
+	ClusterID          string     `gorm:"column:clusterid;type:uuid"`
+	Namespace          string     `gorm:"column:namespace;type:varchar"`
+	ContainerStartTime *time.Time `gorm:"column:containerstarttime;type:timestamp"`
+	ImageID            string     `gorm:"column:imageid;type:varchar"`
 }

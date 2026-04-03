@@ -81,11 +81,6 @@ func (m *ProcessSignalNoSerialized) CloneVT() *ProcessSignalNoSerialized {
 	r.Uid = m.Uid
 	r.Gid = m.Gid
 	r.Scraped = m.Scraped
-	if rhs := m.Lineage; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
-		copy(tmpContainer, rhs)
-		r.Lineage = tmpContainer
-	}
 	if rhs := m.LineageInfo; rhs != nil {
 		tmpContainer := make([]*ProcessSignalNoSerialized_LineageInfoNoSerialized, len(rhs))
 		for k, v := range rhs {
@@ -204,15 +199,6 @@ func (this *ProcessSignalNoSerialized) EqualVT(that *ProcessSignalNoSerialized) 
 	}
 	if this.Gid != that.Gid {
 		return false
-	}
-	if len(this.Lineage) != len(that.Lineage) {
-		return false
-	}
-	for i, vx := range this.Lineage {
-		vy := that.Lineage[i]
-		if vx != vy {
-			return false
-		}
 	}
 	if this.Scraped != that.Scraped {
 		return false
@@ -450,15 +436,6 @@ func (m *ProcessSignalNoSerialized) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		i--
 		dAtA[i] = 0x58
 	}
-	if len(m.Lineage) > 0 {
-		for iNdEx := len(m.Lineage) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Lineage[iNdEx])
-			copy(dAtA[i:], m.Lineage[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Lineage[iNdEx])))
-			i--
-			dAtA[i] = 0x52
-		}
-	}
 	if m.Gid != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Gid))
 		i--
@@ -627,12 +604,6 @@ func (m *ProcessSignalNoSerialized) SizeVT() (n int) {
 	}
 	if m.Gid != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Gid))
-	}
-	if len(m.Lineage) > 0 {
-		for _, s := range m.Lineage {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
 	}
 	if m.Scraped {
 		n += 2
@@ -1410,38 +1381,6 @@ func (m *ProcessSignalNoSerialized) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Lineage", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Lineage = append(m.Lineage, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
 		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Scraped", wireType)
@@ -2337,42 +2276,6 @@ func (m *ProcessSignalNoSerialized) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Lineage", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.Lineage = append(m.Lineage, stringValue)
-			iNdEx = postIndex
 		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Scraped", wireType)

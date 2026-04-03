@@ -164,7 +164,7 @@ func scanVarType(f walker.Field) string {
 		return "string"
 	case "stringarray":
 		return "[]string"
-	case "bytes":
+	case "bytes", "messagebytes":
 		return "[]byte"
 	case "enumarray":
 		return "[]int32"
@@ -218,6 +218,8 @@ func needsTypeConversion(f walker.Field) bool {
 		return true
 	case "enum":
 		return true
+	case "messagebytes":
+		return true
 	}
 	if f.SQLType == "uuid" && f.Type == "string" {
 		return true
@@ -232,6 +234,9 @@ func typeConversionExpr(f walker.Field, varName string) string {
 		return fmt.Sprintf("protocompat.ConvertTimeToTimestampOrNil(%s)", varName)
 	case "enum":
 		return fmt.Sprintf("%s(%s)", f.Type, varName)
+	case "messagebytes":
+		return fmt.Sprintf("pgutils.MustUnmarshalRepeatedMessages(%s, func() *%s { return &%s{} })",
+			varName, f.MessageBytesElemType, f.MessageBytesElemType)
 	}
 	return varName
 }
@@ -301,6 +306,8 @@ func unnestArrayGoType(f walker.Field) string {
 func unnestAppendExpr(f walker.Field) string {
 	getter := f.Getter("obj")
 	switch {
+	case f.DataType == "messagebytes":
+		return fmt.Sprintf("pgutils.MustMarshalRepeatedMessages(%s)", getter)
 	case f.DataType == "datetime" || f.DataType == "datetimetz":
 		return fmt.Sprintf("protocompat.NilOrTime(%s)", getter)
 	case f.SQLType == "uuid":
@@ -314,6 +321,10 @@ func unnestAppendExpr(f walker.Field) string {
 	default:
 		return getter
 	}
+}
+
+func isMessageBytes(f walker.Field) bool {
+	return f.DataType == "messagebytes"
 }
 
 var funcMap = template.FuncMap{
@@ -330,7 +341,7 @@ var funcMap = template.FuncMap{
 	"scanVarName":                  scanVarName,
 	"setterPath":                   setterPath,
 	"joinPath":                     func(parts []string) string { return strings.Join(parts, ".") },
-	"stripPointer":                func(s string) string { return strings.TrimPrefix(s, "*") },
+	"stripPointer":                 func(s string) string { return strings.TrimPrefix(s, "*") },
 	"getterToSetter": func(getter string) string {
 		// Convert "GetSignal().GetLineageInfo()" to "Signal.LineageInfo"
 		parts := strings.Split(getter, ".")
@@ -342,8 +353,8 @@ var funcMap = template.FuncMap{
 		}
 		return strings.Join(result, ".")
 	},
-	"fieldSetterExpr":              fieldSetterExpr,
-	"canUnnest":                    canUnnest,
+	"fieldSetterExpr": fieldSetterExpr,
+	"canUnnest":       canUnnest,
 	"unnestableFields": func(fields []walker.Field) []walker.Field {
 		var out []walker.Field
 		for _, f := range fields {
@@ -362,12 +373,13 @@ var funcMap = template.FuncMap{
 		}
 		return out
 	},
-	"canScanDirect":                canScanDirect,
-	"needsTypeConversion":          needsTypeConversion,
-	"typeConversionExpr":           typeConversionExpr,
-	"pgArrayCast":                  pgArrayCast,
-	"unnestArrayGoType":            unnestArrayGoType,
-	"unnestAppendExpr":             unnestAppendExpr,
+	"isMessageBytes":      isMessageBytes,
+	"canScanDirect":       canScanDirect,
+	"needsTypeConversion": needsTypeConversion,
+	"typeConversionExpr":  typeConversionExpr,
+	"pgArrayCast":         pgArrayCast,
+	"unnestArrayGoType":   unnestArrayGoType,
+	"unnestAppendExpr":    unnestAppendExpr,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {
 			return fmt.Sprintf("%sies", strings.TrimSuffix(s, "y"))
