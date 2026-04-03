@@ -368,6 +368,68 @@ push_operator_image() {
     fi
 }
 
+push_operator_image_to_registry() {
+    info "Pushing stackrox-operator image to registry"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "Missing parameter. Usage: push_operator_image_to_registry <push_context> <registry> <arch>"
+    fi
+
+    local push_context="$1"
+    local registry="$2"
+    local arch="$3"
+
+    local tag
+    tag="$(make -C operator/ --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+
+    # Tag from local build to target registry
+    docker tag "stackrox/stackrox-operator:${tag}" "${registry}/stackrox-operator:${tag}-${arch}"
+    retry 5 true docker push "${registry}/stackrox-operator:${tag}-${arch}" | cat
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        docker tag "stackrox/stackrox-operator:${tag}" "${registry}/stackrox-operator:latest-${arch}"
+        retry 5 true docker push "${registry}/stackrox-operator:latest-${arch}" | cat
+    fi
+
+    if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        local major_minor="${tag%.*}"
+        docker tag "stackrox/stackrox-operator:${tag}" "${registry}/stackrox-operator:${major_minor}-${arch}"
+        retry 5 true docker push "${registry}/stackrox-operator:${major_minor}-${arch}" | cat
+    fi
+}
+
+push_operator_image_manifest_lists() {
+    info "Pushing stackrox-operator images as manifest lists"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_operator_image_manifest_lists <push_context> <registry> <architectures (CSV)>"
+    fi
+
+    local push_context="$1"
+    local registry="$2"
+    local architectures="$3"
+
+    local tag
+    tag="$(make -C operator --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+    retry 5 true \
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${tag}" "$architectures" | cat
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        retry 5 true \
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:latest" "$architectures" | cat
+    fi
+
+    if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        local major_minor="${tag%.*}"
+        retry 5 true \
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${major_minor}" "$architectures" | cat
+    fi
+}
+
 push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 

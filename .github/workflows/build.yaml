@@ -86,10 +86,9 @@ jobs:
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.push_operator_multiarch_manifests.registry += ["quay.io/rhacs-eng", "quay.io/stackrox-io"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
@@ -752,7 +751,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
       # Proto sources freshness is checked in another workflow.
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
@@ -788,29 +787,9 @@ jobs:
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
-      - name: Setup Go RHACS build environment
-        if: matrix.name == 'RHACS_BRANDING'
-        run: echo "QUAY_ORG=rhacs-eng" >> "$GITHUB_ENV"
-
-      - name: Setup Go StackRox build environment
-        if: matrix.name == 'STACKROX_BRANDING'
-        run: echo "QUAY_ORG=stackrox-io" >> "$GITHUB_ENV"
-
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
-
       - name: Build Operator image
         run: |
-          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
+          GOARCH=${{ matrix.arch }} IMAGE_REPO=stackrox scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
@@ -826,16 +805,15 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+        run: docker run --rm --platform linux/${{ matrix.arch }} "stackrox/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
-      - name: Push image
+      - name: Push image to both registries
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
@@ -845,12 +823,15 @@ jobs:
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
               push_context="merge-to-master"
             fi
-            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
-            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
-              echo "ERROR: push_operator_image failed" >&2
-              exit 1
-            fi
-            echo "Operator image push completed successfully"
+
+            for registry in "quay.io/rhacs-eng" "quay.io/stackrox-io"; do
+              echo "Pushing operator image to ${registry} for arch ${{ matrix.arch }}"
+              if ! push_operator_image_to_registry "$push_context" "$registry" "${{ matrix.arch }}"; then
+                echo "ERROR: push failed to ${registry}" >&2
+                exit 1
+              fi
+            done
+            echo "Operator image push completed to both registries"
 
   push-operator-manifests:
     runs-on: ubuntu-latest
@@ -864,13 +845,13 @@ jobs:
     # proceed.
     if: ${{ !cancelled() }}
     strategy:
-      # Supports image builds (see Setup build env):
-      # RHACS_BRANDING
-      # STACKROX_BRANDING
+      # Pushes to both registries:
+      # quay.io/rhacs-eng
+      # quay.io/stackrox-io
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
     env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
@@ -903,7 +884,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
+        push_operator_image_manifest_lists "$push_context" "${{ matrix.registry }}" ${{ matrix.archs }}
 
   scan-go-binaries:
     if: |
