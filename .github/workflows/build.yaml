@@ -548,18 +548,16 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir central-db-image
 
-      - name: Login to quay.io registries
+      # Login via docker/login-action so buildx's docker-container driver
+      # can push. Plain `docker login` doesn't share creds with buildx.
+      - name: Login to quay.io for push
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-          source ./scripts/ci/lib.sh
-          registry_rw_login "quay.io/rhacs-eng"
-          registry_rw_login "quay.io/stackrox-io"
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Build and push main image
         uses: docker/build-push-action@v6
@@ -571,8 +569,6 @@ jobs:
           push: ${{ github.event_name == 'push' || !github.event.pull_request.head.repo.fork }}
           load: ${{ !(github.event_name == 'push' || !github.event.pull_request.head.repo.fork) }}
           tags: |
-            quay.io/stackrox-io/main:${{ env.BUILD_TAG }}
-            quay.io/stackrox-io/main:${{ env.BUILD_TAG }}-${{ matrix.arch }}
             quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}
             quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}-${{ matrix.arch }}
           build-args: |
@@ -593,7 +589,7 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
-      - name: Push roxctl and central-db images
+      - name: Push images
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -604,12 +600,12 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            # Main image already pushed by build-push-action above.
-            # Push roxctl and central-db only.
-            for image in roxctl central-db; do
-              retry 5 true docker push "quay.io/stackrox-io/${image}:${BUILD_TAG}" | cat
-              retry 5 true docker push "quay.io/rhacs-eng/${image}:${BUILD_TAG}" | cat
-            done
+            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+            push_context=""
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+              push_context="merge-to-master"
+            fi
+            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
