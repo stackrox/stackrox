@@ -1,6 +1,7 @@
 package fastjson
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"unicode/utf8"
@@ -63,7 +64,7 @@ func (r *Reader) ReadObject(handler func(key string) error) error {
 
 		r.skipWhitespace()
 		if r.pos >= len(r.data) {
-			return fmt.Errorf("fastjson: unexpected end of object")
+			return errors.New("fastjson: unexpected end of object")
 		}
 		if r.data[r.pos] == '}' {
 			r.pos++
@@ -99,7 +100,7 @@ func (r *Reader) ReadArray(handler func() error) error {
 
 		r.skipWhitespace()
 		if r.pos >= len(r.data) {
-			return fmt.Errorf("fastjson: unexpected end of array")
+			return errors.New("fastjson: unexpected end of array")
 		}
 		if r.data[r.pos] == ']' {
 			r.pos++
@@ -148,7 +149,7 @@ func (r *Reader) readStringValue() (string, error) {
 	}
 
 	if !hasEscape {
-		return "", fmt.Errorf("fastjson: unterminated string")
+		return "", errors.New("fastjson: unterminated string")
 	}
 
 	// Slow path: unescape
@@ -163,7 +164,7 @@ func (r *Reader) readStringValue() (string, error) {
 		if b == '\\' {
 			r.pos++
 			if r.pos >= len(r.data) {
-				return "", fmt.Errorf("fastjson: unterminated escape")
+				return "", errors.New("fastjson: unterminated escape")
 			}
 			switch r.data[r.pos] {
 			case '"', '\\', '/':
@@ -180,7 +181,7 @@ func (r *Reader) readStringValue() (string, error) {
 				buf = append(buf, '\f')
 			case 'u':
 				if r.pos+4 >= len(r.data) {
-					return "", fmt.Errorf("fastjson: short unicode escape")
+					return "", errors.New("fastjson: short unicode escape")
 				}
 				r.pos++
 				hexStr := string(r.data[r.pos : r.pos+4])
@@ -201,7 +202,7 @@ func (r *Reader) readStringValue() (string, error) {
 		buf = append(buf, b)
 		r.pos++
 	}
-	return "", fmt.Errorf("fastjson: unterminated string")
+	return "", errors.New("fastjson: unterminated string")
 }
 
 // ReadUint32 reads a JSON number and converts to uint32.
@@ -338,7 +339,7 @@ func (r *Reader) readNumberBytes() []byte {
 // and returns it as raw bytes. This is a zero-copy slice of the input for most cases.
 func (r *Reader) readRawValue() ([]byte, error) {
 	if r.pos >= len(r.data) {
-		return nil, fmt.Errorf("fastjson: unexpected end of input")
+		return nil, errors.New("fastjson: unexpected end of input")
 	}
 
 	start := r.pos
@@ -357,17 +358,17 @@ func (r *Reader) readRawValue() ([]byte, error) {
 		}
 	case 't':
 		if r.pos+4 > len(r.data) {
-			return nil, fmt.Errorf("fastjson: unexpected end of 'true'")
+			return nil, errors.New("fastjson: unexpected end of 'true'")
 		}
 		r.pos += 4
 	case 'f':
 		if r.pos+5 > len(r.data) {
-			return nil, fmt.Errorf("fastjson: unexpected end of 'false'")
+			return nil, errors.New("fastjson: unexpected end of 'false'")
 		}
 		r.pos += 5
 	case 'n':
 		if r.pos+4 > len(r.data) {
-			return nil, fmt.Errorf("fastjson: unexpected end of 'null'")
+			return nil, errors.New("fastjson: unexpected end of 'null'")
 		}
 		r.pos += 4
 	default:
@@ -410,7 +411,7 @@ func (r *Reader) skipObject() error {
 		r.pos++
 	}
 	if depth != 0 {
-		return fmt.Errorf("fastjson: unterminated object")
+		return errors.New("fastjson: unterminated object")
 	}
 	return nil
 }
@@ -444,7 +445,7 @@ func (r *Reader) skipArray() error {
 		r.pos++
 	}
 	if depth != 0 {
-		return fmt.Errorf("fastjson: unterminated array")
+		return errors.New("fastjson: unterminated array")
 	}
 	return nil
 }
