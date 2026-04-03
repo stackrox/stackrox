@@ -35,7 +35,7 @@ func printStatusSummary(status *updater.ExportStatus) {
 	fmt.Printf("\nExport Summary: %d/%d updaters succeeded\n", successCount, total)
 
 	if failureCount > 0 {
-		fmt.Printf("\nFailed updaters:\n")
+		fmt.Println("\nFailed updaters:")
 		for _, u := range status.Updaters {
 			if u.Status == updater.StatusFailed {
 				fmt.Printf("  - %s: %s\n", u.Name, u.Error)
@@ -45,7 +45,7 @@ func printStatusSummary(status *updater.ExportStatus) {
 
 	if successCount > 0 && failureCount > 0 {
 		fmt.Printf("\nPartial success: %d bundles written, %d failed\n", successCount, failureCount)
-		fmt.Printf("See status.json in output directory for full details.\n")
+		fmt.Println("See status.json in output directory for full details.")
 	}
 }
 
