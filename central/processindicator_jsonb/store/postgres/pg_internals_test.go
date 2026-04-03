@@ -81,22 +81,6 @@ func TestPostgresInternals(t *testing.T) {
 			r.table, r.rowCount, r.totalSize, r.tableSize, r.indexSize)
 	}
 
-	// Also show child table for no-serialized
-	{
-		var total, tbl, idx string
-		var cnt int
-		err := db.DB.QueryRow(ctx, `
-			SELECT
-				pg_size_pretty(pg_total_relation_size('process_indicator_no_serializeds_lineage_infos')),
-				pg_size_pretty(pg_table_size('process_indicator_no_serializeds_lineage_infos')),
-				pg_size_pretty(pg_indexes_size('process_indicator_no_serializeds_lineage_infos')),
-				(SELECT count(*) FROM process_indicator_no_serializeds_lineage_infos)::int
-		`).Scan(&total, &tbl, &idx, &cnt)
-		require.NoError(t, err)
-		t.Logf("  %-40s  rows=%-5d  total=%-10s  table=%-10s  indexes=%s",
-			"  └─ _lineage_infos (child)", cnt, total, tbl, idx)
-	}
-
 	t.Log("\n========== AVERAGE ROW / COLUMN SIZE (bytes) ==========")
 
 	// Serialized (bytea): show avg size of the serialized column vs total row
@@ -127,15 +111,17 @@ func TestPostgresInternals(t *testing.T) {
 			avgRow, avgSerialized, avgSerialized/avgRow*100)
 	}
 
-	// NoSerialized: no blob column, show total row size
+	// NoSerialized: show total row size and inlined bytea column for LineageInfo
 	{
-		var avgRow float64
+		var avgRow, avgLineageInfo float64
 		err := db.DB.QueryRow(ctx, `
-			SELECT avg(pg_column_size(t.*))::numeric(10,1)
+			SELECT
+				avg(pg_column_size(t.*))::numeric(10,1),
+				coalesce(avg(pg_column_size(t.signal_lineageinfo))::numeric(10,1), 0)
 			FROM process_indicator_no_serializeds t
-		`).Scan(&avgRow)
+		`).Scan(&avgRow, &avgLineageInfo)
 		require.NoError(t, err)
-		t.Logf("  NoSerialized:            avg_row=%.0f B   (no blob column)", avgRow)
+		t.Logf("  NoSerialized:            avg_row=%.0f B   avg_lineageinfo_col=%.0f B  (inlined bytea)", avgRow, avgLineageInfo)
 	}
 
 	t.Log("\n========== EXPLAIN ANALYZE: GET single row by PK ==========")

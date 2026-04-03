@@ -65,8 +65,9 @@ message ProcessSignalNoSerialized {
   // Real group ID
   uint32 gid = 9;
 
-  // Process Lineage
-  repeated string lineage = 10 [deprecated = true];
+  // Process Lineage — removed: deprecated field never populated by collector/sensor.
+  // The lineage_info field (12) is used instead.
+  reserved 10;
 
   // Signal origin
   bool scraped = 11;

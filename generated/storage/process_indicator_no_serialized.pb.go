@@ -165,10 +165,6 @@ type ProcessSignalNoSerialized struct {
 	Uid uint32 `protobuf:"varint,8,opt,name=uid,proto3" json:"uid,omitempty" search:"Process No Serialized UID"` // @gotags: search:"Process No Serialized UID"
 	// Real group ID
 	Gid uint32 `protobuf:"varint,9,opt,name=gid,proto3" json:"gid,omitempty"`
-	// Process Lineage
-	//
-	// Deprecated: Marked as deprecated in storage/process_indicator_no_serialized.proto.
-	Lineage []string `protobuf:"bytes,10,rep,name=lineage,proto3" json:"lineage,omitempty"`
 	// Signal origin
 	Scraped bool `protobuf:"varint,11,opt,name=scraped,proto3" json:"scraped,omitempty"`
 	// Process LineageInfo
@@ -270,14 +266,6 @@ func (x *ProcessSignalNoSerialized) GetGid() uint32 {
 	return 0
 }
 
-// Deprecated: Marked as deprecated in storage/process_indicator_no_serialized.proto.
-func (x *ProcessSignalNoSerialized) GetLineage() []string {
-	if x != nil {
-		return x.Lineage
-	}
-	return nil
-}
-
 func (x *ProcessSignalNoSerialized) GetScraped() bool {
 	if x != nil {
 		return x.Scraped
@@ -361,7 +349,7 @@ const file_storage_process_indicator_no_serialized_proto_rawDesc = "" +
 	"\tnamespace\x18\b \x01(\tR\tnamespace\x12L\n" +
 	"\x14container_start_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x12containerStartTime\x12\x19\n" +
 	"\bimage_id\x18\f \x01(\tR\aimageIdJ\x04\b\n" +
-	"\x10\vJ\x04\b\x05\x10\x06\"\x86\x04\n" +
+	"\x10\vJ\x04\b\x05\x10\x06\"\xee\x03\n" +
 	"\x19ProcessSignalNoSerialized\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12.\n" +
@@ -371,15 +359,14 @@ const file_storage_process_indicator_no_serialized_proto_rawDesc = "" +
 	"\x0eexec_file_path\x18\x06 \x01(\tR\fexecFilePath\x12\x10\n" +
 	"\x03pid\x18\a \x01(\rR\x03pid\x12\x10\n" +
 	"\x03uid\x18\b \x01(\rR\x03uid\x12\x10\n" +
-	"\x03gid\x18\t \x01(\rR\x03gid\x12\x1c\n" +
-	"\alineage\x18\n" +
-	" \x03(\tB\x02\x18\x01R\alineage\x12\x18\n" +
+	"\x03gid\x18\t \x01(\rR\x03gid\x12\x18\n" +
 	"\ascraped\x18\v \x01(\bR\ascraped\x12]\n" +
 	"\flineage_info\x18\f \x03(\v2:.storage.ProcessSignalNoSerialized.LineageInfoNoSerializedR\vlineageInfo\x1ak\n" +
 	"\x17LineageInfoNoSerialized\x12\x1d\n" +
 	"\n" +
 	"parent_uid\x18\x01 \x01(\rR\tparentUid\x121\n" +
-	"\x15parent_exec_file_path\x18\x02 \x01(\tR\x12parentExecFilePathB1\n" +
+	"\x15parent_exec_file_path\x18\x02 \x01(\tR\x12parentExecFilePathJ\x04\b\n" +
+	"\x10\vB1\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01b\x06proto3"
 
 var (

@@ -363,6 +363,32 @@ func tableName(parent, child string) string {
 	return fmt.Sprintf("%s_%s", parent, pgutils.NamingStrategy.TableName(child))
 }
 
+// hasSearchableFields checks whether a message type has any fields with search tags.
+// Used to determine if a repeated message can be inlined as bytea.
+func hasSearchableFields(typ reflect.Type) bool {
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		if protoreflect.IsInternalGeneratorField(f) {
+			continue
+		}
+		searchTag := f.Tag.Get("search")
+		if searchTag != "" && searchTag != "-" {
+			return true
+		}
+		// Recurse into nested structs and pointers to structs
+		ft := f.Type
+		if ft.Kind() == reflect.Ptr {
+			ft = ft.Elem()
+		}
+		if ft.Kind() == reflect.Struct && ft != protocompat.TimestampPtrType.Elem() {
+			if hasSearchableFields(ft) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func typeIsEnum(typ reflect.Type) bool {
 	enum, ok := reflect.Zero(typ).Interface().(protoreflect.ProtoEnum)
 	if !ok {
@@ -444,6 +470,35 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				} else {
 					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
+				continue
+			}
+
+			// In NoSerialized mode, inline non-searchable repeated messages as bytea
+			// columns instead of creating child tables. This eliminates the extra
+			// DB round trip for child fetching and simplifies the write path.
+			childMsgType := structField.Type.Elem().Elem() // []*Foo -> Foo
+			if schema.Root().NoSerialized && !hasSearchableFields(childMsgType) {
+				field.DataType = postgres.MessageBytes
+				field.SQLType = "bytea"
+				field.MessageBytesElemType = childMsgType.String()
+				field.Type = "[]byte"
+				field.ModelType = "[]byte"
+				schema.Fields = append(schema.Fields, field)
+
+				// Build setter path from getter: "GetSignal().GetLineageInfo()" -> "Signal.LineageInfo"
+				getter := field.ObjectGetter.Value()
+				parts := strings.Split(getter, ".")
+				var setterParts []string
+				for _, part := range parts {
+					part = strings.TrimPrefix(part, "Get")
+					part = strings.TrimSuffix(part, "()")
+					setterParts = append(setterParts, part)
+				}
+				schema.Root().InlinedRepeatedMessages = append(schema.Root().InlinedRepeatedMessages, InlinedRepeatedMessage{
+					ColumnName:  field.ColumnName,
+					ElementType: childMsgType.String(),
+					SetterPath:  strings.Join(setterParts, "."),
+				})
 				continue
 			}
 

@@ -7,21 +7,22 @@ type DataType string
 
 // Defines all the internal types derived from the struct fields
 const (
-	Bytes       DataType = "bytes"
-	Bool        DataType = "bool"
-	Numeric     DataType = "numeric"
-	String      DataType = "string"
-	DateTime    DataType = "datetime"
-	Map         DataType = "map"
-	Enum        DataType = "enum"
-	StringArray DataType = "stringarray"
-	EnumArray   DataType = "enumarray"
-	Integer     DataType = "integer"
-	IntArray    DataType = "intarray"
-	BigInteger  DataType = "biginteger"
-	UUID        DataType = "uuid"
-	CIDR        DataType = "cidr"
-	DateTimeTZ  DataType = "datetimetz"
+	Bytes        DataType = "bytes"
+	Bool         DataType = "bool"
+	Numeric      DataType = "numeric"
+	String       DataType = "string"
+	DateTime     DataType = "datetime"
+	Map          DataType = "map"
+	Enum         DataType = "enum"
+	StringArray  DataType = "stringarray"
+	EnumArray    DataType = "enumarray"
+	Integer      DataType = "integer"
+	IntArray     DataType = "intarray"
+	BigInteger   DataType = "biginteger"
+	UUID         DataType = "uuid"
+	CIDR         DataType = "cidr"
+	DateTimeTZ   DataType = "datetimetz"
+	MessageBytes DataType = "messagebytes"
 )
 
 var (
@@ -54,7 +55,7 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "text[]"
 	case EnumArray, IntArray:
 		sqlType = "int[]"
-	case Bytes:
+	case Bytes, MessageBytes:
 		sqlType = "bytea"
 	case CIDR:
 		sqlType = "cidr"
@@ -74,6 +75,8 @@ func GetToGormModelType(typ string, dataType DataType) string {
 		modelType = "*pq.StringArray"
 	case EnumArray, IntArray:
 		modelType = "*pq.Int32Array"
+	case MessageBytes:
+		modelType = "[]byte"
 	default:
 		modelType = typ
 	}
