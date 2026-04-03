@@ -577,7 +577,9 @@ jobs:
           load: ${{ !(github.event_name == 'push' || !github.event.pull_request.head.repo.fork) }}
           tags: |
             quay.io/stackrox-io/main:${{ env.BUILD_TAG }}
+            quay.io/stackrox-io/main:${{ env.BUILD_TAG }}-${{ matrix.arch }}
             quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}
+            quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}-${{ matrix.arch }}
           build-args: |
             DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
             ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
