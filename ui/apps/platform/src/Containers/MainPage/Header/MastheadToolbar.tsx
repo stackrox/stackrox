@@ -23,8 +23,7 @@ function MastheadToolbar(): ReactElement {
     const location = useLocation();
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
-    const showOrchestratorComponentsToggle =
-        useCase === useCases.RISK || location.pathname === searchPath;
+    const showOrchestratorComponentsToggle = useCase === useCases.RISK;
 
     // TODO: (PatternFly) need more robust mobile experience than just hiding tools
     // <PageHeaderToolsGroup visibility={{ default: 'hidden', md: 'visible' }}>
