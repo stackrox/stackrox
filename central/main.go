@@ -288,8 +288,7 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
-// Main is the exported entry point for the central binary.
-func Main() {
+func centralRun() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()
@@ -1079,7 +1078,7 @@ func main() {
 
 	switch binaryName {
 	case "central":
-		Main()
+		centralRun()
 	case "migrator":
 		migratorapp.Run()
 	case "compliance":
@@ -1096,6 +1095,6 @@ func main() {
 		roxagentapp.Run()
 	default:
 		// Default to central if called with unknown name
-		Main()
+		centralRun()
 	}
 }
