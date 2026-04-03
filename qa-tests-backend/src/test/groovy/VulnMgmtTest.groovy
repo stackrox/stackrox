@@ -179,7 +179,7 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         where:
         "Data inputs are: "
 
-        imageDigest         | component | cve              | severity                                              | cvss
+        imageDigest         | component | cve              | severity                                             | cvss
         RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" | VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5
         UBUNTU_IMAGE_DIGEST | "gnupg2"  | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 3.3
     }
@@ -195,7 +195,7 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         where:
         "Data inputs are: "
 
-        imageDigest         | component | cve              | severity                                              | cvss
+        imageDigest         | component | cve              | severity                                             | cvss
         RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" | VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5
         UBUNTU_IMAGE_DIGEST | "gpgv"    | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 3.3
     }
