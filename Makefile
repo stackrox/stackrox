@@ -124,6 +124,7 @@ $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
 $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
+$(call go-tool, RATCHET_BIN, github.com/sethvargo/ratchet, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
@@ -138,6 +139,7 @@ style: golangci-lint style-slim
 style-slim: \
 	blanks \
 	check-service-protos \
+	github-actions-pin-check \
 	newlines \
 	no-large-files \
 	openshift-ci-style \
@@ -209,6 +211,11 @@ update-shellcheck-skip:
 	@echo "+ $@"
 	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
+
+.PHONY: github-actions-pin-check
+github-actions-pin-check: $(RATCHET_BIN)
+	@echo "+ $@"
+	$(RATCHET_BIN) lint -format actions .github/workflows/*.yaml .github/workflows/*.yml .github/actions/*/action.yaml
 
 .PHONY: fast-central-build
 fast-central-build: central-build-nodeps
