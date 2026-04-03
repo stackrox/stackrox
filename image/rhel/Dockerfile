@@ -29,6 +29,9 @@ RUN /fetch-stackrox-data.sh /stackrox-data
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS base-with-packages
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
+COPY static-bin/save-dir-contents /stackrox/save-dir-contents
+COPY static-bin/restore-all-dir-contents /stackrox/restore-all-dir-contents
+ENV PATH="/stackrox:$PATH"
 COPY --from=downloads /output/rpms/ /tmp/
 
 RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
