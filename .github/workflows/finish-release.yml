@@ -85,7 +85,7 @@ jobs:
     needs: [variables, properties, preflight-checks]
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ needs.variables.outputs.branch }}
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -156,7 +156,7 @@ jobs:
           fi
 
       - name: Post to Slack
-        uses: slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -189,7 +189,7 @@ jobs:
       BRANCH: "bump-demo-versions-${{ inputs.version }}"
     steps:
       - name: Checkout stackrox/infra repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           repository: stackrox/infra
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
