@@ -1095,6 +1095,7 @@ func main() {
 		roxagentapp.Run()
 	default:
 		// Default to central if called with unknown name
+		log.Warnf("Unknown binary name %q, defaulting to central mode", binaryName)
 		centralRun()
 	}
 }

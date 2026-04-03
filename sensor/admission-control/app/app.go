@@ -39,12 +39,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func init() {
-	memlimit.SetMemoryLimit()
-}
-
 // Run is the main entry point for the admission-control application.
 func Run() {
+	memlimit.SetMemoryLimit()
+
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
 	features.LogFeatureFlags()
 
