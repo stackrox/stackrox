@@ -548,20 +548,23 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir central-db-image
 
-      - name: Login to registries for push
+      - name: Login to stackrox-io registry
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         uses: docker/login-action@v4
         with:
-          registry: quay.io
-          username: ${{ env.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ env.QUAY_STACKROX_IO_RW_PASSWORD }}
+          registry: quay.io/stackrox-io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Login to rhacs-eng registry
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          echo "${{ env.QUAY_RHACS_ENG_RW_PASSWORD }}" | docker login -u "${{ env.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin quay.io/rhacs-eng
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io/rhacs-eng
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Build and push main image
         uses: docker/build-push-action@v6
