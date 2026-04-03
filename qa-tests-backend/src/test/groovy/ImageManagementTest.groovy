@@ -99,28 +99,53 @@ class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.flaky })
-    def "Verify image scan finds correct base OS - #qaImageTag"() {
+    def "Verify image scan finds correct base OS - StackRox Scanner - #qaImageTag"() {
         when:
-        Assume.assumeTrue(scannerV4Enabled ? v4 : v2)
+        Assume.assumeFalse(scannerV4Enabled)
         def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag", false)
+
         then:
         assert img.scan.operatingSystem == expected
+
         where:
         "Data inputs are: "
 
-        // v2 = run if StackRox Scanner enabled, v4 = run if Scanner V4 enabled.
-        qaImageTag             | expected         | flaky | v2    | v4
-        "nginx-1.19-alpine"    | "alpine:v3.13"   | true  | true  | false
-        "nginx-1.19-alpine"    | "alpine:3.13"    | true  | false | true
-        "busybox-1-30"         | "busybox:1.30.1" | true  | true  | false // busybox not supported by Scanner V4
-        "centos7-base"         | "centos:7"       | true  | true  | false // CentOS not supported by Scanner V4
+        qaImageTag             | expected         | flaky
+        "nginx-1.19-alpine"    | "alpine:v3.13"   | true
+        "busybox-1-30"         | "busybox:1.30.1" | true
+        "centos7-base"         | "centos:7"       | true
         // We explicitly do not support Fedora at this time.
-        FEDORA_28              | "unknown"        | false | true  | true
-        "nginx-1-9"            | "debian:8"       | false | true  | true
-        "nginx-1-17-1"         | "debian:9"       | false | true  | true
-        "ubi9-slf4j"           | "rhel:9"         | false | true  | true
-        "apache-server"        | "ubuntu:14.04"   | false | true  | true
-        "ubuntu-22.10-openssl" | "ubuntu:22.10"   | false | true  | true
+        FEDORA_28              | "unknown"        | false
+        "nginx-1-9"            | "debian:8"       | false
+        "nginx-1-17-1"         | "debian:9"       | false
+        "ubi9-slf4j"           | "rhel:9"         | false
+        "apache-server"        | "ubuntu:14.04"   | false
+        "ubuntu-22.10-openssl" | "ubuntu:22.10"   | false
+    }
+
+    @Unroll
+    @Tag("BAT")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.flaky })
+    def "Verify image scan finds correct base OS - Scanner V4 - #qaImageTag"() {
+        when:
+        Assume.assumeTrue(scannerV4Enabled)
+        def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag", false)
+
+        then:
+        assert img.scan.operatingSystem == expected
+
+        where:
+        "Data inputs are: "
+
+        qaImageTag             | expected       | flaky
+        "nginx-1.19-alpine"    | "alpine:3.13"  | true
+        // We explicitly do not support Fedora at this time.
+        FEDORA_28              | "unknown"      | false
+        "nginx-1-9"            | "debian:8"     | false
+        "nginx-1-17-1"         | "debian:9"     | false
+        "ubi9-slf4j"           | "rhel:9"       | false
+        "apache-server"        | "ubuntu:14.04" | false
+        "ubuntu-22.10-openssl" | "ubuntu:22.10" | false
     }
 
     @Unroll

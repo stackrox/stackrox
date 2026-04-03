@@ -169,10 +169,39 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
     }
 
     @Unroll
-    def "Verify severities and CVSS #cve #imageDigest #component #severity #cvss"() {
-        when:
-        Assume.assumeTrue(scannerV4Enabled == v4)
+    def "Verify severities and CVSS - StackRox Scanner - #cve #imageDigest #component #severity #cvss"() {
+        given:
+        Assume.assumeFalse(scannerV4Enabled)
 
+        expect:
+        verifySeveritiesAndCvss(imageDigest, component, cve, severity, cvss)
+
+        where:
+        "Data inputs are: "
+
+        imageDigest         | component | cve              | severity                                              | cvss
+        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" | VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5
+        UBUNTU_IMAGE_DIGEST | "gnupg2"  | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 3.3
+    }
+
+    @Unroll
+    def "Verify severities and CVSS - Scanner V4 - #cve #imageDigest #component #severity #cvss"() {
+        given:
+        Assume.assumeTrue(scannerV4Enabled)
+
+        expect:
+        verifySeveritiesAndCvss(imageDigest, component, cve, severity, cvss)
+
+        where:
+        "Data inputs are: "
+
+        imageDigest         | component | cve              | severity                                              | cvss
+        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" | VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5
+        UBUNTU_IMAGE_DIGEST | "gpgv"    | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 3.3
+    }
+
+    private void verifySeveritiesAndCvss(String imageDigest, String component, String cve,
+                                          VulnerabilitySeverity severity, double cvss) {
         def gqlService = new GraphQLService()
 
         def query = "CVE:${cve}"
@@ -195,7 +224,7 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         def topLevelImageRes = gqlService.Call(getTopLevelImageQuery(),
                 [id: imageDigest, query: query])
         assert topLevelImageRes.hasNoErrors()
-        def topLevelImageResVuln =  topLevelImageRes.value.result.vulns[0]
+        def topLevelImageResVuln = topLevelImageRes.value.result.vulns[0]
 
         def fixableCVEImageRes = gqlService.Call(getImageFixableCVEQuery(),
                 [id: imageDigest, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
@@ -212,33 +241,19 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         assert subCVEComponentRes.hasNoErrors()
         def subCVEComponentResVuln = subCVEComponentRes.value.result.vulns[0]
 
-        then:
-        Math.round(embeddedImageResVuln.cvss * 10) / 10 == cvss
-        embeddedImageResVuln.severity == severity.toString()
+        assert Math.round(embeddedImageResVuln.cvss * 10) / 10 == cvss
+        assert embeddedImageResVuln.severity == severity.toString()
 
-        Math.round(topLevelImageResVuln.cvss * 10) / 10 == cvss
-        topLevelImageResVuln.severity == severity.toString()
+        assert Math.round(topLevelImageResVuln.cvss * 10) / 10 == cvss
+        assert topLevelImageResVuln.severity == severity.toString()
 
-        Math.round(fixableCVEImageResVuln.cvss * 10) / 10 == cvss
-        fixableCVEImageResVuln.severity == severity.toString()
+        assert Math.round(fixableCVEImageResVuln.cvss * 10) / 10 == cvss
+        assert fixableCVEImageResVuln.severity == severity.toString()
 
-        Math.round(fixableCVEComponentResVuln.cvss * 10) / 10 == cvss
-        fixableCVEComponentResVuln.severity == severity.toString()
+        assert Math.round(fixableCVEComponentResVuln.cvss * 10) / 10 == cvss
+        assert fixableCVEComponentResVuln.severity == severity.toString()
 
-        Math.round(subCVEComponentResVuln.cvss * 10) / 10 == cvss
-        subCVEComponentResVuln.severity == severity.toString()
-
-        where:
-        "Data inputs are: "
-        // When v4 = true, run when Scanner V4 is enabled, otherwise run with StackRox scanner.
-        imageDigest | component | cve | severity | cvss | v4
-        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5 | false
-        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5 | true
-        UBUNTU_IMAGE_DIGEST | "gnupg2" | "CVE-2022-3219" |
-                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 3.3 | false
-        UBUNTU_IMAGE_DIGEST | "gpgv"   | "CVE-2022-3219" |
-                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 3.3 | true
+        assert Math.round(subCVEComponentResVuln.cvss * 10) / 10 == cvss
+        assert subCVEComponentResVuln.severity == severity.toString()
     }
 }
