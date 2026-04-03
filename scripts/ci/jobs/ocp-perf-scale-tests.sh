@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"../../.. && pwd)"
+ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=../lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 
