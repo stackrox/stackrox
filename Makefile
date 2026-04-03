@@ -658,7 +658,6 @@ docker-build-roxctl-image:
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
-	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
