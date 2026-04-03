@@ -89,6 +89,7 @@ RUN mkdir -p /stackrox/bin && \
     ln -s /stackrox/central /stackrox/bin/sensor-upgrader && \
     ln -s /stackrox/central /stackrox/bin/admission-control && \
     ln -s /stackrox/central /stackrox/bin/config-controller && \
+    ln -s /stackrox/central /stackrox/bin/roxagent && \
     ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
 

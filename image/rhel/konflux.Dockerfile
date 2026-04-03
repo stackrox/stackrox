@@ -85,6 +85,7 @@ RUN GOARCH=$(uname -m) ; \
     ln -s /stackrox/central /stackrox/bin/sensor-upgrader && \
     ln -s /stackrox/central /stackrox/bin/admission-control && \
     ln -s /stackrox/central /stackrox/bin/config-controller && \
+    ln -s /stackrox/central /stackrox/bin/roxagent && \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
