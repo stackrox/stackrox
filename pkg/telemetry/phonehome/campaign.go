@@ -84,8 +84,8 @@ func MethodPattern(pattern glob.Pattern) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{Method: pattern.Ptr()}
 }
 
-// PathPattern constructs an APICallCampaignCriterion with the Path constraint set to the provided glob pattern.
-// The resulting criterion matches requests whose path satisfies the given pattern.
+// PathPattern builds an APICallCampaignCriterion that matches request paths
+// using the provided glob pattern.
 func PathPattern(pattern glob.Pattern) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{Path: pattern.Ptr()}
 }
