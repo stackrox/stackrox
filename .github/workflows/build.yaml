@@ -600,6 +600,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -674,6 +675,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
+        fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -685,7 +687,7 @@ jobs:
 
     - name: Checkout submodules
       run: |
-        git submodule update --init
+        git submodule update --init --depth 1
 
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
@@ -878,6 +880,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
+        fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
