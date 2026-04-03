@@ -191,6 +191,7 @@ func TestRuntimeDetectionWithNamespaceLabels(t *testing.T) {
 		Description:     "Runtime detection test for namespace label scoping",
 		Severity:        storage.Severity_HIGH_SEVERITY,
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
 		Categories:      []string{"Test"},
 		Scope: []*storage.Scope{
 			{

@@ -285,7 +285,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setName("priv-deploy-${desc.replaceAll(' ', '-')}")
                 .setNamespace(testNs)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-                .setPrivileged(true)
+                .setPrivilegedFlag(true)
                 .addLabel("app", "test")
 
         // Wait for policy propagation to Sensor and Admission Controller
@@ -354,7 +354,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setName("priv-before-${desc.replaceAll(' ', '-')}")
                 .setNamespace(testNs)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-                .setPrivileged(true)
+                .setPrivilegedFlag(true)
                 .addLabel("app", "test")
 
         // Wait for policy propagation to Sensor and Admission Controller
@@ -393,7 +393,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setName("priv-after-${desc.replaceAll(' ', '-')}")
                 .setNamespace(testNs)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-                .setPrivileged(true)
+                .setPrivilegedFlag(true)
                 .addLabel("app", "test")
 
         // Wait for label changes to propagate to admission controller
