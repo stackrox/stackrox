@@ -8,7 +8,6 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -31,13 +30,13 @@ type mockClustersServiceServer struct {
 	postClusterInjectedFn      postClusterFn
 
 	// spy properties
-	clusterSent                     []*storage.Cluster
+	clusterSent                     []*v1.ClusterConfig
 	getClusterCalled                bool
 	getKernelSupportAvailableCalled bool
 }
 
 type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
-type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
+type postClusterFn func(cluster *v1.ClusterConfig) (*v1.ClusterResponse, error)
 type getDefaultsFn func() (*v1.ClusterDefaultsResponse, error)
 
 func (m *mockClustersServiceServer) GetClusterDefaultValues(_ context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
@@ -49,7 +48,7 @@ func (m *mockClustersServiceServer) GetKernelSupportAvailable(_ context.Context,
 	return m.getKernelSupportInjectedFn()
 }
 
-func (m *mockClustersServiceServer) PostCluster(_ context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+func (m *mockClustersServiceServer) PostCluster(_ context.Context, cluster *v1.ClusterConfig) (*v1.ClusterResponse, error) {
 	m.clusterSent = append(m.clusterSent, cluster)
 	return m.postClusterInjectedFn(cluster)
 }
@@ -57,7 +56,7 @@ func (m *mockClustersServiceServer) PostCluster(_ context.Context, cluster *stor
 func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	m.getClusterCalled = true
 	return &v1.ClustersList{
-		Clusters: []*storage.Cluster{
+		Clusters: []*v1.ClusterConfig{
 			{
 				Name: "test-cluster",
 				Id:   "cluster-id",
@@ -116,7 +115,7 @@ func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn
 	var out, errOut *bytes.Buffer
 	conn, closeF, mock := s.createGRPCMockClustersService(getDefaultsF, postClusterF)
 	cmd := sensorGenerateCommand{
-		cluster: &storage.Cluster{},
+		cluster: &v1.ClusterConfig{},
 	}
 	cmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	return out, errOut, closeF, cmd, mock
@@ -153,7 +152,7 @@ func getDefaultsFake(kernelSupport bool) func() (*v1.ClusterDefaultsResponse, er
 }
 
 // postClusterFake base fake function for service.PostCluster that returns the same cluster with fake id
-func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+func postClusterFake(cluster *v1.ClusterConfig) (*v1.ClusterResponse, error) {
 	cluster.Id = "test-id"
 	return &v1.ClusterResponse{
 		Cluster: cluster,
@@ -161,7 +160,7 @@ func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 }
 
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
-func postClusterAlreadyExistsFake(_ *storage.Cluster) (*v1.ClusterResponse, error) {
+func postClusterAlreadyExistsFake(_ *v1.ClusterConfig) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
 }
 
