@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -229,6 +230,15 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+
+	// BusyBox-style consolidation - import app packages
+	complianceapp "github.com/stackrox/rox/compliance/cmd/compliance/app"
+	roxagentapp "github.com/stackrox/rox/compliance/virtualmachines/roxagent/app"
+	configcontrollerapp "github.com/stackrox/rox/config-controller/app"
+	migratorapp "github.com/stackrox/rox/migrator/app"
+	admissioncontrolapp "github.com/stackrox/rox/sensor/admission-control/app"
+	kubernetessensorapp "github.com/stackrox/rox/sensor/kubernetes/app"
+	sensorupgraderapp "github.com/stackrox/rox/sensor/upgrader/app"
 )
 
 var (
@@ -277,7 +287,8 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
-func main() {
+// Main is the exported entry point for the central binary.
+func Main() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()
@@ -1058,4 +1069,60 @@ func waitForTerminationSignal() {
 		osutils.Restart()
 	}
 	log.Info("Central terminated")
+}
+
+// Dispatcher wrapper functions for BusyBox-style invocation
+func migratorMain() {
+	migratorapp.Run()
+}
+
+func complianceMain() {
+	complianceapp.Run()
+}
+
+func kubernetesSensorMain() {
+	kubernetessensorapp.Run()
+}
+
+func sensorUpgraderMain() {
+	sensorupgraderapp.Run()
+}
+
+func admissionControlMain() {
+	admissioncontrolapp.Run()
+}
+
+func configControllerMain() {
+	configcontrollerapp.Run()
+}
+
+func roxagentMain() {
+	roxagentapp.Run()
+}
+
+func main() {
+	// BusyBox-style dispatcher: check how we were called
+	binaryName := filepath.Base(os.Args[0])
+
+	switch binaryName {
+	case "central":
+		Main()
+	case "migrator":
+		migratorMain()
+	case "compliance":
+		complianceMain()
+	case "kubernetes-sensor":
+		kubernetesSensorMain()
+	case "sensor-upgrader":
+		sensorUpgraderMain()
+	case "admission-control":
+		admissionControlMain()
+	case "config-controller":
+		configControllerMain()
+	case "roxagent":
+		roxagentMain()
+	default:
+		// Default to central if called with unknown name
+		Main()
+	}
 }
