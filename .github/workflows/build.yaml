@@ -548,16 +548,33 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir central-db-image
 
-      - name: Build main image
+      - name: Login to registries for push
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ env.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ env.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Login to rhacs-eng registry
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          echo "${{ env.QUAY_RHACS_ENG_RW_PASSWORD }}" | docker login -u "${{ env.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin quay.io/rhacs-eng
+
+      - name: Build and push main image
         uses: docker/build-push-action@v6
         with:
           context: image/rhel
           file: image/rhel/Dockerfile
           platforms: linux/${{ matrix.arch }}
-          load: true
+          # Push directly to registries — avoids slow --load export to local docker.
+          push: ${{ github.event_name == 'push' || !github.event.pull_request.head.repo.fork }}
+          load: ${{ !(github.event_name == 'push' || !github.event.pull_request.head.repo.fork) }}
           tags: |
-            stackrox/main:${{ env.BUILD_TAG }}
             quay.io/stackrox-io/main:${{ env.BUILD_TAG }}
+            quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}
           build-args: |
             DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
             ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
@@ -569,26 +586,14 @@ jobs:
           cache-to: type=gha,mode=max,scope=main-${{ matrix.arch }}
 
       - name: Check debugger presence in the main image
+        if: ${{ !(github.event_name == 'push' || !github.event.pull_request.head.repo.fork) }}
         run: make check-debugger
 
       - name: Build roxctl image
-        env:
-          DOCKER_BUILDX_CACHE: roxctl-${{ matrix.arch }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
-      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
-
-      - name: Push images
+      - name: Push roxctl and central-db images
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -599,12 +604,12 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+            # Main image already pushed by build-push-action above.
+            # Push roxctl and central-db only.
+            for image in roxctl central-db; do
+              retry 5 true docker push "quay.io/stackrox-io/${image}:${BUILD_TAG}" | cat
+              retry 5 true docker push "quay.io/rhacs-eng/${image}:${BUILD_TAG}" | cat
+            done
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
