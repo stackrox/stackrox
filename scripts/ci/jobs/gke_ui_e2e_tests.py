@@ -16,6 +16,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 # Override test env defaults here:
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
 os.environ["OUTPUT_FORMAT"] = "helm"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 
 ClusterTestRunner(
