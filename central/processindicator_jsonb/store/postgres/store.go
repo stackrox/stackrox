@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"google.golang.org/protobuf/encoding/protojson"
+	// protojson replaced by fastjson for marshal/unmarshal
 	"gorm.io/gorm"
 )
 
@@ -73,7 +73,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoProcessIndicatorJsonbs(batch *pgx.Batch, obj *storage.ProcessIndicatorJsonb) error {
 
-	serialized, marshalErr := protojson.Marshal(obj)
+	serialized, marshalErr := obj.MarshalFastJSON()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -146,7 +146,7 @@ func copyFromProcessIndicatorJsonbs(ctx context.Context, s pgSearch.Deleter, tx 
 		obj := objs[idx]
 		idx++
 
-		serialized, marshalErr := protojson.Marshal(obj)
+		serialized, marshalErr := obj.MarshalFastJSON()
 		if marshalErr != nil {
 			return nil, marshalErr
 		}
@@ -183,7 +183,7 @@ func scanRow(row pgx.Row) (*storeType, error) {
 		return nil, err
 	}
 	msg := &storeType{}
-	if err := protojson.Unmarshal(data, msg); err != nil {
+	if err := msg.UnmarshalFastJSON(data); err != nil {
 		return nil, err
 	}
 	return msg, nil
@@ -195,7 +195,7 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 		return nil, err
 	}
 	msg := &storeType{}
-	if err := protojson.Unmarshal(data, msg); err != nil {
+	if err := msg.UnmarshalFastJSON(data); err != nil {
 		return nil, err
 	}
 	return msg, nil
