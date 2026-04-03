@@ -236,6 +236,7 @@ import (
 	roxagentapp "github.com/stackrox/rox/compliance/virtualmachines/roxagent/app"
 	configcontrollerapp "github.com/stackrox/rox/config-controller/app"
 	migratorapp "github.com/stackrox/rox/migrator/app"
+	roxctlapp "github.com/stackrox/rox/roxctl/app"
 	admissioncontrolapp "github.com/stackrox/rox/sensor/admission-control/app"
 	kubernetessensorapp "github.com/stackrox/rox/sensor/kubernetes/app"
 	sensorupgraderapp "github.com/stackrox/rox/sensor/upgrader/app"
@@ -1091,6 +1092,8 @@ func main() {
 		configcontrollerapp.Run()
 	case "roxagent":
 		roxagentapp.Run()
+	case "roxctl":
+		roxctlapp.Run()
 	default:
 		// Default to central if called with unknown name
 		log.Warnf("Unknown binary name %q, defaulting to central mode", binaryName)
