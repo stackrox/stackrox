@@ -33,12 +33,10 @@ import (
 
 var log = logging.LoggerForModule()
 
-func init() {
-	memlimit.SetMemoryLimit()
-}
-
 // Run is the main entry point for the kubernetes-sensor application.
 func Run() {
+	memlimit.SetMemoryLimit()
+
 	premain.StartMain()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")

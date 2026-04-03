@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/retry/handler"
 )
 
-func init() {
-	memlimit.SetMemoryLimit()
-}
-
 var (
 	log = logging.LoggerForModule()
 )
 
 // Run is the main entry point for the compliance application.
 func Run() {
+	memlimit.SetMemoryLimit()
+
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
 		log.Errorf("unable to start continuous profiling: %v", err)
 	}
