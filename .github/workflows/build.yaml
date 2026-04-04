@@ -502,6 +502,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          # Use docker driver (built-in buildkit) — skips ~40s container boot.
+          driver: docker
 
       - name: Checkout submodules
         run: |
@@ -550,14 +553,6 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir central-db-image
 
-      # Login to GHCR for buildx layer cache (type=registry).
-      - name: Login to GHCR for cache
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       # docker/login-action injects credentials into the buildx builder,
       # unlike plain `docker login` which only writes to host config.
       - name: Login to quay.io for buildx push
@@ -593,8 +588,9 @@ jobs:
             ROX_IMAGE_FLAVOR=development_build
             LABEL_VERSION=${{ env.BUILD_TAG }}
             LABEL_RELEASE=${{ env.BUILD_TAG }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache/main-${{ matrix.arch }}
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache/main-${{ matrix.arch }},mode=max
+          # TODO: add cache once docker driver + inline is validated
+          # cache-from: type=registry,ref=quay.io/rhacs-eng/main:latest-${{ matrix.arch }}
+          # cache-to: type=inline
 
       - name: Build roxctl image
         run: |
