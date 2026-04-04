@@ -581,6 +581,7 @@ jobs:
           tags: |
             quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}
             quay.io/rhacs-eng/main:${{ env.BUILD_TAG }}-${{ matrix.arch }}
+            quay.io/rhacs-eng/main:cache-${{ matrix.arch }}
           build-args: |
             DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
             ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
@@ -588,9 +589,11 @@ jobs:
             ROX_IMAGE_FLAVOR=development_build
             LABEL_VERSION=${{ env.BUILD_TAG }}
             LABEL_RELEASE=${{ env.BUILD_TAG }}
-          # TODO: add cache once docker driver + inline is validated
-          # cache-from: type=registry,ref=quay.io/rhacs-eng/main:latest-${{ matrix.arch }}
-          # cache-to: type=inline
+          # Pull the previous build as cache source. With COPY --link,
+          # unchanged layers (packages, UI, static data) are reused from
+          # the cache image — only changed binary layers are rebuilt+pushed.
+          cache-from: type=registry,ref=quay.io/rhacs-eng/main:cache-${{ matrix.arch }}
+          cache-to: type=inline
 
       - name: Build roxctl image
         run: |
