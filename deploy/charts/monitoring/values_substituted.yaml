@@ -1,0 +1,42 @@
+grafanaImage: grafana/grafana:10.4.17
+prometheusImage: prom/prometheus:v2.34.0
+password: stackrox
+anonymousAdminAccess: true
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+exposure:
+  port: 443
+  type: none # route, lb, np
+
+persistence:
+  type: none # pvc, hostpath
+  hostPath: null
+  storageClass: null
+
+nodeSelector: {}
+
+kube-state-metrics:
+  releaseNamespace: true
+
+alertmanager:
+  persistence:
+    enabled: false
+  config:
+    receivers:
+      - name: pagerduty-notifications
+        pagerduty_configs:
+          - service_key: 
+    route:
+      receiver: pagerduty-notifications
+      group_by: [alertname]
+  configmapReload:
+    enabled: true
+
+enableMonitoringPSPs: false
