@@ -417,6 +417,8 @@ jobs:
 
   build-and-push-main:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write  # for GHCR buildx layer cache
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -548,6 +550,14 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir central-db-image
 
+      # Login to GHCR for buildx layer cache (type=registry).
+      - name: Login to GHCR for cache
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       # docker/login-action injects credentials into the buildx builder,
       # unlike plain `docker login` which only writes to host config.
       - name: Login to quay.io for buildx push
@@ -583,8 +593,8 @@ jobs:
             ROX_IMAGE_FLAVOR=development_build
             LABEL_VERSION=${{ env.BUILD_TAG }}
             LABEL_RELEASE=${{ env.BUILD_TAG }}
-          cache-from: type=gha,scope=main-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=main-${{ matrix.arch }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache/main-${{ matrix.arch }}
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache/main-${{ matrix.arch }},mode=max
 
       - name: Build roxctl image
         run: |
