@@ -26,6 +26,7 @@ type Handler interface {
 	common.SensorComponent
 	ProcessReprocessDeployments(*central.ReprocessDeployment) error
 	ProcessInvalidateImageCache(*central.InvalidateImageCache) error
+	ProcessRefreshImageCacheTTL(*central.RefreshImageCacheTTL) error
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
@@ -92,20 +93,42 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 
 		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
-			var key string
-			if centralcaps.Has(centralsensor.FlattenImageData) {
-				key = image.GetImageIdV2()
-			} else {
-				key = image.GetImageId()
-			}
-			if key == "" {
-				key = image.GetImageFullName()
-			}
-			keysToDelete = append(keysToDelete, cache.Key(key))
+			keysToDelete = append(keysToDelete, cacheKeyFromImageKey(image))
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}
 	return nil
+}
+
+func (h *handlerImpl) ProcessRefreshImageCacheTTL(req *central.RefreshImageCacheTTL) error {
+	log.Debug("Received request to refresh image cache TTLs")
+
+	select {
+	case <-h.stopSig.Done():
+		return errors.Wrap(h.stopSig.Err(), "could not fulfill refresh image cache TTL request")
+	default:
+		for _, image := range req.GetImageKeys() {
+			if key := cacheKeyFromImageKey(image); key != "" {
+				h.imageCache.Touch(key)
+			}
+		}
+	}
+	return nil
+}
+
+// cacheKeyFromImageKey resolves the cache key from an InvalidateImageCache_ImageKey
+// proto, applying the V2/V1/fullName precedence based on the FlattenImageData capability.
+func cacheKeyFromImageKey(imageKey *central.InvalidateImageCache_ImageKey) cache.Key {
+	var key string
+	if centralcaps.Has(centralsensor.FlattenImageData) {
+		key = imageKey.GetImageIdV2()
+	} else {
+		key = imageKey.GetImageId()
+	}
+	if key == "" {
+		key = imageKey.GetImageFullName()
+	}
+	return cache.Key(key)
 }
 
 func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {

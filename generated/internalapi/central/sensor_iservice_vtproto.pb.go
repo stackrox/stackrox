@@ -480,6 +480,15 @@ func (m *MsgToSensor_SensorAck) CloneVT() isMsgToSensor_Msg {
 	return r
 }
 
+func (m *MsgToSensor_RefreshImageCacheTtl) CloneVT() isMsgToSensor_Msg {
+	if m == nil {
+		return (*MsgToSensor_RefreshImageCacheTtl)(nil)
+	}
+	r := new(MsgToSensor_RefreshImageCacheTtl)
+	r.RefreshImageCacheTtl = m.RefreshImageCacheTtl.CloneVT()
+	return r
+}
+
 func (m *DeduperState) CloneVT() *DeduperState {
 	if m == nil {
 		return (*DeduperState)(nil)
@@ -663,6 +672,29 @@ func (m *InvalidateImageCache) CloneVT() *InvalidateImageCache {
 }
 
 func (m *InvalidateImageCache) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *RefreshImageCacheTTL) CloneVT() *RefreshImageCacheTTL {
+	if m == nil {
+		return (*RefreshImageCacheTTL)(nil)
+	}
+	r := new(RefreshImageCacheTTL)
+	if rhs := m.ImageKeys; rhs != nil {
+		tmpContainer := make([]*InvalidateImageCache_ImageKey, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.ImageKeys = tmpContainer
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *RefreshImageCacheTTL) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -1849,6 +1881,31 @@ func (this *MsgToSensor_SensorAck) EqualVT(thatIface isMsgToSensor_Msg) bool {
 	return true
 }
 
+func (this *MsgToSensor_RefreshImageCacheTtl) EqualVT(thatIface isMsgToSensor_Msg) bool {
+	that, ok := thatIface.(*MsgToSensor_RefreshImageCacheTtl)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.RefreshImageCacheTtl, that.RefreshImageCacheTtl; p != q {
+		if p == nil {
+			p = &RefreshImageCacheTTL{}
+		}
+		if q == nil {
+			q = &RefreshImageCacheTTL{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *DeduperState) EqualVT(that *DeduperState) bool {
 	if this == that {
 		return true
@@ -2101,6 +2158,39 @@ func (this *InvalidateImageCache) EqualVT(that *InvalidateImageCache) bool {
 
 func (this *InvalidateImageCache) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*InvalidateImageCache)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *RefreshImageCacheTTL) EqualVT(that *RefreshImageCacheTTL) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if len(this.ImageKeys) != len(that.ImageKeys) {
+		return false
+	}
+	for i, vx := range this.ImageKeys {
+		vy := that.ImageKeys[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &InvalidateImageCache_ImageKey{}
+			}
+			if q == nil {
+				q = &InvalidateImageCache_ImageKey{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *RefreshImageCacheTTL) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*RefreshImageCacheTTL)
 	if !ok {
 		return false
 	}
@@ -3338,6 +3428,33 @@ func (m *MsgToSensor_SensorAck) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgToSensor_RefreshImageCacheTtl) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToSensor_RefreshImageCacheTtl) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.RefreshImageCacheTtl != nil {
+		size, err := m.RefreshImageCacheTtl.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xf2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xf2
+	}
+	return len(dAtA) - i, nil
+}
 func (m *DeduperState) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -3761,6 +3878,51 @@ func (m *InvalidateImageCache) MarshalToVT(dAtA []byte) (int, error) {
 }
 
 func (m *InvalidateImageCache) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.ImageKeys) > 0 {
+		for iNdEx := len(m.ImageKeys) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.ImageKeys[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RefreshImageCacheTTL) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RefreshImageCacheTTL) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *RefreshImageCacheTTL) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -4456,6 +4618,20 @@ func (m *MsgToSensor_SensorAck) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MsgToSensor_RefreshImageCacheTtl) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RefreshImageCacheTtl != nil {
+		l = m.RefreshImageCacheTtl.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
 func (m *DeduperState) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4625,6 +4801,22 @@ func (m *InvalidateImageCache_ImageKey) SizeVT() (n int) {
 }
 
 func (m *InvalidateImageCache) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ImageKeys) > 0 {
+		for _, e := range m.ImageKeys {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *RefreshImageCacheTTL) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -6674,6 +6866,47 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				m.Msg = &MsgToSensor_SensorAck{SensorAck: v}
 			}
 			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RefreshImageCacheTtl", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_RefreshImageCacheTtl); ok {
+				if err := oneof.RefreshImageCacheTtl.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RefreshImageCacheTTL{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_RefreshImageCacheTtl{RefreshImageCacheTtl: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -7837,6 +8070,91 @@ func (m *InvalidateImageCache) UnmarshalVT(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: InvalidateImageCache: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageKeys", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
+			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RefreshImageCacheTTL) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RefreshImageCacheTTL: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RefreshImageCacheTTL: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -9937,6 +10255,47 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Msg = &MsgToSensor_SensorAck{SensorAck: v}
 			}
 			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RefreshImageCacheTtl", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_RefreshImageCacheTtl); ok {
+				if err := oneof.RefreshImageCacheTtl.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RefreshImageCacheTTL{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_RefreshImageCacheTtl{RefreshImageCacheTtl: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -11144,6 +11503,91 @@ func (m *InvalidateImageCache) UnmarshalVTUnsafe(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: InvalidateImageCache: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageKeys", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
+			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RefreshImageCacheTTL) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RefreshImageCacheTTL: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RefreshImageCacheTTL: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
