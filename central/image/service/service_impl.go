@@ -1348,7 +1348,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+	if !enrichmentResult.ImageUpdated || !enrichmentResult.ScanResult.HasScanData() {
 		return &v1.WatchImageResponse{
 			ErrorMessage: "scan could not be completed, due to no applicable registry/scanner integration",
 			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,
@@ -1397,7 +1397,7 @@ func (s *serviceImpl) watchImageV2(ctx context.Context, containerImage *storage.
 		}, nil
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+	if !enrichmentResult.ImageUpdated || !enrichmentResult.ScanResult.HasScanData() {
 		return &v1.WatchImageResponse{
 			ErrorMessage: "scan could not be completed, due to no applicable registry/scanner integration",
 			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,
