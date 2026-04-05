@@ -544,7 +544,7 @@ go-unit-tests: build-prep test-prep
 
 # Exercise the logging package for all supported logging levels to make sure that initialization works properly.
 .PHONY: go-log-level-tests
-go-log-level-tests:
+go-log-level-tests: build-prep test-prep
 	@echo "Run log tests"
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
