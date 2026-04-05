@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: indexer
+        resources:
+          requests:
+            cpu: "400m"
+            memory: "2Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"

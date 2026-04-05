@@ -1,0 +1,21 @@
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init-db
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+      containers:
+        - name: db
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
