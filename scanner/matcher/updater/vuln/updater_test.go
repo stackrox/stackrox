@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -355,6 +356,43 @@ func TestIsBundleAllowed(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			u := &Updater{vulnBundleAllowlist: tc.allowlist}
 			assert.Equal(t, tc.want, u.isBundleAllowed(tc.filename))
+		})
+	}
+}
+
+func TestIsRetryableDialError(t *testing.T) {
+	testCases := map[string]struct {
+		err  error
+		want bool
+	}{
+		"nil": {
+			err:  nil,
+			want: false,
+		},
+		"non-OpError": {
+			err:  errors.New("connection refused"),
+			want: false,
+		},
+		"read op": {
+			err:  &net.OpError{Op: "read", Err: errors.New("connection refused")},
+			want: false,
+		},
+		"connection refused": {
+			err:  &net.OpError{Op: "dial", Err: errors.New("connection refused")},
+			want: true,
+		},
+		"i/o timeout": {
+			err:  &net.OpError{Op: "dial", Err: errors.New("i/o timeout")},
+			want: true,
+		},
+		"other dial error": {
+			err:  &net.OpError{Op: "dial", Err: errors.New("no route to host")},
+			want: false,
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, isRetryableDialError(tc.err))
 		})
 	}
 }
