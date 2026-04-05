@@ -1,0 +1,403 @@
+run_id,timestamp,branch,job,cache_hit,cache_size_mb,entries_restored,entries_after,new_entries,build_time_s,job_total_s,probe_hit_pct,notes
+21845188087,2026-02-09T23:36:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,24,191,100,warm run 1 (full 916MB cache)
+21845188087,2026-02-09T23:36:00Z,PR-18908,go-binaries amd64,HIT,916,22857,32477,+9620,23,236,100,warm run 1
+21845317019,2026-02-09T23:41:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,25,176,100,warm run 2
+21845317019,2026-02-09T23:41:00Z,PR-18908,go-binaries amd64,HIT,916,22857,32477,+9620,25,236,100,warm run 2
+21845447755,2026-02-09T23:46:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,24,171,100,warm run 3
+21845447755,2026-02-09T23:46:00Z,PR-18908,go-binaries amd64,HIT,916,22857,,+9620,23,209,100,warm run 3
+21845582203,2026-02-09T23:51:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,25,195,100,warm run 4
+21845582203,2026-02-09T23:51:00Z,PR-18908,go-binaries amd64,HIT,916,22857,,+9620,21,247,100,warm run 4
+21845878961,2026-02-09T23:56:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,24,170,100,warm run 5
+21845878961,2026-02-09T23:56:00Z,PR-18908,go-binaries amd64,HIT,916,22857,,+9620,21,195,100,warm run 5
+21846000723,2026-02-10T00:08:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,26,197,100,warm run 6
+21846000723,2026-02-10T00:08:00Z,PR-18908,go-binaries amd64,HIT,916,22857,,+9620,22,228,100,warm run 6
+21846130810,2026-02-10T00:13:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,24,179,100,warm run 7
+21846130810,2026-02-10T00:13:00Z,PR-18908,go-binaries amd64,HIT,916,22857,,+9620,22,246,100,warm run 7
+21846251148,2026-02-10T00:18:00Z,PR-18908,CLI linux/amd64,HIT,916,22857,,+10,24,181,100,warm run 8
+21846251148,2026-02-10T00:18:00Z,PR-18908,go-binaries amd64,HIT,916,22857,,+9620,23,228,100,warm run 8
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI linux/amd64,HIT,461,22857,22867,+10,13,182,100,earlier warm (partial 461MB cache)
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI linux/arm64,HIT,461,22862,22872,+10,12,168,100,earlier warm
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI linux/ppc64le,HIT,461,22860,22870,+10,13,395,100,earlier warm
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI linux/s390x,HIT,461,22866,22876,+10,14,371,100,earlier warm
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI darwin/amd64,HIT,461,18342,18347,+5,7,315,100,earlier warm (per-job cache)
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI darwin/arm64,HIT,461,18341,18346,+5,7,316,100,earlier warm (per-job cache)
+21832411602,2026-02-09T16:02:00Z,PR-18908,CLI windows/amd64,HIT,461,18342,24660,+6318,114,271,100,earlier warm (no speedup)
+21832411602,2026-02-09T16:02:00Z,PR-18908,go-binaries amd64,HIT,461,22857,32477,+9620,206,404,100,earlier warm (partial cache)
+21832411602,2026-02-09T16:02:00Z,PR-18908,go-binaries arm64,HIT,,,,,,560,,earlier warm
+21832411602,2026-02-09T16:02:00Z,PR-18908,pre-build-docs,HIT,461,22857,22857,+0,,165,,earlier warm (free consumer)
+21832411602,2026-02-09T16:02:00Z,PR-18908,operator RHACS amd64,HIT,461,22857,22857,+0,,1001,,earlier warm (free consumer)
+21832632139,2026-02-09T16:09:00Z,PR-18908,CLI linux/amd64,HIT,461,22857,22867,+10,16,220,100,consecutive warm
+21832632139,2026-02-09T16:09:00Z,PR-18908,go-binaries amd64,HIT,461,22857,32477,+9620,210,466,100,consecutive warm (partial cache)
+21832674828,2026-02-09T16:11:00Z,PR-18908,CLI linux/amd64,HIT,461,22857,22867,+10,15,203,100,consecutive warm
+21832674828,2026-02-09T16:11:00Z,PR-18908,go-binaries amd64,HIT,461,22857,32477,+9620,205,426,100,consecutive warm (partial cache)
+21836188666,2026-02-09T18:20:00Z,PR-18908,CLI linux/amd64,HIT,461,22857,,+10,13,171,100,later warm
+21836188666,2026-02-09T18:20:00Z,PR-18908,go-binaries amd64,HIT,461,22857,32477,+9620,201,378,100,later warm (partial cache)
+21836022036,2026-02-09T18:15:00Z,PR-18908,CLI linux/amd64,HIT,461,22857,,+10,13,182,100,later warm
+21836022036,2026-02-09T18:15:00Z,PR-18908,CLI linux/arm64,HIT,461,22862,,+10,12,183,100,later warm
+21840388402,2026-02-09T20:57:00Z,PR-18908,go-binaries amd64,MISS,,7791,29056,+21265,352,550,1,cold seeding run (saved 927MB full cache)
+21835071595,2026-02-09T17:47:00Z,PR-18908,CLI linux/amd64,MISS,,7791,20273,+12482,179,402,1,cold (no cache available)
+21835071595,2026-02-09T17:47:00Z,PR-18908,go-binaries amd64,MISS,,7791,29056,+21265,352,601,1,cold
+21807146741,2026-02-08T23:11:00Z,PR-18908,CLI linux/amd64,MISS,,31260,,+5674,133,,49,tag mismatch (netgo added but cache without)
+21807146741,2026-02-08T23:11:00Z,PR-18908,CLI linux/arm64,HIT,,31164,,+1572,46,,100,arm64 CGO=0 both sides - proves sharing works
+21807146741,2026-02-08T23:11:00Z,PR-18908,go-binaries amd64,MISS,,,,+21241,257,,,tag mismatch cold
+21803217451,2026-02-08T18:33:00Z,PR-18908,go-binaries amd64,HIT,,31651,,+35,21,215,100,experiment 2: warm full cache (pre-netgo tags)
+21842104290,2026-02-09T21:50:00Z,master,pre-build-cli,MISS,,,,,,,,baseline: master single-job CLI (all 7 arches)
+21842104290,2026-02-09T21:50:00Z,master,go-binaries amd64,MISS,,,,,,,,baseline: master
+21839927755,2026-02-09T20:43:00Z,master,pre-build-cli,MISS,,,,,,,,baseline: master
+21839927755,2026-02-09T20:43:00Z,master,go-binaries amd64,HIT,,,,,,,,baseline: master (rare cache hit)
+21839639107,2026-02-09T20:35:00Z,master,pre-build-cli,MISS,,,,,,,,baseline: master
+21839639107,2026-02-09T20:35:00Z,master,go-binaries amd64,MISS,,,,,,,,baseline: master
+21847430645,2026-02-10T01:06:00Z,other-pr,pre-build-cli,MISS,,,,,,,,baseline: other PR
+21847430645,2026-02-10T01:06:00Z,other-pr,go-binaries amd64,MISS,,,,,,,,baseline: other PR
+21846939390,2026-02-10T00:46:00Z,nightly,pre-build-cli,MISS,,,,,,,,baseline: 4.11.x nightly
+21846939390,2026-02-10T00:46:00Z,nightly,go-binaries amd64,MISS,,,,,,,,baseline: 4.11.x nightly
+21847430645,2026-02-10T01:06:29Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1047,,historical baseline
+21847430645,2026-02-10T01:06:29Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,550,,historical baseline
+21847430645,2026-02-10T01:06:29Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,601,,historical baseline
+21846939390,2026-02-10T00:46:11Z,4.11.x-nightly-20260210,pre-build-cli,,,,,,,976,,historical baseline
+21846939390,2026-02-10T00:46:11Z,4.11.x-nightly-20260210,go-binaries arm64,,,,,,,553,,historical baseline
+21846939390,2026-02-10T00:46:11Z,4.11.x-nightly-20260210,go-binaries amd64,,,,,,,608,,historical baseline
+21846652874,2026-02-10T00:34:52Z,dependabot/go_modules/operator/tools/operator-sdk/github.com/go-git/go-git/v5-5.16.5,pre-build-cli,,,,,,,1059,,historical baseline
+21846652874,2026-02-10T00:34:52Z,dependabot/go_modules/operator/tools/operator-sdk/github.com/go-git/go-git/v5-5.16.5,go-binaries amd64,,,,,,,581,,historical baseline
+21846652874,2026-02-10T00:34:52Z,dependabot/go_modules/operator/tools/operator-sdk/github.com/go-git/go-git/v5-5.16.5,go-binaries arm64,,,,,,,559,,historical baseline
+21846610703,2026-02-10T00:33:16Z,dependabot/go_modules/github.com/go-git/go-git/v5-5.16.5,pre-build-cli,,,,,,,1035,,historical baseline
+21846610703,2026-02-10T00:33:16Z,dependabot/go_modules/github.com/go-git/go-git/v5-5.16.5,go-binaries arm64,,,,,,,570,,historical baseline
+21846610703,2026-02-10T00:33:16Z,dependabot/go_modules/github.com/go-git/go-git/v5-5.16.5,go-binaries amd64,,,,,,,560,,historical baseline
+21846590244,2026-02-10T00:32:33Z,dependabot/go_modules/tests/performance/scale/github.com/go-git/go-git/v5-5.16.5,pre-build-cli,,,,,,,993,,historical baseline
+21846590244,2026-02-10T00:32:33Z,dependabot/go_modules/tests/performance/scale/github.com/go-git/go-git/v5-5.16.5,go-binaries amd64,,,,,,,600,,historical baseline
+21846590244,2026-02-10T00:32:33Z,dependabot/go_modules/tests/performance/scale/github.com/go-git/go-git/v5-5.16.5,go-binaries arm64,,,,,,,585,,historical baseline
+21845106765,2026-02-09T23:33:01Z,jv-ROX-31149-improve-monitoring-deployment-customization,pre-build-cli,,,,,,,1279,,historical baseline
+21845106765,2026-02-09T23:33:01Z,jv-ROX-31149-improve-monitoring-deployment-customization,go-binaries arm64,,,,,,,510,,historical baseline
+21845106765,2026-02-09T23:33:01Z,jv-ROX-31149-improve-monitoring-deployment-customization,go-binaries amd64,,,,,,,611,,historical baseline
+21843999422,2026-02-09T22:51:49Z,jvdm/4.10-scanner-bump,pre-build-cli,,,,,,,1023,,historical baseline
+21843999422,2026-02-09T22:51:49Z,jvdm/4.10-scanner-bump,go-binaries amd64,,,,,,,587,,historical baseline
+21843999422,2026-02-09T22:51:49Z,jvdm/4.10-scanner-bump,go-binaries arm64,,,,,,,589,,historical baseline
+21843697199,2026-02-09T22:41:05Z,dc/rhel-vex-timeout,pre-build-cli,,,,,,,917,,historical baseline
+21843697199,2026-02-09T22:41:05Z,dc/rhel-vex-timeout,go-binaries arm64,,,,,,,533,,historical baseline
+21843697199,2026-02-09T22:41:05Z,dc/rhel-vex-timeout,go-binaries amd64,,,,,,,533,,historical baseline
+21843598475,2026-02-09T22:37:44Z,dc/rhel-vex-timeout,pre-build-cli,,,,,,,1028,,historical baseline
+21843598475,2026-02-09T22:37:44Z,dc/rhel-vex-timeout,go-binaries amd64,,,,,,,566,,historical baseline
+21843598475,2026-02-09T22:37:44Z,dc/rhel-vex-timeout,go-binaries arm64,,,,,,,559,,historical baseline
+21843597091,2026-02-09T22:37:42Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,1331,,historical baseline
+21843597091,2026-02-09T22:37:42Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,624,,historical baseline
+21843597091,2026-02-09T22:37:42Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,571,,historical baseline
+21843381027,2026-02-09T22:30:35Z,ROX-32817/isolate-and-parallelize-tests,pre-build-cli,,,,,,,987,,historical baseline
+21843381027,2026-02-09T22:30:35Z,ROX-32817/isolate-and-parallelize-tests,go-binaries arm64,,,,,,,516,,historical baseline
+21843381027,2026-02-09T22:30:35Z,ROX-32817/isolate-and-parallelize-tests,go-binaries amd64,,,,,,,543,,historical baseline
+21843366508,2026-02-09T22:30:08Z,ROX-32817/refactor-assertResourceWasUpdated,pre-build-cli,,,,,,,967,,historical baseline
+21843366508,2026-02-09T22:30:08Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries arm64,,,,,,,494,,historical baseline
+21843366508,2026-02-09T22:30:08Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries amd64,,,,,,,554,,historical baseline
+21842135872,2026-02-09T21:51:48Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,1237,,historical baseline
+21842135872,2026-02-09T21:51:48Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,548,,historical baseline
+21842135872,2026-02-09T21:51:48Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,551,,historical baseline
+21842104290,2026-02-09T21:50:46Z,master,pre-build-cli,,,,,,,1027,,historical baseline
+21842104290,2026-02-09T21:50:46Z,master,go-binaries amd64,,,,,,,600,,historical baseline
+21842104290,2026-02-09T21:50:46Z,master,go-binaries arm64,,,,,,,571,,historical baseline
+21842027697,2026-02-09T21:48:21Z,dc/rhel-vex-timeout,pre-build-cli,,,,,,,995,,historical baseline
+21842027697,2026-02-09T21:48:21Z,dc/rhel-vex-timeout,go-binaries arm64,,,,,,,505,,historical baseline
+21842027697,2026-02-09T21:48:21Z,dc/rhel-vex-timeout,go-binaries amd64,,,,,,,537,,historical baseline
+21841536817,2026-02-09T21:33:11Z,dc/rhel-vex-timeout,pre-build-cli,,,,,,,1040,,historical baseline
+21841536817,2026-02-09T21:33:11Z,dc/rhel-vex-timeout,go-binaries arm64,,,,,,,552,,historical baseline
+21841536817,2026-02-09T21:33:11Z,dc/rhel-vex-timeout,go-binaries amd64,,,,,,,535,,historical baseline
+21841093288,2026-02-09T21:19:31Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,1326,,historical baseline
+21841093288,2026-02-09T21:19:31Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,565,,historical baseline
+21841093288,2026-02-09T21:19:31Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,508,,historical baseline
+21841081490,2026-02-09T21:19:09Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,1357,,historical baseline
+21841081490,2026-02-09T21:19:09Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,554,,historical baseline
+21841081490,2026-02-09T21:19:09Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,517,,historical baseline
+21840462605,2026-02-09T21:00:16Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1050,,historical baseline
+21840462605,2026-02-09T21:00:16Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,528,,historical baseline
+21840462605,2026-02-09T21:00:16Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,596,,historical baseline
+21840272485,2026-02-09T20:54:15Z,bradr/ROX-27260_fix_policy_scope_validation_logic,pre-build-cli,,,,,,,1250,,historical baseline
+21840272485,2026-02-09T20:54:15Z,bradr/ROX-27260_fix_policy_scope_validation_logic,go-binaries amd64,,,,,,,539,,historical baseline
+21840272485,2026-02-09T20:54:15Z,bradr/ROX-27260_fix_policy_scope_validation_logic,go-binaries arm64,,,,,,,540,,historical baseline
+21840036009,2026-02-09T20:47:00Z,dv/ROX-33052-disable-base-images-console-plugin,pre-build-cli,,,,,,,1019,,historical baseline
+21840036009,2026-02-09T20:47:00Z,dv/ROX-33052-disable-base-images-console-plugin,go-binaries arm64,,,,,,,252,,historical baseline
+21840036009,2026-02-09T20:47:00Z,dv/ROX-33052-disable-base-images-console-plugin,go-binaries amd64,,,,,,,327,,historical baseline
+21839927755,2026-02-09T20:43:56Z,master,pre-build-cli,,,,,,,990,,historical baseline
+21839927755,2026-02-09T20:43:56Z,master,go-binaries amd64,,,,,,,273,,historical baseline
+21839927755,2026-02-09T20:43:56Z,master,go-binaries arm64,,,,,,,242,,historical baseline
+21839676958,2026-02-09T20:36:30Z,dependabot/npm_and_yarn/ui/apps/platform/axios-1.13.5,pre-build-cli,,,,,,,1031,,historical baseline
+21839676958,2026-02-09T20:36:30Z,dependabot/npm_and_yarn/ui/apps/platform/axios-1.13.5,go-binaries amd64,,,,,,,579,,historical baseline
+21839676958,2026-02-09T20:36:30Z,dependabot/npm_and_yarn/ui/apps/platform/axios-1.13.5,go-binaries arm64,,,,,,,528,,historical baseline
+21839639107,2026-02-09T20:35:20Z,master,pre-build-cli,,,,,,,1028,,historical baseline
+21839639107,2026-02-09T20:35:20Z,master,go-binaries amd64,,,,,,,624,,historical baseline
+21839639107,2026-02-09T20:35:20Z,master,go-binaries arm64,,,,,,,544,,historical baseline
+21839020919,2026-02-09T20:16:05Z,AlexVulaj/ROX-32152-scopecomp-label-matching,pre-build-cli,,,,,,,1286,,historical baseline
+21839020919,2026-02-09T20:16:05Z,AlexVulaj/ROX-32152-scopecomp-label-matching,go-binaries amd64,,,,,,,556,,historical baseline
+21839020919,2026-02-09T20:16:05Z,AlexVulaj/ROX-32152-scopecomp-label-matching,go-binaries arm64,,,,,,,544,,historical baseline
+21837611993,2026-02-09T19:27:57Z,ajheflin/imagev2-view-updates,pre-build-cli,,,,,,,1023,,historical baseline
+21837611993,2026-02-09T19:27:57Z,ajheflin/imagev2-view-updates,go-binaries arm64,,,,,,,548,,historical baseline
+21837611993,2026-02-09T19:27:57Z,ajheflin/imagev2-view-updates,go-binaries amd64,,,,,,,618,,historical baseline
+21835611208,2026-02-09T18:03:16Z,ubi-micro,pre-build-cli,,,,,,,1050,,historical baseline
+21835611208,2026-02-09T18:03:16Z,ubi-micro,go-binaries amd64,,,,,,,538,,historical baseline
+21835611208,2026-02-09T18:03:16Z,ubi-micro,go-binaries arm64,,,,,,,505,,historical baseline
+21834777721,2026-02-09T17:38:13Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,328,,historical baseline
+21834777721,2026-02-09T17:38:13Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,658,,historical baseline
+21834777721,2026-02-09T17:38:13Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,580,,historical baseline
+21834776175,2026-02-09T17:38:10Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1328,,historical baseline
+21834776175,2026-02-09T17:38:10Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,552,,historical baseline
+21834776175,2026-02-09T17:38:10Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,616,,historical baseline
+21834432046,2026-02-09T17:27:53Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,930,,historical baseline
+21834432046,2026-02-09T17:27:53Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,566,,historical baseline
+21834432046,2026-02-09T17:27:53Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,494,,historical baseline
+21833741513,2026-02-09T17:02:33Z,ROX-32817/refactor-assertResourceWasUpdated,pre-build-cli,,,,,,,993,,historical baseline
+21833741513,2026-02-09T17:02:33Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries amd64,,,,,,,208,,historical baseline
+21833741513,2026-02-09T17:02:33Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries arm64,,,,,,,272,,historical baseline
+21833722773,2026-02-09T17:01:45Z,master,pre-build-cli,,,,,,,1414,,historical baseline
+21832491588,2026-02-09T16:04:39Z,michael/ROX-32979-image-vuln-export-api,go-binaries amd64,,,,,,,574,,historical baseline
+21832491588,2026-02-09T16:04:39Z,michael/ROX-32979-image-vuln-export-api,go-binaries arm64,,,,,,,575,,historical baseline
+21832491588,2026-02-09T16:04:39Z,michael/ROX-32979-image-vuln-export-api,pre-build-cli,,,,,,,1337,,historical baseline
+21831653453,2026-02-09T15:41:43Z,dashrews/reprocess-throttle-32965,pre-build-cli,,,,,,,1013,,historical baseline
+21831653453,2026-02-09T15:41:43Z,dashrews/reprocess-throttle-32965,go-binaries arm64,,,,,,,562,,historical baseline
+21831653453,2026-02-09T15:41:43Z,dashrews/reprocess-throttle-32965,go-binaries amd64,,,,,,,616,,historical baseline
+21831185104,2026-02-09T15:28:56Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,1218,,historical baseline
+21831185104,2026-02-09T15:28:56Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,496,,historical baseline
+21831185104,2026-02-09T15:28:56Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,576,,historical baseline
+21831050842,2026-02-09T15:25:15Z,backport-18869-to-release-4.10,pre-build-cli,,,,,,,973,,historical baseline
+21831050842,2026-02-09T15:25:15Z,backport-18869-to-release-4.10,go-binaries arm64,,,,,,,531,,historical baseline
+21831050842,2026-02-09T15:25:15Z,backport-18869-to-release-4.10,go-binaries amd64,,,,,,,586,,historical baseline
+21830839898,2026-02-09T15:19:34Z,backport-18869-to-release-4.10,pre-build-cli,,,,,,,1018,,historical baseline
+21830839898,2026-02-09T15:19:34Z,backport-18869-to-release-4.10,go-binaries amd64,,,,,,,534,,historical baseline
+21830839898,2026-02-09T15:19:34Z,backport-18869-to-release-4.10,go-binaries arm64,,,,,,,274,,historical baseline
+21829749031,2026-02-09T14:49:32Z,mc/crs-max-registrations-tidy,pre-build-cli,,,,,,,1406,,historical baseline
+21829749031,2026-02-09T14:49:32Z,mc/crs-max-registrations-tidy,go-binaries arm64,,,,,,,577,,historical baseline
+21829749031,2026-02-09T14:49:32Z,mc/crs-max-registrations-tidy,go-binaries amd64,,,,,,,606,,historical baseline
+21829579018,2026-02-09T14:44:50Z,backport-18869-to-release-4.10,pre-build-cli,,,,,,,1047,,historical baseline
+21829579018,2026-02-09T14:44:50Z,backport-18869-to-release-4.10,go-binaries amd64,,,,,,,626,,historical baseline
+21829579018,2026-02-09T14:44:50Z,backport-18869-to-release-4.10,go-binaries arm64,,,,,,,578,,historical baseline
+21829491791,2026-02-09T14:42:25Z,master,pre-build-cli,,,,,,,1043,,historical baseline
+21829491791,2026-02-09T14:42:25Z,master,go-binaries arm64,,,,,,,552,,historical baseline
+21829491791,2026-02-09T14:42:25Z,master,go-binaries amd64,,,,,,,646,,historical baseline
+21828884639,2026-02-09T14:25:15Z,ROX-31216/show-signature-integration-name-take-2,pre-build-cli,,,,,,,1305,,historical baseline
+21828884639,2026-02-09T14:25:15Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,598,,historical baseline
+21828884639,2026-02-09T14:25:15Z,ROX-31216/show-signature-integration-name-take-2,go-binaries amd64,,,,,,,574,,historical baseline
+21828770422,2026-02-09T14:22:03Z,giles/combine-file-path-criteria,pre-build-cli,,,,,,,1306,,historical baseline
+21828770422,2026-02-09T14:22:03Z,giles/combine-file-path-criteria,go-binaries amd64,,,,,,,537,,historical baseline
+21828770422,2026-02-09T14:22:03Z,giles/combine-file-path-criteria,go-binaries arm64,,,,,,,541,,historical baseline
+21828755285,2026-02-09T14:21:38Z,michael/ROX-32979-image-vuln-export-api,pre-build-cli,,,,,,,1323,,historical baseline
+21828755285,2026-02-09T14:21:38Z,michael/ROX-32979-image-vuln-export-api,go-binaries arm64,,,,,,,484,,historical baseline
+21828198375,2026-02-09T14:05:19Z,giles/combine-file-path-criteria,pre-build-cli,,,,,,,1312,,historical baseline
+21828198375,2026-02-09T14:05:19Z,giles/combine-file-path-criteria,go-binaries arm64,,,,,,,573,,historical baseline
+21828198375,2026-02-09T14:05:19Z,giles/combine-file-path-criteria,go-binaries amd64,,,,,,,611,,historical baseline
+21827308166,2026-02-09T13:38:33Z,akurlov/ROX-32966-set-konflux-retest-command-alias,pre-build-cli,,,,,,,1331,,historical baseline
+21827308166,2026-02-09T13:38:33Z,akurlov/ROX-32966-set-konflux-retest-command-alias,go-binaries arm64,,,,,,,516,,historical baseline
+21827308166,2026-02-09T13:38:33Z,akurlov/ROX-32966-set-konflux-retest-command-alias,go-binaries amd64,,,,,,,565,,historical baseline
+21826509175,2026-02-09T13:14:01Z,giles/combine-file-path-criteria,pre-build-cli,,,,,,,1387,,historical baseline
+21826509175,2026-02-09T13:14:01Z,giles/combine-file-path-criteria,go-binaries arm64,,,,,,,530,,historical baseline
+21826509175,2026-02-09T13:14:01Z,giles/combine-file-path-criteria,go-binaries amd64,,,,,,,572,,historical baseline
+21826278554,2026-02-09T13:06:38Z,konflux/mintmaker/release-4.8/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1257,,historical baseline
+21826278554,2026-02-09T13:06:38Z,konflux/mintmaker/release-4.8/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,798,,historical baseline
+21826278554,2026-02-09T13:06:38Z,konflux/mintmaker/release-4.8/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,803,,historical baseline
+21826278249,2026-02-09T13:06:37Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1372,,historical baseline
+21826278249,2026-02-09T13:06:37Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,525,,historical baseline
+21826278249,2026-02-09T13:06:37Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,571,,historical baseline
+21826268255,2026-02-09T13:06:18Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1303,,historical baseline
+21826268255,2026-02-09T13:06:18Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,506,,historical baseline
+21826268255,2026-02-09T13:06:18Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,537,,historical baseline
+21825793119,2026-02-09T12:51:15Z,ROX-31216/show-signature-integration-name-take-2,go-binaries arm64,,,,,,,140,,historical baseline
+21823683316,2026-02-09T11:43:08Z,ROX-32817/isolate-and-parallelize-tests,pre-build-cli,,,,,,,1336,,historical baseline
+21823683316,2026-02-09T11:43:08Z,ROX-32817/isolate-and-parallelize-tests,go-binaries arm64,,,,,,,516,,historical baseline
+21823683316,2026-02-09T11:43:08Z,ROX-32817/isolate-and-parallelize-tests,go-binaries amd64,,,,,,,597,,historical baseline
+21823611131,2026-02-09T11:40:39Z,konflux/porridge/bundle-helpers-rewrite-fixorder,pre-build-cli,,,,,,,1232,,historical baseline
+21823611131,2026-02-09T11:40:39Z,konflux/porridge/bundle-helpers-rewrite-fixorder,go-binaries arm64,,,,,,,528,,historical baseline
+21823611131,2026-02-09T11:40:39Z,konflux/porridge/bundle-helpers-rewrite-fixorder,go-binaries amd64,,,,,,,560,,historical baseline
+21823574350,2026-02-09T11:39:26Z,konflux/porridge/bundle-helpers-rewrite-fixorder,pre-build-cli,,,,,,,1345,,historical baseline
+21823574350,2026-02-09T11:39:26Z,konflux/porridge/bundle-helpers-rewrite-fixorder,go-binaries arm64,,,,,,,560,,historical baseline
+21823574350,2026-02-09T11:39:26Z,konflux/porridge/bundle-helpers-rewrite-fixorder,go-binaries amd64,,,,,,,558,,historical baseline
+21823465771,2026-02-09T11:35:41Z,konflux/porridge/bundle-helpers-rewrite-fixorder,pre-build-cli,,,,,,,1315,,historical baseline
+21823465771,2026-02-09T11:35:41Z,konflux/porridge/bundle-helpers-rewrite-fixorder,go-binaries arm64,,,,,,,557,,historical baseline
+21823465771,2026-02-09T11:35:41Z,konflux/porridge/bundle-helpers-rewrite-fixorder,go-binaries amd64,,,,,,,624,,historical baseline
+21823000554,2026-02-09T11:20:06Z,ROX-32817/refactor-assertResourceWasUpdated,pre-build-cli,,,,,,,1291,,historical baseline
+21823000554,2026-02-09T11:20:06Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries arm64,,,,,,,538,,historical baseline
+21823000554,2026-02-09T11:20:06Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries amd64,,,,,,,547,,historical baseline
+21822991175,2026-02-09T11:19:47Z,ROX-32817/fix-wait-for-compliance,pre-build-cli,,,,,,,1285,,historical baseline
+21822991175,2026-02-09T11:19:47Z,ROX-32817/fix-wait-for-compliance,go-binaries arm64,,,,,,,562,,historical baseline
+21822991175,2026-02-09T11:19:47Z,ROX-32817/fix-wait-for-compliance,go-binaries amd64,,,,,,,504,,historical baseline
+21822969129,2026-02-09T11:18:59Z,ROX-32817/refactor-assertResourceWasUpdated,pre-build-cli,,,,,,,1317,,historical baseline
+21822969129,2026-02-09T11:18:59Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries arm64,,,,,,,571,,historical baseline
+21822969129,2026-02-09T11:18:59Z,ROX-32817/refactor-assertResourceWasUpdated,go-binaries amd64,,,,,,,606,,historical baseline
+21822910932,2026-02-09T11:17:02Z,ROX-32817/fix-wait-for-compliance,pre-build-cli,,,,,,,1332,,historical baseline
+21822910932,2026-02-09T11:17:02Z,ROX-32817/fix-wait-for-compliance,go-binaries arm64,,,,,,,560,,historical baseline
+21822910932,2026-02-09T11:17:02Z,ROX-32817/fix-wait-for-compliance,go-binaries amd64,,,,,,,608,,historical baseline
+21821115810,2026-02-09T10:18:40Z,backport-18755-to-release-4.10,pre-build-cli,,,,,,,1326,,historical baseline
+21821115810,2026-02-09T10:18:40Z,backport-18755-to-release-4.10,go-binaries arm64,,,,,,,565,,historical baseline
+21821115810,2026-02-09T10:18:40Z,backport-18755-to-release-4.10,go-binaries amd64,,,,,,,578,,historical baseline
+21820820447,2026-02-09T10:09:39Z,dependabot/go_modules/operator/tools/operator-sdk/operator-framework-3dccbaa527,pre-build-cli,,,,,,,358,,historical baseline
+21820820447,2026-02-09T10:09:39Z,dependabot/go_modules/operator/tools/operator-sdk/operator-framework-3dccbaa527,go-binaries arm64,,,,,,,545,,historical baseline
+21820820447,2026-02-09T10:09:39Z,dependabot/go_modules/operator/tools/operator-sdk/operator-framework-3dccbaa527,go-binaries amd64,,,,,,,609,,historical baseline
+21820011687,2026-02-09T09:44:30Z,dependabot/go_modules/operator/tools/operator-sdk/operator-framework-3dccbaa527,pre-build-cli,,,,,,,1310,,historical baseline
+21820011687,2026-02-09T09:44:30Z,dependabot/go_modules/operator/tools/operator-sdk/operator-framework-3dccbaa527,go-binaries amd64,,,,,,,554,,historical baseline
+21820011687,2026-02-09T09:44:30Z,dependabot/go_modules/operator/tools/operator-sdk/operator-framework-3dccbaa527,go-binaries arm64,,,,,,,576,,historical baseline
+21819507015,2026-02-09T09:28:52Z,michael/custom-metrics-prefactoring,pre-build-cli,,,,,,,1270,,historical baseline
+21819507015,2026-02-09T09:28:52Z,michael/custom-metrics-prefactoring,go-binaries amd64,,,,,,,527,,historical baseline
+21819507015,2026-02-09T09:28:52Z,michael/custom-metrics-prefactoring,go-binaries arm64,,,,,,,525,,historical baseline
+21819156767,2026-02-09T09:17:28Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1185,,historical baseline
+21819156767,2026-02-09T09:17:28Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,557,,historical baseline
+21819156767,2026-02-09T09:17:28Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,534,,historical baseline
+21818307403,2026-02-09T08:49:48Z,misha/cherry-pick-pyyaml-rpm-4.10,pre-build-cli,,,,,,,1355,,historical baseline
+21818307403,2026-02-09T08:49:48Z,misha/cherry-pick-pyyaml-rpm-4.10,go-binaries amd64,,,,,,,607,,historical baseline
+21818307403,2026-02-09T08:49:48Z,misha/cherry-pick-pyyaml-rpm-4.10,go-binaries arm64,,,,,,,580,,historical baseline
+21818043936,2026-02-09T08:40:12Z,master,pre-build-cli,,,,,,,1306,,historical baseline
+21818043936,2026-02-09T08:40:12Z,master,go-binaries arm64,,,,,,,565,,historical baseline
+21818043936,2026-02-09T08:40:12Z,master,go-binaries amd64,,,,,,,549,,historical baseline
+21818021779,2026-02-09T08:39:29Z,master,pre-build-cli,,,,,,,1253,,historical baseline
+21818021779,2026-02-09T08:39:29Z,master,go-binaries arm64,,,,,,,583,,historical baseline
+21818021779,2026-02-09T08:39:29Z,master,go-binaries amd64,,,,,,,598,,historical baseline
+21814306854,2026-02-09T06:07:27Z,dependabot/go_modules/github.com/Azure/azure-sdk-for-go-extensions-0.5.1,pre-build-cli,,,,,,,1346,,historical baseline
+21814306854,2026-02-09T06:07:27Z,dependabot/go_modules/github.com/Azure/azure-sdk-for-go-extensions-0.5.1,go-binaries arm64,,,,,,,590,,historical baseline
+21814306854,2026-02-09T06:07:27Z,dependabot/go_modules/github.com/Azure/azure-sdk-for-go-extensions-0.5.1,go-binaries amd64,,,,,,,595,,historical baseline
+21814296776,2026-02-09T06:06:54Z,dependabot/go_modules/golang-org-x-1a70a4f927,pre-build-cli,,,,,,,1325,,historical baseline
+21814296776,2026-02-09T06:06:54Z,dependabot/go_modules/golang-org-x-1a70a4f927,go-binaries amd64,,,,,,,622,,historical baseline
+21814296776,2026-02-09T06:06:54Z,dependabot/go_modules/golang-org-x-1a70a4f927,go-binaries arm64,,,,,,,566,,historical baseline
+21813996364,2026-02-09T05:52:49Z,update_fact_version,pre-build-cli,,,,,,,1368,,historical baseline
+21813996364,2026-02-09T05:52:49Z,update_fact_version,go-binaries arm64,,,,,,,490,,historical baseline
+21813996364,2026-02-09T05:52:49Z,update_fact_version,go-binaries amd64,,,,,,,566,,historical baseline
+21813960110,2026-02-09T05:51:05Z,update_collector_version,pre-build-cli,,,,,,,1239,,historical baseline
+21813960110,2026-02-09T05:51:05Z,update_collector_version,go-binaries arm64,,,,,,,549,,historical baseline
+21813960110,2026-02-09T05:51:05Z,update_collector_version,go-binaries amd64,,,,,,,622,,historical baseline
+21813959681,2026-02-09T05:51:03Z,update_scanner_version,pre-build-cli,,,,,,,1362,,historical baseline
+21813959681,2026-02-09T05:51:03Z,update_scanner_version,go-binaries amd64,,,,,,,609,,historical baseline
+21813959681,2026-02-09T05:51:03Z,update_scanner_version,go-binaries arm64,,,,,,,561,,historical baseline
+21813767621,2026-02-09T05:40:50Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1292,,historical baseline
+21813767621,2026-02-09T05:40:50Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,589,,historical baseline
+21813767621,2026-02-09T05:40:50Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,546,,historical baseline
+21813711036,2026-02-09T05:38:03Z,konflux/mintmaker/release-4.8/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1262,,historical baseline
+21813711036,2026-02-09T05:38:03Z,konflux/mintmaker/release-4.8/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,799,,historical baseline
+21813711036,2026-02-09T05:38:03Z,konflux/mintmaker/release-4.8/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,770,,historical baseline
+21813646596,2026-02-09T05:34:54Z,konflux/mintmaker/master/all,pre-build-cli,,,,,,,1293,,historical baseline
+21813646596,2026-02-09T05:34:54Z,konflux/mintmaker/master/all,go-binaries amd64,,,,,,,609,,historical baseline
+21813646596,2026-02-09T05:34:54Z,konflux/mintmaker/master/all,go-binaries arm64,,,,,,,533,,historical baseline
+21813635903,2026-02-09T05:34:25Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1263,,historical baseline
+21813635903,2026-02-09T05:34:25Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,620,,historical baseline
+21813635903,2026-02-09T05:34:25Z,konflux/mintmaker/release-4.9/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,603,,historical baseline
+21813580950,2026-02-09T05:31:42Z,konflux/mintmaker/release-4.8/all,pre-build-cli,,,,,,,1315,,historical baseline
+21813580950,2026-02-09T05:31:42Z,konflux/mintmaker/release-4.8/all,go-binaries arm64,,,,,,,741,,historical baseline
+21813580950,2026-02-09T05:31:42Z,konflux/mintmaker/release-4.8/all,go-binaries amd64,,,,,,,796,,historical baseline
+21813523286,2026-02-09T05:29:06Z,konflux/mintmaker/release-4.9/all,pre-build-cli,,,,,,,1270,,historical baseline
+21813523286,2026-02-09T05:29:06Z,konflux/mintmaker/release-4.9/all,go-binaries arm64,,,,,,,544,,historical baseline
+21813523286,2026-02-09T05:29:06Z,konflux/mintmaker/release-4.9/all,go-binaries amd64,,,,,,,534,,historical baseline
+21813391715,2026-02-09T05:22:04Z,konflux/mintmaker/release-4.10/all,pre-build-cli,,,,,,,1222,,historical baseline
+21813391715,2026-02-09T05:22:04Z,konflux/mintmaker/release-4.10/all,go-binaries amd64,,,,,,,525,,historical baseline
+21813391715,2026-02-09T05:22:04Z,konflux/mintmaker/release-4.10/all,go-binaries arm64,,,,,,,537,,historical baseline
+21808480278,2026-02-09T00:41:48Z,4.11.x-nightly-20260209,pre-build-cli,,,,,,,1329,,historical baseline
+21808480278,2026-02-09T00:41:48Z,4.11.x-nightly-20260209,go-binaries amd64,,,,,,,635,,historical baseline
+21808480278,2026-02-09T00:41:48Z,4.11.x-nightly-20260209,go-binaries arm64,,,,,,,572,,historical baseline
+21808336242,2026-02-09T00:32:58Z,ovalenti/ROX-26854_external-entities-garbage-collection-jv,pre-build-cli,,,,,,,1294,,historical baseline
+21808336242,2026-02-09T00:32:58Z,ovalenti/ROX-26854_external-entities-garbage-collection-jv,go-binaries amd64,,,,,,,544,,historical baseline
+21808336242,2026-02-09T00:32:58Z,ovalenti/ROX-26854_external-entities-garbage-collection-jv,go-binaries arm64,,,,,,,533,,historical baseline
+21792660693,2026-02-08T05:03:11Z,konflux/mintmaker/release-4.8/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1186,,historical baseline
+21792660693,2026-02-08T05:03:11Z,konflux/mintmaker/release-4.8/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,798,,historical baseline
+21792660693,2026-02-08T05:03:11Z,konflux/mintmaker/release-4.8/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,829,,historical baseline
+21792659815,2026-02-08T05:03:08Z,konflux/mintmaker/release-4.9/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1341,,historical baseline
+21792659815,2026-02-08T05:03:08Z,konflux/mintmaker/release-4.9/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,580,,historical baseline
+21792659815,2026-02-08T05:03:08Z,konflux/mintmaker/release-4.9/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,579,,historical baseline
+21792647849,2026-02-08T05:02:20Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1289,,historical baseline
+21792647849,2026-02-08T05:02:20Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,631,,historical baseline
+21792647849,2026-02-08T05:02:20Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,560,,historical baseline
+21792646820,2026-02-08T05:02:14Z,konflux/mintmaker/master/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1248,,historical baseline
+21792646820,2026-02-08T05:02:14Z,konflux/mintmaker/master/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,608,,historical baseline
+21792646820,2026-02-08T05:02:14Z,konflux/mintmaker/master/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,587,,historical baseline
+21792594608,2026-02-08T04:58:05Z,davdhacs/test-default-gha,pre-build-cli,,,,,,,1208,,historical baseline
+21792594608,2026-02-08T04:58:05Z,davdhacs/test-default-gha,go-binaries amd64,,,,,,,570,,historical baseline
+21792594608,2026-02-08T04:58:05Z,davdhacs/test-default-gha,go-binaries arm64,,,,,,,525,,historical baseline
+21791837167,2026-02-08T03:54:25Z,davdhacs/test-default-gha,pre-build-cli,,,,,,,1349,,historical baseline
+21791837167,2026-02-08T03:54:25Z,davdhacs/test-default-gha,go-binaries amd64,,,,,,,592,,historical baseline
+21791837167,2026-02-08T03:54:25Z,davdhacs/test-default-gha,go-binaries arm64,,,,,,,534,,historical baseline
+21778066342,2026-02-07T09:40:22Z,mh_operator-remove-python-dependency,pre-build-cli,,,,,,,1263,,historical baseline
+21778066342,2026-02-07T09:40:22Z,mh_operator-remove-python-dependency,go-binaries arm64,,,,,,,574,,historical baseline
+21778066342,2026-02-07T09:40:22Z,mh_operator-remove-python-dependency,go-binaries amd64,,,,,,,596,,historical baseline
+21774620350,2026-02-07T05:02:44Z,konflux/mintmaker/release-4.9/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1384,,historical baseline
+21774620350,2026-02-07T05:02:44Z,konflux/mintmaker/release-4.9/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,535,,historical baseline
+21774620350,2026-02-07T05:02:44Z,konflux/mintmaker/release-4.9/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,540,,historical baseline
+21774618785,2026-02-07T05:02:37Z,konflux/references/release-4.8,pre-build-cli,,,,,,,1219,,historical baseline
+21774618785,2026-02-07T05:02:37Z,konflux/references/release-4.8,go-binaries amd64,,,,,,,857,,historical baseline
+21774618785,2026-02-07T05:02:37Z,konflux/references/release-4.8,go-binaries arm64,,,,,,,824,,historical baseline
+21774617673,2026-02-07T05:02:30Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1298,,historical baseline
+21774617673,2026-02-07T05:02:30Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,555,,historical baseline
+21774617673,2026-02-07T05:02:30Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,581,,historical baseline
+21774616613,2026-02-07T05:02:25Z,konflux/mintmaker/master/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1231,,historical baseline
+21774616613,2026-02-07T05:02:25Z,konflux/mintmaker/master/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,625,,historical baseline
+21774616613,2026-02-07T05:02:25Z,konflux/mintmaker/master/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,515,,historical baseline
+21774615799,2026-02-07T05:02:21Z,konflux/references/release-4.9,pre-build-cli,,,,,,,1313,,historical baseline
+21774615799,2026-02-07T05:02:21Z,konflux/references/release-4.9,go-binaries amd64,,,,,,,596,,historical baseline
+21774615799,2026-02-07T05:02:21Z,konflux/references/release-4.9,go-binaries arm64,,,,,,,574,,historical baseline
+21774614182,2026-02-07T05:02:11Z,konflux/references/release-4.10,pre-build-cli,,,,,,,1286,,historical baseline
+21774614182,2026-02-07T05:02:11Z,konflux/references/release-4.10,go-binaries arm64,,,,,,,564,,historical baseline
+21774614182,2026-02-07T05:02:11Z,konflux/references/release-4.10,go-binaries amd64,,,,,,,613,,historical baseline
+21774613201,2026-02-07T05:02:06Z,konflux/references/master,pre-build-cli,,,,,,,1310,,historical baseline
+21774613201,2026-02-07T05:02:06Z,konflux/references/master,go-binaries arm64,,,,,,,577,,historical baseline
+21774613201,2026-02-07T05:02:06Z,konflux/references/master,go-binaries amd64,,,,,,,598,,historical baseline
+21774600274,2026-02-07T05:01:11Z,konflux/mintmaker/release-4.8/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1242,,historical baseline
+21774600274,2026-02-07T05:01:11Z,konflux/mintmaker/release-4.8/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,786,,historical baseline
+21774600274,2026-02-07T05:01:11Z,konflux/mintmaker/release-4.8/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,838,,historical baseline
+21771353378,2026-02-07T01:04:44Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1273,,historical baseline
+21771353378,2026-02-07T01:04:44Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,487,,historical baseline
+21771353378,2026-02-07T01:04:44Z,konflux/mintmaker/master/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,554,,historical baseline
+21770208648,2026-02-07T00:01:26Z,backport-18856-to-release-4.10,pre-build-cli,,,,,,,1349,,historical baseline
+21770208648,2026-02-07T00:01:26Z,backport-18856-to-release-4.10,go-binaries amd64,,,,,,,588,,historical baseline
+21770208648,2026-02-07T00:01:26Z,backport-18856-to-release-4.10,go-binaries arm64,,,,,,,565,,historical baseline
+21770198645,2026-02-07T00:00:59Z,master,pre-build-cli,,,,,,,1309,,historical baseline
+21770198645,2026-02-07T00:00:59Z,master,go-binaries amd64,,,,,,,591,,historical baseline
+21770198645,2026-02-07T00:00:59Z,master,go-binaries arm64,,,,,,,573,,historical baseline
+21767016133,2026-02-06T21:46:14Z,dv/ROX-28622-pf-6,pre-build-cli,,,,,,,1295,,historical baseline
+21767016133,2026-02-06T21:46:14Z,dv/ROX-28622-pf-6,go-binaries amd64,,,,,,,608,,historical baseline
+21767016133,2026-02-06T21:46:14Z,dv/ROX-28622-pf-6,go-binaries arm64,,,,,,,593,,historical baseline
+21766930583,2026-02-06T21:43:08Z,4-10-release-pipeline-updates,pre-build-cli,,,,,,,1242,,historical baseline
+21766930583,2026-02-06T21:43:08Z,4-10-release-pipeline-updates,go-binaries amd64,,,,,,,525,,historical baseline
+21766930583,2026-02-06T21:43:08Z,4-10-release-pipeline-updates,go-binaries arm64,,,,,,,531,,historical baseline
+21766874844,2026-02-06T21:41:02Z,mh_operator-remove-python-dependency,pre-build-cli,,,,,,,1315,,historical baseline
+21766874844,2026-02-06T21:41:02Z,mh_operator-remove-python-dependency,go-binaries amd64,,,,,,,583,,historical baseline
+21766874844,2026-02-06T21:41:02Z,mh_operator-remove-python-dependency,go-binaries arm64,,,,,,,564,,historical baseline
+21764683527,2026-02-06T20:22:38Z,yli3/delegatedBaseImage,pre-build-cli,,,,,,,1207,,historical baseline
+21764683527,2026-02-06T20:22:38Z,yli3/delegatedBaseImage,go-binaries amd64,,,,,,,582,,historical baseline
+21764683527,2026-02-06T20:22:38Z,yli3/delegatedBaseImage,go-binaries arm64,,,,,,,508,,historical baseline
+21764618253,2026-02-06T20:20:13Z,AlexVulaj/ROX-32152-scopecomp-label-matching,pre-build-cli,,,,,,,1305,,historical baseline
+21764618253,2026-02-06T20:20:13Z,AlexVulaj/ROX-32152-scopecomp-label-matching,go-binaries arm64,,,,,,,590,,historical baseline
+21764618253,2026-02-06T20:20:13Z,AlexVulaj/ROX-32152-scopecomp-label-matching,go-binaries amd64,,,,,,,603,,historical baseline
+21764528387,2026-02-06T20:16:52Z,yli3/delegatedBaseImage,pre-build-cli,,,,,,,1346,,historical baseline
+21764528387,2026-02-06T20:16:52Z,yli3/delegatedBaseImage,go-binaries amd64,,,,,,,588,,historical baseline
+21764528387,2026-02-06T20:16:52Z,yli3/delegatedBaseImage,go-binaries arm64,,,,,,,565,,historical baseline
+21762419418,2026-02-06T19:01:57Z,ROX-33039-delete-ROX_ADMISSION_CONTROLLER_CONFIG-ui-cypress,pre-build-cli,,,,,,,1336,,historical baseline
+21762419418,2026-02-06T19:01:57Z,ROX-33039-delete-ROX_ADMISSION_CONTROLLER_CONFIG-ui-cypress,go-binaries arm64,,,,,,,551,,historical baseline
+21762419418,2026-02-06T19:01:57Z,ROX-33039-delete-ROX_ADMISSION_CONTROLLER_CONFIG-ui-cypress,go-binaries amd64,,,,,,,589,,historical baseline
+21761693097,2026-02-06T18:36:55Z,konflux/mintmaker/release-4.10/all,pre-build-cli,,,,,,,1291,,historical baseline
+21761693097,2026-02-06T18:36:55Z,konflux/mintmaker/release-4.10/all,go-binaries amd64,,,,,,,560,,historical baseline
+21761693097,2026-02-06T18:36:55Z,konflux/mintmaker/release-4.10/all,go-binaries arm64,,,,,,,557,,historical baseline
+21761632037,2026-02-06T18:34:53Z,dv/ROX-31785-fix-clusters-page,pre-build-cli,,,,,,,1334,,historical baseline
+21761632037,2026-02-06T18:34:53Z,dv/ROX-31785-fix-clusters-page,go-binaries amd64,,,,,,,587,,historical baseline
+21761632037,2026-02-06T18:34:53Z,dv/ROX-31785-fix-clusters-page,go-binaries arm64,,,,,,,549,,historical baseline
+21761631978,2026-02-06T18:34:53Z,dv/ROX-31785-fix-clusters-page,pre-build-cli,,,,,,,1341,,historical baseline
+21761631978,2026-02-06T18:34:53Z,dv/ROX-31785-fix-clusters-page,go-binaries amd64,,,,,,,595,,historical baseline
+21761631978,2026-02-06T18:34:53Z,dv/ROX-31785-fix-clusters-page,go-binaries arm64,,,,,,,552,,historical baseline
+21760431107,2026-02-06T17:53:29Z,yli3/delegatedBaseImage,pre-build-cli,,,,,,,1330,,historical baseline
+21760431107,2026-02-06T17:53:29Z,yli3/delegatedBaseImage,go-binaries amd64,,,,,,,593,,historical baseline
+21760431107,2026-02-06T17:53:29Z,yli3/delegatedBaseImage,go-binaries arm64,,,,,,,583,,historical baseline
+21760347653,2026-02-06T17:50:40Z,dv/ROX-31785-fix-clusters-page,pre-build-cli,,,,,,,1275,,historical baseline
+21760347653,2026-02-06T17:50:40Z,dv/ROX-31785-fix-clusters-page,go-binaries arm64,,,,,,,504,,historical baseline
+21760347653,2026-02-06T17:50:40Z,dv/ROX-31785-fix-clusters-page,go-binaries amd64,,,,,,,517,,historical baseline
+21760347955,2026-02-06T17:50:40Z,dv/ROX-31785-fix-clusters-page,pre-build-cli,,,,,,,1273,,historical baseline
+21760347955,2026-02-06T17:50:40Z,dv/ROX-31785-fix-clusters-page,go-binaries arm64,,,,,,,489,,historical baseline
+21760347955,2026-02-06T17:50:40Z,dv/ROX-31785-fix-clusters-page,go-binaries amd64,,,,,,,552,,historical baseline
+21760320880,2026-02-06T17:49:44Z,konflux/mintmaker/release-4.10/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1268,,historical baseline
+21760320880,2026-02-06T17:49:44Z,konflux/mintmaker/release-4.10/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,583,,historical baseline
+21760320880,2026-02-06T17:49:44Z,konflux/mintmaker/release-4.10/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,502,,historical baseline
+21760291047,2026-02-06T17:48:41Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,pre-build-cli,,,,,,,1257,,historical baseline
+21760291047,2026-02-06T17:48:41Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,go-binaries arm64,,,,,,,522,,historical baseline
+21760291047,2026-02-06T17:48:41Z,konflux/mintmaker/release-4.10/stackrox-custom-konflux-tasks,go-binaries amd64,,,,,,,565,,historical baseline
+21760204598,2026-02-06T17:45:40Z,dv/ROX-31785-fix-clusters-page,pre-build-cli,,,,,,,1301,,historical baseline
+21760204598,2026-02-06T17:45:40Z,dv/ROX-31785-fix-clusters-page,go-binaries arm64,,,,,,,545,,historical baseline
+21760204598,2026-02-06T17:45:40Z,dv/ROX-31785-fix-clusters-page,go-binaries amd64,,,,,,,613,,historical baseline
+21760204288,2026-02-06T17:45:40Z,dv/ROX-31785-fix-clusters-page,pre-build-cli,,,,,,,1313,,historical baseline
+21760204288,2026-02-06T17:45:40Z,dv/ROX-31785-fix-clusters-page,go-binaries amd64,,,,,,,591,,historical baseline
+21760204288,2026-02-06T17:45:40Z,dv/ROX-31785-fix-clusters-page,go-binaries arm64,,,,,,,551,,historical baseline
+21759547063,2026-02-06T17:23:22Z,dashrews/list-secrets-32719,pre-build-cli,,,,,,,1275,,historical baseline
+21759547063,2026-02-06T17:23:22Z,dashrews/list-secrets-32719,go-binaries amd64,,,,,,,589,,historical baseline
+21759547063,2026-02-06T17:23:22Z,dashrews/list-secrets-32719,go-binaries arm64,,,,,,,530,,historical baseline
+21759546951,2026-02-06T17:23:21Z,dashrews/list-secrets-32719,pre-build-cli,,,,,,,1295,,historical baseline
+21759546951,2026-02-06T17:23:21Z,dashrews/list-secrets-32719,go-binaries amd64,,,,,,,600,,historical baseline
+21759546951,2026-02-06T17:23:21Z,dashrews/list-secrets-32719,go-binaries arm64,,,,,,,565,,historical baseline
+21759074108,2026-02-06T17:07:39Z,konflux/mintmaker/release-4.10/lock-file-maintenance-vulnerability,pre-build-cli,,,,,,,1314,,historical baseline
+21759074108,2026-02-06T17:07:39Z,konflux/mintmaker/release-4.10/lock-file-maintenance-vulnerability,go-binaries arm64,,,,,,,549,,historical baseline
+21759074108,2026-02-06T17:07:39Z,konflux/mintmaker/release-4.10/lock-file-maintenance-vulnerability,go-binaries amd64,,,,,,,616,,historical baseline
+21759063908,2026-02-06T17:07:19Z,davdhacs/test-build-on-runner,pre-build-cli,,,,,,,268,,historical baseline

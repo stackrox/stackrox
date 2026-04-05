@@ -1,0 +1,10 @@
+run_id,timestamp,job,cache_hit,build_time_s,job_total_s,notes
+21853363627,2026-02-10T05:47:40Z,go-binaries amd64,MISS,,,"seeding run (saved 915MB cache)"
+21853857264,2026-02-10T06:07:00Z,CLI linux/amd64,MISS,170,,"cold (cache evicted)"
+21853857264,2026-02-10T06:07:00Z,go-binaries amd64,MISS,,,"cold"
+21854089915,2026-02-10T06:20:37Z,CLI linux/amd64,HIT,139,299,"warm - partial hit without netgo/osusergo tags (~50% overlap)"
+21854089915,2026-02-10T06:20:37Z,go-binaries amd64,HIT,,214,"warm"
+21854209763,2026-02-10T06:26:00Z,CLI linux/amd64,MISS,176,,"cold (cache evicted by other PRs)"
+21854209763,2026-02-10T06:26:00Z,go-binaries amd64,MISS,,,"cold"
+21854325820,2026-02-10T06:35:00Z,CLI linux/amd64,MISS,173,,"cold (cache evicted)"
+21854325820,2026-02-10T06:35:00Z,go-binaries amd64,MISS,,,"cold"
