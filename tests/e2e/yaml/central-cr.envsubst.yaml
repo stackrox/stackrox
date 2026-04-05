@@ -59,10 +59,10 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
-          memory: "2000Mi"
+          memory: "4000Mi"
         limits:
           cpu: "6000m"
-          memory: "2000Mi"
+          memory: "4000Mi"
     db:
       resources:
         requests:
@@ -70,7 +70,7 @@ $centralAdditionalCAIndented
           memory: "500Mi"
         limits:
           cpu: "1000m"
-          memory: "1000Mi"
+          memory: "4000Mi"
 ---
 apiVersion: v1
 kind: Secret
