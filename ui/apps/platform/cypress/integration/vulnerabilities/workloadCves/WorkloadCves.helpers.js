@@ -1,5 +1,6 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
+import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
@@ -257,11 +258,18 @@ export function visitImageSinglePageWithMockedResponses() {
         imageDetailsOpname,
         cveListOpname,
     ]);
+
+    // When FlattenImageData is enabled, the getCVEsForImage query uses imageV2(...)
+    // which returns data under the `imageV2` key instead of `image`.
+    const cveListFixture = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA')
+        ? 'vulnerabilities/workloadCves/multipleCvesForImageV2.json'
+        : 'vulnerabilities/workloadCves/multipleCvesForImage.json';
+
     const staticResponseMapForImageCves = {
         [imageDetailsOpname]: {
             fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
         },
-        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
+        [cveListOpname]: { fixture: cveListFixture },
     };
 
     visitWorkloadCveOverview();
