@@ -63,7 +63,7 @@ type PolicyAsCodeSuite struct {
 	informerfactory   dynamicinformer.DynamicSharedInformerFactory
 	informer          informers.GenericInformer
 	policies          []*storage.Policy
-	cluster           *storage.Cluster
+	cluster           *v1.ClusterConfig
 	notifier          *storage.Notifier
 	ctx               context.Context
 	cleanupCtx        context.Context
@@ -282,9 +282,9 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 	return policy
 }
 
-func (pc *PolicyAsCodeSuite) createClusterInCentral() *storage.Cluster {
+func (pc *PolicyAsCodeSuite) createClusterInCentral() *v1.ClusterConfig {
 	pc.T().Logf("Adding cluster with name \"%s\"", clusterName)
-	cluster, err := pc.clusterClient.PostCluster(pc.ctx, &storage.Cluster{Name: fixtureconsts.ClusterName1, MainImage: "docker.io/stackrox/rox:latest", CentralApiEndpoint: "central.stackrox:443"})
+	cluster, err := pc.clusterClient.PostCluster(pc.ctx, &v1.ClusterConfig{Name: fixtureconsts.ClusterName1, MainImage: "docker.io/stackrox/rox:latest", CentralApiEndpoint: "central.stackrox:443"})
 	pc.NoError(err)
 	return cluster.GetCluster()
 }
