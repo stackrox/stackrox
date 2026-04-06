@@ -2571,7 +2571,7 @@ class Kubernetes {
 
     void ensureNamespaceWithLabels(String namespaceName, String labelKey, String labelValue) {
         def labels = labelKey ? [(labelKey): labelValue] : [:]
-        def namespace = new io.fabric8.kubernetes.api.model.NamespaceBuilder()
+        def namespace = new NamespaceBuilder()
                 .withNewMetadata()
                 .withName(namespaceName)
                 .withLabels(labels)
