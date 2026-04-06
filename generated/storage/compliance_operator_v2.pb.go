@@ -556,25 +556,24 @@ type ComplianceOperatorProfileV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The primary key is name-profile_version as that is guaranteed unique in the operator and how
 	// the profile is referenced in scans and settings
-	Id             string                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
-	ProfileId      string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                // @gotags: search:"Compliance Profile ID,hidden"
-	Name           string                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                           // @gotags: search:"Compliance Profile Name,hidden"
-	ProfileVersion string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version,hidden"` // @gotags: search:"Compliance Profile Version,hidden"
-	ProductType    string                              `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`          // @gotags: search:"Compliance Profile Product Type,hidden"
-	Standard       string                              `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                   // @gotags: search:"Compliance Standard,hidden"
-	Labels         map[string]string                   `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations    map[string]string                   `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Description    string                              `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	Rules          []*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty"`
-	Product        string                              `protobuf:"bytes,11,opt,name=product,proto3" json:"product,omitempty"`
-	Title          string                              `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
-	Values         []string                            `protobuf:"bytes,13,rep,name=values,proto3" json:"values,omitempty"`
-	ClusterId      string                              `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ProfileRefId   string                              `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
-	// @gotags: search:"Compliance Profile Operator Kind,hidden"
-	OperatorKind  ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty" search:"Compliance Profile Operator Kind,hidden"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
+	ProfileId      string                                   `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                // @gotags: search:"Compliance Profile ID,hidden"
+	Name           string                                   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                           // @gotags: search:"Compliance Profile Name,hidden"
+	ProfileVersion string                                   `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version,hidden"` // @gotags: search:"Compliance Profile Version,hidden"
+	ProductType    string                                   `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`          // @gotags: search:"Compliance Profile Product Type,hidden"
+	Standard       string                                   `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                   // @gotags: search:"Compliance Standard,hidden"
+	Labels         map[string]string                        `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations    map[string]string                        `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Description    string                                   `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	Rules          []*ComplianceOperatorProfileV2_Rule      `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty"`
+	Product        string                                   `protobuf:"bytes,11,opt,name=product,proto3" json:"product,omitempty"`
+	Title          string                                   `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
+	Values         []string                                 `protobuf:"bytes,13,rep,name=values,proto3" json:"values,omitempty"`
+	ClusterId      string                                   `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                 // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ProfileRefId   string                                   `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"`                                                      // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+	OperatorKind   ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty" search:"Compliance Profile Operator Kind,hidden"` // @gotags: search:"Compliance Profile Operator Kind,hidden"
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2) Reset() {
