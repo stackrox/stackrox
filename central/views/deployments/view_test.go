@@ -10,11 +10,14 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2Postgres "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -40,11 +43,17 @@ type testCase struct {
 	ignoreOrder             bool
 }
 
+type testImage interface {
+	GetId() string
+	GetName() *storage.ImageName
+	GetScan() *storage.ImageScan
+}
+
 type lessFunc func(records []*deploymentResponse) func(i, j int) bool
 
 type filterImpl struct {
 	matchDeployment func(dep *storage.Deployment) bool
-	matchImage      func(image *storage.Image) bool
+	matchImage      func(image testImage) bool
 	matchVuln       func(vuln *storage.EmbeddedVulnerability) bool
 }
 
@@ -53,7 +62,7 @@ func matchAllFilter() *filterImpl {
 		matchDeployment: func(dep *storage.Deployment) bool {
 			return true
 		},
-		matchImage: func(_ *storage.Image) bool {
+		matchImage: func(_ testImage) bool {
 			return true
 		},
 		matchVuln: func(_ *storage.EmbeddedVulnerability) bool {
@@ -67,7 +76,7 @@ func (f *filterImpl) withDeploymentFilter(fn func(dep *storage.Deployment) bool)
 	return f
 }
 
-func (f *filterImpl) withImageFilter(fn func(image *storage.Image) bool) *filterImpl {
+func (f *filterImpl) withImageFilter(fn func(image testImage) bool) *filterImpl {
 	f.matchImage = fn
 	return f
 }
@@ -89,7 +98,7 @@ type DeploymentViewTestSuite struct {
 
 	testDeployments      []*storage.Deployment
 	testDeploymentsMap   map[string]*storage.Deployment
-	testImages           []*storage.Image
+	testImages           []testImage
 	scopeToDeploymentIDs map[string]set.StringSet
 }
 
@@ -100,58 +109,108 @@ func (s *DeploymentViewTestSuite) SetupSuite() {
 
 	mockRisk := mockRisks.NewMockDataStore(mockCtrl)
 
-	// Initialize the datastore.
-	imageStore := imageDS.NewWithPostgres(
-		imagePostgresV2.New(s.testDB.DB, false, concurrency.NewKeyFence()),
-		mockRisk,
-		ranking.ImageRanker(),
-		ranking.ComponentRanker(),
-	)
-	deploymentStore, err := deploymentDS.NewTestDataStore(
-		s.T(),
-		s.testDB,
-		&deploymentDS.DeploymentTestStoreParams{
-			ImagesDataStore:  imageStore,
-			RisksDataStore:   mockRisk,
-			ClusterRanker:    ranking.ClusterRanker(),
-			NamespaceRanker:  ranking.NamespaceRanker(),
-			DeploymentRanker: ranking.DeploymentRanker(),
-		},
-	)
-	s.Require().NoError(err)
-
-	// Upsert test images.
-	images, err := imageSamples.GetTestImages(s.T())
-	s.Require().NoError(err)
-	// set cvss metrics list with one nvd cvss score
-	for _, image := range images {
-		s.Require().NoError(imageStore.UpsertImage(ctx, image))
-	}
-
-	// Ensure that the image is stored and constructed as expected.
-	for idx, image := range images {
-		actual, found, err := imageStore.GetImage(ctx, image.GetId())
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var deploymentStore deploymentDS.DataStore
+	if features.FlattenImageData.Enabled() {
+		imageV2Store := imageV2DS.NewWithPostgres(
+			imageV2Postgres.New(s.testDB.DB, false, concurrency.NewKeyFence()),
+			mockRisk,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+		var err error
+		deploymentStore, err = deploymentDS.NewTestDataStore(
+			s.T(),
+			s.testDB,
+			&deploymentDS.DeploymentTestStoreParams{
+				ImagesV2DataStore: imageV2Store,
+				RisksDataStore:    mockRisk,
+				ClusterRanker:     ranking.ClusterRanker(),
+				NamespaceRanker:   ranking.NamespaceRanker(),
+				DeploymentRanker:  ranking.DeploymentRanker(),
+			},
+		)
 		s.Require().NoError(err)
-		s.Require().True(found)
 
-		cloned := actual.CloneVT()
-		// Adjust dynamic fields and ensure images in ACS are as expected.
-		standardizeImages(image, cloned)
+		imagesV2, imagesV2Err := imageSamples.GetTestImagesV2(s.T())
+		s.Require().NoError(imagesV2Err)
+		for _, imgV2 := range imagesV2 {
+			s.Require().NoError(imageV2Store.UpsertImage(ctx, imgV2))
+		}
 
-		// Now that we confirmed that images match, use stored image to establish the expected test results.
-		// This makes dynamic fields matching (e.g. created at) straightforward.
-		images[idx] = actual
+		// Verify stored V2 images and use them for expected results.
+		s.testImages = make([]testImage, len(imagesV2))
+		for idx, imgV2 := range imagesV2 {
+			actual, found, getErr := imageV2Store.GetImage(ctx, imgV2.GetId())
+			s.Require().NoError(getErr)
+			s.Require().True(found)
+			s.testImages[idx] = actual
+		}
+	} else {
+		imageStore := imageDS.NewWithPostgres(
+			imagePostgresV2.New(s.testDB.DB, false, concurrency.NewKeyFence()),
+			mockRisk,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+		var err error
+		deploymentStore, err = deploymentDS.NewTestDataStore(
+			s.T(),
+			s.testDB,
+			&deploymentDS.DeploymentTestStoreParams{
+				ImagesDataStore:  imageStore,
+				RisksDataStore:   mockRisk,
+				ClusterRanker:    ranking.ClusterRanker(),
+				NamespaceRanker:  ranking.NamespaceRanker(),
+				DeploymentRanker: ranking.DeploymentRanker(),
+			},
+		)
+		s.Require().NoError(err)
+
+		images, imagesErr := imageSamples.GetTestImages(s.T())
+		s.Require().NoError(imagesErr)
+
+		for _, image := range images {
+			s.Require().NoError(imageStore.UpsertImage(ctx, image))
+		}
+
+		// Ensure that the image is stored and constructed as expected.
+		s.testImages = make([]testImage, len(images))
+		for idx, image := range images {
+			actual, found, getErr := imageStore.GetImage(ctx, image.GetId())
+			s.Require().NoError(getErr)
+			s.Require().True(found)
+
+			cloned := actual.CloneVT()
+			// Adjust dynamic fields and ensure images in ACS are as expected.
+			standardizeImages(image, cloned)
+
+			// Now that we confirmed that images match, use stored image to establish the expected test results.
+			// This makes dynamic fields matching (e.g. created at) straightforward.
+			s.testImages[idx] = actual
+		}
 	}
-	s.testImages = images
 	s.deploymentView = NewDeploymentView(s.testDB.DB)
 
-	s.Require().Len(images, 5)
-	deployments := []*storage.Deployment{
-		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, images[0]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, images[1]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[2]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[3]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster3, testconsts.NamespaceC, images[4]),
+	s.Require().Len(s.testImages, 5)
+	var deployments []*storage.Deployment
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		deployments = []*storage.Deployment{
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, testconsts.NamespaceA, s.testImages[0].(*storage.ImageV2)),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, testconsts.NamespaceA, s.testImages[1].(*storage.ImageV2)),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, s.testImages[2].(*storage.ImageV2)),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, s.testImages[3].(*storage.ImageV2)),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster3, testconsts.NamespaceC, s.testImages[4].(*storage.ImageV2)),
+		}
+	} else {
+		deployments = []*storage.Deployment{
+			fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, s.testImages[0].(*storage.Image)),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, s.testImages[1].(*storage.Image)),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, s.testImages[2].(*storage.Image)),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, s.testImages[3].(*storage.Image)),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster3, testconsts.NamespaceC, s.testImages[4].(*storage.Image)),
+		}
 	}
 
 	s.testDeploymentsMap = make(map[string]*storage.Deployment)
@@ -199,7 +258,7 @@ func (s *DeploymentViewTestSuite) TestGet() {
 			desc:        "filtered query",
 			query:       search.NewQueryBuilder().AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
 			ignoreOrder: true,
-			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+			matchFilter: matchAllFilter().withImageFilter(func(image testImage) bool {
 				return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:latest"
 			}),
 		},
@@ -430,7 +489,7 @@ func (s *DeploymentViewTestSuite) TestGet() {
 }
 
 func (s *DeploymentViewTestSuite) compileExpected(filter *filterImpl, less lessFunc, hasSortBySeverityCounts bool) []DeploymentCore {
-	imageMap := make(map[string]*storage.Image)
+	imageMap := make(map[string]testImage)
 	for _, img := range s.testImages {
 		imageMap[img.GetId()] = img
 	}
@@ -466,10 +525,14 @@ func (s *DeploymentViewTestSuite) compileExpected(filter *filterImpl, less lessF
 	return ret
 }
 
-func compileExpectedVulns(containers []*storage.Container, imageMap map[string]*storage.Image, filter *filterImpl) []*storage.EmbeddedVulnerability {
+func compileExpectedVulns(containers []*storage.Container, imageMap map[string]testImage, filter *filterImpl) []*storage.EmbeddedVulnerability {
 	results := make([]*storage.EmbeddedVulnerability, 0)
 	for _, container := range containers {
-		image := imageMap[container.GetImage().GetId()]
+		imageID := container.GetImage().GetId()
+		if imageID == "" {
+			imageID = container.GetImage().GetIdV2()
+		}
+		image := imageMap[imageID]
 		if image == nil {
 			continue
 		}
