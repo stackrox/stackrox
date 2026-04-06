@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
