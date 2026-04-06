@@ -444,7 +444,7 @@ func TestReprocessImageComponentRiskUpdatesRanker(t *testing.T) {
 
 	mgr.reprocessImageComponentRisk(component, "linux", imageID, componentIndex)
 
-	assert.InDelta(t, 3.5, component.RiskScore, 0.001, "component RiskScore should be set")
+	assert.InDelta(t, 3.5, component.GetRiskScore(), 0.001, "component RiskScore should be set")
 
 	expectedID := scancomponent.ComponentIDV2(component, imageID, componentIndex)
 	rankerScore := ranker.GetScoreForID(expectedID)
@@ -470,7 +470,7 @@ func TestReprocessNodeComponentRiskUpdatesRanker(t *testing.T) {
 
 	mgr.reprocessNodeComponentRisk(component, os)
 
-	assert.InDelta(t, 2.8, component.RiskScore, 0.001, "component RiskScore should be set")
+	assert.InDelta(t, 2.8, component.GetRiskScore(), 0.001, "component RiskScore should be set")
 
 	expectedID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
 	rankerScore := ranker.GetScoreForID(expectedID)
