@@ -5,6 +5,7 @@ Run qa-tests-backend in a IBM CLOUD POWERVS Openshift cluster provided via
 automation-flavors/powervs.
 """
 import os
+import scanner_v4_defaults
 from base_qa_e2e_test import make_qa_e2e_test_runner_custom
 from clusters import AutomationFlavorsCluster
 
@@ -17,6 +18,9 @@ os.environ["REMOTE_CLUSTER_ARCH"] = "ppc64le"
 os.environ["COLLECTION_METHOD"] = "ebpf"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
+
+# Scanner V4
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = scanner_v4_defaults.VULN_BUNDLE_ALLOWLIST
 
 # Trigger tests
 make_qa_e2e_test_runner_custom(cluster=AutomationFlavorsCluster()).run()

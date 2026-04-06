@@ -4,6 +4,7 @@
 Run qa-tests-backend in a ROSA cluster provided via automation-flavors/rosa.
 """
 import os
+import scanner_v4_defaults
 from base_qa_e2e_test import make_qa_e2e_test_runner
 from clusters import AutomationFlavorsCluster
 
@@ -19,5 +20,8 @@ if "-hcp-" in os.environ["JOB_NAME"]:
     os.environ["DISABLE_AUDIT_LOG_ALERTS_TEST"] = "true"
     # ROX-22502 - ROSA HCP is missing LoadBalancer support
     os.environ["SUPPORTS_LOAD_BALANCER_SVC"] = "false"
+
+# Scanner V4
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = scanner_v4_defaults.VULN_BUNDLE_ALLOWLIST
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
