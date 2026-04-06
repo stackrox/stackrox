@@ -30,6 +30,38 @@ export function validateFilePath(value: string): string | undefined {
     return undefined;
 }
 
+const highChurnPrefixes = ['/tmp', '/proc', '/sys', '/var/log'];
+
+/**
+ * Returns a warning message when a file path glob pattern is structurally too broad,
+ * such as root-level catch-alls or globs under high-churn directories.
+ */
+export function warnBroadFilePath(value: string): string | undefined {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+        return undefined;
+    }
+
+    // Root-level catch-all without additional path segments: /**, /*
+    if (trimmed === '/**' || trimmed === '/*') {
+        return 'This pattern matches every file on the system and will generate extreme alert volume. Consider narrowing to a specific directory like /etc/**.';
+    }
+
+    // Root-level single-level glob with trailing path: /*/bar
+    if (trimmed.startsWith('/*/')) {
+        return 'This pattern matches all immediate subdirectories of root. Consider scoping to a specific directory.';
+    }
+
+    // High-churn directories with glob wildcards
+    for (const prefix of highChurnPrefixes) {
+        if (trimmed.startsWith(`${prefix}/`) && /[*]/.test(trimmed)) {
+            return `Patterns under ${prefix} typically generate very high alert volume due to frequent ${prefix === '/tmp' ? 'temporary file' : prefix === '/var/log' ? 'log file' : 'system'} activity.`;
+        }
+    }
+
+    return undefined;
+}
+
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
     {
@@ -390,6 +422,7 @@ export type TextDescriptor = {
     placeholder?: string;
     helperText?: string;
     validate?: (value: string) => string | undefined;
+    warn?: (value: string) => string | undefined;
 } & BaseDescriptor &
     DescriptorCanBoolean &
     DescriptorCanNegate;
@@ -1532,6 +1565,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '/home/**/.ssh/id_*',
         helperText: 'Enter an absolute file path. Supports glob patterns.',
         validate: validateFilePath,
+        warn: warnBroadFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
@@ -1679,6 +1713,7 @@ export const nodeEventDescriptor: Descriptor[] = [
         placeholder: '/home/**/.ssh/id_*',
         helperText: 'Enter an absolute file path. Supports glob patterns.',
         validate: validateFilePath,
+        warn: warnBroadFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

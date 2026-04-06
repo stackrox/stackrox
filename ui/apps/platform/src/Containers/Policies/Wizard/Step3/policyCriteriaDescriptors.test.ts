@@ -5,6 +5,7 @@ import {
     nodeEventDescriptor,
     policyCriteriaDescriptors,
     validateFilePath,
+    warnBroadFilePath,
 } from './policyCriteriaDescriptors';
 
 // Enforce consistency of whicheverName properties in policy criteria descriptors.
@@ -94,6 +95,76 @@ describe('validateFilePath', () => {
         expect(validateFilePath('/home/user/..')).toBe(
             'File path must not contain directory traversal (..)'
         );
+    });
+});
+
+describe('warnBroadFilePath', () => {
+    it('should return undefined for an empty string', () => {
+        expect(warnBroadFilePath('')).toBeUndefined();
+    });
+
+    it('should return undefined for a whitespace-only string', () => {
+        expect(warnBroadFilePath('   ')).toBeUndefined();
+    });
+
+    it('should warn for /** (root catch-all)', () => {
+        expect(warnBroadFilePath('/**')).toBeDefined();
+    });
+
+    it('should warn for /* (root catch-all)', () => {
+        expect(warnBroadFilePath('/*')).toBeDefined();
+    });
+
+    it('should not warn for /**/foo (scoped recursive search)', () => {
+        expect(warnBroadFilePath('/**/foo')).toBeUndefined();
+    });
+
+    it('should warn for /*/bar (root-level single-level search)', () => {
+        expect(warnBroadFilePath('/*/bar')).toBeDefined();
+    });
+
+    it('should warn for /tmp/**', () => {
+        expect(warnBroadFilePath('/tmp/**')).toBeDefined();
+    });
+
+    it('should warn for /proc/*', () => {
+        expect(warnBroadFilePath('/proc/*')).toBeDefined();
+    });
+
+    it('should warn for /sys/**', () => {
+        expect(warnBroadFilePath('/sys/**')).toBeDefined();
+    });
+
+    it('should warn for /var/log/**', () => {
+        expect(warnBroadFilePath('/var/log/**')).toBeDefined();
+    });
+
+    it('should not warn for /etc/passwd (specific safe path)', () => {
+        expect(warnBroadFilePath('/etc/passwd')).toBeUndefined();
+    });
+
+    it('should not warn for / (root path, not a glob)', () => {
+        expect(warnBroadFilePath('/')).toBeUndefined();
+    });
+
+    it('should not warn for /tmp (exact path, no glob)', () => {
+        expect(warnBroadFilePath('/tmp')).toBeUndefined();
+    });
+
+    it('should not warn for /tmp/specific.txt (exact path under high-churn)', () => {
+        expect(warnBroadFilePath('/tmp/specific.txt')).toBeUndefined();
+    });
+
+    it('should not warn for /proc/1/status (specific path under high-churn)', () => {
+        expect(warnBroadFilePath('/proc/1/status')).toBeUndefined();
+    });
+
+    it('should not warn for /home/**/.ssh/id_* (scoped pattern)', () => {
+        expect(warnBroadFilePath('/home/**/.ssh/id_*')).toBeUndefined();
+    });
+
+    it('should handle leading/trailing whitespace', () => {
+        expect(warnBroadFilePath('  /**  ')).toBeDefined();
     });
 });
 

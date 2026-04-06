@@ -59,6 +59,10 @@ function PolicyCriteriaFieldInput({
             // value.value is always a string for 'text' type descriptors
             const validationError = descriptor.validate?.(String(value.value));
             const showError = Boolean(validationError);
+            const warningMessage = !showError
+                ? descriptor.warn?.(String(value.value))
+                : undefined;
+            const showWarning = Boolean(warningMessage);
 
             return (
                 <Flex grow={{ default: 'grow' }}>
@@ -70,13 +74,27 @@ function PolicyCriteriaFieldInput({
                         onChange={(_event, val) => handleChangeValue(val)}
                         data-testid="policy-criteria-value-text-input"
                         placeholder={descriptor.placeholder || ''}
-                        validated={showError ? 'error' : 'default'}
+                        validated={
+                            showError ? 'error' : showWarning ? 'warning' : 'default'
+                        }
                     />
-                    {(descriptor.helperText || showError) && (
+                    {(descriptor.helperText || showError || showWarning) && (
                         <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem variant={showError ? 'error' : 'default'}>
-                                    {showError ? validationError : descriptor.helperText}
+                            <HelperText isLiveRegion>
+                                <HelperTextItem
+                                    variant={
+                                        showError
+                                            ? 'error'
+                                            : showWarning
+                                              ? 'warning'
+                                              : 'default'
+                                    }
+                                >
+                                    {showError
+                                        ? validationError
+                                        : showWarning
+                                          ? warningMessage
+                                          : descriptor.helperText}
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
