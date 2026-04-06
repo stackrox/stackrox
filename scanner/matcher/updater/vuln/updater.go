@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -25,6 +26,7 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -75,6 +77,8 @@ type Opts struct {
 
 	RetryDelay time.Duration
 	RetryMax   int
+
+	VulnBundleAllowlist []string
 }
 
 // Updater represents a vulnerability updater.
@@ -106,6 +110,8 @@ type Updater struct {
 
 	retryDelay time.Duration
 	retryMax   int
+
+	vulnBundleAllowlist set.FrozenSet[string]
 
 	distManager *distManager
 }
@@ -143,6 +149,8 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		return u.Import(ctx, reader)
 	}
 	u.iterateFunc = jsonblob.Iterate
+
+	u.vulnBundleAllowlist = set.NewFrozenSet(normalizeAllowlist(opts.VulnBundleAllowlist)...)
 
 	u.tryRemoveExiting()
 
@@ -303,6 +311,10 @@ func (u *Updater) Stop() error {
 func (u *Updater) Start() error {
 	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.Start")
 
+	if !u.vulnBundleAllowlist.IsEmpty() {
+		zlog.Warn(ctx).Str("bundles", u.vulnBundleAllowlist.ElementsString(", ")).Msg("vulnerability bundle allowlist is active: only listed bundles will be imported; do not use in production")
+	}
+
 	if !u.skipGC {
 		go u.runGCFullPeriodic()
 	}
@@ -432,8 +444,12 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	names := make([]string, 0, len(zipReader.File))
 	for i := range zipReader.File {
 		bundleF := zipReader.File[i]
-		names = append(names, bundleF.Name)
 		ctx := zlog.ContextWithValues(ctx, "bundle", bundleF.Name)
+		if !u.isBundleAllowed(bundleF.Name) {
+			zlog.Info(ctx).Msg("skipping bundle (not in allowlist)")
+			continue
+		}
+		names = append(names, bundleF.Name)
 		zlog.Info(ctx).Msg("starting bundle update")
 		if err := u.updateBundle(ctx, bundleF, zipTime, prevTime); err != nil {
 			zlog.Error(ctx).Err(err).Msg("updating bundle failed")
@@ -620,4 +636,27 @@ func closeResponse(resp *http.Response) {
 func isConnectionRefused(err error) bool {
 	var opErr *net.OpError
 	return errors.As(err, &opErr) && opErr.Op == "dial" && strings.Contains(opErr.Err.Error(), "connection refused")
+}
+
+// normalizeAllowlist trims whitespace from each entry and drops empty strings.
+// This handles cases where bundle names are configured with surrounding spaces,
+// e.g. from a comma-separated environment variable or YAML value.
+func normalizeAllowlist(entries []string) []string {
+	result := make([]string, 0, len(entries))
+	for _, s := range entries {
+		if t := strings.TrimSpace(s); t != "" {
+			result = append(result, t)
+		}
+	}
+	return result
+}
+
+// isBundleAllowed reports whether the named bundle file should be imported.
+// When no allowlist is configured, all bundles are allowed.
+// Bundle filenames may include a directory prefix (e.g. "bundles/alpine.json.zst").
+func (u *Updater) isBundleAllowed(filename string) bool {
+	if u.vulnBundleAllowlist.IsEmpty() {
+		return true
+	}
+	return u.vulnBundleAllowlist.Contains(strings.TrimSuffix(path.Base(filename), ".json.zst"))
 }

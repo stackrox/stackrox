@@ -190,6 +190,12 @@ type MatcherConfig struct {
 	VulnerabilityVersion string `mapstructure:"vulnerability_version"`
 	// Readiness determine the readiness type for the Matcher.
 	Readiness MatcherReadiness `mapstructure:"readiness"`
+	// VulnBundleAllowlist, when non-empty, restricts which vulnerability bundles
+	// are imported on each update cycle. An empty list imports all bundles.
+	// Bundle names are specified without file extension (e.g. "alpine", "nvd").
+	// For the full list of bundle names see scanner/updater/export.go.
+	// Intended for CI/development use only; do not use in production.
+	VulnBundleAllowlist []string `mapstructure:"vuln_bundle_allowlist"`
 }
 
 // resolveVersions returns values for ROX_VERSION and ROX_VULNERABILITY_VERSION
