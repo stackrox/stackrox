@@ -2569,6 +2569,19 @@ class Kubernetes {
         return namespace
     }
 
+    void ensureNamespaceWithLabels(String namespaceName, String labelKey, String labelValue) {
+        def labels = labelKey ? [(labelKey): labelValue] : [:]
+        def namespace = new io.fabric8.kubernetes.api.model.NamespaceBuilder()
+                .withNewMetadata()
+                .withName(namespaceName)
+                .withLabels(labels)
+                .endMetadata()
+                .build()
+
+        client.namespaces().createOrReplace(namespace)
+        log.info "Created namespace ${namespaceName} with labels: ${labels}"
+    }
+
     void deleteNamespace(String ns, Boolean waitForDeletion = true) {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()

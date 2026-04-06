@@ -231,53 +231,30 @@ class AdmissionControllerTest extends BaseSpecification {
         }
     }
 
-    // Helper method to create namespace with labels using fabric8 client
-    private void ensureNamespaceWithLabels(String namespaceName, String labelKey, String labelValue) {
-        def labels = labelKey ? [(labelKey): labelValue] : [:]
-        def namespace = new io.fabric8.kubernetes.api.model.NamespaceBuilder()
-                .withNewMetadata()
-                .withName(namespaceName)
-                .withLabels(labels)
-                .endMetadata()
-                .build()
-
-        orchestrator.client.namespaces().createOrReplace(namespace)
-        log.info "Created namespace ${namespaceName} with labels: ${labels}"
-    }
-
     @Unroll
     @Tag("BAT")
     def "Verify AC enforcement with label scoping: #desc"() {
         given:
         "Set up namespace with labels"
         def testNs = "qa-label-scope-${desc.replaceAll(' ', '-')}"
-        ensureNamespaceWithLabels(testNs, nsKey, nsLabel)
+        orchestrator.ensureNamespaceWithLabels(testNs, nsKey, nsLabel)
 
         and:
         "Create policy with namespace label scoping"
-        def policyBuilder = PolicyOuterClass.Policy.newBuilder()
+        def basePolicy = Services.getPolicyByName("Privileged Container")
+        def policy = basePolicy.toBuilder()
+                .clearId()
                 .setName("Test - AC Label Scoping ${desc}")
-                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                .clearScope()
+                .addScope(ScopeOuterClass.Scope.newBuilder()
+                        .setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("team")
+                                .setValue(policyNs)))
+                .clearEnforcementActions()
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                .addCategories("Test")
+                .build()
 
-        def scopeBuilder = ScopeOuterClass.Scope.newBuilder()
-                .setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                        .setKey("team")
-                        .setValue(policyNs))
-
-        policyBuilder.addScope(scopeBuilder)
-        policyBuilder.addPolicySections(
-                PolicyOuterClass.PolicySection.newBuilder()
-                        .addPolicyGroups(
-                                PolicyOuterClass.PolicyGroup.newBuilder()
-                                        .setFieldName("Privileged Container")
-                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true"))
-                        )
-        )
-
-        def policyId = PolicyService.createNewPolicy(policyBuilder.build())
+        def policyId = PolicyService.createNewPolicy(policy)
 
         when:
         "Create a privileged deployment"
@@ -320,33 +297,24 @@ class AdmissionControllerTest extends BaseSpecification {
         given:
         "Set up namespace with initial label"
         def testNs = "qa-label-hotreload-${desc.replaceAll(' ', '-')}"
-        ensureNamespaceWithLabels(testNs, "team", initialValue)
+        orchestrator.ensureNamespaceWithLabels(testNs, "team", initialValue)
 
         and:
         "Create policy scoped to initial namespace label value"
-        def policyBuilder = PolicyOuterClass.Policy.newBuilder()
+        def basePolicy = Services.getPolicyByName("Privileged Container")
+        def policy = basePolicy.toBuilder()
+                .clearId()
                 .setName("Test - AC Hot-Reload ${desc}")
-                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                .clearScope()
+                .addScope(ScopeOuterClass.Scope.newBuilder()
+                        .setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("team")
+                                .setValue(initialValue)))
+                .clearEnforcementActions()
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                .addCategories("Test")
+                .build()
 
-        def scopeBuilder = ScopeOuterClass.Scope.newBuilder()
-                .setNamespaceLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                        .setKey("team")
-                        .setValue(initialValue))
-
-        policyBuilder.addScope(scopeBuilder)
-        policyBuilder.addPolicySections(
-                PolicyOuterClass.PolicySection.newBuilder()
-                        .addPolicyGroups(
-                                PolicyOuterClass.PolicyGroup.newBuilder()
-                                        .setFieldName("Privileged Container")
-                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true"))
-                        )
-        )
-
-        def policyId = PolicyService.createNewPolicy(policyBuilder.build())
+        def policyId = PolicyService.createNewPolicy(policy)
 
         when:
         "Create privileged deployment with initial labels - should be blocked"
