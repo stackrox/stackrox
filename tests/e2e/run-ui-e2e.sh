@@ -74,6 +74,10 @@ test_ui_e2e() {
         enable_console_plugin
     fi
 
+    if [[ "${ROX_SCANNER_V4:-}" == "true" ]]; then
+        wait_for_scanner_v4_vuln_load
+    fi
+
     run_ui_e2e_tests
 }
 
