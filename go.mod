@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	cloud.google.com/go/artifactregistry v1.20.0
 	cloud.google.com/go/compute/metadata v0.9.0
-	cloud.google.com/go/containeranalysis v0.14.2
+	cloud.google.com/go/containeranalysis v0.15.0
 	cloud.google.com/go/securitycenter v1.40.0
 	cloud.google.com/go/storage v1.61.3
 	dario.cat/mergo v1.0.2
