@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	integrationSetMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	scannerSetMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypesMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
@@ -385,4 +387,93 @@ func TestReprocessDeploymentRiskUsesCorrectImageID(t *testing.T) {
 			manager.ReprocessDeploymentRisk(deployment)
 		})
 	}
+}
+
+// stubImageComponentScorer returns a fixed risk score for any component.
+type stubImageComponentScorer struct {
+	score float32
+}
+
+func (s *stubImageComponentScorer) Score(_ context.Context, sc scancomponent.ScanComponent, _ string, imageComponent *storage.EmbeddedImageScanComponent, imageID string, index int) *storage.Risk {
+	componentID := scancomponent.ComponentIDV2(imageComponent, imageID, index)
+	return &storage.Risk{
+		Score: s.score,
+		Results: []*storage.Risk_Result{
+			{Name: "stub", Score: s.score},
+		},
+		Subject: &storage.RiskSubject{
+			Id:   componentID,
+			Type: storage.RiskSubjectType_IMAGE_COMPONENT,
+		},
+	}
+}
+
+// stubNodeComponentScorer returns a fixed risk score for any component.
+type stubNodeComponentScorer struct {
+	score float32
+}
+
+func (s *stubNodeComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string) *storage.Risk {
+	return &storage.Risk{
+		Score: s.score,
+		Results: []*storage.Risk_Result{
+			{Name: "stub", Score: s.score},
+		},
+		Subject: &storage.RiskSubject{
+			Type: storage.RiskSubjectType_NODE_COMPONENT,
+		},
+	}
+}
+
+func TestReprocessImageComponentRiskUpdatesRanker(t *testing.T) {
+	ranker := ranking.NewRanker()
+	mgr := &managerImpl{
+		imageComponentScorer: &stubImageComponentScorer{score: 3.5},
+		imageComponentRanker: ranker,
+	}
+
+	component := &storage.EmbeddedImageScanComponent{
+		Name:    "openssl",
+		Version: "1.1.1",
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2021-1234", Cvss: 7.5},
+		},
+	}
+	imageID := "sha256:abc123"
+	componentIndex := 0
+
+	mgr.reprocessImageComponentRisk(component, "linux", imageID, componentIndex)
+
+	assert.InDelta(t, 3.5, component.RiskScore, 0.001, "component RiskScore should be set")
+
+	expectedID := scancomponent.ComponentIDV2(component, imageID, componentIndex)
+	rankerScore := ranker.GetScoreForID(expectedID)
+	assert.InDelta(t, 3.5, rankerScore, 0.001,
+		"ranker must be updated with the calculated score so downstream updateComponentRisk does not clobber it")
+}
+
+func TestReprocessNodeComponentRiskUpdatesRanker(t *testing.T) {
+	ranker := ranking.NewRanker()
+	mgr := &managerImpl{
+		nodeComponentScorer: &stubNodeComponentScorer{score: 2.8},
+		nodeComponentRanker: ranker,
+	}
+
+	component := &storage.EmbeddedNodeScanComponent{
+		Name:    "kernel",
+		Version: "5.4.0",
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2022-5678", Cvss: 6.0},
+		},
+	}
+	os := "linux"
+
+	mgr.reprocessNodeComponentRisk(component, os)
+
+	assert.InDelta(t, 2.8, component.RiskScore, 0.001, "component RiskScore should be set")
+
+	expectedID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
+	rankerScore := ranker.GetScoreForID(expectedID)
+	assert.InDelta(t, 2.8, rankerScore, 0.001,
+		"ranker must be updated with the calculated score so downstream updateComponentRisk does not clobber it")
 }
