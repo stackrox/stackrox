@@ -345,6 +345,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
     customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n      - name: ROX_LABEL_BASED_POLICY_SCOPING'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_TAILORED_PROFILES'
     customize_envVars+=$'\n        value: "true"'
 
