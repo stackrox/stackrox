@@ -52,10 +52,6 @@ function PolicyPage({
     policyId,
 }: PolicyPageProps): ReactElement {
     const { searchFilter } = useURLSearch();
-
-    // If wizardPolicy: ClientPolicy is correct above, then getClientWizardPolicy is unneeded below.
-    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
     const [policy, setPolicy] = useState<ClientPolicy>(initialPolicy);
     const [errorsForGeneratedPolicy, setErrorsForGeneratedPolicy] =
         useState<ErrorsForGeneratedPolicy | null>(null);
