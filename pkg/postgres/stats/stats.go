@@ -107,10 +107,12 @@ type PGAnalyzeStats struct {
 	Error        string
 }
 
-// GetPGAnalyzeStats returns a tuple struct that wraps the results from the query to pg_stat_all_tables
+// GetPGAnalyzeStats returns a tuple struct that wraps the results from the query to pg_stat_user_tables.
+// pg_stat_user_tables is used instead of pg_stat_all_tables because external database instances
+// may not grant access to pg_stat_all_tables.
 func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyzeStats {
 	var analyzeStats PGAnalyzeStats
-	rows, err := db.Query(ctx, "SELECT relname, last_autoanalyze, last_analyze, last_autovacuum, last_vacuum FROM pg_stat_all_tables WHERE schemaname = $1 ORDER BY relname limit $2", "public", limit)
+	rows, err := db.Query(ctx, "SELECT relname, last_autoanalyze, last_analyze, last_autovacuum, last_vacuum FROM pg_stat_user_tables ORDER BY relname LIMIT $1", limit)
 	if err != nil {
 		analyzeStats.Error = err.Error()
 		return &analyzeStats
@@ -120,7 +122,7 @@ func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyz
 	for rows.Next() {
 		var analyzeStat PGAnalyzeStat
 		if err := rows.Scan(&analyzeStat.TableName, &analyzeStat.LastAutoAnalyze, &analyzeStat.LastAnalyze, &analyzeStat.LastAutoVacuum, &analyzeStat.LastVacuum); err != nil {
-			analyzeStats.Error = errors.Wrap(err, "error scanning rows from pg_stat_all_tables").Error()
+			analyzeStats.Error = errors.Wrap(err, "error scanning rows from pg_stat_user_tables").Error()
 			return &analyzeStats
 		}
 		analyzeStats.AnalyzeStats = append(analyzeStats.AnalyzeStats, &analyzeStat)
