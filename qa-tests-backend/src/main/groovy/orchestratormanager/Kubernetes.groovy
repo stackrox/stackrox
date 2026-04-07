@@ -2580,6 +2580,48 @@ class Kubernetes {
 
         client.namespaces().createOrReplace(namespace)
         log.info "Created namespace ${namespaceName} with labels: ${labels}"
+
+        // OpenShift uses Security Context Constraints (SCCs) to control pod security policies.
+        // Without the privileged SCC, pods with securityContext.privileged=true cannot be created,
+        // which is required for some E2E tests that validate privileged container detection policies.
+        if (util.Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+            grantPrivilegedSCC(namespaceName)
+        }
+    }
+
+    private void grantPrivilegedSCC(String namespace) {
+        def crbName = "system:openshift:scc:privileged"
+        try {
+            def crb = client.rbac().clusterRoleBindings().withName(crbName).get()
+            if (crb == null) {
+                log.warn "ClusterRoleBinding ${crbName} not found (SCC may not be needed)"
+                return
+            }
+
+            // Check if service account is already a subject
+            def existingSubject = crb.subjects?.find {
+                it.kind == "ServiceAccount" && it.name == "default" && it.namespace == namespace
+            }
+            if (existingSubject) {
+                log.info "ServiceAccount default in namespace ${namespace} already has privileged SCC"
+                return
+            }
+
+            // Add service account to subjects
+            if (crb.subjects == null) {
+                crb.subjects = []
+            }
+            crb.subjects.add([
+                kind: "ServiceAccount",
+                name: "default",
+                namespace: namespace
+            ])
+
+            client.rbac().clusterRoleBindings().withName(crbName).replace(crb)
+            log.info "Granted privileged SCC to default service account in namespace ${namespace}"
+        } catch (Exception e) {
+            log.warn "Failed to grant privileged SCC (this may be expected): ${e.message}"
+        }
     }
 
     void deleteNamespace(String ns, Boolean waitForDeletion = true) {

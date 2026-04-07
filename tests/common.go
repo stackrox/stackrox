@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
+	rbacV1 "k8s.io/api/rbac/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -812,6 +813,48 @@ func createNamespaceWithLabels(t *testing.T, name string, labels map[string]stri
 	require.NoError(t, err, "creating namespace %q with labels %v", name, labels)
 
 	t.Logf("Created namespace %q with labels: %v", name, labels)
+
+	// OpenShift uses Security Context Constraints (SCCs) to control pod security policies.
+	// Without the privileged SCC, pods with securityContext.privileged=true cannot be created,
+	// which is required for some E2E tests that validate privileged container detection policies.
+	if isOpenshift() {
+		grantPrivilegedSCC(t, client, name)
+	}
+}
+
+// grantPrivilegedSCC adds the default service account to the privileged SCC ClusterRoleBinding.
+func grantPrivilegedSCC(t *testing.T, client *kubernetes.Clientset, namespace string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	crbName := "system:openshift:scc:privileged"
+	crb, err := client.RbacV1().ClusterRoleBindings().Get(ctx, crbName, metaV1.GetOptions{})
+	if err != nil {
+		t.Logf("Could not get ClusterRoleBinding %q (SCC may not be needed): %v", crbName, err)
+		return
+	}
+
+	// Check if service account is already a subject
+	saSubject := rbacV1.Subject{
+		Kind:      "ServiceAccount",
+		Name:      "default",
+		Namespace: namespace,
+	}
+	for _, subject := range crb.Subjects {
+		if subject.Kind == saSubject.Kind && subject.Name == saSubject.Name && subject.Namespace == saSubject.Namespace {
+			t.Logf("ServiceAccount default in namespace %q already has privileged SCC", namespace)
+			return
+		}
+	}
+
+	// Add service account to subjects
+	crb.Subjects = append(crb.Subjects, saSubject)
+	_, err = client.RbacV1().ClusterRoleBindings().Update(ctx, crb, metaV1.UpdateOptions{})
+	if err != nil {
+		t.Logf("Failed to grant privileged SCC (this may be expected): %v", err)
+	} else {
+		t.Logf("Granted privileged SCC to default service account in namespace %q", namespace)
+	}
 }
 
 // deleteNamespace deletes a namespace.
