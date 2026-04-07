@@ -18,9 +18,6 @@ import spock.lang.Tag
 @Tag("PZ")
 class FileActivityTest extends BaseSpecification {
 
-    static final private String FACT_CONTAINER = "fact"
-    static final private String COLLECTOR_DS = "collector"
-
     static final private String TEST_IMAGE =
             "quay.io/rhacs-eng/qa-multi-arch:nginx-" +
             "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
@@ -36,9 +33,9 @@ class FileActivityTest extends BaseSpecification {
         Assume.assumeTrue(
                 "FACT container not found in collector DaemonSet",
                 orchestrator.containsDaemonSetContainer(
-                        Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER))
+                        Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER))
 
-        patchFactEnv()
+        setFactEnv("/tmp/**/*", true)
 
         orchestrator.createDeployment(testDeployment)
         assert Services.waitForDeployment(testDeployment)
@@ -46,6 +43,7 @@ class FileActivityTest extends BaseSpecification {
 
     def cleanupSpec() {
         orchestrator.deleteDeployment(testDeployment)
+        setFactEnv("", false)
     }
 
     @Tag("BAT")
@@ -119,13 +117,7 @@ class FileActivityTest extends BaseSpecification {
 
         then:
         "a node-level alert is triggered"
-        waitForTrue(30, 3) {
-            def alerts = AlertService.getViolations(
-                    ListAlertsRequest.newBuilder()
-                            .setQuery("Policy:${policyName}+Violation State:ACTIVE+Entity Type:NODE")
-                            .build())
-            alerts.size() > 0
-        }
+        assert Services.waitForNodeViolation(policyName, 90)
 
         cleanup:
         if (hostDeployment) {
@@ -138,25 +130,26 @@ class FileActivityTest extends BaseSpecification {
     }
 
     @CompileStatic
-    private void patchFactEnv() {
-        log.info "Setting FACT_PATHS and FACT_JSON on collector DaemonSet"
+    private void setFactEnv(String paths, boolean json) {
+        String jsonStr = Boolean.toString(json)
+        log.info "Setting FACT env on collector DaemonSet: FACT_PATHS=${paths}, FACT_JSON=${jsonStr}"
 
         orchestrator.updateDaemonSetEnv(
-                Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                "FACT_PATHS", "/tmp/**/*")
+                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
+                "FACT_PATHS", paths)
         orchestrator.updateDaemonSetEnv(
-                Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                "FACT_JSON", "true")
+                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
+                "FACT_JSON", jsonStr)
 
         log.info "Waiting for collector DS to pick up FACT env vars and be ready"
         waitForTrue(20, 10) {
             orchestrator.daemonSetEnvVarUpdated(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_PATHS", "/tmp/**/*") &&
+                    Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
+                    "FACT_PATHS", paths) &&
             orchestrator.daemonSetEnvVarUpdated(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_JSON", "true") &&
-            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
+                    Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
+                    "FACT_JSON", jsonStr) &&
+            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS)
         }
     }
 
