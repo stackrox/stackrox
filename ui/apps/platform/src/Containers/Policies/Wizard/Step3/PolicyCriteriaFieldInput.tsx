@@ -80,7 +80,7 @@ function PolicyCriteriaFieldInput({
                     />
                     {(descriptor.helperText || showError || showWarning) && (
                         <FormHelperText>
-                            <HelperText isLiveRegion>
+                            <HelperText isLiveRegion={showError || showWarning}>
                                 <HelperTextItem
                                     variant={
                                         showError
