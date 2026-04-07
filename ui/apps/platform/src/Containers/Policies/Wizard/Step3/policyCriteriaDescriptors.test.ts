@@ -108,7 +108,7 @@ describe('warnBroadFilePath', () => {
     });
 
     it('should warn for /** (root catch-all)', () => {
-        expect(warnBroadFilePath('/**')).toBeDefined();
+        expect(warnBroadFilePath('/**')).toContain('every file on the system');
     });
 
     it('should warn for /* (root catch-all)', () => {
@@ -120,11 +120,11 @@ describe('warnBroadFilePath', () => {
     });
 
     it('should warn for /*/bar (root-level single-level search)', () => {
-        expect(warnBroadFilePath('/*/bar')).toBeDefined();
+        expect(warnBroadFilePath('/*/bar')).toContain('immediate subdirectories');
     });
 
     it('should warn for /tmp/**', () => {
-        expect(warnBroadFilePath('/tmp/**')).toBeDefined();
+        expect(warnBroadFilePath('/tmp/**')).toContain('temporary file');
     });
 
     it('should warn for /proc/*', () => {
