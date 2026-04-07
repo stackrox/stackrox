@@ -10,6 +10,14 @@ FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS mapping
 COPY download-mappings.sh /download-mappings.sh
 RUN /download-mappings.sh /mappings
 
+# Build Delve debugger when DEBUG_BUILD=yes.
+FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS debugger
+
+ARG DEBUG_BUILD=no
+
+COPY download-dlv.sh /download-dlv.sh
+RUN DEBUG_BUILD=${DEBUG_BUILD} /download-dlv.sh
+
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG LABEL_VERSION
@@ -34,6 +42,8 @@ COPY scripts/entrypoint.sh \
 COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
+# Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).
+COPY --from=debugger /output/go/ /go/
 
 RUN microdnf upgrade -y --nobest && \
     microdnf clean all && \

@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
-import { selectors } from 'reducers';
 import { policiesBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
-import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
-import type { ClientPolicy, Policy } from 'types/policy.proto';
+import useURLSearch from 'hooks/useURLSearch';
+import {
+    generatePolicyFromSearch,
+    getPolicy,
+    updatePolicyDisabledState,
+} from 'services/PoliciesService';
+import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import type { ExtendedPageAction } from 'utils/queryStringUtils';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { getClientWizardPolicy, initialPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
+
+import GeneratedPolicyErrorModal from './GeneratedPolicyErrorModal';
+import type { ErrorsForGeneratedPolicy } from './GeneratedPolicyErrorModal';
 
 function clonePolicy(policy: ClientPolicy): ClientPolicy {
     /*
@@ -34,14 +40,6 @@ function clonePolicy(policy: ClientPolicy): ClientPolicy {
     };
 }
 
-type WizardPolicyState = {
-    wizardPolicy: Policy;
-};
-
-const wizardPolicyState = createStructuredSelector<WizardPolicyState, { wizardPolicy: Policy }>({
-    wizardPolicy: selectors.getWizardPolicy,
-});
-
 type PolicyPageProps = {
     hasWriteAccessForPolicy: boolean;
     pageAction?: ExtendedPageAction;
@@ -53,16 +51,10 @@ function PolicyPage({
     pageAction,
     policyId,
 }: PolicyPageProps): ReactElement {
-    const { wizardPolicy } = useSelector(wizardPolicyState);
-
-    // If wizardPolicy: ClientPolicy is correct above, then getClientWizardPolicy is unneeded below.
-    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
-    const [policy, setPolicy] = useState<ClientPolicy>(
-        pageAction === 'generate' && wizardPolicy
-            ? getClientWizardPolicy(wizardPolicy)
-            : initialPolicy
-    );
+    const { searchFilter } = useURLSearch();
+    const [policy, setPolicy] = useState<ClientPolicy>(initialPolicy);
+    const [errorsForGeneratedPolicy, setErrorsForGeneratedPolicy] =
+        useState<ErrorsForGeneratedPolicy | null>(null);
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -94,8 +86,53 @@ function PolicyPage({
                 .finally(() => {
                     setIsLoading(false);
                 });
+        } else if (pageAction === 'generate' && getHasSearchApplied(searchFilter)) {
+            generatePolicyFromSearch(getRequestQueryStringForSearchFilter(searchFilter))
+                .then((data) => {
+                    /*
+                    // Note these omissions may not be handled gracefully by the policy form, but represent what the actual
+                    // runtime value is at the time this file was converted to TypeScript.
+                    policy: Omit<
+                        ClientPolicy,
+                        | 'severity'
+                        | 'excludedImageNames'
+                        | 'excludedDeploymentScopes'
+                        | 'serverPolicySections'
+                        | 'policySections'
+                    > & { severity: PolicySeverity | null }
+                    */
+
+                    const alteredSearchTerms =
+                        Array.isArray(data.alteredSearchTerms) &&
+                        data.alteredSearchTerms.length !== 0
+                            ? data.alteredSearchTerms
+                            : [];
+                    const hasNestedFields = Boolean(data.hasNestedFields);
+
+                    setErrorsForGeneratedPolicy(
+                        alteredSearchTerms.length !== 0 || hasNestedFields
+                            ? {
+                                  alteredSearchTerms,
+                                  errorFromCatch: '',
+                                  hasNestedFields,
+                              }
+                            : null
+                    );
+
+                    setPolicy(getClientWizardPolicy(data.policy ?? {}));
+                })
+                .catch((err) => {
+                    // to get the actual error returned by the server, we have to dereference the response object first
+                    //   because err.message is the generic Axios error message,
+                    //   https://github.com/axios/axios/issues/960#issuecomment-309287911
+                    setErrorsForGeneratedPolicy({
+                        alteredSearchTerms: [],
+                        errorFromCatch: err?.response?.data || 'An unrecognized error occurred.',
+                        hasNestedFields: false,
+                    });
+                });
         }
-    }, [pageAction, policyId]);
+    }, [pageAction, policyId, searchFilter]);
 
     function handleUpdateDisabledState(id: string, disabled: boolean) {
         return updatePolicyDisabledState(id, disabled).then(() => {
@@ -127,6 +164,12 @@ function PolicyPage({
                         policy={policy}
                     />
                 ))
+            )}
+            {errorsForGeneratedPolicy !== null && (
+                <GeneratedPolicyErrorModal
+                    errors={errorsForGeneratedPolicy}
+                    onClose={() => setErrorsForGeneratedPolicy(null)}
+                />
             )}
         </>
     );
