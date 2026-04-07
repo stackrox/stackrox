@@ -59,9 +59,7 @@ function PolicyCriteriaFieldInput({
             // value.value is always a string for 'text' type descriptors
             const validationError = descriptor.validate?.(String(value.value));
             const showError = Boolean(validationError);
-            const warningMessage = !showError
-                ? descriptor.warn?.(String(value.value))
-                : undefined;
+            const warningMessage = !showError ? descriptor.warn?.(String(value.value)) : undefined;
             const showWarning = Boolean(warningMessage);
 
             return (
@@ -74,20 +72,14 @@ function PolicyCriteriaFieldInput({
                         onChange={(_event, val) => handleChangeValue(val)}
                         data-testid="policy-criteria-value-text-input"
                         placeholder={descriptor.placeholder || ''}
-                        validated={
-                            showError ? 'error' : showWarning ? 'warning' : 'default'
-                        }
+                        validated={showError ? 'error' : showWarning ? 'warning' : 'default'}
                     />
                     {(descriptor.helperText || showError || showWarning) && (
                         <FormHelperText>
                             <HelperText isLiveRegion={showError || showWarning}>
                                 <HelperTextItem
                                     variant={
-                                        showError
-                                            ? 'error'
-                                            : showWarning
-                                              ? 'warning'
-                                              : 'default'
+                                        showError ? 'error' : showWarning ? 'warning' : 'default'
                                     }
                                 >
                                     {showError
