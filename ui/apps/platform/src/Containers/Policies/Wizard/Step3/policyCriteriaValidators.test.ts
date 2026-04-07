@@ -211,7 +211,7 @@ describe('policyCriteriaValidators', () => {
             'should pass when File Operation and a path criterion are both present with values for %s event source',
             (eventSource) => {
                 if (eventSource !== 'DEPLOYMENT_EVENT' && eventSource !== 'NODE_EVENT') {
-                    it.skip(`should not apply to ${eventSource} event source`);
+                    it.todo(`should not apply to ${eventSource} event source`, () => {});
                 }
 
                 const context: PolicyContext = {

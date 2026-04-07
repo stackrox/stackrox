@@ -93,21 +93,33 @@ export default defineConfig(async () => {
         build: {
             assetsDir: './static',
             outDir: 'build',
-            rollupOptions: {
+            rolldownOptions: {
                 output: {
                     // Break the following dependencies into their own chunks to limit memory usage during build and decouple large
                     // dependencies from their first entry point in our app's pages.
-                    manualChunks: {
-                        d3: ['d3'],
-                        lodash: ['lodash'],
-                        redoc: [
-                            'redoc',
-                            '@redocly/ajv',
-                            '@redocly/config',
-                            '@redocly/openapi-core',
+                    codeSplitting: {
+                        groups: [
+                            {
+                                name: 'd3',
+                                test: /d3/,
+                            },
+                            {
+                                name: 'lodash',
+                                test: /lodash/,
+                            },
+                            {
+                                name: 'redoc',
+                                test: /redoc|@redocly\/ajv|@redocly\/config|@redocly\/openapi-core/,
+                            },
+                            {
+                                name: 'react',
+                                test: /react|react-dom/,
+                            },
+                            {
+                                name: 'apollo',
+                                test: /@apollo\/client/,
+                            },
                         ],
-                        react: ['react', 'react-dom'],
-                        apollo: ['@apollo/client'],
                     },
                 },
             },
