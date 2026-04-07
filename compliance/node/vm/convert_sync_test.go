@@ -113,12 +113,12 @@ func TestConversionsSyncWithMappers(t *testing.T) {
 		require.NotNil(t, mappersResult)
 
 		// Compare top-level fields
-		require.Equal(t, mappersResult.State, vmResult.State)
-		require.Equal(t, mappersResult.Success, vmResult.Success)
-		require.Equal(t, mappersResult.Err, vmResult.Err)
+		require.Equal(t, mappersResult.GetState(), vmResult.GetState())
+		require.Equal(t, mappersResult.GetSuccess(), vmResult.GetSuccess())
+		require.Equal(t, mappersResult.GetErr(), vmResult.GetErr())
 
 		// Compare Contents in detail
-		compareContents(t, mappersResult.Contents, vmResult.Contents)
+		compareContents(t, mappersResult.GetContents(), vmResult.GetContents())
 	})
 
 	t.Run("Alpine distribution VersionID fallback", func(t *testing.T) {
@@ -139,11 +139,11 @@ func TestConversionsSyncWithMappers(t *testing.T) {
 		require.NoError(t, err)
 
 		// Both should fall back to Version for Alpine
-		vmDist := vmResult.Contents.Distributions["alpine"]
-		mappersDist := mappersResult.Contents.Distributions["alpine"]
+		vmDist := vmResult.GetContents().GetDistributions()["alpine"]
+		mappersDist := mappersResult.GetContents().GetDistributions()["alpine"]
 
-		require.Equal(t, "3.15.0", vmDist.VersionId, "VM converter should use Version for Alpine")
-		require.Equal(t, "3.15.0", mappersDist.VersionId, "Mappers converter should use Version for Alpine")
+		require.Equal(t, "3.15.0", vmDist.GetVersionId(), "VM converter should use Version for Alpine")
+		require.Equal(t, "3.15.0", mappersDist.GetVersionId(), "Mappers converter should use Version for Alpine")
 		protoassert.Equal(t, mappersDist, vmDist)
 	})
 }
@@ -153,33 +153,33 @@ func compareContents(t *testing.T, expected, actual *v4.Contents) {
 	require.NotNil(t, actual)
 
 	// Compare packages
-	require.Len(t, actual.Packages, len(expected.Packages))
-	for id, expectedPkg := range expected.Packages {
-		actualPkg := actual.Packages[id]
+	require.Len(t, actual.GetPackages(), len(expected.GetPackages()))
+	for id, expectedPkg := range expected.GetPackages() {
+		actualPkg := actual.GetPackages()[id]
 		require.NotNil(t, actualPkg, "missing package: %s", id)
 		protoassert.Equal(t, expectedPkg, actualPkg, "package %s differs", id)
 	}
 
 	// Compare distributions
-	require.Len(t, actual.Distributions, len(expected.Distributions))
-	for id, expectedDist := range expected.Distributions {
-		actualDist := actual.Distributions[id]
+	require.Len(t, actual.GetDistributions(), len(expected.GetDistributions()))
+	for id, expectedDist := range expected.GetDistributions() {
+		actualDist := actual.GetDistributions()[id]
 		require.NotNil(t, actualDist, "missing distribution: %s", id)
 		protoassert.Equal(t, expectedDist, actualDist, "distribution %s differs", id)
 	}
 
 	// Compare repositories
-	require.Len(t, actual.Repositories, len(expected.Repositories))
-	for id, expectedRepo := range expected.Repositories {
-		actualRepo := actual.Repositories[id]
+	require.Len(t, actual.GetRepositories(), len(expected.GetRepositories()))
+	for id, expectedRepo := range expected.GetRepositories() {
+		actualRepo := actual.GetRepositories()[id]
 		require.NotNil(t, actualRepo, "missing repository: %s", id)
 		protoassert.Equal(t, expectedRepo, actualRepo, "repository %s differs", id)
 	}
 
 	// Compare environments
-	require.Len(t, actual.Environments, len(expected.Environments))
-	for id, expectedEnvList := range expected.Environments {
-		actualEnvList := actual.Environments[id]
+	require.Len(t, actual.GetEnvironments(), len(expected.GetEnvironments()))
+	for id, expectedEnvList := range expected.GetEnvironments() {
+		actualEnvList := actual.GetEnvironments()[id]
 		require.NotNil(t, actualEnvList, "missing environment list: %s", id)
 		protoassert.Equal(t, expectedEnvList, actualEnvList, "environment %s differs", id)
 	}
