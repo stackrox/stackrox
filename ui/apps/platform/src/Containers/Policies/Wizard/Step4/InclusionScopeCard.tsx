@@ -162,7 +162,7 @@ function InclusionScopeCard({
                         )}
                     </Flex>
                 </FormGroup>
-                <FormGroup label="Deployment">
+                <FormGroup label="Deployment label">
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
                             aria-label="Deployment label key"
