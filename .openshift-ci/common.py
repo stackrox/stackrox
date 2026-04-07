@@ -41,8 +41,11 @@ def enable_sfa_for_ocp():
         ocp_variant = os.environ.get("CLUSTER_FLAVOR_VARIANT", "")
         expr = r"openshift-4-ocp/\w+-(?P<major>\d+)\.(?P<minor>\d+)"
         m = re.match(expr, ocp_variant)
-        if m and int(m.group("major")) >= 4 and int(m.group("minor")) >= 16:
-            os.environ["SFA_AGENT"] = "true"
-            log_print("Enabled SFA agent for OCP", ocp_variant)
+        if m:
+            major = int(m.group("major"))
+            minor = int(m.group("minor"))
+            if (major, minor) >= (4, 16):
+                os.environ["SFA_AGENT"] = "true"
+                log_print("Enabled SFA agent for OCP", ocp_variant)
     except (ValueError, TypeError, AttributeError) as ex:
         log_print(f"Could not identify OCP version, SFA is disabled: {ex}")

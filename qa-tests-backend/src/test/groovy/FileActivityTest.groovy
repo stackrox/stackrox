@@ -42,8 +42,11 @@ class FileActivityTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        orchestrator.deleteDeployment(testDeployment)
-        setFactEnv("", false)
+        if (orchestrator.containsDaemonSetContainer(
+                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER)) {
+            orchestrator.deleteDeployment(testDeployment)
+            setFactEnv("", false)
+        }
     }
 
     @Tag("BAT")

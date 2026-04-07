@@ -23,6 +23,11 @@ class TestEnableSfaForOcp(unittest.TestCase):
         enable_sfa_for_ocp()
         self.assertEqual(os.environ.get("SFA_AGENT"), "true")
 
+    def test_enables_sfa_for_ocp_5_1(self):
+        os.environ["CLUSTER_FLAVOR_VARIANT"] = "openshift-4-ocp/stable-5.1"
+        enable_sfa_for_ocp()
+        self.assertEqual(os.environ.get("SFA_AGENT"), "true")
+
     def test_does_not_enable_sfa_for_ocp_4_15(self):
         os.environ["CLUSTER_FLAVOR_VARIANT"] = "openshift-4-ocp/stable-4.15"
         enable_sfa_for_ocp()
