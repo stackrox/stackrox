@@ -346,15 +346,17 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 	$(KUSTOMIZE) build build/dist > dist/install.yaml
 
 .PHONY: chart
-chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
+chart: kubebuilder manifests build-installer ## Generate a helm chart with all necessary resources.
 # The dependency above makes sure protos are up to date, so we can skip this time-consuming process below
 # by specifying the SKIP env var. Otherwise each target that kubebuilder invokes (and there is a bunch) would regen protos.
-	rm -rf dist/chart
-# Run the sed and kubebuilder as a single command, propagating the VERSION from when the directory is still pristine, to prevent -dirty suffix while PROJECT is modified.
-	set -e; \
-	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then sed -i'.bak' -e 's,^projectName: rhacs-operator,projectName: stackrox-operator,' PROJECT; fi; \
-	VERSION=$(VERSION) ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
-	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then mv PROJECT.bak PROJECT; fi
+	rm -rf dist/chart build/chart
+	mkdir -p build/chart
+ifeq ($(ROX_IMAGE_FLAVOR), opensource)
+	sed -e 's,^projectName: rhacs-operator,projectName: stackrox-operator,' PROJECT > build/chart/PROJECT
+else
+	cp PROJECT build/chart/PROJECT
+endif
+	cd build/chart && VERSION=$(VERSION) ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force --manifests $(PROJECT_DIR)/dist/install.yaml --output-dir $(PROJECT_DIR)/dist
 	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
 	rm -f dist/chart/Chart.yaml.bak
 
