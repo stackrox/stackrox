@@ -245,14 +245,6 @@ import (
 var (
 	log = logging.CreateLogger(logging.CurrentModule(), 0)
 
-	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
-		oidc.TypeName:                oidc.NewFactory,
-		"auth0":                      oidc.NewFactory, // legacy
-		saml.TypeName:                saml.NewFactory,
-		authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
-		iap.TypeName:                 iap.NewFactory,
-	}
-
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -562,6 +554,17 @@ func startGRPCServer() {
 
 	// Create the registry of applied auth providers.
 	registry := authProviderRegistry.Singleton()
+
+	// Initialize auth provider backend factories. This must be done here (not at package level)
+	// because tlsconfig.ManagerInstance() requires certificate files that may not be available
+	// for all entry points in the consolidated binary.
+	authProviderBackendFactories := map[string]authproviders.BackendFactoryCreator{
+		oidc.TypeName:                oidc.NewFactory,
+		"auth0":                      oidc.NewFactory, // legacy
+		saml.TypeName:                saml.NewFactory,
+		authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
+		iap.TypeName:                 iap.NewFactory,
+	}
 
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
