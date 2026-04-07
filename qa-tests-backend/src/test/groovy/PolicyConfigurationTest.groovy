@@ -61,7 +61,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private List<DeploymentOuterClass.PortConfig.ExposureLevel> EXPOSURE_VALUES =
             [DeploymentOuterClass.PortConfig.ExposureLevel.NODE,
              DeploymentOuterClass.PortConfig.ExposureLevel.EXTERNAL]
-    static final private List<Deployment> DEPLOYMENTS = [
+    static final private Map<String, Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(DEPLOYMENTNGINX)
                     .setImage(TEST_IMAGE)
@@ -113,7 +113,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setServiceAccountName(SERVICE_ACCOUNT_NAME)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .setSkipReplicaWait(true),
-    ]
+    ].collectEntries { [(it.name): it] }
 
     static final private Deployment NGINX_WITH_DIGEST = new Deployment()
             .setName(NGINX_LATEST_WITH_DIGEST_NAME)
@@ -132,7 +132,7 @@ class PolicyConfigurationTest extends BaseSpecification {
             .setSkipReplicaWait(false)
 
     static final private Service NPSERVICE =
-            new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
+            new Service(DEPLOYMENTS[DEPLOYMENTNGINX_NP])
             .setType(Service.Type.NODEPORT)
 
     @Shared
@@ -154,7 +154,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             orchestrator.deleteDeployment(deployment)
         }
         orchestrator.deleteService(NPSERVICE.name, NPSERVICE.namespace)
@@ -239,7 +239,7 @@ class PolicyConfigurationTest extends BaseSpecification {
             // A fresh scan might be required because other tests in the suite could've run a scan on the same image,
             // and we don't want those results to taint this test
             // TODO: Find a direct way to clear the cache than just forcing a scan
-            def dep = DEPLOYMENTS.find { it.getName() == depname }
+            def dep = DEPLOYMENTS[depname]
             assert dep != null
 
             log.info "Deleting image ${dep.getImage()} from DB"

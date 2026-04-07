@@ -23,7 +23,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     // ldconfig process
     static final private String LDCONFIG = "/sbin/ldconfig"
 
-    static final private List<Deployment> DEPLOYMENTS = [
+    static final private Map<String, Deployment> DEPLOYMENTS = [
             new Deployment()
                 .setName (NGINXDEPLOYMENT)
                 .setImage (TEST_IMAGE)
@@ -66,20 +66,20 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4979")
                 .addLabel ("app", "test" ),
-     ]
+     ].collectEntries { [(it.name): it] }
 
     static final private MAX_SLEEP_TIME = 240000
     static final private SLEEP_INCREMENT = 5000
 
     def setupSpec() {
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deployment : DEPLOYMENTS) {
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.values())
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             assert Services.waitForDeployment(deployment)
         }
     }
 
     def cleanupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             orchestrator.deleteDeployment(deployment)
         }
     }
@@ -128,7 +128,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     def "Verify process visualization on default: #depName"()  {
         when:
         "Get Process IDs running on deployment: #depName"
-        String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        String uid = DEPLOYMENTS[depName].deploymentUid
         assert uid != null
 
         Set<String> receivedProcessPaths
@@ -193,7 +193,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     def "Verify process paths, UIDs, and GIDs on #depName"()  {
         when:
         "Get Processes running on deployment: #depName"
-        String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        String uid = DEPLOYMENTS[depName].deploymentUid
         assert uid != null
 
         Map<String,Set<Tuple2<Integer,Integer>>> processToUserAndGroupIds
@@ -272,7 +272,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     def "Verify process arguments on #depName"() {
         when:
         "Get Process args running on deployment: #depName"
-        String depId = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        String depId = DEPLOYMENTS[depName].deploymentUid
         assert depId != null
 
         List<Tuple2<String, String>> processToArgs

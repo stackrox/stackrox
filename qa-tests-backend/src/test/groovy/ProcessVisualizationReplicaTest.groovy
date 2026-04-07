@@ -13,7 +13,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private String APACHEDEPLOYMENT = "apacheserverdeployment"
     static final private String MONGODEPLOYMENT = "mongodeployment"
 
-    static final private List<Deployment> DEPLOYMENTS = [
+    static final private Map<String, Deployment> DEPLOYMENTS = [
             new Deployment()
                 .setName (APACHEDEPLOYMENT)
                 .setReplicas(REPLICACOUNT)
@@ -24,22 +24,22 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
                 .setReplicas(REPLICACOUNT)
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:mongodb")
                 .addLabel ("app", "test" ),
-     ]
+     ].collectEntries { [(it.name): it] }
 
     static final private MAX_SLEEP_TIME = 180000
     static final private SLEEP_INCREMENT = 5000
 
     def setupSpec() {
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deployment : DEPLOYMENTS) {
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.values())
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             assert Services.waitForDeployment(deployment)
         }
     }
     def cleanupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             orchestrator.deleteDeployment(deployment)
         }
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             Services.waitForSRDeletion(deployment)
         }
     }
@@ -59,7 +59,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
     def "Verify process visualization with replicas on #depName"()  {
         when:
         "Get Process IDs running on deployment: #depName"
-        String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        String uid = DEPLOYMENTS[depName].deploymentUid
         assert uid != null
 
         // processContainerMap contains a map of process path to a container id for each time that path was executed

@@ -11,16 +11,15 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 class K8sEventDetectionTest extends BaseSpecification {
-    static final private List<Deployment> DEPLOYMENTS = []
+    static final private Map<String, Deployment> DEPLOYMENTS = [:]
 
     static private registerDeployment(String name, boolean privileged) {
-        DEPLOYMENTS.add(
-            new Deployment().setName(name)
+        def deployment = new Deployment().setName(name)
                 .setImage(TEST_IMAGE).addLabel("app", name)
                 .setPrivilegedFlag(privileged)
                 .setStdin(true)
                 .setTty(true)
-        )
+        DEPLOYMENTS[name] = deployment
         return name
     }
 
@@ -37,8 +36,8 @@ class K8sEventDetectionTest extends BaseSpecification {
     static final private String CLONED_KUBECTL_ATTACH_POLICY_NAME = "CLONED: Kubernetes Actions: Attach to Pod"
 
     def setupSpec() {
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deployment : DEPLOYMENTS) {
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.values())
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             assert Services.waitForDeployment(deployment)
         }
 
@@ -104,7 +103,7 @@ class K8sEventDetectionTest extends BaseSpecification {
                                      List<String> violatingDeploymentNames, Map<String, String> podNames,
                                      int expectedK8sViolationsCount) {
         violatingDeploymentNames.each { String violatingDeploymentName ->
-            def violatingDeployment = DEPLOYMENTS.find { it.name == violatingDeploymentName }
+            def violatingDeployment = DEPLOYMENTS[violatingDeploymentName]
             assert violatingDeployment
             def violations = Services.getViolationsByDeploymentID(
                     violatingDeployment.deploymentUid, policyName, false, 60)
@@ -147,7 +146,7 @@ class K8sEventDetectionTest extends BaseSpecification {
                 continue
             }
             log.info "Checking that deployment ${deploymentName} does NOT have a violation"
-            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            def deployment = DEPLOYMENTS[deploymentName]
             assert deployment
             assert Services.checkForNoViolationsByDeploymentID(deployment.deploymentUid, policyName)
         }
@@ -183,7 +182,7 @@ class K8sEventDetectionTest extends BaseSpecification {
         def podNames = new HashMap<String, String>()
         def execIntoDeployments = []
         for (def deploymentName: execIntoDeploymentNames) {
-            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            def deployment = DEPLOYMENTS[deploymentName]
             assert deployment
             execIntoDeployments.add(deployment)
 
@@ -226,7 +225,7 @@ class K8sEventDetectionTest extends BaseSpecification {
         "Exec should fail for all violating deployments, but not for the others, and violations should not be updated"
         for (def deploymentName: execIntoDeploymentNames) {
             def execShouldSucceed = (violatingDeploymentNames.find { it == deploymentName } == null)
-            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            def deployment = DEPLOYMENTS[deploymentName]
             assert deployment
             assert orchestrator.execInContainer(deployment, "ls -l") == execShouldSucceed
         }
@@ -279,7 +278,7 @@ class K8sEventDetectionTest extends BaseSpecification {
         def podNames = new HashMap<String, String>()
         def attachToPodsInDeployments = []
         for (def deploymentName: attachToDeploymentNames) {
-            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            def deployment = DEPLOYMENTS[deploymentName]
             assert deployment
             attachToPodsInDeployments.add(deployment)
 
@@ -321,7 +320,7 @@ class K8sEventDetectionTest extends BaseSpecification {
         then:
         "Attach should fail for all violating deployments, but not for the others, and violations should not be updated"
         for (def deploymentName: attachToDeploymentNames) {
-            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            def deployment = DEPLOYMENTS[deploymentName]
             assert deployment
              // these pods/attach events should be blocked by the enforced policy
             orchestrator.attachToContainer(deployment)
