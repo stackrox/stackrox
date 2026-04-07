@@ -2611,11 +2611,9 @@ class Kubernetes {
             if (crb.subjects == null) {
                 crb.subjects = []
             }
-            crb.subjects.add([
-                kind: "ServiceAccount",
-                name: "default",
-                namespace: namespace
-            ])
+            crb.subjects.add(
+                new Subject(kind: "ServiceAccount", name: "default", namespace: namespace)
+            )
 
             client.rbac().clusterRoleBindings().withName(crbName).replace(crb)
             log.info "Granted privileged SCC to default service account in namespace ${namespace}"
