@@ -46,7 +46,7 @@ enable_console_plugin() {
         # Wait for console deployment to roll out with plugin configuration
         info "Waiting for console deployment to roll out with plugin enabled"
         kubectl rollout status deployment/console -n openshift-console --timeout=3m || {
-            info "Warning: Console rollout did not complete, proceeding anyway"
+            die "Console rollout did not complete within 3m after enabling plugin"
         }
     fi
 }
