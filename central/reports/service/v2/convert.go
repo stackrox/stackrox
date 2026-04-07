@@ -86,6 +86,7 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
+		Query:                  filters.GetQuery(),
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -122,10 +123,34 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 	}
 
 	ret := &storage.ResourceScope{}
-	if scope.GetCollectionScope() != nil {
-		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: scope.GetCollectionScope().GetCollectionId()}
+	switch ref := scope.GetScopeReference().(type) {
+	case *apiV2.ResourceScope_CollectionScope:
+		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: ref.CollectionScope.GetCollectionId()}
+	case *apiV2.ResourceScope_EntityScope:
+		ret.ScopeReference = &storage.ResourceScope_EntityScope{EntityScope: convertV2EntityScopeToStorage(ref.EntityScope)}
 	}
 	return ret
+}
+
+func convertV2EntityScopeToStorage(es *apiV2.EntityScope) *storage.EntityScope {
+	if es == nil {
+		return nil
+	}
+	rules := make([]*storage.EntityScopeRule, 0, len(es.GetRules()))
+	for _, rule := range es.GetRules() {
+		sr := &storage.EntityScopeRule{
+			Entity: storage.EntityType(rule.GetEntity()),
+			Field:  storage.EntityField(rule.GetField()),
+		}
+		for _, rv := range rule.GetValues() {
+			sr.Values = append(sr.Values, &storage.RuleValue{
+				Value:     rv.GetValue(),
+				MatchType: storage.MatchType(rv.GetMatchType()),
+			})
+		}
+		rules = append(rules, sr)
+	}
+	return &storage.EntityScope{Rules: rules}
 }
 
 func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
@@ -227,6 +252,7 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
+		Query:                  filters.GetQuery(),
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -263,25 +289,46 @@ func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope
 	}
 
 	ret := &apiV2.ResourceScope{}
-	if scope.GetScopeReference() != nil {
-		var collectionName string
-		collection, found, err := s.collectionDatastore.Get(allAccessCtx, scope.GetCollectionId())
+	switch ref := scope.GetScopeReference().(type) {
+	case *storage.ResourceScope_CollectionId:
+		collection, found, err := s.collectionDatastore.Get(allAccessCtx, ref.CollectionId)
 		if err != nil {
 			return nil, err
 		}
 		if !found {
-			return nil, errors.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
+			return nil, errors.Errorf("Collection with ID %s no longer exists", ref.CollectionId)
 		}
-		collectionName = collection.GetName()
-
 		ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
 			CollectionScope: &apiV2.CollectionReference{
-				CollectionId:   scope.GetCollectionId(),
-				CollectionName: collectionName,
+				CollectionId:   ref.CollectionId,
+				CollectionName: collection.GetName(),
 			},
 		}
+	case *storage.ResourceScope_EntityScope:
+		ret.ScopeReference = &apiV2.ResourceScope_EntityScope{EntityScope: convertStorageEntityScopeToV2(ref.EntityScope)}
 	}
 	return ret, nil
+}
+
+func convertStorageEntityScopeToV2(es *storage.EntityScope) *apiV2.EntityScope {
+	if es == nil {
+		return nil
+	}
+	rules := make([]*apiV2.EntityScopeRule, 0, len(es.GetRules()))
+	for _, rule := range es.GetRules() {
+		ar := &apiV2.EntityScopeRule{
+			Entity: apiV2.ScopeEntity(rule.GetEntity()),
+			Field:  apiV2.ScopeField(rule.GetField()),
+		}
+		for _, rv := range rule.GetValues() {
+			ar.Values = append(ar.Values, &apiV2.RuleValue{
+				Value:     rv.GetValue(),
+				MatchType: apiV2.MatchType(rv.GetMatchType()),
+			})
+		}
+		rules = append(rules, ar)
+	}
+	return &apiV2.EntityScope{Rules: rules}
 }
 
 // convertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration
@@ -433,6 +480,10 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 	}
 	v2snaps := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
 	for _, snapshot := range snapshots {
+		resourceScope, err := s.convertProtoResourceScopeToV2(snapshot.GetResourceScope())
+		if err != nil {
+			return nil, err
+		}
 		snapshotv2 := &apiV2.ReportSnapshot{
 			ReportStatus:       s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
 			ReportConfigId:     snapshot.GetReportConfigurationId(),
@@ -448,6 +499,7 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
 				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
 			},
+			ResourceScope:       resourceScope,
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
 		}
 		for _, notifier := range snapshot.GetNotifiers() {

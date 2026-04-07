@@ -356,6 +356,88 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 	}
 }
 
+func (s *typeConversionTestSuite) TestConvertEntityScope() {
+	apiScope := &apiV2.EntityScope{
+		Rules: []*apiV2.EntityScopeRule{
+			{
+				Entity: apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT,
+				Field:  apiV2.ScopeField_FIELD_NAME,
+				Values: []*apiV2.RuleValue{
+					{Value: "frontend", MatchType: apiV2.MatchType_EXACT},
+					{Value: "back.*", MatchType: apiV2.MatchType_REGEX},
+				},
+			},
+			{
+				Entity: apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE,
+				Field:  apiV2.ScopeField_FIELD_LABEL,
+				Values: []*apiV2.RuleValue{
+					{Value: "env=prod", MatchType: apiV2.MatchType_EXACT},
+				},
+			},
+		},
+	}
+	storageScope := &storage.EntityScope{
+		Rules: []*storage.EntityScopeRule{
+			{
+				Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+				Field:  storage.EntityField_FIELD_NAME,
+				Values: []*storage.RuleValue{
+					{Value: "frontend", MatchType: storage.MatchType_EXACT},
+					{Value: "back.*", MatchType: storage.MatchType_REGEX},
+				},
+			},
+			{
+				Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+				Field:  storage.EntityField_FIELD_LABEL,
+				Values: []*storage.RuleValue{
+					{Value: "env=prod", MatchType: storage.MatchType_EXACT},
+				},
+			},
+		},
+	}
+
+	s.T().Run("API to storage entity scope", func(t *testing.T) {
+		got := convertV2EntityScopeToStorage(apiScope)
+		protoassert.Equal(t, storageScope, got)
+	})
+
+	s.T().Run("Storage to API entity scope", func(t *testing.T) {
+		got := convertStorageEntityScopeToV2(storageScope)
+		protoassert.Equal(t, apiScope, got)
+	})
+
+	s.T().Run("convertProtoResourceScopeToV2 with entity scope does not call collection datastore", func(t *testing.T) {
+		// collection datastore must NOT be called — no EXPECT set up
+		scope := &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{EntityScope: storageScope},
+		}
+		got, err := s.service.convertProtoResourceScopeToV2(scope)
+		assert.NoError(t, err)
+		protoassert.Equal(t, &apiV2.ResourceScope{
+			ScopeReference: &apiV2.ResourceScope_EntityScope{EntityScope: apiScope},
+		}, got)
+	})
+
+	s.T().Run("convertV2ResourceScopeToProto with entity scope", func(t *testing.T) {
+		scope := &apiV2.ResourceScope{
+			ScopeReference: &apiV2.ResourceScope_EntityScope{EntityScope: apiScope},
+		}
+		got := s.service.convertV2ResourceScopeToProto(scope)
+		protoassert.Equal(t, &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{EntityScope: storageScope},
+		}, got)
+	})
+
+	s.T().Run("Query field round-trips through vuln filters", func(t *testing.T) {
+		apiFilters := &apiV2.VulnerabilityReportFilters{Query: "CVE:CVE-2024-1234"}
+		storageFilters := s.service.convertV2VulnReportFiltersToProto(apiFilters, nil)
+		assert.Equal(t, "CVE:CVE-2024-1234", storageFilters.GetQuery())
+
+		backToAPI := s.service.convertProtoVulnReportFiltersToV2(storageFilters)
+		assert.Equal(t, "CVE:CVE-2024-1234", backToAPI.GetQuery())
+	})
+}
+
 func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 	var cases = []struct {
 		testname string
