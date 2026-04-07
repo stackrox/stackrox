@@ -95,7 +95,7 @@ tests:
     expectError: true
     expect: |
       .error | assertThat(contains("certificate and key"))
-  - name: "reencrypt route without custom certificate uses OpenShift CA"
+  - name: "reencrypt route without custom cert has empty cert fields"
     set:
       central.exposure.route.enabled: true
       central.exposure.route.reencrypt.enabled: true
