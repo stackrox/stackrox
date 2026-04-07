@@ -672,12 +672,9 @@ ifneq ($(HOST_OS),linux)
 endif
 	cp bin/$(HOST_OS)_amd64/roxctl image/rhel/bin/roxctl-$(HOST_OS)-amd64
 endif
-	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
-	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
-	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
-	cp bin/linux_$(GOARCH)/roxagent          image/rhel/bin/roxagent
+	# Note: migrator, kubernetes-sensor, sensor-upgrader, admission-control, compliance, and roxagent
+	# are no longer separate binaries - they're consolidated into central via BusyBox-style dispatch.
+	# The Dockerfiles create symlinks to central for these components.
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
