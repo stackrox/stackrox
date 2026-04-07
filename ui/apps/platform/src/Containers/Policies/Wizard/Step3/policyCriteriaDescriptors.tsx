@@ -59,7 +59,7 @@ export function warnBroadFilePath(value: string): string | undefined {
 
     // High-churn directories with glob wildcards
     const matchedPrefix = Object.keys(highChurnPrefixes).find(
-        (prefix) => trimmed.startsWith(`${prefix}/`) && /[*]/.test(trimmed)
+        (prefix) => trimmed.startsWith(`${prefix}/`) && trimmed.includes('*')
     );
     if (matchedPrefix) {
         return `Patterns under ${matchedPrefix} typically generate very high alert volume due to frequent ${highChurnPrefixes[matchedPrefix]} activity.`;
