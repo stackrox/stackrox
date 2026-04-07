@@ -14,13 +14,16 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageComponentV2DS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -37,6 +40,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
+
+// testImage is satisfied by both *storage.Image and *storage.ImageV2.
+type testImage interface {
+	GetId() string
+	GetName() *storage.ImageName
+	GetScan() *storage.ImageScan
+}
 
 type testCase struct {
 	desc           string
@@ -57,16 +67,16 @@ type imageIDsPaginationTestCase struct {
 }
 
 type lessFunc func(records []*imageCVECoreResponse) func(i, j int) bool
-type lessFuncForImages func(records []*storage.Image) func(i, j int) bool
+type lessFuncForImages func(records []testImage) func(i, j int) bool
 
 type filterImpl struct {
-	matchImage func(image *storage.Image) bool
+	matchImage func(image testImage) bool
 	matchVuln  func(vuln *storage.EmbeddedVulnerability) bool
 }
 
 func matchAllFilter() *filterImpl {
 	return &filterImpl{
-		matchImage: func(_ *storage.Image) bool {
+		matchImage: func(_ testImage) bool {
 			return true
 		},
 		matchVuln: func(_ *storage.EmbeddedVulnerability) bool {
@@ -77,7 +87,7 @@ func matchAllFilter() *filterImpl {
 
 func matchNoneFilter() *filterImpl {
 	return &filterImpl{
-		matchImage: func(_ *storage.Image) bool {
+		matchImage: func(_ testImage) bool {
 			return false
 		},
 		matchVuln: func(_ *storage.EmbeddedVulnerability) bool {
@@ -86,7 +96,7 @@ func matchNoneFilter() *filterImpl {
 	}
 }
 
-func (f *filterImpl) withImageFilter(fn func(image *storage.Image) bool) *filterImpl {
+func (f *filterImpl) withImageFilter(fn func(image testImage) bool) *filterImpl {
 	f.matchImage = fn
 	return f
 }
@@ -107,7 +117,7 @@ type ImageCVEViewTestSuite struct {
 	cveView  CveView
 	suiteCtx context.Context
 
-	testImages              []*storage.Image
+	testImages              []testImage
 	testImagesToDeployments map[string][]*storage.Deployment
 
 	componentDatastore imageComponentV2DS.DataStore
@@ -119,66 +129,118 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	ctx := s.suiteCtx
 	s.testDB = pgtest.ForT(s.T())
 
-	// Initialize the datastore.
-	imageStore := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	// Initialize the datastores.
 	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 	s.componentDatastore = imageComponentV2DS.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.cveDatastore = imageCVEV2DS.GetTestPostgresDataStore(s.T(), s.testDB)
 
-	// Upsert test images.
-	images, err := imageSamples.GetTestImages(s.T())
-	s.Require().NoError(err)
-	// set cvss metrics list with one nvd cvss score
-	for _, image := range images {
-		for _, components := range image.GetScan().GetComponents() {
-			for _, vuln := range components.GetVulns() {
-				cvssScore := &storage.CVSSScore{
+	// setCVSSMetrics sets NVD CVSS metrics on all vulns in an image scan.
+	setCVSSMetrics := func(scan *storage.ImageScan) {
+		for _, component := range scan.GetComponents() {
+			for _, vuln := range component.GetVulns() {
+				vuln.CvssMetrics = []*storage.CVSSScore{{
 					Source: storage.Source_SOURCE_NVD,
 					CvssScore: &storage.CVSSScore_Cvssv3{
-						Cvssv3: &storage.CVSSV3{
-							Score: 10,
-						},
+						Cvssv3: &storage.CVSSV3{Score: 10},
 					},
-				}
-				vuln.CvssMetrics = []*storage.CVSSScore{cvssScore}
+				}}
 				vuln.NvdCvss = 10
 			}
 		}
-		s.Require().NoError(imageStore.UpsertImage(ctx, image))
 	}
 
-	// Ensure that the image is stored and constructed as expected.
-	for idx, image := range images {
-		actual, found, err := imageStore.GetImage(ctx, image.GetId())
+	// Upsert images using the appropriate datastore based on feature flag.
+	var deployments []*storage.Deployment
+	if features.FlattenImageData.Enabled() {
+		imageV2Store := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+		imagesV2, err := imageSamples.GetTestImagesV2(s.T())
 		s.Require().NoError(err)
-		s.Require().True(found)
+		for _, imgV2 := range imagesV2 {
+			setCVSSMetrics(imgV2.GetScan())
+			s.Require().NoError(imageV2Store.UpsertImage(ctx, imgV2))
+		}
+		// Verify stored V2 images and use them for expected results.
+		for idx, imgV2 := range imagesV2 {
+			actual, found, err := imageV2Store.GetImage(ctx, imgV2.GetId())
+			s.Require().NoError(err)
+			s.Require().True(found)
+			imagesV2[idx] = actual
+		}
+		s.testImages = make([]testImage, len(imagesV2))
+		for i, img := range imagesV2 {
+			s.testImages[i] = img
+		}
+		deployments = []*storage.Deployment{
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, testconsts.NamespaceA, imagesV2[1]),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, imagesV2[1]),
+			fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, imagesV2[2]),
+		}
+	} else {
+		imageStore := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+		images, err := imageSamples.GetTestImages(s.T())
+		s.Require().NoError(err)
+		for _, image := range images {
+			setCVSSMetrics(image.GetScan())
+			s.Require().NoError(imageStore.UpsertImage(ctx, image))
+		}
+		// Ensure that the image is stored and constructed as expected.
+		for idx, image := range images {
+			actual, found, err := imageStore.GetImage(ctx, image.GetId())
+			s.Require().NoError(err)
+			s.Require().True(found)
 
-		cloned := actual.CloneVT()
-		// Adjust dynamic fields and ensure images in ACS are as expected.
-		standardizeImages(image, cloned)
-		protoassert.Equal(s.T(), image, cloned)
+			cloned := actual.CloneVT()
+			standardizeImages(image, cloned)
+			protoassert.Equal(s.T(), image, cloned)
 
-		// Now that we confirmed that images match, use stored image to establish the expected test results.
-		// This makes dynamic fields matching (e.g. created at) straightforward.
-		images[idx] = actual
+			images[idx] = actual
+		}
+		s.testImages = make([]testImage, len(images))
+		for i, img := range images {
+			s.testImages[i] = img
+		}
+		deployments = []*storage.Deployment{
+			fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, images[1]),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[1]),
+			fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[2]),
+		}
 	}
-	s.testImages = images
+
 	s.cveView = NewCVEView(s.testDB.DB)
 
-	s.Require().Len(images, 5)
-	deployments := []*storage.Deployment{
-		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, images[1]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[1]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[2]),
-	}
+	s.Require().Len(s.testImages, 5)
 	for _, d := range deployments {
 		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
 	}
 
 	s.testImagesToDeployments = make(map[string][]*storage.Deployment)
-	s.testImagesToDeployments[images[1].GetId()] = []*storage.Deployment{deployments[0], deployments[1]}
-	s.testImagesToDeployments[images[2].GetId()] = []*storage.Deployment{deployments[2]}
+	s.testImagesToDeployments[s.testImages[1].GetId()] = []*storage.Deployment{deployments[0], deployments[1]}
+	s.testImagesToDeployments[s.testImages[2].GetId()] = []*storage.Deployment{deployments[2]}
+}
+
+// imageScopeCategory returns the search category for image scoping.
+func (s *ImageCVEViewTestSuite) imageScopeCategory() v1.SearchCategory {
+	if features.FlattenImageData.Enabled() {
+		return v1.SearchCategory_IMAGES_V2
+	}
+	return v1.SearchCategory_IMAGES
+}
+
+// imageSearchField returns the search field label for image ID.
+func imageSearchField() search.FieldLabel {
+	if features.FlattenImageData.Enabled() {
+		return search.ImageID
+	}
+	return search.ImageSHA
+}
+
+func incrAffectedImageCount(val *imageCVECoreResponse) {
+	if features.FlattenImageData.Enabled() {
+		val.AffectedImageCountV2++
+	} else {
+		val.AffectedImageCount++
+	}
 }
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
@@ -230,7 +292,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 				// Wrap image filter with sac filter.
 				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
-				matchFilter.withImageFilter(func(image *storage.Image) bool {
+				matchFilter.withImageFilter(func(image testImage) bool {
 					if sacTC[image.GetId()] {
 						return baseImageMatchFilter(image)
 					}
@@ -317,7 +379,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
 				// Wrap image filter with sac filter.
 				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
-				matchFilter.withImageFilter(func(image *storage.Image) bool {
+				matchFilter.withImageFilter(func(image testImage) bool {
 					if sacTC[image.GetId()] {
 						return baseImageMatchFilter(image)
 					}
@@ -411,7 +473,7 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 				// Wrap image filter with sac filter.
 				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
-				matchFilter.withImageFilter(func(image *storage.Image) bool {
+				matchFilter.withImageFilter(func(image testImage) bool {
 					if sacTC[image.GetId()] {
 						return baseImageMatchFilter(image)
 					}
@@ -445,7 +507,19 @@ func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 	}
 }
 
+func (s *ImageCVEViewTestSuite) findImageByName(fullName string) testImage {
+	for _, img := range s.testImages {
+		if img.GetName().GetFullName() == fullName {
+			return img
+		}
+	}
+	return nil
+}
+
 func (s *ImageCVEViewTestSuite) testCases() []testCase {
+	wordpressDebian := s.findImageByName("quay.io/appcontainers/wordpress:debian")
+	s.Require().NotNil(wordpressDebian)
+
 	return []testCase{
 		{
 			desc:        "search all",
@@ -466,7 +540,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
-			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+			matchFilter: matchAllFilter().withImageFilter(func(image testImage) bool {
 				return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:latest"
 			}),
 		},
@@ -478,7 +552,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image testImage) bool {
 					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
@@ -554,7 +628,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image testImage) bool {
 					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
@@ -565,7 +639,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 			desc: "search one operating system",
 			ctx:  context.Background(),
 			q:    search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "debian:8").ProtoQuery(),
-			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+			matchFilter: matchAllFilter().withImageFilter(func(image testImage) bool {
 				return image.GetScan().GetOperatingSystem() == "debian:8"
 			}),
 		},
@@ -604,15 +678,15 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
-				Level: v1.SearchCategory_IMAGES,
+				IDs:   []string{wordpressDebian.GetId()},
+				Level: s.imageScopeCategory(),
 			}),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.CVE, "CVE-2022-1552").
 				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image testImage) bool {
 					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
@@ -622,8 +696,8 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search critical severity w/ cve & image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
-				Level: v1.SearchCategory_IMAGES,
+				IDs:   []string{wordpressDebian.GetId()},
+				Level: s.imageScopeCategory(),
 				Parent: &scoped.Scope{
 					IDs:   []string{cve.ID("CVE-2022-1552", "debian:8")},
 					Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
@@ -633,7 +707,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image testImage) bool {
 					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian" &&
 						image.GetScan().GetOperatingSystem() == "debian:8"
 				}).
@@ -666,7 +740,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				AddStrings(search.PlatformComponent, "false", "-").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image testImage) bool {
 					deps, ok := s.testImagesToDeployments[image.GetId()]
 					if !ok {
 						// include inactive image
@@ -691,7 +765,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				AddStrings(search.PlatformComponent, "true", "-").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image testImage) bool {
 					deps, ok := s.testImagesToDeployments[image.GetId()]
 					if !ok {
 						// include inactive image
@@ -717,15 +791,15 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			desc: "w/ affected image sort",
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
-					search.NewSortOption(search.ImageSHA).AggregateBy(aggregatefunc.Count, true).Reversed(true),
+					search.NewSortOption(imageSearchField()).AggregateBy(aggregatefunc.Count, true).Reversed(true),
 				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
 				return func(i, j int) bool {
-					if records[i].AffectedImageCount == records[j].AffectedImageCount {
+					if records[i].GetAffectedImageCount() == records[j].GetAffectedImageCount() {
 						return records[i].CVE < records[j].CVE
 					}
-					return records[i].AffectedImageCount > records[j].AffectedImageCount
+					return records[i].GetAffectedImageCount() > records[j].GetAffectedImageCount()
 				}
 			},
 		},
@@ -769,15 +843,16 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 }
 
 func (s *ImageCVEViewTestSuite) paginationTestCasesForImageIDs() []imageIDsPaginationTestCase {
+	imgIDField := imageSearchField()
 	return []imageIDsPaginationTestCase{
 		{
 			desc: "sort by image name",
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().
 					AddSortOption(search.NewSortOption(search.ImageName)).
-					AddSortOption(search.NewSortOption(search.ImageSHA)),
+					AddSortOption(search.NewSortOption(imgIDField)),
 			).ProtoQuery(),
-			less: func(records []*storage.Image) func(i int, j int) bool {
+			less: func(records []testImage) func(i int, j int) bool {
 				return func(i, j int) bool {
 					if records[i].GetName().GetFullName() == records[j].GetName().GetFullName() {
 						return strings.Compare(records[i].GetId(), records[j].GetId()) < 0
@@ -791,9 +866,9 @@ func (s *ImageCVEViewTestSuite) paginationTestCasesForImageIDs() []imageIDsPagin
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().
 					AddSortOption(search.NewSortOption(search.ImageOS)).
-					AddSortOption(search.NewSortOption(search.ImageSHA)),
+					AddSortOption(search.NewSortOption(imgIDField)),
 			).ProtoQuery(),
-			less: func(records []*storage.Image) func(i int, j int) bool {
+			less: func(records []testImage) func(i int, j int) bool {
 				return func(i, j int) bool {
 					if records[i].GetScan().GetOperatingSystem() == records[j].GetScan().GetOperatingSystem() {
 						return strings.Compare(records[i].GetId(), records[j].GetId()) < 0
@@ -807,9 +882,9 @@ func (s *ImageCVEViewTestSuite) paginationTestCasesForImageIDs() []imageIDsPagin
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().
 					AddSortOption(search.NewSortOption(search.ImageScanTime)).
-					AddSortOption(search.NewSortOption(search.ImageSHA)),
+					AddSortOption(search.NewSortOption(imgIDField)),
 			).ProtoQuery(),
-			less: func(records []*storage.Image) func(i int, j int) bool {
+			less: func(records []testImage) func(i int, j int) bool {
 				return func(i, j int) bool {
 					if protocompat.CompareTimestamps(records[i].GetScan().GetScanTime(), records[j].GetScan().GetScanTime()) == 0 {
 						return strings.Compare(records[i].GetId(), records[j].GetId()) < 0
@@ -920,7 +995,7 @@ func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
 	baseTc.less = paginationTc.less
 }
 
-func (s *ImageCVEViewTestSuite) compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveCore {
+func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveCore {
 	cveMap := make(map[string]*imageCVECoreResponse)
 
 	for _, image := range images {
@@ -930,7 +1005,7 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []*storage.Image, filter 
 
 		var seenForImage set.Set[string]
 		// Instead of using embedded objects, grab components and CVEs from the datastores to get IDs
-		components, err := s.componentDatastore.SearchRawImageComponents(s.suiteCtx, search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery())
+		components, err := s.componentDatastore.SearchRawImageComponents(s.suiteCtx, search.NewQueryBuilder().AddExactMatches(imageSearchField(), image.GetId()).ProtoQuery())
 		s.Require().NoError(err)
 		for _, component := range components {
 			dbVulns, err := s.cveDatastore.SearchRawImageCVEs(s.suiteCtx, search.NewQueryBuilder().AddExactMatches(search.ComponentID, component.GetId()).ProtoQuery())
@@ -1003,7 +1078,7 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []*storage.Image, filter 
 				if !seenForImage.Add(val.CVE) {
 					continue
 				}
-				val.AffectedImageCount++
+				incrAffectedImageCount(val)
 
 				switch vuln.GetSeverity() {
 				case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
@@ -1063,6 +1138,7 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []*storage.Image, filter 
 	if options.SkipGetAffectedImages {
 		for _, entry := range cveMap {
 			entry.AffectedImageCount = 0
+			entry.AffectedImageCountV2 = 0
 		}
 	}
 	if options.SkipGetFirstDiscoveredInSystem {
@@ -1081,8 +1157,8 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []*storage.Image, filter 
 	return ret
 }
 
-func compileExpectedAffectedImageIDs(images []*storage.Image, filter *filterImpl, less lessFuncForImages) []string {
-	var affectedImages []*storage.Image
+func compileExpectedAffectedImageIDs(images []testImage, filter *filterImpl, less lessFuncForImages) []string {
+	var affectedImages []testImage
 	for _, image := range images {
 		if !filter.matchImage(image) {
 			continue
@@ -1116,7 +1192,7 @@ func compileExpectedAffectedImageIDs(images []*storage.Image, filter *filterImpl
 	return ret
 }
 
-func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl) *common.ResourceCountByImageCVESeverity {
+func compileExpectedCountBySeverity(images []testImage, filter *filterImpl) *common.ResourceCountByImageCVESeverity {
 	sevToCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
 	sevToFixableCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
 
@@ -1198,13 +1274,18 @@ func TestImageCVEUnknownSeverity(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
 
-	// Initialize the datastore.
-	imageStore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
-
-	// Upsert test images.
+	// Upsert test images using the appropriate datastore.
 	images := testImages()
-	for _, image := range images {
-		assert.NoError(t, imageStore.UpsertImage(ctx, image))
+	if features.FlattenImageData.Enabled() {
+		imageV2Store := imageV2DS.GetTestPostgresDataStore(t, testDB.DB)
+		for _, image := range images {
+			assert.NoError(t, imageV2Store.UpsertImage(ctx, imageUtils.ConvertToV2(image)))
+		}
+	} else {
+		imageStore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
+		for _, image := range images {
+			assert.NoError(t, imageStore.UpsertImage(ctx, image))
+		}
 	}
 
 	cveView := NewCVEView(testDB.DB)
