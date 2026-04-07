@@ -68,7 +68,7 @@ func Run(databases *types.Databases) error {
 	}
 
 	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
-	// there are no migrations executed. This also resets the rollback marker in case there is one.
+	// there are no migrations executed.
 	return UpdateToCurrentVersion(databases)
 }
 
