@@ -1,7 +1,7 @@
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c AS builder
 # This installs PyYAML (with Python) needed by bundle_helpers.
-RUN dnf -y install --allowerasing python3.12-pyyaml && \
-    alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+RUN dnf -y install --allowerasing python3.14-pyyaml && \
+    alternatives --install /usr/bin/python3 python3 /usr/bin/python3.14 1
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
