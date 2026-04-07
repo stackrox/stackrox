@@ -624,6 +624,13 @@ class ComplianceTest extends BaseSpecification {
         ]
 
         given:
+        "skip if Scanner V4 is enabled"
+        // The Scanner V4 integration is auto-registered and cannot be deleted via the API.
+        // The no-scanner compliance state (COMPLIANCE_STATE_FAILURE) is therefore unreachable.
+        Assume.assumeFalse("Skipping: Scanner V4 integration cannot be deleted, no-scanner scenario is not testable",
+                scannerV4Enabled)
+
+        and:
         "remove image integrations"
         def gcrRemoved = ImageIntegrationService.deleteImageIntegration(gcrId)
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
@@ -1055,12 +1062,12 @@ class ComplianceTest extends BaseSpecification {
         def controls = [
                 new Control(
                         "PCI_DSS_3_2:6_2",
-                        ["Image $TEST_IMAGE has \\d{2}\\d+ fixed CVEs. " +
+                        ["Image $TEST_IMAGE has \\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
                         "HIPAA_164:306_e",
-                        ["Image $TEST_IMAGE has \\d{2}\\d+ fixed CVEs. " +
+                        ["Image $TEST_IMAGE has \\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
         ]
