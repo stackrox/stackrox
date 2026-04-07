@@ -587,7 +587,26 @@ install_the_compliance_operator() {
     fi
 
     wait_for_profile_bundles_to_be_ready
+    install_e2e_compliance_resources
     oc get csv -n openshift-compliance
+}
+
+install_e2e_compliance_resources() {
+    info "Installing e2e custom rule and tailored profile"
+    oc apply -f "${ROOT}/tests/e2e/yaml/compliance-operator/e2e-custom-rule.yaml"
+    oc apply -f "${ROOT}/tests/e2e/yaml/compliance-operator/e2e-tailored-profile.yaml"
+    # Wait for TP to become READY
+    local retries=30
+    for i in $(seq 1 $retries); do
+        state=$(oc get tailoredprofile e2e-tailored-profile -n openshift-compliance \
+            -o jsonpath='{.status.state}' 2>/dev/null || true)
+        if [[ "$state" == "READY" ]]; then
+            info "TailoredProfile e2e-tailored-profile is READY"
+            return
+        fi
+        sleep 5
+    done
+    die "TailoredProfile e2e-tailored-profile did not become READY"
 }
 
 setup_client_CA_auth_provider() {

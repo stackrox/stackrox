@@ -1,0 +1,12 @@
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: e2e-tailored-profile
+  namespace: openshift-compliance
+spec:
+  title: E2E Test TailoredProfile
+  description: From-scratch TailoredProfile for e2e testing
+  enableRules:
+    - name: check-cm-marker
+      kind: CustomRule
+      rationale: E2E test rule

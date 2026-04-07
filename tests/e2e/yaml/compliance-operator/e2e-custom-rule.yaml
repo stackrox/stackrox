@@ -1,0 +1,37 @@
+# Namespace for custom rule input target (ConfigMap check)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: e2e-test-cr
+---
+# ConfigMap that the custom rule checks for (makes the rule PASS by default)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: required-config
+  namespace: e2e-test-cr
+data:
+  e2e-marker: "true"
+---
+apiVersion: compliance.openshift.io/v1alpha1
+kind: CustomRule
+metadata:
+  name: check-cm-marker
+  namespace: openshift-compliance
+spec:
+  id: xccdf_org.example_rule_check_cm_marker
+  title: ConfigMap has e2e marker
+  description: Checks for a ConfigMap with an e2e-marker data key
+  rationale: E2E test marker must be present
+  severity: medium
+  checkType: Platform
+  scannerType: CEL
+  expression: |
+    configmaps.items.exists(cm, has(cm.data) && "e2e-marker" in cm.data)
+  failureReason: No ConfigMap with 'e2e-marker' data key found
+  inputs:
+    - name: configmaps
+      kubernetesInputSpec:
+        apiVersion: v1
+        resource: configmaps
+        resourceNamespace: e2e-test-cr
