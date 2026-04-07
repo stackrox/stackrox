@@ -823,7 +823,7 @@ func createNamespaceWithLabels(t *testing.T, name string, labels map[string]stri
 }
 
 // grantPrivilegedSCC adds the default service account to the privileged SCC ClusterRoleBinding.
-func grantPrivilegedSCC(t *testing.T, client *kubernetes.Clientset, namespace string) {
+func grantPrivilegedSCC(t *testing.T, client kubernetes.Interface, namespace string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

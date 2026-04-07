@@ -2584,7 +2584,7 @@ class Kubernetes {
         // OpenShift uses Security Context Constraints (SCCs) to control pod security policies.
         // Without the privileged SCC, pods with securityContext.privileged=true cannot be created,
         // which is required for some E2E tests that validate privileged container detection policies.
-        if (util.Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
             grantPrivilegedSCC(namespaceName)
         }
     }
