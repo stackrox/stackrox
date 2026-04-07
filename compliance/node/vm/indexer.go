@@ -23,6 +23,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -150,8 +151,11 @@ func IndexVM(ctx context.Context, cfg VMIndexerConfig) (*v4.IndexReport, error) 
 	ccReport.Success = true
 	ccReport.State = controller.IndexFinished.String()
 
-	// Use our minimal conversion instead of pkg/scannerv4/mappers
-	report := toProtoV4IndexReport(ccReport)
+	// Use mappers package for conversion (roxagent builds only get lightweight index functions)
+	report, err := mappers.ToProtoV4IndexReport(ccReport)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert index report")
+	}
 	return report, nil
 }
 
