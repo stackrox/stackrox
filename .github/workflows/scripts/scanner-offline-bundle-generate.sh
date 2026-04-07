@@ -5,6 +5,10 @@ set -eu
 output_dir="${1?:missing positional argument 'output_dir'}"
 vulnerability_version="${2?:missing positional argument 'vulnerability_version'}"
 supported_releases="${3?:missing positional argument 'supported_releases'}"
+if ! command -v parallel &>/dev/null; then
+    echo missing needed binary: 'parallel(1)' >&2
+    exit 1
+fi
 
 mkdir -p "$output_dir"
 
@@ -31,16 +35,24 @@ esac
 
 tmpdir=$(mktemp -d)
 
-declare -A files_to_download=(
-    ["$tmpdir/$filename"]="https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/$filename_version/$filename"
-    ["$tmpdir/mapping.zip"]="https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
+declare -a files_to_download=(
+    "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/$filename_version/$filename"
+    "https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 )
 
 # Download the files. The vulnerability bundle is ~317MB and may take longer than
 # 60 seconds on slower network conditions between GitHub runners and GCS.
-for f in "${!files_to_download[@]}"; do
-    curl --fail --silent --show-error --max-time 300 --retry 3 --create-dirs -o "$f" "${files_to_download[$f]}"
-done
+curl -K - <<-.
+    parallel
+    fail
+    silent
+    show-error
+    max-time=300
+    retry=3
+    output-dir="${tmpdir}"
+    remote-name
+    $(printf 'url="%s"\n' "${files_to_download[@]}")
+.
 unzip -j "$tmpdir/mapping.zip" "repomapping/*" -d "$tmpdir" && rm "$tmpdir/mapping.zip"
 
 # Manifest contains:
@@ -61,9 +73,7 @@ cat >"$tmpdir/manifest.json" <<EOF
 EOF
 
 # Sanity check.
-for f in "$tmpdir"/*.json; do
-    jq empty "$f" || echo "jq processing failed for $f"
-done
+parallel --tag --null jq empty ::: "$tmpdir"/*.json
 
 # Bundle creation.
 zip -j "$output_dir/$bundle_prefix$version.zip" "$tmpdir"/*
