@@ -2,6 +2,7 @@ package vmcve
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sync"
@@ -24,6 +25,9 @@ func NewCVEView(db postgres.DB) CveView {
 
 // Singleton provides the interface to search VM CVEs stored in the database.
 func Singleton() CveView {
+	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
+		return nil
+	}
 	once.Do(func() {
 		vmCVEView = NewCVEView(globaldb.GetPostgres())
 	})
