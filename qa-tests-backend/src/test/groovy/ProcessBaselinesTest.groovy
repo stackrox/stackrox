@@ -44,7 +44,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     static final private Integer RISK_WAIT_TIME = 240
 
-    static final private List<Deployment> DEPLOYMENTS =
+    static final private Map<String, Deployment> DEPLOYMENTS =
             [
                 DEPLOYMENTNGINX,
                 DEPLOYMENTNGINX_RESOLVE_VIOLATION,
@@ -64,6 +64,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 .setEnv(["CLUSTER_NAME": "main"])
                 .addLabel("app", "test")
             }
+            .collectEntries { [(it.name): it] }
 
     @Shared
     private Policy unauthorizedProcessExecution
@@ -88,7 +89,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for lock to kick in"
-        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        def deployment = DEPLOYMENTS[deploymentName]
         assert deployment != null
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
@@ -147,7 +148,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify baseline processes for the given key before and after locking "() {
         when:
-        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        def deployment = DEPLOYMENTS[deploymentName]
         assert deployment != null
         String deploymentId = deployment.getDeploymentUid()
         // Currently, we always create a deployment where the container name is the same
@@ -196,7 +197,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                */
         when:
         "exec into the container after locking baseline and create a baseline violation"
-        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        def deployment = DEPLOYMENTS[deploymentName]
         assert deployment != null
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
@@ -295,7 +296,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         when:
         "a deployment is deleted"
         // Get all baselines for our deployment and assert they exist
-        def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
+        def deployment = DEPLOYMENTS[DEPLOYMENTNGINX_DELETE]
         assert deployment != null
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
@@ -328,7 +329,7 @@ class ProcessBaselinesTest extends BaseSpecification {
          */
         when:
         "an added process is removed and baseline is locked and the process is run"
-        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        def deployment = DEPLOYMENTS[deploymentName]
         assert deployment != null
         orchestrator.createDeployment(deployment)
         def deploymentId = deployment.deploymentUid
@@ -387,7 +388,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         given:
         "a baseline is created"
         // Get all baselines for our deployment and assert they exist
-        def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
+        def deployment = DEPLOYMENTS[DEPLOYMENTNGINX_DELETE_API]
         assert deployment != null
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
@@ -426,7 +427,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     @Tag("BAT")
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
-        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        def deployment = DEPLOYMENTS[deploymentName]
         assert deployment != null
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()

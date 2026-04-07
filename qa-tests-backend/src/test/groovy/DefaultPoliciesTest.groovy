@@ -92,7 +92,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel("app", "test")
             .addPort(80)
 
-    static final private List<Deployment> DEPLOYMENTS = [
+    static final private Map<String, Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
             .setImagePrefetcherAffinity()
@@ -122,7 +122,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setImage("registry.redhat.io/redhat/community-operator-index:v4.19")
             .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
-    ]
+    ].collectEntries { [(it.name): it] }
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 300
     static final private Integer VIOLATION_CLEARED_TIMEOUT = WAIT_FOR_VIOLATION_TIMEOUT
@@ -155,7 +155,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         assert gcrId != ""
 
         ImageService.clearImageCaches()
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             ImageService.deleteImages(
                     SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${deployment.getImage()}").build(),
                     true)
@@ -164,9 +164,9 @@ class DefaultPoliciesTest extends BaseSpecification {
                 SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${STRUTS_DEPLOYMENT.getImage()}").build(),
                 true)
 
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.values())
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             assert Services.waitForDeployment(deployment)
         }
         Helpers.collectImageScanForDebug(
@@ -187,7 +187,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             orchestrator.deleteDeployment(deployment)
         }
         assert ImageIntegrationService.deleteImageIntegration(gcrId)
@@ -426,7 +426,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         and:
         "The struts deployment details"
-        Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
+        Deployment dep = DEPLOYMENTS[STRUTS]
         RiskOuterClass.Risk risk = Services.getDeploymentWithRisk(dep.deploymentUid).risk
 
         expect:

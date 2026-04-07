@@ -30,7 +30,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     // Target deployments
     @Shared
-    final private List<Deployment> targetDeployments = [
+    final private Map<String, Deployment> targetDeployments = [
             new Deployment()
                     .setName(TCPCONNECTIONTARGET1)
                     .setNamespace(TEST_NAMESPACE)
@@ -65,7 +65,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8082,fork STDOUT & " +
                             "sleep 90 && pkill socat && sleep 3600)" as String,]),
                     // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
-        ]
+        ].collectEntries { [(it.name): it] }
 
     def setupSpec() {
         // cleanup after a prior incomplete run
@@ -81,14 +81,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     def createDeployments() {
         // batchCreateDeployments() provisions the namespace as needed (see
         // ensureNamespaceExsists())
-        orchestrator.batchCreateDeployments(targetDeployments)
-        for (Deployment d : targetDeployments) {
+        orchestrator.batchCreateDeployments(targetDeployments.values())
+        for (Deployment d : targetDeployments.values()) {
             assert Services.waitForDeployment(d)
         }
     }
 
     def destroyDeployments() {
-        for (Deployment deployment : targetDeployments) {
+        for (Deployment deployment : targetDeployments.values()) {
             if (orchestrator.getDeploymentId(deployment) != null) {
                 orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
             }
@@ -105,8 +105,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         // implicitly creates the namespace as needed
         createDeployments()
 
-        String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
-        String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId1 = targetDeployments[TCPCONNECTIONTARGET1]?.deploymentUid
+        String deploymentId2 = targetDeployments[TCPCONNECTIONTARGET2]?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
@@ -171,8 +171,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     def "Networking endpoints are no longer in the API when deployments are deleted"() {
         given:
-        String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
-        String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId1 = targetDeployments[TCPCONNECTIONTARGET1]?.deploymentUid
+        String deploymentId2 = targetDeployments[TCPCONNECTIONTARGET2]?.deploymentUid
 
         destroyDeployments()
 
@@ -197,7 +197,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
         createDeployments()
 
-        String deploymentId3 = targetDeployments.find { it.name == TCPCONNECTIONTARGET3 }?.deploymentUid
+        String deploymentId3 = targetDeployments[TCPCONNECTIONTARGET3]?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId3, 240)
 
@@ -234,7 +234,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
         createDeployments()
 
-        String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId2 = targetDeployments[TCPCONNECTIONTARGET2]?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId2, 240)
 

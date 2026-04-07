@@ -17,9 +17,9 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
             .setImage ("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel ("app", "test" )
-    static final private List<Deployment> DEPLOYMENTS = [
+    static final private Map<String, Deployment> DEPLOYMENTS = [
     STRUTS_DEP,
-    ]
+    ].collectEntries { [(it.name): it] }
 
     private static final String GET_CVES_INFO_WITH_IMAGE_QUERY = """
     query image(\$id: ID!) {
@@ -119,14 +119,14 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private  gqlService = new GraphQLService()
 
     def setupSpec() {
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deployment : DEPLOYMENTS) {
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.values())
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             assert Services.waitForDeployment(deployment)
         }
     }
 
     def cleanupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
+        for (Deployment deployment : DEPLOYMENTS.values()) {
             orchestrator.deleteDeployment(deployment)
         }
     }
@@ -136,7 +136,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         when:
         "Fetch the results of the images from GraphQL "
         gqlService = new GraphQLService()
-        String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        String uid = DEPLOYMENTS[depName].deploymentUid
         assert uid != null
         def imageId = waitForValidImageID(uid)
         log.info "image id ..." + imageId
