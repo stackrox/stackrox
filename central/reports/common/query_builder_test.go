@@ -197,3 +197,189 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 func assertByDirectComparison(t testing.TB, expected *v1.Query, actual *v1.Query) {
 	protoassert.Equal(t, expected, actual)
 }
+
+func TestBuildEntityScopeQuery(t *testing.T) {
+	testCases := []struct {
+		name          string
+		scope         *storage.EntityScope
+		expected      *v1.Query
+		assertQueries func(t testing.TB, expected *v1.Query, actual *v1.Query)
+		hasError      bool
+	}{
+		{
+			name:          "Empty rules returns empty query (match all)",
+			scope:         &storage.EntityScope{},
+			expected:      search.EmptyQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Namespace rule",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "prod", MatchType: storage.MatchType_EXACT},
+							{Value: "staging", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			expected:      search.NewQueryBuilder().AddExactMatches(search.Namespace, "prod", "staging").ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Single deployment name rule",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "web-server", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			expected:      search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "web-server").ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Cluster name rule",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "prod-us", MatchType: storage.MatchType_EXACT},
+							{Value: "prod-eu", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			expected:      search.NewQueryBuilder().AddExactMatches(search.Cluster, "prod-us", "prod-eu").ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Multiple rules are ANDed",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "prod", MatchType: storage.MatchType_EXACT},
+						},
+					},
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "backend", MatchType: storage.MatchType_EXACT},
+							{Value: "frontend", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			expected: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.Namespace, "prod").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "backend", "frontend").ProtoQuery(),
+			),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Label rule uses map query",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_LABEL,
+						Values: []*storage.RuleValue{
+							{Value: "env=prod", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			expected:      search.NewQueryBuilder().AddMapQuery(search.NamespaceLabel, `"env"`, `"prod"`).ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Regex match type adds r/ prefix",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "web-.*", MatchType: storage.MatchType_REGEX},
+						},
+					},
+				},
+			},
+			expected:      search.NewQueryBuilder().AddStrings(search.DeploymentName, "r/web-.*").ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Rule with empty values is skipped",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{},
+					},
+				},
+			},
+			expected:      search.EmptyQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
+			name: "Unsupported entity/field returns error",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+						Field:  storage.EntityField_FIELD_ANNOTATION,
+						Values: []*storage.RuleValue{
+							{Value: "team=infra", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			hasError: true,
+		},
+		{
+			name: "Deployment annotation rule",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_ANNOTATION,
+						Values: []*storage.RuleValue{
+							{Value: "owner=team-a", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			expected:      search.NewQueryBuilder().AddMapQuery(search.DeploymentAnnotation, `"owner"`, `"team-a"`).ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			qb := &queryBuilder{
+				entityScope: tc.scope,
+			}
+			result, err := qb.buildEntityScopeQuery()
+			if tc.hasError {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			tc.assertQueries(t, tc.expected, result)
+		})
+	}
+}

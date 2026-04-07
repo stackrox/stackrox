@@ -361,7 +361,7 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 
 func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
 	collection *storage.ResourceCollection) (*common.ReportQuery, error) {
-	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
+	qb := common.NewVulnReportQueryBuilder(collection, rc.GetResourceScope().GetEntityScope(), rc.GetVulnReportFilters(), s.collectionQueryResolver,
 		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
 	rQuery, err := qb.BuildQuery(ctx, nil, nil)
 	if err != nil {
