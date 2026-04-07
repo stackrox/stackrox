@@ -30,7 +30,12 @@ export function validateFilePath(value: string): string | undefined {
     return undefined;
 }
 
-const highChurnPrefixes = ['/tmp', '/proc', '/sys', '/var/log'];
+const highChurnPrefixes: Record<string, string> = {
+    '/tmp': 'temporary file',
+    '/proc': 'system',
+    '/sys': 'system',
+    '/var/log': 'log file',
+};
 
 /**
  * Returns a warning message when a file path glob pattern is structurally too broad,
@@ -53,10 +58,11 @@ export function warnBroadFilePath(value: string): string | undefined {
     }
 
     // High-churn directories with glob wildcards
-    for (const prefix of highChurnPrefixes) {
-        if (trimmed.startsWith(`${prefix}/`) && /[*]/.test(trimmed)) {
-            return `Patterns under ${prefix} typically generate very high alert volume due to frequent ${prefix === '/tmp' ? 'temporary file' : prefix === '/var/log' ? 'log file' : 'system'} activity.`;
-        }
+    const matchedPrefix = Object.keys(highChurnPrefixes).find(
+        (prefix) => trimmed.startsWith(`${prefix}/`) && /[*]/.test(trimmed)
+    );
+    if (matchedPrefix) {
+        return `Patterns under ${matchedPrefix} typically generate very high alert volume due to frequent ${highChurnPrefixes[matchedPrefix]} activity.`;
     }
 
     return undefined;
