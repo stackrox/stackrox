@@ -1428,8 +1428,8 @@ github.com/stackrox/hashstructure v0.0.4 h1:m6n9oRdmsfI7/oIZjsGU6hDCHPzQn5rQ1fQk
 github.com/stackrox/hashstructure v0.0.4/go.mod h1:FkaQJi8DJhUs7swo1VKuqzh9kYSKAr2R23/gMC26Gqc=
 github.com/stackrox/helm-operator v0.8.1-0.20251208094835-6f1985043d0d h1:vi8OBPMlPQzcQaIwWRQDQzqFWhZq6HoVDZQWQXARByA=
 github.com/stackrox/helm-operator v0.8.1-0.20251208094835-6f1985043d0d/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
-github.com/stackrox/helmtest v0.0.8 h1:42gop8zRw0/Q9bIJ/f9rgcILSugTs2vs2G0QXYaGDeU=
-github.com/stackrox/helmtest v0.0.8/go.mod h1:V8ntXFPB1ReepRgg7REARB0vvdM155dyODPCFP2d2EY=
+github.com/stackrox/helmtest v0.0.9 h1:Fv1TYozPzr0iJbpQQgIGNRcTq8XkkThKeHVL/DWOBq8=
+github.com/stackrox/helmtest v0.0.9/go.mod h1:wbSi8FLPKlRKjKpczG0a9/KyJqm/wqCU1VR/LWbVWFQ=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPcd92aJT2gJwVeyE8tMuaqS5l5s3cEgXFY=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8/go.mod h1:ZF7mH4kH1G+82HxR3uFDHvyLG8eCOdrh1RDyQcTGkBA=
 github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d h1:88Iui7fSMKgXvpyfBlbP3qosrqyv3qMgOJ6JJ4V4tFQ=
