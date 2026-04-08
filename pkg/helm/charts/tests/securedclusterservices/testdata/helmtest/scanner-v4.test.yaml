@@ -32,9 +32,6 @@ tests:
   - name: "on openshift 4"
     set:
       env.openshift: 4
-  - name: "on openshift 3"
-    set:
-      env.openshift: 3
 
 - name: "scanner V4 should be installed by default for new installations"
   release: { "isInstall": true, "isUpgrade": false }

@@ -42,21 +42,6 @@ tests:
         availableSchemas:
           - openshift-4.12
 
-- name: "Create admissionregistration.k8s.io/v1beta1 on OpenShift 3.11"
-  server:
-    availableSchemas:
-      - openshift-3.11.0
-  set:
-    env.openshift: 3
-  values:
-    admissionControl:
-      dynamic:
-        enforceOnCreates: true
-      listenOnCreates: true
-  expect: |
-    .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1beta1")
-    .validatingwebhookconfigurations[].webhooks[] | assertThat(.admissionReviewVersions == null)
-
 - name: "Admission control deployment configuration"
   tests:
     - name: "default replicas"
