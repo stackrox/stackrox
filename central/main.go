@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -176,7 +177,6 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
-	versionUtils "github.com/stackrox/rox/central/version/utils"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
@@ -230,18 +230,20 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+
+	// BusyBox-style consolidation - import app packages
+	complianceapp "github.com/stackrox/rox/compliance/cmd/compliance/app"
+	roxagentapp "github.com/stackrox/rox/compliance/virtualmachines/roxagent/app"
+	configcontrollerapp "github.com/stackrox/rox/config-controller/app"
+	migratorapp "github.com/stackrox/rox/migrator/app"
+	roxctlapp "github.com/stackrox/rox/roxctl/app"
+	admissioncontrolapp "github.com/stackrox/rox/sensor/admission-control/app"
+	kubernetessensorapp "github.com/stackrox/rox/sensor/kubernetes/app"
+	sensorupgraderapp "github.com/stackrox/rox/sensor/upgrader/app"
 )
 
 var (
 	log = logging.CreateLogger(logging.CurrentModule(), 0)
-
-	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
-		oidc.TypeName:                oidc.NewFactory,
-		"auth0":                      oidc.NewFactory, // legacy
-		saml.TypeName:                saml.NewFactory,
-		authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
-		iap.TypeName:                 iap.NewFactory,
-	}
 
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -278,7 +280,7 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
-func main() {
+func centralRun() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()
@@ -319,7 +321,6 @@ func main() {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
 	}
-	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
 
@@ -553,6 +554,17 @@ func startGRPCServer() {
 
 	// Create the registry of applied auth providers.
 	registry := authProviderRegistry.Singleton()
+
+	// Initialize auth provider backend factories. This must be done here (not at package level)
+	// because tlsconfig.ManagerInstance() requires certificate files that may not be available
+	// for all entry points in the consolidated binary.
+	authProviderBackendFactories := map[string]authproviders.BackendFactoryCreator{
+		oidc.TypeName:                oidc.NewFactory,
+		"auth0":                      oidc.NewFactory, // legacy
+		saml.TypeName:                saml.NewFactory,
+		authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
+		iap.TypeName:                 iap.NewFactory,
+	}
 
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
@@ -1060,4 +1072,34 @@ func waitForTerminationSignal() {
 		osutils.Restart()
 	}
 	log.Info("Central terminated")
+}
+
+func main() {
+	// BusyBox-style dispatcher: check how we were called
+	binaryName := filepath.Base(os.Args[0])
+
+	switch binaryName {
+	case "central":
+		centralRun()
+	case "migrator":
+		migratorapp.Run()
+	case "compliance":
+		complianceapp.Run()
+	case "kubernetes-sensor":
+		kubernetessensorapp.Run()
+	case "sensor-upgrader":
+		sensorupgraderapp.Run()
+	case "admission-control":
+		admissioncontrolapp.Run()
+	case "config-controller":
+		configcontrollerapp.Run()
+	case "roxagent":
+		roxagentapp.Run()
+	case "roxctl":
+		roxctlapp.Run()
+	default:
+		// Default to central if called with unknown name
+		log.Warnf("Unknown binary name %q, defaulting to central mode", binaryName)
+		centralRun()
+	}
 }

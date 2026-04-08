@@ -10,8 +10,9 @@ import (
 // Headers wraps http.Header with a metadata.MD-like interface.
 type Headers http.Header
 
-// NewHeaders creates Headers from gRPC metadata, canonicalizing the lowercase
-// keys used by metadata.MD into the format expected by http.Header.
+// NewHeaders creates a Headers value from gRPC metadata.MD by copying each metadata
+// key and its values into an http.Header. Multiple values for the same key are
+// preserved and the header map is preallocated to the number of metadata keys.
 func NewHeaders(m metadata.MD) Headers {
 	h := make(http.Header, len(m))
 	for k, vs := range m {

@@ -129,8 +129,8 @@ func TestEnricherFlow(t *testing.T) {
 				requestedScan:     false,
 			}),
 			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanSucceeded,
+				ImageUpdated: false,
+				ScanResult:   ScanReused,
 			},
 			expectedBaseImageCalls: 1,
 		},
@@ -1744,6 +1744,22 @@ func TestToBaseImageInfos(t *testing.T) {
 					assert.Equal(t, exp.GetMaxLayerIndex(), result[i].GetMaxLayerIndex())
 				}
 			}
+		})
+	}
+}
+
+func TestHasScanData(t *testing.T) {
+	for _, tc := range []struct {
+		result   ScanResult
+		expected bool
+	}{
+		{ScanNotDone, false},
+		{ScanTriggered, false},
+		{ScanSucceeded, true},
+		{ScanReused, true},
+	} {
+		t.Run(tc.result.String(), func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.result.HasScanData())
 		})
 	}
 }
