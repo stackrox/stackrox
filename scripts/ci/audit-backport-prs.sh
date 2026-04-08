@@ -426,12 +426,24 @@ generate_report() {
             if [[ ${#prs_no_jira[@]} -gt 0 ]]; then
                 echo "### PRs Missing Jira Reference (${#prs_no_jira[@]})"
                 echo ""
+
+                # Collect PR info for sorting
+                local pr_lines=()
                 for pr_number in "${prs_no_jira[@]}"; do
                     local author="${PR_AUTHORS[$pr_number]}"
                     local title="${PR_TITLES[$pr_number]}"
                     local slack_id
                     slack_id=$("$SCRIPTS_ROOT/scripts/ci/get-slack-user-id.sh" "$author" 2>/dev/null || echo "")
 
+                    if [[ -n "$slack_id" ]]; then
+                        pr_lines+=("$author|$slack_id|$pr_number|$title")
+                    else
+                        pr_lines+=("$author||$pr_number|$title")
+                    fi
+                done
+
+                # Sort by author and output
+                printf '%s\n' "${pr_lines[@]}" | sort -t'|' -k1,1 | while IFS='|' read -r author slack_id pr_number title; do
                     if [[ -n "$slack_id" ]]; then
                         echo "- @$author ($slack_id) [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
                     else
