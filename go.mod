@@ -49,7 +49,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/go-jose/go-jose/v4 v4.1.3
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
