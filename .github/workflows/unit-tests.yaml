@@ -228,11 +228,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -265,21 +267,25 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
-
     - name: UI Component Tests
-      run: make ui-component-tests
+      uses: cypress-io/github-action@v7
+      with:
+        working-directory: ui/apps/platform
+        component: true
+        browser: chrome
+        quiet: true
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
@@ -309,17 +315,22 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: bats-core/bats-action@4.0.0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -354,14 +365,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: bats-core/bats-action@4.0.0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -389,8 +400,6 @@ jobs:
 
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -401,6 +410,9 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install pycodestyle
+        run: python3 -m pip install pycodestyle
 
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
