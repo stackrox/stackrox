@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 
-# Audit backport PRs and Jira issues for release management
-# This script:
-# - Fetches all backport PRs
-# - Groups them by target release branch
-# - Validates Jira references and metadata
-# - Finds orphaned Jira issues
-# - Generates a report with author mentions
+# Release managers need visibility into backport PR status before cutting releases
+# to ensure all required fixes are included and properly tracked in Jira.
 
 set -euo pipefail
 
@@ -378,6 +373,12 @@ find_orphaned_issues() {
 generate_report() {
     info "Generating report"
 
+    # Build Slack ID cache for all unique authors
+    declare -A SLACK_ID_CACHE
+    for author in $(printf '%s\n' "${PR_AUTHORS[@]}" | sort -u); do
+        SLACK_ID_CACHE["$author"]=$("$SCRIPTS_ROOT/scripts/ci/get-slack-user-id.sh" "$author" 2>/dev/null || echo "")
+    done
+
     {
         echo "# Backport PR Audit Report"
         echo ""
@@ -395,12 +396,12 @@ generate_report() {
                 has_content=true
             fi
 
-            # Check for orphaned issues
-            local orphaned_check
-            orphaned_check=$(jq -r --arg branch "$branch" \
+            # Check for orphaned issues (query once, reuse later)
+            local orphaned
+            orphaned=$(jq -r --arg branch "$branch" \
                 '[.[] | select(.branch == $branch) | .key] | join("\n")' \
                 "$TEMP_DIR/orphaned-issues.json" 2>/dev/null || echo "")
-            if [[ -n "$orphaned_check" ]]; then
+            if [[ -n "$orphaned" ]]; then
                 has_content=true
             fi
 
@@ -432,8 +433,7 @@ generate_report() {
                 for pr_number in "${prs_no_jira[@]}"; do
                     local author="${PR_AUTHORS[$pr_number]}"
                     local title="${PR_TITLES[$pr_number]}"
-                    local slack_id
-                    slack_id=$("$SCRIPTS_ROOT/scripts/ci/get-slack-user-id.sh" "$author" 2>/dev/null || echo "")
+                    local slack_id="${SLACK_ID_CACHE[$author]}"
 
                     if [[ -n "$slack_id" ]]; then
                         pr_lines+=("$author|$slack_id|$pr_number|$title")
@@ -536,12 +536,7 @@ generate_report() {
                 echo ""
             fi
 
-            # Orphaned Jira issues
-            local orphaned
-            orphaned=$(jq -r --arg branch "$branch" \
-                '[.[] | select(.branch == $branch) | .key] | join("\n")' \
-                "$TEMP_DIR/orphaned-issues.json" 2>/dev/null || echo "")
-
+            # Orphaned Jira issues (reuse result from earlier check)
             if [[ -n "$orphaned" ]]; then
                 local count
                 count=$(echo "$orphaned" | wc -l)
