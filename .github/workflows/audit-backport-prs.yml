@@ -1,0 +1,39 @@
+name: Audit Backport PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '.github/workflows/audit-backport-prs.yml'
+      - 'scripts/ci/audit-backport-prs.sh'
+  workflow_dispatch:
+    inputs:
+      release_branches:
+        description: 'Release branches (comma-separated, or "all" for auto-detect)'
+        required: false
+        default: 'all'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git tag operations
+
+      - name: Run backport audit
+        env:
+          JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_BRANCHES: ${{ inputs.release_branches || 'all' }}
+        run: |
+          chmod +x scripts/ci/audit-backport-prs.sh
+          ./scripts/ci/audit-backport-prs.sh --branches "$RELEASE_BRANCHES"
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backport-audit-report
+          path: backport-audit-report.md
