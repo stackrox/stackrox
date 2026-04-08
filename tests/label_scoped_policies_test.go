@@ -32,6 +32,9 @@ func TestLabelScopedPolicies(t *testing.T) {
 }
 
 func (s *LabelScopedPoliciesSuite) SetupSuite() {
+	if isOpenshift() {
+		s.T().Skip("Skipping on OpenShift due to cluster-wide Pod Security config in CI")
+	}
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.policyService = v1.NewPolicyServiceClient(conn)
 	s.alertService = v1.NewAlertServiceClient(conn)
