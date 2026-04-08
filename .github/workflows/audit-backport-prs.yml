@@ -79,5 +79,5 @@ jobs:
           chmod +x scripts/ci/post-backport-audit-to-slack.sh
           ./scripts/ci/post-backport-audit-to-slack.sh \
             backport-audit-report.md \
-            "C05AZF8T7GW" \
+            "${{ needs.properties.outputs.slack-channel }}" \
             "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
