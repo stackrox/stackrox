@@ -613,7 +613,8 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 	containerImageViews := []*views.ContainerImageView{}
 	for _, img := range imgs {
 		containerImageViews = append(containerImageViews, &views.ContainerImageView{
-			ImageIDV2: img.GetId(),
+			ImageIDV2:         img.GetId(),
+			ImageNameFullName: fmt.Sprintf("docker.io/library/%s:latest", img.GetId()),
 			// Last character of image ID is the cluster.
 			ClusterIDs: []string{img.GetId()[len(img.GetId())-1:]},
 		})
