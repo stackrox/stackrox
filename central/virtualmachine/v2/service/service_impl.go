@@ -12,6 +12,7 @@ import (
 	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	vmDS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -89,28 +90,28 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 		return nil, err
 	}
 
+	// Batch fetch CVE severity counts and component scan counts for all VMs
+	// in two queries instead of 2*N queries.
+	vmIDs := make([]string, 0, len(vms))
+	for _, vm := range vms {
+		vmIDs = append(vmIDs, vm.GetId())
+	}
+
+	severityByVM, err := s.batchCVESeverityByVM(ctx, vmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	componentCountsByVM, err := s.batchComponentScanCounts(ctx, vmIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	items := make([]*v2.VMListItem, 0, len(vms))
 	for _, vm := range vms {
 		item := storagetov2.VirtualMachineV2ToListItem(vm)
-
-		// Get severity counts for this VM.
-		vmFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vm.GetId()).ProtoQuery()
-		severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter)
-		if err != nil {
-			return nil, err
-		}
-		item.CveSeverityCounts = storagetov2.SeverityCountsToProto(severityCounts)
-
-		// Get component scan counts for this VM.
-		totalComponents, err := s.componentDS.Count(ctx, vmFilter)
-		if err != nil {
-			return nil, err
-		}
-		item.ComponentScanCount = &v2.ComponentScanCount{
-			Total:   int32(totalComponents),
-			Scanned: int32(totalComponents),
-		}
-
+		item.CveSeverityCounts = severityByVM[vm.GetId()]
+		item.ComponentScanCount = componentCountsByVM[vm.GetId()]
 		items = append(items, item)
 	}
 
@@ -187,4 +188,125 @@ func (s *serviceImpl) GetVMDashboardCounts(ctx context.Context, request *v2.VMDa
 		VmCount:  int32(vmCount),
 		CveCount: int32(cveCount),
 	}, nil
+}
+
+// batchCVESeverityByVM fetches all CVEs for the given VM IDs in one query
+// and aggregates severity counts per VM in memory.
+func (s *serviceImpl) batchCVESeverityByVM(ctx context.Context, vmIDs []string) (map[string]*v2.VulnCountBySeverity, error) {
+	result := make(map[string]*v2.VulnCountBySeverity, len(vmIDs))
+	for _, id := range vmIDs {
+		result[id] = &v2.VulnCountBySeverity{
+			Critical:  &v2.VulnFixableCount{},
+			Important: &v2.VulnFixableCount{},
+			Moderate:  &v2.VulnFixableCount{},
+			Low:       &v2.VulnFixableCount{},
+			Unknown:   &v2.VulnFixableCount{},
+		}
+	}
+	if len(vmIDs) == 0 {
+		return result, nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
+	cves, err := s.cveDS.SearchRawVMCVEs(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cve := range cves {
+		counts, ok := result[cve.GetVmV2Id()]
+		if !ok {
+			continue
+		}
+		var bucket *v2.VulnFixableCount
+		switch cve.GetSeverity() {
+		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+			bucket = counts.Critical
+		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+			bucket = counts.Important
+		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+			bucket = counts.Moderate
+		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+			bucket = counts.Low
+		default:
+			bucket = counts.Unknown
+		}
+		bucket.Total++
+		if cve.GetIsFixable() {
+			bucket.Fixable++
+		}
+	}
+
+	return result, nil
+}
+
+// batchComponentScanCounts fetches all components for the given VM IDs in one query
+// and counts total vs scanned per VM in memory.
+func (s *serviceImpl) batchComponentScanCounts(ctx context.Context, vmIDs []string) (map[string]*v2.ComponentScanCount, error) {
+	result := make(map[string]*v2.ComponentScanCount, len(vmIDs))
+	for _, id := range vmIDs {
+		result[id] = &v2.ComponentScanCount{}
+	}
+	if len(vmIDs) == 0 {
+		return result, nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
+	components, err := s.componentDS.SearchRawVMComponents(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Components link to scans, not VMs directly. We need to resolve the VM ID
+	// via the CVE table's vm_v2_id FK. Instead, count components per scan and
+	// map scans to VMs.
+	// However, SearchRawVMComponents with a VirtualMachineID filter already
+	// joins through the scan table, so we get the right components.
+	// We need the scan-to-VM mapping to bucket by VM.
+	scanIDs := make(map[string]struct{})
+	compsByScan := make(map[string][]*storage.VirtualMachineComponentV2)
+	for _, comp := range components {
+		scanIDs[comp.GetVmScanId()] = struct{}{}
+		compsByScan[comp.GetVmScanId()] = append(compsByScan[comp.GetVmScanId()], comp)
+	}
+
+	scanIDList := make([]string, 0, len(scanIDs))
+	for id := range scanIDs {
+		scanIDList = append(scanIDList, id)
+	}
+	scans, err := s.scanDS.GetBatch(ctx, scanIDList)
+	if err != nil {
+		return nil, err
+	}
+
+	scanToVM := make(map[string]string, len(scans))
+	for _, scan := range scans {
+		scanToVM[scan.GetId()] = scan.GetVmV2Id()
+	}
+
+	for scanID, comps := range compsByScan {
+		vmID, ok := scanToVM[scanID]
+		if !ok {
+			continue
+		}
+		counts, ok := result[vmID]
+		if !ok {
+			continue
+		}
+		for _, comp := range comps {
+			counts.Total++
+			scanned := true
+			for _, n := range comp.GetNotes() {
+				if n == storage.VirtualMachineComponentV2_UNSCANNED {
+					scanned = false
+					break
+				}
+			}
+			if scanned {
+				counts.Scanned++
+			}
+		}
+	}
+
+	return result, nil
 }
