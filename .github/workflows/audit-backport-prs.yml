@@ -71,39 +71,13 @@ jobs:
           name: backport-audit-report
           path: backport-audit-report.md
 
-      - name: Prepare Slack message
+      - name: Post report to Slack
         if: success()
-        id: slack-message
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
-          # Read the report and prepare for Slack
-          REPORT_CONTENT=$(cat backport-audit-report.md)
-
-          # Count issues
-          PR_COUNT=$(grep -c "^- <@\|^- :konflux:" backport-audit-report.md || echo "0")
-          JIRA_COUNT=$(grep -c "^\- \[ROX-" backport-audit-report.md || echo "0")
-
-          # Prepare summary
-          SUMMARY="📋 *Backport PR Audit Report*\n\n"
-          SUMMARY+="• PRs missing Jira reference: ${PR_COUNT}\n"
-          SUMMARY+="• Jira issues with missing metadata: ${JIRA_COUNT}\n\n"
-          SUMMARY+="<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View full report in GitHub Actions>"
-
-          # Output for Slack (escape newlines for YAML)
-          echo "summary<<EOF" >> "$GITHUB_OUTPUT"
-          echo -e "$SUMMARY" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
-      - name: Post summary to Slack
-        if: success()
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: "${{ needs.properties.outputs.slack-channel }}"
-            text: "Backport PR Audit Report"
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "${{ steps.slack-message.outputs.summary }}"
+          chmod +x scripts/ci/post-backport-audit-to-slack.sh
+          ./scripts/ci/post-backport-audit-to-slack.sh \
+            backport-audit-report.md \
+            "${{ needs.properties.outputs.slack-channel }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
