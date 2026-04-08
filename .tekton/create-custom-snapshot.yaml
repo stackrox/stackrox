@@ -117,7 +117,8 @@ spec:
     - name: determine-if-pipeline-should-skip
       taskSpec:
         steps:
-        - image: quay.io/konflux-ci/release-service-utils:latest@sha256:987b4b06a9b12d859b50d152e07e4a20fa32bfc9beeecd8f5b1012da3ce42d58
+        - name: determine-if-pipeline-should-skip
+          image: quay.io/konflux-ci/release-service-utils:latest@sha256:987b4b06a9b12d859b50d152e07e4a20fa32bfc9beeecd8f5b1012da3ce42d58
           env:
           - name: GH_TOKEN
             valueFrom:
