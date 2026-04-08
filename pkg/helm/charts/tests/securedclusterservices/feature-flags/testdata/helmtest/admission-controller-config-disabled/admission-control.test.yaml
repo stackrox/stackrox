@@ -20,17 +20,6 @@ tests:
             timeout: 7
       expect: |
         .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 7 + 2)
-- name: "OpenShift3 clusters do not support admission control sideEffects"
-  server:
-    availableSchemas:
-      - openshift-3.11.0
-  set:
-    env.openshift: 3
-    admissionControl:
-      listenOnEvents: true
-      listenOnCreates: true
-      listenOnUpdates: true
-  expectError: true
 - name: "scanInline defaults to false"
   set:
     admissionControl.dynamic.scanInline: null

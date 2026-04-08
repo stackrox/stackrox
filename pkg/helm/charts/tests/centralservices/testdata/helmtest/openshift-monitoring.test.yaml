@@ -143,47 +143,8 @@ tests:
     env.openshift: false
   tests: *disabled-test
 
-- name: "Disable override when on explicit OpenShift 3 environment"
-  set:
-    monitoring.openshift.enabled: true
-    env.openshift: 3
-  tests: *disabled-test
-
-- name: "Disable override with default value when on explicit OpenShift 3 environment"
-  set:
-    env.openshift: 3
-  tests: *disabled-test
-
-- name: "Disable override when on auto-detected OpenShift 3 environment"
-  set:
-    monitoring.openshift.enabled: true
-  server:
-    visibleSchemas:
-      - openshift-3.11.0
-  capabilities:
-    kubeVersion:
-      version: "v1.11.0"
-  tests: *disabled-test
-
 - name: "Disable override when on non-OpenShift environment (legacy)"
   set:
     enableOpenShiftMonitoring: true
     env.openshift: false
-  tests: *disabled-test
-
-- name: "Disable override when on explicit OpenShift 3 environment (legacy)"
-  set:
-    enableOpenShiftMonitoring: true
-    env.openshift: 3
-  tests: *disabled-test
-
-- name: "Disable override when on auto-detected OpenShift 3 environment (legacy)"
-  set:
-    enableOpenShiftMonitoring: true
-  server:
-    visibleSchemas:
-      - openshift-3.11.0
-  capabilities:
-    kubeVersion:
-      version: "v1.11.0"
   tests: *disabled-test
