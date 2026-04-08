@@ -49,3 +49,9 @@ run_generate_and_get_bundle_test() {
   generate_bundle k8s
   assert_failure
 }
+
+@test "[openshift3] roxctl sensor generate rejects unsupported openshift version" {
+  generate_bundle openshift --name oc3-test-cluster --openshift-version 3
+  assert_failure
+  assert_output --partial "only '4' is currently supported"
+}
