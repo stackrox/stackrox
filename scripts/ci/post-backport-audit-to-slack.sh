@@ -62,7 +62,7 @@ post_message() {
 
     timestamp=$(grep "^Generated:" "$REPORT_FILE" | sed 's/Generated: //' || echo "Unknown")
     total_prs=$(grep -c "^- <@\|^- :konflux:" "$REPORT_FILE" 2>/dev/null || echo "0")
-    total_jira=$(grep -c "^- <" "$REPORT_FILE" | grep -c "ROX-" || echo "0")
+    total_jira=$(grep -c "^- <https://redhat.atlassian.net/browse/ROX-" "$REPORT_FILE" 2>/dev/null || echo "0")
 
     # Post header
     jq -n \
