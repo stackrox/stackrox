@@ -97,6 +97,54 @@ var (
 	}
 )
 
+// BundleExporter defines the interface for exporting vulnerability bundle data.
+type BundleExporter interface {
+	ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error
+}
+
+// clairCoreBundleExporter is the production implementation using ClairCore.
+type clairCoreBundleExporter struct {
+	httpClient *http.Client
+}
+
+// ExportBundle implements BundleExporter using the ClairCore bundle function.
+func (e *clairCoreBundleExporter) ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+	return bundle(ctx, e.httpClient, w, opts)
+}
+
+// NewBundleExporter creates a new production bundle exporter with the given HTTP client.
+func NewBundleExporter(httpClient *http.Client) BundleExporter {
+	return &clairCoreBundleExporter{httpClient: httpClient}
+}
+
+// NewDefaultBundleExporter creates a new production bundle exporter with rate-limited HTTP client.
+// Rate limit is ~16 requests/second by default, configurable via STACKROX_SCANNER_V4_UPDATER_INTERVAL.
+func NewDefaultBundleExporter() BundleExporter {
+	// Rate limit to ~16 requests/second by default.
+	interval := 62 * time.Millisecond
+	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
+	if configuredInterval != "" {
+		parsedInterval, err := time.ParseDuration(configuredInterval)
+		switch {
+		case err != nil:
+			log.Printf("invalid interval, using default (%v): %v", interval, err)
+		case parsedInterval < interval:
+			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
+		default:
+			interval = parsedInterval
+		}
+	}
+
+	httpClient := &http.Client{
+		Transport: &rateLimitedTransport{
+			limiter:   rate.NewLimiter(rate.Every(interval), 1),
+			transport: http.DefaultTransport,
+		},
+	}
+
+	return NewBundleExporter(httpClient)
+}
+
 type ExportOptions struct {
 	ManualVulnURL string
 }
@@ -106,9 +154,10 @@ type ExportOptions struct {
 // or several zstd files all written to the given outputDir.
 //
 // Export supports partial failure tolerance: if some updaters fail, the successful ones
-// are still written and a status.json file is created with all results. An error is only
-// returned if ALL updaters fail.
-func Export(ctx context.Context, outputDir string, opts *ExportOptions) (*ExportStatus, error) {
+// are still written. A status.json file is written to outputDir alongside the bundle files,
+// recording the success or failure status of each updater. An error is only returned if ALL
+// updaters fail.
+func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter BundleExporter) (*ExportStatus, error) {
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return nil, fmt.Errorf("creating output dir: %w", err)
@@ -135,29 +184,6 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) (*Export
 		bundles[uSet] = managerOpts
 	}
 
-	// Rate limit to ~16 requests/second by default.
-	interval := 62 * time.Millisecond
-	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
-	if configuredInterval != "" {
-		parsedInterval, err := time.ParseDuration(configuredInterval)
-		switch {
-		case err != nil:
-			log.Printf("invalid interval, using default (%v): %v", interval, err)
-		case parsedInterval < interval:
-			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
-		default:
-			interval = parsedInterval
-		}
-	}
-
-	// The http client for pulling data from security sources.
-	httpClient := &http.Client{
-		Transport: &rateLimitedTransport{
-			limiter:   rate.NewLimiter(rate.Every(interval), 1),
-			transport: http.DefaultTransport,
-		},
-	}
-
 	// Export to bundle(s) with partial failure tolerance.
 	var status ExportStatus
 	for name, o := range bundles {
@@ -177,7 +203,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) (*Export
 			continue
 		}
 
-		err = bundle(bundleCtx, httpClient, w, o)
+		err = exporter.ExportBundle(bundleCtx, w, o)
 		closeErr := w.Close()
 
 		// Prefer bundle error, but capture close error if bundle succeeded

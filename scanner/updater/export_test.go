@@ -1,12 +1,16 @@
 package updater
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/quay/claircore/libvuln/updates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -160,4 +164,118 @@ func TestUpdaterStatus_JSONSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, string(data), `"error":"connection timeout"`)
+}
+
+// testBundleExporter is a simple test double for BundleExporter.
+type testBundleExporter struct {
+	exportFunc func(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error
+}
+
+func (t *testBundleExporter) ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+	return t.exportFunc(ctx, w, opts)
+}
+
+func TestExport_PartialFailure(t *testing.T) {
+	tmpDir := t.TempDir()
+	ctx := context.Background()
+
+	// Create a mock exporter that fails for specific bundles.
+	callCount := 0
+	exporter := &testBundleExporter{
+		exportFunc: func(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+			callCount++
+			// Write some data to simulate bundle content.
+			if _, err := w.Write([]byte(`{"test":"data"}`)); err != nil {
+				return err
+			}
+
+			// Simulate failure for the third bundle (arbitrary choice for testing).
+			if callCount == 3 {
+				return errors.New("simulated bundle export failure")
+			}
+			return nil
+		},
+	}
+
+	// Run export with a minimal manual URL (will be one of the bundles).
+	opts := &ExportOptions{
+		ManualVulnURL: "", // Empty URL should still work for testing structure.
+	}
+
+	status, err := Export(ctx, tmpDir, opts, exporter)
+
+	// Should not return error since not ALL bundles failed.
+	require.NoError(t, err)
+	require.NotNil(t, status)
+
+	// Verify status was recorded.
+	assert.Greater(t, len(status.Updaters), 0, "should have recorded updater statuses")
+
+	// Verify we have both successes and failures.
+	assert.Greater(t, status.SuccessCount(), 0, "should have at least one success")
+	assert.Greater(t, status.FailureCount(), 0, "should have at least one failure")
+	assert.True(t, status.HasFailures(), "should report having failures")
+
+	// Verify status.json was created.
+	statusPath := filepath.Join(tmpDir, "status.json")
+	assert.FileExists(t, statusPath)
+
+	// Verify status.json content.
+	statusData, err := os.ReadFile(statusPath)
+	require.NoError(t, err)
+
+	var readStatus ExportStatus
+	err = json.Unmarshal(statusData, &readStatus)
+	require.NoError(t, err)
+	assert.Equal(t, len(status.Updaters), len(readStatus.Updaters))
+
+	// Verify failed bundle file was deleted and successful ones remain.
+	for _, u := range status.Updaters {
+		bundlePath := filepath.Join(tmpDir, u.Name+".json.zst")
+		if u.Status == StatusFailed {
+			assert.NoFileExists(t, bundlePath, "failed bundle file should be deleted: %s", u.Name)
+		} else {
+			assert.FileExists(t, bundlePath, "successful bundle file should exist: %s", u.Name)
+		}
+	}
+}
+
+func TestExport_AllFailed(t *testing.T) {
+	tmpDir := t.TempDir()
+	ctx := context.Background()
+
+	// Create a mock exporter that always fails.
+	exporter := &testBundleExporter{
+		exportFunc: func(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+			return errors.New("all bundles fail")
+		},
+	}
+
+	opts := &ExportOptions{
+		ManualVulnURL: "",
+	}
+
+	status, err := Export(ctx, tmpDir, opts, exporter)
+
+	// Should return error when ALL bundles fail.
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "all")
+	require.NotNil(t, status)
+
+	// Verify all updaters failed.
+	assert.Equal(t, 0, status.SuccessCount())
+	assert.Greater(t, status.FailureCount(), 0)
+
+	// Verify status.json was still created.
+	statusPath := filepath.Join(tmpDir, "status.json")
+	assert.FileExists(t, statusPath)
+
+	// Verify no bundle files remain.
+	files, err := os.ReadDir(tmpDir)
+	require.NoError(t, err)
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".zst" {
+			t.Errorf("bundle file should not exist: %s", f.Name())
+		}
+	}
 }

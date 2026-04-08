@@ -19,7 +19,8 @@ func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOption
 	const timeout = 3 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	return updater.Export(ctx, outputDir, opts)
+	exporter := updater.NewDefaultBundleExporter()
+	return updater.Export(ctx, outputDir, opts, exporter)
 }
 
 // printStatusSummary prints a summary of the export results.
