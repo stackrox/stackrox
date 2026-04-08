@@ -37,6 +37,10 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 RUN \
+    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
+    # by the script `save-dir-contents` during the image build. The directory
+    # contents are then restored by the script `restore-all-dir-contents`
+    # during the container start.
     mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
     chown -R 4000:4000 /out/etc/pki/ca-trust /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
