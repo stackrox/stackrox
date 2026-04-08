@@ -386,6 +386,29 @@ generate_report() {
 
         for branch in $(printf '%s\n' "${!RELEASE_VERSIONS[@]}" | sort -V); do
             local expected_version="${RELEASE_VERSIONS[$branch]}"
+
+            # Check if this branch has anything to report
+            local has_content=false
+
+            # Check for PRs
+            if [[ -n "${PRS_BY_BRANCH[$branch]:-}" ]]; then
+                has_content=true
+            fi
+
+            # Check for orphaned issues
+            local orphaned_check
+            orphaned_check=$(jq -r --arg branch "$branch" \
+                '[.[] | select(.branch == $branch) | .key] | join("\n")' \
+                "$TEMP_DIR/orphaned-issues.json" 2>/dev/null || echo "")
+            if [[ -n "$orphaned_check" ]]; then
+                has_content=true
+            fi
+
+            # Skip empty releases
+            if [[ "$has_content" == "false" ]]; then
+                continue
+            fi
+
             echo "## $branch (Expected: $expected_version)"
             echo ""
 
