@@ -11,8 +11,5 @@ tests:
       - openshift-4.12
   set:
     env.openshift: true
-  capabilities:
-    kubeVersion:
-      version: "v1.18.0"
   expect:
     .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 4"))
