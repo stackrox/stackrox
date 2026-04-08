@@ -135,7 +135,15 @@ post_release_sections() {
         }
         /^- / {
             if (in_release) {
-                print $0
+                line = $0
+                # Convert markdown links [text](url) to Slack format <url|text>
+                while (match(line, /\[([^\]]+)\]\(([^)]+)\)/, arr)) {
+                    before = substr(line, 1, RSTART - 1)
+                    slack_link = "<" arr[2] "|" arr[1] ">"
+                    after = substr(line, RSTART + RLENGTH)
+                    line = before slack_link after
+                }
+                print line
                 lines_count++
             }
         }
