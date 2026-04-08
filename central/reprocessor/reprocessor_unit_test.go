@@ -343,10 +343,16 @@ func TestReprocessImageV2(t *testing.T) {
 	}
 	imageID := "id"
 	imageDigest := "sha256:test"
+	imageName := &storage.ImageName{
+		Registry: "docker.io",
+		Remote:   "library/nginx",
+		Tag:      "latest",
+		FullName: "docker.io/library/nginx:latest",
+	}
 	t.Run("error retrieving the image", func(tt *testing.T) {
 		testLoop, imageDS, _, _ := newTestLoop(tt)
 		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, errors.New("some error"))
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
@@ -356,7 +362,7 @@ func TestReprocessImageV2(t *testing.T) {
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
 			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(nil, false, nil),
 		)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
@@ -366,21 +372,21 @@ func TestReprocessImageV2(t *testing.T) {
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
 			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(nil, false, errors.New("some error")),
 		)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
 	t.Run("image is not pullable", func(tt *testing.T) {
 		testLoop, imageDS, _, _ := newTestLoop(tt)
 		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.ImageV2{NotPullable: true}, true, nil)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
 	t.Run("image is cluster local", func(tt *testing.T) {
 		testLoop, imageDS, _, _ := newTestLoop(tt)
 		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.ImageV2{IsClusterLocal: true}, true, nil)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
@@ -392,7 +398,7 @@ func TestReprocessImageV2(t *testing.T) {
 			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
 			imageDS.EXPECT().UpsertImage(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 		)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
@@ -404,7 +410,7 @@ func TestReprocessImageV2(t *testing.T) {
 			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
 			imageDS.EXPECT().UpsertImage(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 		)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
@@ -416,14 +422,14 @@ func TestReprocessImageV2(t *testing.T) {
 			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
 			imageDS.EXPECT().UpsertImage(gomock.Any(), gomock.Any()).Times(1).Return(errors.New("upsert error")),
 		)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
 	t.Run("reprocessingFunc error", func(tt *testing.T) {
 		testLoop, imageDS, _, _ := newTestLoop(tt)
 		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.ImageV2{}, true, nil)
-		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncError)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncError)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
@@ -432,7 +438,7 @@ func TestReprocessImageV2(t *testing.T) {
 		image := &storage.ImageV2{}
 		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil)
 		riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(image)).Times(1).Return(errors.New("some error"))
-		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
 		assert.Nil(tt, retImage)
 		assert.False(tt, reprocessed)
 	})
@@ -444,7 +450,7 @@ func TestReprocessImageV2(t *testing.T) {
 			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(image)).Times(1).Return(nil),
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, errors.New("some error")),
 		)
-		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
 		assert.Nil(tt, retImage)
 		assert.False(tt, reprocessed)
 	})
@@ -456,7 +462,7 @@ func TestReprocessImageV2(t *testing.T) {
 			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(image)).Times(1).Return(nil),
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
 		)
-		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
 		assert.Nil(tt, retImage)
 		assert.False(tt, reprocessed)
 	})
@@ -469,7 +475,7 @@ func TestReprocessImageV2(t *testing.T) {
 			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(initialImage)).Times(1).Return(nil),
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(secondImage, true, nil),
 		)
-		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
 		assert.NotNil(tt, retImage)
 		assert.False(tt, proto.Equal(initialImage, retImage))
 		assert.True(tt, proto.Equal(secondImage, retImage))
@@ -479,7 +485,7 @@ func TestReprocessImageV2(t *testing.T) {
 		testLoop, imageDS, _, _ := newTestLoop(tt)
 		image := &storage.ImageV2{}
 		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil)
-		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncNoUpdate)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncNoUpdate)
 		assert.NotNil(tt, retImage)
 		assert.True(tt, proto.Equal(image, retImage))
 		assert.True(tt, reprocessed)
@@ -494,7 +500,7 @@ func TestReprocessImageV2(t *testing.T) {
 			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).Times(1).Return(nil),
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(secondImage, true, nil),
 		)
-		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageName, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
 		assert.NotNil(tt, retImage)
 		assert.True(tt, proto.Equal(secondImage, retImage))
 		assert.True(tt, reprocessed)
