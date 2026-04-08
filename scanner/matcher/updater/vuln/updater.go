@@ -338,10 +338,9 @@ func (u *Updater) Start() error {
 			}
 			zlog.Info(ctx).Msg("completed update")
 
-			// Skip jitter when vulns have never been loaded, so that a
-			// failed first attempt (e.g. Central not yet ready at startup)
-			// retries after the base interval rather than base+jitter
-			// (10-25 min), which can exceed the CI readiness timeout.
+			// Skip jitter when vulns have never been loaded, so that
+			// failed initial attempts (e.g. Central not yet ready at startup)
+			// retry quicker to get the matcher into a functional state.
 			interval := u.updateInterval + jitter()
 			if !u.Initialized(ctx) {
 				interval = u.updateInterval
