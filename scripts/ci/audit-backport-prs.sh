@@ -444,11 +444,15 @@ generate_report() {
 
                 # Sort by author and output
                 printf '%s\n' "${pr_lines[@]}" | sort -t'|' -k1,1 | while IFS='|' read -r author slack_id pr_number title; do
-                    if [[ -n "$slack_id" ]]; then
-                        echo "- @$author ($slack_id) [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
+                    local mention
+                    if [[ "$author" == "app/red-hat-konflux" ]]; then
+                        mention=":konflux:"
+                    elif [[ -n "$slack_id" ]]; then
+                        mention="<@$slack_id>"
                     else
-                        echo "- @$author [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
+                        mention="@$author"
                     fi
+                    echo "- $mention [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
                 done
                 echo ""
             fi
