@@ -42,12 +42,11 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
         /tmp/postgres-libs.rpm \
         /tmp/postgres.rpm && \
     dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum /tmp/*.rpm /tmp/RPM-GPG-KEY-CentOS-Official
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-RUN mkdir -p /out/stackrox && \
-    mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
+RUN \
     mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
-    chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
+    chown -R 4000:4000 /out/etc/pki/ca-trust /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
 COPY static-bin/* /out/stackrox/
 RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust/source /etc/ssl
