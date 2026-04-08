@@ -799,6 +799,15 @@ func setClusterLabels(t *testing.T, clusterID string, labels map[string]string) 
 func createNamespaceWithLabels(t *testing.T, name string, labels map[string]string) {
 	client := createK8sClient(t)
 
+	// Pod Security Standards enforce before SCCs on OCP 4.11+. Set to "privileged" to allow
+	// privileged containers in tests (clusters with PSS enforcement default to "baseline").
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels["pod-security.kubernetes.io/enforce"] = "privileged"
+	labels["pod-security.kubernetes.io/audit"] = "privileged"
+	labels["pod-security.kubernetes.io/warn"] = "privileged"
+
 	namespace := &coreV1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,

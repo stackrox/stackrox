@@ -2571,6 +2571,13 @@ class Kubernetes {
 
     void ensureNamespaceWithLabels(String namespaceName, String labelKey, String labelValue) {
         def labels = labelKey ? [(labelKey): labelValue] : [:]
+
+        // Pod Security Standards enforce before SCCs on OCP 4.11+. Set to "privileged" to allow
+        // privileged containers in tests (clusters with PSS enforcement default to "baseline").
+        labels["pod-security.kubernetes.io/enforce"] = "privileged"
+        labels["pod-security.kubernetes.io/audit"] = "privileged"
+        labels["pod-security.kubernetes.io/warn"] = "privileged"
+
         def namespace = new NamespaceBuilder()
                 .withNewMetadata()
                 .withName(namespaceName)
