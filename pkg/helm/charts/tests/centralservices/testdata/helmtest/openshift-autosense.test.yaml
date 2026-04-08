@@ -17,7 +17,7 @@ tests:
 - name: "Detect OpenShift 4 if env.openshift=true and server resources are visible"
   server:
     visibleSchemas:
-      - openshift-4.1.0
+      - openshift-4.12
   set:
     env.openshift: true
   capabilities:

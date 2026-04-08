@@ -4,9 +4,9 @@ values:
       enabled: false
 server:
   visibleSchemas:
-  - openshift-4.1.0
+  - openshift-4.12
   availableSchemas:
-  - openshift-4.1.0
+  - openshift-4.12
 tests:
 - name: "scanner with default settings is in slim mode"
   set:

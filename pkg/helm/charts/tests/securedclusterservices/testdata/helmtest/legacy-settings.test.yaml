@@ -91,7 +91,7 @@ tests:
       type: OPENSHIFT4_CLUSTER
   server:
     visibleSchemas:
-      - openshift-4.1.0
+      - openshift-4.12
   expect: |
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT4_CLUSTER")
