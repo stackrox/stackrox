@@ -355,8 +355,8 @@ func (*AdmCtrlUpdateResourceRequest_ClusterLabels) isAdmCtrlUpdateResourceReques
 // from Sensor to the admission controller. Instead of purging the entire
 // image cache, only the specified entries are removed.
 type AdmCtrlImageCacheInvalidation struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	ImageKeys     []*central.InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageKeys     []*central.ImageKey    `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -391,7 +391,7 @@ func (*AdmCtrlImageCacheInvalidation) Descriptor() ([]byte, []int) {
 	return file_internalapi_sensor_admission_control_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *AdmCtrlImageCacheInvalidation) GetImageKeys() []*central.InvalidateImageCache_ImageKey {
+func (x *AdmCtrlImageCacheInvalidation) GetImageKeys() []*central.ImageKey {
 	if x != nil {
 		return x.ImageKeys
 	}
@@ -467,10 +467,10 @@ const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"\x0ecluster_labels\x18\x06 \x01(\v2\x15.sensor.ClusterLabelsH\x00R\rclusterLabels\x1a\x11\n" +
 	"\x0fResourcesSyncedB\n" +
 	"\n" +
-	"\bresource\"f\n" +
-	"\x1dAdmCtrlImageCacheInvalidation\x12E\n" +
+	"\bresource\"Q\n" +
+	"\x1dAdmCtrlImageCacheInvalidation\x120\n" +
 	"\n" +
-	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeysB\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
+	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeysB\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
 
 var (
 	file_internalapi_sensor_admission_control_proto_rawDescOnce sync.Once
@@ -501,7 +501,7 @@ var file_internalapi_sensor_admission_control_proto_goTypes = []any{
 	(*storage.Deployment)(nil),                           // 12: storage.Deployment
 	(*storage.Pod)(nil),                                  // 13: storage.Pod
 	(*storage.NamespaceMetadata)(nil),                    // 14: storage.NamespaceMetadata
-	(*central.InvalidateImageCache_ImageKey)(nil),        // 15: central.InvalidateImageCache.ImageKey
+	(*central.ImageKey)(nil),                             // 15: central.ImageKey
 }
 var file_internalapi_sensor_admission_control_proto_depIdxs = []int32{
 	7,  // 0: sensor.AdmissionControlSettings.cluster_config:type_name -> storage.DynamicClusterConfig
@@ -516,7 +516,7 @@ var file_internalapi_sensor_admission_control_proto_depIdxs = []int32{
 	14, // 9: sensor.AdmCtrlUpdateResourceRequest.namespace:type_name -> storage.NamespaceMetadata
 	6,  // 10: sensor.AdmCtrlUpdateResourceRequest.synced:type_name -> sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
 	1,  // 11: sensor.AdmCtrlUpdateResourceRequest.cluster_labels:type_name -> sensor.ClusterLabels
-	15, // 12: sensor.AdmCtrlImageCacheInvalidation.image_keys:type_name -> central.InvalidateImageCache.ImageKey
+	15, // 12: sensor.AdmCtrlImageCacheInvalidation.image_keys:type_name -> central.ImageKey
 	13, // [13:13] is the sub-list for method output_type
 	13, // [13:13] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name

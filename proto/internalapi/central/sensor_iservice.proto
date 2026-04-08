@@ -52,7 +52,7 @@ message MsgFromSensor {
 
 message ReprocessDeployments {}
 
-// next available tag: 30
+// next available tag: 31
 message MsgToSensor {
   oneof msg {
     SensorEnforcement enforcement = 1;
@@ -84,6 +84,7 @@ message MsgToSensor {
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
     IssueSecuredClusterCertsResponse issue_secured_cluster_certs_response = 28;
     SensorACK sensor_ack = 29;
+    RefreshImageCacheTTL refresh_image_cache_ttl = 30;
   }
 }
 
@@ -154,13 +155,20 @@ message ReprocessDeployment {
   repeated string deployment_ids = 1;
 }
 
-message InvalidateImageCache {
-  message ImageKey {
-    string image_id = 1;
-    string image_full_name = 2;
-    string image_id_v2 = 3;
-  }
+message ImageKey {
+  string image_id = 1;
+  string image_full_name = 2;
+  string image_id_v2 = 3;
+}
 
+message InvalidateImageCache {
+  repeated ImageKey image_keys = 1;
+}
+
+// RefreshImageCacheTTL bumps the TTL of existing image cache entries on
+// Sensor without replacing their data. Sent by Central's reprocessor for
+// images whose scan data has not changed.
+message RefreshImageCacheTTL {
   repeated ImageKey image_keys = 1;
 }
 

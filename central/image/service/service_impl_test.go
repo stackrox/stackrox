@@ -563,7 +563,7 @@ func TestDeleteImages_V2(t *testing.T) {
 	expectedMsg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_InvalidateImageCache{
 			InvalidateImageCache: &central.InvalidateImageCache{
-				ImageKeys: []*central.InvalidateImageCache_ImageKey{
+				ImageKeys: []*central.ImageKey{
 					{
 						ImageId:       "sha256:abc123",
 						ImageIdV2:     "image-uuid-1",
