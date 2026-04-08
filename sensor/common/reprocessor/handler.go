@@ -116,9 +116,9 @@ func (h *handlerImpl) ProcessRefreshImageCacheTTL(req *central.RefreshImageCache
 	return nil
 }
 
-// cacheKeyFromImageKey resolves the cache key from an InvalidateImageCache_ImageKey
+// cacheKeyFromImageKey resolves the cache key from an ImageKey
 // proto, applying the V2/V1/fullName precedence based on the FlattenImageData capability.
-func cacheKeyFromImageKey(imageKey *central.InvalidateImageCache_ImageKey) cache.Key {
+func cacheKeyFromImageKey(imageKey *central.ImageKey) cache.Key {
 	var key string
 	if centralcaps.Has(centralsensor.FlattenImageData) {
 		key = imageKey.GetImageIdV2()

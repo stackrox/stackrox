@@ -47,7 +47,7 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 		name        string
 		flatten     bool
 		cache       map[cache.Key]string
-		imageKeys   []*central.InvalidateImageCache_ImageKey
+		imageKeys   []*central.ImageKey
 		wantRemoved []cache.Key
 		wantKept    []cache.Key
 	}{
@@ -60,7 +60,7 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 				"redis:alpine":  "redis:alpine",
 				"nginx:latest":  "nginx:latest",
 			},
-			imageKeys: []*central.InvalidateImageCache_ImageKey{
+			imageKeys: []*central.ImageKey{
 				{ImageId: "sha256:abc123", ImageFullName: "docker.io/library/nginx:latest"},
 				{ImageId: "sha256:def456", ImageFullName: "quay.io/stackrox/main:4.0.0"},
 				{ImageFullName: "redis:alpine"},
@@ -77,7 +77,7 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 				"redis:alpine": "redis:alpine",
 				"nginx:latest": "nginx:latest",
 			},
-			imageKeys: []*central.InvalidateImageCache_ImageKey{
+			imageKeys: []*central.ImageKey{
 				{ImageIdV2: "uuid-v5-id-1", ImageFullName: "docker.io/library/nginx:latest"},
 				{ImageIdV2: "uuid-v5-id-2", ImageFullName: "quay.io/stackrox/main:4.0.0"},
 				{ImageFullName: "redis:alpine"},
@@ -127,7 +127,7 @@ func TestProcessRefreshImageCacheTTL(t *testing.T) {
 		name      string
 		flatten   bool
 		cache     map[cache.Key]string
-		imageKeys []*central.InvalidateImageCache_ImageKey
+		imageKeys []*central.ImageKey
 		wantKept  []cache.Key
 	}{
 		{
@@ -137,7 +137,7 @@ func TestProcessRefreshImageCacheTTL(t *testing.T) {
 				"sha256:abc123": "docker.io/library/nginx:latest",
 				"sha256:def456": "quay.io/stackrox/main:4.0.0",
 			},
-			imageKeys: []*central.InvalidateImageCache_ImageKey{
+			imageKeys: []*central.ImageKey{
 				{ImageId: "sha256:abc123", ImageFullName: "docker.io/library/nginx:latest"},
 				{ImageId: "sha256:def456", ImageFullName: "quay.io/stackrox/main:4.0.0"},
 			},
@@ -149,7 +149,7 @@ func TestProcessRefreshImageCacheTTL(t *testing.T) {
 			cache: map[cache.Key]string{
 				"uuid-v5-id-1": "docker.io/library/nginx:latest",
 			},
-			imageKeys: []*central.InvalidateImageCache_ImageKey{
+			imageKeys: []*central.ImageKey{
 				{ImageIdV2: "uuid-v5-id-1", ImageFullName: "docker.io/library/nginx:latest"},
 			},
 			wantKept: []cache.Key{"uuid-v5-id-1"},
@@ -158,7 +158,7 @@ func TestProcessRefreshImageCacheTTL(t *testing.T) {
 			name:    "non-existent key does not error",
 			flatten: false,
 			cache:   map[cache.Key]string{},
-			imageKeys: []*central.InvalidateImageCache_ImageKey{
+			imageKeys: []*central.ImageKey{
 				{ImageId: "sha256:nonexistent", ImageFullName: "does-not-exist:latest"},
 			},
 			wantKept: nil,

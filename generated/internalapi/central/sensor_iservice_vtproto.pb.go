@@ -633,11 +633,11 @@ func (m *ReprocessDeployment) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *InvalidateImageCache_ImageKey) CloneVT() *InvalidateImageCache_ImageKey {
+func (m *ImageKey) CloneVT() *ImageKey {
 	if m == nil {
-		return (*InvalidateImageCache_ImageKey)(nil)
+		return (*ImageKey)(nil)
 	}
-	r := new(InvalidateImageCache_ImageKey)
+	r := new(ImageKey)
 	r.ImageId = m.ImageId
 	r.ImageFullName = m.ImageFullName
 	r.ImageIdV2 = m.ImageIdV2
@@ -648,7 +648,7 @@ func (m *InvalidateImageCache_ImageKey) CloneVT() *InvalidateImageCache_ImageKey
 	return r
 }
 
-func (m *InvalidateImageCache_ImageKey) CloneMessageVT() proto.Message {
+func (m *ImageKey) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -658,7 +658,7 @@ func (m *InvalidateImageCache) CloneVT() *InvalidateImageCache {
 	}
 	r := new(InvalidateImageCache)
 	if rhs := m.ImageKeys; rhs != nil {
-		tmpContainer := make([]*InvalidateImageCache_ImageKey, len(rhs))
+		tmpContainer := make([]*ImageKey, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -681,7 +681,7 @@ func (m *RefreshImageCacheTTL) CloneVT() *RefreshImageCacheTTL {
 	}
 	r := new(RefreshImageCacheTTL)
 	if rhs := m.ImageKeys; rhs != nil {
-		tmpContainer := make([]*InvalidateImageCache_ImageKey, len(rhs))
+		tmpContainer := make([]*ImageKey, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -2105,7 +2105,7 @@ func (this *ReprocessDeployment) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *InvalidateImageCache_ImageKey) EqualVT(that *InvalidateImageCache_ImageKey) bool {
+func (this *ImageKey) EqualVT(that *ImageKey) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -2123,8 +2123,8 @@ func (this *InvalidateImageCache_ImageKey) EqualVT(that *InvalidateImageCache_Im
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *InvalidateImageCache_ImageKey) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*InvalidateImageCache_ImageKey)
+func (this *ImageKey) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ImageKey)
 	if !ok {
 		return false
 	}
@@ -2143,10 +2143,10 @@ func (this *InvalidateImageCache) EqualVT(that *InvalidateImageCache) bool {
 		vy := that.ImageKeys[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &InvalidateImageCache_ImageKey{}
+				p = &ImageKey{}
 			}
 			if q == nil {
-				q = &InvalidateImageCache_ImageKey{}
+				q = &ImageKey{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -2176,10 +2176,10 @@ func (this *RefreshImageCacheTTL) EqualVT(that *RefreshImageCacheTTL) bool {
 		vy := that.ImageKeys[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &InvalidateImageCache_ImageKey{}
+				p = &ImageKey{}
 			}
 			if q == nil {
-				q = &InvalidateImageCache_ImageKey{}
+				q = &ImageKey{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -3805,7 +3805,7 @@ func (m *ReprocessDeployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InvalidateImageCache_ImageKey) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageKey) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -3818,12 +3818,12 @@ func (m *InvalidateImageCache_ImageKey) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InvalidateImageCache_ImageKey) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageKey) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *InvalidateImageCache_ImageKey) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageKey) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -4778,7 +4778,7 @@ func (m *ReprocessDeployment) SizeVT() (n int) {
 	return n
 }
 
-func (m *InvalidateImageCache_ImageKey) SizeVT() (n int) {
+func (m *ImageKey) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -7896,7 +7896,7 @@ func (m *ReprocessDeployment) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InvalidateImageCache_ImageKey) UnmarshalVT(dAtA []byte) error {
+func (m *ImageKey) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7919,10 +7919,10 @@ func (m *InvalidateImageCache_ImageKey) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: InvalidateImageCache_ImageKey: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageKey: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: InvalidateImageCache_ImageKey: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageKey: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8101,7 +8101,7 @@ func (m *InvalidateImageCache) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
+			m.ImageKeys = append(m.ImageKeys, &ImageKey{})
 			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8186,7 +8186,7 @@ func (m *RefreshImageCacheTTL) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
+			m.ImageKeys = append(m.ImageKeys, &ImageKey{})
 			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -11317,7 +11317,7 @@ func (m *ReprocessDeployment) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InvalidateImageCache_ImageKey) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ImageKey) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11340,10 +11340,10 @@ func (m *InvalidateImageCache_ImageKey) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: InvalidateImageCache_ImageKey: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageKey: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: InvalidateImageCache_ImageKey: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageKey: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -11534,7 +11534,7 @@ func (m *InvalidateImageCache) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
+			m.ImageKeys = append(m.ImageKeys, &ImageKey{})
 			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -11619,7 +11619,7 @@ func (m *RefreshImageCacheTTL) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
+			m.ImageKeys = append(m.ImageKeys, &ImageKey{})
 			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

@@ -1430,16 +1430,76 @@ func (x *ReprocessDeployment) GetDeploymentIds() []string {
 	return nil
 }
 
+type ImageKey struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageId       string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	ImageFullName string                 `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName,proto3" json:"image_full_name,omitempty"`
+	ImageIdV2     string                 `protobuf:"bytes,3,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageKey) Reset() {
+	*x = ImageKey{}
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageKey) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageKey) ProtoMessage() {}
+
+func (x *ImageKey) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageKey.ProtoReflect.Descriptor instead.
+func (*ImageKey) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ImageKey) GetImageId() string {
+	if x != nil {
+		return x.ImageId
+	}
+	return ""
+}
+
+func (x *ImageKey) GetImageFullName() string {
+	if x != nil {
+		return x.ImageFullName
+	}
+	return ""
+}
+
+func (x *ImageKey) GetImageIdV2() string {
+	if x != nil {
+		return x.ImageIdV2
+	}
+	return ""
+}
+
 type InvalidateImageCache struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	ImageKeys     []*InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageKeys     []*ImageKey            `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InvalidateImageCache) Reset() {
 	*x = InvalidateImageCache{}
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1451,7 +1511,7 @@ func (x *InvalidateImageCache) String() string {
 func (*InvalidateImageCache) ProtoMessage() {}
 
 func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1464,10 +1524,10 @@ func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvalidateImageCache.ProtoReflect.Descriptor instead.
 func (*InvalidateImageCache) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{9}
+	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *InvalidateImageCache) GetImageKeys() []*InvalidateImageCache_ImageKey {
+func (x *InvalidateImageCache) GetImageKeys() []*ImageKey {
 	if x != nil {
 		return x.ImageKeys
 	}
@@ -1478,15 +1538,15 @@ func (x *InvalidateImageCache) GetImageKeys() []*InvalidateImageCache_ImageKey {
 // Sensor without replacing their data. Sent by Central's reprocessor for
 // images whose scan data has not changed.
 type RefreshImageCacheTTL struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	ImageKeys     []*InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageKeys     []*ImageKey            `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RefreshImageCacheTTL) Reset() {
 	*x = RefreshImageCacheTTL{}
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1498,7 +1558,7 @@ func (x *RefreshImageCacheTTL) String() string {
 func (*RefreshImageCacheTTL) ProtoMessage() {}
 
 func (x *RefreshImageCacheTTL) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1511,74 +1571,14 @@ func (x *RefreshImageCacheTTL) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshImageCacheTTL.ProtoReflect.Descriptor instead.
 func (*RefreshImageCacheTTL) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{10}
+	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *RefreshImageCacheTTL) GetImageKeys() []*InvalidateImageCache_ImageKey {
+func (x *RefreshImageCacheTTL) GetImageKeys() []*ImageKey {
 	if x != nil {
 		return x.ImageKeys
 	}
 	return nil
-}
-
-type InvalidateImageCache_ImageKey struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ImageId       string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageFullName string                 `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName,proto3" json:"image_full_name,omitempty"`
-	ImageIdV2     string                 `protobuf:"bytes,3,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *InvalidateImageCache_ImageKey) Reset() {
-	*x = InvalidateImageCache_ImageKey{}
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InvalidateImageCache_ImageKey) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InvalidateImageCache_ImageKey) ProtoMessage() {}
-
-func (x *InvalidateImageCache_ImageKey) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InvalidateImageCache_ImageKey.ProtoReflect.Descriptor instead.
-func (*InvalidateImageCache_ImageKey) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{9, 0}
-}
-
-func (x *InvalidateImageCache_ImageKey) GetImageId() string {
-	if x != nil {
-		return x.ImageId
-	}
-	return ""
-}
-
-func (x *InvalidateImageCache_ImageKey) GetImageFullName() string {
-	if x != nil {
-		return x.ImageFullName
-	}
-	return ""
-}
-
-func (x *InvalidateImageCache_ImageKey) GetImageIdV2() string {
-	if x != nil {
-		return x.ImageIdV2
-	}
-	return ""
 }
 
 var File_internalapi_central_sensor_iservice_proto protoreflect.FileDescriptor
@@ -1688,17 +1688,17 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01\"<\n" +
 	"\x13ReprocessDeployment\x12%\n" +
-	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"\xcc\x01\n" +
-	"\x14InvalidateImageCache\x12E\n" +
-	"\n" +
-	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeys\x1am\n" +
+	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"m\n" +
 	"\bImageKey\x12\x19\n" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12&\n" +
 	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName\x12\x1e\n" +
-	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV2\"]\n" +
-	"\x14RefreshImageCacheTTL\x12E\n" +
+	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV2\"H\n" +
+	"\x14InvalidateImageCache\x120\n" +
 	"\n" +
-	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeys2P\n" +
+	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys\"H\n" +
+	"\x14RefreshImageCacheTTL\x120\n" +
+	"\n" +
+	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys2P\n" +
 	"\rSensorService\x12?\n" +
 	"\vCommunicate\x12\x16.central.MsgFromSensor\x1a\x14.central.MsgToSensor(\x010\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
@@ -1730,12 +1730,12 @@ var file_internalapi_central_sensor_iservice_proto_goTypes = []any{
 	(*AuditLogSync)(nil),                     // 10: central.AuditLogSync
 	(*AuditLogStatusInfo)(nil),               // 11: central.AuditLogStatusInfo
 	(*ReprocessDeployment)(nil),              // 12: central.ReprocessDeployment
-	(*InvalidateImageCache)(nil),             // 13: central.InvalidateImageCache
-	(*RefreshImageCacheTTL)(nil),             // 14: central.RefreshImageCacheTTL
-	nil,                                      // 15: central.DeduperState.ResourceHashesEntry
-	nil,                                      // 16: central.AuditLogSync.NodeAuditLogFileStatesEntry
-	nil,                                      // 17: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
-	(*InvalidateImageCache_ImageKey)(nil),    // 18: central.InvalidateImageCache.ImageKey
+	(*ImageKey)(nil),                         // 13: central.ImageKey
+	(*InvalidateImageCache)(nil),             // 14: central.InvalidateImageCache
+	(*RefreshImageCacheTTL)(nil),             // 15: central.RefreshImageCacheTTL
+	nil,                                      // 16: central.DeduperState.ResourceHashesEntry
+	nil,                                      // 17: central.AuditLogSync.NodeAuditLogFileStatesEntry
+	nil,                                      // 18: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
 	(*SensorEvent)(nil),                      // 19: central.SensorEvent
 	(*NetworkFlowUpdate)(nil),                // 20: central.NetworkFlowUpdate
 	(*ScrapeUpdate)(nil),                     // 21: central.ScrapeUpdate
@@ -1805,7 +1805,7 @@ var file_internalapi_central_sensor_iservice_proto_depIdxs = []int32{
 	45, // 27: central.MsgToSensor.network_baseline_sync:type_name -> central.NetworkBaselineSync
 	10, // 28: central.MsgToSensor.audit_log_sync:type_name -> central.AuditLogSync
 	12, // 29: central.MsgToSensor.reprocess_deployment:type_name -> central.ReprocessDeployment
-	13, // 30: central.MsgToSensor.invalidate_image_cache:type_name -> central.InvalidateImageCache
+	14, // 30: central.MsgToSensor.invalidate_image_cache:type_name -> central.InvalidateImageCache
 	46, // 31: central.MsgToSensor.issue_local_scanner_certs_response:type_name -> central.IssueLocalScannerCertsResponse
 	47, // 32: central.MsgToSensor.updated_image:type_name -> storage.Image
 	5,  // 33: central.MsgToSensor.reprocess_deployments:type_name -> central.ReprocessDeployments
@@ -1819,16 +1819,16 @@ var file_internalapi_central_sensor_iservice_proto_depIdxs = []int32{
 	53, // 41: central.MsgToSensor.deployment_enhancement_request:type_name -> central.DeploymentEnhancementRequest
 	54, // 42: central.MsgToSensor.issue_secured_cluster_certs_response:type_name -> central.IssueSecuredClusterCertsResponse
 	8,  // 43: central.MsgToSensor.sensor_ack:type_name -> central.SensorACK
-	14, // 44: central.MsgToSensor.refresh_image_cache_ttl:type_name -> central.RefreshImageCacheTTL
-	15, // 45: central.DeduperState.resource_hashes:type_name -> central.DeduperState.ResourceHashesEntry
+	15, // 44: central.MsgToSensor.refresh_image_cache_ttl:type_name -> central.RefreshImageCacheTTL
+	16, // 45: central.DeduperState.resource_hashes:type_name -> central.DeduperState.ResourceHashesEntry
 	0,  // 46: central.SensorACK.action:type_name -> central.SensorACK.Action
 	1,  // 47: central.SensorACK.message_type:type_name -> central.SensorACK.MessageType
 	2,  // 48: central.NodeInventoryACK.action:type_name -> central.NodeInventoryACK.Action
 	3,  // 49: central.NodeInventoryACK.messageType:type_name -> central.NodeInventoryACK.MessageType
-	16, // 50: central.AuditLogSync.node_audit_log_file_states:type_name -> central.AuditLogSync.NodeAuditLogFileStatesEntry
-	17, // 51: central.AuditLogStatusInfo.node_audit_log_file_states:type_name -> central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
-	18, // 52: central.InvalidateImageCache.image_keys:type_name -> central.InvalidateImageCache.ImageKey
-	18, // 53: central.RefreshImageCacheTTL.image_keys:type_name -> central.InvalidateImageCache.ImageKey
+	17, // 50: central.AuditLogSync.node_audit_log_file_states:type_name -> central.AuditLogSync.NodeAuditLogFileStatesEntry
+	18, // 51: central.AuditLogStatusInfo.node_audit_log_file_states:type_name -> central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
+	13, // 52: central.InvalidateImageCache.image_keys:type_name -> central.ImageKey
+	13, // 53: central.RefreshImageCacheTTL.image_keys:type_name -> central.ImageKey
 	55, // 54: central.AuditLogSync.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
 	55, // 55: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
 	4,  // 56: central.SensorService.Communicate:input_type -> central.MsgFromSensor

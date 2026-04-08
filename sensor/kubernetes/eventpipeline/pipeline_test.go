@@ -350,7 +350,7 @@ func (s *eventPipelineSuite) Test_RefreshImageCacheTTL() {
 	msgFromCentral := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_RefreshImageCacheTtl{
 			RefreshImageCacheTtl: &central.RefreshImageCacheTTL{
-				ImageKeys: []*central.InvalidateImageCache_ImageKey{
+				ImageKeys: []*central.ImageKey{
 					{ImageId: "sha256:abc123"},
 				},
 			},

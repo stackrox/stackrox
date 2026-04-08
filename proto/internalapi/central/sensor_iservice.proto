@@ -155,13 +155,13 @@ message ReprocessDeployment {
   repeated string deployment_ids = 1;
 }
 
-message InvalidateImageCache {
-  message ImageKey {
-    string image_id = 1;
-    string image_full_name = 2;
-    string image_id_v2 = 3;
-  }
+message ImageKey {
+  string image_id = 1;
+  string image_full_name = 2;
+  string image_id_v2 = 3;
+}
 
+message InvalidateImageCache {
   repeated ImageKey image_keys = 1;
 }
 
@@ -169,7 +169,7 @@ message InvalidateImageCache {
 // Sensor without replacing their data. Sent by Central's reprocessor for
 // images whose scan data has not changed.
 message RefreshImageCacheTTL {
-  repeated InvalidateImageCache.ImageKey image_keys = 1;
+  repeated ImageKey image_keys = 1;
 }
 
 service SensorService {
