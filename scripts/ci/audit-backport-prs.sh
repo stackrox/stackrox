@@ -433,9 +433,9 @@ generate_report() {
                     slack_id=$("$SCRIPTS_ROOT/scripts/ci/get-slack-user-id.sh" "$author" 2>/dev/null || echo "")
 
                     if [[ -n "$slack_id" ]]; then
-                        echo "- @$author ($slack_id) PR #$pr_number: $title"
+                        echo "- @$author ($slack_id) [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
                     else
-                        echo "- @$author PR #$pr_number: $title"
+                        echo "- @$author [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
                     fi
                 done
                 echo ""
@@ -487,7 +487,7 @@ generate_report() {
                 echo ""
                 while IFS= read -r issue_line; do
                     IFS=':' read -r jira_key has_fix has_affected <<< "$issue_line"
-                    echo "- $jira_key: $has_fix fixVersion, $has_affected affectedVersion - https://${JIRA_BASE_URL}/browse/$jira_key"
+                    echo "- [$jira_key](https://${JIRA_BASE_URL}/browse/$jira_key): $has_fix fixVersion, $has_affected affectedVersion"
                 done <<< "$unique_issues"
                 echo ""
             fi
@@ -507,7 +507,7 @@ generate_report() {
                 echo ""
                 while IFS= read -r jira_key; do
                     [[ -z "$jira_key" ]] && continue
-                    echo "- $jira_key: https://${JIRA_BASE_URL}/browse/$jira_key"
+                    echo "- [$jira_key](https://${JIRA_BASE_URL}/browse/$jira_key)"
                 done <<< "$orphaned"
                 echo ""
             fi
