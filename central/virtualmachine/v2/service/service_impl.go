@@ -221,15 +221,15 @@ func (s *serviceImpl) batchCVESeverityByVM(ctx context.Context, vmIDs []string) 
 		var bucket *v2.VulnFixableCount
 		switch cve.GetSeverity() {
 		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-			bucket = counts.Critical
+			bucket = counts.GetCritical()
 		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-			bucket = counts.Important
+			bucket = counts.GetImportant()
 		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-			bucket = counts.Moderate
+			bucket = counts.GetModerate()
 		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-			bucket = counts.Low
+			bucket = counts.GetLow()
 		default:
-			bucket = counts.Unknown
+			bucket = counts.GetUnknown()
 		}
 		bucket.Total++
 		if cve.GetIsFixable() {
