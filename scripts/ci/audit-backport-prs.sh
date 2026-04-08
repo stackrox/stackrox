@@ -452,7 +452,7 @@ generate_report() {
                     else
                         mention="@$author"
                     fi
-                    echo "- $mention [#$pr_number](https://github.com/stackrox/stackrox/pull/$pr_number): $title"
+                    echo "- $mention <https://github.com/stackrox/stackrox/pull/$pr_number|#$pr_number>: $title"
                 done
                 echo ""
             fi
@@ -509,7 +509,7 @@ generate_report() {
                 echo ""
                 while IFS= read -r issue_line; do
                     IFS=':' read -r jira_key has_fix has_affected assignee team component <<< "$issue_line"
-                    echo "- [$jira_key](https://${JIRA_BASE_URL}/browse/$jira_key): $has_fix fixVersion, $has_affected affectedVersion (Assignee: $assignee, Team: $team, Component: $component)"
+                    echo "- <https://${JIRA_BASE_URL}/browse/$jira_key|$jira_key>: $has_fix fixVersion, $has_affected affectedVersion (Assignee: $assignee, Team: $team, Component: $component)"
                 done <<< "$unique_issues"
                 echo ""
             fi
@@ -529,7 +529,7 @@ generate_report() {
                 echo ""
                 while IFS= read -r jira_key; do
                     [[ -z "$jira_key" ]] && continue
-                    echo "- [$jira_key](https://${JIRA_BASE_URL}/browse/$jira_key)"
+                    echo "- <https://${JIRA_BASE_URL}/browse/$jira_key|$jira_key>"
                 done <<< "$orphaned"
                 echo ""
             fi

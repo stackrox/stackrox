@@ -53,157 +53,63 @@ post_to_slack() {
         -d "$payload"
 }
 
-post_header() {
+build_full_message() {
     local timestamp
     local total_prs
     local total_jira
 
     timestamp=$(grep "^Generated:" "$REPORT_FILE" | sed 's/Generated: //' || echo "Unknown")
     total_prs=$(grep -c "^- <@\|^- :konflux:" "$REPORT_FILE" 2>/dev/null || echo "0")
-    total_jira=$(grep -c "^- \[ROX-" "$REPORT_FILE" 2>/dev/null || echo "0")
+    total_jira=$(grep -c "^- <" "$REPORT_FILE" | grep -c "ROX-" || echo "0")
 
-    info "Posting header: $total_prs PRs, $total_jira Jira issues"
+    # Build header
+    local message
+    message=$(cat <<EOF
+*📋 Backport PR Audit Report*
+
+*Generated:* ${timestamp}
+*Total PRs missing Jira:* ${total_prs}
+*Total Jira issues with missing metadata:* ${total_jira}
+
+<${GITHUB_RUN_URL}|View full report in GitHub Actions>
+
+───────────────────────────────────────
+EOF
+)
+
+    # Extract report content (skip first two lines: title and timestamp)
+    local report_content
+    report_content=$(tail -n +4 "$REPORT_FILE")
+
+    message="${message}
+${report_content}"
+
+    echo "$message"
+}
+
+
+post_message() {
+    info "Building and posting complete report"
+
+    local message
+    message=$(build_full_message)
 
     jq -n \
         --arg channel "$SLACK_CHANNEL" \
-        --arg timestamp "$timestamp" \
-        --arg total_prs "$total_prs" \
-        --arg total_jira "$total_jira" \
-        --arg url "$GITHUB_RUN_URL" \
+        --arg text "$message" \
         '{
           "channel": $channel,
           "text": "Backport PR Audit Report",
           "blocks": [
             {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "📋 Backport PR Audit Report"
-              }
-            },
-            {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": ("*Generated:* " + $timestamp + "\n*Total PRs missing Jira:* " + $total_prs + "\n*Total Jira issues with missing metadata:* " + $total_jira)
+                "text": $text
               }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": ("<" + $url + "|View full report in GitHub Actions>")
-              }
-            },
-            {
-              "type": "divider"
             }
           ]
         }' | post_to_slack "$(cat -)"
-}
-
-post_release_sections() {
-    info "Posting release sections"
-
-    # Extract each release section and post separately
-    awk '
-        BEGIN {
-            in_release = 0
-            release_name = ""
-            lines_count = 0
-        }
-        /^## release-/ {
-            if (in_release && lines_count > 0) {
-                # Output previous release end marker
-                print "RELEASE_END"
-            }
-            in_release = 1
-            release_name = $0
-            gsub(/^## /, "", release_name)
-            lines_count = 0
-            print "RELEASE_START:" release_name
-            next
-        }
-        /^### / {
-            if (in_release) {
-                section_header = $0
-                gsub(/^### /, "", section_header)
-                print ""
-                print "*" section_header "*"
-            }
-            next
-        }
-        /^- / {
-            if (in_release) {
-                line = $0
-                # Convert markdown links [text](url) to Slack format <url|text>
-                while (match(line, /\[([^\]]+)\]\(([^)]+)\)/, arr)) {
-                    before = substr(line, 1, RSTART - 1)
-                    slack_link = "<" arr[2] "|" arr[1] ">"
-                    after = substr(line, RSTART + RLENGTH)
-                    line = before slack_link after
-                }
-                print line
-                lines_count++
-            }
-        }
-        END {
-            if (in_release && lines_count > 0) {
-                print "RELEASE_END"
-            }
-        }
-    ' "$REPORT_FILE" | {
-        local release_name=""
-        local content=""
-
-        while IFS= read -r line; do
-            if [[ "$line" =~ ^RELEASE_START: ]]; then
-                release_name="${line#RELEASE_START:}"
-                content=""
-            elif [[ "$line" == "RELEASE_END" ]]; then
-                if [[ -n "$content" ]]; then
-                    info "  Posting: $release_name"
-
-                    # Build message with release header and content (using actual newlines)
-                    local message
-                    message=$(printf "*%s*\n\n%s" "$release_name" "$content")
-
-                    jq -n \
-                        --arg channel "$SLACK_CHANNEL" \
-                        --arg text "$message" \
-                        '{
-                          "channel": $channel,
-                          "text": "Release section",
-                          "blocks": [
-                            {
-                              "type": "section",
-                              "text": {
-                                "type": "mrkdwn",
-                                "text": $text
-                              }
-                            },
-                            {
-                              "type": "divider"
-                            }
-                          ]
-                        }' | post_to_slack "$(cat -)"
-
-                    # Small delay to avoid rate limiting
-                    sleep 1
-                fi
-                release_name=""
-                content=""
-            else
-                # Append line with actual newline
-                if [[ -z "$content" ]]; then
-                    content="$line"
-                else
-                    content="$content
-$line"
-                fi
-            fi
-        done
-    }
 }
 
 main() {
@@ -213,8 +119,7 @@ main() {
     fi
 
     validate_environment
-    post_header
-    post_release_sections
+    post_message
 
     info "✅ Posted to Slack channel: $SLACK_CHANNEL"
 }
