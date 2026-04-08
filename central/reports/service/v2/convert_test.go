@@ -7,6 +7,7 @@ import (
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
@@ -357,6 +358,7 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 }
 
 func (s *typeConversionTestSuite) TestConvertEntityScope() {
+	s.T().Setenv(features.VulnerabilityReportsEnhancedFiltering.EnvVar(), "true")
 	apiScope := &apiV2.EntityScope{
 		Rules: []*apiV2.EntityScopeRule{
 			{

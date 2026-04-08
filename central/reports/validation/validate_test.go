@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +25,7 @@ func regexValue(v string) *apiV2.RuleValue {
 }
 
 func TestValidateEntityScope(t *testing.T) {
+	t.Setenv(features.VulnerabilityReportsEnhancedFiltering.EnvVar(), "true")
 	cases := map[string]struct {
 		scope       *apiV2.EntityScope
 		expectError bool
@@ -69,7 +71,7 @@ func TestValidateEntityScope(t *testing.T) {
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_UNSET, exactValue("x")),
 			),
 			expectError: true,
-			errContains: "Unexpected entity scope rule with an unset field",
+			errContains: "with an unset field",
 		},
 		"duplicate entity+field pair": {
 			scope: makeEntityScope(
@@ -254,6 +256,7 @@ func TestValidateSchedule(t *testing.T) {
 }
 
 func TestValidateReportFiltersQuery(t *testing.T) {
+	t.Setenv(features.VulnerabilityReportsEnhancedFiltering.EnvVar(), "true")
 	v := &Validator{}
 	baseFilters := func(query string) *apiV2.ReportConfiguration {
 		return &apiV2.ReportConfiguration{

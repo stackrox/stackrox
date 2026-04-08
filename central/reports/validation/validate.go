@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -173,6 +174,9 @@ func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) err
 	case *apiV2.ResourceScope_CollectionScope:
 		return v.validateCollectionScope(ref.CollectionScope)
 	case *apiV2.ResourceScope_EntityScope:
+		if !features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+		}
 		return validateEntityScope(ref.EntityScope)
 	default:
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
@@ -257,9 +261,11 @@ func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) err
 		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
 			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
 	}
-	if q := filters.GetQuery(); q != "" {
-		if _, err := search.ParseQuery(q); err != nil {
-			return errors.Wrapf(errox.InvalidArgs, "Invalid query in vulnerability report filters: %s", err)
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		if q := filters.GetQuery(); q != "" {
+			if _, err := search.ParseQuery(q); err != nil {
+				return errors.Wrapf(errox.InvalidArgs, "Invalid query in vulnerability report filters: %s", err)
+			}
 		}
 	}
 	return nil
@@ -342,6 +348,16 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	return nil
 }
 
+func collectionSnapshot(collection *storage.ResourceCollection) *storage.CollectionSnapshot {
+	if collection == nil {
+		return nil
+	}
+	return &storage.CollectionSnapshot{
+		Id:   collection.GetId(),
+		Name: collection.GetName(),
+	}
+}
+
 func generateReportSnapshot(
 	config *storage.ReportConfiguration,
 	collection *storage.ResourceCollection,
@@ -355,17 +371,17 @@ func generateReportSnapshot(
 		Name:                  config.GetName(),
 		Description:           config.GetDescription(),
 		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Collection: &storage.CollectionSnapshot{
-			Id:   config.GetResourceScope().GetCollectionId(),
-			Name: collection.GetName(),
-		},
-		ResourceScope: config.GetResourceScope(),
-		Schedule:      config.GetSchedule(),
+		Collection:            collectionSnapshot(collection),
+		Schedule:              config.GetSchedule(),
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_WAITING,
 			ReportRequestType:        requestType,
 			ReportNotificationMethod: notificationMethod,
 		},
+	}
+
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		snapshot.ResourceScope = config.GetResourceScope()
 	}
 
 	reportFilters := config.GetVulnReportFilters().CloneVT()

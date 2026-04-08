@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -86,9 +87,11 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
-		Query:                  filters.GetQuery(),
 	}
 
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		ret.Query = filters.GetQuery()
+	}
 	for _, severity := range filters.GetSeverities() {
 		ret.Severities = append(ret.Severities, storage.VulnerabilitySeverity(severity))
 	}
@@ -127,7 +130,9 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 	case *apiV2.ResourceScope_CollectionScope:
 		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: ref.CollectionScope.GetCollectionId()}
 	case *apiV2.ResourceScope_EntityScope:
-		ret.ScopeReference = &storage.ResourceScope_EntityScope{EntityScope: convertV2EntityScopeToStorage(ref.EntityScope)}
+		if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			ret.ScopeReference = &storage.ResourceScope_EntityScope{EntityScope: convertV2EntityScopeToStorage(ref.EntityScope)}
+		}
 	}
 	return ret
 }
@@ -253,7 +258,9 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
-		Query:                  filters.GetQuery(),
+	}
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		ret.Query = filters.GetQuery()
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -306,7 +313,9 @@ func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope
 			},
 		}
 	case *storage.ResourceScope_EntityScope:
-		ret.ScopeReference = &apiV2.ResourceScope_EntityScope{EntityScope: convertStorageEntityScopeToV2(ref.EntityScope)}
+		if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			ret.ScopeReference = &apiV2.ResourceScope_EntityScope{EntityScope: convertStorageEntityScopeToV2(ref.EntityScope)}
+		}
 	}
 	return ret, nil
 }
@@ -482,9 +491,12 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 	}
 	v2snaps := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
 	for _, snapshot := range snapshots {
-		resourceScope, err := s.convertProtoResourceScopeToV2(snapshot.GetResourceScope())
-		if err != nil {
-			return nil, err
+		var resourceScope *apiV2.ResourceScope
+		if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			resourceScope, err = s.convertProtoResourceScopeToV2(snapshot.GetResourceScope())
+			if err != nil {
+				return nil, err
+			}
 		}
 		snapshotv2 := &apiV2.ReportSnapshot{
 			ReportStatus:       s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
