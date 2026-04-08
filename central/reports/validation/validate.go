@@ -195,6 +195,13 @@ func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionRefer
 	return nil
 }
 
+// validateEntityScope validates the provided EntityScope and its rules.
+// It returns an error if:
+// 1. the scope is nil;
+// 2. any rule has an unset entity or field;
+// 3. a rule uses the unsupported (cluster, annotation) combination;
+// 4. a duplicate (entity, field) pair appears
+// 5. a rule has no values, or a label rule contains values that are not in `key=value` format.
 func validateEntityScope(es *apiV2.EntityScope) error {
 	if es == nil {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
@@ -209,7 +216,7 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule: %s", rule.GetEntity())
 		}
 		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
-			return errors.Wrap(errox.InvalidArgs, "Unexpected entity scope rule with an unset field")
+			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule for %s with an unset field", rule.GetEntity())
 		}
 		// Cluster annotation is not indexed and therefore unsupported.
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
