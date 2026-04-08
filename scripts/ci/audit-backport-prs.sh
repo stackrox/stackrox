@@ -138,10 +138,10 @@ detect_release_versions() {
 fetch_backport_prs() {
     info "Fetching backport PRs from GitHub"
 
-    # Fetch OPEN PRs with backport label targeting release branches
+    # Fetch OPEN non-draft PRs with backport label targeting release branches
     gh pr list \
         --repo stackrox/stackrox \
-        --search "label:backport" \
+        --search "label:backport draft:false" \
         --state open \
         --limit 1000 \
         --json number,title,author,baseRefName,body,state \
