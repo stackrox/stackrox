@@ -200,7 +200,10 @@ spec:
       taskRef: *post-bigquery-metrics-ref
 
     - name: clone-repository
-      when: $(tasks.determine-if-pipeline-should-skip.results.SHOULD_SKIP_PIPELINE) != "SKIP"
+      when:
+      - input: $(tasks.determine-if-pipeline-should-skip.results.SHOULD_SKIP_PIPELINE)
+        operator: in
+        values: [RUN]
       params:
       - name: url
         value: $(params.git-url)
