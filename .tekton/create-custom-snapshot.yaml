@@ -9,17 +9,11 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-comment: "/konflux-retest create-custom-snapshot"
-    # TODO(ROX-21073): re-enable for all PR branches
+    # This pipeline is triggered for all PRs and pushes to the master, release branches and tags.
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (
-        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
-      ) || (
-        event == "pull_request" && (
-          target_branch.startsWith("release-") ||
-          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
-        ) && body.action != "ready_for_review"
-      )
+      (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$"))
+      ||
+      (event == "pull_request" && body.action != "ready_for_review")
     # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
@@ -120,6 +114,38 @@ spec:
     - name: git-auth
 
     tasks:
+    - name: determine-if-pipeline-should-skip
+      taskSpec:
+        steps:
+        - image: quay.io/konflux-ci/release-service-utils:latest@sha256:987b4b06a9b12d859b50d152e07e4a20fa32bfc9beeecd8f5b1012da3ce42d58
+          env:
+          - name: GH_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: rhacs-github-bot-token
+                key: token
+          - name: SOURCE_BRANCH
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['pipelinesascode.tekton.dev/source-branch']
+          - name: TARGET_BRANCH
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['pipelinesascode.tekton.dev/branch']
+          - name: PULL_REQUEST_NUMBER
+            value: '{{pull_request_number}}'
+          script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            # Normalize branch names because Konflux sometimes prepends refs/heads/ and sometimes doesn't.
+            SOURCE_BRANCH="${SOURCE_BRANCH#refs/heads/}"
+            TARGET_BRANCH="${TARGET_BRANCH#refs/heads/}"
+
+            echo "Source branch: ${SOURCE_BRANCH}"
+            echo "Target branch: ${TARGET_BRANCH}"
+            echo "Pull request number: ${PULL_REQUEST_NUMBER}"
+            echo "GH_TOKEN present: $(echo -n $GH_TOKEN | wc -c)"
 
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
