@@ -106,6 +106,7 @@ spec:
           value: "password"
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
+        {{- include "srox.envVars" (list . "deployment" "central-db" "central-db") | nindent 8 }}
         ports:
         - containerPort: 5432
           name: postgresql

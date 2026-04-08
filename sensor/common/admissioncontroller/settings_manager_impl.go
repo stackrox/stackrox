@@ -22,6 +22,7 @@ type settingsManager struct {
 	currSettings                  *sensor.AdmissionControlSettings
 	settingsStream                *concurrency.ValueStream[*sensor.AdmissionControlSettings]
 	sensorEventsStream            *concurrency.ValueStream[*sensor.AdmCtrlUpdateResourceRequest]
+	imageCacheInvalidationStream  *concurrency.ValueStream[*sensor.AdmCtrlImageCacheInvalidation]
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
 	lastClusterLabels             map[string]string
@@ -45,9 +46,10 @@ type clusterIDWaiter interface {
 // NewSettingsManager creates a new settings manager for admission control settings.
 func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGetter, deployments store.DeploymentStore, pods store.PodStore, namespaces store.NamespaceStore) SettingsManager {
 	return &settingsManager{
-		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
-		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
-		centralEndpoint:    env.CentralEndpoint.Setting(),
+		settingsStream:               concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
+		sensorEventsStream:           concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
+		imageCacheInvalidationStream: concurrency.NewValueStream[*sensor.AdmCtrlImageCacheInvalidation](nil),
+		centralEndpoint:              env.CentralEndpoint.Setting(),
 
 		clusterID:     clusterID,
 		clusterLabels: clusterLabels,
@@ -178,12 +180,21 @@ func copyMap(m map[string]string) map[string]string {
 	return result
 }
 
+func (p *settingsManager) InvalidateImageCache(keys []*central.ImageKey) {
+	p.imageCacheInvalidationStream.Push(&sensor.AdmCtrlImageCacheInvalidation{
+		ImageKeys: keys,
+	})
+}
 func (p *settingsManager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
 	return p.settingsStream
 }
 
 func (p *settingsManager) SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest] {
 	return p.sensorEventsStream
+}
+
+func (p *settingsManager) ImageCacheInvalidationStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlImageCacheInvalidation] {
+	return p.imageCacheInvalidationStream
 }
 
 func (p *settingsManager) GetResourcesForSync() []*sensor.AdmCtrlUpdateResourceRequest {

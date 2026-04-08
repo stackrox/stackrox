@@ -13,6 +13,7 @@ message MsgToAdmissionControl {
   oneof msg {
     AdmissionControlSettings settings_push = 1;
     AdmCtrlUpdateResourceRequest update_resource_request = 2;
+    AdmCtrlImageCacheInvalidation image_cache_invalidation = 3;
   }
 }
 

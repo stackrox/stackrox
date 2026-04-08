@@ -4,6 +4,7 @@ package sensor;
 
 import "google/protobuf/timestamp.proto";
 import "internalapi/central/sensor_events.proto";
+import "internalapi/central/sensor_iservice.proto";
 import "storage/cluster.proto";
 import "storage/deployment.proto";
 import "storage/namespace_metadata.proto";
@@ -45,4 +46,11 @@ message AdmCtrlUpdateResourceRequest {
     ResourcesSynced synced = 5;
     ClusterLabels cluster_labels = 6;
   }
+}
+
+// AdmCtrlImageCacheInvalidation carries targeted image cache invalidation keys
+// from Sensor to the admission controller. Instead of purging the entire
+// image cache, only the specified entries are removed.
+message AdmCtrlImageCacheInvalidation {
+  repeated central.ImageKey image_keys = 1;
 }

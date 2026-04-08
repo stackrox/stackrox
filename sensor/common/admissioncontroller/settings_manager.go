@@ -18,7 +18,9 @@ type SettingsManager interface {
 	GetResourcesForSync() []*sensor.AdmCtrlUpdateResourceRequest
 
 	FlushCache()
+	InvalidateImageCache(keys []*central.ImageKey)
 
 	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
 	SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
+	ImageCacheInvalidationStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlImageCacheInvalidation]
 }

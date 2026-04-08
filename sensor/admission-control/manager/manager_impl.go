@@ -108,6 +108,8 @@ type manager struct {
 	imageNameCacheEnabled    bool
 	imageFetchGroup          *coalescer.Coalescer[*storage.Image]
 
+	imageCacheInvalidationC chan *sensor.AdmCtrlImageCacheInvalidation
+
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
 	namespaces       *resources.NamespaceStore
@@ -160,12 +162,13 @@ func NewManager(namespace string, maxImageCacheSize int64, imageNameCacheEnabled
 
 		alertsC: make(chan []*storage.Alert),
 
-		namespaces:       nsStore,
-		deployments:      depStore,
-		pods:             podStore,
-		resourceUpdatesC: make(chan *sensor.AdmCtrlUpdateResourceRequest),
-		initialSyncSig:   concurrency.NewSignal(),
-		depClient:        deploymentServiceClient,
+		namespaces:              nsStore,
+		deployments:             depStore,
+		pods:                    podStore,
+		resourceUpdatesC:        make(chan *sensor.AdmCtrlUpdateResourceRequest),
+		imageCacheInvalidationC: make(chan *sensor.AdmCtrlImageCacheInvalidation),
+		initialSyncSig:          concurrency.NewSignal(),
+		depClient:               deploymentServiceClient,
 
 		ownNamespace: namespace,
 	}
@@ -247,6 +250,10 @@ func (m *manager) ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest
 	return m.resourceUpdatesC
 }
 
+func (m *manager) ImageCacheInvalidationC() chan<- *sensor.AdmCtrlImageCacheInvalidation {
+	return m.imageCacheInvalidationC
+}
+
 func (m *manager) InitialResourceSyncSig() *concurrency.Signal {
 	return &m.initialSyncSig
 }
@@ -264,6 +271,8 @@ func (m *manager) run() {
 			m.ProcessNewSettings(newSettings)
 		case req := <-m.resourceUpdatesC:
 			m.processUpdateResourceRequest(req)
+		case inv := <-m.imageCacheInvalidationC:
+			m.processImageCacheInvalidation(inv)
 		default:
 			// Select on syncC only if there is nothing to be read from the main
 			// channels. The duplication of select branches is a bit ugly, but inevitable
@@ -276,6 +285,8 @@ func (m *manager) run() {
 				m.ProcessNewSettings(newSettings)
 			case req := <-m.resourceUpdatesC:
 				m.processUpdateResourceRequest(req)
+			case inv := <-m.imageCacheInvalidationC:
+				m.processImageCacheInvalidation(inv)
 			case syncSig := <-m.syncC:
 				syncSig.Signal()
 			}
@@ -516,4 +527,30 @@ func (m *manager) processUpdateResourceRequest(req *sensor.AdmCtrlUpdateResource
 
 func (m *manager) getDeploymentForPod(namespace, podName string) *storage.Deployment {
 	return m.deployments.Get(namespace, m.pods.GetDeploymentID(namespace, podName))
+}
+
+func (m *manager) processImageCacheInvalidation(inv *sensor.AdmCtrlImageCacheInvalidation) {
+	s := m.currentState()
+	flatten := s != nil && s.GetFlattenImageData()
+
+	invalidated := 0
+	for _, key := range inv.GetImageKeys() {
+		cacheKey := key.GetImageId()
+		if flatten && key.GetImageIdV2() != "" {
+			cacheKey = key.GetImageIdV2()
+		}
+		fullName := key.GetImageFullName()
+
+		if cacheKey != "" {
+			m.imageCache.Remove(cacheKey)
+			m.imageFetchGroup.Forget(cacheKey)
+			invalidated++
+		}
+		if fullName != "" {
+			m.imageNameToImageCacheKey.Remove(fullName)
+			m.imageFetchGroup.Forget(fullName)
+		}
+	}
+
+	log.Infof("Targeted image cache invalidation: invalidated %d entries", invalidated)
 }

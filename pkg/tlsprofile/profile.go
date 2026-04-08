@@ -85,7 +85,7 @@ var (
 )
 
 var supportedVersions = map[string]uint16{
-	"TLSv1.0": tls.VersionTLS10,
+	"TLSv1":   tls.VersionTLS10,
 	"TLSv1.1": tls.VersionTLS11,
 	"TLSv1.2": tls.VersionTLS12,
 	"TLSv1.3": tls.VersionTLS13,
@@ -122,6 +122,7 @@ func parseMinVersion(s string) (uint16, error) {
 
 func parseCipherSuites(s string) ([]uint16, error) {
 	var suites []uint16
+	var skipped []string
 	for _, name := range strings.Split(s, ",") {
 		name = strings.TrimSpace(name)
 		if name == "" {
@@ -129,9 +130,13 @@ func parseCipherSuites(s string) ([]uint16, error) {
 		}
 		id, ok := supportedCipherSuites[name]
 		if !ok {
-			return nil, fmt.Errorf("unknown cipher suite %q", name)
+			skipped = append(skipped, name)
+			continue
 		}
 		suites = append(suites, id)
+	}
+	if len(skipped) > 0 {
+		log.Warnf("Ignoring cipher suites not supported by Go: %s", strings.Join(skipped, ", "))
 	}
 	if len(suites) == 0 {
 		return nil, errors.New("no valid cipher suites in input")

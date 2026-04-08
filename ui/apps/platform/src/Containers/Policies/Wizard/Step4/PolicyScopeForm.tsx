@@ -37,6 +37,7 @@ import { getImages } from 'services/imageService';
 import { initialExcludedDeployment, initialScope } from '../../policies.utils';
 import PolicyScopeCardLegacy from './PolicyScopeCardLegacy';
 import InclusionScopeCard from './InclusionScopeCard';
+import ExclusionScopeCard from './ExclusionScopeCard';
 
 function PolicyScopeForm(): ReactElement {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = useState(false);
@@ -209,13 +210,24 @@ function PolicyScopeForm(): ReactElement {
                         {excludedDeploymentScopes?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
-                                <PolicyScopeCardLegacy
-                                    type="exclusion"
-                                    name={`excludedDeploymentScopes[${index}]`}
-                                    clusters={clusters}
-                                    onDelete={() => deleteExclusionDeploymentScope(index)}
-                                    hasAuditLogEventSource={hasAuditLogEventSource}
-                                />
+                                {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
+                                    <ExclusionScopeCard
+                                        index={index}
+                                        excludedDeploymentScope={excludedDeploymentScopes[index]}
+                                        clusters={clusters}
+                                        handleChange={handleChange}
+                                        setFieldValue={setFieldValue}
+                                        onDelete={() => deleteExclusionDeploymentScope(index)}
+                                    />
+                                ) : (
+                                    <PolicyScopeCardLegacy
+                                        type="exclusion"
+                                        name={`excludedDeploymentScopes[${index}]`}
+                                        clusters={clusters}
+                                        onDelete={() => deleteExclusionDeploymentScope(index)}
+                                        hasAuditLogEventSource={hasAuditLogEventSource}
+                                    />
+                                )}
                             </GridItem>
                         ))}
                     </Grid>

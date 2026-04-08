@@ -83,7 +83,7 @@ jobs:
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
@@ -95,7 +95,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # ratchet:actions/upload-artifact@v7
         with:
           name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
@@ -141,7 +141,7 @@ jobs:
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
@@ -153,7 +153,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # ratchet:actions/upload-artifact@v7
         with:
           name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}

@@ -20,6 +20,7 @@ type Manager interface {
 
 	SettingsUpdateC() chan<- *sensor.AdmissionControlSettings
 	ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest
+	ImageCacheInvalidationC() chan<- *sensor.AdmCtrlImageCacheInvalidation
 
 	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
 	SensorConnStatusFlag() *concurrency.Flag

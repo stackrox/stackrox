@@ -1261,11 +1261,11 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 
 	if features.FlattenImageData.Enabled() {
 		// Extract ImageV2 ID and SHA from search results
-		keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(results))
+		keys := make([]*central.ImageKey, 0, len(results))
 		for _, res := range results {
 			if res.FieldValues != nil {
 				// Set both ImageId (SHA for old sensors) and ImageIdV2 (ImageV2 ID for new sensors)
-				keys = append(keys, &central.InvalidateImageCache_ImageKey{
+				keys = append(keys, &central.ImageKey{
 					ImageId:       res.FieldValues[strings.ToLower(search.ImageSHA.String())], // SHA for backward compatibility
 					ImageIdV2:     res.ID,                                                     // ImageV2 ID for new sensors
 					ImageFullName: res.FieldValues[strings.ToLower(search.ImageName.String())],
@@ -1283,9 +1283,9 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 			})
 		}
 	} else {
-		keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
+		keys := make([]*central.ImageKey, 0, len(idSlice))
 		for _, id := range idSlice {
-			keys = append(keys, &central.InvalidateImageCache_ImageKey{
+			keys = append(keys, &central.ImageKey{
 				ImageId: id,
 			})
 		}
@@ -1348,7 +1348,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+	if !enrichmentResult.ImageUpdated || !enrichmentResult.ScanResult.HasScanData() {
 		return &v1.WatchImageResponse{
 			ErrorMessage: "scan could not be completed, due to no applicable registry/scanner integration",
 			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,
@@ -1397,7 +1397,7 @@ func (s *serviceImpl) watchImageV2(ctx context.Context, containerImage *storage.
 		}, nil
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+	if !enrichmentResult.ImageUpdated || !enrichmentResult.ScanResult.HasScanData() {
 		return &v1.WatchImageResponse{
 			ErrorMessage: "scan could not be completed, due to no applicable registry/scanner integration",
 			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,

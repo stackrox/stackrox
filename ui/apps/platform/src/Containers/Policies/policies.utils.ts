@@ -21,6 +21,7 @@ import type {
     PolicyGroup,
     PolicyImageExclusion,
     PolicyScope,
+    PolicyScopeLabel,
     ValueObj,
 } from 'types/policy.proto';
 import type { SearchFilter } from 'types/search';
@@ -267,38 +268,15 @@ export function getClusterName(clusters: ClusterScopeObject[], clusterId: string
 /* PolicyWizard steps */
 
 export type WizardPolicyStep4 = {
-    scope: WizardScope[];
-    excludedDeploymentScopes: WizardExcludedDeployment[];
+    scope: PolicyScope[];
+    excludedDeploymentScopes: PolicyExcludedDeployment[];
     excludedImageNames: string[];
 };
 
-export type WizardExcludedDeployment = {
-    name: string;
-    scope: WizardExcludedScope | null;
-};
-
-export type WizardExcludedScope = {
-    cluster: string;
-    namespace: string;
-    label: WizardScopeLabel | null;
-};
-
-/*
- * WizardScope whose label object whose properties have either empty string or undefined values
- * corresponds to PolicyScope label value null.
- */
-
-export type WizardScope = WizardExcludedScope & {
-    clusterLabel: WizardScopeLabel | null;
-    namespaceLabel: WizardScopeLabel | null;
-};
-
-export type WizardScopeLabel = {
-    key: string;
-    value: string;
-};
-
-export const initialScope: WizardScope = {
+// The exclusion UI does not show cluster or namespace label yet, but inclusion and exclusion both
+// use the same backend proto (storage.Scope), so defaults include the full PolicyScope to match the API.
+// We plan to add those fields to the exclusion UI later.
+export const initialScope: PolicyScope = {
     cluster: '',
     clusterLabel: null,
     namespace: '',
@@ -306,9 +284,9 @@ export const initialScope: WizardScope = {
     label: null,
 };
 
-export const initialExcludedDeployment: WizardExcludedDeployment = {
+export const initialExcludedDeployment: PolicyExcludedDeployment = {
     name: '',
-    scope: null,
+    scope: initialScope,
 };
 
 // TODO: work with API to update contract for returning number comparison fields
@@ -462,6 +440,35 @@ function getExclusionFields({ exclusions }: Policy): {
     };
 }
 
+function isPolicyScopeLabelEmpty(label: PolicyScopeLabel | null | undefined): boolean {
+    if (label == null) {
+        return true;
+    }
+    return label.key === '' && label.value === '';
+}
+
+/**
+ * Whether a deployment exclusion scope should be sent as null to Central (matches validateScope
+ * "no field populated"). Call only after trimming in trimClientWizardPolicy.
+ */
+export function isExcludedDeploymentScopeEmpty(scope: PolicyScope | null | undefined): boolean {
+    if (scope == null) {
+        return true;
+    }
+
+    const hasCluster = (scope.cluster ?? '') !== '';
+    const hasNamespace = (scope.namespace ?? '') !== '';
+    if (hasCluster || hasNamespace) {
+        return false;
+    }
+
+    return (
+        isPolicyScopeLabelEmpty(scope.label) &&
+        isPolicyScopeLabelEmpty(scope.clusterLabel) &&
+        isPolicyScopeLabelEmpty(scope.namespaceLabel)
+    );
+}
+
 /*
  * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
  */
@@ -469,7 +476,14 @@ export function getServerPolicyExclusions(policy: ClientPolicy): Policy['exclusi
     const exclusions: Policy['exclusions'] = [];
 
     policy.excludedDeploymentScopes.forEach((deployment) => {
-        exclusions.push({ deployment, image: null });
+        const deploymentForServer = isExcludedDeploymentScopeEmpty(deployment.scope)
+            ? { ...deployment, scope: null }
+            : deployment;
+
+        exclusions.push({
+            deployment: deploymentForServer,
+            image: null,
+        });
     });
 
     policy.excludedImageNames.forEach((name) => {
@@ -505,32 +519,33 @@ function getFormattedServerPolicyFields(policy: ClientPolicy): Policy['policySec
     return policySections;
 }
 
-// Impure function assumes caller has cloned the scope!
-function trimPolicyScope(scope: PolicyScope) {
-    /* eslint-disable no-param-reassign */
-    if (typeof scope.cluster === 'string') {
-        scope.cluster = scope.cluster.trim();
+/**
+ * Trims key/value. Returns null when both are empty. Central treats a present but empty "label"
+ * message differently from null.
+ */
+function trimLabelToNullIfEmpty(
+    label: PolicyScopeLabel | null | undefined
+): PolicyScopeLabel | null {
+    if (label == null) {
+        return null;
     }
-
-    if (typeof scope.namespace === 'string') {
-        scope.namespace = scope.namespace.trim();
+    const key = (label.key ?? '').trim();
+    const value = (label.value ?? '').trim();
+    if (key === '' && value === '') {
+        return null;
     }
-    /* eslint-enable no-param-reassign */
+    return { key, value };
+}
 
-    // TODO label key and value: make sure about empty string versus undefined.
-    /*
-    if (scope.label) {
-        if (typeof scope.label.key === 'string') {
-            scope.label.key = scope.label.key.trim();
-        }
-
-        if (typeof scope.label.value === 'string') {
-            scope.label.value = scope.label.value.trim();
-        }
-    }
-    */
-
-    return scope;
+function trimPolicyScope(scope: PolicyScope): PolicyScope {
+    return {
+        ...scope,
+        cluster: typeof scope.cluster === 'string' ? scope.cluster.trim() : scope.cluster,
+        namespace: typeof scope.namespace === 'string' ? scope.namespace.trim() : scope.namespace,
+        label: trimLabelToNullIfEmpty(scope.label),
+        clusterLabel: trimLabelToNullIfEmpty(scope.clusterLabel),
+        namespaceLabel: trimLabelToNullIfEmpty(scope.namespaceLabel),
+    };
 }
 
 function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
@@ -580,7 +595,7 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
     if (Array.isArray(policy.scope)) {
         // for instead of forEach to work around no-param-reassign lint error.
         for (let i = 0; i !== policy.scope.length; i += 1) {
-            trimPolicyScope(policy.scope[i]);
+            policy.scope[i] = trimPolicyScope(policy.scope[i]);
         }
     }
 
@@ -590,7 +605,7 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
             const excludedDeploymentScope = policy.excludedDeploymentScopes[i];
 
             if (excludedDeploymentScope.scope) {
-                trimPolicyScope(excludedDeploymentScope.scope);
+                excludedDeploymentScope.scope = trimPolicyScope(excludedDeploymentScope.scope);
             }
 
             if (typeof excludedDeploymentScope.name === 'string') {

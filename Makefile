@@ -118,11 +118,13 @@ include make/gotools.mk
 $(call go-tool, BUF_BIN, github.com/bufbuild/buf/cmd/buf, tools/proto)
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/v2/cmd/golangci-lint, tools/linters)
 $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
+$(call go-tool, OSSLS_BIN, github.com/stackrox/ossls, tools/build)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
 $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
+$(call go-tool, RATCHET_BIN, github.com/sethvargo/ratchet, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
@@ -137,6 +139,7 @@ style: golangci-lint style-slim
 style-slim: \
 	blanks \
 	check-service-protos \
+	github-actions-pin-check \
 	newlines \
 	no-large-files \
 	openshift-ci-style \
@@ -162,10 +165,6 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	$(GOLANGCILINT_BIN) --version
-	@echo "Running with no tags and no tests..."
-	@# The first run is meant to have limited scope to warmup the cache.
-	@# Adding it as first allowed to shorten the runtime of the following runs to about 5 min each
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --tests=false
 	@echo "Running with no tags..."
 	@# We need to enable unused linter here as it will not work without tests or in release tag.
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --enable=unused
@@ -208,6 +207,11 @@ update-shellcheck-skip:
 	@echo "+ $@"
 	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
+
+.PHONY: github-actions-pin-check
+github-actions-pin-check: $(RATCHET_BIN)
+	@echo "+ $@"
+	$(RATCHET_BIN) lint -format actions .github/workflows/*.yaml .github/workflows/*.yml .github/actions/*/action.yaml
 
 .PHONY: fast-central-build
 fast-central-build: central-build-nodeps
@@ -486,14 +490,7 @@ main-build-dockerized: build-volumes
 main-build-nodeps:
 	$(GOBUILD) \
 		central \
-		compliance/cmd/compliance \
-		config-controller \
-		migrator \
-		operator/cmd \
-		sensor/admission-control \
-		sensor/kubernetes \
-		sensor/upgrader \
-		compliance/virtualmachines/roxagent
+		operator/cmd
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
@@ -664,7 +661,6 @@ docker-build-roxctl-image:
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
-	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
@@ -679,12 +675,9 @@ ifneq ($(HOST_OS),linux)
 endif
 	cp bin/$(HOST_OS)_amd64/roxctl image/rhel/bin/roxctl-$(HOST_OS)-amd64
 endif
-	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
-	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
-	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
-	cp bin/linux_$(GOARCH)/roxagent          image/rhel/bin/roxagent
+	# Note: migrator, kubernetes-sensor, sensor-upgrader, admission-control, compliance, and roxagent
+	# are no longer separate binaries - they're consolidated into central via BusyBox-style dispatch.
+	# The Dockerfiles create symlinks to central for these components.
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
@@ -777,14 +770,14 @@ product-branding:
 	@echo $(ROX_PRODUCT_BRANDING)
 
 .PHONY: ossls-audit
-ossls-audit: deps
-	ossls version
-	ossls audit
+ossls-audit: deps $(OSSLS_BIN)
+	$(OSSLS_BIN) version
+	$(OSSLS_BIN) audit
 
 .PHONY: ossls-notice
-ossls-notice: deps
-	ossls version
-	ossls audit --export image/rhel/THIRD_PARTY_NOTICES
+ossls-notice: deps $(OSSLS_BIN)
+	$(OSSLS_BIN) version
+	$(OSSLS_BIN) audit --export image/rhel/THIRD_PARTY_NOTICES
 
 .PHONY: collector-tag
 collector-tag:
