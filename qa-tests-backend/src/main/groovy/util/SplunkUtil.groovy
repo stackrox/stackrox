@@ -179,7 +179,7 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-2.0.4-25-gee0d42c")
+                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-latest")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
