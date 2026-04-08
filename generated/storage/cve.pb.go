@@ -1567,7 +1567,7 @@ type ImageCVEV2 struct {
 	// was hash index, making it btree
 	//
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
+	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree,allow-null"` // @gotags: sql:"fk(Image:id),index=btree,allow-null"
 	CveBaseInfo *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	// cvss stores ACS preferred cvss score
 	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS"`                                           // @gotags: search:"CVSS"

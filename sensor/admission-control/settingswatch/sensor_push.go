@@ -15,20 +15,22 @@ import (
 // WatchSensorMessagePush watches for sensor pushes, and forwards them.
 func WatchSensorMessagePush(mgr manager.Manager, cc *grpc.ClientConn) {
 	w := &sensorPushWatch{
-		ctx:                   mgr.Stopped(),
-		mgmtServiceClient:     sensor.NewAdmissionControlManagementServiceClient(cc),
-		settingsOutC:          mgr.SettingsUpdateC(),
-		updateResourceReqOutC: mgr.ResourceUpdatesC(),
-		sensorConnStatus:      mgr.SensorConnStatusFlag(),
-		initialResourceSync:   mgr.InitialResourceSyncSig(),
+		ctx:                        mgr.Stopped(),
+		mgmtServiceClient:          sensor.NewAdmissionControlManagementServiceClient(cc),
+		settingsOutC:               mgr.SettingsUpdateC(),
+		updateResourceReqOutC:      mgr.ResourceUpdatesC(),
+		imageCacheInvalidationOutC: mgr.ImageCacheInvalidationC(),
+		sensorConnStatus:           mgr.SensorConnStatusFlag(),
+		initialResourceSync:        mgr.InitialResourceSyncSig(),
 	}
 	go w.run()
 }
 
 type sensorPushWatch struct {
-	ctx                   concurrency.ErrorWaitable
-	settingsOutC          chan<- *sensor.AdmissionControlSettings
-	updateResourceReqOutC chan<- *sensor.AdmCtrlUpdateResourceRequest
+	ctx                        concurrency.ErrorWaitable
+	settingsOutC               chan<- *sensor.AdmissionControlSettings
+	updateResourceReqOutC      chan<- *sensor.AdmCtrlUpdateResourceRequest
+	imageCacheInvalidationOutC chan<- *sensor.AdmCtrlImageCacheInvalidation
 
 	sensorConnStatus    *concurrency.Flag
 	initialResourceSync *concurrency.Signal
@@ -102,6 +104,12 @@ func (w *sensorPushWatch) dispatchMsg(msg *sensor.MsgToAdmissionControl) error {
 		case <-w.ctx.Done():
 			return errors.Wrap(w.ctx.Err(), "dispatching update resource request")
 		case w.updateResourceReqOutC <- m.UpdateResourceRequest:
+		}
+	case *sensor.MsgToAdmissionControl_ImageCacheInvalidation:
+		select {
+		case <-w.ctx.Done():
+			return errors.Wrap(w.ctx.Err(), "dispatching image cache invalidation")
+		case w.imageCacheInvalidationOutC <- m.ImageCacheInvalidation:
 		}
 	default:
 		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)

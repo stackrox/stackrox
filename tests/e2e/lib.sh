@@ -1507,6 +1507,16 @@ setup_automation_flavor_e2e_cluster() {
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
     fi
+
+    # Export console credentials for OCP UI e2e tests (Cypress browser login)
+    # No oc login needed - kubeconfig already has admin access from automation-flavors
+    if [[ "$ci_job" =~ ^ocp.*ui-e2e-tests$ ]]; then
+        info "Exporting OCP console credentials for UI tests"
+        source "${SHARED_DIR}/dotenv"
+        export OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL}"
+        export OPENSHIFT_CONSOLE_USERNAME="${OPENSHIFT_CONSOLE_USERNAME}"
+        export OPENSHIFT_CONSOLE_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD}"
+    fi
 }
 
 # When working as expected it takes less than one minute for the API server to
