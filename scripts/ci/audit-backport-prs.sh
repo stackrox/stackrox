@@ -482,19 +482,19 @@ generate_report() {
                                 team=$(echo "$issue_data" | jq -r '.fields.customfield_10001.name // "No team"')
                                 component=$(echo "$issue_data" | jq -r '[.fields.components[].name] | join(", ") | if . == "" then "No component" else . end')
 
-                                local has_fix_version="✓"
-                                local has_affected_version="✓"
+                                local has_fix_version=":white_check_mark:"
+                                local has_affected_version=":white_check_mark:"
 
                                 if [[ -z "$fix_versions" ]] || [[ "$fix_versions" == "null" ]] || ! echo "$fix_versions" | grep -q "$expected_version"; then
-                                    has_fix_version="✗"
+                                    has_fix_version=":x:"
                                 fi
 
                                 if [[ -z "$affected_versions" ]] || [[ "$affected_versions" == "null" ]]; then
-                                    has_affected_version="✗"
+                                    has_affected_version=":x:"
                                 fi
 
-                                if [[ "$has_fix_version" == "✗" ]] || [[ "$has_affected_version" == "✗" ]]; then
-                                    issues_with_problems+=("$jira_key:$has_fix_version:$has_affected_version:$assignee:$team:$component")
+                                if [[ "$has_fix_version" == ":x:" ]] || [[ "$has_affected_version" == ":x:" ]]; then
+                                    issues_with_problems+=("$jira_key|$has_fix_version|$has_affected_version|$assignee|$team|$component")
 
                                     # Track PR references
                                     if [[ -n "${jira_to_prs[$jira_key]:-}" ]]; then
@@ -517,7 +517,7 @@ generate_report() {
                 echo "### Jira Issues with Missing Metadata ($(echo "$unique_issues" | wc -l))"
                 echo ""
                 while IFS= read -r issue_line; do
-                    IFS=':' read -r jira_key has_fix has_affected assignee team component <<< "$issue_line"
+                    IFS='|' read -r jira_key has_fix has_affected assignee team component <<< "$issue_line"
 
                     # Get PRs that reference this Jira issue
                     local pr_refs="${jira_to_prs[$jira_key]:-}"
