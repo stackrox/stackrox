@@ -9,6 +9,8 @@ import (
 	"github.com/quay/zlog"
 )
 
+const SingleBundleUpdateKey = `last-vuln-update`
+
 // GetLastVulnerabilityUpdate implements MatcherMetadataStore.GetLastVulnerabilityUpdate.
 //
 // Assumes the last update is the oldest update timestamp in the table.
