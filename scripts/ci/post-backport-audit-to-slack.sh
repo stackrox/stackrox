@@ -109,39 +109,38 @@ post_release_sections() {
     awk '
         BEGIN {
             in_release = 0
-            content = ""
             release_name = ""
+            lines_count = 0
         }
         /^## release-/ {
-            if (in_release && content != "") {
-                # Output previous release
-                print "RELEASE_START:" release_name
-                print content
+            if (in_release && lines_count > 0) {
+                # Output previous release end marker
                 print "RELEASE_END"
             }
             in_release = 1
             release_name = $0
             gsub(/^## /, "", release_name)
-            content = ""
+            lines_count = 0
+            print "RELEASE_START:" release_name
             next
         }
         /^### / {
             if (in_release) {
                 section_header = $0
                 gsub(/^### /, "", section_header)
-                content = content "\n*" section_header "*\n"
+                print ""
+                print "*" section_header "*"
             }
             next
         }
         /^- / {
             if (in_release) {
-                content = content $0 "\n"
+                print $0
+                lines_count++
             }
         }
         END {
-            if (in_release && content != "") {
-                print "RELEASE_START:" release_name
-                print content
+            if (in_release && lines_count > 0) {
                 print "RELEASE_END"
             }
         }
@@ -157,8 +156,9 @@ post_release_sections() {
                 if [[ -n "$content" ]]; then
                     info "  Posting: $release_name"
 
-                    # Build message with release header and content
-                    local message="*${release_name}*\n\n${content}"
+                    # Build message with release header and content (using actual newlines)
+                    local message
+                    message=$(printf "*%s*\n\n%s" "$release_name" "$content")
 
                     jq -n \
                         --arg channel "$SLACK_CHANNEL" \
@@ -186,7 +186,13 @@ post_release_sections() {
                 release_name=""
                 content=""
             else
-                content="${content}${line}\n"
+                # Append line with actual newline
+                if [[ -z "$content" ]]; then
+                    content="$line"
+                else
+                    content="$content
+$line"
+                fi
             fi
         done
     }
