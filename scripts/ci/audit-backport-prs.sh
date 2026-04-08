@@ -265,7 +265,7 @@ get_jira_issue() {
 
     response=$(curl --fail -sSL \
         -u "${JIRA_USER}:${JIRA_TOKEN}" \
-        "https://${JIRA_BASE_URL}/rest/api/3/issue/${issue_key}?fields=fixVersions,versions,summary,status,assignee" \
+        "https://${JIRA_BASE_URL}/rest/api/3/issue/${issue_key}?fields=fixVersions,versions,summary,status,assignee,components" \
         2>/dev/null || echo "{}")
 
     echo "$response"
@@ -471,10 +471,12 @@ generate_report() {
                                 local fix_versions
                                 local affected_versions
                                 local assignee
+                                local team
 
                                 fix_versions=$(echo "$issue_data" | jq -r '[.fields.fixVersions[].name] | join(", ")')
                                 affected_versions=$(echo "$issue_data" | jq -r '[.fields.versions[].name] | join(", ")')
                                 assignee=$(echo "$issue_data" | jq -r '.fields.assignee.displayName // "Unassigned"')
+                                team=$(echo "$issue_data" | jq -r '[.fields.components[].name] | join(", ") | if . == "" then "No team" else . end')
 
                                 local has_fix_version="✓"
                                 local has_affected_version="✓"
@@ -488,7 +490,7 @@ generate_report() {
                                 fi
 
                                 if [[ "$has_fix_version" == "✗" ]] || [[ "$has_affected_version" == "✗" ]]; then
-                                    issues_with_problems+=("$jira_key:$has_fix_version:$has_affected_version:$assignee")
+                                    issues_with_problems+=("$jira_key:$has_fix_version:$has_affected_version:$assignee:$team")
                                 fi
                             fi
                         done
@@ -504,8 +506,8 @@ generate_report() {
                 echo "### Jira Issues with Missing Metadata ($(echo "$unique_issues" | wc -l))"
                 echo ""
                 while IFS= read -r issue_line; do
-                    IFS=':' read -r jira_key has_fix has_affected assignee <<< "$issue_line"
-                    echo "- [$jira_key](https://${JIRA_BASE_URL}/browse/$jira_key): $has_fix fixVersion, $has_affected affectedVersion (Assignee: $assignee)"
+                    IFS=':' read -r jira_key has_fix has_affected assignee team <<< "$issue_line"
+                    echo "- [$jira_key](https://${JIRA_BASE_URL}/browse/$jira_key): $has_fix fixVersion, $has_affected affectedVersion (Assignee: $assignee, Team: $team)"
                 done <<< "$unique_issues"
                 echo ""
             fi
