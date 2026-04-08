@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package main
+package app
 
 import (
 	"context"
