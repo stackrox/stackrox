@@ -79,9 +79,9 @@ tests:
 - name: "central with OpenShift 4 and stock SCCs"
   server:
     visibleSchemas:
-    - openshift-4.1.0
+    - openshift-4.12
     availableSchemas:
-    - openshift-4.1.0
+    - openshift-4.12
   values:
     env:
       openshift: 4
