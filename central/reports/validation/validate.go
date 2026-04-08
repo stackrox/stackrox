@@ -195,6 +195,12 @@ func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionRefer
 	return nil
 }
 
+// validateEntityScope validates the provided EntityScope and its rules.
+// 
+// It returns an error if the scope is nil, any rule has an unset entity or field,
+// a rule uses the unsupported cluster+annotation combination, a duplicate
+// (entity, field) pair appears, a rule has no values, or a label rule contains
+// values that are not in `key=value` format.
 func validateEntityScope(es *apiV2.EntityScope) error {
 	if es == nil {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
@@ -335,6 +341,7 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	return nil
 }
 
+//   names taken from the provided protoNotifiers slice.
 func generateReportSnapshot(
 	config *storage.ReportConfiguration,
 	collection *storage.ResourceCollection,

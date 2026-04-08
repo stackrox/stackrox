@@ -132,6 +132,9 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 	return ret
 }
 
+// convertV2EntityScopeToStorage converts an apiV2.EntityScope into a storage.EntityScope.
+// If es is nil, it returns nil. Each rule is mapped to a storage.EntityScopeRule by copying
+// the entity and field and converting each rule value's Value and MatchType to storage types.
 func convertV2EntityScopeToStorage(es *apiV2.EntityScope) *storage.EntityScope {
 	if es == nil {
 		return nil
@@ -310,6 +313,9 @@ func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope
 	return ret, nil
 }
 
+// convertStorageEntityScopeToV2 converts a storage.EntityScope into an apiV2.EntityScope.
+// If es is nil, it returns nil. Each storage rule is mapped to an apiV2.EntityScopeRule,
+// preserving Entity and Field, and converting each rule value's Value and MatchType.
 func convertStorageEntityScopeToV2(es *storage.EntityScope) *apiV2.EntityScope {
 	if es == nil {
 		return nil
