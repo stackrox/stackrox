@@ -177,7 +177,7 @@ jobs:
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{needs.variables.outputs.branch}}
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -207,7 +207,7 @@ jobs:
 
       - name: Post to Slack about picked cherries
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
-        uses: slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -287,7 +287,7 @@ jobs:
             "true"
 
       - name: Post to Slack
-        uses: slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -331,7 +331,7 @@ jobs:
     name: Setup demo clusters
     secrets: inherit
     needs: [variables, cut-rc, trim-cluster-names]
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||
