@@ -459,6 +459,8 @@ generate_report() {
 
             # Jira issues with missing metadata
             local issues_with_problems=()
+            declare -A jira_to_prs  # Map jira_key to PR numbers
+
             if [[ -n "${PRS_BY_BRANCH[$branch]:-}" ]]; then
                 IFS=',' read -ra pr_numbers <<< "${PRS_BY_BRANCH[$branch]}"
                 for pr_number in "${pr_numbers[@]}"; do
@@ -493,6 +495,13 @@ generate_report() {
 
                                 if [[ "$has_fix_version" == "✗" ]] || [[ "$has_affected_version" == "✗" ]]; then
                                     issues_with_problems+=("$jira_key:$has_fix_version:$has_affected_version:$assignee:$team:$component")
+
+                                    # Track PR references
+                                    if [[ -n "${jira_to_prs[$jira_key]:-}" ]]; then
+                                        jira_to_prs[$jira_key]="${jira_to_prs[$jira_key]},$pr_number"
+                                    else
+                                        jira_to_prs[$jira_key]="$pr_number"
+                                    fi
                                 fi
                             fi
                         done
@@ -509,7 +518,20 @@ generate_report() {
                 echo ""
                 while IFS= read -r issue_line; do
                     IFS=':' read -r jira_key has_fix has_affected assignee team component <<< "$issue_line"
-                    echo "- <https://${JIRA_BASE_URL}/browse/$jira_key|$jira_key>: $has_fix fixVersion, $has_affected affectedVersion (Assignee: $assignee, Team: $team, Component: $component)"
+
+                    # Get PRs that reference this Jira issue
+                    local pr_refs="${jira_to_prs[$jira_key]:-}"
+                    local pr_links=""
+                    if [[ -n "$pr_refs" ]]; then
+                        IFS=',' read -ra pr_array <<< "$pr_refs"
+                        local pr_link_list=()
+                        for pr in "${pr_array[@]}"; do
+                            pr_link_list+=("<https://github.com/stackrox/stackrox/pull/$pr|#$pr>")
+                        done
+                        pr_links=" (PRs: $(IFS=', '; echo "${pr_link_list[*]}"))"
+                    fi
+
+                    echo "- <https://${JIRA_BASE_URL}/browse/$jira_key|$jira_key>: $has_fix fixVersion, $has_affected affectedVersion (Assignee: $assignee, Team: $team, Component: $component)$pr_links"
                 done <<< "$unique_issues"
                 echo ""
             fi
