@@ -518,6 +518,44 @@ func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
 	require.Len(t, resp.GetImage().GetNames(), 3)
 }
 
+// TestGetImage_IDNormalization ensures that GetImage passes UUID-based IDs through
+// unchanged, while still normalizing plain SHA hashes with the "sha256:" prefix.
+func TestGetImage_IDNormalization(t *testing.T) {
+	cases := map[string]struct {
+		requestID  string
+		expectedID string
+	}{
+		"UUID is not mangled with sha256 prefix": {
+			requestID:  "faa743bd-0365-54ad-9898-9650fa51b808",
+			expectedID: "faa743bd-0365-54ad-9898-9650fa51b808",
+		},
+		"plain SHA hash is normalized with sha256 prefix": {
+			requestID:  "72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728",
+			expectedID: "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728",
+		},
+		"sha256-prefixed digest is unchanged": {
+			requestID:  "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728",
+			expectedID: "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+			imageDSMock.EXPECT().
+				GetImage(gomock.Any(), tc.expectedID).
+				Return(&storage.Image{Id: tc.expectedID}, true, nil)
+
+			s := &serviceImpl{mappingDatastore: imageDSMock}
+
+			resp, err := s.GetImage(context.Background(), &v1.GetImageRequest{Id: tc.requestID})
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedID, resp.GetId())
+		})
+	}
+}
+
 // TestDeleteImages_V2 ensures that DeleteImages correctly queries for ImageID and SHA
 // and broadcasts InvalidateImageCache messages with both fields populated.
 func TestDeleteImages_V2(t *testing.T) {
