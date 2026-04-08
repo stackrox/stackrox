@@ -1,13 +1,5 @@
-ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi9
-ARG RPMS_BASE_TAG=latest
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi9-micro
-ARG BASE_TAG=latest
-
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS ubi-base
-
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9:latest AS ubi-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
 FROM ubi-base AS downloads
 
