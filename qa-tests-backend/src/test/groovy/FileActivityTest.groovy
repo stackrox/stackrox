@@ -45,7 +45,7 @@ class FileActivityTest extends BaseSpecification {
         if (orchestrator.containsDaemonSetContainer(
                 Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER)) {
             orchestrator.deleteDeployment(testDeployment)
-            setFactEnv("", false)
+            removeFactEnv()
         }
     }
 
@@ -152,6 +152,22 @@ class FileActivityTest extends BaseSpecification {
             orchestrator.daemonSetEnvVarUpdated(
                     Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
                     "FACT_JSON", jsonStr) &&
+            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS)
+        }
+    }
+
+    private void removeFactEnv() {
+        log.info "Removing FACT env vars from collector DaemonSet"
+
+        orchestrator.removeDaemonSetEnv(
+                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
+                "FACT_PATHS")
+        orchestrator.removeDaemonSetEnv(
+                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
+                "FACT_JSON")
+
+        log.info "Waiting for collector DS to be ready"
+        waitForTrue(20, 10) {
             orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS)
         }
     }

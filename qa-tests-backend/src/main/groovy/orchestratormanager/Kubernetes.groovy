@@ -571,6 +571,33 @@ class Kubernetes {
                 .spec.containers.findIndexOf { it.name == containerName } > -1
     }
 
+    void removeDaemonSetEnv(String ns, String name, String containerName, String key) {
+        log.debug "Remove env var in ${ns}/${name}/${containerName}: ${key}"
+        List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+                .spec.containers
+        int containerIndex = containers.findIndexOf { it.name == containerName }
+        if (containerIndex == -1) {
+            throw new RuntimeException("Could not remove env var. No container named ${containerName} in ${ns}/${name}")
+        }
+        List<EnvVar> envVars = containers.get(containerIndex).env
+        envVars.removeIf { EnvVar it -> it.name == key }
+
+        client.apps().daemonSets().inNamespace(ns).withName(name)
+                .edit { d ->
+                    new DaemonSetBuilder(d)
+                            .editSpec()
+                            .editTemplate()
+                            .editSpec()
+                            .editContainer(containerIndex)
+                            .withEnv(envVars)
+                            .endContainer()
+                            .endSpec()
+                            .endTemplate()
+                            .endSpec()
+                            .build()
+                }
+    }
+
     void updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
         log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
         List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
