@@ -343,9 +343,15 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
+ifdef SKIP_DEPS
+deps:
+	@echo "+ $@ (skipped via SKIP_DEPS)"
+	$(SILENT)touch deps
+else
 deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)touch deps
+endif
 
 %/go.sum: %/go.mod
 	$(SILENT)cd $*
@@ -555,11 +561,17 @@ sensor-pipeline-benchmark: build-prep test-prep
 	LOGLEVEL="panic" go test -bench=. -run=^# -benchtime=30s -count=5 ./sensor/tests/pipeline | tee $(CURDIR)/test-output/pipeline.results.txt
 
 .PHONY: go-postgres-unit-tests
-go-postgres-unit-tests: build-prep test-prep
+go-postgres-unit-tests: go-postgres-unit-tests-main go-postgres-unit-tests-migrator
+
+.PHONY: go-postgres-unit-tests-main
+go-postgres-unit-tests-main: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
+
+.PHONY: go-postgres-unit-tests-migrator
+go-postgres-unit-tests-migrator: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
@@ -603,7 +615,7 @@ test: go-unit-tests ui-test shell-unit-tests
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
+	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
