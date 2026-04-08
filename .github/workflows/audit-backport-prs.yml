@@ -3,9 +3,6 @@ name: Audit Backport PRs
 on:
   pull_request:
     types: [opened, synchronize]
-    paths:
-      - '.github/workflows/audit-backport-prs.yml'
-      - 'scripts/ci/audit-backport-prs.sh'
   workflow_dispatch:
     inputs:
       release_branches:
