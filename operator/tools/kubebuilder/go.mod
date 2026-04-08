@@ -4,6 +4,8 @@ go 1.25.7
 
 require sigs.k8s.io/kubebuilder/v4 v4.13.1
 
+replace sigs.k8s.io/kubebuilder/v4 => github.com/camilamacedo86/kubebuilder/v4 v4.0.0-20260407151507-1da33d29230e
+
 require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
