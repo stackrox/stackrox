@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -645,8 +646,7 @@ func isRetryableDialError(err error) bool {
 	if !errors.As(err, &opErr) || opErr.Op != "dial" {
 		return false
 	}
-	msg := opErr.Err.Error()
-	return strings.Contains(msg, "connection refused") || strings.Contains(msg, "i/o timeout")
+	return errors.Is(err, syscall.ECONNREFUSED) || opErr.Timeout()
 }
 
 // normalizeAllowlist trims whitespace from each entry and drops empty strings.

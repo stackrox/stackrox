@@ -10,7 +10,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -378,11 +380,11 @@ func TestIsRetryableDialError(t *testing.T) {
 			want: false,
 		},
 		"connection refused": {
-			err:  &net.OpError{Op: "dial", Err: errors.New("connection refused")},
+			err:  &net.OpError{Op: "dial", Err: &os.SyscallError{Syscall: "connect", Err: syscall.ECONNREFUSED}},
 			want: true,
 		},
 		"i/o timeout": {
-			err:  &net.OpError{Op: "dial", Err: errors.New("i/o timeout")},
+			err:  &net.OpError{Op: "dial", Err: &net.DNSError{IsTimeout: true}},
 			want: true,
 		},
 		"other dial error": {
