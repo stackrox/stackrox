@@ -217,7 +217,7 @@ jobs:
           cp stub.txt bin/windows_amd64/roxctl.exe
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.9
+        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
       - name: Cache Go dependencies
         if: |
