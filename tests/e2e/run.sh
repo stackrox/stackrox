@@ -26,6 +26,10 @@ test_e2e() {
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
     export ROX_NETPOL_FIELDS=true
+    # Use minimal process filtering for E2E tests to ensure short-lived test processes
+    # (like /bin/date, /bin/sleep) are captured for validation in tests like TestPod.
+    # See ROX-29771 for details on process filtering impact on test reliability.
+    export ROX_PROCESS_FILTER_MODE=minimal
 
     test_preamble
     setup_deployment_env false false
