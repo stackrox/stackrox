@@ -95,17 +95,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert hasNetworkViolation && hasProcessViolation
         }
 
-        // Check for Alerts
-        // The conversion job (savedsearches.conf) is async — dispatch returns immediately
-        // while the search runs in the background. We re-dispatch on each retry because:
-        //   1. The default search window is -5m which test setup can exceed (overridden to -30m)
-        //   2. If the job ran before violations were fully indexed, it produces zero notables
-        //   3. Re-dispatching with force_dispatch creates a fresh run each time
-        // We query via the Alerts data model (not index=notable directly) because
-        // CIM field extractions (app, severity, dest, etc.) are only applied by the data model.
-        List<Map<String, String>> alerts = Collections.emptyList()
-        boolean hasNetworkAlert = false
-        boolean hasProcessAlert = false
+        // Stage 1: Wait for notables to be created.
+        // The conversion job (savedsearches.conf) is async — dispatch returns immediately.
+        // We re-dispatch each retry because if the job ran before violations were fully
+        // indexed it produces zero notables. We override earliest_time from -5m to -30m
+        // because test setup can exceed the default window.
+        // Query index=notable directly here — it respects earliest_time and confirms
+        // the conversion job succeeded before we attempt the data model query.
         withRetry(40, 15) {
             log.info "Dispatching conversion job to create Splunk alerts from ACS violations"
             postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME + "/dispatch", [
@@ -114,17 +110,35 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                     "dispatch.earliest_time": "-30m",
             ])
 
-            // "| from datamodel" is a generating command that ignores the search job's
-            // earliest_time, so we pipe to a where clause to filter by time.
+            def notableSearchId = SplunkUtil.createSearch(port,
+                    "search index=notable sourcetype=stash", "-30m")
+            Response notableResponse = SplunkUtil.getSearchResults(port, notableSearchId)
+            assert notableResponse != null
+            def notables = notableResponse.getBody().jsonPath().getList("results")
+            log.info "Found ${notables.size()} notable events in index=notable"
+            assert !notables.isEmpty()
+        }
+
+        // Stage 2: Query via the Alerts data model for CIM field validation.
+        // CIM field extractions (app, severity, dest, src, etc.) are only applied
+        // by the data model, so we must query through it to validate them.
+        // We use tstats with summariesonly=false because on a freshly-booted Splunk
+        // instance (as in CI) there are no acceleration summaries yet, and Splunk's
+        // search optimizer can convert "| from datamodel" to tstats summariesonly=true
+        // which would return zero results despite the raw events existing.
+        List<Map<String, String>> alerts = Collections.emptyList()
+        boolean hasNetworkAlert = false
+        boolean hasProcessAlert = false
+        withRetry(40, 15) {
             def vSearchId = SplunkUtil.createSearch(port,
-                    "| from datamodel Alerts.Alerts | where _time>relative_time(now(),\"-30m\")")
+                    "| datamodel Alerts Alerts search | search sourcetype=stackrox-violations", "-30m")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
             assert !alerts.isEmpty()
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
-            log.info "Found ${alerts.size()} alerts in Splunk — " +
+            log.info "Found ${alerts.size()} alerts via data model — " +
                     "Network: ${hasNetworkAlert}, Process: ${hasProcessAlert}"
             assert hasNetworkAlert && hasProcessAlert
         }
