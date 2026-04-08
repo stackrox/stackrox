@@ -494,14 +494,7 @@ main-build-dockerized: build-volumes
 main-build-nodeps:
 	$(GOBUILD) \
 		central \
-		compliance/cmd/compliance \
-		config-controller \
-		migrator \
-		operator/cmd \
-		sensor/admission-control \
-		sensor/kubernetes \
-		sensor/upgrader \
-		compliance/virtualmachines/roxagent
+		operator/cmd
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
@@ -672,7 +665,6 @@ docker-build-roxctl-image:
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
-	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
@@ -687,12 +679,9 @@ ifneq ($(HOST_OS),linux)
 endif
 	cp bin/$(HOST_OS)_amd64/roxctl image/rhel/bin/roxctl-$(HOST_OS)-amd64
 endif
-	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
-	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
-	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
-	cp bin/linux_$(GOARCH)/roxagent          image/rhel/bin/roxagent
+	# Note: migrator, kubernetes-sensor, sensor-upgrader, admission-control, compliance, and roxagent
+	# are no longer separate binaries - they're consolidated into central via BusyBox-style dispatch.
+	# The Dockerfiles create symlinks to central for these components.
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
