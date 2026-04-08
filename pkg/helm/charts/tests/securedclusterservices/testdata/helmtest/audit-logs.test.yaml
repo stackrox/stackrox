@@ -20,19 +20,9 @@ tests:
     - name: "on an explicit non-OpenShift environment"
       set:
         env.openshift: false
-    - name: "on an explicit OpenShift 3 environment"
-      set:
-        env.openshift: 3
     - name: "on an explicit OpenShift 4 environment"
       set:
         env.openshift: 4
-    - name: "on an auto-detected OpenShift 3 environment"
-      server:
-        visibleSchemas:
-        - openshift-3.11.0
-      capabilities:
-        kubeVersion:
-          version: "v1.11.0"
     - name: "on an auto-detected OpenShift 4 environment"
       server:
         visibleSchemas:
@@ -43,16 +33,6 @@ tests:
     - name: "on an explicit non-OpenShift environment"
       set:
         env.openshift: false
-    - name: "on an explicit OpenShift 3 environment"
-      set:
-        env.openshift: 3
-    - name: "on an auto-detected OpenShift 3 environment"
-      server:
-        visibleSchemas:
-        - openshift-3.11.0
-      capabilities:
-        kubeVersion:
-          version: "v1.11.0"
 - name: "Collection should be enabled"
   expect: |
     helmClusterConfig | .clusterConfig.dynamicConfig.disableAuditLogs | assertThat(. == false)
@@ -88,13 +68,3 @@ tests:
   - name: "on an explicit non-OpenShift environment"
     set:
       env.openshift: false
-  - name: "on an explicit OpenShift 3 environment"
-    set:
-      env.openshift: 3
-  - name: "on an auto-detected OpenShift 3 environment"
-    server:
-      visibleSchemas:
-      - openshift-3.11.0
-    capabilities:
-      kubeVersion:
-        version: "v1.11.0"

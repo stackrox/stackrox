@@ -19,9 +19,6 @@ tests:
     .deployments.["scanner"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca-sensor")
   tests:
   - name: "on openshift 4"
-  - name: "on openshift 3"
-    set:
-      env.openshift: 3
 
 - name: "scanner is enabled by default"
   set:
