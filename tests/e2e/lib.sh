@@ -594,8 +594,22 @@ install_the_compliance_operator() {
 install_e2e_compliance_resources() {
     info "Installing e2e custom rule and tailored profile"
     oc apply -f "${ROOT}/tests/e2e/yaml/compliance-operator/e2e-custom-rule.yaml"
+
+    # Wait for CustomRule to exist and give compliance operator time to process it
+    info "Waiting for CustomRule check-cm-marker to be created and processed..."
+    local retries=30
+    for i in $(seq 1 $retries); do
+        if oc get customrule check-cm-marker -n openshift-compliance &>/dev/null; then
+            info "CustomRule check-cm-marker exists, waiting for compliance operator to process it"
+            sleep 10
+            break
+        fi
+        sleep 5
+    done
+
     oc apply -f "${ROOT}/tests/e2e/yaml/compliance-operator/e2e-tailored-profile.yaml"
-    # Wait for TP to become READY
+
+    # Wait for TP to become READY with better error reporting
     local retries=30
     for i in $(seq 1 $retries); do
         state=$(oc get tailoredprofile e2e-tailored-profile -n openshift-compliance \
@@ -604,9 +618,15 @@ install_e2e_compliance_resources() {
             info "TailoredProfile e2e-tailored-profile is READY"
             return
         fi
+        if [[ "$state" == "ERROR" ]]; then
+            error_msg=$(oc get tailoredprofile e2e-tailored-profile -n openshift-compliance \
+                -o jsonpath='{.status.errorMessage}' 2>/dev/null || true)
+            die "TailoredProfile e2e-tailored-profile is in ERROR state: $error_msg"
+        fi
+        info "Waiting for TailoredProfile (attempt $i/$retries, current state: $state)"
         sleep 5
     done
-    die "TailoredProfile e2e-tailored-profile did not become READY"
+    die "TailoredProfile e2e-tailored-profile did not become READY after ${retries} attempts"
 }
 
 setup_client_CA_auth_provider() {
