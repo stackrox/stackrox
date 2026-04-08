@@ -39,7 +39,7 @@ type PolicyBehaviorFormProps = {
 
 function getEventSourceHelperText(eventSource: PolicyEventSource) {
     if (eventSource === 'DEPLOYMENT_EVENT') {
-        return 'Monitor deployments for process activity, baseline deviation, and user issued container commands.';
+        return 'Inspect workloads for process activity, file activity, baseline deviation, and user issued container commands.';
     }
 
     if (eventSource === 'AUDIT_LOG_EVENT') {
@@ -47,7 +47,7 @@ function getEventSourceHelperText(eventSource: PolicyEventSource) {
     }
 
     if (eventSource === 'NODE_EVENT') {
-        return 'Event sources that evaluate node level activity.';
+        return 'Inspect activity on cluster nodes.';
     }
 
     return '';
