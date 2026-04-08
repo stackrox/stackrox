@@ -31,7 +31,7 @@ jobs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -118,15 +118,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v3'
+      - uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v3'
+        uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
@@ -144,15 +144,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v3'
+      - uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v3'
+        uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
       - name: Publish OpenAPI spec to Google Cloud storage
         env:
           STACKROX_TAG: ${{ github.ref_name }}

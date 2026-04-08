@@ -22,10 +22,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6
       with:
         python-version: '3.10'
 
@@ -60,10 +60,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6
       with:
         python-version: '3.10'
 
@@ -99,7 +99,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -109,18 +109,18 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Authenticate with test GCS bucket
-      uses: google-github-actions/auth@v3
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v3
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
 
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
@@ -145,7 +145,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       if: always()
       with:
         fetch-depth: 0
@@ -157,7 +157,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}
@@ -168,12 +168,12 @@ jobs:
         path: .
 
     - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v3
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v3
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
 
     - name: Upload NVD Feeds to Google Cloud Storage
       run: |
@@ -186,7 +186,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}
@@ -197,12 +197,12 @@ jobs:
         path: .
 
     - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v3
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v3
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
 
     - name: Upload NVD API to Google Cloud Storage
       run:

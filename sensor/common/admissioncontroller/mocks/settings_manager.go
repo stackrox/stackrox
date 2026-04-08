@@ -84,7 +84,7 @@ func (mr *MockSettingsManagerMockRecorder) ImageCacheInvalidationStream() *gomoc
 }
 
 // InvalidateImageCache mocks base method.
-func (m *MockSettingsManager) InvalidateImageCache(keys []*central.InvalidateImageCache_ImageKey) {
+func (m *MockSettingsManager) InvalidateImageCache(keys []*central.ImageKey) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InvalidateImageCache", keys)
 }
