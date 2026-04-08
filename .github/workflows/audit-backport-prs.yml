@@ -9,10 +9,33 @@ on:
         description: 'Release branches (comma-separated, or "all" for auto-detect)'
         required: false
         default: 'all'
+      dry_run:
+        description: 'Dry run (post to test Slack channel)'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
 
 jobs:
+  properties:
+    name: Read repository properties
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.slack-channel, steps.properties.outputs.dry-slack-channel))[github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)] }}
+    steps:
+      - name: Read workflow properties file
+        id: properties
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.event.repository.default_branch }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
   audit:
     runs-on: ubuntu-latest
+    needs: [properties]
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
@@ -47,3 +70,40 @@ jobs:
         with:
           name: backport-audit-report
           path: backport-audit-report.md
+
+      - name: Prepare Slack message
+        if: success()
+        id: slack-message
+        run: |
+          # Read the report and prepare for Slack
+          REPORT_CONTENT=$(cat backport-audit-report.md)
+
+          # Count issues
+          PR_COUNT=$(grep -c "^- <@\|^- :konflux:" backport-audit-report.md || echo "0")
+          JIRA_COUNT=$(grep -c "^\- \[ROX-" backport-audit-report.md || echo "0")
+
+          # Prepare summary
+          SUMMARY="📋 *Backport PR Audit Report*\n\n"
+          SUMMARY+="• PRs missing Jira reference: ${PR_COUNT}\n"
+          SUMMARY+="• Jira issues with missing metadata: ${JIRA_COUNT}\n\n"
+          SUMMARY+="<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View full report in GitHub Actions>"
+
+          # Output for Slack (escape newlines for YAML)
+          echo "summary<<EOF" >> "$GITHUB_OUTPUT"
+          echo -e "$SUMMARY" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Post summary to Slack
+        if: success()
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Backport PR Audit Report"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ steps.slack-message.outputs.summary }}"
