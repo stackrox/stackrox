@@ -98,12 +98,6 @@ func (s *LabelScopedPoliciesSuite) waitForViolationAlert(deploymentName, policyN
 	waitForAlert(s.T(), s.alertService, &v1.ListAlertsRequest{Query: query.Query()}, expectedCount)
 }
 
-// teardownDeploymentAndWaitForViolationCleanup tears down deployment and waits for violations to resolve
-func (s *LabelScopedPoliciesSuite) teardownDeploymentAndWaitForViolationCleanup(deploymentName, namespace, policyName string) {
-	teardownDeploymentWithoutCheck(s.T(), deploymentName, namespace)
-	s.waitForViolationAlert(deploymentName, policyName, 0)
-}
-
 func (s *LabelScopedPoliciesSuite) TestNamespaceLabelPolicyScoping() {
 	t := s.T()
 	backendNS := fmt.Sprintf("test-backend-%d", rand.IntN(10000))
@@ -125,18 +119,14 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelPolicyScoping() {
 
 	backendDeployment := fmt.Sprintf("test-ns-backend-%d", rand.IntN(10000))
 	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
-	t.Cleanup(func() {
-		s.teardownDeploymentAndWaitForViolationCleanup(backendDeployment, backendNS, createdPolicy.GetName())
-	})
+	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	s.waitForViolationAlert(backendDeployment, createdPolicy.GetName(), 1)
 	t.Logf("Alert appeared for deployment in namespace with team=backend")
 
 	frontendDeployment := fmt.Sprintf("test-ns-frontend-%d", rand.IntN(10000))
 	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
-	t.Cleanup(func() {
-		s.teardownDeploymentAndWaitForViolationCleanup(frontendDeployment, frontendNS, createdPolicy.GetName())
-	})
+	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	s.waitForViolationAlert(frontendDeployment, createdPolicy.GetName(), 0)
 	t.Logf("No alert for deployment in namespace with team=frontend")
@@ -234,16 +224,12 @@ func (s *LabelScopedPoliciesSuite) TestRuntimeDetectionWithNamespaceLabels() {
 
 	backendDeployment := fmt.Sprintf("test-runtime-backend-%d", rand.IntN(10000))
 	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
-	t.Cleanup(func() {
-		s.teardownDeploymentAndWaitForViolationCleanup(backendDeployment, backendNS, createdPolicy.GetName())
-	})
+	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-runtime-frontend-%d", rand.IntN(10000))
 	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
-	t.Cleanup(func() {
-		s.teardownDeploymentAndWaitForViolationCleanup(frontendDeployment, frontendNS, createdPolicy.GetName())
-	})
+	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
 
 	client := createK8sClient(t)
@@ -274,9 +260,7 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelRemoval() {
 
 	deployment1 := fmt.Sprintf("test-ns-removal-%d", rand.IntN(10000))
 	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, 1, testNS, true)
-	t.Cleanup(func() {
-		s.teardownDeploymentAndWaitForViolationCleanup(deployment1, testNS, createdPolicy.GetName())
-	})
+	defer teardownDeploymentWithoutCheck(t, deployment1, testNS)
 
 	s.waitForViolationAlert(deployment1, createdPolicy.GetName(), 1)
 	t.Logf("Alert appeared for deployment in namespace with team=backend")

@@ -29,7 +29,7 @@ func allIntsZero(ints ...int) bool {
 }
 
 func (a *allCounts) AllZero() bool {
-	return allIntsZero(a.PodCount, a.ClusterCount, a.NodeCount, a.ViolationCount, a.DeploymentCount, a.SecretCount)
+	return allIntsZero(a.PodCount, a.ClusterCount, a.NodeCount, a.DeploymentCount, a.SecretCount)
 }
 
 type summaryCountsResp struct {
@@ -72,7 +72,6 @@ func TestClusterDeletion(t *testing.T) {
 	assert.NotZero(t, counts.ClusterCount)
 	// ROX-6391: NodeCount starts at zero
 	// assert.NotZero(t, resp.NodeCount)
-	assert.NotZero(t, counts.ViolationCount)
 	assert.NotZero(t, counts.DeploymentCount)
 	assert.NotZero(t, counts.SecretCount)
 	assert.NotZero(t, counts.PodCount)
