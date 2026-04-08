@@ -28,6 +28,15 @@ jobs:
           chmod +x scripts/ci/audit-backport-prs.sh
           ./scripts/ci/audit-backport-prs.sh --branches "$RELEASE_BRANCHES"
 
+      - name: Show report in summary
+        if: always()
+        run: |
+          if [ -f backport-audit-report.md ]; then
+            cat backport-audit-report.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Report file not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload report
         uses: actions/upload-artifact@v4
         if: always()
