@@ -53,7 +53,9 @@ post_to_slack() {
         -d "$payload"
 }
 
-build_full_message() {
+post_message() {
+    info "Building and posting report in sections"
+
     local timestamp
     local total_prs
     local total_jira
@@ -62,54 +64,130 @@ build_full_message() {
     total_prs=$(grep -c "^- <@\|^- :konflux:" "$REPORT_FILE" 2>/dev/null || echo "0")
     total_jira=$(grep -c "^- <" "$REPORT_FILE" | grep -c "ROX-" || echo "0")
 
-    # Build header
-    local message
-    message=$(cat <<EOF
-*📋 Backport PR Audit Report*
-
-*Generated:* ${timestamp}
-*Total PRs missing Jira:* ${total_prs}
-*Total Jira issues with missing metadata:* ${total_jira}
-
-<${GITHUB_RUN_URL}|View full report in GitHub Actions>
-
-───────────────────────────────────────
-EOF
-)
-
-    # Extract report content (skip first two lines: title and timestamp)
-    local report_content
-    report_content=$(tail -n +4 "$REPORT_FILE")
-
-    message="${message}
-${report_content}"
-
-    echo "$message"
-}
-
-
-post_message() {
-    info "Building and posting complete report"
-
-    local message
-    message=$(build_full_message)
-
+    # Post header
     jq -n \
         --arg channel "$SLACK_CHANNEL" \
-        --arg text "$message" \
+        --arg timestamp "$timestamp" \
+        --arg total_prs "$total_prs" \
+        --arg total_jira "$total_jira" \
+        --arg url "$GITHUB_RUN_URL" \
         '{
           "channel": $channel,
           "text": "Backport PR Audit Report",
           "blocks": [
             {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "📋 Backport PR Audit Report"
+              }
+            },
+            {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": $text
+                "text": ("*Generated:* " + $timestamp + "\n*Total PRs missing Jira:* " + $total_prs + "\n*Total Jira issues with missing metadata:* " + $total_jira)
               }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": ("<" + $url + "|View full report in GitHub Actions>")
+              }
+            },
+            {
+              "type": "divider"
             }
           ]
         }' | post_to_slack "$(cat -)"
+
+    # Parse and post each release section
+    awk '
+        BEGIN {
+            in_release = 0
+            section = ""
+            current_subsection = ""
+        }
+        /^## release-/ {
+            # Post previous section if exists
+            if (in_release && section != "") {
+                print "SECTION_START"
+                print section
+                print "SECTION_END"
+            }
+            in_release = 1
+            release_name = $0
+            gsub(/^## /, "", release_name)
+            section = "*" release_name "*\n"
+            next
+        }
+        /^### / {
+            if (in_release) {
+                subsection_header = $0
+                gsub(/^### /, "", subsection_header)
+                current_subsection = subsection_header
+                section = section "\n*" subsection_header "*\n"
+            }
+            next
+        }
+        /^- / {
+            if (in_release) {
+                # Check if section is getting too large (max ~2800 chars to be safe)
+                if (length(section) > 2800) {
+                    # Post current section
+                    print "SECTION_START"
+                    print section
+                    print "SECTION_END"
+                    # Start new section with continuation
+                    section = "*" release_name " (continued)*\n\n*" current_subsection " (continued)*\n"
+                }
+                section = section $0 "\n"
+            }
+        }
+        END {
+            if (in_release && section != "") {
+                print "SECTION_START"
+                print section
+                print "SECTION_END"
+            }
+        }
+    ' "$REPORT_FILE" | {
+        while IFS= read -r line; do
+            if [[ "$line" == "SECTION_START" ]]; then
+                content=""
+            elif [[ "$line" == "SECTION_END" ]]; then
+                if [[ -n "$content" ]]; then
+                    jq -n \
+                        --arg channel "$SLACK_CHANNEL" \
+                        --arg text "$content" \
+                        '{
+                          "channel": $channel,
+                          "text": "Release section",
+                          "blocks": [
+                            {
+                              "type": "section",
+                              "text": {
+                                "type": "mrkdwn",
+                                "text": $text
+                              }
+                            }
+                          ]
+                        }' | post_to_slack "$(cat -)"
+
+                    # Small delay to avoid rate limiting
+                    sleep 1
+                fi
+            else
+                if [[ -z "$content" ]]; then
+                    content="$line"
+                else
+                    content="$content
+$line"
+                fi
+            fi
+        done
+    }
 }
 
 main() {
