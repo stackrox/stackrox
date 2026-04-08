@@ -373,12 +373,6 @@ find_orphaned_issues() {
 generate_report() {
     info "Generating report"
 
-    # Build Slack ID cache for all unique authors
-    declare -A SLACK_ID_CACHE
-    for author in $(printf '%s\n' "${PR_AUTHORS[@]}" | sort -u); do
-        SLACK_ID_CACHE["$author"]=$("$SCRIPTS_ROOT/scripts/ci/get-slack-user-id.sh" "$author" 2>/dev/null || echo "")
-    done
-
     {
         echo "# Backport PR Audit Report"
         echo ""
@@ -433,7 +427,8 @@ generate_report() {
                 for pr_number in "${prs_no_jira[@]}"; do
                     local author="${PR_AUTHORS[$pr_number]}"
                     local title="${PR_TITLES[$pr_number]}"
-                    local slack_id="${SLACK_ID_CACHE[$author]}"
+                    local slack_id
+                    slack_id=$("$SCRIPTS_ROOT/scripts/ci/get-slack-user-id.sh" "$author" 2>/dev/null || echo "")
 
                     if [[ -n "$slack_id" ]]; then
                         pr_lines+=("$author|$slack_id|$pr_number|$title")
