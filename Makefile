@@ -36,6 +36,12 @@ SILENT ?= @
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
+# UNIT_TEST_PKG_INCLUDE/EXCLUDE allow filtering the package list for parallel CI sharding.
+# UNIT_TEST_PKG_INCLUDE: grep -E pattern to include only matching packages (default: match all)
+# UNIT_TEST_PKG_EXCLUDE: grep -Ev pattern to exclude matching packages (default: match none)
+UNIT_TEST_PKG_INCLUDE ?= .
+UNIT_TEST_PKG_EXCLUDE ?= ^$$
+
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
@@ -536,9 +542,12 @@ test-prep:
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 25m -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE) | grep -E "$(UNIT_TEST_PKG_INCLUDE)" | grep -Ev "$(UNIT_TEST_PKG_EXCLUDE)") \
 		| tee $(GO_TEST_OUTPUT_PATH)
-	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
+
+# Exercise the logging package for all supported logging levels to make sure that initialization works properly.
+.PHONY: go-log-level-tests
+go-log-level-tests: build-prep test-prep
 	@echo "Run log tests"
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
@@ -558,12 +567,12 @@ sensor-pipeline-benchmark: build-prep test-prep
 go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE) | grep -E "$(UNIT_TEST_PKG_INCLUDE)" | grep -Ev "$(UNIT_TEST_PKG_EXCLUDE)") \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE) | grep -E "$(UNIT_TEST_PKG_INCLUDE)" | grep -Ev "$(UNIT_TEST_PKG_EXCLUDE)") \
 		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
@@ -598,7 +607,7 @@ ui-component-tests:
 	make -C ui test-component
 
 .PHONY: test
-test: go-unit-tests ui-test shell-unit-tests
+test: go-unit-tests go-log-level-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep test-prep
