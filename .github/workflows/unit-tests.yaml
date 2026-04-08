@@ -22,6 +22,21 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        shard:
+          - name: pkg-helm
+            packages: ./pkg/helm/...
+          - name: pkg-other
+            packages: ./pkg/...
+            exclude-pattern: /helm/
+          - name: central-1
+            packages: ./central/...
+            exclude-pattern: /central/[o-z]
+          - name: central-2
+            packages: ./central/...
+            exclude-pattern: /central/[a-n]
+          - name: rest
+            packages: ./...
+            exclude-pattern: /pkg/|/central/
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -31,16 +46,20 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go exports GOTOOLCHAIN matching the go.mod value, which
+    # prevents auto-downloading newer toolchains. Override to auto so
+    # sub-modules with newer go directives (e.g. tools/proto) work.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -50,34 +69,25 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
-
-    - uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
-    - name: Go Integration Unit Tests
-      run: ${{ matrix.gotags }} make integration-unit-tests
-
-    - name: Go Operator Integration Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-integration
-
-    - name: Go Operator Helm Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-helm
+      run: |
+        mkdir -p bin test-output
+        set -o pipefail
+        # Build package list, filtering out packages that have their own dedicated jobs
+        EXCLUDE='sensor/tests|operator/tests|/scanner/e2etests'
+        if [[ -n '${{ matrix.shard.exclude-pattern }}' ]]; then
+          EXCLUDE="${EXCLUDE}|${{ matrix.shard.exclude-pattern }}"
+        fi
+        PACKAGES=$(go list ${{ matrix.shard.packages }} | grep -Ev "$EXCLUDE")
+        # shellcheck disable=SC2086
+        GOTAGS="${GOTAGS:+$GOTAGS,}test" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
+          scripts/go-test.sh -timeout 25m -race -cover \
+          -coverprofile test-output/coverage.out -v \
+          $PACKAGES \
+          | tee test-output/test.log
+      shell: bash
 
     - name: Generate junit report
       if: always()
@@ -100,12 +110,110 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  go-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go exports GOTOOLCHAIN matching the go.mod value, which
+    # prevents auto-downloading newer toolchains. Override to auto so
+    # sub-modules with newer go directives (e.g. tools/proto) work.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}-integration
+
+    - name: Go Integration Unit Tests
+      run: |
+        mkdir -p test-output
+        set -o pipefail
+        PACKAGES=$(go list ./... | grep -E 'registries|scanners|notifiers')
+        # shellcheck disable=SC2086
+        ${{ matrix.gotags }} GOTAGS="${GOTAGS:+$GOTAGS,}test,integration" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
+          scripts/go-test.sh -v $PACKAGES | tee test-output/test.log
+      shell: bash
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+  go-operator-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go exports GOTOOLCHAIN matching the go.mod value, which
+    # prevents auto-downloading newer toolchains. Override to auto so
+    # sub-modules with newer go directives (e.g. tools/proto) work.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Download scanner module for proto generation
+      run: go mod download github.com/stackrox/scanner
+
+    - name: Go Operator Integration Tests
+      run: ${{ matrix.gotags }} make -C operator/ test-integration
+
+    - name: Go Operator Helm Tests
+      run: ${{ matrix.gotags }} make -C operator/ test-helm
+
   go-postgres:
     strategy:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '15' ]
+        shard:
+          - name: main
+            make-target: go-postgres-unit-tests-main
+          - name: migrator
+            make-target: go-postgres-unit-tests-migrator
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -115,40 +223,52 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go exports GOTOOLCHAIN matching the go.mod value, which
+    # prevents auto-downloading newer toolchains. Override to auto so
+    # sub-modules with newer go directives (e.g. tools/proto) work.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    # trust: allow passwordless TCP connections (replaces unix socket peer auth from CI container)
+    # locale=C: deterministic collation matching CI container's default
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
+          -p 5432:5432 \
+          docker.io/library/postgres:${{ matrix.pg }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for _ in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
+          sleep 1
+        done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-postgres-unit-tests
+      run: SKIP_DEPS=1 ${{ matrix.gotags }} make ${{ matrix.shard.make-target }}
 
     - uses: codecov/codecov-action@v3
       with:
@@ -178,35 +298,49 @@ jobs:
 
   go-bench:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go exports GOTOOLCHAIN matching the go.mod value, which
+    # prevents auto-downloading newer toolchains. Override to auto so
+    # sub-modules with newer go directives (e.g. tools/proto) work.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    # trust: allow passwordless TCP connections (replaces unix socket peer auth from CI container)
+    # locale=C: deterministic collation matching CI container's default
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
+          -p 5432:5432 \
+          docker.io/library/postgres:15
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for _ in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
+          sleep 1
+        done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -501,6 +635,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - go
+      - go-integration
+      - go-operator-integration
       - go-bench
       - go-postgres
       - local-roxctl-tests
