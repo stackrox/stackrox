@@ -116,6 +116,9 @@ spec:
     tasks:
     - name: determine-if-pipeline-should-skip
       taskSpec:
+        results:
+        - name: SHOULD_SKIP_PIPELINE
+          description: Whether the pipeline should skip or run.
         steps:
         - name: determine-if-pipeline-should-skip
           image: quay.io/konflux-ci/release-service-utils:latest@sha256:987b4b06a9b12d859b50d152e07e4a20fa32bfc9beeecd8f5b1012da3ce42d58
@@ -135,6 +138,7 @@ spec:
                 fieldPath: metadata.annotations['pipelinesascode.tekton.dev/branch']
           - name: PULL_REQUEST_NUMBER
             value: '{{pull_request_number}}'
+
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
@@ -146,12 +150,57 @@ spec:
             echo "Source branch: ${SOURCE_BRANCH}"
             echo "Target branch: ${TARGET_BRANCH}"
             echo "Pull request number: ${PULL_REQUEST_NUMBER}"
-            echo "GH_TOKEN present: $(echo -n $GH_TOKEN | wc -c)"
+
+            is_pull_request() {
+                if [[ "${PULL_REQUEST_NUMBER}" == '{{pull_request_number}}' ]]; then
+                  return 0
+                else
+                  return 1
+                fi
+            }
+
+            is_targeting_release_branch() {
+                if [[ "${TARGET_BRANCH}" == release-* ]]; then
+                  return 1
+                else
+                  return 0
+                fi
+            }
+
+            source_branch_has_magic_string() {
+                if [[ "${SOURCE_BRANCH}" =~ (konflux|renovate|appstudio|rhtap) ]]; then
+                  return 1
+                else
+                  return 0
+                fi
+            }
+
+            has_magic_label() {
+                local pull_request_number=$1
+                local label_name="konflux-build"
+
+                gh pr view --json labels "${pull_request_number}" \
+                  | jq -r '.labels[] | select(.name == "'${label_name}'") | .name' | grep -q "${label_name}"
+            }
+
+            if is_pull_request && ! is_targeting_release_branch && ! source_branch_has_magic_string && ! has_magic_label; then
+                echo "Skipping the custom snapshot pipeline for this PR."
+                echo "This commit is not producing a Konflux build."
+                echo -n "SKIP" | tee $(results.SHOULD_SKIP_PIPELINE.path)
+                exit 0
+            else
+                echo "Running the custom snapshot pipeline."
+                echo "This commit is producing a Konflux build."
+                echo -n "RUN" | tee $(results.SHOULD_SKIP_PIPELINE.path)
+                exit 0
+            fi
+
 
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
 
     - name: clone-repository
+      when: $(tasks.determine-if-pipeline-should-skip.results.SHOULD_SKIP_PIPELINE) != "SKIP"
       params:
       - name: url
         value: $(params.git-url)
