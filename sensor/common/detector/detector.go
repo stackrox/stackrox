@@ -904,7 +904,7 @@ func (d *detectorImpl) processFileAccess() {
 				}, item.Access)
 				source = central.AlertResults_DEPLOYMENT_EVENT
 			}
-			detectorMetrics.FileAccessPolicyMatchDuration.Observe(time.Since(matchStart).Seconds())
+			detectorMetrics.FileAccessCriteriaMatchDuration.Observe(time.Since(matchStart).Seconds())
 
 			if len(alerts) == 0 {
 				// No need to process runtime alerts that have no violations

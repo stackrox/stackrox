@@ -154,15 +154,15 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "file_access_events_received_total",
-		Help:      "Total number of file access events received from the FACT agent and entering the processing pipeline",
+		Help:      "Total number of file access events received from the file activity monitoring agent and entering the processing pipeline",
 	})
 
-	// FileAccessPolicyMatchDuration tracks how long policy matching takes per file access event.
-	FileAccessPolicyMatchDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+	// FileAccessCriteriaMatchDuration tracks how long criteria matching takes per file access event.
+	FileAccessCriteriaMatchDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "file_access_policy_match_duration_seconds",
-		Help:      "Time spent evaluating file access policies per event, including glob pattern matching",
+		Name:      "file_access_criteria_match_duration_seconds",
+		Help:      "Time spent matching file access criteria per event",
 		Buckets:   prometheus.DefBuckets,
 	})
 
@@ -368,6 +368,6 @@ func init() {
 		DetectorFileAccessQueueOperations,
 		DetectorFileAccessDroppedCount,
 		FileAccessEventsReceived,
-		FileAccessPolicyMatchDuration,
+		FileAccessCriteriaMatchDuration,
 	)
 }
