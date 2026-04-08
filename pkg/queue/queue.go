@@ -23,7 +23,6 @@ type Queue[T comparable] struct {
 	maxSize        int
 	counterMetric  *prometheus.CounterVec
 	droppedMetric  prometheus.Counter
-	gaugeMetric    prometheus.Gauge
 	queue          *list.List
 	notEmptySignal concurrency.Signal
 	mutex          sync.Mutex
@@ -45,13 +44,6 @@ func WithCounterVec[T comparable](vec *prometheus.CounterVec) OptionFunc[T] {
 func WithDroppedMetric[T comparable](metric prometheus.Counter) OptionFunc[T] {
 	return func(q *Queue[T]) {
 		q.droppedMetric = metric
-	}
-}
-
-// WithGaugeMetric provides a gauge which tracks the current depth of the queue.
-func WithGaugeMetric[T comparable](gauge prometheus.Gauge) OptionFunc[T] {
-	return func(queue *Queue[T]) {
-		queue.gaugeMetric = gauge
 	}
 }
 
@@ -100,9 +92,6 @@ func (q *Queue[T]) Pull() T {
 
 	if q.counterMetric != nil {
 		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
-	}
-	if q.gaugeMetric != nil {
-		q.gaugeMetric.Dec()
 	}
 
 	if q.queue.Len() == 0 {
@@ -159,9 +148,6 @@ func (q *Queue[T]) pull() (T, bool) {
 	if q.counterMetric != nil {
 		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
 	}
-	if q.gaugeMetric != nil {
-		q.gaugeMetric.Dec()
-	}
 
 	if q.queue.Len() == 0 {
 		q.notEmptySignal.Reset()
@@ -190,9 +176,6 @@ func (q *Queue[T]) Push(item T) {
 		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
 	}
 	q.queue.PushBack(item)
-	if q.gaugeMetric != nil {
-		q.gaugeMetric.Inc()
-	}
 }
 
 // Len returns the number of elements in the queue.
