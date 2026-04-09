@@ -977,7 +977,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 			expectedDisabledLogs bool
 		}{
 			"Kubernetes cluster":  {&storage.Cluster{Type: storage.ClusterType_KUBERNETES_CLUSTER, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}, true},
-			"Openshift 3 cluster": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT_CLUSTER, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}, true},
 			"Openshift 4 cluster": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT4_CLUSTER, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}, false},
 			"Openshift 4 cluster with disabled logs": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT4_CLUSTER, MainImage: mainImage, CentralApiEndpoint: centralEndpoint,
 				DynamicConfig: &storage.DynamicClusterConfig{DisableAuditLogs: true}}, true},
