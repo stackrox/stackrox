@@ -18,11 +18,39 @@ DEBUG_OUTPUT="debug-dump"
 DIAGNOSTIC_OUTPUT="diagnostic-bundle"
 CENTRAL_DATA_OUTPUT="central-data"
 
-# Set up port forward to Central
+# Set up port forward to Central with retry
 info "Setting up port forward to central"
-nohup kubectl -n stackrox port-forward svc/central 8000:443 >/dev/null 2>&1 &
-PORT_FORWARD_PID=$!
-sleep 5  # Give port-forward time to establish
+PORT_FORWARD_PID=""
+MAX_PORT_FORWARD_RETRIES=5
+for retry in $(seq 1 ${MAX_PORT_FORWARD_RETRIES}); do
+    info "Attempting to establish port-forward (try ${retry}/${MAX_PORT_FORWARD_RETRIES})"
+
+    # Kill any existing port-forward on this port
+    pkill -f "port-forward.*8000:443" || true
+    sleep 1
+
+    # Start new port-forward
+    nohup kubectl -n stackrox port-forward svc/central 8000:443 >/dev/null 2>&1 &
+    PORT_FORWARD_PID=$!
+
+    # Wait for port-forward to be ready
+    for i in $(seq 1 10); do
+        if curl -sk --connect-timeout 2 --max-time 5 https://localhost:8000/v1/ping >/dev/null 2>&1; then
+            info "Port-forward established successfully"
+            break 2  # Break out of both loops
+        fi
+        sleep 1
+    done
+
+    # If we got here, port-forward failed
+    info "Port-forward attempt ${retry} failed, retrying..."
+    kill "${PORT_FORWARD_PID}" 2>/dev/null || true
+done
+
+if ! curl -sk --connect-timeout 2 --max-time 5 https://localhost:8000/v1/ping >/dev/null 2>&1; then
+    info "Error: Failed to establish port-forward after ${MAX_PORT_FORWARD_RETRIES} attempts"
+    exit 1
+fi
 
 # Set API_ENDPOINT since we know it from the port-forward
 export API_ENDPOINT="localhost:8000"
