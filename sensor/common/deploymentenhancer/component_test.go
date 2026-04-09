@@ -148,7 +148,7 @@ func (m mockStoreProvider) Deployments() store.DeploymentStore {
 	return m.dep
 }
 
-func (m mockStoreProvider) Registries() *registry.Store {
+func (m mockStoreProvider) Registries() registry.Provider {
 	return nil
 }
 

@@ -86,7 +86,7 @@ func NewDispatcherRegistry(
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
+			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, credentialsManager),
 
 		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore, storeProvider.VirtualMachines()),
