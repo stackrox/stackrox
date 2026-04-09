@@ -322,20 +322,6 @@ func (mr *MockClusterCountByPlatformTypeMockRecorder) GetOpenshift4ClusterCount(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenshift4ClusterCount", reflect.TypeOf((*MockClusterCountByPlatformType)(nil).GetOpenshift4ClusterCount))
 }
 
-// GetOpenshiftClusterCount mocks base method.
-func (m *MockClusterCountByPlatformType) GetOpenshiftClusterCount() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOpenshiftClusterCount")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetOpenshiftClusterCount indicates an expected call of GetOpenshiftClusterCount.
-func (mr *MockClusterCountByPlatformTypeMockRecorder) GetOpenshiftClusterCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenshiftClusterCount", reflect.TypeOf((*MockClusterCountByPlatformType)(nil).GetOpenshiftClusterCount))
-}
-
 // MockCVECountByType is a mock of CVECountByType interface.
 type MockCVECountByType struct {
 	ctrl     *gomock.Controller
