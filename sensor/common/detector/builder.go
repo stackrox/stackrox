@@ -24,6 +24,17 @@ import (
 	"github.com/stackrox/rox/sensor/common/updater"
 )
 
+// StoreProvider provides access to the stores needed by the detector.
+type StoreProvider interface {
+	Deployments() store.DeploymentStore
+	ServiceAccounts() store.ServiceAccountStore
+	NetworkPolicies() store.NetworkPolicyStore
+	Nodes() store.NodeStore
+	Registries() registry.Provider
+	ClusterLabels() scopecomp.ClusterLabelProvider
+	NamespaceLabels() scopecomp.NamespaceLabelProvider
+}
+
 // Builder constructs a Detector with a fluent API.
 type Builder struct {
 	clusterID              ClusterIDProvider
@@ -35,7 +46,7 @@ type Builder struct {
 	auditLogEvents         chan *sensor.AuditEvents
 	auditLogUpdater        updater.Component
 	networkPolicyStore     store.NetworkPolicyStore
-	registryStore          *registry.Store
+	registryStore          registry.Provider
 	localScan              *scan.LocalScan
 	nodeStore              store.NodeStore
 	clusterLabelProvider   scopecomp.ClusterLabelProvider
@@ -93,7 +104,18 @@ func (b *Builder) WithNetworkPolicyStore(nps store.NetworkPolicyStore) *Builder 
 	return b
 }
 
-func (b *Builder) WithRegistryStore(rs *registry.Store) *Builder {
+func (b *Builder) WithStoreProvider(sp StoreProvider) *Builder {
+	b.deploymentStore = sp.Deployments()
+	b.serviceAccountStore = sp.ServiceAccounts()
+	b.networkPolicyStore = sp.NetworkPolicies()
+	b.nodeStore = sp.Nodes()
+	b.registryStore = sp.Registries()
+	b.clusterLabelProvider = sp.ClusterLabels()
+	b.namespaceLabelProvider = sp.NamespaceLabels()
+	return b
+}
+
+func (b *Builder) WithRegistryStore(rs registry.Provider) *Builder {
 	b.registryStore = rs
 	return b
 }

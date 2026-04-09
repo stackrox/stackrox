@@ -644,10 +644,10 @@ func (mr *MockProviderMockRecorder) RBAC() *gomock.Call {
 }
 
 // Registries mocks base method.
-func (m *MockProvider) Registries() *registry.Store {
+func (m *MockProvider) Registries() registry.Provider {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Registries")
-	ret0, _ := ret[0].(*registry.Store)
+	ret0, _ := ret[0].(registry.Provider)
 	return ret0
 }
 
