@@ -150,16 +150,6 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.ClusterID).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("openshift_cluster_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.ClusterPlatformType,
-						storage.ClusterType_OPENSHIFT_CLUSTER.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(search.ClusterID).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
 			Filter("openshift4_cluster_count",
 				search.NewQueryBuilder().
 					AddExactMatches(

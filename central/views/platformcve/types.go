@@ -38,7 +38,6 @@ type CveView interface {
 type ClusterCountByPlatformType interface {
 	GetGenericClusterCount() int
 	GetKubernetesClusterCount() int
-	GetOpenshiftClusterCount() int
 	GetOpenshift4ClusterCount() int
 }
 

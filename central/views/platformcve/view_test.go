@@ -166,7 +166,6 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECore() {
 				assert.Equal(t,
 					record.GetClusterCountByPlatformType().GetGenericClusterCount()+
 						record.GetClusterCountByPlatformType().GetKubernetesClusterCount()+
-						record.GetClusterCountByPlatformType().GetOpenshiftClusterCount()+
 						record.GetClusterCountByPlatformType().GetOpenshift4ClusterCount(),
 					record.GetClusterCount(),
 				)
@@ -226,7 +225,6 @@ func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
 					assert.Equal(t,
 						record.GetClusterCountByPlatformType().GetGenericClusterCount()+
 							record.GetClusterCountByPlatformType().GetKubernetesClusterCount()+
-							record.GetClusterCountByPlatformType().GetOpenshiftClusterCount()+
 							record.GetClusterCountByPlatformType().GetOpenshift4ClusterCount(),
 						record.GetClusterCount(),
 					)

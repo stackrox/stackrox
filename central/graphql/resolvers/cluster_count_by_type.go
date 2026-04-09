@@ -45,9 +45,9 @@ func (resolver *clusterCountByTypeResolver) Kubernetes(_ context.Context) int32 
 	return int32(resolver.data.GetKubernetesClusterCount())
 }
 
-// Openshift returns the number of clusters of type OPENSHIFT
+// Openshift returns the number of clusters of type OPENSHIFT (deprecated -- returns 0).
 func (resolver *clusterCountByTypeResolver) Openshift(_ context.Context) int32 {
-	return int32(resolver.data.GetOpenshiftClusterCount())
+	return 0
 }
 
 // Openshift4 retruns the number of clusters of type OPENSHIFT4

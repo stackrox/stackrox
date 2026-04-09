@@ -17,10 +17,6 @@ func (e *emptyClusterCountByPlatformType) GetKubernetesClusterCount() int {
 	return 0
 }
 
-func (e *emptyClusterCountByPlatformType) GetOpenshiftClusterCount() int {
-	return 0
-}
-
 func (e *emptyClusterCountByPlatformType) GetOpenshift4ClusterCount() int {
 	return 0
 }

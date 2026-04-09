@@ -50,7 +50,6 @@ func (c *platformCVECoreResponse) GetClusterCountByPlatformType() ClusterCountBy
 	return &clusterCountByPlatformType{
 		GenericClusterCount:    c.GenericClusters,
 		KubernetesClusterCount: c.KubernetesClusters,
-		OpenshiftClusterCount:  c.OpenshiftClusters,
 		Openshift4ClusterCount: c.Openshift4Clusters,
 	}
 }
@@ -72,7 +71,6 @@ type platformCVECoreCount struct {
 type clusterCountByPlatformType struct {
 	GenericClusterCount    int
 	KubernetesClusterCount int
-	OpenshiftClusterCount  int
 	Openshift4ClusterCount int
 }
 
@@ -82,10 +80,6 @@ func (c *clusterCountByPlatformType) GetGenericClusterCount() int {
 
 func (c *clusterCountByPlatformType) GetKubernetesClusterCount() int {
 	return c.KubernetesClusterCount
-}
-
-func (c *clusterCountByPlatformType) GetOpenshiftClusterCount() int {
-	return c.OpenshiftClusterCount
 }
 
 func (c *clusterCountByPlatformType) GetOpenshift4ClusterCount() int {
