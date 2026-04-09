@@ -506,12 +506,12 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ClusterPlatformType,
 					storage.ClusterType_KUBERNETES_CLUSTER.String(),
-					storage.ClusterType_OPENSHIFT_CLUSTER.String(),
+					storage.ClusterType_OPENSHIFT4_CLUSTER.String(),
 				).
 				ProtoQuery(),
 			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
 				return cluster.GetType() == storage.ClusterType_KUBERNETES_CLUSTER ||
-					cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER
+					cluster.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER
 			}),
 		},
 		{
