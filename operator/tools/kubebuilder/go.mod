@@ -4,7 +4,7 @@ go 1.25.7
 
 require sigs.k8s.io/kubebuilder/v4 v4.13.1
 
-replace sigs.k8s.io/kubebuilder/v4 => github.com/camilamacedo86/kubebuilder/v4 v4.0.0-20260408092423-9f3b2a74de9e
+replace sigs.k8s.io/kubebuilder/v4 => github.com/porridge/kubebuilder/v4 v4.0.0-20260409070001-6835821e25d2
 
 require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
