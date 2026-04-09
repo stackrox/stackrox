@@ -27,6 +27,7 @@ type ClusterType int32
 const (
 	ClusterType_GENERIC_CLUSTER    ClusterType = 0
 	ClusterType_KUBERNETES_CLUSTER ClusterType = 1
+	// Deprecated: Marked as deprecated in storage/cluster.proto.
 	ClusterType_OPENSHIFT_CLUSTER  ClusterType = 2
 	ClusterType_OPENSHIFT4_CLUSTER ClusterType = 5
 )
@@ -2883,11 +2884,11 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x1ftotal_desired_analyzer_pods_optB\x1f\n" +
 	"\x1dtotal_ready_analyzer_pods_optB\x1b\n" +
 	"\x19total_desired_db_pods_optB\x19\n" +
-	"\x17total_ready_db_pods_opt*u\n" +
+	"\x17total_ready_db_pods_opt*y\n" +
 	"\vClusterType\x12\x13\n" +
 	"\x0fGENERIC_CLUSTER\x10\x00\x12\x16\n" +
-	"\x12KUBERNETES_CLUSTER\x10\x01\x12\x15\n" +
-	"\x11OPENSHIFT_CLUSTER\x10\x02\x12\x16\n" +
+	"\x12KUBERNETES_CLUSTER\x10\x01\x12\x19\n" +
+	"\x11OPENSHIFT_CLUSTER\x10\x02\x1a\x02\b\x01\x12\x16\n" +
 	"\x12OPENSHIFT4_CLUSTER\x10\x05\"\x04\b\x03\x10\x03\"\x04\b\x04\x10\x04*n\n" +
 	"\x10CollectionMethod\x12\x14\n" +
 	"\x10UNSET_COLLECTION\x10\x00\x12\x11\n" +
