@@ -828,7 +828,7 @@ func (p *fakeProvider) Namespaces() store.NamespaceStore {
 	return nil
 }
 
-func (p *fakeProvider) Registries() *registry.Store {
+func (p *fakeProvider) Registries() registry.Provider {
 	return nil
 }
 

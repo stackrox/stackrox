@@ -97,7 +97,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.LabelBasedPolicyScoping.Enabled() {
 		namespaces = storeProvider.Namespaces()
 	}
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabelsStore(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
@@ -108,7 +108,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
 	if features.LabelBasedPolicyScoping.Enabled() && helmManagedConfig != nil {
-		storeProvider.ClusterLabels().Set(helmManagedConfig.GetClusterConfig().GetClusterLabels())
+		storeProvider.ClusterLabelsStore().Set(helmManagedConfig.GetClusterConfig().GetClusterLabels())
 	}
 
 	if cfg.introspectionK8sClient == nil {
@@ -144,25 +144,19 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
 
 	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
-	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.Registries(), localScan)
+	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.RegistryStore(), localScan)
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
 	policyDetector, err := detector.NewBuilder().
+		WithStoreProvider(storeProvider).
 		WithClusterID(clusterID).
 		WithEnforcer(enforcer).
 		WithAdmCtrlSettingsMgr(admCtrlSettingsMgr).
-		WithDeploymentStore(storeProvider.Deployments()).
-		WithServiceAccountStore(storeProvider.ServiceAccounts()).
 		WithImageCache(imageCache).
 		WithAuditLogEvents(auditLogEventsInput).
 		WithAuditLogUpdater(auditLogCollectionManager).
-		WithNetworkPolicyStore(storeProvider.NetworkPolicies()).
-		WithRegistryStore(storeProvider.Registries()).
 		WithLocalScan(localScan).
-		WithNodeStore(storeProvider.Nodes()).
-		WithClusterLabelProvider(storeProvider.ClusterLabels()).
-		WithNamespaceLabelProvider(storeProvider.NamespaceLabels()).
 		Build()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating detector")
