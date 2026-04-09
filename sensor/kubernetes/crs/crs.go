@@ -214,11 +214,13 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
 		return nil, errors.Wrap(sensorCommon.ProbeStreamForConnectionError(stream,
-			"the cluster registration secret has been revoked in central",
-			"central did not echo the SensorHello metadata key."+
-				" Possible reasons: central does not support CRS-based cluster registration,"+
-				" or a networking/TLS issue is preventing proper communication"),
-			"central did not acknowledge SensorHello metadata")
+			"the cluster registration secret may be revoked or expired",
+			"central did not acknowledge SensorHello,"+
+				" likely due to a networking or TLS configuration issue"+
+				" (e.g., re-encrypt routes or TLS termination)"+
+				" preventing central from receiving sensor's TLS certificate,"+
+				" or central does not support CRS-based cluster registration"),
+			"handshake with central")
 	}
 
 	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})

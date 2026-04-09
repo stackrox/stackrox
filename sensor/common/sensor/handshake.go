@@ -9,19 +9,16 @@ import (
 
 // ProbeStreamForConnectionError probes a stream via Recv() to retrieve the
 // actual server-side error when central did not echo the SensorHello metadata
-// key. revokedMsg is a phrase describing the revoked credential (e.g.
-// "the init bundle credentials have been revoked in central" or "the cluster
-// registration secret has been revoked in central") and noEchoMsg is the error message returned when
-// Recv() succeeds without an error, meaning central is reachable but did not
-// acknowledge the handshake.
-func ProbeStreamForConnectionError(stream central.SensorService_CommunicateClient, revokedMsg, noEchoMsg string) error {
+// key. deniedMsg is the suggestion shown when central returns PermissionDenied
+// (e.g. revoked or expired credentials). genericMsg is the fallback error
+// message used for any other error or when Recv() succeeds without an error.
+func ProbeStreamForConnectionError(stream central.SensorService_CommunicateClient, deniedMsg, genericMsg string) error {
 	if _, recvErr := stream.Recv(); recvErr != nil {
 		if st, ok := status.FromError(recvErr); ok && st.Code() == codes.PermissionDenied {
-			return errors.Wrapf(recvErr, "central rejected the connection, possibly because"+
-				" %s."+
-				" Check central logs for details", revokedMsg)
+			return errors.Wrapf(recvErr, "central rejected the connection: %s."+
+				" Check central logs for details", deniedMsg)
 		}
-		return errors.Wrap(recvErr, "central rejected the connection")
+		return errors.Wrap(recvErr, genericMsg)
 	}
-	return errors.New(noEchoMsg)
+	return errors.New(genericMsg)
 }

@@ -126,13 +126,13 @@ func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
 		recvErr error
 		wantMsg string
 	}{
-		"PermissionDenied error suggests revoked credentials": {
+		"PermissionDenied error suggests revoked or expired credentials": {
 			recvErr: status.Error(codes.PermissionDenied, "not authorized: no authorizer could authorize this request"),
-			wantMsg: "credentials have been revoked",
+			wantMsg: "may be revoked or expired",
 		},
-		"Other gRPC error is surfaced": {
+		"Other gRPC error includes networking suggestion": {
 			recvErr: status.Error(codes.Internal, "could not fetch cluster for sensor: cluster does not exist"),
-			wantMsg: "central rejected the connection",
+			wantMsg: "likely due to a networking or TLS configuration issue",
 		},
 		"No error from Recv falls back to networking suggestion": {
 			recvMsg: &central.MsgToSensor{},
