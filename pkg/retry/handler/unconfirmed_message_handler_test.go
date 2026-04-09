@@ -316,6 +316,73 @@ func TestOnTimerFiredDoesNotBlockWhenRetryQueueFull(t *testing.T) {
 	})
 }
 
+// Regression: ACK must remove the resource from pendingRetries so that the
+// dispatcher never delivers a stale retry for an already-acknowledged resource.
+func TestACKClearsPendingRetryBeforeDispatch(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		umh := NewUnconfirmedMessageHandler(ctx, "test-ack-clears-pending", time.Minute)
+
+		// Simulate two resources whose timers have fired and are queued in pendingRetries.
+		umh.mu.Lock()
+		umh.resources["res-acked"] = &resourceState{numUnackedSendings: 1}
+		umh.resources["res-pending"] = &resourceState{numUnackedSendings: 1}
+		umh.pendingRetries.Add("res-acked")
+		umh.pendingRetries.Add("res-pending")
+		umh.mu.Unlock()
+
+		// ACK one resource before the dispatcher drains pendingRetries.
+		umh.HandleACK("res-acked")
+
+		// Notify the dispatcher so it drains the (now filtered) set.
+		umh.retryNotifyCh <- struct{}{}
+		synctest.Wait()
+
+		// Only the non-ACKed resource should be emitted.
+		select {
+		case rid := <-umh.RetryCommand():
+			assert.Equal(t, "res-pending", rid)
+		default:
+			t.Fatal("expected retry for res-pending")
+		}
+
+		// No further retries should be queued.
+		select {
+		case rid := <-umh.RetryCommand():
+			t.Fatalf("unexpected stale retry: %s", rid)
+		default:
+		}
+	})
+}
+
+// Regression: even if the dispatcher already took a resource from pendingRetries
+// into its local slice, isResourceActive must prevent delivery after a concurrent ACK.
+func TestDispatcherSkipsRetryForACKedResource(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		umh := NewUnconfirmedMessageHandler(ctx, "test-dispatcher-skip", time.Minute)
+
+		// Seed a tracked resource.
+		umh.mu.Lock()
+		umh.resources[testResourceID] = &resourceState{numUnackedSendings: 1}
+		umh.mu.Unlock()
+
+		// Before ACK, the dispatcher would consider this resource active.
+		assert.True(t, umh.isResourceActive(testResourceID),
+			"resource should be active before ACK")
+
+		umh.HandleACK(testResourceID)
+
+		// After ACK, the liveness check must return false.
+		assert.False(t, umh.isResourceActive(testResourceID),
+			"resource should be inactive after ACK")
+	})
+}
+
 func TestShutdownWithPendingRetrySignal(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())

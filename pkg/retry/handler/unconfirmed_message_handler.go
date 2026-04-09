@@ -157,6 +157,7 @@ func (h *UnconfirmedMessageHandlerImpl) HandleACK(resourceID string) {
 				state.timer.Stop()
 			}
 			delete(h.resources, resourceID)
+			h.pendingRetries.Remove(resourceID)
 			log.Debugf("[%s] Received ACK for resource %s", h.handlerName, resourceID)
 		} else {
 			log.Debugf("[%s] Received ACK for unknown resource %s", h.handlerName, resourceID)
@@ -257,6 +258,9 @@ func (h *UnconfirmedMessageHandlerImpl) runRetryDispatcher() {
 			}
 
 			for _, resourceID := range pending {
+				if !h.isResourceActive(resourceID) {
+					continue
+				}
 				select {
 				case <-h.ctx.Done():
 					return
@@ -265,6 +269,16 @@ func (h *UnconfirmedMessageHandlerImpl) runRetryDispatcher() {
 			}
 		}
 	}
+}
+
+// isResourceActive returns true if the resource still has unacked sendings tracked.
+// Used by the dispatcher to skip retries for resources that were ACKed between
+// takePendingRetries and the actual send.
+func (h *UnconfirmedMessageHandlerImpl) isResourceActive(resourceID string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	_, exists := h.resources[resourceID]
+	return exists
 }
 
 func (h *UnconfirmedMessageHandlerImpl) takePendingRetries() []string {
