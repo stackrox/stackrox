@@ -179,7 +179,7 @@ class Enforcement extends BaseSpecification {
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):
                     new Deployment()
                             .setImagePrefetcherAffinity()
-                            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3")
                             .addPort(22)
                             .setSkipReplicaWait(true)
                             .setCommand(["sleep", "600"]),

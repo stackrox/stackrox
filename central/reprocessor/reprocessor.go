@@ -458,7 +458,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	l.sendReprocessDeployments(skipClusterIDs)
 }
 
-func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnricher.FetchOption,
+func (l *loopImpl) reprocessImageV2(id string, digest string, imageName *storage.ImageName, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFuncV2) (*storage.ImageV2, bool) {
 	image, exists, err := l.imagesV2.GetImage(allAccessCtx, id)
 	if err != nil {
@@ -477,7 +477,7 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnri
 		if !exists {
 			return nil, false
 		}
-		image = utils.ConvertToV2(legacyImage)
+		image = utils.ConvertToV2WithNameOverride(legacyImage, imageName)
 		migrateToV2 = true
 	}
 
@@ -554,11 +554,11 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			return
 		}
 		clusterIDSet := set.NewStringSet(result.GetClusterIDs()...)
-		go func(id string, digest string, clusterIDs set.StringSet) {
+		go func(id string, digest string, imageName *storage.ImageName, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImageV2(id, digest, fetchOpt, imgReprocessingFunc)
+			image, successfullyProcessed := l.reprocessImageV2(id, digest, imageName, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -619,7 +619,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					)
 				}
 			}
-		}(result.GetImageID(), result.GetImageDigest(), clusterIDSet)
+		}(result.GetImageID(), result.GetImageDigest(), result.GetImageName(), clusterIDSet)
 	}
 	select {
 	case <-wg.Done():

@@ -102,7 +102,7 @@ func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetImageId(),
+		pgutils.NilOrString(obj.GetImageId()),
 		obj.GetCveBaseInfo().GetCve(),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
@@ -184,7 +184,7 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 
 		return []interface{}{
 			obj.GetId(),
-			obj.GetImageId(),
+			pgutils.NilOrString(obj.GetImageId()),
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),

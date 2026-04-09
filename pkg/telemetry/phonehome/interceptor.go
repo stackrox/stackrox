@@ -46,6 +46,12 @@ func (c *Client) track(rp *RequestParams) {
 	}
 }
 
+// getGRPCRequestDetails constructs a RequestParams for a gRPC invocation.
+// For grpc-gateway requests it uses the HTTP method, path, status code, and
+// headers, merging User-Agent values from both gRPC metadata and the HTTP
+// request. For pure gRPC calls it uses the full method name as both Method
+// and Path, derives the code from erroxGRPC.RoxErrorToGRPCCode, and builds
+// Headers from gRPC metadata.
 func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil && grpcFullMethod != v1.PingService_Ping_FullMethodName { // Ignore readiness probes.
@@ -90,6 +96,11 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	}
 }
 
+// getHTTPRequestDetails extracts the authenticated user (if any) from ctx and constructs
+// a RequestParams describing the given HTTP request and response status.
+// If user identity cannot be obtained, a debug message is logged.
+// The returned RequestParams contains the request method, URL path, provided status code,
+// the original *http.Request (HTTPReq) and a Headers wrapper created from r.Header.
 func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {

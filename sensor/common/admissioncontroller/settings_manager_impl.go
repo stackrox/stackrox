@@ -180,7 +180,7 @@ func copyMap(m map[string]string) map[string]string {
 	return result
 }
 
-func (p *settingsManager) InvalidateImageCache(keys []*central.InvalidateImageCache_ImageKey) {
+func (p *settingsManager) InvalidateImageCache(keys []*central.ImageKey) {
 	p.imageCacheInvalidationStream.Push(&sensor.AdmCtrlImageCacheInvalidation{
 		ImageKeys: keys,
 	})

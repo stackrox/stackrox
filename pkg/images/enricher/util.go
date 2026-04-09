@@ -32,7 +32,7 @@ func EnrichImageByName(ctx context.Context, enricher ImageEnricher, enrichmentCt
 		return nil, err
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != ScanSucceeded) {
+	if !enrichmentResult.ImageUpdated || !enrichmentResult.ScanResult.HasScanData() {
 		return nil, errors.Errorf("scan could not be completed for image %s (%v): please check that an applicable registry and scanner is integrated", name, img.GetNotes())
 	}
 
@@ -55,7 +55,7 @@ func EnrichImageV2ByName(ctx context.Context, enricher ImageEnricherV2, enrichme
 		return nil, err
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != ScanSucceeded) {
+	if !enrichmentResult.ImageUpdated || !enrichmentResult.ScanResult.HasScanData() {
 		return nil, errors.Errorf("scan could not be completed for image %s (%v): please check that an applicable registry and scanner is integrated", name, img.GetNotes())
 	}
 
