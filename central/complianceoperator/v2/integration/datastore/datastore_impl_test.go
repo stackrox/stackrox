@@ -257,7 +257,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 	// Add some clusters
 	_, err := s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster1, "cluster1", 1, 1)
 	s.Require().NoError(err)
-	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster2, "cluster2", 2, 2)
+	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster2, "cluster2", 2, 5)
 	s.Require().NoError(err)
 	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name, status_providermetadata_cluster_type, type) values ($1, $2, $3, $4)", testconsts.Cluster3, "cluster3", 5, 5)
 	s.Require().NoError(err)
@@ -463,7 +463,7 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			Version:                           "2",
 			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster2",
-			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT4_CLUSTER),
 			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_ARO),
 			OperatorInstalled:                 pointers.Bool(true),
 		},
