@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-
 	"time"
 
 	commonViews "github.com/stackrox/rox/central/views/common"

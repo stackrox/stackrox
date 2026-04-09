@@ -192,6 +192,8 @@ func (s *serviceImpl) GetVMDashboardCounts(ctx context.Context, request *v2.VMDa
 
 // batchCVESeverityByVM fetches all CVEs for the given VM IDs in one query
 // and aggregates severity counts per VM in memory.
+// TODO: Evaluate whether a SQL view with GROUP BY vm_v2_id would
+// be more efficient than in-memory aggregation for large result sets.
 func (s *serviceImpl) batchCVESeverityByVM(ctx context.Context, vmIDs []string) (map[string]*v2.VulnCountBySeverity, error) {
 	result := make(map[string]*v2.VulnCountBySeverity, len(vmIDs))
 	for _, id := range vmIDs {
@@ -242,6 +244,8 @@ func (s *serviceImpl) batchCVESeverityByVM(ctx context.Context, vmIDs []string) 
 
 // batchComponentScanCounts fetches all components for the given VM IDs in one query
 // and counts total vs scanned per VM in memory.
+// TODO: Evaluate whether a SQL view with GROUP BY vm_v2_id would
+// be more efficient than in-memory aggregation for large result sets.
 func (s *serviceImpl) batchComponentScanCounts(ctx context.Context, vmIDs []string) (map[string]*v2.ComponentScanCount, error) {
 	result := make(map[string]*v2.ComponentScanCount, len(vmIDs))
 	for _, id := range vmIDs {
