@@ -84,7 +84,7 @@ func TestPartialValidation(t *testing.T) {
 				cluster.AdmissionControllerEvents = true
 				cluster.Type = storage.ClusterType_OPENSHIFT_CLUSTER
 			},
-			expectedErrors: []string{"OpenShift 3.x compatibility mode does not support"},
+			expectedErrors: []string{"OpenShift 3.x is not supported anymore"},
 		},
 		"Non OpenShift4 cluster with enabled audit log collection should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
