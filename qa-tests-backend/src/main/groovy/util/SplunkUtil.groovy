@@ -104,6 +104,10 @@ class SplunkUtil {
     }
 
     static Response getSearchResults(int port, String searchId) {
+        // Wait for the search job to complete before fetching results.
+        // Splunk search jobs are async — fetching /events or /results before
+        // the job is DONE returns empty results, not an error.
+        waitForSearchComplete(port, searchId)
         Response response = null
         withRetry(20, 3) {
             response = splunkAdminRequest()
@@ -111,12 +115,24 @@ class SplunkUtil {
                     // Splunk defaults to returning 100 events. count=0 removes the limit
                     // so searches don't silently miss results beyond the first page.
                     .param("count", "0")
-                    .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId + "/events")
+                    .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId + "/results")
             assert response.statusCode() == 200 :
                     "GET search results for " + searchId + " failed with status " +
                     response.statusCode() + ": " + response.asString()
         }
         return response
+    }
+
+    private static void waitForSearchComplete(int port, String searchId) {
+        withRetry(30, 3) {
+            Response status = splunkAdminRequest()
+                    .param("output_mode", "json")
+                    .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId)
+            assert status.statusCode() == 200
+            String dispatchState = status.jsonPath().getString("entry[0].content.dispatchState")
+            log.debug("Search " + searchId + " state: " + dispatchState)
+            assert dispatchState == "DONE" : "Search not complete: " + dispatchState
+        }
     }
 
     static String createSearch(int port, String search = "search", String earliestTime = null) {
