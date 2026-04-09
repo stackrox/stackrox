@@ -76,17 +76,17 @@ func NewUnconfirmedMessageHandler(ctx context.Context, handlerName string, baseI
 	go func() {
 		defer h.cleanupDone.Flow().ReportStopped()
 		<-ctx.Done()
-		h.mu.Lock()
-		// Stop all timers to prevent more sends to channels
-		for _, state := range h.resources {
-			if state.timer != nil {
-				state.timer.Stop()
+		concurrency.WithLock(&h.mu, func() {
+			// Stop all timers to prevent more sends to channels.
+			for _, state := range h.resources {
+				if state.timer != nil {
+					state.timer.Stop()
+				}
 			}
-		}
-		// Close notification channel after timers are stopped.
-		// Timers and cleanup both use h.mu to avoid close/send races.
-		close(h.retryNotifyCh)
-		h.mu.Unlock()
+			// Close notification channel after timers are stopped.
+			// Timers and cleanup both use h.mu to avoid close/send races.
+			close(h.retryNotifyCh)
+		})
 
 		h.retryWorkerDone.Wait()
 		// Close command channel after the worker exits.
