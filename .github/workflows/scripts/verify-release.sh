@@ -91,19 +91,7 @@ validate_helm_charts() {
 
 validate_images() {
     RELEASE_PATCH="$1"
-    # Derive the downstream main image repo from the release branch's Tekton config,
-    # which is the source of truth for whether the release uses rhel8 or rhel9 base images.
-    local release_branch="release-${RELEASE_PATCH%.*}"
-    local main_repo
-    main_repo=$(gh api -H "$ACCEPT_RAW" "/repos/${GITHUB_REPOSITORY}/contents/.tekton/create-custom-snapshot.yaml?ref=${release_branch}" \
-        | grep -o '"externalRepo": "[^"]*rhacs-main[^"]*"' \
-        | head -1 \
-        | sed 's/"externalRepo": "//;s/"//')
-    if [[ -z "${main_repo}" ]]; then
-        gh_log error "Could not determine main image repo from .tekton/create-custom-snapshot.yaml on ${release_branch}"
-        return 1
-    fi
-    check_docker_image "${main_repo}:${RELEASE_PATCH}"
+    check_docker_image "registry.redhat.io/advanced-cluster-security/rhacs-operator-bundle:${RELEASE_PATCH}"
     check_docker_image "quay.io/stackrox-io/main:${RELEASE_PATCH}"
     check_docker_image "quay.io/rhacs-eng/main:${RELEASE_PATCH}"
 }
