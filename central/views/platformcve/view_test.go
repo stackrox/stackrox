@@ -428,9 +428,9 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			desc: "search one cluster",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.Cluster, "openshift-1").ProtoQuery(),
+				AddExactMatches(search.Cluster, "openshift4-1").ProtoQuery(),
 			matchFilter: matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
-				return cluster.GetName() == "openshift-1"
+				return cluster.GetName() == "openshift4-1"
 			}),
 		},
 		{
@@ -438,11 +438,11 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.CVE, "cve-2").
-				AddExactMatches(search.Cluster, "openshift-2").
+				AddExactMatches(search.Cluster, "openshift4-2").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withClusterFilter(func(cluster *storage.Cluster) bool {
-					return cluster.GetName() == "openshift-2"
+					return cluster.GetName() == "openshift4-2"
 				}).
 				withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
 					return cveParts.CVE.GetCveBaseInfo().GetCve() == "cve-2"
@@ -614,39 +614,36 @@ func (s *PlatformCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCa
 			visibleClusters: set.NewStringSet(
 				s.clusterNameToIDMap["generic-1"], s.clusterNameToIDMap["generic-2"],
 				s.clusterNameToIDMap["kubernetes-1"], s.clusterNameToIDMap["kubernetes-2"],
-				s.clusterNameToIDMap["openshift-1"], s.clusterNameToIDMap["openshift-2"],
 				s.clusterNameToIDMap["openshift4-1"], s.clusterNameToIDMap["openshift4-2"],
 			),
 		},
 		{
-			desc: "generic-1, kubernetes-1, openshift-1 and openshift4-1 clusters visible",
+			desc: "generic-1, kubernetes-1 and openshift4-1 clusters visible",
 			ctx: sac.WithGlobalAccessScopeChecker(ctx,
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(
 						s.clusterNameToIDMap["generic-1"], s.clusterNameToIDMap["kubernetes-1"],
-						s.clusterNameToIDMap["openshift-1"], s.clusterNameToIDMap["openshift4-1"]))),
+						s.clusterNameToIDMap["openshift4-1"]))),
 			visibleClusters: set.NewStringSet(
 				s.clusterNameToIDMap["generic-1"],
 				s.clusterNameToIDMap["kubernetes-1"],
-				s.clusterNameToIDMap["openshift-1"],
 				s.clusterNameToIDMap["openshift4-1"],
 			),
 		},
 		{
-			desc: "generic-2, kubernetes-2, openshift-2, openshift4-2 clusters visible",
+			desc: "generic-2, kubernetes-2, openshift4-2 clusters visible",
 			ctx: sac.WithGlobalAccessScopeChecker(ctx,
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(
 						s.clusterNameToIDMap["generic-2"], s.clusterNameToIDMap["kubernetes-2"],
-						s.clusterNameToIDMap["openshift-2"], s.clusterNameToIDMap["openshift4-2"]))),
+						s.clusterNameToIDMap["openshift4-2"]))),
 			visibleClusters: set.NewStringSet(
 				s.clusterNameToIDMap["generic-2"],
 				s.clusterNameToIDMap["kubernetes-2"],
-				s.clusterNameToIDMap["openshift-2"],
 				s.clusterNameToIDMap["openshift4-2"],
 			),
 		},
@@ -943,26 +940,6 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 	})
 	clusterMap[kubernetes2.GetId()] = kubernetes2
 
-	openshift1 := generateTestCluster(&testClusterFields{
-		Name:         "openshift-1",
-		PlatformType: storage.ClusterType_OPENSHIFT_CLUSTER,
-		ProviderType: storage.ClusterMetadata_OCP,
-		Labels:       map[string]string{"platform-type": "openshift"},
-		K8sVersion:   "8.0",
-		IsOpenshift:  true,
-	})
-	clusterMap[openshift1.GetId()] = openshift1
-
-	openshift2 := generateTestCluster(&testClusterFields{
-		Name:         "openshift-2",
-		PlatformType: storage.ClusterType_OPENSHIFT_CLUSTER,
-		ProviderType: storage.ClusterMetadata_OSD,
-		Labels:       map[string]string{"platform-type": "openshift"},
-		K8sVersion:   "8.0",
-		IsOpenshift:  true,
-	})
-	clusterMap[openshift2.GetId()] = openshift2
-
 	openshift41 := generateTestCluster(&testClusterFields{
 		Name:         "openshift4-1",
 		PlatformType: storage.ClusterType_OPENSHIFT4_CLUSTER,
@@ -1004,9 +981,9 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		converterV2.NewClusterCVEParts(cve3Openshift, []*storage.Cluster{generic2}, ""),
 		converterV2.NewClusterCVEParts(cve4K8, []*storage.Cluster{kubernetes1, kubernetes2}, "9.3"),
 		converterV2.NewClusterCVEParts(cve5K8, []*storage.Cluster{kubernetes1, kubernetes2}, "9.2"),
-		converterV2.NewClusterCVEParts(cve1Openshift, []*storage.Cluster{openshift1, openshift41, openshift42}, ""),
-		converterV2.NewClusterCVEParts(cve2Openshift, []*storage.Cluster{openshift1, openshift2, openshift42}, "4.15"),
-		converterV2.NewClusterCVEParts(cve4Openshift, []*storage.Cluster{openshift2, openshift42}, "4.13"),
+		converterV2.NewClusterCVEParts(cve1Openshift, []*storage.Cluster{openshift41, openshift42}, ""),
+		converterV2.NewClusterCVEParts(cve2Openshift, []*storage.Cluster{openshift42}, "4.15"),
+		converterV2.NewClusterCVEParts(cve4Openshift, []*storage.Cluster{openshift42}, "4.13"),
 		converterV2.NewClusterCVEParts(cve5Openshift, []*storage.Cluster{openshift41, openshift42}, "4.15"),
 		converterV2.NewClusterCVEParts(cve1Istio, []*storage.Cluster{generic1}, ""),
 		converterV2.NewClusterCVEParts(cve5Istio, []*storage.Cluster{openshift41}, "4.15"),
