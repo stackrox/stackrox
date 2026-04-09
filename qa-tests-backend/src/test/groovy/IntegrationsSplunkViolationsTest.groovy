@@ -103,7 +103,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasProcessAlert = false
         withRetry(40, 15) {
             def vSearchId = SplunkUtil.createSearch(port,
-                    "| datamodel Alerts Alerts search | search sourcetype=stackrox-violations", "-30m")
+                    "| datamodel Alerts Alerts search | rename Alerts.* AS *" +
+                    " | search sourcetype=stackrox-violations", "-30m")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
