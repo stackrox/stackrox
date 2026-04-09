@@ -89,7 +89,7 @@ func (s *migrationTestSuite) getTestCluster(name string, helmManaged bool) *stor
 	c := &storage.Cluster{
 		Id:        uuid.NewV4().String(),
 		Name:      name,
-		Type:      storage.ClusterType_OPENSHIFT_CLUSTER,
+		Type:      storage.ClusterType_OPENSHIFT4_CLUSTER,
 		MainImage: "quay.io/stackrox-io/main",
 	}
 	acc := &storage.AdmissionControllerConfig{
