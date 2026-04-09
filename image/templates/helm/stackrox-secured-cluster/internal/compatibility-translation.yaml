@@ -12,8 +12,15 @@ cluster:
     clusterName: {{ .value }}
   type: |
     env:
-      openshift: {{ if eq .rawValue "OPENSHIFT4_CLUSTER" }} 4 {{ else }} {{ eq .rawValue "OPENSHIFT_CLUSTER" }} {{ end }}
-
+{{- if eq .rawValue "OPENSHIFT4_CLUSTER" -}}
+      openshift: 4
+{{- else if eq .rawValue "OPENSHIFT_CLUSTER" -}}
+      {{/* We don't support this anymore, but this way we are explicit about it
+           and produce a rendering error for this cluster type. */}}
+      openshift: 3
+{{- else -}}
+      openshift: false
+{{- end -}}
 endpoint:
   central: |
     centralEndpoint: {{ .value }}
