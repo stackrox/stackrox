@@ -24,54 +24,55 @@ nohup kubectl -n stackrox port-forward svc/central 8000:443 >/dev/null 2>&1 &
 PORT_FORWARD_PID=$!
 sleep 5  # Give port-forward time to establish
 
+# Set API_ENDPOINT since we know it from the port-forward
+export API_ENDPOINT="localhost:8000"
+
 # Get admin password from SHARED_DIR (saved by stackrox-install-helm step)
 if [[ -n "${SHARED_DIR:-}" && -f "${SHARED_DIR}/rox_admin_password" ]]; then
-    ROX_ADMIN_PASSWORD="$(cat "${SHARED_DIR}/rox_admin_password")"
-    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+    export ROX_ADMIN_PASSWORD="$(cat "${SHARED_DIR}/rox_admin_password")"
     info "Retrieved admin password from SHARED_DIR"
 else
     info "Warning: Could not find admin password in SHARED_DIR"
 fi
 
-# Wait for Central API to be responsive
-if wait_for_api; then
-    info "Central API is responsive, collecting diagnostics"
+# Wait for Central API to be responsive (ignore ci_export permission errors at end of function)
+# If wait_for_api truly fails (API down), it will exit the script with exit 1
+# If it succeeds but ci_export fails, || true catches that and we continue
+wait_for_api || true
+info "Central API is responsive, collecting diagnostics"
 
-    # Get central debug dump (includes metrics)
-    if get_central_debug_dump "${DEBUG_OUTPUT}"; then
-        info "Collected central debug dump to ${DEBUG_OUTPUT}"
-        process_central_metrics "${DEBUG_OUTPUT}" || info "Warning: Failed to process central metrics"
-    else
-        info "Warning: Failed to collect central debug dump"
-    fi
-
-    # Get central diagnostics bundle
-    if get_central_diagnostics "${DIAGNOSTIC_OUTPUT}"; then
-        info "Collected central diagnostics to ${DIAGNOSTIC_OUTPUT}"
-    else
-        info "Warning: Failed to collect central diagnostics"
-    fi
-
-    # Grab additional data from Central
-    if "$ROOT/scripts/grab-data-from-central.sh" "${CENTRAL_DATA_OUTPUT}"; then
-        info "Collected central data to ${CENTRAL_DATA_OUTPUT}"
-    else
-        info "Warning: Failed to collect central data"
-    fi
-
-    # Store artifacts to OpenShift CI artifact directory
-    if [[ -n "${ARTIFACT_DIR:-}" ]]; then
-        info "Copying diagnostics to ${ARTIFACT_DIR}"
-        for dir in "${DEBUG_OUTPUT}" "${DIAGNOSTIC_OUTPUT}" "${CENTRAL_DATA_OUTPUT}"; do
-            if [[ -d "${dir}" ]]; then
-                cp -r "${dir}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${dir}"
-            fi
-        done
-    else
-        info "Warning: ARTIFACT_DIR not set, diagnostics not copied to artifacts"
-    fi
+# Get central debug dump (includes metrics)
+if get_central_debug_dump "${DEBUG_OUTPUT}"; then
+    info "Collected central debug dump to ${DEBUG_OUTPUT}"
+    process_central_metrics "${DEBUG_OUTPUT}" || info "Warning: Failed to process central metrics"
 else
-    info "Warning: Central API is not responsive, skipping diagnostic collection"
+    info "Warning: Failed to collect central debug dump"
+fi
+
+# Get central diagnostics bundle
+if get_central_diagnostics "${DIAGNOSTIC_OUTPUT}"; then
+    info "Collected central diagnostics to ${DIAGNOSTIC_OUTPUT}"
+else
+    info "Warning: Failed to collect central diagnostics"
+fi
+
+# Grab additional data from Central
+if "$ROOT/scripts/grab-data-from-central.sh" "${CENTRAL_DATA_OUTPUT}"; then
+    info "Collected central data to ${CENTRAL_DATA_OUTPUT}"
+else
+    info "Warning: Failed to collect central data"
+fi
+
+# Store artifacts to OpenShift CI artifact directory
+if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+    info "Copying diagnostics to ${ARTIFACT_DIR}"
+    for dir in "${DEBUG_OUTPUT}" "${DIAGNOSTIC_OUTPUT}" "${CENTRAL_DATA_OUTPUT}"; do
+        if [[ -d "${dir}" ]]; then
+            cp -r "${dir}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${dir}"
+        fi
+    done
+else
+    info "Warning: ARTIFACT_DIR not set, diagnostics not copied to artifacts"
 fi
 
 # Clean up port forward
