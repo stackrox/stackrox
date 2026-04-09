@@ -4,6 +4,7 @@ import { Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/re
 import type { MenuToggleElement } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
 import { ensureExhaustive } from 'utils/type.utils';
 
 const dropdownItems = [
@@ -16,6 +17,7 @@ const dropdownItems = [
         text: 'Create scheduled report',
         description: 'Create a scheduled report from this view using the filters you’ve applied.',
         featureFlagDependency: 'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING',
+        writeAccessRequirement: 'WorkflowAdministration',
     },
 ] as const;
 
@@ -32,6 +34,7 @@ function CreateReportDropdown({
 }: CreateReportDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadWriteAccess } = usePermissions();
 
     const onToggleClick = () => {
         setIsOpen((prev) => !prev);
@@ -74,8 +77,11 @@ function CreateReportDropdown({
                         const isEnabled =
                             !('featureFlagDependency' in dropdownItem) ||
                             isFeatureFlagEnabled(dropdownItem.featureFlagDependency);
+                        const hasAccess =
+                            !('writeAccessRequirement' in dropdownItem) ||
+                            hasReadWriteAccess(dropdownItem.writeAccessRequirement);
 
-                        return isEnabled ? (
+                        return isEnabled && hasAccess ? (
                             <DropdownItem key={text} value={text} description={description}>
                                 {text}
                             </DropdownItem>
