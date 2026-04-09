@@ -18,6 +18,21 @@ DEBUG_OUTPUT="debug-dump"
 DIAGNOSTIC_OUTPUT="diagnostic-bundle"
 CENTRAL_DATA_OUTPUT="central-data"
 
+# Set up port forward to Central
+info "Setting up port forward to central"
+nohup kubectl -n stackrox port-forward svc/central 8000:443 >/dev/null 2>&1 &
+PORT_FORWARD_PID=$!
+sleep 5  # Give port-forward time to establish
+
+# Get admin password from SHARED_DIR (saved by stackrox-install-helm step)
+if [[ -n "${SHARED_DIR:-}" && -f "${SHARED_DIR}/rox_admin_password" ]]; then
+    ROX_ADMIN_PASSWORD="$(cat "${SHARED_DIR}/rox_admin_password")"
+    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+    info "Retrieved admin password from SHARED_DIR"
+else
+    info "Warning: Could not find admin password in SHARED_DIR"
+fi
+
 # Wait for Central API to be responsive
 if wait_for_api; then
     info "Central API is responsive, collecting diagnostics"
@@ -57,6 +72,11 @@ if wait_for_api; then
     fi
 else
     info "Warning: Central API is not responsive, skipping diagnostic collection"
+fi
+
+# Clean up port forward
+if [[ -n "${PORT_FORWARD_PID:-}" ]]; then
+    kill "${PORT_FORWARD_PID}" 2>/dev/null || true
 fi
 
 info "Diagnostic collection complete"
