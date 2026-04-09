@@ -1,0 +1,27 @@
+name: "Check Konflux branch name"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+    paths:
+      - '**/*konflux*.Dockerfile'
+      - '.tekton/**'
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if branch name contains 'konflux'
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          echo "Branch name: $BRANCH_NAME"
+          echo "Changed files affecting Konflux or Tekton configuration"
+
+          if ! echo "$BRANCH_NAME" | grep -i "konflux"; then
+            echo "::error::PR changes Konflux Dockerfiles or Tekton files but branch name does not contain 'konflux'."
+            echo "::error::Please rename your branch to include 'konflux' in the name so that konflux jobs can run."
+            exit 1
+          fi
+
+          echo "✓ Branch name contains 'konflux'"
