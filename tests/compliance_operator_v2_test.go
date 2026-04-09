@@ -43,9 +43,6 @@ const (
 	defaultInterval     = 5 * time.Second
 	waitForDoneTimeout  = 5 * time.Minute
 	waitForDoneInterval = 30 * time.Second
-
-	// Namespace for custom rule input target (shared across tests, created idempotently).
-	customRuleNamespace = "e2e-test-cr"
 )
 
 var (
@@ -71,8 +68,8 @@ var (
 	}
 )
 
-// profileRef pairs a profile name with its compliance operator kind, used to
-// assert both the name and the Kind field on ScanSettingBinding profile entries.
+// profileRef pairs a profile name with its compliance operator kind (Profile/TailoredProfile),
+// used to assert both the name and the Kind field on ScanSettingBinding profile entries.
 type profileRef struct {
 	name         string
 	operatorKind v2.ComplianceProfile_OperatorKind
@@ -206,17 +203,11 @@ func cleanUpResources(ctx context.Context, t *testing.T, client ctrlClient.Clien
 }
 
 // createCustomRule creates a CEL CustomRule with the given name, waits for it
-// to reach Ready phase, and registers cleanup. The namespace and ConfigMap
-// prereqs are created idempotently (safe for parallel callers).
+// to reach Ready phase, and registers cleanup.
 func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
-	// Ensure namespace + ConfigMap exist (shared across tests).
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: customRuleNamespace}}
-	if err := client.Create(ctx, ns); err != nil && !errors2.IsAlreadyExists(err) {
-		require.NoError(t, err, "failed to create namespace %s", customRuleNamespace)
-	}
-
+	// Ensure ConfigMap exists in the CO namespace (shared across tests).
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: "required-config", Namespace: customRuleNamespace},
+		ObjectMeta: metav1.ObjectMeta{Name: "e2e-cr-config", Namespace: coNamespaceV2},
 		Data:       map[string]string{"e2e-marker": "true"},
 	}
 	if err := client.Create(ctx, cm); err != nil && !errors2.IsAlreadyExists(err) {
@@ -230,7 +221,7 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 		},
 		Spec: complianceoperatorv1.CustomRuleSpec{
 			RulePayload: complianceoperatorv1.RulePayload{
-				ID:          fmt.Sprintf("xccdf_org.example_rule_%s", strings.ReplaceAll(name, "-", "_")),
+				ID:          name,
 				Title:       "ConfigMap has e2e marker",
 				Description: "Checks for a ConfigMap with an e2e-marker data key",
 				Rationale:   "E2E test marker must be present",
@@ -247,7 +238,7 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 						KubernetesInputSpec: complianceoperatorv1.KubernetesInputSpec{
 							APIVersion:        "v1",
 							Resource:          "configmaps",
-							ResourceNamespace: customRuleNamespace,
+							ResourceNamespace: coNamespaceV2,
 						},
 					},
 				},
@@ -270,9 +261,7 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 }
 
 // createTailoredProfile creates an extends-based TailoredProfile (extending
-// ocp4-e8), waits for it to be READY in k8s, and registers cleanup. Use this
-// for tests that just need any TP regardless of variant. For specific TP
-// variants (from-scratch, custom rules, etc.) build the TP inline in the test.
+// ocp4-e8), waits for it to be READY in k8s, and registers cleanup.
 func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
 	tp := &complianceoperatorv1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -281,7 +270,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 		},
 		Spec: complianceoperatorv1.TailoredProfileSpec{
 			Extends:     "ocp4-e8",
-			Title:       "E2E Test TailoredProfile",
+			Title:       fmt.Sprintf("E2E TailoredProfile %s", name),
 			Description: "Extends ocp4-e8 for e2e testing",
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
 				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
@@ -300,7 +289,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			name, current.Status.State, current.Status.ErrorMessage)
-	}, 3*time.Minute, 10*time.Second)
+	}, 1*time.Minute, 5*time.Second)
 }
 
 // waitForTPIngestion waits for a tailored profile to be ingested by ACS and returns it.
@@ -319,7 +308,7 @@ func waitForTPIngestion(ctx context.Context, t *testing.T,
 			}
 		}
 		require.Failf(c, "TP not yet ingested by ACS", "profile %q not found", name)
-	}, 2*time.Minute, 10*time.Second)
+	}, 1*time.Minute, 5*time.Second)
 	return profile
 }
 
@@ -404,12 +393,12 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Create per-test tailored profile and wait for ACS ingestion.
 	testID := fmt.Sprintf("sync-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("sync-tp-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitForTPIngestion(ctx, t, profileClient, clusterID, tpName)
 
-	// Use mixed profiles (platform Profile + TailoredProfile) to validate that the startup
+	// Use mixed profiles (Profile + TailoredProfile) to validate that the startup
 	// sync path preserves profile_refs with correct kinds.
 	initialProfiles := []profileRef{
 		{name: "ocp4-cis", operatorKind: v2.ComplianceProfile_PROFILE},
@@ -515,8 +504,7 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
 	// Create per-test tailored profile and wait for ACS ingestion.
-	testID := fmt.Sprintf("profile-get-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("profile-get-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	tpProfile := waitForTPIngestion(ctx, t, client, clusterID, tpName)
 
@@ -561,8 +549,7 @@ func TestComplianceV2ProfileGetSummaries(t *testing.T) {
 	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
 	// Create per-test tailored profile and wait for ACS ingestion.
-	testID := fmt.Sprintf("summaries-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("summaries-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	waitForTPIngestion(ctx, t, client, clusterID, tpName)
 
@@ -613,7 +600,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 
 	// Create per-test tailored profile and wait for ACS ingestion.
 	testID := fmt.Sprintf("create-get-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("create-get-tp-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitForTPIngestion(ctx, t, profileClient, clusterID, tpName)
@@ -792,7 +779,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 
 	// Create per-test tailored profile and wait for ACS ingestion.
 	testID := fmt.Sprintf("update-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("update-tp-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitForTPIngestion(ctx, t, profileClient, clusterID, tpName)
@@ -891,7 +878,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 
 	// Create per-test tailored profile and wait for ACS ingestion.
 	testID := fmt.Sprintf("delete-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("delete-tp-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitForTPIngestion(ctx, t, profileClient, clusterID, tpName)
@@ -1042,7 +1029,7 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	// Create per-test tailored profile and wait for ACS ingestion.
 	testID := fmt.Sprintf("rescan-%s", uuid.NewV4().String())
-	tpName := testID + "-tp"
+	tpName := fmt.Sprintf("rescan-tp-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitForTPIngestion(ctx, t, profileClient, clusterId, tpName)
@@ -1120,7 +1107,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			extendsTPName, current.Status.State, current.Status.ErrorMessage)
-	}, 3*time.Minute, 10*time.Second)
+	}, 1*time.Minute, 5*time.Second)
 
 	// --- Variant 2: from-scratch TP with a custom rule ---
 	crName := testID + "-cr"
@@ -1150,7 +1137,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			fromScratchCRName, current.Status.State, current.Status.ErrorMessage)
-	}, 3*time.Minute, 10*time.Second)
+	}, 1*time.Minute, 5*time.Second)
 
 	// --- Variant 3: from-scratch TP with regular rules only (no custom rules) ---
 	fromScratchRegName := testID + "-from-scratch-reg"
@@ -1178,7 +1165,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			fromScratchRegName, current.Status.State, current.Status.ErrorMessage)
-	}, 3*time.Minute, 10*time.Second)
+	}, 1*time.Minute, 5*time.Second)
 
 	// --- Wait for ACS ingestion of all three TPs ---
 	extendsInACS := waitForTPIngestion(ctx, t, profileClient, clusterID, extendsTPName)
