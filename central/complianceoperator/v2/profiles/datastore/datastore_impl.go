@@ -7,6 +7,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -17,6 +19,7 @@ import (
 )
 
 var (
+	log           = logging.LoggerForModule()
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
@@ -119,19 +122,67 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clust
 	}
 	parsedQuery.Pagination = q.GetPagination()
 
-	var profileNames []string
-	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileName](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, parsedQuery, func(r *distinctProfileName) error {
-		profileNames = append(profileNames, r.ProfileName)
-		return nil
-	})
+	var results []*distinctProfileName
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
-	if len(profileNames) == 0 {
+	if len(results) == 0 {
 		return nil, nil
 	}
+	profileNames := make([]string, 0, len(results))
+	for _, result := range results {
+		profileNames = append(profileNames, result.ProfileName)
+	}
 
-	return profileNames, err
+	if !env.SkipTailoredProfileEquivalenceHash.BooleanSetting() {
+		profileNames, err = d.filterNonEquivalentTPs(ctx, profileNames, readableClusterIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return profileNames, nil
+}
+
+// filterNonEquivalentTPs removes tailored profile names whose instances have differing
+// equivalence hashes across clusters. OOB profiles are passed through unchanged.
+func (d *datastoreImpl) filterNonEquivalentTPs(ctx context.Context, names []string, clusterIDs []string) ([]string, error) {
+	if len(names) == 0 {
+		return names, nil
+	}
+
+	profiles, err := d.store.GetByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterIDs...).
+		AddExactMatches(search.ComplianceOperatorProfileName, names...).ProtoQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	byName := make(map[string][]*storage.ComplianceOperatorProfileV2, len(names))
+	for _, p := range profiles {
+		byName[p.GetName()] = append(byName[p.GetName()], p)
+	}
+
+	return applyEquivalenceFilter(names, byName), nil
+}
+
+// applyEquivalenceFilter filters names using pre-fetched profile instances grouped by name.
+// Tailored profiles whose instances have inconsistent equivalence hashes are removed.
+// OOB profiles are passed through unchanged.
+func applyEquivalenceFilter(names []string, byName map[string][]*storage.ComplianceOperatorProfileV2) []string {
+	filtered := names[:0]
+	for _, name := range names {
+		instances := byName[name]
+		isTP := len(instances) > 0 && instances[0].GetOperatorKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE
+		if !isTP || TailoredProfilesEquivalent(instances) {
+			filtered = append(filtered, name)
+		} else {
+			log.Warnf("Tailored profile %q excluded from profile picker: content differs across clusters (equivalence hash mismatch). "+
+				"Deploy an identical tailored profile on all clusters to make it schedulable. Alternatively, enable ROX_COMPLIANCE_SKIP_TAILORED_PROFILE_EQUIVALENCE_HASH to skip equivalence checks.", name)
+		}
+	}
+	return filtered
 }
 
 type distinctProfileCount struct {
@@ -139,33 +190,35 @@ type distinctProfileCount struct {
 	Name       string `db:"compliance_profile_name"`
 }
 
-// CountDistinctProfiles returns count of distinct profiles matching query
+// CountDistinctProfiles returns the number of distinct profile names present on all requested clusters.
 func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, clusterIDs []string) (int, error) {
-	// Build the matching query to restrict profiles to the incoming clusters
 	readableClusterIDs := bestEffortClusters(ctx, clusterIDs)
+
+	var err error
+	q, err = withSACFilter(ctx, resources.Compliance, q)
+	if err != nil {
+		return 0, err
+	}
 
 	query := search.ConjunctionQuery(
 		search.NewQueryBuilder().
 			AddExactMatches(search.ClusterID, readableClusterIDs...).
-			AddNumericField(search.ProfileCount, storage.Comparator_EQUALS, float32(len(readableClusterIDs))).ProtoQuery(),
+			AddNumericField(search.ProfileCount, storage.Comparator_EQUALS, float32(len(readableClusterIDs))).
+			ProtoQuery(),
 		q,
 	)
-
 	query.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ComplianceOperatorProfileName.String(),
 		},
 	}
 
-	var count int
-	err := pgSearch.RunSelectRequestForSchemaFn[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName), func(r *distinctProfileCount) error {
-		count++
-		return nil
-	})
+	var results []*distinctProfileCount
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
 	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	return len(results), nil
 }
 
 func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
@@ -174,6 +227,22 @@ func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
 	}
 	return cloned
+}
+
+// TailoredProfilesEquivalent returns true when all instances share the same equivalence_hash
+// value. An all-empty hash is treated as equivalent (COUNT(DISTINCT "") = 1). An empty or nil
+// slice is considered equivalent.
+func TailoredProfilesEquivalent(instances []*storage.ComplianceOperatorProfileV2) bool {
+	if len(instances) == 0 {
+		return true
+	}
+	h := instances[0].GetEquivalenceHash()
+	for _, inst := range instances[1:] {
+		if inst.GetEquivalenceHash() != h {
+			return false
+		}
+	}
+	return true
 }
 
 func bestEffortClusters(ctx context.Context, clusterIDs []string) []string {

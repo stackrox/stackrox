@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -299,6 +300,15 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		}
 	}
 
+	// For scan configs that include tailored profiles, verify that each tailored profile has
+	// equivalent content (same equivalence_hash) on every selected cluster.
+	// The bypass env var disables this check entirely (name-only, same as non-tailored profile behavior).
+	if !env.SkipTailoredProfileEquivalenceHash.BooleanSetting() {
+		if err := m.validateTailoredProfilesEquivalence(ctx, returnedProfiles, clusters, scanRequest.GetScanConfigName()); err != nil {
+			return nil, err
+		}
+	}
+
 	// Build profile refs (name + kind) - needed to support tailored profiles, a different resource kind in CO.
 	// Persist profile_refs so the startup sync path can forward correct kinds to Sensor on reconnect.
 	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
@@ -568,4 +578,55 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 	}
 
 	return cron, nil
+}
+
+// validateTailoredProfilesEquivalence verifies that each tailored profile in the scan
+// request is equivalent on every selected cluster, by comparing their equivalence hashes.
+// Non-tailored profiles are not checked. Called only when hash checking is not bypassed.
+//
+// Hash equivalence: all instances share the same hash value (COUNT(DISTINCT hash) = 1).
+// All-empty is allowed — treated as equivalent, matching the profile picker semantics.
+func (m *managerImpl) validateTailoredProfilesEquivalence(
+	ctx context.Context,
+	cluster0Profiles []*storage.ComplianceOperatorProfileV2,
+	clusters []string,
+	scanConfigName string,
+) error {
+	var tailoredProfileNames []string
+	for _, p := range cluster0Profiles {
+		if p.GetOperatorKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+			tailoredProfileNames = append(tailoredProfileNames, p.GetName())
+		}
+	}
+	if len(tailoredProfileNames) == 0 {
+		return nil
+	}
+
+	allInstances, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusters...).
+		AddExactMatches(search.ComplianceOperatorProfileName, tailoredProfileNames...).ProtoQuery())
+	if err != nil {
+		return errors.Wrapf(err, "scan configuration %q: failed to retrieve tailored profiles across clusters", scanConfigName)
+	}
+
+	byName := make(map[string][]*storage.ComplianceOperatorProfileV2, len(tailoredProfileNames))
+	for _, p := range allInstances {
+		byName[p.GetName()] = append(byName[p.GetName()], p)
+	}
+
+	for _, name := range tailoredProfileNames {
+		instances := byName[name]
+		if len(instances) != len(clusters) {
+			log.Warnf("Scan configuration %q rejected: tailored profile %q is present on %d of %d selected clusters",
+				scanConfigName, name, len(instances), len(clusters))
+			return errors.Errorf("scan configuration %q: tailored profile %q is not present on all selected clusters", scanConfigName, name)
+		}
+		if !profileDatastore.TailoredProfilesEquivalent(instances) {
+			log.Warnf("Scan configuration %q rejected: tailored profile %q has different content across clusters (equivalence hash mismatch). "+
+				"Deploy an identical tailored profile on all clusters before creating a multi-cluster scan.", scanConfigName, name)
+			return errors.Errorf("scan configuration %q: tailored profile %q has different content across clusters; "+
+				"ensure the same tailored profile is deployed on every cluster before creating a multi-cluster scan", scanConfigName, name)
+		}
+	}
+	return nil
 }
