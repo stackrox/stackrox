@@ -351,3 +351,75 @@ func TestProcessEvent_V2EventHasTailoredProfileKind(t *testing.T) {
 	require.NotNil(t, v2Profile)
 	assert.Equal(t, central.ComplianceOperatorProfileV2_TAILORED_PROFILE, v2Profile.GetOperatorKind())
 }
+
+// TestProcessEvent_V2EventCarriesNamespaceAndSetValues tests that the V2 event carries
+// namespace and set_values so Central can compute the equivalence hash.
+func TestProcessEvent_V2EventCarriesNamespaceAndSetValues(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations, centralsensor.ComplianceV2TailoredProfiles})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis-tailored",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+			SetValues: []v1alpha1.VariableValueSpec{
+				{Name: "var_password_min_length", Rationale: "org policy", Value: "15"},
+				{Name: "var_session_timeout", Rationale: "compliance", Value: "600"},
+			},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_ocp4-cis-tailored",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.Len(t, event.ForwardMessages, 2)
+
+	v2Profile := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+	require.NotNil(t, v2Profile)
+
+	assert.Equal(t, "openshift-compliance", v2Profile.GetNamespace(), "namespace must be forwarded")
+
+	require.Len(t, v2Profile.GetSetValues(), 2)
+	assert.Equal(t, "var_password_min_length", v2Profile.GetSetValues()[0].GetName())
+	assert.Equal(t, "org policy", v2Profile.GetSetValues()[0].GetRationale())
+	assert.Equal(t, "15", v2Profile.GetSetValues()[0].GetValue())
+	assert.Equal(t, "var_session_timeout", v2Profile.GetSetValues()[1].GetName())
+	assert.Equal(t, "600", v2Profile.GetSetValues()[1].GetValue())
+}
+
+// TestProcessEvent_V2EventEmptySetValues tests that set_values is empty when the TP has no SetValues.
+func TestProcessEvent_V2EventEmptySetValues(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations, centralsensor.ComplianceV2TailoredProfiles})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis-tailored",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_ocp4-cis-tailored",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	v2Profile := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+	assert.Empty(t, v2Profile.GetSetValues())
+}

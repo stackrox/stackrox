@@ -1,6 +1,11 @@
 package internaltov2storage
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"slices"
+	"strings"
+
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,22 +22,30 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 
 	productType := internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation]
 
+	operatorKind := centralToStorageProfileKind(internalMsg.GetOperatorKind())
+
+	var equivalenceHash string
+	if operatorKind == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+		equivalenceHash = computeEquivalenceHash(internalMsg)
+	}
+
 	return &storage.ComplianceOperatorProfileV2{
-		Id:             internalMsg.GetId(),
-		ProfileId:      internalMsg.GetProfileId(),
-		Name:           internalMsg.GetName(),
-		ProfileVersion: internalMsg.GetProfileVersion(),
-		ProductType:    productType,
-		Labels:         internalMsg.GetLabels(),
-		Annotations:    internalMsg.GetAnnotations(),
-		Description:    internalMsg.GetDescription(),
-		Rules:          rules,
-		Product:        internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
-		Title:          internalMsg.GetTitle(),
-		Values:         internalMsg.GetValues(),
-		ClusterId:      clusterID,
-		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
-		OperatorKind:   centralToStorageProfileKind(internalMsg.GetOperatorKind()),
+		Id:              internalMsg.GetId(),
+		ProfileId:       internalMsg.GetProfileId(),
+		Name:            internalMsg.GetName(),
+		ProfileVersion:  internalMsg.GetProfileVersion(),
+		ProductType:     productType,
+		Labels:          internalMsg.GetLabels(),
+		Annotations:     internalMsg.GetAnnotations(),
+		Description:     internalMsg.GetDescription(),
+		Rules:           rules,
+		Product:         internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
+		Title:           internalMsg.GetTitle(),
+		Values:          internalMsg.GetValues(),
+		ClusterId:       clusterID,
+		ProfileRefId:    BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
+		OperatorKind:    operatorKind,
+		EquivalenceHash: equivalenceHash,
 	}
 }
 
@@ -79,6 +92,63 @@ func ScanConfigRefsToCentral(refs []*storage.ComplianceOperatorScanConfiguration
 		})
 	}
 	return centralRefs
+}
+
+// computeEquivalenceHash returns a SHA-256 hex digest that identifies whether two
+// tailored profiles carry equivalent compliance configuration. The hash covers the
+// fields that define a profile's effective content: name, namespace, description,
+// title, rules, and set_values.
+//
+// Rules and set_values are sorted for order independence. Rationale is excluded from
+// set_values hashing because it is documentation, not configuration — two profiles
+// with the same variable overrides but different rationales are functionally equivalent.
+//
+// IMPORTANT — changing the inputs or serialisation of this function changes the hash
+// for every tailored profile. This may temporarily prevent multi-cluster scan config
+// creation until all profiles are re-synced. Because the hash is computed in Central
+// (not Sensor), rolling Sensor upgrades do NOT cause hash divergence.
+func computeEquivalenceHash(msg *central.ComplianceOperatorProfileV2) string {
+	h := sha256.New()
+
+	// Write scalar fields, NUL-separated.
+	for _, s := range []string{msg.GetName(), msg.GetNamespace(), msg.GetDescription(), msg.GetTitle()} {
+		_, _ = h.Write([]byte(s))
+		_, _ = h.Write([]byte{0})
+	}
+
+	// Rules: sorted for order independence.
+	ruleNames := make([]string, 0, len(msg.GetRules()))
+	for _, r := range msg.GetRules() {
+		ruleNames = append(ruleNames, r.GetRuleName())
+	}
+	slices.Sort(ruleNames)
+	for _, r := range ruleNames {
+		_, _ = h.Write([]byte(r))
+		_, _ = h.Write([]byte{0})
+	}
+	// Section separator between rules and set_values.
+	_, _ = h.Write([]byte{0})
+
+	// SetValues: sorted by name then value for order independence.
+	type nameValue struct{ name, value string }
+	setVals := make([]nameValue, 0, len(msg.GetSetValues()))
+	for _, sv := range msg.GetSetValues() {
+		setVals = append(setVals, nameValue{name: sv.GetName(), value: sv.GetValue()})
+	}
+	slices.SortFunc(setVals, func(a, b nameValue) int {
+		if c := strings.Compare(a.name, b.name); c != 0 {
+			return c
+		}
+		return strings.Compare(a.value, b.value)
+	})
+	for _, sv := range setVals {
+		_, _ = h.Write([]byte(sv.name))
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(sv.value))
+		_, _ = h.Write([]byte{0})
+	}
+
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_OperatorKind) storage.ComplianceOperatorProfileV2_OperatorKind {
