@@ -8,6 +8,8 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=../lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../tests/e2e/lib.sh
+source "$ROOT/tests/e2e/lib.sh"
 
 info "Collecting diagnostics after performance/scale tests"
 
