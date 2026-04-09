@@ -114,6 +114,8 @@ func newCentralClient(instanceId string) *CentralClient {
 func getCentralDeploymentProperties() map[string]any {
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.Openshift.BooleanSetting() {
+		// Should probably be changed to OPENSHIFT4_CLUSTER, but since this is production code, keeping it for now
+		// due to compatibility concerns.
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 	// k8s apiserver is not accessible in cloud service environment.
