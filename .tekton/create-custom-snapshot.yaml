@@ -138,6 +138,10 @@ spec:
                 fieldPath: metadata.annotations['pipelinesascode.tekton.dev/branch']
           - name: PULL_REQUEST_NUMBER
             value: '{{pull_request_number}}'
+          - name: GH_REPO
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['pipelinesascode.tekton.dev/repo-url']
 
           script: |
             #!/usr/bin/env bash
@@ -154,46 +158,50 @@ spec:
             # Exit 0 when the function name is true; exit 1 when false (so && / ! compose correctly).
 
             is_pull_request() {
-                if [[ "${PULL_REQUEST_NUMBER}" == '{{pull_request_number}}' ]] || [[ -z "${PULL_REQUEST_NUMBER}" ]]; then
-                  echo "This is not a pull request."
-                  return 1
-                else
-                  echo "This is a pull request."
-                  return 0
-                fi
+              if [[ "${PULL_REQUEST_NUMBER}" == '{{pull_request_number}}' ]] || [[ -z "${PULL_REQUEST_NUMBER}" ]]; then
+                echo "This is not a pull request."
+                return 1
+              else
+                echo "This is a pull request."
+                return 0
+              fi
             }
 
             is_targeting_release_branch() {
-                if [[ "${TARGET_BRANCH}" == release-* ]]; then
-                  echo "Target branch is a release branch."
-                  return 0
-                else
-                  echo "Target branch is not a release branch."
-                  return 1
-                fi
+              if [[ "${TARGET_BRANCH}" == release-* ]]; then
+                echo "Target branch is a release branch."
+                return 0
+              else
+                echo "Target branch is not a release branch."
+                return 1
+              fi
             }
 
             source_branch_matches() {
-                if [[ "${SOURCE_BRANCH}" =~ (konflux|renovate|appstudio|rhtap) ]]; then
-                  echo "Source branch has the magic string for a Konflux branch."
-                  return 0
-                else
-                  echo "Source branch does not have the magic string."
-                  return 1
-                fi
+              if [[ "${SOURCE_BRANCH}" =~ (konflux|renovate|appstudio|rhtap) ]]; then
+                echo "Source branch has the magic string for a Konflux branch."
+                return 0
+              else
+                echo "Source branch does not have the magic string."
+                return 1
+              fi
             }
 
             has_konflux_build_label() {
-                local pull_request_number=$1
-                local label_name="konflux-build"
+              local pull_request_number=$1
+              local label_name="konflux-build"
 
-                gh pr view --json labels "${pull_request_number}" \
-                  | jq -r '.labels[] | select(.name == "'"${label_name}"'") | .name' | grep -q "${label_name}"
+              if gh pr view --json labels "${pull_request_number}" \
+                | jq -r '.labels[] | select(.name == "'"${label_name}"'") | .name' | grep -q "${label_name}"; then
+                return 0
+              else
+                return 1
+              fi
             }
 
-            if is_pull_request; then
-                echo "Sleeping for 60 seconds to allow the labeler to assign the konflux-build label to the PR if applicable."
-                sleep 60
+            if is_pull_request && ! has_konflux_build_label "${PULL_REQUEST_NUMBER}"; then
+              echo "Sleeping for 60 seconds to allow the labeler to assign the konflux-build label to the PR if applicable."
+              sleep 60
             fi
 
             # Skip snapshot work when this is a normal PR (not release, not Konflux/Renovate branch, no konflux-build label).
