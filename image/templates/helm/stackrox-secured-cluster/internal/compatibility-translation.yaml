@@ -12,7 +12,7 @@ cluster:
     clusterName: {{ .value }}
   type: |
     env:
-      openshift: {{ if eq .rawValue "OPENSHIFT4_CLUSTER" }} 4 {{ else }} {{ eq .rawValue "OPENSHIFT_CLUSTER" }} {{ end }}
+      openshift: {{ eq .rawValue "OPENSHIFT4_CLUSTER" }}
 
 endpoint:
   central: |
