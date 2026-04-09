@@ -9,8 +9,7 @@ import (
 
 const sensorHelloNotAcknowledgedMsg = "central did not acknowledge SensorHello," +
 	" likely due to a networking or TLS configuration issue" +
-	" (e.g., re-encrypt routes or TLS termination)" +
-	" preventing central from receiving sensor's TLS certificate"
+	" (e.g., re-encrypt routes or TLS termination)"
 
 // ProbeStreamForConnectionError probes a stream via Recv() to retrieve the
 // actual server-side error when central did not echo the SensorHello metadata
