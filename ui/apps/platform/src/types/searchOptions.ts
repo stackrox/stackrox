@@ -90,6 +90,7 @@ export type SearchFieldLabel =
     | 'Cluster CVE Fixed By'
     | 'Cluster CVE Fixable'
     | 'CLUSTER CVE FIXABLE' // TODO replace UPPERCASE with Title Case
+    | 'DEPLOYMENT_STATUS' // TODO replace UPPERCASE with Title Case
     | 'Fixable CVE Count'
     | 'Last Updated'
     | 'Image Top CVSS'

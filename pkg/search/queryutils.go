@@ -2,12 +2,32 @@ package search
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+// QueryMentionsField returns true if any MatchFieldQuery leaf in the query tree
+// references the given field label (case-insensitive). It is used to detect when a
+// caller has explicitly filtered on a field so that default server-side filters for
+// that field can be skipped.
+func QueryMentionsField(q *v1.Query, field FieldLabel) bool {
+	if q == nil {
+		return false
+	}
+	found := false
+	ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		if mfq, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery); ok {
+			if strings.EqualFold(mfq.MatchFieldQuery.GetField(), field.String()) {
+				found = true
+			}
+		}
+	})
+	return found
+}
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.
 func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {

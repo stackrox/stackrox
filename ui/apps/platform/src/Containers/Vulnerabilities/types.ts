@@ -20,6 +20,12 @@ export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);
 }
 
+export const deploymentStatusLabels = ['Deployed', 'Deleted'] as const;
+export type DeploymentStatusLabel = (typeof deploymentStatusLabels)[number];
+export function isDeploymentStatusLabel(value: unknown): value is DeploymentStatusLabel {
+    return deploymentStatusLabels.some((status) => status === value);
+}
+
 export const scanStatuses = ['Scanned', 'Not scanned'] as const;
 export type ScanStatus = (typeof scanStatuses)[number];
 
@@ -40,6 +46,9 @@ const vulnMgmtLocalStorageSchema = yup.object({
                 .array(yup.string().required().oneOf(vulnerabilitySeverityLabels))
                 .required(),
             FIXABLE: yup.array(yup.string().required().oneOf(fixableStatuses)).required(),
+            DEPLOYMENT_STATUS: yup
+                .array(yup.string().required().oneOf(deploymentStatusLabels))
+                .required(),
         }),
     }),
 });

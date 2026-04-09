@@ -552,6 +552,15 @@ func (m *managerImpl) DeploymentRemoved(deploymentID string) error {
 	return err
 }
 
+// DeploymentTombstoned transitions active alerts for the deployment to TOMBSTONED state.
+func (m *managerImpl) DeploymentTombstoned(deploymentID string) error {
+	err := m.alertManager.AlertAndNotifyTombstoned(lifecycleMgrCtx, deploymentID)
+
+	m.deploymentObservationQueue.RemoveDeployment(deploymentID)
+
+	return err
+}
+
 func (m *managerImpl) RemoveDeploymentFromObservation(deploymentID string) {
 	m.deploymentObservationQueue.RemoveFromObservation(deploymentID)
 }

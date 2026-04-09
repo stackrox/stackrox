@@ -6,7 +6,7 @@ import { FormikProvider, useFormik } from 'formik';
 import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
 import useAnalytics, { WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED } from 'hooks/useAnalytics';
-import type { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from '../../types';
+import type { DefaultFilters, DeploymentStatusLabel, FixableStatus, VulnerabilitySeverityLabel } from '../../types';
 
 function analyticsTrackDefaultFilters(
     analyticsTrack: ReturnType<typeof useAnalytics>['analyticsTrack'],
@@ -22,6 +22,8 @@ function analyticsTrackDefaultFilters(
             SEVERITY_UNKNOWN: filters.SEVERITY.includes('Unknown') ? 1 : 0,
             CVE_STATUS_FIXABLE: filters.FIXABLE.includes('Fixable') ? 1 : 0,
             CVE_STATUS_NOT_FIXABLE: filters.FIXABLE.includes('Not fixable') ? 1 : 0,
+            DEPLOYMENT_STATUS_DEPLOYED: filters.DEPLOYMENT_STATUS.includes('Deployed') ? 1 : 0,
+            DEPLOYMENT_STATUS_DELETED: filters.DEPLOYMENT_STATUS.includes('Deleted') ? 1 : 0,
         },
     });
 }
@@ -29,12 +31,16 @@ function analyticsTrackDefaultFilters(
 type DefaultFilterModalProps = {
     defaultFilters: DefaultFilters;
     setLocalStorage: (values: DefaultFilters) => void;
+    isTombstonesEnabled: boolean;
 };
 
-function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterModalProps) {
+function DefaultFilterModal({ defaultFilters, setLocalStorage, isTombstonesEnabled }: DefaultFilterModalProps) {
     const { analyticsTrack } = useAnalytics();
     const [isOpen, setIsOpen] = useState(false);
-    const totalFilters = defaultFilters.SEVERITY.length + defaultFilters.FIXABLE.length;
+    const totalFilters =
+        defaultFilters.SEVERITY.length +
+        defaultFilters.FIXABLE.length +
+        (isTombstonesEnabled ? defaultFilters.DEPLOYMENT_STATUS.length : 0);
 
     const formik = useFormik({
         initialValues: cloneDeep(defaultFilters),
@@ -48,6 +54,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
     const { submitForm, values, setFieldValue, setValues } = formik;
     const severityValues = values.SEVERITY;
     const fixableValues = values.FIXABLE;
+    const deploymentStatusValues = values.DEPLOYMENT_STATUS;
 
     function handleModalToggle() {
         if (isOpen) {
@@ -74,6 +81,19 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
             newFixableValues = newFixableValues.filter((val) => val !== fixable);
         }
         setFieldValue('FIXABLE', newFixableValues).catch(() => {});
+    }
+
+    function handleDeploymentStatusChange(
+        status: DeploymentStatusLabel,
+        isChecked: boolean
+    ) {
+        let newValues = [...deploymentStatusValues];
+        if (isChecked) {
+            newValues.push(status);
+        } else {
+            newValues = newValues.filter((val) => val !== status);
+        }
+        setFieldValue('DEPLOYMENT_STATUS', newValues).catch(() => {});
     }
 
     return (
@@ -168,6 +188,26 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 }}
                             />
                         </FormGroup>
+                        {isTombstonesEnabled && (
+                            <FormGroup label="Deployment status" isInline>
+                                <Checkbox
+                                    label="Deployed"
+                                    id="deployed-status"
+                                    isChecked={deploymentStatusValues.includes('Deployed')}
+                                    onChange={(_event, isChecked) => {
+                                        handleDeploymentStatusChange('Deployed', isChecked);
+                                    }}
+                                />
+                                <Checkbox
+                                    label="Deleted"
+                                    id="deleted-status"
+                                    isChecked={deploymentStatusValues.includes('Deleted')}
+                                    onChange={(_event, isChecked) => {
+                                        handleDeploymentStatusChange('Deleted', isChecked);
+                                    }}
+                                />
+                            </FormGroup>
+                        )}
                     </Form>
                 </FormikProvider>
             </Modal>

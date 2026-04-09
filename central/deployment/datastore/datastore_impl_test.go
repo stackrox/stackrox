@@ -3,9 +3,12 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	nfMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
+	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -196,6 +199,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:                "id",
 		Namespace:         "my-namespace",
 		PlatformComponent: false,
+		DeploymentStatus:  storage.DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED,
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
@@ -212,10 +216,73 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:                "id",
 		Namespace:         "kube-123",
 		PlatformComponent: true,
+		DeploymentStatus:  storage.DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED,
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
 	suite.matcher.EXPECT().MatchDeployment(deployment).Return(true, nil).Times(1)
 	err = ds.UpsertDeployment(ctx, deployment)
 	suite.Require().NoError(err)
+}
+
+// TestTombstoneDeployment_SetsDeletedStatusAndTombstone verifies that TombstoneDeployment
+// updates the stored deployment with DEPLOYMENT_STATUS_DELETED and a non-nil Tombstone.
+func (suite *DeploymentDataStoreTestSuite) TestTombstoneDeployment_SetsDeletedStatusAndTombstone() {
+	// Set up baseline and network flow mocks required by removeOperationalData.
+	baselineStore := baselineMocks.NewMockDataStore(suite.mockCtrl)
+	clusterFlowStore := nfMocks.NewMockClusterDataStore(suite.mockCtrl)
+	flowStore := nfMocks.NewMockFlowDataStore(suite.mockCtrl)
+
+	ds := newDatastoreImpl(
+		suite.storage,
+		nil,
+		nil,
+		baselineStore,
+		clusterFlowStore,
+		suite.riskStore,
+		nil,
+		suite.filter,
+		nil,
+		nil,
+		nil,
+		suite.matcher,
+	)
+
+	ctx := sac.WithAllAccess(context.Background())
+	deploymentID := "dep-tombstone-test"
+	clusterID := "cluster-1"
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	// The initial deployment has DEPLOYMENT_STATUS_DEPLOYED.
+	initialDeployment := &storage.Deployment{
+		Id:               deploymentID,
+		ClusterId:        clusterID,
+		DeploymentStatus: storage.DeploymentStatus_DEPLOYMENT_STATUS_DEPLOYED,
+	}
+
+	// removeOperationalData calls risks, baselines, and network flows.
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, storage.RiskSubjectType_DEPLOYMENT).Return(nil).Times(1)
+	baselineStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil).Times(1)
+	clusterFlowStore.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(flowStore, nil).Times(1)
+	flowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), deploymentID).Return(nil).Times(1)
+
+	// deploymentStore.Get returns the initial deployment.
+	suite.storage.EXPECT().Get(gomock.Any(), deploymentID).Return(initialDeployment, true, nil).Times(1)
+
+	// Capture the deployment passed to Upsert so we can assert its fields.
+	var upsertedDeployment *storage.Deployment
+	suite.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, dep *storage.Deployment) error {
+			upsertedDeployment = dep
+			return nil
+		},
+	).Times(1)
+
+	err := ds.TombstoneDeployment(ctx, clusterID, deploymentID, expiresAt)
+	suite.Require().NoError(err)
+
+	// The upserted deployment must have DELETED status and a non-nil tombstone.
+	suite.Require().NotNil(upsertedDeployment, "expected Upsert to be called with a deployment")
+	suite.Equal(storage.DeploymentStatus_DEPLOYMENT_STATUS_DELETED, upsertedDeployment.GetDeploymentStatus())
+	suite.NotNil(upsertedDeployment.GetTombstone(), "expected Tombstone to be set")
 }

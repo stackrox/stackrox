@@ -12,6 +12,7 @@ type UseDeploymentsWithProcessInfoParams = {
     sortOption: ApiSortOption;
     page: number;
     perPage: number;
+    showDeleted: boolean;
 };
 
 export default function useDeploymentsWithProcessInfo({
@@ -19,6 +20,7 @@ export default function useDeploymentsWithProcessInfo({
     sortOption,
     page,
     perPage,
+    showDeleted,
 }: UseDeploymentsWithProcessInfoParams): UseRestQueryReturn<ListDeploymentWithProcessInfo[]> {
     const shouldHideOrchestratorComponents =
         localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
@@ -27,10 +29,13 @@ export default function useDeploymentsWithProcessInfo({
         const effectiveSearchFilter = {
             ...searchFilter,
             ...(shouldHideOrchestratorComponents ? { 'Orchestrator Component': 'false' } : {}),
+            // When showing deleted deployments, add the tombstone filter so the backend
+            // bypasses its default active-only exclusion and returns soft-deleted records.
+            ...(showDeleted ? { 'Tombstone Deleted At': '*' } : {}),
         };
 
         return fetchDeploymentsWithProcessInfo(effectiveSearchFilter, sortOption, page, perPage);
-    }, [searchFilter, sortOption, page, perPage, shouldHideOrchestratorComponents]);
+    }, [searchFilter, sortOption, page, perPage, shouldHideOrchestratorComponents, showDeleted]);
 
     return useRestQuery(requestFn);
 }

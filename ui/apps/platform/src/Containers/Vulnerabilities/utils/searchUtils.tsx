@@ -20,6 +20,7 @@ import { ensureStringArray } from 'utils/ensure';
 
 import { isFixableStatus, isVulnerabilitySeverityLabel } from '../types';
 import type {
+    DeploymentStatusLabel,
     FixableStatus,
     NodeEntityTab,
     PlatformEntityTab,
@@ -232,6 +233,31 @@ export function getVulnStateScopedQueryString(
         ...searchFilterWithRegex,
         ...vulnerabilityStateFilter,
     });
+}
+
+/**
+ * Wraps a base query string to scope results by deployment status.
+ * - `['Deployed']` or unset: no addition (view default excludes tombstoned records).
+ * - `['Deleted']`: appends `+Tombstone Deleted At:*` (IS NOT NULL → only tombstoned).
+ * - `['Deployed', 'Deleted']`: appends `+Tombstone Deleted At:*,-*`.
+ *   Comma-separated values for one field form a disjunction: (IS NOT NULL OR IS NULL) = all rows.
+ * The '+' character is the backend's AND-conjunction separator between fields.
+ */
+export function getDeploymentStatusScopedQueryString(
+    baseQuery: string,
+    selectedStatuses: DeploymentStatusLabel[] | undefined
+): string {
+    const showDeployed =
+        !selectedStatuses || selectedStatuses.length === 0 || selectedStatuses.includes('Deployed');
+    const showDeleted = selectedStatuses?.includes('Deleted') ?? false;
+
+    if (showDeployed && showDeleted) {
+        return [baseQuery, 'Tombstone Deleted At:*,-*'].filter(Boolean).join('+');
+    }
+    if (showDeleted) {
+        return [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+');
+    }
+    return baseQuery;
 }
 
 export function getZeroCveScopedQueryString(searchFilter: QuerySearchFilter): string {

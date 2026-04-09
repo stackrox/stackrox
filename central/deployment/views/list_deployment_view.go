@@ -13,26 +13,28 @@ import (
 // This view is used to populate ListDeployment protos from database queries.
 // The db tags use search field labels (lowercase with underscores), not database column names.
 type ListDeploymentView struct {
-	ID          string     `db:"deployment_id"`
-	Hash        uint64     `db:"deployment_hash"`
-	Name        string     `db:"deployment"`
-	ClusterName string     `db:"cluster"`
-	ClusterID   string     `db:"cluster_id"`
-	Namespace   string     `db:"namespace"`
-	Created     *time.Time `db:"created"`
+	ID                 string     `db:"deployment_id"`
+	Hash               uint64     `db:"deployment_hash"`
+	Name               string     `db:"deployment"`
+	ClusterName        string     `db:"cluster"`
+	ClusterID          string     `db:"cluster_id"`
+	Namespace          string     `db:"namespace"`
+	Created            *time.Time `db:"created"`
+	TombstoneDeletedAt *time.Time `db:"tombstone_deleted_at"`
 	// Priority is NOT selected from DB - it's computed by the ranker
 }
 
 // ToListDeployment converts the view to a storage.ListDeployment proto.
 func (v *ListDeploymentView) ToListDeployment() *storage.ListDeployment {
 	return &storage.ListDeployment{
-		Id:        v.ID,
-		Hash:      v.Hash,
-		Name:      v.Name,
-		Cluster:   v.ClusterName,
-		ClusterId: v.ClusterID,
-		Namespace: v.Namespace,
-		Created:   protocompat.ConvertTimeToTimestampOrNil(v.Created),
+		Id:                 v.ID,
+		Hash:               v.Hash,
+		Name:               v.Name,
+		Cluster:            v.ClusterName,
+		ClusterId:          v.ClusterID,
+		Namespace:          v.Namespace,
+		Created:            protocompat.ConvertTimeToTimestampOrNil(v.Created),
+		TombstoneDeletedAt: protocompat.ConvertTimeToTimestampOrNil(v.TombstoneDeletedAt),
 		// Priority is set by updateListDeploymentPriority in the datastore layer
 	}
 }
@@ -47,5 +49,6 @@ func ListDeploymentViewSelects() []*v1.QuerySelect {
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.Created).Proto(),
+		search.NewQuerySelect(search.TombstoneDeletedAt).Proto(),
 	}
 }

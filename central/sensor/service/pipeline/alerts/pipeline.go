@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -69,8 +70,15 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if len(alertResults.GetAlerts()) > 0 {
 			return errors.Errorf("unexpected: Got non-zero alerts for a deployment remove: %+v", msg.GetEvent())
 		}
-		if err := s.lifecycleManager.DeploymentRemoved(alertResults.GetDeploymentId()); err != nil {
-			return err
+		// When DeploymentTombstones is enabled, the deployment events pipeline handles
+		// alert lifecycle via DeploymentTombstoned(). Skip here to avoid overwriting
+		// TOMBSTONED alert state with RESOLVED. Note: when the TTL is 0 (hard-delete path),
+		// the deployment events pipeline's runRemovePipeline handles alert cleanup directly
+		// for reconciliation removes; live removes in that case are handled here.
+		if !features.DeploymentTombstones.Enabled() {
+			if err := s.lifecycleManager.DeploymentRemoved(alertResults.GetDeploymentId()); err != nil {
+				return err
+			}
 		}
 
 		return nil

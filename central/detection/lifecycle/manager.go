@@ -42,6 +42,8 @@ type Manager interface {
 	HandleResourceAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
 	HandleNodeAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
 	DeploymentRemoved(deploymentID string) error
+	// DeploymentTombstoned transitions active alerts for the deployment to TOMBSTONED state.
+	DeploymentTombstoned(deploymentID string) error
 	RemovePolicy(policyID string) error
 	RemoveDeploymentFromObservation(deploymentID string)
 	SendBaselineToSensor(baseline *storage.ProcessBaseline) error

@@ -41,8 +41,12 @@ function DeploymentsTableContainer({
 }: DeploymentsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
+    // Deployment status scoping is handled upstream in WorkloadCvesOverviewPage
+    // via getDeploymentStatusScopedQueryString applied to workloadCvesScopedQueryString.
+    const deploymentsQueryString = workloadCvesScopedQueryString;
+
     const { error, loading, data } = useDeployments({
-        query: workloadCvesScopedQueryString,
+        query: deploymentsQueryString,
         pagination,
         sortOption,
     });

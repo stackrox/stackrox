@@ -331,6 +331,10 @@
               {
                 "name": "ATTEMPTED",
                 "integer": 3
+              },
+              {
+                "name": "TOMBSTONED",
+                "integer": 4
               }
             ],
             "reserved_ids": [
@@ -5656,6 +5660,16 @@
             ]
           },
           {
+            "name": "TombstoneRetentionConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "retention_duration_days",
+                "type": "int32"
+              }
+            ]
+          },
+          {
             "name": "PrivateConfig",
             "fields": [
               {
@@ -5704,6 +5718,11 @@
                 "id": 9,
                 "name": "metrics",
                 "type": "PrometheusMetrics"
+              },
+              {
+                "id": 10,
+                "name": "tombstone_retention_config",
+                "type": "TombstoneRetentionConfig"
               }
             ]
           },
@@ -7478,6 +7497,11 @@
                 "id": 35,
                 "name": "platform_component",
                 "type": "bool"
+              },
+              {
+                "id": 36,
+                "name": "tombstone",
+                "type": "Tombstone"
               }
             ],
             "maps": [
@@ -8131,6 +8155,11 @@
                 "id": 7,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 9,
+                "name": "tombstone_deleted_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -8153,6 +8182,9 @@
           },
           {
             "path": "storage/taints.proto"
+          },
+          {
+            "path": "storage/tombstone.proto"
           }
         ],
         "package": {
@@ -18844,6 +18876,46 @@
             "name": "cc_enable_arenas",
             "value": "true"
           },
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "tombstone.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Tombstone",
+            "fields": [
+              {
+                "id": 1,
+                "name": "deleted_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "expires_at",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
           {
             "name": "go_package",
             "value": "./storage;storage"

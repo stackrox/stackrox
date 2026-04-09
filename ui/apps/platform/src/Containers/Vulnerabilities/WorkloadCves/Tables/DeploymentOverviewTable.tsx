@@ -12,6 +12,7 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import TombstonedDeploymentLabel from '../components/TombstonedDeploymentLabel';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -75,6 +76,9 @@ export const deploymentListQuery = gql`
             namespace
             imageCount(query: $query)
             created
+            tombstone {
+                deletedAt
+            }
         }
     }
 `;
@@ -94,6 +98,7 @@ export type Deployment = {
     namespace: string;
     imageCount: number;
     created: string | null;
+    tombstone?: { deletedAt?: string | null };
 };
 
 type DeploymentOverviewTableProps = {
@@ -177,7 +182,9 @@ function DeploymentOverviewTable({
                             namespace,
                             imageCount,
                             created,
+                            tombstone,
                         } = deployment;
+                        const tombstoneDeletedAt = tombstone?.deletedAt ?? undefined;
                         const criticalCount = imageCVECountBySeverity.critical.total;
                         const importantCount = imageCVECountBySeverity.important.total;
                         const moderateCount = imageCVECountBySeverity.moderate.total;
@@ -198,6 +205,13 @@ function DeploymentOverviewTable({
                                         >
                                             <Truncate position="middle" content={name} />
                                         </Link>
+                                        {tombstoneDeletedAt && (
+                                            <TombstonedDeploymentLabel
+                                                deletedAt={tombstoneDeletedAt}
+                                                isCompact
+                                                variant="outline"
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="CVEs by severity"

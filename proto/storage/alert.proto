@@ -263,4 +263,7 @@ enum ViolationState {
   reserved "SNOOZED";
   RESOLVED = 2;
   ATTEMPTED = 3;
+  // TOMBSTONED indicates the alert's deployment was deleted but retained.
+  // TOMBSTONED alerts are not notified; they transition to RESOLVED at TTL expiry.
+  TOMBSTONED = 4;
 }

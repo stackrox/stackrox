@@ -225,6 +225,23 @@ func (m *PrometheusMetrics) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
+func (m *TombstoneRetentionConfig) CloneVT() *TombstoneRetentionConfig {
+	if m == nil {
+		return (*TombstoneRetentionConfig)(nil)
+	}
+	r := new(TombstoneRetentionConfig)
+	r.RetentionDurationDays = m.RetentionDurationDays
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *TombstoneRetentionConfig) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *PrivateConfig) CloneVT() *PrivateConfig {
 	if m == nil {
 		return (*PrivateConfig)(nil)
@@ -237,6 +254,7 @@ func (m *PrivateConfig) CloneVT() *PrivateConfig {
 	r.VulnerabilityExceptionConfig = m.VulnerabilityExceptionConfig.CloneVT()
 	r.AdministrationEventsConfig = m.AdministrationEventsConfig.CloneVT()
 	r.Metrics = m.Metrics.CloneVT()
+	r.TombstoneRetentionConfig = m.TombstoneRetentionConfig.CloneVT()
 	if m.AlertRetention != nil {
 		r.AlertRetention = m.AlertRetention.(interface {
 			CloneVT() isPrivateConfig_AlertRetention
@@ -732,6 +750,25 @@ func (this *PrometheusMetrics) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *TombstoneRetentionConfig) EqualVT(that *TombstoneRetentionConfig) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.RetentionDurationDays != that.RetentionDurationDays {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *TombstoneRetentionConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*TombstoneRetentionConfig)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (this *PrivateConfig) EqualVT(that *PrivateConfig) bool {
 	if this == that {
 		return true
@@ -769,6 +806,9 @@ func (this *PrivateConfig) EqualVT(that *PrivateConfig) bool {
 		return false
 	}
 	if !this.Metrics.EqualVT(that.Metrics) {
+		return false
+	}
+	if !this.TombstoneRetentionConfig.EqualVT(that.TombstoneRetentionConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1627,6 +1667,44 @@ func (m *PrometheusMetrics) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *TombstoneRetentionConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TombstoneRetentionConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *TombstoneRetentionConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RetentionDurationDays != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RetentionDurationDays))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *PrivateConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1665,6 +1743,16 @@ func (m *PrivateConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+	}
+	if m.TombstoneRetentionConfig != nil {
+		size, err := m.TombstoneRetentionConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x52
 	}
 	if m.Metrics != nil {
 		size, err := m.Metrics.MarshalToSizedBufferVT(dAtA[:i])
@@ -2453,6 +2541,19 @@ func (m *PrometheusMetrics) SizeVT() (n int) {
 	return n
 }
 
+func (m *TombstoneRetentionConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RetentionDurationDays != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RetentionDurationDays))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *PrivateConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2486,6 +2587,10 @@ func (m *PrivateConfig) SizeVT() (n int) {
 	}
 	if m.Metrics != nil {
 		l = m.Metrics.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.TombstoneRetentionConfig != nil {
+		l = m.TombstoneRetentionConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -4375,6 +4480,76 @@ func (m *PrometheusMetrics) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *TombstoneRetentionConfig) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TombstoneRetentionConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TombstoneRetentionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RetentionDurationDays", wireType)
+			}
+			m.RetentionDurationDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RetentionDurationDays |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PrivateConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4680,6 +4855,42 @@ func (m *PrivateConfig) UnmarshalVT(dAtA []byte) error {
 				m.Metrics = &PrometheusMetrics{}
 			}
 			if err := m.Metrics.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TombstoneRetentionConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TombstoneRetentionConfig == nil {
+				m.TombstoneRetentionConfig = &TombstoneRetentionConfig{}
+			}
+			if err := m.TombstoneRetentionConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7420,6 +7631,76 @@ func (m *PrometheusMetrics) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *TombstoneRetentionConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TombstoneRetentionConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TombstoneRetentionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RetentionDurationDays", wireType)
+			}
+			m.RetentionDurationDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RetentionDurationDays |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PrivateConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7725,6 +8006,42 @@ func (m *PrivateConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Metrics = &PrometheusMetrics{}
 			}
 			if err := m.Metrics.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TombstoneRetentionConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TombstoneRetentionConfig == nil {
+				m.TombstoneRetentionConfig = &TombstoneRetentionConfig{}
+			}
+			if err := m.TombstoneRetentionConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

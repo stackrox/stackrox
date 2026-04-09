@@ -206,6 +206,20 @@ export const attributeForSeverityInFrontendAndLocalStorage: SelectSearchFilterAt
         ],
     },
 };
+export const attributeForDeploymentStatusInFrontendAndLocalStorage: SelectSearchFilterAttribute =
+    {
+        displayName: 'Deployment status',
+        filterChipLabel: 'Deployment status',
+        searchTerm: 'DEPLOYMENT_STATUS',
+        inputType: 'select',
+        inputProps: {
+            options: [
+                { label: 'Deployed', value: 'Deployed' },
+                { label: 'Deleted', value: 'Deleted' },
+            ],
+        },
+    };
+
 export const attributeForSeverityInBackendAndViewBasedReport: SelectSearchFilterAttribute = {
     displayName: 'CVE severity',
     filterChipLabel: 'CVE severity',

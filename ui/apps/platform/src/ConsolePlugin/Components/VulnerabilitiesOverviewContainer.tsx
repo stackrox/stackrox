@@ -36,6 +36,7 @@ import { ALL_NAMESPACES_KEY } from '../constants';
 const emptyDefaultFilters: DefaultFilters = {
     SEVERITY: [],
     FIXABLE: [],
+    DEPLOYMENT_STATUS: [],
 };
 
 export function VulnerabilitiesOverviewContainer() {
@@ -45,14 +46,17 @@ export function VulnerabilitiesOverviewContainer() {
     const { baseSearchFilter } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    // Strip DEPLOYMENT_STATUS — not supported in the Console Plugin variant.
+    const { DEPLOYMENT_STATUS: _deploymentStatus, ...querySearchFilterWithoutStatus } =
+        querySearchFilter;
     const workloadCvesScopedQueryString = getVulnStateScopedQueryString(
         {
             ...baseSearchFilter,
-            ...querySearchFilter,
+            ...querySearchFilterWithoutStatus,
             // If "All Projects" is selected, use the query search filter's Namespace, otherwise override with the active namespace
             Namespace:
                 activeNamespace === ALL_NAMESPACES_KEY
-                    ? querySearchFilter.Namespace
+                    ? querySearchFilterWithoutStatus.Namespace
                     : [activeNamespace],
         },
         'OBSERVED'
@@ -106,6 +110,7 @@ export function VulnerabilitiesOverviewContainer() {
             additionalToolbarItems={undefined}
             additionalHeaderItems={undefined}
             showDeferralUI={false}
+            includeDeploymentStatusFilters={false}
             cveTableColumnOverrides={{
                 cveSelection: hideColumnIf(true),
                 rowActions: hideColumnIf(true),

@@ -64,6 +64,7 @@ type VulnerabilitiesOverviewProps = {
     additionalToolbarItems: ReactNode;
     additionalHeaderItems: ReactNode;
     showDeferralUI: boolean;
+    includeDeploymentStatusFilters: boolean;
     cveTableColumnOverrides: ColumnConfigOverrides<keyof typeof cveDefaultColumns>;
     imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof imageDefaultColumns>;
     deploymentTableColumnOverrides: ColumnConfigOverrides<keyof typeof deploymentDefaultColumns>;
@@ -87,6 +88,7 @@ function VulnerabilitiesOverview({
     additionalToolbarItems,
     additionalHeaderItems,
     showDeferralUI,
+    includeDeploymentStatusFilters,
     cveTableColumnOverrides,
     imageTableColumnOverrides,
     deploymentTableColumnOverrides,
@@ -135,6 +137,7 @@ function VulnerabilitiesOverview({
             }}
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
+            includeDeploymentStatusFilters={includeDeploymentStatusFilters}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
         >
             {additionalToolbarItems}

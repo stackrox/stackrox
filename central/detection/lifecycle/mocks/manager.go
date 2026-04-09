@@ -54,6 +54,20 @@ func (mr *MockManagerMockRecorder) DeploymentRemoved(deploymentID any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentRemoved", reflect.TypeOf((*MockManager)(nil).DeploymentRemoved), deploymentID)
 }
 
+// DeploymentTombstoned mocks base method.
+func (m *MockManager) DeploymentTombstoned(deploymentID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeploymentTombstoned", deploymentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeploymentTombstoned indicates an expected call of DeploymentTombstoned.
+func (mr *MockManagerMockRecorder) DeploymentTombstoned(deploymentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentTombstoned", reflect.TypeOf((*MockManager)(nil).DeploymentTombstoned), deploymentID)
+}
+
 // HandleDeploymentAlerts mocks base method.
 func (m *MockManager) HandleDeploymentAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	m.ctrl.T.Helper()
