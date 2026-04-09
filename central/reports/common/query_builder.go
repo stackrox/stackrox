@@ -173,31 +173,33 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 			fieldLabel == search.DeploymentAnnotation ||
 			fieldLabel == search.NamespaceAnnotation
 
-		values := make([]string, 0, len(rule.GetValues()))
-		for _, rv := range rule.GetValues() {
-			val := rv.GetValue()
-			if rv.GetMatchType() == storage.MatchType_REGEX {
-				val = search.RegexPrefix + val
-			}
-			values = append(values, val)
-		}
-
-		if len(values) == 0 {
+		if len(rule.GetValues()) == 0 {
 			continue
 		}
 
 		if isMapField {
-			for _, v := range values {
-				key, value := splitLabelValue(v)
-				conjuncts = append(conjuncts,
+			mapQueries := make([]*v1.Query, 0, len(rule.GetValues()))
+			for _, rv := range rule.GetValues() {
+				val := rv.GetValue()
+				key, value := splitLabelValue(val)
+				mapQueries = append(mapQueries,
 					search.NewQueryBuilder().AddMapQuery(fieldLabel, key, value).ProtoQuery())
 			}
-		} else if rule.GetValues()[0].GetMatchType() == storage.MatchType_REGEX {
-			conjuncts = append(conjuncts,
-				search.NewQueryBuilder().AddStrings(fieldLabel, values...).ProtoQuery())
+			conjuncts = append(conjuncts, search.DisjunctionQuery(mapQueries...))
 		} else {
-			conjuncts = append(conjuncts,
-				search.NewQueryBuilder().AddExactMatches(fieldLabel, values...).ProtoQuery())
+			var ruleQueries []*v1.Query
+			for _, rv := range rule.GetValues() {
+				val := rv.GetValue()
+				if rv.GetMatchType() == storage.MatchType_REGEX {
+					val = search.RegexPrefix + val
+					ruleQueries = append(ruleQueries,
+						search.NewQueryBuilder().AddStrings(fieldLabel, val).ProtoQuery())
+				} else {
+					ruleQueries = append(ruleQueries,
+						search.NewQueryBuilder().AddExactMatches(fieldLabel, val).ProtoQuery())
+				}
+			}
+			conjuncts = append(conjuncts, search.DisjunctionQuery(ruleQueries...))
 		}
 	}
 
