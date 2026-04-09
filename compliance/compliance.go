@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
@@ -43,24 +44,28 @@ const (
 
 // Compliance represents the Compliance app
 type Compliance struct {
-	nodeNameProvider node.NodeNameProvider
-	nodeScanner      node.NodeScanner
-	nodeIndexer      node.NodeIndexer
-	umhNodeInventory node.UnconfirmedMessageHandler
-	umhNodeIndex     node.UnconfirmedMessageHandler
-	cache            *sensor.MsgFromCompliance
+	nodeNameProvider     node.NodeNameProvider
+	nodeScanner          node.NodeScanner
+	nodeIndexer          node.NodeIndexer
+	umhNodeInventory     node.UnconfirmedMessageHandler
+	umhNodeIndex         node.UnconfirmedMessageHandler
+	nodeInventoryCache   *sensor.MsgFromCompliance
+	nodeInventoryCacheMu sync.Mutex
+	nodeIndexCache       *sensor.MsgFromCompliance
+	nodeIndexCacheMu     sync.Mutex
 }
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
 	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider: nnp,
-		nodeScanner:      scanner,
-		nodeIndexer:      nodeIndexer,
-		umhNodeInventory: umhNodeInv,
-		umhNodeIndex:     umhNodeIndex,
-		cache:            nil,
+		nodeNameProvider:   nnp,
+		nodeScanner:        scanner,
+		nodeIndexer:        nodeIndexer,
+		umhNodeInventory:   umhNodeInv,
+		umhNodeIndex:       umhNodeIndex,
+		nodeInventoryCache: nil,
+		nodeIndexCache:     nil,
 	}
 }
 
@@ -190,12 +195,13 @@ func (c *Compliance) manageNodeInventoryScanLoop(ctx context.Context) <-chan *se
 					log.Info("UMH retry channel for node inventory closed; stopping scan loop")
 					return
 				}
-				if c.cache == nil {
+				cachedMsg := c.getNodeInventoryCache()
+				if cachedMsg == nil {
 					log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
 					t.Reset(time.Second)
 				} else {
-					nodeInventoriesC <- c.cache
+					nodeInventoriesC <- cachedMsg
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
 				}
 			case <-t.C:
@@ -230,12 +236,13 @@ func (c *Compliance) manageNodeIndexScanLoop(ctx context.Context) <-chan *sensor
 					log.Info("UMH retry channel for node index closed; stopping scan loop")
 					return
 				}
-				if c.cache == nil {
+				cachedMsg := c.getNodeIndexCache()
+				if cachedMsg == nil {
 					log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV4)
 					t.Reset(time.Second)
 				} else {
-					nodeIndexesC <- c.cache
+					nodeIndexesC <- cachedMsg
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV4)
 				}
 			case <-t.C:
@@ -264,7 +271,7 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
 	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV2)
 	c.umhNodeInventory.ObserveSending(nodeResourceID)
-	c.cache = msg.CloneVT()
+	c.setNodeInventoryCache(msg.CloneVT())
 	return msg
 }
 
@@ -285,7 +292,32 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 	msg := c.createIndexMsg(report, nodeName)
 	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV4)
 	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV4)
+	c.setNodeIndexCache(msg.CloneVT())
 	return msg
+}
+
+func (c *Compliance) getNodeInventoryCache() *sensor.MsgFromCompliance {
+	c.nodeInventoryCacheMu.Lock()
+	defer c.nodeInventoryCacheMu.Unlock()
+	return c.nodeInventoryCache
+}
+
+func (c *Compliance) setNodeInventoryCache(msg *sensor.MsgFromCompliance) {
+	c.nodeInventoryCacheMu.Lock()
+	defer c.nodeInventoryCacheMu.Unlock()
+	c.nodeInventoryCache = msg
+}
+
+func (c *Compliance) getNodeIndexCache() *sensor.MsgFromCompliance {
+	c.nodeIndexCacheMu.Lock()
+	defer c.nodeIndexCacheMu.Unlock()
+	return c.nodeIndexCache
+}
+
+func (c *Compliance) setNodeIndexCache(msg *sensor.MsgFromCompliance) {
+	c.nodeIndexCacheMu.Lock()
+	defer c.nodeIndexCacheMu.Unlock()
+	c.nodeIndexCache = msg
 }
 
 func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {

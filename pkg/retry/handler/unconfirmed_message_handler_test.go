@@ -137,6 +137,40 @@ func TestMultipleResources(t *testing.T) {
 	}
 }
 
+func TestNonPositiveBaseIntervalUsesDefaultForFirstRetry(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		umh := NewUnconfirmedMessageHandler(ctx, "test-default-interval", 0)
+		retryReceived := make(chan string, 1)
+		go func() {
+			retryReceived <- <-umh.RetryCommand()
+		}()
+
+		umh.ObserveSending(testResourceID)
+
+		// No immediate retry should happen when base interval is non-positive.
+		time.Sleep(time.Second)
+		synctest.Wait()
+		select {
+		case resourceID := <-retryReceived:
+			t.Fatalf("retry should not fire early; got %s", resourceID)
+		default:
+		}
+
+		// Retry should happen at the normalized default interval.
+		time.Sleep(defaultBaseInterval)
+		synctest.Wait()
+		select {
+		case resourceID := <-retryReceived:
+			assert.Equal(t, testResourceID, resourceID)
+		default:
+			t.Fatal("expected retry after default base interval")
+		}
+	})
+}
+
 func TestOnACKCallback(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -254,8 +288,8 @@ func TestOnTimerFiredDoesNotBlockWhenRetryQueueFull(t *testing.T) {
 		}
 		umh.mu.Unlock()
 
-		// Fill the single-slot retry queue to force coalescing/default branch.
-		umh.retryCommandCh <- "already-queued"
+		// Fill the single-slot notify queue to force coalescing/default branch.
+		umh.retryNotifyCh <- struct{}{}
 
 		done := concurrency.NewSignal()
 		go func() {
@@ -282,13 +316,19 @@ func TestOnTimerFiredDoesNotBlockWhenRetryQueueFull(t *testing.T) {
 	})
 }
 
-func TestShutdownWithPendingBufferedRetrySignal(t *testing.T) {
+func TestShutdownWithPendingRetrySignal(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		umh := NewUnconfirmedMessageHandler(ctx, "test-shutdown-buffered", time.Second)
+		umh := NewUnconfirmedMessageHandler(ctx, "test-shutdown-signal", time.Second)
 
-		// Put one pending retry signal in the buffered channel without a consumer.
-		umh.retryCommandCh <- "pending-retry"
+		// Queue a pending retry and notify the worker without a retry consumer.
+		umh.mu.Lock()
+		umh.pendingRetries.Add("pending-retry")
+		umh.mu.Unlock()
+		umh.retryNotifyCh <- struct{}{}
+		// Let the worker run and potentially block on sending to RetryCommand.
+		synctest.Wait()
+
 		cancel()
 		synctest.Wait()
 
@@ -298,21 +338,12 @@ func TestShutdownWithPendingBufferedRetrySignal(t *testing.T) {
 			t.Fatal("cleanup should complete")
 		}
 
-		// After shutdown, a pending buffered value may be drained first, but then the channel must be closed.
-		ch := umh.RetryCommand()
+		// Retry command channel should be closed after shutdown.
 		select {
-		case _, ok := <-ch:
-			// ok=true means we drained the buffered value; ok=false means channel was already closed.
-			if ok {
-				select {
-				case _, ok := <-ch:
-					assert.False(t, ok, "retry channel should be closed after draining pending buffered value")
-				default:
-					t.Fatal("retry channel close check should not block")
-				}
-			}
+		case _, ok := <-umh.RetryCommand():
+			assert.False(t, ok, "retry channel should be closed after shutdown")
 		default:
-			t.Fatal("retry channel drain/close should not block")
+			t.Fatal("retry channel close check should not block")
 		}
 	})
 }

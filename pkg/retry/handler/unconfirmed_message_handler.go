@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -33,9 +34,19 @@ type UnconfirmedMessageHandlerImpl struct {
 	resources map[string]*resourceState
 	mu        sync.Mutex
 
-	// retryCommandCh emits resourceID when a retry should be attempted.
-	// It is intentionally buffered (size 1) to allow one pending retry signal.
+	// retryNotifyCh wakes the retry dispatcher when at least one resource timer fires.
+	// Timer callbacks do a non-blocking send after marking pendingRetries; with buffer size 1,
+	// multiple firings coalesce into a single wake-up until the dispatcher drains pendingRetries.
+	retryNotifyCh chan struct{}
+	// pendingRetries is the per-resource retry set consumed by the dispatcher.
+	// Access is guarded by mu: timer callbacks add entries, dispatcher snapshots and clears.
+	pendingRetries set.StringSet
+	// retryCommandCh carries concrete resourceIDs that callers should resend now.
+	// It is intentionally unbuffered so retry production naturally back-pressures to consumption.
 	retryCommandCh chan string
+	// retryWorkerDone is a one-shot signal set when the dispatcher exits, so cleanup can
+	// wait for the worker before closing retryCommandCh.
+	retryWorkerDone concurrency.Signal
 	// onACK is called when an ACK is received for a resource (optional)
 	onACK func(resourceID string)
 	ctx   context.Context
@@ -48,27 +59,37 @@ type UnconfirmedMessageHandlerImpl struct {
 // It can be stopped by canceling the context.
 func NewUnconfirmedMessageHandler(ctx context.Context, handlerName string, baseInterval time.Duration) *UnconfirmedMessageHandlerImpl {
 	h := &UnconfirmedMessageHandlerImpl{
-		handlerName:    handlerName,
-		baseInterval:   baseInterval,
-		resources:      make(map[string]*resourceState),
-		retryCommandCh: make(chan string, 1),
-		ctx:            ctx,
-		cleanupDone:    concurrency.NewStopper(),
+		handlerName:     handlerName,
+		baseInterval:    baseInterval,
+		resources:       make(map[string]*resourceState),
+		retryNotifyCh:   make(chan struct{}, 1),
+		pendingRetries:  set.NewStringSet(),
+		retryCommandCh:  make(chan string),
+		retryWorkerDone: concurrency.NewSignal(),
+		ctx:             ctx,
+		cleanupDone:     concurrency.NewStopper(),
 	}
+
+	go h.runRetryDispatcher()
 
 	// Cleanup goroutine
 	go func() {
 		defer h.cleanupDone.Flow().ReportStopped()
 		<-ctx.Done()
 		h.mu.Lock()
-		defer h.mu.Unlock()
 		// Stop all timers to prevent more sends to channels
 		for _, state := range h.resources {
 			if state.timer != nil {
 				state.timer.Stop()
 			}
 		}
-		// Close channel after timers are stopped
+		// Close notification channel after timers are stopped.
+		// Timers and cleanup both use h.mu to avoid close/send races.
+		close(h.retryNotifyCh)
+		h.mu.Unlock()
+
+		h.retryWorkerDone.Wait()
+		// Close command channel after the worker exits.
 		close(h.retryCommandCh)
 	}()
 
@@ -118,7 +139,7 @@ func (h *UnconfirmedMessageHandlerImpl) ObserveSending(resourceID string) {
 
 	// First unacked message - start/reset timer
 	state.retry = 0
-	h.resetTimer(resourceID, state, h.baseInterval)
+	h.resetTimer(resourceID, state, h.calculateNextInterval(0))
 }
 
 // HandleACK is called when an ACK is received for a resource.
@@ -204,16 +225,58 @@ func (h *UnconfirmedMessageHandlerImpl) onTimerFired(resourceID string) {
 	// Schedule next retry
 	h.resetTimer(resourceID, state, nextInterval)
 
-	// Signal retry (non-blocking); keep at most one pending retry signal.
+	// Mark this resource as pending for retry and coalesce notifications.
+	h.pendingRetries.Add(resourceID)
 	select {
 	case <-h.ctx.Done():
 		return
-	case h.retryCommandCh <- resourceID:
+	case h.retryNotifyCh <- struct{}{}:
 	default:
-		// A pending retry signal is already queued (or being processed); additional
-		// signals for this timer tick are intentionally coalesced.
-		log.Debugf("[%s] Retry signal queue full, coalescing retry signal for %s", h.handlerName, resourceID)
+		// A pending notification is already queued (or being processed); retries remain
+		// tracked in pendingRetries and will be drained by the worker.
+		log.Debugf("[%s] Retry notification queue full, coalescing notification for %s", h.handlerName, resourceID)
 	}
+}
+
+func (h *UnconfirmedMessageHandlerImpl) runRetryDispatcher() {
+	defer h.retryWorkerDone.Signal()
+	for {
+		select {
+		case <-h.ctx.Done():
+			return
+		case _, ok := <-h.retryNotifyCh:
+			if !ok {
+				return
+			}
+		}
+
+		for {
+			pending := h.takePendingRetries()
+			if len(pending) == 0 {
+				break
+			}
+
+			for _, resourceID := range pending {
+				select {
+				case <-h.ctx.Done():
+					return
+				case h.retryCommandCh <- resourceID:
+				}
+			}
+		}
+	}
+}
+
+func (h *UnconfirmedMessageHandlerImpl) takePendingRetries() []string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.pendingRetries.Cardinality() == 0 {
+		return nil
+	}
+
+	pending := h.pendingRetries.AsSlice()
+	h.pendingRetries = set.NewStringSet()
+	return pending
 }
 
 // calculateNextInterval returns the next retry interval with linear backoff.
