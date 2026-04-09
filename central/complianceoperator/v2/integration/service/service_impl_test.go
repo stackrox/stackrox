@@ -157,7 +157,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 						StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 						OperatorInstalled:   true,
 						Status:              apiV2.COStatus_HEALTHY,
-						ClusterPlatformType: apiV2.ClusterPlatformType_OPENSHIFT_CLUSTER,
+						ClusterPlatformType: apiV2.ClusterPlatformType_OPENSHIFT4_CLUSTER,
 						ClusterProviderType: apiV2.ClusterProviderType_OCP,
 					},
 				},
@@ -209,7 +209,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 					OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 					ClusterID:                         fixtureconsts.Cluster1,
 					ClusterName:                       mockClusterName,
-					Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+					Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT4_CLUSTER),
 					StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
 				},
 				}, nil).Times(1)
