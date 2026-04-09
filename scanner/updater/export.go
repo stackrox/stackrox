@@ -31,10 +31,11 @@ import (
 
 // UpdaterStatus represents the result of a single updater execution.
 type UpdaterStatus struct {
-	Name        string    `json:"name"`
-	Status      string    `json:"status"` // "success" or "failed"
-	Error       string    `json:"error,omitempty"`
-	LastAttempt time.Time `json:"last_attempt"`
+	Name                 string    `json:"name"`
+	Status               string    `json:"status"` // "success" or "failed"
+	Error                string    `json:"error,omitempty"`
+	LastAttempt          time.Time `json:"last_attempt"`
+	LastSuccessfulUpdate *string   `json:"last_successful_update,omitempty"` // ISO8601 timestamp, enriched by Python
 }
 
 // ExportStatus contains the results of all updater executions.

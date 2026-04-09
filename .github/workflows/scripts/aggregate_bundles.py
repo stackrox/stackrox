@@ -18,10 +18,12 @@ Usage:
 """
 
 import argparse
+import json
 import subprocess
 import sys
 import tempfile
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -36,6 +38,49 @@ def gsutil_copy(src, dest) -> subprocess.CompletedProcess:
 def gsutil_copy_parallel(srcs: list, dest) -> subprocess.CompletedProcess:
     """Copy multiple files to/from GCS using parallel threads."""
     return subprocess.run(["gsutil", "-m", "cp", *srcs, dest], capture_output=True, text=True)
+
+
+def download_previous_status(version: str) -> dict | None:
+    """Download previous status.json from GCS, return None if not found."""
+    gcs_status = f"{GCS_BUCKET}/{version}/bundles/status.json"
+
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as tmp:
+        result = gsutil_copy(gcs_status, tmp.name)
+        if result.returncode != 0:
+            return None
+
+        try:
+            tmp.seek(0)
+            return json.load(open(tmp.name))
+        except (json.JSONDecodeError, FileNotFoundError):
+            return None
+
+
+def enrich_status_with_timestamps(status_file: Path, version: str):
+    """Add last_successful_update timestamps to status.json."""
+    # Load current status
+    with open(status_file) as f:
+        status = json.load(f)
+
+    # Download previous status from GCS
+    previous = download_previous_status(version)
+    previous_updaters = {u["name"]: u for u in previous.get("updaters", [])} if previous else {}
+
+    # Enrich each updater
+    now = datetime.now(timezone.utc).isoformat()
+    for updater in status.get("updaters", []):
+        if updater["status"] == "success":
+            # Successful update: set to now
+            updater["last_successful_update"] = now
+        else:
+            # Failed update: preserve previous timestamp if available
+            prev = previous_updaters.get(updater["name"])
+            if prev and "last_successful_update" in prev:
+                updater["last_successful_update"] = prev["last_successful_update"]
+
+    # Write enriched status
+    with open(status_file, "w") as f:
+        json.dump(status, f, indent=2)
 
 
 def cmd_upload(args: argparse.Namespace) -> int:
@@ -60,6 +105,9 @@ def cmd_upload(args: argparse.Namespace) -> int:
 
     status_file = local_dir / "status.json"
     if status_file.exists():
+        print("Enriching status.json with timestamps")
+        enrich_status_with_timestamps(status_file, args.version)
+
         print("Uploading status.json")
         result = gsutil_copy(status_file, f"{gcs_dest}/")
         if result.returncode != 0:
