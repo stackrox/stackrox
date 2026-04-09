@@ -158,12 +158,12 @@ spec:
             # Exit 0 when the function name is true; exit 1 when false (so && / ! compose correctly).
 
             is_pull_request() {
-              if [[ "${PULL_REQUEST_NUMBER}" == '{{pull_request_number}}' ]] || [[ -z "${PULL_REQUEST_NUMBER}" ]]; then
-                echo "This is not a pull request."
-                return 1
-              else
+              if [[ -n "${PULL_REQUEST_NUMBER}" ]] && [[ "${PULL_REQUEST_NUMBER}" =~ ^[0-9]+$ ]]; then
                 echo "This is a pull request."
                 return 0
+              else
+                echo "This is not a pull request."
+                return 1
               fi
             }
 
