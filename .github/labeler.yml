@@ -66,6 +66,8 @@ backport:
 - base-branch: 'release-*'
 
 konflux-build:
+# This label triggers Konflux pipelines.
+# The list here should be kept in sync with the CODEOWNERS section for Konflux related files.
 - changed-files:
   - any-glob-to-any-file:
     - '**/konflux*.Dockerfile'
