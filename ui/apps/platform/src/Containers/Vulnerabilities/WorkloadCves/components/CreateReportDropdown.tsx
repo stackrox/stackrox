@@ -73,7 +73,7 @@ function CreateReportDropdown({
                         const { description, text } = dropdownItem;
                         const isEnabled =
                             !('featureFlagDependency' in dropdownItem) ||
-                            isFeatureFlagEnabled(dropdownItem.featureFlagDependency); // DELETE NOT
+                            isFeatureFlagEnabled(dropdownItem.featureFlagDependency);
 
                         return isEnabled ? (
                             <DropdownItem key={text} value={text} description={description}>
