@@ -71,6 +71,7 @@ konflux-build:
     - '**/konflux*.Dockerfile'
     - .tekton/**/*
     - .konflux/**/*
+    - rpms.*
 
 ai-review:
 - changed-files:
