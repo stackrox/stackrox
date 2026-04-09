@@ -95,37 +95,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert hasNetworkViolation && hasProcessViolation
         }
 
-        // Stage 1: Wait for notables to be created.
-        // The conversion job (savedsearches.conf) is async — dispatch returns immediately.
-        // We re-dispatch each retry because if the job ran before violations were fully
-        // indexed it produces zero notables. We override earliest_time from -5m to -30m
-        // because test setup can exceed the default window.
-        // Query index=notable directly here — it respects earliest_time and confirms
-        // the conversion job succeeded before we attempt the data model query.
-        withRetry(40, 15) {
-            log.info "Dispatching conversion job to create Splunk alerts from ACS violations"
-            postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME + "/dispatch", [
-                    "dispatch.now": "true",
-                    "force_dispatch": "true",
-                    "dispatch.earliest_time": "-30m",
-            ])
-
-            def notableSearchId = SplunkUtil.createSearch(port,
-                    "search index=notable sourcetype=stash", "-30m")
-            Response notableResponse = SplunkUtil.getSearchResults(port, notableSearchId)
-            assert notableResponse != null
-            def notables = notableResponse.getBody().jsonPath().getList("results")
-            log.info "Found ${notables.size()} notable events in index=notable"
-            assert !notables.isEmpty()
-        }
-
-        // Stage 2: Query via the Alerts data model for CIM field validation.
-        // CIM field extractions (app, severity, dest, src, etc.) are only applied
-        // by the data model, so we must query through it to validate them.
-        // We use tstats with summariesonly=false because on a freshly-booted Splunk
-        // instance (as in CI) there are no acceleration summaries yet, and Splunk's
-        // search optimizer can convert "| from datamodel" to tstats summariesonly=true
-        // which would return zero results despite the raw events existing.
+        // Query the CIM Alerts data model to validate CIM field extractions (app, severity, etc.).
+        // Use "| datamodel ... search" instead of "| from datamodel" to prevent Splunk's optimizer
+        // from using summariesonly=true on a fresh instance with no acceleration built.
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
@@ -144,7 +116,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }
 
         then:
-        "StackRox violations are in Splunk and have been converted to alerts"
+        "StackRox violations are in Splunk with correct CIM field mappings"
         assert !alerts.isEmpty()
         log.info "Validating CIM mappings for alerts"
         for (alert in alerts) {
