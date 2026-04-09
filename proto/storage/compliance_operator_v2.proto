@@ -39,7 +39,7 @@ message ProfileShim {
   string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
 }
 
-// Next Tag: 17
+// Next Tag: 18
 message ComplianceOperatorProfileV2 {
   // The primary key is name-profile_version as that is guaranteed unique in the operator and how
   // the profile is referenced in scans and settings
@@ -68,6 +68,11 @@ message ComplianceOperatorProfileV2 {
     TAILORED_PROFILE = 2;
   }
   OperatorKind operator_kind = 16;
+  // equivalence_hash is a SHA-256 hex digest computed by Central from the profile's
+  // content fields (name, namespace, description, title, rules, set_values). It identifies
+  // whether two tailored profiles across clusters carry equivalent compliance configuration.
+  // Empty for non-tailored profiles (equivalence is by name alone).
+  string equivalence_hash = 17;
 }
 
 // Next tag: 19
