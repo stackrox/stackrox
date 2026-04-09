@@ -26,6 +26,10 @@ helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/ma
 helm install --wait --namespace stackrox-operator-system --create-namespace stackrox-operator stackrox/stackrox-operator
 ```
 
+> [!WARNING]
+> If you are upgrading from a 4.10.x operator manifest-based installation, include `--take-ownership` in the `helm` command line.
+> You'll want at least helm 3.18 (released May 19, 2025) for this to work correctly with CRDs.
+
 ## Where to go from here?
 
 Once the operator is running, to actually deploy StackRox you need to create a `Central` and/or a `SecuredCluster` custom resource.
