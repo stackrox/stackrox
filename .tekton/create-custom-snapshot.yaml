@@ -155,10 +155,8 @@ spec:
             echo "Target branch: ${TARGET_BRANCH}"
             echo "Pull request number: ${PULL_REQUEST_NUMBER}"
 
-            # Exit 0 when the function name is true; exit 1 when false (so && / ! compose correctly).
-
             is_pull_request() {
-              if [[ -n "${PULL_REQUEST_NUMBER}" ]] && [[ "${PULL_REQUEST_NUMBER}" =~ ^[0-9]+$ ]]; then
+              if [[ "${PULL_REQUEST_NUMBER}" =~ ^[0-9]+$ ]]; then
                 echo "This is a pull request."
                 return 0
               else
@@ -204,17 +202,18 @@ spec:
               sleep 60
             fi
 
-            # Skip snapshot work when this is a normal PR (not release, not Konflux/Renovate branch, no konflux-build label).
+            # Skip snapshot work when this is a normal PR
+            # (not targetting a release branch, not with Konflux/Renovate string in the source branch, no konflux-build label)
             if is_pull_request && ! is_targeting_release_branch && ! source_branch_matches && ! has_konflux_build_label "${PULL_REQUEST_NUMBER}"; then
+                echo "This commit is not producing a Konflux build."
                 echo "Skipping the custom snapshot pipeline for this PR."
-                echo "This PR is not producing a Konflux build."
-                echo -n "SKIP" | tee "$(results.SHOULD_SKIP_PIPELINE.path)"
+                echo -n "true" > "$(results.SHOULD_SKIP_PIPELINE.path)"
                 exit 0
             else
                 echo "Running the custom snapshot pipeline for this PR."
-                echo "This PR is producing a Konflux build."
+                echo "This commit is producing a Konflux build."
                 echo "Pipeline should run"
-                echo -n "RUN" | tee "$(results.SHOULD_SKIP_PIPELINE.path)"
+                echo -n "false" > "$(results.SHOULD_SKIP_PIPELINE.path)"
                 exit 0
             fi
 
@@ -225,7 +224,7 @@ spec:
       when:
       - input: $(tasks.determine-if-pipeline-should-skip.results.SHOULD_SKIP_PIPELINE)
         operator: in
-        values: [RUN]
+        values: [ "false" ]
       params:
       - name: url
         value: $(params.git-url)
