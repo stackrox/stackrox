@@ -16,7 +16,7 @@ import (
 // acknowledge the handshake.
 func ProbeStreamForConnectionError(stream central.SensorService_CommunicateClient, revokedMsg, noEchoMsg string) error {
 	if _, recvErr := stream.Recv(); recvErr != nil {
-		if st, ok := status.FromError(recvErr); ok && st.Code() == codes.Unauthenticated {
+		if st, ok := status.FromError(recvErr); ok && st.Code() == codes.PermissionDenied {
 			return errors.Wrapf(recvErr, "central rejected the connection, possibly because"+
 				" %s."+
 				" Check central logs for details", revokedMsg)

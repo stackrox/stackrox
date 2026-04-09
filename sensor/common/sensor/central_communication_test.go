@@ -126,8 +126,8 @@ func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
 		recvErr error
 		wantMsg string
 	}{
-		"Unauthenticated error suggests revoked credentials": {
-			recvErr: status.Error(codes.Unauthenticated, "credentials not found: client certificate validation failed: init bundle is revoked"),
+		"PermissionDenied error suggests revoked credentials": {
+			recvErr: status.Error(codes.PermissionDenied, "not authorized: no authorizer could authorize this request"),
 			wantMsg: "credentials have been revoked",
 		},
 		"Other gRPC error is surfaced": {
