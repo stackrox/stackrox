@@ -151,50 +151,64 @@ spec:
             echo "Target branch: ${TARGET_BRANCH}"
             echo "Pull request number: ${PULL_REQUEST_NUMBER}"
 
+            # Exit 0 when the function name is true; exit 1 when false (so && / ! compose correctly).
+
             is_pull_request() {
-                if [[ "${PULL_REQUEST_NUMBER}" == '{{pull_request_number}}' ]]; then
-                  return 0
-                else
+                if [[ "${PULL_REQUEST_NUMBER}" == '{{pull_request_number}}' ]] || [[ -z "${PULL_REQUEST_NUMBER}" ]]; then
+                  echo "This is not a pull request."
                   return 1
+                else
+                  echo "This is a pull request."
+                  return 0
                 fi
             }
 
             is_targeting_release_branch() {
                 if [[ "${TARGET_BRANCH}" == release-* ]]; then
-                  return 1
-                else
+                  echo "Target branch is a release branch."
                   return 0
+                else
+                  echo "Target branch is not a release branch."
+                  return 1
                 fi
             }
 
-            source_branch_has_magic_string() {
+            source_branch_matches() {
                 if [[ "${SOURCE_BRANCH}" =~ (konflux|renovate|appstudio|rhtap) ]]; then
-                  return 1
-                else
+                  echo "Source branch has the magic string for a Konflux branch."
                   return 0
+                else
+                  echo "Source branch does not have the magic string."
+                  return 1
                 fi
             }
 
-            has_magic_label() {
+            has_konflux_build_label() {
                 local pull_request_number=$1
                 local label_name="konflux-build"
 
                 gh pr view --json labels "${pull_request_number}" \
-                  | jq -r '.labels[] | select(.name == "'${label_name}'") | .name' | grep -q "${label_name}"
+                  | jq -r '.labels[] | select(.name == "'"${label_name}"'") | .name' | grep -q "${label_name}"
             }
 
-            if is_pull_request && ! is_targeting_release_branch && ! source_branch_has_magic_string && ! has_magic_label; then
-                echo "Skipping the custom snapshot pipeline for this PR."
-                echo "This commit is not producing a Konflux build."
-                echo -n "SKIP" | tee $(results.SHOULD_SKIP_PIPELINE.path)
-                exit 0
-            else
-                echo "Running the custom snapshot pipeline."
-                echo "This commit is producing a Konflux build."
-                echo -n "RUN" | tee $(results.SHOULD_SKIP_PIPELINE.path)
-                exit 0
+            if is_pull_request; then
+                echo "Sleeping for 60 seconds to allow the labeler to assign the konflux-build label to the PR if applicable."
+                sleep 60
             fi
 
+            # Skip snapshot work when this is a normal PR (not release, not Konflux/Renovate branch, no konflux-build label).
+            if is_pull_request && ! is_targeting_release_branch && ! source_branch_matches && ! has_konflux_build_label "${PULL_REQUEST_NUMBER}"; then
+                echo "Skipping the custom snapshot pipeline for this PR."
+                echo "This PR is not producing a Konflux build."
+                echo -n "SKIP" | tee "$(results.SHOULD_SKIP_PIPELINE.path)"
+                exit 0
+            else
+                echo "Running the custom snapshot pipeline for this PR."
+                echo "This PR is producing a Konflux build."
+                echo "Pipeline should run"
+                echo -n "RUN" | tee "$(results.SHOULD_SKIP_PIPELINE.path)"
+                exit 0
+            fi
 
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
