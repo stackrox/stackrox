@@ -269,18 +269,6 @@ func testCluster() []*storage.Cluster {
 			CentralApiEndpoint: centralEndpoint,
 		},
 		{
-			Name:               "os_cluster1",
-			Type:               storage.ClusterType_OPENSHIFT_CLUSTER,
-			MainImage:          mainImage,
-			CentralApiEndpoint: centralEndpoint,
-		},
-		{
-			Name:               "os_cluster2",
-			Type:               storage.ClusterType_OPENSHIFT_CLUSTER,
-			MainImage:          mainImage,
-			CentralApiEndpoint: centralEndpoint,
-		},
-		{
 			Name:               "os4_cluster1",
 			Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
 			MainImage:          mainImage,

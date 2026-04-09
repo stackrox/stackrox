@@ -403,16 +403,16 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestEnvImpact() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	vuln := s.getClusterVulnerabilityResolver(ctx, "clusterCve1")
-
+	clusterCount := len(s.clusterIDs)
 	impact, err := vuln.EnvImpact(ctx)
 	s.NoError(err)
-	s.Equal(float64(1)/8, impact)
+	s.Equal(float64(1)/float64(clusterCount), impact)
 
 	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve2")
 
 	impact, err = vuln.EnvImpact(ctx)
 	s.NoError(err)
-	s.Equal(float64(2)/8, impact)
+	s.Equal(float64(2)/float64(clusterCount), impact)
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) getClusterResolver(ctx context.Context, id string) *clusterResolver {
