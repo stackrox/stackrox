@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 enum ClusterType {
   GENERIC_CLUSTER = 0;
   KUBERNETES_CLUSTER = 1;
-  OPENSHIFT_CLUSTER = 2;
+  OPENSHIFT_CLUSTER = 2 [deprecated = true];
   reserved 3;
   reserved 4;
   OPENSHIFT4_CLUSTER = 5;
