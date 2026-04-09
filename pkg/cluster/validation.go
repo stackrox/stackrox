@@ -61,8 +61,8 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Central API endpoint cannot contain whitespace")
 	}
 
-	if cluster.GetAdmissionControllerEvents() && cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER {
-		errorList.AddString("OpenShift 3.x compatibility mode does not support admission controller webhooks on port-forward and exec.")
+	if cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER {
+		errorList.AddString("OpenShift 3.x is not supported anymore")
 	}
 	if !cluster.GetDynamicConfig().GetDisableAuditLogs() && cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER {
 		// Note: this will not fail server-side validation, because on those paths, normalization (which forces it to
