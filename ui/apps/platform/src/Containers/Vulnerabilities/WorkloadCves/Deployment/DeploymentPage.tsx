@@ -90,6 +90,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
         ...baseSearchFilter,
         'Deployment ID': [wrapInQuotes(deploymentId)], // exact match instead of regex match
         ...querySearchFilter,
+        'Vulnerability State': [vulnerabilityState],
     };
 
     return (
