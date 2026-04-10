@@ -31,6 +31,9 @@ type DataStore interface {
 
 	// GetControlsByRulesAndBenchmarks returns controls by a list of rule names group by control, standard and rule name.
 	GetControlsByRulesAndBenchmarks(ctx context.Context, ruleNames []string, benchmarkNames []string) ([]*ControlResult, error)
+
+	// GetControlsByRules returns all controls for the given rule names, regardless of benchmark/standard.
+	GetControlsByRules(ctx context.Context, ruleNames []string) ([]*ControlResult, error)
 }
 
 // New returns an instance of DataStore.

@@ -153,11 +153,6 @@ var (
 			Name: "rule-1",
 		},
 	}
-	benchmarks = []*storage.ComplianceOperatorBenchmarkV2{
-		{
-			ShortName: "CIS-OCP",
-		},
-	}
 	controls = []*datastore.ControlResult{
 		{
 			Standard: "standard-1",
@@ -171,7 +166,6 @@ type walkByQueryTestCase struct {
 	expectedProfiles     func() ([]*storage.ComplianceOperatorProfileV2, error)
 	expectedRemediations func() ([]*storage.ComplianceOperatorRemediationV2, error)
 	expectedRules        func() ([]*storage.ComplianceOperatorRuleV2, error)
-	expectedBenchmarks   func() ([]*storage.ComplianceOperatorBenchmarkV2, error)
 	expectedControls     func() ([]*datastore.ControlResult, error)
 	expectError          bool
 }
@@ -190,9 +184,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
 			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
-			},
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
@@ -208,9 +199,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
 			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
-			},
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
@@ -225,9 +213,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			},
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
-			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
 			},
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
@@ -251,8 +236,8 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
 			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
 			},
 		},
 		"remediation search error": {
@@ -275,9 +260,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			},
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
-			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
 			},
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
@@ -308,7 +290,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*storage.ComplianceOperatorRuleV2{}, nil
 			},
 		},
-		"benchmark not found": {
+		"profile with no benchmark mapping": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
@@ -324,8 +306,8 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
 			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
 			},
 		},
 		"control search error": {
@@ -338,9 +320,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			},
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
-			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
 			},
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return nil, errors.New("error")
@@ -357,9 +336,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			},
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return rules, nil
-			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return benchmarks, nil
 			},
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return []*datastore.ControlResult{}, nil
@@ -378,7 +354,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Times(1).Return(tcase.expectedRules())
 			}
 			if tcase.expectedControls != nil {
-				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(tcase.expectedControls())
+				s.ruleDS.EXPECT().GetControlsByRules(gomock.Any(), gomock.Any()).Times(1).Return(tcase.expectedControls())
 			}
 			var results []*report.ResultRow
 			status := &checkStatus{}
@@ -579,15 +555,6 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	}
 	expRules, _ := tcase.expectedRules()
 	if len(expRules) != 1 {
-		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
-		return
-	}
-	if tcase.expectedBenchmarks == nil {
-		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
-		return
-	}
-	expBench, _ := tcase.expectedBenchmarks()
-	if len(expBench) == 0 {
 		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
 		return
 	}

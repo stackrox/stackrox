@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/complianceoperator/v2/benchmark"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	types "github.com/stackrox/rox/pkg/protocompat"
@@ -35,15 +34,8 @@ func GetLastScanTime(ctx context.Context, clusterID string, profileName string, 
 	return lastScanTime, nil
 }
 
-func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, ruleNames []string, profileName string) ([]*complianceRuleDS.ControlResult, error) {
-	shortName := benchmark.GetBenchmarkShortNameFromProfileName(profileName)
-
-	// If the profile does not map to a benchmark then we cannot map control data.
-	if shortName == "" {
-		return nil, nil
-	}
-
-	controls, err := ruleDS.GetControlsByRulesAndBenchmarks(ctx, ruleNames, []string{shortName})
+func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, ruleNames []string, _ string) ([]*complianceRuleDS.ControlResult, error) {
+	controls, err := ruleDS.GetControlsByRules(ctx, ruleNames)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not receive controls by rule controls")
 	}

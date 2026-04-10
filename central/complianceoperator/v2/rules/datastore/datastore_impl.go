@@ -29,13 +29,23 @@ func (d *datastoreImpl) DeleteRule(ctx context.Context, id string) error {
 
 // GetRulesByCluster retrieves rules by cluster
 func (d *datastoreImpl) GetRulesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorRuleV2, error) {
-	return d.store.GetByQuery(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+	var results []*storage.ComplianceOperatorRuleV2
+	err := d.store.GetByQueryFn(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterID).ProtoQuery(), func(r *storage.ComplianceOperatorRuleV2) error {
+		results = append(results, r)
+		return nil
+	})
+	return results, err
 }
 
 // SearchRules returns the rules for the given query
 func (d *datastoreImpl) SearchRules(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorRuleV2, error) {
-	return d.store.GetByQuery(ctx, query)
+	var results []*storage.ComplianceOperatorRuleV2
+	err := d.store.GetByQueryFn(ctx, query, func(r *storage.ComplianceOperatorRuleV2) error {
+		results = append(results, r)
+		return nil
+	})
+	return results, err
 }
 
 // DeleteRulesByCluster delete rule by cluster id
@@ -64,6 +74,36 @@ func (d *datastoreImpl) GetControlsByRulesAndBenchmarks(ctx context.Context, rul
 	builder.AddExactMatches(search.ComplianceOperatorStandard, benchmarks...)
 
 	// Add a group by clause to group the rule names by name, control and standard to reduce the result set.
+	builder.AddGroupBy(
+		search.ComplianceOperatorRuleName,
+		search.ComplianceOperatorControl,
+		search.ComplianceOperatorStandard,
+	)
+
+	query := builder.ProtoQuery()
+	var results []*ControlResult
+	err := pgSearch.RunSelectRequestForSchemaFn[ControlResult](ctx, d.db, postgresSchema.ComplianceOperatorRuleV2Schema, query, func(r *ControlResult) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// GetControlsByRules returns all controls for the given rule names, regardless of benchmark/standard.
+func (d *datastoreImpl) GetControlsByRules(ctx context.Context, ruleNames []string) ([]*ControlResult, error) {
+	builder := search.NewQueryBuilder()
+	builder.AddSelectFields(
+		search.NewQuerySelect(search.ComplianceOperatorControl),
+		search.NewQuerySelect(search.ComplianceOperatorStandard),
+		search.NewQuerySelect(search.ComplianceOperatorRuleName),
+	)
+
+	builder.AddExactMatches(search.ComplianceOperatorRuleName, ruleNames...)
+
 	builder.AddGroupBy(
 		search.ComplianceOperatorRuleName,
 		search.ComplianceOperatorControl,

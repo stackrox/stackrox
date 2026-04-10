@@ -780,7 +780,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				}
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
-				s.ruleDatastore.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.ruleDatastore.EXPECT().GetControlsByRules(gomock.Any(), []string{"rule-name"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
 		{
@@ -806,7 +806,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 				}
 				s.resultDatastore.EXPECT().ComplianceProfileResults(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 
-				s.ruleDatastore.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+				s.ruleDatastore.EXPECT().GetControlsByRules(gomock.Any(), []string{"rule-name"}).Return(getExpectedControlResults(), nil).Times(1)
 			},
 		},
 		{
