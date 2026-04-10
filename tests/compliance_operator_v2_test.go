@@ -404,9 +404,9 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	require.Greater(t, len(clusters.GetClusters()), 0)
 	clusterID := clusters.GetClusters()[0].GetId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
+	// Create tailored profile and wait until it appears in Central.
 	testID := fmt.Sprintf("sync-%s", uuid.NewV4().String())
-	tpName := fmt.Sprintf("sync-tp-%s", uuid.NewV4().String())
+	tpName := testID
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
@@ -517,7 +517,7 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	client := v2.NewComplianceProfileServiceClient(conn)
 	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
+	// Create tailored profile and wait until it appears in Central.
 	tpName := fmt.Sprintf("profile-get-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	tailoredProfile := waitUntilTPInCentralDB(ctx, t, client, clusterID, tpName)
@@ -558,7 +558,7 @@ func TestComplianceV2ProfileGetSummaries(t *testing.T) {
 	client := v2.NewComplianceProfileServiceClient(conn)
 	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
+	// Create tailored profile and wait until it appears in Central.
 	tpName := fmt.Sprintf("summaries-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	waitUntilTPInCentralDB(ctx, t, client, clusterID, tpName)
@@ -608,9 +608,9 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 	clusterID := clusters.GetClusters()[0].GetId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
+	// Create tailored profile and wait until it appears in Central.
 	testID := fmt.Sprintf("create-get-%s", uuid.NewV4().String())
-	tpName := fmt.Sprintf("create-get-tp-%s", uuid.NewV4().String())
+	tpName := testID
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
@@ -748,12 +748,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	require.Greater(t, len(clusters.GetClusters()), 0)
 	clusterID := clusters.GetClusters()[0].GetId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
 	testID := fmt.Sprintf("update-%s", uuid.NewV4().String())
-	tpName := fmt.Sprintf("update-tp-%s", uuid.NewV4().String())
-	createTailoredProfile(ctx, t, dynClient, tpName)
-	profileClient := v2.NewComplianceProfileServiceClient(conn)
-	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
 
 	// Create a scan configuration with a single regular profile.
 	initialProfiles := []profileRef{
@@ -790,6 +785,12 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 		assertScanSetting(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, req)
 		assertScanSettingBinding(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, initialProfiles)
 	}, defaultTimeout, defaultInterval)
+
+	// Create tailored profile and wait until it appears in Central.
+	tpName := testID
+	createTailoredProfile(ctx, t, dynClient, tpName)
+	profileClient := v2.NewComplianceProfileServiceClient(conn)
+	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
 
 	// Update to mixed profiles: a regular profile + the TailoredProfile.
 	updatedProfiles := []profileRef{
@@ -838,9 +839,9 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 
 	clusterID := clusters.GetClusters()[0].GetId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
+	// Create tailored profile and wait until it appears in Central.
 	testID := fmt.Sprintf("delete-%s", uuid.NewV4().String())
-	tpName := fmt.Sprintf("delete-tp-%s", uuid.NewV4().String())
+	tpName := testID
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
@@ -974,9 +975,9 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 	client := v2.NewComplianceScanConfigurationServiceClient(conn)
 	clusterId := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
-	// Create per-test tailored profile and wait for ACS ingestion.
+	// Create tailored profile and wait until it appears in Central.
 	testID := fmt.Sprintf("rescan-%s", uuid.NewV4().String())
-	tpName := fmt.Sprintf("rescan-tp-%s", uuid.NewV4().String())
+	tpName := testID
 	createTailoredProfile(ctx, t, dynClient, tpName)
 	profileClient := v2.NewComplianceProfileServiceClient(conn)
 	waitUntilTPInCentralDB(ctx, t, profileClient, clusterId, tpName)
