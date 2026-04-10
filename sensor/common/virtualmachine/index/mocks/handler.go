@@ -221,6 +221,20 @@ func (m *MockVirtualMachineStore) EXPECT() *MockVirtualMachineStoreMockRecorder 
 	return m.recorder
 }
 
+// Get mocks base method.
+func (m *MockVirtualMachineStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(*virtualmachine.Info)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockVirtualMachineStoreMockRecorder) Get(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVirtualMachineStore)(nil).Get), id)
+}
+
 // GetFromCID mocks base method.
 func (m *MockVirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	m.ctrl.T.Helper()

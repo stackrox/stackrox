@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
@@ -238,6 +239,16 @@ func (h *handlerImpl) forwardToCompliance(
 		return
 	}
 
+	// Resolve the VM's host node so the compliance multiplexer can route to
+	// the correct compliance connection. If the VM is unknown (e.g. deleted
+	// between send and ACK), broadcast to all connections as a fallback.
+	var nodeName string
+	if resourceID != "" {
+		if vmInfo := h.store.Get(virtualmachine.VMID(resourceID)); vmInfo != nil {
+			nodeName = vmInfo.NodeName
+		}
+	}
+
 	msg := common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_ComplianceAck{
@@ -249,11 +260,10 @@ func (h *handlerImpl) forwardToCompliance(
 				},
 			},
 		},
-		// Hostname is the VM resource ID used by the compliance multiplexer to
-		// route the message to the correct compliance connection. When empty
-		// (e.g. bulk ACK), broadcast to all compliance connections.
-		Hostname:  resourceID,
-		Broadcast: resourceID == "",
+		// Hostname is the node name (not the VM resource ID) used by the
+		// compliance multiplexer to route to the correct compliance connection.
+		Hostname:  nodeName,
+		Broadcast: nodeName == "",
 	}
 
 	select {

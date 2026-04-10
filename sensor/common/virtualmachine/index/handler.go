@@ -23,6 +23,7 @@ type Handler interface {
 //
 //go:generate mockgen-wrapper
 type VirtualMachineStore interface {
+	Get(id virtualmachine.VMID) *virtualmachine.Info
 	GetFromCID(cid uint32) *virtualmachine.Info
 }
 
