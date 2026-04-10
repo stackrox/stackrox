@@ -168,7 +168,7 @@ spec:
         image: brew.registry.redhat.com/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c
         script: |
           #!/bin/bash
-          set -euo pipefail
+          set -euxo pipefail
 
           # Install oras CLI
           echo "=== Installing oras ==="
@@ -176,17 +176,33 @@ spec:
           tar -xzf oras_1.1.0_linux_amd64.tar.gz
           chmod +x oras
           mv oras /usr/local/bin/
+          echo "DEBUG: oras installed at $(which oras)"
+          oras version
 
           # Extract source and Cachi2 artifacts from OCI storage
           echo "=== Extracting source artifact ==="
+          echo "DEBUG: SOURCE_ARTIFACT = $SOURCE_ARTIFACT"
           SOURCE_OCI_PATH="${SOURCE_ARTIFACT#oci::}"
+          echo "DEBUG: SOURCE_OCI_PATH = $SOURCE_OCI_PATH"
           mkdir -p /workspace/source
-          oras pull -o /workspace/source "$SOURCE_OCI_PATH"
+          oras pull -o /workspace/source "$SOURCE_OCI_PATH" || {
+            echo "ERROR: Failed to pull source artifact"
+            exit 1
+          }
+          echo "DEBUG: Source artifact extracted, contents:"
+          ls -la /workspace/source | head -20
 
           echo "=== Extracting Cachi2 artifact ==="
+          echo "DEBUG: CACHI2_ARTIFACT = $CACHI2_ARTIFACT"
           CACHI2_OCI_PATH="${CACHI2_ARTIFACT#oci::}"
+          echo "DEBUG: CACHI2_OCI_PATH = $CACHI2_OCI_PATH"
           mkdir -p /workspace/cachi2
-          oras pull -o /workspace/cachi2 "$CACHI2_OCI_PATH"
+          oras pull -o /workspace/cachi2 "$CACHI2_OCI_PATH" || {
+            echo "ERROR: Failed to pull Cachi2 artifact"
+            exit 1
+          }
+          echo "DEBUG: Cachi2 artifact extracted, contents:"
+          ls -la /workspace/cachi2
 
           cd /workspace/source
 
@@ -196,6 +212,7 @@ spec:
             set +u
             source /workspace/cachi2/cachi2.env
             set -u
+            echo "DEBUG: Cachi2 environment sourced"
           else
             echo "WARNING: cachi2.env not found, proceeding without hermetic environment"
           fi
@@ -206,7 +223,10 @@ spec:
 
           # Run go mod tidy - will fail if Go version is incompatible
           echo "=== Running go mod tidy ==="
-          go mod tidy
+          go mod tidy || {
+            echo "ERROR: go mod tidy failed with exit code $?"
+            exit 1
+          }
 
           echo "=== SUCCESS: Go version is compatible with go.mod requirements ==="
         env:
