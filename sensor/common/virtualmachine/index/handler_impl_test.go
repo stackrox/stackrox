@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -331,6 +332,242 @@ func (s *virtualMachineHandlerSuite) TestResponsesC_AfterStart() {
 
 	ch := s.handler.ResponsesC()
 	s.Require().NotNil(ch)
+}
+
+func (s *virtualMachineHandlerSuite) TestComplianceC_AfterStart() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ch := s.handler.ComplianceC()
+	s.Require().NotNil(ch)
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_ACK() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-123",
+			Reason:      "all good",
+		}},
+	}
+
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	select {
+	case got := <-s.handler.ComplianceC():
+		ack := got.Msg.GetComplianceAck()
+		s.Require().NotNil(ack)
+		s.Equal(sensor.MsgToCompliance_ComplianceACK_ACK, ack.GetAction())
+		s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
+		s.Equal("vm-123", ack.GetResourceId())
+		s.Equal("all good", ack.GetReason())
+		s.Equal("vm-123", got.Hostname)
+		s.False(got.Broadcast)
+	case <-time.After(time.Second):
+		s.Fail("timed out waiting for compliance ACK")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_NACK() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_NACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-456",
+			Reason:      "validation failed",
+		}},
+	}
+
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	select {
+	case got := <-s.handler.ComplianceC():
+		ack := got.Msg.GetComplianceAck()
+		s.Require().NotNil(ack)
+		s.Equal(sensor.MsgToCompliance_ComplianceACK_NACK, ack.GetAction())
+		s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
+		s.Equal("vm-456", ack.GetResourceId())
+		s.Equal("validation failed", ack.GetReason())
+		s.Equal("vm-456", got.Hostname)
+		s.False(got.Broadcast)
+	case <-time.After(time.Second):
+		s.Fail("timed out waiting for compliance NACK")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_BroadcastWhenResourceIDEmpty() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "",
+		}},
+	}
+
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	select {
+	case got := <-s.handler.ComplianceC():
+		s.Empty(got.Hostname)
+		s.True(got.Broadcast)
+	case <-time.After(time.Second):
+		s.Fail("timed out waiting for broadcast compliance ACK")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_NoStartDoesNotPanic() {
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-no-start",
+		}},
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = s.handler.ProcessMessage(ctx, msg)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		s.Fail("ProcessMessage should not block when Start() has not been called")
+	}
+
+	s.Nil(s.handler.ComplianceC())
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_UnknownActionDropped() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_Action(999),
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-unknown",
+		}},
+	}
+
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("unexpected message on ComplianceC for unknown SensorACK action")
+	default:
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DoesNotBlockWhenStopped() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+
+	// Fill the compliance channel to capacity so the next send would block
+	// without the StopRequested guard.
+	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
+
+	s.handler.Stop()
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_NACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-stopped",
+			Reason:      "after stop",
+		}},
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = s.handler.ProcessMessage(ctx, msg)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		s.Fail("ProcessMessage blocked on full toCompliance channel after Stop")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DeadlockDetection() {
+	// Verify that an unbuffered channel would block when the consumer is slow,
+	// and that our buffer of 1 absorbs exactly one send without blocking.
+	// If someone removes the buffer, this test will time out.
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ctx := context.Background()
+	makeMsg := func(id string) *central.MsgToSensor {
+		return &central.MsgToSensor{
+			Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+				Action:      central.SensorACK_ACK,
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				ResourceId:  id,
+			}},
+		}
+	}
+
+	// First send should succeed without blocking (fills the buffer).
+	err = s.handler.ProcessMessage(ctx, makeMsg("vm-first"))
+	s.Require().NoError(err)
+
+	// Second send without draining: must not block indefinitely.
+	// With buffer=1, the channel is now full. The second send races
+	// with the stopper. We run it in a goroutine to detect the block.
+	secondDone := make(chan struct{})
+	go func() {
+		defer close(secondDone)
+		_ = s.handler.ProcessMessage(ctx, makeMsg("vm-second"))
+	}()
+
+	// Drain the first message so the second can proceed.
+	select {
+	case <-s.handler.ComplianceC():
+	case <-time.After(time.Second):
+		s.Fail("first message should be available in the buffer")
+	}
+
+	select {
+	case <-secondDone:
+	case <-time.After(time.Second):
+		s.Fail("second ProcessMessage blocked — potential deadlock if buffer is removed")
+	}
+
+	// Drain second message.
+	select {
+	case <-s.handler.ComplianceC():
+	case <-time.After(time.Second):
+		s.Fail("second message should arrive after draining first")
+	}
 }
 
 func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {

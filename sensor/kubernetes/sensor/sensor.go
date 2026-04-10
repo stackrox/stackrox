@@ -205,7 +205,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
-		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler.(common.ComplianceComponent))
+		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())

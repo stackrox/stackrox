@@ -164,7 +164,7 @@ func (h *handlerImpl) Start() error {
 		return errStartMoreThanOnce
 	}
 	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
-	h.toCompliance = make(chan common.MessageToComplianceWithAddress)
+	h.toCompliance = make(chan common.MessageToComplianceWithAddress, 1)
 	h.toCentral = h.run(h.indexReports)
 	return nil
 }
@@ -239,6 +239,7 @@ func (h *handlerImpl) forwardToCompliance(
 
 	select {
 	case <-h.stopper.Flow().StopRequested():
+		log.Debugf("Dropping VM ACK/NACK (resourceID=%s) during shutdown", resourceID)
 	case h.toCompliance <- common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_ComplianceAck{
@@ -250,6 +251,9 @@ func (h *handlerImpl) forwardToCompliance(
 				},
 			},
 		},
+		// Hostname is the VM resource ID used by the compliance multiplexer to
+		// route the message to the correct compliance connection. When empty
+		// (e.g. bulk ACK), broadcast to all compliance connections.
 		Hostname:  resourceID,
 		Broadcast: resourceID == "",
 	}:

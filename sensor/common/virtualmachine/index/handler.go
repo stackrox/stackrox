@@ -11,8 +11,10 @@ import (
 )
 
 // Handler provides functionality to send virtual machine index reports to Central.
+// It embeds ComplianceComponent (which itself embeds SensorComponent) so that
+// compliance channel wiring is part of the compile-time contract.
 type Handler interface {
-	common.SensorComponent
+	common.ComplianceComponent
 
 	Send(ctx context.Context, vm *v1.IndexReport) error
 }
