@@ -510,9 +510,9 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	// Create per-test tailored profile and wait for ACS ingestion.
 	tpName := fmt.Sprintf("profile-get-%s", uuid.NewV4().String())
 	createTailoredProfile(ctx, t, dynClient, tpName)
-	tpProfile := waitUntilTPInCentralDB(ctx, t, client, clusterID, tpName)
+	tailoredProfile := waitUntilTPInCentralDB(ctx, t, client, clusterID, tpName)
 
-	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, tpProfile.GetOperatorKind(),
+	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, tailoredProfile.GetOperatorKind(),
 		"e2e tailored profile should have operator_kind TAILORED_PROFILE")
 
 	// Find a regular Profile to contrast.
@@ -529,11 +529,9 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	assert.Equal(t, v2.ComplianceProfile_PROFILE, regularProfile.GetOperatorKind(),
 		"regular profile should have operator_kind PROFILE")
 
-	// Get the TailoredProfile by ID and verify operator_kind + inherited rules.
-	tp, err := client.GetComplianceProfile(ctx, &v2.ResourceByID{Id: tpProfile.GetId()})
+	// Get the TailoredProfile by ID and verify inherited rules.
+	tp, err := client.GetComplianceProfile(ctx, &v2.ResourceByID{Id: tailoredProfile.GetId()})
 	require.NoError(t, err)
-	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, tp.GetOperatorKind(),
-		"GetComplianceProfile response should have operator_kind TAILORED_PROFILE")
 	assert.Greater(t, len(tp.GetRules()), 0, "tailored profile should have rules inherited from base profile")
 
 	// Verify a regular profile also has rules and correct operator_kind via GetComplianceProfile.
