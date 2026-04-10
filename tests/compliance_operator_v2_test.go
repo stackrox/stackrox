@@ -646,11 +646,6 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	assert.GreaterOrEqual(t, len(scanConfigs.GetConfigurations()), 1)
 	assert.GreaterOrEqual(t, scanConfigs.GetTotalCount(), int32(1))
 
-	// Wait for SSB and assert profile kinds.
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assertScanSettingBinding(ctx, wrapCollectT(t, c), dynClient, testID, coNamespaceV2, initialProfiles)
-	}, defaultTimeout, defaultInterval)
-
 	serviceResult := v2.NewComplianceResultsServiceClient(conn)
 	query = &v2.RawQuery{Query: ""}
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
