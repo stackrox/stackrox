@@ -163,6 +163,8 @@ spec:
       value: $(params.oci-artifact-expires-after)
     - name: COMMIT_SHA
       value: $(params.revision)
+    - name: PLATFORM
+      value: linux/amd64
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
