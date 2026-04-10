@@ -4,26 +4,53 @@ on:
   schedule:
     - cron: '*/15 * * * *'  # Every 15 minutes
   workflow_dispatch:
-
-permissions:
-  contents: write
-  pull-requests: write
+    inputs:
+      dry-run:
+        description: Dry-run
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: auto-merge
   cancel-in-progress: false
 
+run-name: >-
+  ${{
+    format('auto-merge {0}',
+      fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != 'true']
+    )
+  }}
+
 jobs:
-  auto-merge:
-    name: Enable auto-merge for eligible PRs
+  auto-merge-dependabot:
+    name: "Dependabot: Enable auto-merge for eligible PRs"
     runs-on: ubuntu-latest
     if: github.repository_owner == 'stackrox'
+    env:
+      DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
       - name: Run auto-merge action
-        uses: stackrox/actions/automerge@8fcfacbfc4629361cca5573aba147be2155ba7e9
+        uses: stackrox/actions/automerge@tm/ROX-34007-automerge-configurability
         with:
+          dry-run: ${{github.event.inputs.dry-run == 'true'}}
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+  auto-merge-mintmaker:
+    name: "MintMaker: Enable auto-merge for eligible PRs (mintmaker)"
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'stackrox'
+    env:
+      DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
+
+    steps:
+      - name: Run auto-merge action
+        uses: stackrox/actions/automerge@tm/ROX-34007-automerge-configurability
+        with:
+          dry-run: ${{github.event.inputs.dry-run == 'true'}}
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          allowed-base-branches: 'master'
+          labels: 'konflux-build'
+          required-checks: '^(?!.*conforma)Red Hat Konflux'
+          allowed-authors: 'app/red-hat-konflux'
