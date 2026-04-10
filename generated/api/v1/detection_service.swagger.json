@@ -903,7 +903,8 @@
           "format": "int64"
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Deprecated: Use lifecycle_stage instead."
         },
         "imagePullSecrets": {
           "type": "array",
@@ -957,9 +958,26 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "tombstone": {
+          "$ref": "#/definitions/storageTombstone",
+          "description": "tombstone indicates if this deployment has been soft-deleted and when it will be purged."
+        },
+        "lifecycleStage": {
+          "$ref": "#/definitions/storageDeploymentLifecycleStage",
+          "description": "lifecycle_stage indicates the current lifecycle state of this deployment."
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 38"
+    },
+    "storageDeploymentLifecycleStage": {
+      "type": "string",
+      "enum": [
+        "DEPLOYMENT_ACTIVE",
+        "DEPLOYMENT_DELETED"
+      ],
+      "default": "DEPLOYMENT_ACTIVE",
+      "description": "DeploymentLifecycleStage represents the lifecycle state of a deployment resource.\n\n - DEPLOYMENT_DELETED: Future: DEPLOYMENT_SCALED_DOWN, DEPLOYMENT_SUSPENDED, etc."
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1635,6 +1653,22 @@
         "TOLERATION_OPERATOR_EQUAL"
       ],
       "default": "TOLERATION_OPERATION_UNKNOWN"
+    },
+    "storageTombstone": {
+      "type": "object",
+      "properties": {
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "deleted_at is the time the resource was soft-deleted."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "expires_at is the time after which the resource will be permanently purged.\nThis value is pre-computed as deleted_at plus the configured TTL."
+        }
+      },
+      "description": "Tombstone tracks when a resource was soft-deleted and when it should be permanently purged."
     },
     "storageViolationState": {
       "type": "string",

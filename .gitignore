@@ -83,3 +83,6 @@ container-name-repos-map.json
 
 # APM dependencies
 apm_modules/
+
+# bv (beads viewer) local config and caches
+.bv/

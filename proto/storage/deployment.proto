@@ -12,7 +12,24 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 36
+// Tombstone tracks when a resource was soft-deleted and when it should be permanently purged.
+message Tombstone {
+  // deleted_at is the time the resource was soft-deleted.
+  google.protobuf.Timestamp deleted_at = 1; // @gotags: search:"Tombstone Deleted At,hidden"
+
+  // expires_at is the time after which the resource will be permanently purged.
+  // This value is pre-computed as deleted_at plus the configured TTL.
+  google.protobuf.Timestamp expires_at = 2; // @gotags: search:"Tombstone Expires At,hidden"
+}
+
+// DeploymentLifecycleStage represents the lifecycle state of a deployment resource.
+enum DeploymentLifecycleStage {
+  DEPLOYMENT_ACTIVE = 0;
+  DEPLOYMENT_DELETED = 1;
+  // Future: DEPLOYMENT_SCALED_DOWN, DEPLOYMENT_SUSPENDED, etc.
+}
+
+// Next available tag: 38
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -33,7 +50,7 @@ message Deployment {
   reserved 12;
   map<string, string> annotations = 14; // @gotags: search:"Deployment Annotation"
   int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
-  bool inactive = 16;
+  bool inactive = 16 [deprecated = true]; // Deprecated: Use lifecycle_stage instead.
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"
   string service_account = 18; // @gotags: search:"Service Account"
   PermissionLevel service_account_permission_level = 28; // @gotags: search:"Service Account Permission Level"
@@ -51,6 +68,12 @@ message Deployment {
   reserved 30; // was tags
 
   bool platform_component = 35; // @gotags: search:"Platform Component"
+
+  // tombstone indicates if this deployment has been soft-deleted and when it will be purged.
+  Tombstone tombstone = 36;
+
+  // lifecycle_stage indicates the current lifecycle state of this deployment.
+  DeploymentLifecycleStage lifecycle_stage = 37; // @gotags: search:"Lifecycle Stage"
 }
 
 // Next tag: 13
