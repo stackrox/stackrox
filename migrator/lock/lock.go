@@ -3,7 +3,7 @@ package lock
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/dblock"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
