@@ -289,7 +289,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			name, current.Status.State, current.Status.ErrorMessage)
-	}, 1*time.Minute, 5*time.Second)
+	}, 10*time.Second, 1*time.Second)
 }
 
 // waitForTPIngestion waits for a tailored profile to be ingested by ACS and returns it.
@@ -308,7 +308,7 @@ func waitForTPIngestion(ctx context.Context, t *testing.T,
 			}
 		}
 		require.Failf(c, "TP not yet ingested by ACS", "profile %q not found", name)
-	}, 1*time.Minute, 5*time.Second)
+	}, 10*time.Second, 1*time.Second)
 	return profile
 }
 
@@ -1107,7 +1107,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			extendsTPName, current.Status.State, current.Status.ErrorMessage)
-	}, 1*time.Minute, 5*time.Second)
+	}, 10*time.Second, 1*time.Second)
 
 	// --- Variant 2: from-scratch TP with a custom rule ---
 	crName := testID + "-cr"
@@ -1137,7 +1137,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			fromScratchCRName, current.Status.State, current.Status.ErrorMessage)
-	}, 1*time.Minute, 5*time.Second)
+	}, 10*time.Second, 1*time.Second)
 
 	// --- Variant 3: from-scratch TP with regular rules only (no custom rules) ---
 	fromScratchRegName := testID + "-from-scratch-reg"
@@ -1165,7 +1165,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			fromScratchRegName, current.Status.State, current.Status.ErrorMessage)
-	}, 1*time.Minute, 5*time.Second)
+	}, 10*time.Second, 1*time.Second)
 
 	// --- Wait for ACS ingestion of all three TPs ---
 	extendsInACS := waitForTPIngestion(ctx, t, profileClient, clusterID, extendsTPName)
