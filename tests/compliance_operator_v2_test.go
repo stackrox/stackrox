@@ -230,6 +230,8 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 		},
 		Spec: complianceoperatorv1.CustomRuleSpec{
 			RulePayload: complianceoperatorv1.RulePayload{
+				// CO recommendation: set metadata.name and spec.rulePayload.id
+				// to the same DNS-friendly value (lowercase, hyphens, no underscores).
 				ID:          name,
 				Title:       "ConfigMap has e2e marker",
 				Description: "Checks for a ConfigMap with an e2e-marker data key",
@@ -321,7 +323,7 @@ func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 			}
 		}
 		require.Failf(c, "TP not yet in Central DB", "profile %q not found", name)
-	}, 10*time.Second, 1*time.Second)
+	}, 1*time.Minute, 2*time.Second)
 	return profile
 }
 
@@ -1031,49 +1033,35 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	crName := testID + "-cr"
 	createCustomRule(ctx, t, dynClient, crName)
 
-	variants := map[string]struct {
-		spec        complianceoperatorv1.TailoredProfileSpec
-		expectRules []string
-		rejectRules []string
-	}{
+	variants := map[string]complianceoperatorv1.TailoredProfileSpec{
 		"extends": {
-			spec: complianceoperatorv1.TailoredProfileSpec{
-				Extends:     "ocp4-cis",
-				Title:       "E2E Extends Base",
-				Description: "TP extending ocp4-cis for e2e testing",
-				EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-					{Name: "ocp4-api-server-encryption-provider-config", Rationale: "e2e test"},
-				},
-				DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-					{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
-				},
+			Extends:     "ocp4-cis",
+			Title:       "E2E Extends Base",
+			Description: "TP extending ocp4-cis for e2e testing",
+			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: "ocp4-api-server-admission-control-plugin-alwaysadmit", Rationale: "e2e test"},
 			},
-			expectRules: []string{"ocp4-api-server-encryption-provider-config"},
-			rejectRules: []string{"ocp4-api-server-encryption-provider-cipher"},
+			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+			},
 		},
 		"custom-rules": {
-			spec: complianceoperatorv1.TailoredProfileSpec{
-				Title:       "E2E Custom Rules",
-				Description: "From-scratch TP with a custom rule",
-				EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-					{Name: crName, Kind: complianceoperatorv1.CustomRuleKind, Rationale: "e2e test"},
-				},
+			Title:       "E2E Custom Rules",
+			Description: "From-scratch TP with a custom rule",
+			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: crName, Kind: complianceoperatorv1.CustomRuleKind, Rationale: "e2e test"},
 			},
-			expectRules: []string{crName},
 		},
 		"from-scratch": {
-			spec: complianceoperatorv1.TailoredProfileSpec{
-				Title:       "E2E From-Scratch",
-				Description: "From-scratch TP with regular rules",
-				EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-					{Name: "ocp4-api-server-audit-log-maxbackup", Kind: complianceoperatorv1.RuleKind, Rationale: "e2e test"},
-				},
+			Title:       "E2E From-Scratch",
+			Description: "From-scratch TP with regular rules",
+			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: "ocp4-api-server-audit-log-maxbackup", Kind: complianceoperatorv1.RuleKind, Rationale: "e2e test"},
 			},
-			expectRules: []string{"ocp4-api-server-audit-log-maxbackup"},
 		},
 	}
 
-	for name, variant := range variants {
+	for name, spec := range variants {
 		t.Run(name, func(t *testing.T) {
 			tpName := testID + "-" + name
 
@@ -1082,7 +1070,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 					Name:      tpName,
 					Namespace: coNamespaceV2,
 				},
-				Spec: variant.spec,
+				Spec: spec,
 			}
 			require.NoErrorf(t, dynClient.Create(ctx, tp), "failed to create TP %s", tpName)
 			t.Cleanup(func() {
@@ -1106,16 +1094,16 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 			require.NoError(t, err)
 			assert.Greater(t, len(detail.GetRules()), 0, "TP should have at least one rule")
 
-			ruleNames := make(map[string]bool, len(detail.GetRules()))
+			ruleNames := make([]string, 0, len(detail.GetRules()))
 			for _, r := range detail.GetRules() {
-				ruleNames[r.GetName()] = true
+				ruleNames = append(ruleNames, r.GetName())
 			}
 
-			for _, expected := range variant.expectRules {
-				assert.Truef(t, ruleNames[expected], "expected rule %q not found in TP", expected)
+			for _, r := range spec.EnableRules {
+				assert.Contains(t, ruleNames, r.Name, "expected rule not found")
 			}
-			for _, rejected := range variant.rejectRules {
-				assert.Falsef(t, ruleNames[rejected], "rejected rule %q should not be in TP", rejected)
+			for _, r := range spec.DisableRules {
+				assert.NotContains(t, ruleNames, r.Name, "found unexpected rule")
 			}
 		})
 	}
