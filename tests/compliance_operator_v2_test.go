@@ -1016,8 +1016,8 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 }
 
 // TestComplianceV2TailoredProfileVariants verifies that ACS correctly tracks
-// different TailoredProfile variants: extends-base (with disabled rules),
-// from-scratch with custom rules, and from-scratch with regular rules only.
+// different TailoredProfile variants: extends-base (with enabled and disabled
+// rules), from-scratch with custom rules, and from-scratch with regular rules.
 func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -1027,9 +1027,10 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 	testID := fmt.Sprintf("variants-%s", uuid.NewV4().String())
 
-	// --- Variant 1: extends-base TP (disables a rule from ocp4-cis) ---
+	// --- Variant 1: extends-base TP (enables and disables rules from ocp4-cis) ---
 	extendsTPName := testID + "-extends"
 	const disabledRule = "ocp4-api-server-encryption-provider-cipher"
+	const enabledRule = "ocp4-api-server-encryption-provider-config"
 	extendsTP := &complianceoperatorv1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      extendsTPName,
@@ -1039,6 +1040,9 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 			Extends:     "ocp4-cis",
 			Title:       "E2E Extends Base",
 			Description: "TP extending ocp4-cis for e2e testing",
+			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: enabledRule, Rationale: "e2e test"},
+			},
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
 				{Name: disabledRule, Rationale: "e2e test"},
 			},
@@ -1060,10 +1064,10 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	// --- Variant 2: from-scratch TP with a custom rule ---
 	crName := testID + "-cr"
 	createCustomRule(ctx, t, dynClient, crName)
-	fromScratchCRName := testID + "-from-scratch-cr"
-	fromScratchCR := &complianceoperatorv1.TailoredProfile{
+	customRulesTPName := testID + "-custom-rules"
+	customRulesTP := &complianceoperatorv1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fromScratchCRName,
+			Name:      customRulesTPName,
 			Namespace: coNamespaceV2,
 		},
 		Spec: complianceoperatorv1.TailoredProfileSpec{
@@ -1074,92 +1078,98 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, dynClient.Create(ctx, fromScratchCR), "failed to create from-scratch TP with custom rule")
+	require.NoError(t, dynClient.Create(ctx, customRulesTP), "failed to create custom-rules TP")
 	t.Cleanup(func() {
-		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, fromScratchCRName, coNamespaceV2)
+		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, customRulesTPName, coNamespaceV2)
 	})
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		var current complianceoperatorv1.TailoredProfile
-		err := dynClient.Get(ctx, types.NamespacedName{Name: fromScratchCRName, Namespace: coNamespaceV2}, &current)
-		require.NoErrorf(c, err, "failed to get TailoredProfile %s", fromScratchCRName)
+		err := dynClient.Get(ctx, types.NamespacedName{Name: customRulesTPName, Namespace: coNamespaceV2}, &current)
+		require.NoErrorf(c, err, "failed to get TailoredProfile %s", customRulesTPName)
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
-			fromScratchCRName, current.Status.State, current.Status.ErrorMessage)
+			customRulesTPName, current.Status.State, current.Status.ErrorMessage)
 	}, 10*time.Second, 1*time.Second)
 
 	// --- Variant 3: from-scratch TP with regular rules only (no custom rules) ---
-	fromScratchRegName := testID + "-from-scratch-reg"
-	fromScratchReg := &complianceoperatorv1.TailoredProfile{
+	const fromScratchRule = "ocp4-api-server-audit-log-maxbackup"
+	fromScratchTPName := testID + "-from-scratch"
+	fromScratchTP := &complianceoperatorv1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fromScratchRegName,
+			Name:      fromScratchTPName,
 			Namespace: coNamespaceV2,
 		},
 		Spec: complianceoperatorv1.TailoredProfileSpec{
 			Title:       "E2E From-Scratch with Regular Rules",
 			Description: "From-scratch TP with regular rules for e2e testing",
 			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: disabledRule, Kind: complianceoperatorv1.RuleKind, Rationale: "e2e test"},
+				{Name: fromScratchRule, Kind: complianceoperatorv1.RuleKind, Rationale: "e2e test"},
 			},
 		},
 	}
-	require.NoError(t, dynClient.Create(ctx, fromScratchReg), "failed to create from-scratch TP with regular rules")
+	require.NoError(t, dynClient.Create(ctx, fromScratchTP), "failed to create from-scratch TP")
 	t.Cleanup(func() {
-		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, fromScratchRegName, coNamespaceV2)
+		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, fromScratchTPName, coNamespaceV2)
 	})
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		var current complianceoperatorv1.TailoredProfile
-		err := dynClient.Get(ctx, types.NamespacedName{Name: fromScratchRegName, Namespace: coNamespaceV2}, &current)
-		require.NoErrorf(c, err, "failed to get TailoredProfile %s", fromScratchRegName)
+		err := dynClient.Get(ctx, types.NamespacedName{Name: fromScratchTPName, Namespace: coNamespaceV2}, &current)
+		require.NoErrorf(c, err, "failed to get TailoredProfile %s", fromScratchTPName)
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
-			fromScratchRegName, current.Status.State, current.Status.ErrorMessage)
+			fromScratchTPName, current.Status.State, current.Status.ErrorMessage)
 	}, 10*time.Second, 1*time.Second)
 
-	// --- Wait for ACS ingestion of all three TPs ---
-	extendsInACS := waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, extendsTPName)
-	fromScratchCRInACS := waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, fromScratchCRName)
-	fromScratchRegInACS := waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, fromScratchRegName)
+	// --- Wait until all three TPs appear in Central ---
+	storedExtendsTP := waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, extendsTPName)
+	storedCustomRulesTP := waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, customRulesTPName)
+	storedFromScratchTP := waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, fromScratchTPName)
 
 	// All variants should have operator_kind TAILORED_PROFILE.
-	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, extendsInACS.GetOperatorKind(),
+	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, storedExtendsTP.GetOperatorKind(),
 		"extends-base TP should have operator_kind TAILORED_PROFILE")
-	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, fromScratchCRInACS.GetOperatorKind(),
-		"from-scratch TP (custom rule) should have operator_kind TAILORED_PROFILE")
-	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, fromScratchRegInACS.GetOperatorKind(),
-		"from-scratch TP (regular rules) should have operator_kind TAILORED_PROFILE")
+	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, storedCustomRulesTP.GetOperatorKind(),
+		"custom-rules TP should have operator_kind TAILORED_PROFILE")
+	assert.Equal(t, v2.ComplianceProfile_TAILORED_PROFILE, storedFromScratchTP.GetOperatorKind(),
+		"from-scratch TP should have operator_kind TAILORED_PROFILE")
 
-	// --- Verify extends-base TP: inherited rules present, disabled rule excluded ---
-	extendsDetail, err := profileClient.GetComplianceProfile(ctx, &v2.ResourceByID{Id: extendsInACS.GetId()})
+	// --- Verify extends-base TP: enabled rule present, disabled rule excluded ---
+	extendsDetail, err := profileClient.GetComplianceProfile(ctx, &v2.ResourceByID{Id: storedExtendsTP.GetId()})
 	require.NoError(t, err)
 	assert.Greater(t, len(extendsDetail.GetRules()), 0, "extends-base TP should have rules inherited from ocp4-cis")
+	var foundEnabled bool
 	for _, r := range extendsDetail.GetRules() {
 		assert.NotEqualf(t, disabledRule, r.GetName(),
 			"disabled rule %q should not be in extends-base TP rules list", disabledRule)
+		if r.GetName() == enabledRule {
+			foundEnabled = true
+		}
 	}
+	assert.True(t, foundEnabled, "enabled rule %q should be in extends-base TP rules list", enabledRule)
 
-	// --- Verify from-scratch TP with custom rule: custom rule present ---
-	fromScratchCRDetail, err := profileClient.GetComplianceProfile(ctx, &v2.ResourceByID{Id: fromScratchCRInACS.GetId()})
+	// --- Verify custom-rules TP: custom rule present ---
+	customRulesDetail, err := profileClient.GetComplianceProfile(ctx, &v2.ResourceByID{Id: storedCustomRulesTP.GetId()})
 	require.NoError(t, err)
 	foundCustomRule := false
-	for _, r := range fromScratchCRDetail.GetRules() {
+	for _, r := range customRulesDetail.GetRules() {
 		if r.GetName() == crName {
 			foundCustomRule = true
 			break
 		}
 	}
 	assert.True(t, foundCustomRule,
-		"from-scratch TP should contain custom rule %s in its rules list", crName)
+		"custom-rules TP should contain custom rule %s", crName)
 
-	// --- Verify from-scratch TP with regular rules: enabled rule present ---
-	fromScratchRegDetail, err := profileClient.GetComplianceProfile(ctx, &v2.ResourceByID{Id: fromScratchRegInACS.GetId()})
+	// --- Verify from-scratch TP: regular rule present ---
+	fromScratchDetail, err := profileClient.GetComplianceProfile(ctx, &v2.ResourceByID{Id: storedFromScratchTP.GetId()})
 	require.NoError(t, err)
-	foundEnabledRule := false
-	for _, r := range fromScratchRegDetail.GetRules() {
-		if r.GetName() == disabledRule {
-			foundEnabledRule = true
+	foundFromScratchRule := false
+	for _, r := range fromScratchDetail.GetRules() {
+		if r.GetName() == fromScratchRule {
+			foundFromScratchRule = true
 			break
 		}
 	}
-	assert.True(t, foundEnabledRule,
-		"from-scratch TP (regular rules) should contain rule %s", disabledRule)
+	assert.True(t, foundFromScratchRule,
+		"from-scratch TP should contain rule %s", fromScratchRule)
 }
