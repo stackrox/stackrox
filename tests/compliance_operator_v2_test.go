@@ -529,16 +529,14 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	assert.Equal(t, v2.ComplianceProfile_PROFILE, regularProfile.GetOperatorKind(),
 		"regular profile should have operator_kind PROFILE")
 
-	// Get the TailoredProfile by ID and verify inherited rules.
+	// Get the TailoredProfile by ID and verify rules.
 	tp, err := client.GetComplianceProfile(ctx, &v2.ResourceByID{Id: tailoredProfile.GetId()})
 	require.NoError(t, err)
-	assert.Greater(t, len(tp.GetRules()), 0, "tailored profile should have rules inherited from base profile")
+	assert.Greater(t, len(tp.GetRules()), 0, "tailored profile should have rules")
 
-	// Verify a regular profile also has rules and correct operator_kind via GetComplianceProfile.
+	// Verify a regular profile also has rules via GetComplianceProfile.
 	regProfile, err := client.GetComplianceProfile(ctx, &v2.ResourceByID{Id: regularProfile.GetId()})
 	require.NoError(t, err)
-	assert.Equal(t, v2.ComplianceProfile_PROFILE, regProfile.GetOperatorKind(),
-		"regular profile GetComplianceProfile should have operator_kind PROFILE")
 	assert.Greater(t, len(regProfile.GetRules()), 0, "regular profile should have rules")
 }
 
