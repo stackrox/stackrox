@@ -317,6 +317,54 @@ push_main_image_set() {
     fi
 }
 
+push_operator_multiarch_image() {
+    info "Building and pushing multi-arch stackrox-operator image"
+
+    if [[ "$#" -ne 2 ]]; then
+        die "Missing parameter. Usage: push_operator_multiarch_image <push_context> <registry>"
+    fi
+
+    local push_context="$1"
+    local registry="$2"
+
+    local tag
+    tag="$(make -C operator/ --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+
+    local platforms="linux/amd64,linux/arm64"
+    local build_args="--platform ${platforms} --build-arg ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR:-development}"
+
+    # Build and push main tag
+    retry 5 true docker buildx build \
+        ${build_args} \
+        -f operator/prebuilt.Dockerfile \
+        -t "${registry}/stackrox-operator:${tag}" \
+        --push \
+        . | cat
+
+    # Build and push latest tag for merge-to-master
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        retry 5 true docker buildx build \
+            ${build_args} \
+            -f operator/prebuilt.Dockerfile \
+            -t "${registry}/stackrox-operator:latest" \
+            --push \
+            . | cat
+    fi
+
+    # Build and push major.minor tag for releases
+    if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        local major_minor="${tag%.*}"
+        retry 5 true docker buildx build \
+            ${build_args} \
+            -f operator/prebuilt.Dockerfile \
+            -t "${registry}/stackrox-operator:${major_minor}" \
+            --push \
+            . | cat
+    fi
+}
+
 push_operator_image_to_registry() {
     info "Pushing stackrox-operator image to registry"
 
