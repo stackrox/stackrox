@@ -81,7 +81,6 @@ spec:
 
   workspaces:
   - name: git-auth
-  - name: shared-workspace
 
   tasks:
 
@@ -153,49 +152,29 @@ spec:
       workspace: git-auth
 
   - name: verify-go-mod-tidy
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(params.revision)-go-mod-validation
+    - name: DOCKERFILE
+      value: image/go-mod-validation/Dockerfile
+    - name: CONTEXT
+      value: .
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.oci-artifact-expires-after)
+    - name: COMMIT_SHA
+      value: $(params.revision)
+    - name: PLATFORM
+      value: linux/amd64
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     taskRef:
       params:
       - name: name
-        value: git-clone
+        value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone:0.1@sha256:fe38ad52e9d8c289fdf6a6ff1e64c6eda3310f22bfe09a9c5f2850dac15bb75b
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.9@sha256:a9ca472e297388d6ef8d1f51ee205abee6076aed7c5356ec0df84f14a2e78ad8
       - name: kind
         value: task
       resolver: bundles
-    params:
-    - name: url
-      value: $(params.git-url)
-    - name: revision
-      value: $(params.revision)
-    runAfter:
-    - init
-    workspaces:
-    - name: output
-      workspace: shared-workspace
-    - name: basic-auth
-      workspace: git-auth
-
-  - name: run-go-mod-tidy
-    taskSpec:
-      workspaces:
-      - name: source
-      steps:
-      - name: verify
-        image: brew.registry.redhat.com/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c
-        workingDir: $(workspaces.source.path)
-        script: |
-          #!/bin/bash
-          set -euo pipefail
-
-          echo "=== Go Version Check ==="
-          go version
-
-          echo "=== Running go mod tidy ==="
-          go mod tidy
-
-          echo "=== SUCCESS: Go version is compatible with go.mod requirements ==="
-    runAfter:
-    - verify-go-mod-tidy
-    workspaces:
-    - name: source
-      workspace: shared-workspace
