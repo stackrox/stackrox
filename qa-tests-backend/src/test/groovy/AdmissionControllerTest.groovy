@@ -233,8 +233,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Unroll
-    @Tag("BAT")
     def "Verify AC enforcement with label scoping: #desc"() {
         given:
         "Set up namespace with labels"
