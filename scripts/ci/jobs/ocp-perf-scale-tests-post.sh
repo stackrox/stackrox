@@ -72,7 +72,7 @@ info "Central API is responsive, collecting diagnostics"
 # Get central debug dump (includes metrics)
 if get_central_debug_dump "${DEBUG_OUTPUT}"; then
     info "Collected central debug dump to ${DEBUG_OUTPUT}"
-    process_central_metrics "${DEBUG_OUTPUT}" || info "Warning: Failed to process central metrics"
+    # Skip metrics processing - debug dump already contains raw metrics in the zip
 else
     info "Warning: Failed to collect central debug dump"
 fi
