@@ -8,20 +8,19 @@ RUN grep '^go ' go.mod > /tmp/go_version.txt && \
     grep '^toolchain ' go.mod >> /tmp/go_version.txt || true
 
 # Create minimal go.mod with only version info (no dependencies)
-RUN echo "module github.com/stackrox/rox" > go.mod.minimal && \
-    cat /tmp/go_version.txt >> go.mod.minimal && \
-    mv go.mod.minimal go.mod
+RUN echo "module github.com/stackrox/rox" > go.mod && \
+    cat /tmp/go_version.txt >> go.mod
 
-# Validate Go version compatibility
-# go mod graph will fail if go.mod requires a Go version higher than installed
+# Create a trivial Go file to validate compilation
+RUN echo 'package main\n\nfunc main() {}' > main.go
+
+# Validate Go version compatibility by building
+# This will fail if go.mod requires a Go version higher than installed
 RUN set -ex && \
     echo "Installed Go version:" && \
     go version && \
     echo "Minimal go.mod for validation:" && \
     cat go.mod && \
     echo "Checking go.mod compatibility..." && \
-    go mod graph -go >& /dev/null || { \
-        echo "ERROR: go.mod requires a newer Go version than installed"; \
-        exit 1; \
-    } && \
+    go build -o /dev/null . && \
     echo "SUCCESS: Go version is compatible with go.mod"
