@@ -36,7 +36,7 @@ var (
 		},
 	}
 
-	// Expected resources when enforcement is enabled.
+	// Expected resources when enforcement is enabled (only memory limit differs).
 	expectedResourcesEnforcementEnabled = &corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),

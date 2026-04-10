@@ -22,9 +22,9 @@ var (
 		},
 	}
 
-	// defaultResourcesEnforcementEnabled defines resource requirements when enforcement is enabled.
-	// The memory limit matches the enforcement-disabled default since the busybox-style
-	// consolidated binary requires sufficient headroom for all components' init overhead.
+	// defaultResourcesEnforcementEnabled has a higher memory limit to accommodate the
+	// in-process image cache used by the policy-evaluation webhook during enforcement.
+	// Only the memory limit differs; requests stay the same so scheduling is unaffected.
 	defaultResourcesEnforcementEnabled = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
