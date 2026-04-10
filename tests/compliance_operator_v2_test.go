@@ -692,6 +692,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 
 	// Verify that the duplicate profile was not created and the error message is correct.
 	_, err = scanConfigService.CreateComplianceScanConfiguration(ctx, duplicateProfileReq)
+	require.Error(t, err, "expected duplicate profile scan config to be rejected")
 	assert.Contains(t, err.Error(), "already uses profile")
 
 	// Also verify that creating with the TP name is rejected (duplicate TP).
@@ -716,6 +717,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		},
 	}
 	_, err = scanConfigService.CreateComplianceScanConfiguration(ctx, duplicateTPReq)
+	require.Error(t, err, "expected duplicate TP scan config to be rejected")
 	assert.Contains(t, err.Error(), "already uses profile")
 
 	query = &v2.RawQuery{Query: ""}
