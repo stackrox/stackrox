@@ -81,6 +81,7 @@ spec:
 
   workspaces:
   - name: git-auth
+  - name: shared-workspace
 
   tasks:
 
@@ -152,85 +153,49 @@ spec:
       workspace: git-auth
 
   - name: verify-go-mod-tidy
-    params:
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    taskSpec:
+    taskRef:
       params:
-      - name: SOURCE_ARTIFACT
-        type: string
-      - name: CACHI2_ARTIFACT
-        type: string
+      - name: name
+        value: git-clone
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone:0.1@sha256:fe38ad52e9d8c289fdf6a6ff1e64c6eda3310f22bfe09a9c5f2850dac15bb75b
+      - name: kind
+        value: task
+      resolver: bundles
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.revision)
+    runAfter:
+    - init
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    - name: basic-auth
+      workspace: git-auth
+
+  - name: run-go-mod-tidy
+    taskSpec:
+      workspaces:
+      - name: source
       steps:
       - name: verify
         image: brew.registry.redhat.com/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c
+        workingDir: $(workspaces.source.path)
         script: |
           #!/bin/bash
-          set -euxo pipefail
+          set -euo pipefail
 
-          # Install oras CLI
-          echo "=== Installing oras ==="
-          curl -LO https://github.com/oras-project/oras/releases/download/v1.1.0/oras_1.1.0_linux_amd64.tar.gz
-          tar -xzf oras_1.1.0_linux_amd64.tar.gz
-          chmod +x oras
-          mv oras /usr/local/bin/
-          echo "DEBUG: oras installed at $(which oras)"
-          oras version
-
-          # Extract source and Cachi2 artifacts from OCI storage
-          echo "=== Extracting source artifact ==="
-          echo "DEBUG: SOURCE_ARTIFACT = $SOURCE_ARTIFACT"
-          SOURCE_OCI_PATH="${SOURCE_ARTIFACT#oci::}"
-          echo "DEBUG: SOURCE_OCI_PATH = $SOURCE_OCI_PATH"
-          mkdir -p /workspace/source
-          oras pull -o /workspace/source "$SOURCE_OCI_PATH" || {
-            echo "ERROR: Failed to pull source artifact"
-            exit 1
-          }
-          echo "DEBUG: Source artifact extracted, contents:"
-          ls -la /workspace/source | head -20
-
-          echo "=== Extracting Cachi2 artifact ==="
-          echo "DEBUG: CACHI2_ARTIFACT = $CACHI2_ARTIFACT"
-          CACHI2_OCI_PATH="${CACHI2_ARTIFACT#oci::}"
-          echo "DEBUG: CACHI2_OCI_PATH = $CACHI2_OCI_PATH"
-          mkdir -p /workspace/cachi2
-          oras pull -o /workspace/cachi2 "$CACHI2_OCI_PATH" || {
-            echo "ERROR: Failed to pull Cachi2 artifact"
-            exit 1
-          }
-          echo "DEBUG: Cachi2 artifact extracted, contents:"
-          ls -la /workspace/cachi2
-
-          cd /workspace/source
-
-          # Inject Cachi2 environment for hermetic build
-          if [ -f /workspace/cachi2/cachi2.env ]; then
-            echo "=== Sourcing Cachi2 environment ==="
-            set +u
-            source /workspace/cachi2/cachi2.env
-            set -u
-            echo "DEBUG: Cachi2 environment sourced"
-          else
-            echo "WARNING: cachi2.env not found, proceeding without hermetic environment"
-          fi
-
-          # Report Go version
           echo "=== Go Version Check ==="
           go version
 
-          # Run go mod tidy - will fail if Go version is incompatible
           echo "=== Running go mod tidy ==="
-          go mod tidy || {
-            echo "ERROR: go mod tidy failed with exit code $?"
-            exit 1
-          }
+          go mod tidy
 
           echo "=== SUCCESS: Go version is compatible with go.mod requirements ==="
-        env:
-        - name: SOURCE_ARTIFACT
-          value: $(params.SOURCE_ARTIFACT)
-        - name: CACHI2_ARTIFACT
-          value: $(params.CACHI2_ARTIFACT)
+    runAfter:
+    - verify-go-mod-tidy
+    workspaces:
+    - name: source
+      workspace: shared-workspace
