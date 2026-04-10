@@ -87,6 +87,7 @@ func (p *pipelineImpl) reconcileV1(ctx context.Context, clusterID string, storeM
 
 func (p *pipelineImpl) reconcileV2(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	query.Pagination = &v1.QueryPagination{Limit: math.MaxInt32}
 	results, err := p.virtualMachineV2Store.Search(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "retrieving v2 virtual machines for reconciliation")
