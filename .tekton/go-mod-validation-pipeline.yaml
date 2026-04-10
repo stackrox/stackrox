@@ -153,28 +153,64 @@ spec:
 
   - name: verify-go-mod-tidy
     params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(params.revision)-go-mod-validation
-    - name: DOCKERFILE
-      value: image/go-mod-validation/Dockerfile
-    - name: CONTEXT
-      value: .
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.oci-artifact-expires-after)
-    - name: COMMIT_SHA
-      value: $(params.revision)
-    - name: PLATFORM
-      value: linux/amd64
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    taskRef:
+    taskSpec:
       params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.9@sha256:a9ca472e297388d6ef8d1f51ee205abee6076aed7c5356ec0df84f14a2e78ad8
-      - name: kind
-        value: task
-      resolver: bundles
+      - name: SOURCE_ARTIFACT
+        type: string
+      - name: CACHI2_ARTIFACT
+        type: string
+      steps:
+      - name: verify
+        image: brew.registry.redhat.com/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+
+          # Install oras CLI
+          echo "=== Installing oras ==="
+          curl -LO https://github.com/oras-project/oras/releases/download/v1.1.0/oras_1.1.0_linux_amd64.tar.gz
+          tar -xzf oras_1.1.0_linux_amd64.tar.gz
+          chmod +x oras
+          mv oras /usr/local/bin/
+
+          # Extract source and Cachi2 artifacts from OCI storage
+          echo "=== Extracting source artifact ==="
+          SOURCE_OCI_PATH="${SOURCE_ARTIFACT#oci::}"
+          mkdir -p /workspace/source
+          oras pull -o /workspace/source "$SOURCE_OCI_PATH"
+
+          echo "=== Extracting Cachi2 artifact ==="
+          CACHI2_OCI_PATH="${CACHI2_ARTIFACT#oci::}"
+          mkdir -p /workspace/cachi2
+          oras pull -o /workspace/cachi2 "$CACHI2_OCI_PATH"
+
+          cd /workspace/source
+
+          # Inject Cachi2 environment for hermetic build
+          if [ -f /workspace/cachi2/cachi2.env ]; then
+            echo "=== Sourcing Cachi2 environment ==="
+            set +u
+            source /workspace/cachi2/cachi2.env
+            set -u
+          else
+            echo "WARNING: cachi2.env not found, proceeding without hermetic environment"
+          fi
+
+          # Report Go version
+          echo "=== Go Version Check ==="
+          go version
+
+          # Run go mod tidy - will fail if Go version is incompatible
+          echo "=== Running go mod tidy ==="
+          go mod tidy
+
+          echo "=== SUCCESS: Go version is compatible with go.mod requirements ==="
+        env:
+        - name: SOURCE_ARTIFACT
+          value: $(params.SOURCE_ARTIFACT)
+        - name: CACHI2_ARTIFACT
+          value: $(params.CACHI2_ARTIFACT)
