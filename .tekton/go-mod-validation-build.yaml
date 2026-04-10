@@ -38,24 +38,9 @@ spec:
     value: 'false'
   - name: oci-artifact-expires-after
     value: '1d'
-  - name: prefetch-input
-    value: |
-      [
-        { "type": "gomod", "path": "." }
-      ]
 
   pipelineRef:
     name: go-mod-validation-pipeline
-
-  taskRunSpecs:
-  - pipelineTaskName: prefetch-dependencies
-    stepSpecs:
-    - name: prefetch-dependencies
-      computeResources:
-        limits:
-          cpu: 2
-        requests:
-          cpu: 2
 
   taskRunTemplate:
     # TODO: Change to build-pipeline-go-mod-validation once created
