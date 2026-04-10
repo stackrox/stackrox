@@ -477,8 +477,6 @@ upgrade-dirty-tag-via-olm: kuttl
 
 .PHONY: upgrade-via-helm
 upgrade-via-chart:
-	which helm
-	helm version
 # TODO(ROX-33128): drop --take-ownership (and possibly replace with deploy-via-chart) after 4.11 release
 	helm install --take-ownership --namespace $(TEST_NAMESPACE) --wait \
 		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
