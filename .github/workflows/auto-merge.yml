@@ -45,6 +45,7 @@ jobs:
           dry-run: ${{github.event.inputs.dry-run == 'true'}}
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           allowed-base-branches: 'master'
+          # TODO(ROX-34007): switch to mintmaker label after merge of https://github.com/stackrox/stackrox/pull/19944
           labels: 'konflux-build'
           required-checks: '^(?!.*conforma)Red Hat Konflux'
           allowed-authors: 'app/red-hat-konflux'
