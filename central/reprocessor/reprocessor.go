@@ -444,6 +444,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					log.Errorw("Error sending reprocessing messages to cluster, skipping cluster until next reprocessing cycle",
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.ImageID(image.GetId()), logging.Err(err),
+						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic.
 						logging.String("dst_cluster", conn.ClusterID()),
 					)
 				}
@@ -618,6 +619,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					log.Errorw("Error sending reprocessing messages to cluster, skipping cluster until next reprocessing cycle",
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.ImageID(image.GetId()), logging.Err(err),
+						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic.
 						logging.String("dst_cluster", conn.ClusterID()),
 					)
 				}
