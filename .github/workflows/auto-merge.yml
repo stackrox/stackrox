@@ -27,9 +27,6 @@ jobs:
     name: "Dependabot: Enable auto-merge for eligible PRs"
     runs-on: ubuntu-latest
     if: github.repository_owner == 'stackrox'
-    env:
-      DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
-
     steps:
       - name: Run auto-merge action
         uses: stackrox/actions/automerge@tm/ROX-34007-automerge-configurability
@@ -41,9 +38,6 @@ jobs:
     name: "MintMaker: Enable auto-merge for eligible PRs (mintmaker)"
     runs-on: ubuntu-latest
     if: github.repository_owner == 'stackrox'
-    env:
-      DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
-
     steps:
       - name: Run auto-merge action
         uses: stackrox/actions/automerge@tm/ROX-34007-automerge-configurability
