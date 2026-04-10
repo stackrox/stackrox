@@ -15,15 +15,22 @@ type wrapper struct {
 var (
 	clusterStringToType = map[string]storage.ClusterType{
 		"k8s":        storage.ClusterType_KUBERNETES_CLUSTER,
-		"openshift":  storage.ClusterType_OPENSHIFT_CLUSTER,
 		"openshift4": storage.ClusterType_OPENSHIFT4_CLUSTER,
 	}
-
-	clusterEnumToString = utils.InvertMap(clusterStringToType)
+	clusterEnumToString            = utils.InvertMap(clusterStringToType)
+	clusterStringToTypeWithAliases = func() map[string]storage.ClusterType {
+		result := map[string]storage.ClusterType{
+			"openshift": storage.ClusterType_OPENSHIFT4_CLUSTER,
+		}
+		for k, v := range clusterStringToType {
+			result[k] = v
+		}
+		return result
+	}()
 
 	validClusterStrings = func() []string {
-		out := make([]string, 0, len(clusterStringToType))
-		for s := range clusterStringToType {
+		out := make([]string, 0, len(clusterStringToTypeWithAliases))
+		for s := range clusterStringToTypeWithAliases {
 			out = append(out, s)
 		}
 		return out
@@ -35,7 +42,7 @@ func (w wrapper) String() string {
 }
 
 func (w wrapper) Set(input string) error {
-	if val, ok := clusterStringToType[strings.ToLower(input)]; ok {
+	if val, ok := clusterStringToTypeWithAliases[strings.ToLower(input)]; ok {
 		*w.ClusterType = val
 		return nil
 	}
