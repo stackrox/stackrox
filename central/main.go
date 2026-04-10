@@ -29,6 +29,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	"github.com/stackrox/rox/central/backgroundmigrations"
 	baseImageService "github.com/stackrox/rox/central/baseimage/service"
 	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
@@ -398,6 +399,10 @@ func startServices() {
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
+
+	if features.BackgroundMigration.Enabled() {
+		backgroundmigrations.Singleton().Start()
 	}
 }
 
@@ -1015,6 +1020,7 @@ func waitForTerminationSignal() {
 	log.Infof("Caught %s signal", sig)
 
 	stoppables := []stoppableWithName{
+		{backgroundmigrations.Singleton(), "background migrations"},
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "garbage collector"},

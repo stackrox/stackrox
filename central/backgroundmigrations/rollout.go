@@ -1,0 +1,155 @@
+package backgroundmigrations
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+)
+
+var defaultPollInterval = 10 * time.Second
+
+const deploymentName = "central"
+
+var log = logging.LoggerForModule()
+
+// RolloutChecker checks whether the Central deployment rollout is complete.
+type RolloutChecker interface {
+	WaitForRolloutComplete(ctx context.Context) error
+}
+
+type k8sRolloutChecker struct {
+	client       kubernetes.Interface
+	inCluster    bool
+	pollInterval time.Duration
+}
+
+// NewCentralRolloutChecker creates a RolloutChecker that polls the K8s API.
+func NewCentralRolloutChecker() RolloutChecker {
+	cfg, err := rest.InClusterConfig()
+	rc := &k8sRolloutChecker{inCluster: true, pollInterval: defaultPollInterval}
+
+	if err != nil {
+		log.Warnf("failed to get in cluster kubernetes config, assuming not running in a kubernetes cluster: %w", err)
+		rc.inCluster = false
+		return rc
+	}
+
+	client, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Warnf("failed to create in cluster K8s client, assuming not running in a kubernetes cluster: %w", err)
+		rc.inCluster = false
+		return rc
+	}
+
+	rc.client = client
+
+	return rc
+}
+
+// WaitForRolloutComplet polls the K8s deployment of central and blocks until the rollout is complete
+func (c *k8sRolloutChecker) WaitForRolloutComplete(ctx context.Context) error {
+
+	namespace := env.Namespace.Setting()
+	log.Infof("Background migrations: waiting for deployment %s/%s rollout to complete", namespace, deploymentName)
+
+	ticker := time.NewTicker(c.pollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			isDone, err := c.isRolloutDone(ctx)
+			if err != nil {
+				log.Warnf("failed to get central rollout state, will retry: %v", err)
+			}
+			if isDone {
+				return nil
+			}
+		}
+
+	}
+}
+
+func (c *k8sRolloutChecker) isRolloutDone(ctx context.Context) (bool, error) {
+	if !c.inCluster {
+		return true, nil
+	}
+
+	namespace := env.Namespace.Setting()
+	deployment, err := c.client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	if err != nil {
+		return false, fmt.Errorf("error getting deployment %s/%s: %w", namespace, deploymentName, err)
+	}
+
+	if done := c.checkRolloutStatus(deployment); !done {
+		return false, nil
+	}
+	log.Infof("No rollout in progress for central.")
+	terminatingPods, err := c.checkTerminatingPods(ctx, deployment)
+	if err != nil {
+		return false, err
+	}
+
+	if len(terminatingPods) > 0 {
+		log.Infof("Background migrations: deployment %s/%s rollout complete but pods still terminating: %v",
+			namespace, deploymentName, terminatingPods)
+		return false, nil
+	}
+
+	log.Infof("Background migrations: deployment %s/%s rollout complete", namespace, deploymentName)
+	return true, nil
+}
+
+func (c *k8sRolloutChecker) checkRolloutStatus(deployment *appsv1.Deployment) bool {
+	replicas := int32(1)
+	if deployment.Spec.Replicas != nil {
+		replicas = *deployment.Spec.Replicas
+	}
+	if deployment.Status.UpdatedReplicas != replicas ||
+		deployment.Status.AvailableReplicas != replicas ||
+		deployment.Status.ObservedGeneration < deployment.Generation {
+		namespace := env.Namespace.Setting()
+		log.Infof("Background migrations: deployment %s/%s rollout in progress (updated=%d, available=%d, desired=%d)",
+			namespace, deploymentName,
+			deployment.Status.UpdatedReplicas,
+			deployment.Status.AvailableReplicas,
+			replicas)
+		return false
+	}
+	return true
+}
+
+// checkTerminatingPods queries for terminating pods matching the deployment selector
+// TODO: once the min. k8s version we support is 1.35 we can use deployment.Status.TerminatingReplicas instead
+func (c *k8sRolloutChecker) checkTerminatingPods(ctx context.Context, deployment *appsv1.Deployment) ([]string, error) {
+	namespace := env.Namespace.Setting()
+
+	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing deployment selector: %w", err)
+	}
+
+	pods, err := c.client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error listing pods for deployment %s/%s: %w", namespace, deploymentName, err)
+	}
+
+	var terminating []string
+	for _, pod := range pods.Items {
+		if pod.DeletionTimestamp != nil {
+			terminating = append(terminating, pod.Name)
+		}
+	}
+	return terminating, nil
+}
