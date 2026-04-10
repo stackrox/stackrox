@@ -1256,9 +1256,6 @@ wait_for_scanner_v4_vuln_load() {
             die "wait_for_scanner_v4_vuln_load() timed out after ${max_seconds}s."
         fi
 
-        info "--- Pod resources at ${elapsed}s ---"
-        kubectl top pods -n stackrox --no-headers 2>/dev/null || true
-
         sleep 30
     done
 }
