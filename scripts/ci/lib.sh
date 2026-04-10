@@ -333,7 +333,6 @@ push_operator_image_to_registry() {
 
     registry_rw_login "$registry"
 
-    # Tag from local build to target registry
     docker tag "stackrox/stackrox-operator:${tag}" "${registry}/stackrox-operator:${tag}-${arch}"
     retry 5 true docker push "${registry}/stackrox-operator:${tag}-${arch}" | cat
 
