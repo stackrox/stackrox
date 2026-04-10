@@ -407,3 +407,13 @@ func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
 		NewChannel[int](5, nil)
 	}, "NewChannel should panic when waitable is nil")
 }
+
+func TestSafeChannel_NewSafeChannel_PanicsOnNilDone(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	// Creating a Channel with a waitable that has nil Done() should panic
+	// context.Background() returns nil from Done() since it can never be canceled
+	assert.Panics(t, func() {
+		NewChannel[int](5, context.Background())
+	}, "NewChannel should panic when waitable.Done() is nil")
+}

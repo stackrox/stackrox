@@ -25,6 +25,9 @@ func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 	if waitable == nil {
 		panic("waitable must not be nil")
 	}
+	if waitable.Done() == nil {
+		panic("waitable.Done() must not be nil")
+	}
 	if size < 0 {
 		panic("size must not be negative")
 	}
