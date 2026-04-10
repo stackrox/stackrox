@@ -16,6 +16,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	common "github.com/stackrox/rox/sensor/common"
 	message "github.com/stackrox/rox/sensor/common/message"
 	virtualmachine "github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -72,6 +73,20 @@ func (m *MockHandler) Capabilities() []centralsensor.SensorCapability {
 func (mr *MockHandlerMockRecorder) Capabilities() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockHandler)(nil).Capabilities))
+}
+
+// ComplianceC mocks base method.
+func (m *MockHandler) ComplianceC() <-chan common.MessageToComplianceWithAddress {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComplianceC")
+	ret0, _ := ret[0].(<-chan common.MessageToComplianceWithAddress)
+	return ret0
+}
+
+// ComplianceC indicates an expected call of ComplianceC.
+func (mr *MockHandlerMockRecorder) ComplianceC() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceC", reflect.TypeOf((*MockHandler)(nil).ComplianceC))
 }
 
 // Name mocks base method.
@@ -166,6 +181,20 @@ func (m *MockHandler) Stop() {
 func (mr *MockHandlerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop))
+}
+
+// Stopped mocks base method.
+func (m *MockHandler) Stopped() concurrency.ReadOnlyErrorSignal {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stopped")
+	ret0, _ := ret[0].(concurrency.ReadOnlyErrorSignal)
+	return ret0
+}
+
+// Stopped indicates an expected call of Stopped.
+func (mr *MockHandlerMockRecorder) Stopped() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stopped", reflect.TypeOf((*MockHandler)(nil).Stopped))
 }
 
 // MockVirtualMachineStore is a mock of VirtualMachineStore interface.
