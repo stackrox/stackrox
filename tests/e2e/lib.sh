@@ -265,6 +265,14 @@ deploy_central() {
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
         CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
     fi
+
+    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+        # The busybox-style consolidated binary (ROX-33958) runs init() for all
+        # components at startup. Under the race detector's ~5-10x memory multiplier
+        # this causes OOMKills for components with tight memory limits.
+        info "Race build detected: increasing memory limits for config-controller"
+        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c config-controller --limits 'memory=512Mi'
+    fi
 }
 
 # shellcheck disable=SC2120
@@ -424,6 +432,14 @@ deploy_sensor() {
         # https://stack-rox.atlassian.net/browse/ROX-6891
         # et al.
         retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+    fi
+
+    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+        # The busybox-style consolidated binary (ROX-33958) runs init() for all
+        # components at startup. Under the race detector's ~5-10x memory multiplier
+        # this causes OOMKills for components with tight memory limits.
+        info "Race build detected: increasing memory limits for admission-control and config-controller"
+        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
     fi
 }
 
