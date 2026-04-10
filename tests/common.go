@@ -31,7 +31,6 @@ import (
 	"google.golang.org/grpc"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
-	rbacV1 "k8s.io/api/rbac/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -398,7 +397,6 @@ func buildContainer(name, image string, pullPolicy coreV1.PullPolicy) coreV1.Con
 		Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
 	}
 
-
 	return container
 }
 
@@ -702,7 +700,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string, namespace string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
-	teardownDeploymentInternal(t, deploymentName, namespace)
+	teardownDeploymentInternal(t, deploymentName, namespace, false)
 }
 
 func getConfig(t testutils.T) *rest.Config {
