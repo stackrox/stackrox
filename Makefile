@@ -165,10 +165,6 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	$(GOLANGCILINT_BIN) --version
-	@echo "Running with no tags and no tests..."
-	@# The first run is meant to have limited scope to warmup the cache.
-	@# Adding it as first allowed to shorten the runtime of the following runs to about 5 min each
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --tests=false
 	@echo "Running with no tags..."
 	@# We need to enable unused linter here as it will not work without tests or in release tag.
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --enable=unused

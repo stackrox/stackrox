@@ -17,6 +17,9 @@ type Cache[K comparable, V any] interface {
 	GetOrSet(key K, value V) V
 	Remove(key ...K)
 	RemoveAll()
+	// Touch resets the TTL of an existing entry without changing its value.
+	// Returns true if the key was found and refreshed, false if not present.
+	Touch(key K) bool
 }
 
 type opts[K comparable, V any] func(*expiringCacheImpl[K, V])
@@ -172,6 +175,21 @@ func (e *expiringCacheImpl[K, V]) GetOrSet(key K, value V) V {
 
 	e.addNoLock(key, value)
 	return value
+}
+
+// Touch resets the TTL of an existing entry without changing its value.
+func (e *expiringCacheImpl[K, V]) Touch(key K) bool {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	e.cleanNoLock(e.clock.Now())
+	value := e.getValue(key)
+	if value == nil {
+		return false
+	}
+	e.removeNoLock(key)
+	e.addNoLock(key, value)
+	return true
 }
 
 func (e *expiringCacheImpl[K, V]) getValue(key interface{}) interface{} {

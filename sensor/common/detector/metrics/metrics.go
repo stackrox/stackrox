@@ -149,6 +149,23 @@ var (
 			"reason",
 		})
 
+	// FileAccessEventsReceived counts file access events entering the pipeline.
+	FileAccessEventsReceived = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "file_access_events_received_total",
+		Help:      "Total number of file access events received from the file activity monitoring agent and entering the processing pipeline",
+	})
+
+	// FileAccessCriteriaMatchDuration tracks how long criteria matching takes per file access event.
+	FileAccessCriteriaMatchDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "file_access_criteria_match_duration_seconds",
+		Help:      "Time spent matching file access criteria per event",
+		Buckets:   prometheus.DefBuckets,
+	})
+
 	// DetectorProcessIndicatorQueueOperations keeps track of the operations of the detection process indicator buffer.
 	DetectorProcessIndicatorQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -350,5 +367,7 @@ func init() {
 		DetectorDeploymentDroppedCount,
 		DetectorFileAccessQueueOperations,
 		DetectorFileAccessDroppedCount,
+		FileAccessEventsReceived,
+		FileAccessCriteriaMatchDuration,
 	)
 }

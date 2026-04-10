@@ -3,12 +3,38 @@ import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import { Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
+import { ensureExhaustive } from 'utils/type.utils';
+
+const dropdownItems = [
+    {
+        text: 'Export report as CSV',
+        description:
+            'Export a view-based CSV report from this view using the filters you’ve applied.',
+    },
+    {
+        text: 'Create scheduled report',
+        description: 'Create a scheduled report from this view using the filters you’ve applied.',
+        featureFlagDependency: 'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING',
+        writeAccessRequirement: 'WorkflowAdministration',
+    },
+] as const;
+
+type DropdownItemText = (typeof dropdownItems)[number]['text'];
+
 export type CreateReportDropdownProps = {
-    onSelect: (value: string | number | undefined) => void;
+    onSelectExportReportAsCSV: () => void;
+    onSelectCreateScheduledReport: () => void;
 };
 
-function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
+function CreateReportDropdown({
+    onSelectExportReportAsCSV,
+    onSelectCreateScheduledReport,
+}: CreateReportDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadWriteAccess } = usePermissions();
 
     const onToggleClick = () => {
         setIsOpen((prev) => !prev);
@@ -16,9 +42,18 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
 
     const onSelectHandler = (
         _event: ReactMouseEvent<Element, MouseEvent> | undefined,
-        value: string | number | undefined
+        value: DropdownItemText
     ) => {
-        onSelect(value);
+        switch (value) {
+            case 'Export report as CSV':
+                onSelectExportReportAsCSV();
+                break;
+            case 'Create scheduled report':
+                onSelectCreateScheduledReport();
+                break;
+            default:
+                ensureExhaustive(value);
+        }
         setIsOpen(false);
     };
 
@@ -37,13 +72,21 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
                 popperProps={{ position: 'right', appendTo: () => document.body }}
             >
                 <DropdownList>
-                    <DropdownItem
-                        value="Export report as CSV"
-                        key="Export report as CSV"
-                        description="Export a view-based CSV report from this view using the filters you've applied."
-                    >
-                        Export report as CSV
-                    </DropdownItem>
+                    {dropdownItems.map((dropdownItem) => {
+                        const { description, text } = dropdownItem;
+                        const isEnabled =
+                            !('featureFlagDependency' in dropdownItem) ||
+                            isFeatureFlagEnabled(dropdownItem.featureFlagDependency);
+                        const hasAccess =
+                            !('writeAccessRequirement' in dropdownItem) ||
+                            hasReadWriteAccess(dropdownItem.writeAccessRequirement);
+
+                        return isEnabled && hasAccess ? (
+                            <DropdownItem key={text} value={text} description={description}>
+                                {text}
+                            </DropdownItem>
+                        ) : null;
+                    })}
                 </DropdownList>
             </Dropdown>
         </>

@@ -891,6 +891,7 @@ func (d *detectorImpl) processFileAccess() {
 
 			var alerts []*storage.Alert
 			var source central.AlertResults_Source
+			matchStart := time.Now()
 			if fsUtils.IsNodeFileAccess(item.Access) {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
 				source = central.AlertResults_NODE_EVENT
@@ -903,6 +904,7 @@ func (d *detectorImpl) processFileAccess() {
 				}, item.Access)
 				source = central.AlertResults_DEPLOYMENT_EVENT
 			}
+			detectorMetrics.FileAccessCriteriaMatchDuration.Observe(time.Since(matchStart).Seconds())
 
 			if len(alerts) == 0 {
 				// No need to process runtime alerts that have no violations

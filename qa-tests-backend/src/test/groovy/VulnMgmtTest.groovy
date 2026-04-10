@@ -15,6 +15,15 @@ class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE =
             "quay.io/rhacs-eng/qa:ubi9-9.7-1769417801-amd64"
 
+    // Used by StackRox Scanner tests - the legacy scanner may misidentify UBI9 as centos:9
+    // due to a scanner-db namespace detection issue, so we use an older RHEL image instead.
+    static final private String RHEL_IMAGE_LEGACY_DIGEST =
+            "sha256:481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
+    static final private String RHEL_IMAGE_LEGACY =
+            "quay.io/rhacs-eng/qa:ansibleplaybookbundle-" +
+            "-gluster-s3object-apb-" +
+            "-481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
+
     static final private String UBUNTU_IMAGE_DIGEST =
             "sha256:c9672795a48854502d9dc0f1b719ac36dd99259a2f8ce425904a5cb4ae0d60d2"
     static final private String UBUNTU_IMAGE =
@@ -127,7 +136,11 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
 """
 
     def setupSpec() {
-        ImageService.scanImage(RHEL_IMAGE)
+        if (scannerV4Enabled) {
+            ImageService.scanImage(RHEL_IMAGE)
+        } else {
+            ImageService.scanImage(RHEL_IMAGE_LEGACY)
+        }
         ImageService.scanImage(UBUNTU_IMAGE)
     }
 
@@ -179,9 +192,9 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         where:
         "Data inputs are: "
 
-        imageDigest         | component | cve              | severity                                             | cvss
-        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" | VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5
-        UBUNTU_IMAGE_DIGEST | "gnupg2"  | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 3.3
+        imageDigest              | component | cve              | severity                                        | cvss
+        RHEL_IMAGE_LEGACY_DIGEST | "glib2"   | "CVE-2019-13012" | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
+        UBUNTU_IMAGE_DIGEST      | "gnupg2"  | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 3.3
     }
 
     @Unroll
