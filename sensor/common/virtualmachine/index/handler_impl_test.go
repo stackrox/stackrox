@@ -488,8 +488,7 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DoesNotBlockWhenSto
 	err := s.handler.Start()
 	s.Require().NoError(err)
 
-	// Fill the compliance channel to capacity so the next send would block
-	// without the StopRequested guard.
+	// Fill the compliance channel to capacity.
 	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
 
 	s.handler.Stop()
@@ -504,23 +503,25 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DoesNotBlockWhenSto
 		}},
 	}
 
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		_ = s.handler.ProcessMessage(ctx, msg)
-	}()
+	// Non-blocking: the default branch drops immediately when the channel
+	// is full, regardless of stopper state.
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
 
+	// Only the pre-filled message should be in the channel.
 	select {
-	case <-done:
-	case <-time.After(time.Second):
-		s.Fail("ProcessMessage blocked on full toCompliance channel after Stop")
+	case <-s.handler.ComplianceC():
+	default:
+		s.Fail("expected the pre-filled message")
+	}
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("the second message should have been dropped")
+	default:
 	}
 }
 
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DeadlockDetection() {
-	// Verify that an unbuffered channel would block when the consumer is slow,
-	// and that our buffer of 1 absorbs exactly one send without blocking.
-	// If someone removes the buffer, this test will time out.
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenQueueFull() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	defer s.handler.Stop()
@@ -536,37 +537,67 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DeadlockDetection()
 		}
 	}
 
-	// First send should succeed without blocking (fills the buffer).
+	// First send fills the buffer (capacity 1).
 	err = s.handler.ProcessMessage(ctx, makeMsg("vm-first"))
 	s.Require().NoError(err)
 
-	// Second send without draining: must not block indefinitely.
-	// With buffer=1, the channel is now full. The second send races
-	// with the stopper. We run it in a goroutine to detect the block.
-	secondDone := make(chan struct{})
-	go func() {
-		defer close(secondDone)
-		_ = s.handler.ProcessMessage(ctx, makeMsg("vm-second"))
-	}()
+	// Second send without draining: hits the default branch, drops
+	// immediately instead of blocking. This protects ProcessMessage
+	// from stalling if compliance is slow.
+	err = s.handler.ProcessMessage(ctx, makeMsg("vm-second"))
+	s.Require().NoError(err)
 
-	// Drain the first message so the second can proceed.
+	// Only the first message is in the channel.
 	select {
-	case <-s.handler.ComplianceC():
+	case got := <-s.handler.ComplianceC():
+		s.Equal("vm-first", got.Msg.GetComplianceAck().GetResourceId())
 	case <-time.After(time.Second):
 		s.Fail("first message should be available in the buffer")
 	}
 
-	select {
-	case <-secondDone:
-	case <-time.After(time.Second):
-		s.Fail("second ProcessMessage blocked — potential deadlock if buffer is removed")
-	}
-
-	// Drain second message.
+	// Channel should now be empty (second was dropped).
 	select {
 	case <-s.handler.ComplianceC():
-	case <-time.After(time.Second):
-		s.Fail("second message should arrive after draining first")
+		s.Fail("second message should have been dropped when queue was full")
+	default:
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsOnCancelledContext() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	// Fill the buffer so the send would need to block.
+	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-cancelled",
+		}},
+	}
+
+	// With a cancelled context and a full buffer, ProcessMessage must
+	// not block. The default branch fires before ctx.Done() is even
+	// checked, but either path results in a drop.
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	// Drain the pre-filled message; the cancelled one was dropped.
+	select {
+	case <-s.handler.ComplianceC():
+	default:
+		s.Fail("expected the pre-filled message")
+	}
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("the message with cancelled context should have been dropped")
+	default:
 	}
 }
 

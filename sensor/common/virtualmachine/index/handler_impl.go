@@ -129,7 +129,7 @@ func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 }
 
 // ProcessMessage handles SensorACK messages for VM index reports.
-func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
+func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	sensorAck := msg.GetSensorAck()
 	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
 		return nil
@@ -138,7 +138,7 @@ func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor
 	vmID := sensorAck.GetResourceId()
 	action := sensorAck.GetAction()
 	reason := sensorAck.GetReason()
-	h.forwardToCompliance(vmID, action, reason)
+	h.forwardToCompliance(ctx, vmID, action, reason)
 
 	metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
 
@@ -217,6 +217,7 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 }
 
 func (h *handlerImpl) forwardToCompliance(
+	ctx context.Context,
 	resourceID string,
 	action central.SensorACK_Action,
 	reason string,
@@ -237,10 +238,7 @@ func (h *handlerImpl) forwardToCompliance(
 		return
 	}
 
-	select {
-	case <-h.stopper.Flow().StopRequested():
-		log.Debugf("Dropping VM ACK/NACK (resourceID=%s) during shutdown", resourceID)
-	case h.toCompliance <- common.MessageToComplianceWithAddress{
+	msg := common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_ComplianceAck{
 				ComplianceAck: &sensor.MsgToCompliance_ComplianceACK{
@@ -256,7 +254,16 @@ func (h *handlerImpl) forwardToCompliance(
 		// (e.g. bulk ACK), broadcast to all compliance connections.
 		Hostname:  resourceID,
 		Broadcast: resourceID == "",
-	}:
+	}
+
+	select {
+	case <-ctx.Done():
+		log.Warnf("Dropping VM ACK/NACK (resourceID=%s): %v", resourceID, ctx.Err())
+	case <-h.stopper.Flow().StopRequested():
+		log.Debugf("Dropping VM ACK/NACK (resourceID=%s) during shutdown", resourceID)
+	case h.toCompliance <- msg:
+	default:
+		log.Warnf("Dropping VM ACK/NACK (resourceID=%s): compliance queue is full", resourceID)
 	}
 }
 
