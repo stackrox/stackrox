@@ -639,7 +639,7 @@ func isConnectionRefused(err error) bool {
 }
 
 // normalizeAllowlist trims whitespace from each entry and drops empty strings.
-// This handles cases where bundle names are configured with surrounding spaces,
+// This handles cases the allowed names are configured with surrounding spaces,
 // e.g. from a comma-separated environment variable or YAML value.
 func normalizeAllowlist(entries []string) []string {
 	result := make([]string, 0, len(entries))

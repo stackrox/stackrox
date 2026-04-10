@@ -304,9 +304,15 @@ func TestUpdater_Initialized(t *testing.T) {
 }
 
 func TestNormalizeAllowlist(t *testing.T) {
-	// Simulates an allowlist with surrounding whitespace.
-	input := []string{" epss", " nvd ", "rhel-vex", "", "  "}
+	// Simulates an allowlist with only whitespace.
+	input := []string{" ", "  ", "  \t   ", ""}
 	u := &Updater{vulnBundleAllowlist: set.NewFrozenSet(normalizeAllowlist(input)...)}
+	assert.True(t, u.isBundleAllowed("bundles/epss.json.zst"), "everything allowed when list empty")
+	assert.True(t, u.isBundleAllowed("hello-world"), "everything allowed when list empty")
+
+	// Simulates an allowlist with surrounding whitespace.
+	input = []string{" epss", " nvd ", "rhel-vex", "", "  "}
+	u = &Updater{vulnBundleAllowlist: set.NewFrozenSet(normalizeAllowlist(input)...)}
 	assert.True(t, u.isBundleAllowed("bundles/epss.json.zst"), "leading-space entry should match")
 	assert.True(t, u.isBundleAllowed("bundles/nvd.json.zst"), "surrounding-space entry should match")
 	assert.True(t, u.isBundleAllowed("bundles/rhel-vex.json.zst"), "clean entry should match")
