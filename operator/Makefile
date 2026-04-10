@@ -475,7 +475,7 @@ upgrade-via-olm: kuttl
 upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
-.PHONY: upgrade-via-helm
+.PHONY: upgrade-via-chart
 upgrade-via-chart:
 # TODO(ROX-33128): drop --take-ownership (and possibly replace with deploy-via-chart) after 4.11 release
 	helm install --take-ownership --namespace $(TEST_NAMESPACE) --wait \
