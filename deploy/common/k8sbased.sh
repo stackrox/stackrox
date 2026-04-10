@@ -415,6 +415,12 @@ function launch_central {
         )
       fi
 
+      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-}" != "false" ]]; then
+        helm_args+=(
+          --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
+        )
+      fi
+
       if [[ -n "$EXTERNAL_DB" ]]; then
           helm_args+=(
             --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
@@ -551,6 +557,9 @@ function launch_central {
                 if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
                   ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher \
                     "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
+                fi
+                if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+                  ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher SCANNER_V4_MATCHER_READINESS=vulnerability
                 fi
               fi
             else
