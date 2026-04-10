@@ -233,6 +233,8 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Unroll
+    @Tag("BAT")
     def "Verify AC enforcement with label scoping: #desc"() {
         given:
         "Set up namespace with labels"
@@ -241,7 +243,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Create policy with namespace label scoping"
-        def basePolicy = Services.getPolicyByName("Privileged Container")
+        def basePolicy = Services.getPolicyByName("Latest tag")
         def policy = basePolicy.toBuilder()
                 .clearId()
                 .setName("Test - AC Label Scoping ${desc}")
@@ -257,12 +259,11 @@ class AdmissionControllerTest extends BaseSpecification {
         def policyId = PolicyService.createNewPolicy(policy)
 
         when:
-        "Create a privileged deployment"
+        "Create a deployment with latest tag"
         def deployment = new Deployment()
-                .setName("priv-deploy-${desc.replaceAll(' ', '-')}")
+                .setName("latest-deploy-${desc.replaceAll(' ', '-')}")
                 .setNamespace(testNs)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-                .setPrivilegedFlag(true)
                 .addLabel("app", "test")
 
         // Wait for policy propagation to Sensor and Admission Controller
@@ -301,7 +302,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Create policy scoped to initial namespace label value"
-        def basePolicy = Services.getPolicyByName("Privileged Container")
+        def basePolicy = Services.getPolicyByName("Latest tag")
         def policy = basePolicy.toBuilder()
                 .clearId()
                 .setName("Test - AC Hot-Reload ${desc}")
@@ -317,12 +318,11 @@ class AdmissionControllerTest extends BaseSpecification {
         def policyId = PolicyService.createNewPolicy(policy)
 
         when:
-        "Create privileged deployment with initial labels - should be blocked"
+        "Create deployment with latest tag and initial labels - should be blocked"
         def deployment1 = new Deployment()
-                .setName("priv-before-${desc.replaceAll(' ', '-')}")
+                .setName("latest-before-${desc.replaceAll(' ', '-')}")
                 .setNamespace(testNs)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-                .setPrivilegedFlag(true)
                 .addLabel("app", "test")
 
         // Wait for policy propagation to Sensor and Admission Controller
@@ -356,12 +356,11 @@ class AdmissionControllerTest extends BaseSpecification {
         }
 
         and:
-        "Create another privileged deployment - should be allowed"
+        "Create another deployment with latest tag - should be allowed"
         def deployment2 = new Deployment()
-                .setName("priv-after-${desc.replaceAll(' ', '-')}")
+                .setName("latest-after-${desc.replaceAll(' ', '-')}")
                 .setNamespace(testNs)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-                .setPrivilegedFlag(true)
                 .addLabel("app", "test")
 
         // Wait for label changes to propagate to admission controller

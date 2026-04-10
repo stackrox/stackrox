@@ -32,16 +32,13 @@ func TestLabelScopedPolicies(t *testing.T) {
 }
 
 func (s *LabelScopedPoliciesSuite) SetupSuite() {
-	if isOpenshift() {
-		s.T().Skip("Skipping on OpenShift due to cluster-wide Pod Security config in CI")
-	}
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.policyService = v1.NewPolicyServiceClient(conn)
 	s.alertService = v1.NewAlertServiceClient(conn)
 }
 
-// newPrivilegedContainerPolicy creates a privileged container detection policy with namespace label scoping
-func (s *LabelScopedPoliciesSuite) newPrivilegedContainerPolicy(name, description, labelKey, labelValue string) *storage.Policy {
+// newLatestTagPolicy creates a latest tag detection policy with namespace label scoping
+func (s *LabelScopedPoliciesSuite) newLatestTagPolicy(name, description, labelKey, labelValue string) *storage.Policy {
 	return &storage.Policy{
 		Name:            name,
 		Description:     description,
@@ -60,9 +57,9 @@ func (s *LabelScopedPoliciesSuite) newPrivilegedContainerPolicy(name, descriptio
 			{
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: "Privileged Container",
+						FieldName: "Image Tag",
 						Values: []*storage.PolicyValue{
-							{Value: "true"},
+							{Value: "latest"},
 						},
 					},
 				},
@@ -109,7 +106,7 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelPolicyScoping() {
 	createNamespaceWithLabels(t, frontendNS, map[string]string{"team": "frontend"})
 	defer deleteNamespace(t, frontendNS)
 
-	policy := s.newPrivilegedContainerPolicy(
+	policy := s.newLatestTagPolicy(
 		"Test - Namespace Label Backend",
 		"Test namespace label scoping",
 		"team",
@@ -118,14 +115,14 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelPolicyScoping() {
 	createdPolicy := s.createPolicyWithCleanup(policy)
 
 	backendDeployment := fmt.Sprintf("test-ns-backend-%d", rand.IntN(10000))
-	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	s.waitForViolationAlert(backendDeployment, createdPolicy.GetName(), 1)
 	t.Logf("Alert appeared for deployment in namespace with team=backend")
 
 	frontendDeployment := fmt.Sprintf("test-ns-frontend-%d", rand.IntN(10000))
-	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	s.waitForViolationAlert(frontendDeployment, createdPolicy.GetName(), 0)
@@ -144,15 +141,15 @@ func (s *LabelScopedPoliciesSuite) TestPolicyDryRunWithNamespaceLabel() {
 	defer deleteNamespace(t, frontendNS)
 
 	backendDeployment := fmt.Sprintf("test-dryrun-backend-%d", rand.IntN(10000))
-	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-dryrun-frontend-%d", rand.IntN(10000))
-	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 
 	defaultDeployment := fmt.Sprintf("test-dryrun-default-%d", rand.IntN(10000))
-	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace, true)
+	setupDeploymentNoWaitInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", defaultDeployment, 1, defaultNamespace)
 	defer teardownDeploymentWithoutCheck(t, defaultDeployment, defaultNamespace)
 
 	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
@@ -163,7 +160,7 @@ func (s *LabelScopedPoliciesSuite) TestPolicyDryRunWithNamespaceLabel() {
 	waitForDeploymentInCentral(t, frontendDeployment)
 	waitForDeploymentInCentral(t, defaultDeployment)
 
-	policy := s.newPrivilegedContainerPolicy(
+	policy := s.newLatestTagPolicy(
 		"Test - Dry Run Namespace Label",
 		"Dry run test for namespace label scoping",
 		"team",
@@ -223,12 +220,12 @@ func (s *LabelScopedPoliciesSuite) TestRuntimeDetectionWithNamespaceLabels() {
 	createdPolicy := s.createPolicyWithCleanup(policy)
 
 	backendDeployment := fmt.Sprintf("test-runtime-backend-%d", rand.IntN(10000))
-	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS, true)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", backendDeployment, 1, backendNS)
 	defer teardownDeploymentWithoutCheck(t, backendDeployment, backendNS)
 	waitForDeploymentReadyInK8s(t, backendDeployment, backendNS)
 
 	frontendDeployment := fmt.Sprintf("test-runtime-frontend-%d", rand.IntN(10000))
-	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS, true)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", frontendDeployment, 1, frontendNS)
 	defer teardownDeploymentWithoutCheck(t, frontendDeployment, frontendNS)
 	waitForDeploymentReadyInK8s(t, frontendDeployment, frontendNS)
 
@@ -250,7 +247,7 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelRemoval() {
 	createNamespaceWithLabels(t, testNS, map[string]string{"team": "backend"})
 	defer deleteNamespace(t, testNS)
 
-	policy := s.newPrivilegedContainerPolicy(
+	policy := s.newLatestTagPolicy(
 		"Test - Label Removal Namespace",
 		"Test namespace label removal",
 		"team",
@@ -259,7 +256,7 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelRemoval() {
 	createdPolicy := s.createPolicyWithCleanup(policy)
 
 	deployment1 := fmt.Sprintf("test-ns-removal-%d", rand.IntN(10000))
-	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, 1, testNS, true)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment1, 1, testNS)
 	defer teardownDeploymentWithoutCheck(t, deployment1, testNS)
 
 	s.waitForViolationAlert(deployment1, createdPolicy.GetName(), 1)
@@ -278,7 +275,7 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelRemoval() {
 	s.Require().NoError(err)
 
 	deployment2 := fmt.Sprintf("test-ns-removal-%d", rand.IntN(10000))
-	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment2, 1, testNS, true)
+	setupDeploymentWithReplicasInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deployment2, 1, testNS)
 	defer teardownDeploymentWithoutCheck(t, deployment2, testNS)
 
 	s.waitForViolationAlert(deployment2, createdPolicy.GetName(), 0)

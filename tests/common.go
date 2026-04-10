@@ -368,29 +368,29 @@ func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 }
 
 func setupDeploymentInNamespace(t *testing.T, image, deploymentName, namespace string) {
-	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, 1, namespace, false)
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, 1, namespace)
 }
 
 func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
-	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, replicas, "default", false)
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, replicas, "default")
 }
 
-func setupDeploymentWithReplicasInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string, privileged bool) {
-	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, namespace, privileged)
+func setupDeploymentWithReplicasInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, namespace)
 	waitForDeploymentReadyInK8s(t, deploymentName, namespace)
 	waitForDeploymentInCentral(t, deploymentName)
 }
 
 func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
-	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, "default", false)
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, "default")
 }
 
-func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string, privileged bool) {
-	require.NoError(t, createDeploymentViaAPI(t, image, deploymentName, replicas, namespace, privileged))
+func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+	require.NoError(t, createDeploymentViaAPI(t, image, deploymentName, replicas, namespace))
 }
 
-// buildContainer constructs a container spec with optional privileged mode.
-func buildContainer(name, image string, pullPolicy coreV1.PullPolicy, privileged bool) coreV1.Container {
+// buildContainer constructs a container spec.
+func buildContainer(name, image string, pullPolicy coreV1.PullPolicy) coreV1.Container {
 	container := coreV1.Container{
 		Name:            name,
 		Image:           image,
@@ -398,11 +398,6 @@ func buildContainer(name, image string, pullPolicy coreV1.PullPolicy, privileged
 		Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
 	}
 
-	if privileged {
-		container.SecurityContext = &coreV1.SecurityContext{
-			Privileged: pointers.Bool(true),
-		}
-	}
 
 	return container
 }
@@ -410,8 +405,7 @@ func buildContainer(name, image string, pullPolicy coreV1.PullPolicy, privileged
 // createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
 // Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
 // to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
-// Set privileged=true to create a deployment with privileged containers.
-func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string, privileged bool) error {
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) error {
 	client := createK8sClient(t)
 
 	t.Logf("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
@@ -444,7 +438,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 					Labels: map[string]string{"app": deploymentName},
 				},
 				Spec: coreV1.PodSpec{
-					Containers: []coreV1.Container{buildContainer(deploymentName, image, pullPolicy, privileged)},
+					Containers: []coreV1.Container{buildContainer(deploymentName, image, pullPolicy)},
 				},
 			},
 		},
@@ -708,7 +702,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string, namespace string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
-	teardownDeploymentInternal(t, deploymentName, namespace, false)
+	teardownDeploymentInternal(t, deploymentName, namespace)
 }
 
 func getConfig(t testutils.T) *rest.Config {
@@ -799,15 +793,6 @@ func setClusterLabels(t *testing.T, clusterID string, labels map[string]string) 
 func createNamespaceWithLabels(t *testing.T, name string, labels map[string]string) {
 	client := createK8sClient(t)
 
-	// Pod Security Standards enforce before SCCs on OCP 4.11+. Set to "privileged" to allow
-	// privileged containers in tests (clusters with PSS enforcement default to "baseline").
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-	labels["pod-security.kubernetes.io/enforce"] = "privileged"
-	labels["pod-security.kubernetes.io/audit"] = "privileged"
-	labels["pod-security.kubernetes.io/warn"] = "privileged"
-
 	namespace := &coreV1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,
@@ -822,48 +807,6 @@ func createNamespaceWithLabels(t *testing.T, name string, labels map[string]stri
 	require.NoError(t, err, "creating namespace %q with labels %v", name, labels)
 
 	t.Logf("Created namespace %q with labels: %v", name, labels)
-
-	// OpenShift uses Security Context Constraints (SCCs) to control pod security policies.
-	// Without the privileged SCC, pods with securityContext.privileged=true cannot be created,
-	// which is required for some E2E tests that validate privileged container detection policies.
-	if isOpenshift() {
-		grantPrivilegedSCC(t, client, name)
-	}
-}
-
-// grantPrivilegedSCC adds the default service account to the privileged SCC ClusterRoleBinding.
-func grantPrivilegedSCC(t *testing.T, client kubernetes.Interface, namespace string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	crbName := "system:openshift:scc:privileged"
-	crb, err := client.RbacV1().ClusterRoleBindings().Get(ctx, crbName, metaV1.GetOptions{})
-	if err != nil {
-		t.Logf("Could not get ClusterRoleBinding %q (SCC may not be needed): %v", crbName, err)
-		return
-	}
-
-	// Check if service account is already a subject
-	saSubject := rbacV1.Subject{
-		Kind:      "ServiceAccount",
-		Name:      "default",
-		Namespace: namespace,
-	}
-	for _, subject := range crb.Subjects {
-		if subject.Kind == saSubject.Kind && subject.Name == saSubject.Name && subject.Namespace == saSubject.Namespace {
-			t.Logf("ServiceAccount default in namespace %q already has privileged SCC", namespace)
-			return
-		}
-	}
-
-	// Add service account to subjects
-	crb.Subjects = append(crb.Subjects, saSubject)
-	_, err = client.RbacV1().ClusterRoleBindings().Update(ctx, crb, metaV1.UpdateOptions{})
-	if err != nil {
-		t.Logf("Failed to grant privileged SCC (this may be expected): %v", err)
-	} else {
-		t.Logf("Granted privileged SCC to default service account in namespace %q", namespace)
-	}
 }
 
 // deleteNamespace deletes a namespace.
