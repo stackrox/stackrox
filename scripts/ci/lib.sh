@@ -335,7 +335,7 @@ push_operator_multiarch_image() {
     local platforms="linux/amd64,linux/arm64"
     local build_args="--platform ${platforms} --build-arg ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR:-development}"
 
-    # Build and push main tag
+    info "Building and pushing ${registry}/stackrox-operator:${tag}"
     retry 5 true docker buildx build \
         ${build_args} \
         -f operator/prebuilt.Dockerfile \
@@ -343,8 +343,8 @@ push_operator_multiarch_image() {
         --push \
         . | cat
 
-    # Build and push latest tag for merge-to-master
     if [[ "$push_context" == "merge-to-master" ]]; then
+        info "Building and pushing ${registry}/stackrox-operator:latest"
         retry 5 true docker buildx build \
             ${build_args} \
             -f operator/prebuilt.Dockerfile \
@@ -353,9 +353,9 @@ push_operator_multiarch_image() {
             . | cat
     fi
 
-    # Build and push major.minor tag for releases
     if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         local major_minor="${tag%.*}"
+        info "Building and pushing ${registry}/stackrox-operator:${major_minor}"
         retry 5 true docker buildx build \
             ${build_args} \
             -f operator/prebuilt.Dockerfile \
