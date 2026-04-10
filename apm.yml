@@ -1,0 +1,9 @@
+name: deployment-tombstones-with-beads
+version: 1.0.0
+description: APM project for deployment-tombstones-with-beads
+author: Stephan Heßelmann
+dependencies:
+  apm:
+  - stehessel/agentskills
+  mcp: []
+scripts: {}

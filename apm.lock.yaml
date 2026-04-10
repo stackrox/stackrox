@@ -1,0 +1,25 @@
+lockfile_version: '1'
+generated_at: '2026-04-10T13:08:07.952178+00:00'
+apm_version: 0.8.11
+dependencies:
+- repo_url: stehessel/agentskills
+  host: github.com
+  resolved_commit: a3285d168613e95080d3e332e0d2488b75368067
+  package_type: apm_package
+  deployed_files:
+  - .claude/skills/beadflow
+  - .claude/skills/reviewer
+  - .claude/skills/sculptor
+  - .claude/skills/session-viewer
+  - .claude/skills/treeflow
+  - .cursor/skills/beadflow
+  - .cursor/skills/reviewer
+  - .cursor/skills/sculptor
+  - .cursor/skills/session-viewer
+  - .cursor/skills/treeflow
+  - .github/skills/beadflow
+  - .github/skills/reviewer
+  - .github/skills/sculptor
+  - .github/skills/session-viewer
+  - .github/skills/treeflow
+  content_hash: sha256:898819faa2c94199712d93f4747240545f946723dcf6012b08d2a28efdb7cbea
