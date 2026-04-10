@@ -5,7 +5,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -913,7 +912,8 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 	})
 
 	query := &v2.RawQuery{Query: ""}
-	scanConfigs, _ := scanConfigService.ListComplianceScanConfigurations(ctx, query)
+	scanConfigs, err := scanConfigService.ListComplianceScanConfigurations(ctx, query)
+	require.NoError(t, err)
 	configs := scanConfigs.GetConfigurations()
 	scanconfigID := getscanConfigID(testID, configs)
 	reqDelete := &v2.ResourceByID{
@@ -923,7 +923,8 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify scan configuration no longer exists
-	scanConfigs, _ = scanConfigService.ListComplianceScanConfigurations(ctx, query)
+	scanConfigs, err = scanConfigService.ListComplianceScanConfigurations(ctx, query)
+	require.NoError(t, err)
 	configs = scanConfigs.GetConfigurations()
 	scanconfigID = getscanConfigID(testID, configs)
 	assert.Empty(t, scanconfigID)
@@ -970,7 +971,8 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 	})
 
 	query := &v2.RawQuery{Query: ""}
-	scanConfigs, _ := scanConfigService.ListComplianceScanConfigurations(ctx, query)
+	scanConfigs, err := scanConfigService.ListComplianceScanConfigurations(ctx, query)
+	require.NoError(t, err)
 	configs := scanConfigs.GetConfigurations()
 	_ = getscanConfigID(testName, configs) // verify config exists
 
@@ -1194,7 +1196,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	require.NoError(t, err)
 	foundCustomRule := false
 	for _, r := range fromScratchCRDetail.GetRules() {
-		if strings.Contains(r.GetName(), crName) {
+		if r.GetName() == crName {
 			foundCustomRule = true
 			break
 		}
