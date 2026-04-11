@@ -181,8 +181,10 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 
 	for _, c := range clusters {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
+		namespaceFilter := clusterPkg.GetNamespaceFilter(c)
+		log.Infof("Setting namespace filter for cluster %s (%s): %q", c.GetName(), c.GetId(), namespaceFilter)
 		ds.idToRegexCache.Add(c.GetId(),
-			regexp.MustCompile(clusterPkg.GetNamespaceFilter(c)))
+			regexp.MustCompile(namespaceFilter))
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
@@ -348,10 +350,16 @@ func (ds *datastoreImpl) MatchProcessIndicator(ctx context.Context,
 
 	filter, ok := ds.idToRegexCache.Get(id)
 	if !ok {
+		log.Debugf("No namespace filter found for cluster %s", id)
 		return false, nil
 	}
 
-	return filter.(*regexp.Regexp).MatchString(indicator.GetNamespace()), nil
+	matched := filter.(*regexp.Regexp).MatchString(indicator.GetNamespace())
+	if matched {
+		log.Debugf("Process indicator namespace %q matched filter for cluster %s, excluding from persistence",
+			indicator.GetNamespace(), id)
+	}
+	return matched, nil
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
@@ -914,8 +922,10 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 		return err
 	}
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
+	namespaceFilter := clusterPkg.GetNamespaceFilter(cluster)
+	log.Infof("Updating namespace filter for cluster %s (%s): %q", cluster.GetName(), cluster.GetId(), namespaceFilter)
 	ds.idToRegexCache.Add(cluster.GetId(),
-		regexp.MustCompile(clusterPkg.GetNamespaceFilter(cluster)))
+		regexp.MustCompile(namespaceFilter))
 	ds.nameToIDCache.Add(cluster.GetName(), cluster.GetId())
 	return nil
 }
