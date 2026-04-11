@@ -23,8 +23,8 @@ var (
 	deploymentBaseSchema   = schema.DeploymentsSchema()
 	imagesSchema           = schema.ImagesSchema()
 	alertSchema            = schema.AlertsSchema()
-	imageComponentV2Schema = schema.ImageComponentV2Schema
-	imageCVEV2Schema       = schema.ImageCvesV2Schema
+	imageComponentV2Schema = schema.ImageComponentV2Schema()
+	imageCVEV2Schema       = schema.ImageCvesV2Schema()
 )
 
 func TestReplaceVars(t *testing.T) {
