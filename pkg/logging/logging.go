@@ -28,7 +28,6 @@ package logging
 import (
 	"fmt"
 	"io/fs"
-	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -185,12 +184,10 @@ func init() {
 
 	if buildinfo.ReleaseBuild {
 		config.DisableStacktrace = true
-		config.Sampling = &zap.SamplingConfig{
-			// The default sampling config assumes an interval of 1s.
-			Initial: int(math.Max(1, float64(maxLogLineQuotaPerInterval/logLineQuotaIntervalSecs))),
-			// Do not try to distill a representative sample and instead drop log messages.
-			Thereafter: 1,
-		}
+		// Sampling is applied via a shared sampler in CreateLogger instead of
+		// per-logger config.Sampling. Each config.Sampling creates a new
+		// counters [7][4096]counter array (~450 KB). With ~100+ loggers this
+		// totals ~46 MB. Sharing a single sampler reduces this to ~450 KB.
 	} else {
 		// Configures logging at the DPanic log-level to panic.
 		config.Development = true
@@ -350,6 +347,7 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	}
 	// Make zap build a logger with only the standard streams:
 	lc.OutputPaths = stdPaths
+	// And append the rotating files as a Tee core option:
 	// And append the rotating files as a Tee core option:
 	logger, err := lc.Build(zap.AddCallerSkip(skip), zap.WrapCore(withRotatingCores(&lc, rotatingPaths)))
 	if err != nil {
