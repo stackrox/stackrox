@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.CloudSourcesSchema
+	schema         = pkgSchema.CloudSourcesSchema()
 	targetResource = resources.Integration
 )
 

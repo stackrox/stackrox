@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// SecuredUnitsSchema is the go schema for table `secured_units`.
-	SecuredUnitsSchema = func() *walker.Schema {
+	SecuredUnitsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("secured_units")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableSecuredUnitsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_USAGE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

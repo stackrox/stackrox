@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,14 +25,14 @@ var (
 	}
 
 	// VirtualMachineScanV2Schema is the go schema for table `virtual_machine_scan_v2`.
-	VirtualMachineScanV2Schema = func() *walker.Schema {
+	VirtualMachineScanV2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("virtual_machine_scan_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineScanV2)(nil)), "virtual_machine_scan_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.VirtualMachineV2": VirtualMachineV2Schema,
+			"storage.VirtualMachineV2": VirtualMachineV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -50,7 +51,7 @@ var (
 		RegisterTable(schema, CreateTableVirtualMachineScanV2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINE_SCANS_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

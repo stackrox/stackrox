@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// DelegatedRegistryConfigsSchema is the go schema for table `delegated_registry_configs`.
-	DelegatedRegistryConfigsSchema = func() *walker.Schema {
+	DelegatedRegistryConfigsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("delegated_registry_configs")
 		if schema != nil {
 			return schema
@@ -31,7 +32,7 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableDelegatedRegistryConfigsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

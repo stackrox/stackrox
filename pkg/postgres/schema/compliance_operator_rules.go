@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// ComplianceOperatorRulesSchema is the go schema for table `compliance_operator_rules`.
-	ComplianceOperatorRulesSchema = func() *walker.Schema {
+	ComplianceOperatorRulesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_rules")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorRulesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

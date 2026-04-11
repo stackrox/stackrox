@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/k8scfgwatch/mocks"
+
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -45,7 +47,7 @@ func TestConfigMapTrigger(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			k8sClient := fake.NewClientset()
 			watcher := watch.NewFake()
-			watchReactor := NewTestWatchReactor(t, watcher)
+			watchReactor := mocks.NewTestWatchReactor(t, watcher)
 			k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReactor}
 			currentCfgData := ""
 			mutex := sync.RWMutex{}
@@ -96,7 +98,7 @@ func TestConfigMapContextCancelled(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			k8sClient := fake.NewClientset()
 			watcher := watch.NewFake()
-			watchReactor := NewTestWatchReactor(t, watcher)
+			watchReactor := mocks.NewTestWatchReactor(t, watcher)
 			k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReactor}
 			currentCfgData := ""
 			mutex := sync.RWMutex{}

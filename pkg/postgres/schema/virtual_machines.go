@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// VirtualMachinesSchema is the go schema for table `virtual_machines`.
-	VirtualMachinesSchema = func() *walker.Schema {
+	VirtualMachinesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("virtual_machines")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableVirtualMachinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

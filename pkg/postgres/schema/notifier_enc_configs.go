@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// NotifierEncConfigsSchema is the go schema for table `notifier_enc_configs`.
-	NotifierEncConfigsSchema = func() *walker.Schema {
+	NotifierEncConfigsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("notifier_enc_configs")
 		if schema != nil {
 			return schema
@@ -31,7 +32,7 @@ var (
 		schema.ScopingResource = resources.InstallationInfo
 		RegisterTable(schema, CreateTableNotifierEncConfigsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

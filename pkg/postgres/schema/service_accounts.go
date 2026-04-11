@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// ServiceAccountsSchema is the go schema for table `service_accounts`.
-	ServiceAccountsSchema = func() *walker.Schema {
+	ServiceAccountsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("service_accounts")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableServiceAccountsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

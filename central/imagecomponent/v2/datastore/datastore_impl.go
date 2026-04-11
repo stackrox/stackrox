@@ -124,7 +124,7 @@ func (ds *datastoreImpl) initializeRankers() {
 
 	count := 0
 	err := pgSearch.RunSelectRequestForSchemaFn[views.ComponentRiskView](
-		readCtx, ds.db, pkgSchema.ImageComponentV2Schema, query,
+		readCtx, ds.db, pkgSchema.ImageComponentV2Schema(), query,
 		func(r *views.ComponentRiskView) error {
 			ds.imageComponentRanker.Add(r.ComponentID, r.ComponentRiskScore)
 			count++

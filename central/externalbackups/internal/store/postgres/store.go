@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ExternalBackupsSchema
+	schema         = pkgSchema.ExternalBackupsSchema()
 	targetResource = resources.Integration
 )
 

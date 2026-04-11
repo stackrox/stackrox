@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +21,7 @@ var (
 	}
 
 	// LogImbuesSchema is the go schema for table `log_imbues`.
-	LogImbuesSchema = func() *walker.Schema {
+	LogImbuesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("log_imbues")
 		if schema != nil {
 			return schema
@@ -29,7 +30,7 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

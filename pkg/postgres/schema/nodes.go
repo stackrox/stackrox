@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,14 +30,14 @@ var (
 	}
 
 	// NodesSchema is the go schema for table `nodes`.
-	NodesSchema = func() *walker.Schema {
+	NodesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("nodes")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Node)(nil)), "nodes")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster": ClustersSchema,
+			"storage.Cluster": ClustersSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -55,7 +56,7 @@ var (
 		RegisterTable(schema, CreateTableNodesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

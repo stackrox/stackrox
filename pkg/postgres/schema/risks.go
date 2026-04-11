@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// RisksSchema is the go schema for table `risks`.
-	RisksSchema = func() *walker.Schema {
+	RisksSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("risks")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableRisksStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

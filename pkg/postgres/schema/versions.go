@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// VersionsSchema is the go schema for table `versions`.
-	VersionsSchema = func() *walker.Schema {
+	VersionsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("versions")
 		if schema != nil {
 			return schema
@@ -32,7 +33,7 @@ var (
 		schema.ScopingResource = resources.Version
 		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// IntegrationHealthsSchema is the go schema for table `integration_healths`.
-	IntegrationHealthsSchema = func() *walker.Schema {
+	IntegrationHealthsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("integration_healths")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableIntegrationHealthsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

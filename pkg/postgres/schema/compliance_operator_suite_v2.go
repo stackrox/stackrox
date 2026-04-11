@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,14 +25,14 @@ var (
 	}
 
 	// ComplianceOperatorSuiteV2Schema is the go schema for table `compliance_operator_suite_v2`.
-	ComplianceOperatorSuiteV2Schema = func() *walker.Schema {
+	ComplianceOperatorSuiteV2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_suite_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorSuiteV2)(nil)), "compliance_operator_suite_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster": ClustersSchema,
+			"storage.Cluster": ClustersSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,7 +43,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorSuiteV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SUITES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

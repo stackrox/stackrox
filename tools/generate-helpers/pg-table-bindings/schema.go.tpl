@@ -7,6 +7,7 @@ import (
     "context"
     "fmt"
     "reflect"
+    "sync"
     "time"
 
     "github.com/lib/pq"
@@ -46,7 +47,7 @@ var (
     {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" dict "Schema" .Schema "Singleton" .Singleton }}
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
-    {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
+    {{template "schemaVar" .Schema.Table}} = sync.OnceValue(func() *walker.Schema {
         {{- if .RegisterSchema }}
         schema := GetSchemaForTable("{{.Schema.Table}}")
         if schema != nil {
@@ -60,7 +61,7 @@ var (
         {{- if gt (len .References) 0 }}
 		referencedSchemas := map[string]*walker.Schema{
 		{{- range $ref := .References }}
-		    "{{ $ref.TypeName }}": {{ template "schemaVar" $ref.Table }},
+		    "{{ $ref.TypeName }}": {{ template "schemaVar" $ref.Table }}(),
 		{{- end }}
 		}
 
@@ -87,7 +88,7 @@ var (
             {{- end}}
         {{- end}}
         return schema
-    }()
+    })
 )
 
 {{- define "createGormModel" }}

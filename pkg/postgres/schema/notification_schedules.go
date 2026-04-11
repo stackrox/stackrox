@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// NotificationSchedulesSchema is the go schema for table `notification_schedules`.
-	NotificationSchedulesSchema = func() *walker.Schema {
+	NotificationSchedulesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("notification_schedules")
 		if schema != nil {
 			return schema
@@ -31,7 +32,7 @@ var (
 		schema.ScopingResource = resources.Notifications
 		RegisterTable(schema, CreateTableNotificationSchedulesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

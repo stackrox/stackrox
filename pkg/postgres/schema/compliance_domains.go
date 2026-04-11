@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// ComplianceDomainsSchema is the go schema for table `compliance_domains`.
-	ComplianceDomainsSchema = func() *walker.Schema {
+	ComplianceDomainsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_domains")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceDomainsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_DOMAIN, schema)
 		return schema
-	}()
+	})
 )
 
 const (

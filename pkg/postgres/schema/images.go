@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -29,7 +30,7 @@ var (
 	}
 
 	// ImagesSchema is the go schema for table `images`.
-	ImagesSchema = func() *walker.Schema {
+	ImagesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("images")
 		if schema != nil {
 			return schema
@@ -47,7 +48,7 @@ var (
 		RegisterTable(schema, CreateTableImagesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

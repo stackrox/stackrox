@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// NetworkBaselinesSchema is the go schema for table `network_baselines`.
-	NetworkBaselinesSchema = func() *walker.Schema {
+	NetworkBaselinesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("network_baselines")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableNetworkBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_BASELINE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

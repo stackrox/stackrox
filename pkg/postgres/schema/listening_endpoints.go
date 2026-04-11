@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,16 +25,16 @@ var (
 	}
 
 	// ListeningEndpointsSchema is the go schema for table `listening_endpoints`.
-	ListeningEndpointsSchema = func() *walker.Schema {
+	ListeningEndpointsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("listening_endpoints")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ProcessIndicator": ProcessIndicatorsSchema,
-			"storage.Deployment":       DeploymentsSchema,
-			"storage.Pod":              PodsSchema,
+			"storage.ProcessIndicator": ProcessIndicatorsSchema(),
+			"storage.Deployment":       DeploymentsSchema(),
+			"storage.Pod":              PodsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -44,7 +45,7 @@ var (
 		RegisterTable(schema, CreateTableListeningEndpointsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)
 		return schema
-	}()
+	})
 )
 
 const (

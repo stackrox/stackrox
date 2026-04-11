@@ -31,7 +31,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ListeningEndpointsSchema
+	schema         = pkgSchema.ListeningEndpointsSchema()
 	targetResource = resources.DeploymentExtension
 )
 

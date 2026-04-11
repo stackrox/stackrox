@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// ClusterInitBundlesSchema is the go schema for table `cluster_init_bundles`.
-	ClusterInitBundlesSchema = func() *walker.Schema {
+	ClusterInitBundlesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cluster_init_bundles")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.InitBundleMeta
 		RegisterTable(schema, CreateTableClusterInitBundlesStmt)
 		return schema
-	}()
+	})
 )
 
 const (
