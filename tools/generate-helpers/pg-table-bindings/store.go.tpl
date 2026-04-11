@@ -44,7 +44,7 @@ const (
 
 var (
     log = logging.LoggerForModule()
-    schema = {{ template "schemaVar" .Schema}}
+    schema = {{ template "schemaVar" .Schema}}()
     targetResource = resources.{{.ScopingResource}}
 )
 

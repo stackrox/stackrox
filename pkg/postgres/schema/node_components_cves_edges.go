@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,15 +24,15 @@ var (
 	}
 
 	// NodeComponentsCvesEdgesSchema is the go schema for table `node_components_cves_edges`.
-	NodeComponentsCvesEdgesSchema = func() *walker.Schema {
+	NodeComponentsCvesEdgesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_components_cves_edges")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentCVEEdge)(nil)), "node_components_cves_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.NodeComponent": NodeComponentsSchema,
-			"storage.NodeCVE":       NodeCvesSchema,
+			"storage.NodeComponent": NodeComponentsSchema(),
+			"storage.NodeCVE":       NodeCvesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -50,7 +51,7 @@ var (
 		RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

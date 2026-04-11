@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,15 +25,15 @@ var (
 	}
 
 	// VirtualMachineCvev2Schema is the go schema for table `virtual_machine_cvev2`.
-	VirtualMachineCvev2Schema = func() *walker.Schema {
+	VirtualMachineCvev2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("virtual_machine_cvev2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineCVEV2)(nil)), "virtual_machine_cvev2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.VirtualMachineV2":          VirtualMachineV2Schema,
-			"storage.VirtualMachineComponentV2": VirtualMachineComponentV2Schema,
+			"storage.VirtualMachineV2":          VirtualMachineV2Schema(),
+			"storage.VirtualMachineComponentV2": VirtualMachineComponentV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -51,7 +52,7 @@ var (
 		RegisterTable(schema, CreateTableVirtualMachineCvev2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// ComplianceRunMetadataSchema is the go schema for table `compliance_run_metadata`.
-	ComplianceRunMetadataSchema = func() *walker.Schema {
+	ComplianceRunMetadataSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_run_metadata")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceRunMetadataStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_METADATA, schema)
 		return schema
-	}()
+	})
 )
 
 const (

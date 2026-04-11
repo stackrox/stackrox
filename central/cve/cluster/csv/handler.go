@@ -52,7 +52,7 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*csvCommon.SearchWrapper{
-			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema().OptionsMap, resolver.ClusterDataStore),
 		},
 	)
 }

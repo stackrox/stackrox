@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -24,7 +25,7 @@ var (
 	}
 
 	// PoliciesSchema is the go schema for table `policies`.
-	PoliciesSchema = func() *walker.Schema {
+	PoliciesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("policies")
 		if schema != nil {
 			return schema
@@ -35,7 +36,7 @@ var (
 		RegisterTable(schema, CreateTablePoliciesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICIES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

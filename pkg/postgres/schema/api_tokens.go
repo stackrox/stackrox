@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// APITokensSchema is the go schema for table `api_tokens`.
-	APITokensSchema = func() *walker.Schema {
+	APITokensSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("api_tokens")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableAPITokensStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_API_TOKEN, schema)
 		return schema
-	}()
+	})
 )
 
 const (

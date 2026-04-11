@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.DeclarativeConfigHealthsSchema
+	schema         = pkgSchema.DeclarativeConfigHealthsSchema()
 	targetResource = resources.Integration
 )
 

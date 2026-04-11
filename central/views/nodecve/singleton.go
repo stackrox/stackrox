@@ -18,7 +18,7 @@ var (
 func NewCVEView(db postgres.DB) CveView {
 	return &nodeCVECoreViewImpl{
 		db:     db,
-		schema: schema.NodeCvesSchema,
+		schema: schema.NodeCvesSchema(),
 	}
 }
 

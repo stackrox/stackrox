@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// ImageCveInfosSchema is the go schema for table `image_cve_infos`.
-	ImageCveInfosSchema = func() *walker.Schema {
+	ImageCveInfosSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("image_cve_infos")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableImageCveInfosStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_CVE_INFOS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

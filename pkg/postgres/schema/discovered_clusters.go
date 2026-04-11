@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,14 +25,14 @@ var (
 	}
 
 	// DiscoveredClustersSchema is the go schema for table `discovered_clusters`.
-	DiscoveredClustersSchema = func() *walker.Schema {
+	DiscoveredClustersSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("discovered_clusters")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.DiscoveredCluster)(nil)), "discovered_clusters")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.CloudSource": CloudSourcesSchema,
+			"storage.CloudSource": CloudSourcesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,7 +43,7 @@ var (
 		RegisterTable(schema, CreateTableDiscoveredClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DISCOVERED_CLUSTERS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

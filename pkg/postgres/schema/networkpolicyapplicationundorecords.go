@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// NetworkpolicyapplicationundorecordsSchema is the go schema for table `networkpolicyapplicationundorecords`.
-	NetworkpolicyapplicationundorecordsSchema = func() *walker.Schema {
+	NetworkpolicyapplicationundorecordsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("networkpolicyapplicationundorecords")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.NetworkPolicy
 		RegisterTable(schema, CreateTableNetworkpolicyapplicationundorecordsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

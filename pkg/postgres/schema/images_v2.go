@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -30,7 +31,7 @@ var (
 	}
 
 	// ImagesV2Schema is the go schema for table `images_v2`.
-	ImagesV2Schema = func() *walker.Schema {
+	ImagesV2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("images_v2")
 		if schema != nil {
 			return schema
@@ -49,7 +50,7 @@ var (
 		RegisterTable(schema, CreateTableImagesV2Stmt, features.FlattenImageData.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// ServiceIdentitiesSchema is the go schema for table `service_identities`.
-	ServiceIdentitiesSchema = func() *walker.Schema {
+	ServiceIdentitiesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("service_identities")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableServiceIdentitiesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

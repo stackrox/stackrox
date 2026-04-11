@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,14 +29,14 @@ var (
 	}
 
 	// PodsSchema is the go schema for table `pods`.
-	PodsSchema = func() *walker.Schema {
+	PodsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("pods")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Deployment": DeploymentsSchema,
+			"storage.Deployment": DeploymentsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -46,7 +47,7 @@ var (
 		RegisterTable(schema, CreateTablePodsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PODS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +28,7 @@ var (
 	}
 
 	// CollectionsSchema is the go schema for table `collections`.
-	CollectionsSchema = func() *walker.Schema {
+	CollectionsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("collections")
 		if schema != nil {
 			return schema
@@ -38,7 +39,7 @@ var (
 		RegisterTable(schema, CreateTableCollectionsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COLLECTIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

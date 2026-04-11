@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// ExternalBackupsSchema is the go schema for table `external_backups`.
-	ExternalBackupsSchema = func() *walker.Schema {
+	ExternalBackupsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("external_backups")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableExternalBackupsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

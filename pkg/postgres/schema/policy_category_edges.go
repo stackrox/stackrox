@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,15 +24,15 @@ var (
 	}
 
 	// PolicyCategoryEdgesSchema is the go schema for table `policy_category_edges`.
-	PolicyCategoryEdgesSchema = func() *walker.Schema {
+	PolicyCategoryEdgesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("policy_category_edges")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategoryEdge)(nil)), "policy_category_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Policy":         PoliciesSchema,
-			"storage.PolicyCategory": PolicyCategoriesSchema,
+			"storage.Policy":         PoliciesSchema(),
+			"storage.PolicyCategory": PolicyCategoriesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -46,7 +47,7 @@ var (
 		RegisterTable(schema, CreateTablePolicyCategoryEdgesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORY_EDGE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

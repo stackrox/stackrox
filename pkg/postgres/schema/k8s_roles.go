@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// K8sRolesSchema is the go schema for table `k8s_roles`.
-	K8sRolesSchema = func() *walker.Schema {
+	K8sRolesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("k8s_roles")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

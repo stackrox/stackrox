@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,14 +24,14 @@ var (
 	}
 
 	// BaseImageLayersSchema is the go schema for table `base_image_layers`.
-	BaseImageLayersSchema = func() *walker.Schema {
+	BaseImageLayersSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("base_image_layers")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImageLayer)(nil)), "base_image_layers")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.BaseImage": BaseImagesSchema,
+			"storage.BaseImage": BaseImagesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -45,7 +46,7 @@ var (
 		RegisterTable(schema, CreateTableBaseImageLayersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGE_LAYERS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -20,14 +21,14 @@ var (
 	}
 
 	// BaseImageTagsSchema is the go schema for table `base_image_tags`.
-	BaseImageTagsSchema = func() *walker.Schema {
+	BaseImageTagsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("base_image_tags")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImageTag)(nil)), "base_image_tags")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.BaseImageRepository": BaseImageRepositoriesSchema,
+			"storage.BaseImageRepository": BaseImageRepositoriesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -36,7 +37,7 @@ var (
 		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImageTagsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

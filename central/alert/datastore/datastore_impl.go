@@ -106,7 +106,7 @@ func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context
 	}
 
 	var results []*alertviews.PolicyNameAndSeverity
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
 		results = append(results, r)
 		return nil
 	})
@@ -129,7 +129,7 @@ func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q 
 	emptyResult := &alertviews.PolicySeverityCounts{}
 	results := make([]*alertviews.PolicySeverityCounts, 0)
 	// TODO(ROX-33425): replace call with one specific for counts that only returns a single row
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, countQuery, func(r *alertviews.PolicySeverityCounts) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), countQuery, func(r *alertviews.PolicySeverityCounts) error {
 		results = append(results, r)
 		return nil
 	})
@@ -162,7 +162,7 @@ func (ds *datastoreImpl) SearchAlertPolicyGroups(ctx context.Context, q *v1.Quer
 	groupQuery := alertviews.WithAlertPolicyGroupQuery(q)
 
 	var results []*alertviews.AlertPolicyGroup
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, groupQuery, func(r *alertviews.AlertPolicyGroup) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), groupQuery, func(r *alertviews.AlertPolicyGroup) error {
 		results = append(results, r)
 		return nil
 	})
@@ -183,7 +183,7 @@ func (ds *datastoreImpl) SearchAlertTimeseriesEvents(ctx context.Context, q *v1.
 	timeseriesQuery := alertviews.WithAlertTimeseriesQuery(q)
 
 	var results []*alertviews.AlertTimeseriesEvent
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, timeseriesQuery, func(r *alertviews.AlertTimeseriesEvent) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), timeseriesQuery, func(r *alertviews.AlertTimeseriesEvent) error {
 		results = append(results, r)
 		return nil
 	})
@@ -209,7 +209,7 @@ func (ds *datastoreImpl) SearchAlertDeploymentIDs(ctx context.Context, q *v1.Que
 	clonedQuery.Pagination = nil
 
 	var ids []string
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.DeploymentIDResult) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema(), clonedQuery, func(r *alertviews.DeploymentIDResult) error {
 		if id := r.GetDeploymentID(); id != "" {
 			ids = append(ids, id)
 		}

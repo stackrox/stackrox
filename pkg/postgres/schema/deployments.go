@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -52,16 +53,16 @@ var (
 	}
 
 	// DeploymentsSchema is the go schema for table `deployments`.
-	DeploymentsSchema = func() *walker.Schema {
+	DeploymentsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("deployments")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":             ImagesSchema,
-			"storage.NamespaceMetadata": NamespacesSchema,
-			"storage.ImageV2":           ImagesV2Schema,
+			"storage.Image":             ImagesSchema(),
+			"storage.NamespaceMetadata": NamespacesSchema(),
+			"storage.ImageV2":           ImagesV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -83,7 +84,7 @@ var (
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

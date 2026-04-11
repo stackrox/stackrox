@@ -188,7 +188,7 @@ func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Contex
 	}
 
 	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
-	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema(), cloned, fn)
 	if err != nil {
 		log.Errorf("unable to iterate over indicators for risk processing: %v", err)
 	}

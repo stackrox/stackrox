@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageIntegrationsSchema
+	schema         = pkgSchema.ImageIntegrationsSchema()
 	targetResource = resources.Integration
 )
 
