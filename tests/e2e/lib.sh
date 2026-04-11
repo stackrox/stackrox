@@ -271,7 +271,7 @@ deploy_central() {
         # components at startup. Under the race detector's ~5-10x memory multiplier
         # this causes OOMKills for components with tight memory limits.
         info "Race build detected: increasing memory limits for config-controller"
-        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c config-controller --limits 'memory=512Mi'
+        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
     fi
 }
 
