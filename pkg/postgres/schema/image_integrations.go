@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// ImageIntegrationsSchema is the go schema for table `image_integrations`.
-	ImageIntegrationsSchema = func() *walker.Schema {
+	ImageIntegrationsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("image_integrations")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableImageIntegrationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_INTEGRATIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

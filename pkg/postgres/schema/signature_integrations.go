@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// SignatureIntegrationsSchema is the go schema for table `signature_integrations`.
-	SignatureIntegrationsSchema = func() *walker.Schema {
+	SignatureIntegrationsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("signature_integrations")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableSignatureIntegrationsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +28,7 @@ var (
 	}
 
 	// RoleBindingsSchema is the go schema for table `role_bindings`.
-	RoleBindingsSchema = func() *walker.Schema {
+	RoleBindingsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("role_bindings")
 		if schema != nil {
 			return schema
@@ -38,7 +39,7 @@ var (
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

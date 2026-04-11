@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// ClusterCvesSchema is the go schema for table `cluster_cves`.
-	ClusterCvesSchema = func() *walker.Schema {
+	ClusterCvesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cluster_cves")
 		if schema != nil {
 			return schema
@@ -39,7 +40,7 @@ var (
 		RegisterTable(schema, CreateTableClusterCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULNERABILITIES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

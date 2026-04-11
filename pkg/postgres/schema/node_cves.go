@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// NodeCvesSchema is the go schema for table `node_cves`.
-	NodeCvesSchema = func() *walker.Schema {
+	NodeCvesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_cves")
 		if schema != nil {
 			return schema
@@ -42,7 +43,7 @@ var (
 		RegisterTable(schema, CreateTableNodeCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_VULNERABILITIES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

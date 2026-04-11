@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -20,7 +21,7 @@ var (
 	}
 
 	// HashesSchema is the go schema for table `hashes`.
-	HashesSchema = func() *walker.Schema {
+	HashesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("hashes")
 		if schema != nil {
 			return schema
@@ -29,7 +30,7 @@ var (
 		schema.ScopingResource = resources.Hash
 		RegisterTable(schema, CreateTableHashesStmt, features.StoreEventHashes.Enabled)
 		return schema
-	}()
+	})
 )
 
 const (

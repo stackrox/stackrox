@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// PermissionSetsSchema is the go schema for table `permission_sets`.
-	PermissionSetsSchema = func() *walker.Schema {
+	PermissionSetsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("permission_sets")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTablePermissionSetsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

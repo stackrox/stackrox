@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// ComplianceOperatorRemediationV2Schema is the go schema for table `compliance_operator_remediation_v2`.
-	ComplianceOperatorRemediationV2Schema = func() *walker.Schema {
+	ComplianceOperatorRemediationV2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_remediation_v2")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorRemediationV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_REMEDIATIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

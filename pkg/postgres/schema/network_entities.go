@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// NetworkEntitiesSchema is the go schema for table `network_entities`.
-	NetworkEntitiesSchema = func() *walker.Schema {
+	NetworkEntitiesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("network_entities")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)
 		return schema
-	}()
+	})
 )
 
 const (

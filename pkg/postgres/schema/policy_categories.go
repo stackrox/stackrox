@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// PolicyCategoriesSchema is the go schema for table `policy_categories`.
-	PolicyCategoriesSchema = func() *walker.Schema {
+	PolicyCategoriesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("policy_categories")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORIES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

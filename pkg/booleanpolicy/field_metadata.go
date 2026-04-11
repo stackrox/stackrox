@@ -249,7 +249,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForAddCaps(),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return addCapabilitiesValueRegex
+			return addCapabilitiesValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -260,7 +260,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.AllowPrivilegeEscalation),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -269,7 +269,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.AppArmorProfile),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -278,7 +278,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.AutomountServiceAccountToken),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -289,7 +289,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForCVE(),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -298,7 +298,7 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadataRegex(fieldnames.CVSS, querybuilders.ForCVSS(),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -309,7 +309,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.CPUCoresLimit),
 		violationmessages.ResourceContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -318,7 +318,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.CPUCoresRequest),
 		violationmessages.ResourceContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -327,7 +327,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.MemoryLimit),
 		violationmessages.ResourceContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -336,7 +336,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.MemoryRequest),
 		violationmessages.ResourceContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -345,7 +345,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ContainerName),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -354,7 +354,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDays(search.FirstImageOccurrenceTimestamp),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return integerValueRegex
+			return integerValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -364,7 +364,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDays(search.FirstSystemOccurrenceTimestamp),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return integerValueRegex
+			return integerValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -374,7 +374,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDays(search.CVEPublishedOn),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return integerValueRegex
+			return integerValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -385,7 +385,7 @@ func initializeFieldMetadata() FieldMetadata {
 			querybuilders.ForDays(search.CVEFixAvailable),
 			violationmessages.VulnContextFields,
 			func(*validateConfiguration) *regexp.Regexp {
-				return integerValueRegex
+				return integerValueRegex()
 			},
 			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 			[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -396,7 +396,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldContain),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -405,7 +405,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelMap(search.ImageLabel, query.MapShouldContain),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return keyValueValueRegex
+			return keyValueValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
@@ -416,9 +416,9 @@ func initializeFieldMetadata() FieldMetadata {
 		violationmessages.ImageContextFields,
 		func(c *validateConfiguration) *regexp.Regexp {
 			if c.disallowFromInDockerfileLine {
-				return dockerfileLineValueRegexNoFrom
+				return dockerfileLineValueRegexNoFrom()
 			}
-			return dockerfileLineValueRegex
+			return dockerfileLineValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
@@ -428,7 +428,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDropCaps(),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return dropCapabilitiesValueRegex
+			return dropCapabilitiesValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -438,10 +438,10 @@ func initializeFieldMetadata() FieldMetadata {
 		violationmessages.EnvVarContextFields,
 		func(c *validateConfiguration) *regexp.Regexp {
 			if c != nil && c.validateEnvVarSourceRestrictions {
-				return environmentVariableWithSourceStrictRegex
+				return environmentVariableWithSourceStrictRegex()
 			}
 
-			return environmentVariableWithSourceRegex
+			return environmentVariableWithSourceRegex()
 		}, []storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
 	)
@@ -450,7 +450,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFixable(),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -460,7 +460,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFixedBy(),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -470,7 +470,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.HostIPC),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -479,7 +479,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.HostNetwork),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -487,7 +487,7 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadataRegex(fieldnames.HostPID,
 		querybuilders.ForFieldLabel(search.HostPID), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -496,7 +496,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDays(search.ImageCreatedTime),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return integerValueRegex
+			return integerValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -506,7 +506,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForCompound(augmentedobjs.ComponentAndVersionCustomTag, 2),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return keyValueValueRegex
+			return keyValueValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
@@ -516,7 +516,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ImageOS),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -526,7 +526,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ImageRegistry),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -535,7 +535,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ImageRemote),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -544,7 +544,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDays(search.ImageScanTime),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return integerValueRegex
+			return integerValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -554,7 +554,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForImageSignatureVerificationStatus(),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return signatureIntegrationIDValueRegex
+			return signatureIntegrationIDValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
@@ -564,7 +564,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ImageTag),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -573,7 +573,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ImageUser),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -582,7 +582,7 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadataRegex(fieldnames.MinimumRBACPermissions,
 		querybuilders.ForK8sRBAC(), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return rbacPermissionValueRegex
+			return rbacPermissionValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden)
@@ -591,7 +591,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.MountPropagation),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return mountPropagationValueRegex
+			return mountPropagationValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -600,7 +600,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.Namespace),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -608,7 +608,7 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadataRegex(fieldnames.NvdCvss, querybuilders.ForNvdCVSS(),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -619,7 +619,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.ExposedNodePort),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -628,7 +628,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.Port),
 		violationmessages.PortContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -637,7 +637,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.ExposureLevel),
 		violationmessages.PortContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return portExposureValueRegex
+			return portExposureValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -646,7 +646,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.Privileged),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -655,7 +655,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ProcessAncestor),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{Process})
@@ -664,7 +664,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelContainsRegex(search.ProcessArguments),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{Process})
@@ -673,7 +673,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ProcessName),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{Process})
@@ -682,7 +682,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.ProcessUID),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{Process})
@@ -691,7 +691,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelUpper(search.PortProtocol),
 		violationmessages.PortContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -700,7 +700,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.ReadOnlyRootFilesystem),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -709,7 +709,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(augmentedobjs.RuntimeClassCustomTag),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -719,7 +719,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelMapRequired(search.DeploymentAnnotation),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return keyValueValueRegex
+			return keyValueValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -728,7 +728,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelMapRequired(search.ImageLabel),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return keyValueValueRegex
+			return keyValueValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
@@ -738,7 +738,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelMapRequired(search.DeploymentLabel),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return keyValueValueRegex
+			return keyValueValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
@@ -747,7 +747,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.SeccompProfileType),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return seccompProfileTypeValueRegex
+			return seccompProfileTypeValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden)
@@ -756,7 +756,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.ServiceAccountName),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -765,7 +765,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForSeverity(),
 		violationmessages.VulnContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return severityValueRegex
+			return severityValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden,
@@ -775,7 +775,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelNil(augmentedobjs.ImageScanCustomTag),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
@@ -785,7 +785,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.VolumeDestination),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -794,7 +794,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.VolumeName),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -803,7 +803,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.VolumeSource),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -812,7 +812,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelRegex(search.VolumeType),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
@@ -821,7 +821,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.NotInNetworkBaselineCustomTag),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{NetworkFlow}, negationForbidden, operatorsForbidden)
@@ -830,7 +830,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.NotInProcessBaselineCustomTag),
 		violationmessages.ProcessBaselineContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
 		[]RuntimeFieldType{Process}, negationForbidden, operatorsForbidden)
@@ -839,7 +839,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForWriteableHostMount(),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -848,7 +848,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabelBoolean(search.VolumeReadonly, true),
 		violationmessages.VolumeContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
@@ -857,7 +857,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIVerbCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
-			return auditEventAPIVerbValueRegex
+			return auditEventAPIVerbValueRegex()
 		}, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
 		negationForbidden,
@@ -868,9 +868,9 @@ func initializeFieldMetadata() FieldMetadata {
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
 			if c != nil && c.sourceIsAuditLogEvents {
-				return auditEventResourceValueRegex
+				return auditEventResourceValueRegex()
 			}
-			return kubernetesResourceValueRegex
+			return kubernetesResourceValueRegex()
 		}, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 		negationForbidden,
@@ -880,7 +880,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.KubeUserName,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserNameCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return kubernetesNameRegex
+			return kubernetesNameRegex()
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
@@ -890,7 +890,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.KubeUserGroups,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserGroupsCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return kubernetesNameRegex
+			return kubernetesNameRegex()
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
@@ -900,7 +900,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.KubeResourceName,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceNameCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
@@ -910,7 +910,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.SourceIPAddress,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesSourceIPAddressCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return ipAddressValueRegex
+			return ipAddressValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
@@ -919,7 +919,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.UserAgent,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserAgentCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return stringValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
@@ -929,7 +929,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.IsImpersonatedUser,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesIsImpersonatedCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
@@ -940,7 +940,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.Replicas),
 		violationmessages.ResourceContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return comparatorDecimalValueRegex
+			return comparatorDecimalValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -950,7 +950,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.LivenessProbeDefined),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -961,7 +961,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(search.ReadinessProbeDefined),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
@@ -970,7 +970,7 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadataRegex(fieldnames.HasIngressNetworkPolicy,
 		querybuilders.ForFieldLabel(augmentedobjs.HasIngressPolicyCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
@@ -979,7 +979,7 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadataRegex(fieldnames.HasEgressNetworkPolicy,
 		querybuilders.ForFieldLabel(augmentedobjs.HasEgressPolicyCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return booleanValueRegex()
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
@@ -1010,7 +1010,7 @@ func initializeFieldMetadata() FieldMetadata {
 		f.registerFieldMetadataRegex(fieldnames.FileOperation,
 			querybuilders.ForFieldLabel(search.FileOperation), nil,
 			func(*validateConfiguration) *regexp.Regexp {
-				return fileOperationRegex
+				return fileOperationRegex()
 			},
 			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 			[]RuntimeFieldType{FileAccess},

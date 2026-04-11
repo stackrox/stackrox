@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// ProcessBaselineResultsSchema is the go schema for table `process_baseline_results`.
-	ProcessBaselineResultsSchema = func() *walker.Schema {
+	ProcessBaselineResultsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("process_baseline_results")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableProcessBaselineResultsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINE_RESULTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

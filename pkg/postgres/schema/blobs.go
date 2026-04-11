@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// BlobsSchema is the go schema for table `blobs`.
-	BlobsSchema = func() *walker.Schema {
+	BlobsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("blobs")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableBlobsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BLOB, schema)
 		return schema
-	}()
+	})
 )
 
 const (

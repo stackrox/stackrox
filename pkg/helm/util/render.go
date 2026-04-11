@@ -2,10 +2,10 @@ package util
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
-	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
@@ -24,7 +24,7 @@ type Options struct {
 // Render renders a chart locally, like renderutil.Render, but its options struct allows specifying
 // the list of supported API versions explicitly.
 func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]string, error) {
-	if err := action.CheckDependencies(c, c.Metadata.Dependencies); err != nil {
+	if err := checkDependencies(c, c.Metadata.Dependencies); err != nil {
 		return nil, err
 	}
 
@@ -62,4 +62,24 @@ func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]s
 	}
 
 	return engine.Render(c, vals)
+}
+
+// checkDependencies checks if the given chart's dependencies are present in the charts/ directory.
+// Inlined from helm.sh/helm/v3/pkg/action.CheckDependencies to avoid importing the action package,
+// which transitively pulls in helm/lint → govalidator (~1 MB of regexp compilation at init time).
+func checkDependencies(ch *chart.Chart, reqs []*chart.Dependency) error {
+	var missing []string
+outer:
+	for _, r := range reqs {
+		for _, d := range ch.Dependencies() {
+			if d.Name() == r.Name {
+				continue outer
+			}
+		}
+		missing = append(missing, r.Name)
+	}
+	if len(missing) > 0 {
+		return errors.Errorf("found in Chart.yaml, but missing in charts/ directory: %s", strings.Join(missing, ", "))
+	}
+	return nil
 }

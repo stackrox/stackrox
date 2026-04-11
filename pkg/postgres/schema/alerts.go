@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -24,7 +25,7 @@ var (
 	}
 
 	// AlertsSchema is the go schema for table `alerts`.
-	AlertsSchema = func() *walker.Schema {
+	AlertsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("alerts")
 		if schema != nil {
 			return schema
@@ -35,7 +36,7 @@ var (
 		RegisterTable(schema, CreateTableAlertsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -19,7 +20,7 @@ var (
 	}
 
 	// SimpleAccessScopesSchema is the go schema for table `simple_access_scopes`.
-	SimpleAccessScopesSchema = func() *walker.Schema {
+	SimpleAccessScopesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("simple_access_scopes")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableSimpleAccessScopesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

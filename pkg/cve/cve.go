@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	pgID "github.com/stackrox/rox/pkg/postgres/id"
 )
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{
@@ -20,19 +20,19 @@ var componentCVETypes = map[storage.CVE_CVEType]struct{}{
 
 // ID creates a CVE ID from the given cve id and os.
 func ID(cve, os string) string {
-	return pgSearch.IDFromPks([]string{cve, os})
+	return pgID.FromPks([]string{cve, os})
 }
 
 // IDV2 creates a CVE ID from the given cve name, component id and index of CVE within the component.
 func IDV2(cve *storage.EmbeddedVulnerability, componentID string, index int) string {
 	// The index it occurs in the component list is sufficient for uniqueness.  We do not need to be able to
 	// rebuild this ID at query time from an embedded object.
-	return pgSearch.IDFromPks([]string{cve.GetCve(), strconv.Itoa(index), componentID})
+	return pgID.FromPks([]string{cve.GetCve(), strconv.Itoa(index), componentID})
 }
 
 // IDToParts return the CVE ID parts—cve and operating system.
 func IDToParts(id string) (string, string) {
-	parts := pgSearch.IDToParts(id)
+	parts := pgID.ToParts(id)
 	if len(parts) >= 2 {
 		return parts[0], parts[1]
 	}
@@ -44,5 +44,5 @@ func IDToParts(id string) (string, string) {
 // Example: "CVE-2021-1234#curl#debian-bookworm-updater::debian:12"
 // For Red Hat vulns, datasource will be empty string.
 func ImageCVEInfoID(cve, packageName, datasource string) string {
-	return pgSearch.IDFromPks([]string{cve, packageName, datasource})
+	return pgID.FromPks([]string{cve, packageName, datasource})
 }

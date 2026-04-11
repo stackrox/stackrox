@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -33,7 +34,7 @@ var (
 	}
 
 	// SecretsSchema is the go schema for table `secrets`.
-	SecretsSchema = func() *walker.Schema {
+	SecretsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("secrets")
 		if schema != nil {
 			return schema
@@ -44,7 +45,7 @@ var (
 		RegisterTable(schema, CreateTableSecretsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SECRETS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

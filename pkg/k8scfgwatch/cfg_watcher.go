@@ -2,7 +2,6 @@ package k8scfgwatch
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -11,8 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
-	k8sTest "k8s.io/client-go/testing"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
@@ -24,13 +22,20 @@ var (
 // ConfigMapWatcher watches a config map in a given namespaces and evokes a callback function
 // when changes are detected.
 type ConfigMapWatcher struct {
-	k8sClient    kubernetes.Interface
-	modifiedFunc func(*v1.ConfigMap)
+	configMapsClient configMapsClient
+	modifiedFunc     func(*v1.ConfigMap)
+}
+
+// configMapsClient is the minimal interface needed for ConfigMap watching.
+// Using this instead of kubernetes.Interface avoids importing the full k8s
+// client-go scheme which registers all 58+ API groups at init (~1.3 MB).
+type configMapsClient interface {
+	CoreV1() corev1client.CoreV1Interface
 }
 
 // NewConfigMapWatcher creates a new config map watcher.
-func NewConfigMapWatcher(k8sClient kubernetes.Interface, modifiedFunc func(*v1.ConfigMap)) *ConfigMapWatcher {
-	return &ConfigMapWatcher{k8sClient: k8sClient, modifiedFunc: modifiedFunc}
+func NewConfigMapWatcher(k8sClient configMapsClient, modifiedFunc func(*v1.ConfigMap)) *ConfigMapWatcher {
+	return &ConfigMapWatcher{configMapsClient: k8sClient, modifiedFunc: modifiedFunc}
 }
 
 // Watch a config map in the given namespace bound by the context.
@@ -47,7 +52,7 @@ func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, nam
 func (w *ConfigMapWatcher) init(ctx concurrency.Waitable, namespace string, name string) error {
 	initCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(concurrency.AsContext(ctx), timeout)
 	defer cancel()
-	cfgMap, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Get(initCtx, name, metav1.GetOptions{})
+	cfgMap, err := w.configMapsClient.CoreV1().ConfigMaps(namespace).Get(initCtx, name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -68,7 +73,7 @@ func (w *ConfigMapWatcher) run(ctx concurrency.Waitable, namespace string, name 
 }
 
 func (w *ConfigMapWatcher) startWatcher(ctx concurrency.Waitable, namespace string, name string) {
-	watcher, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Watch(
+	watcher, err := w.configMapsClient.CoreV1().ConfigMaps(namespace).Watch(
 		concurrency.AsContext(ctx),
 		metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}),
 	)
@@ -100,23 +105,4 @@ func (w *ConfigMapWatcher) onChange(ctx concurrency.Waitable, eventChannel <-cha
 			}
 		}
 	}
-}
-
-// Used in unit tests to react on watch events.
-type testWatchReactor struct {
-	watcher watch.Interface
-	err     error
-}
-
-func (w *testWatchReactor) Handles(_ k8sTest.Action) bool {
-	return true
-}
-
-func (w *testWatchReactor) React(_ k8sTest.Action) (bool, watch.Interface, error) {
-	return true, w.watcher, w.err
-}
-
-// NewTestWatchReactor creates a new test watch reactor for testing.
-func NewTestWatchReactor(_ *testing.T, watcher watch.Interface) k8sTest.WatchReactor {
-	return &testWatchReactor{watcher: watcher}
 }

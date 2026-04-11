@@ -45,7 +45,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ImagesSchema
+	schema = pkgSchema.ImagesSchema()
 
 	// Assume it exists
 	legacyCVEExists = true
@@ -856,7 +856,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 		return nil
 	}
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, callback)
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema(), q, s.db, callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
@@ -868,7 +868,7 @@ func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn fun
 
 	q = applyDefaultSort(q)
 
-	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, fn)
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema(), q, s.db, fn)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
@@ -910,7 +910,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
 	results := make([]*views.ImageRiskView, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
-	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q, func(r *views.ImageRiskView) error {
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema(), q, func(r *views.ImageRiskView) error {
 		results = append(results, r)
 		return nil
 	})
@@ -1038,7 +1038,7 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 
 func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) (bool, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
-	count, err := pgSearch.RunCountRequestForSchema(ctx, pkgSchema.ImageComponentV2Schema, q, s.db)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, pkgSchema.ImageComponentV2Schema(), q, s.db)
 	if err != nil {
 		return false, err
 	}
@@ -1046,7 +1046,7 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 }
 
 func applyDefaultSort(q *v1.Query) *v1.Query {
-	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema().OptionsMap)
 
 	defaultSortOption := &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),

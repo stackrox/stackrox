@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// NodeComponentsSchema is the go schema for table `node_components`.
-	NodeComponentsSchema = func() *walker.Schema {
+	NodeComponentsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_components")
 		if schema != nil {
 			return schema
@@ -41,7 +42,7 @@ var (
 		RegisterTable(schema, CreateTableNodeComponentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

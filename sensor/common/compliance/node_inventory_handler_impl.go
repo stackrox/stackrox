@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/pkg/rhctag"
-	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -31,12 +30,11 @@ var (
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
 
-	goldenKey = rhcc.RepositoryKey
-)
-
-var (
-	goldenName = rhcc.GoldRepo.Name
-	goldenURI  = rhcc.GoldRepo.URI
+	// goldenKey, goldenName, and goldenURI are inlined from claircore/rhel/rhcc to avoid
+	// importing the rhcc package which transitively pulls in sqlite/modernc (~1.9 MB init).
+	goldenKey  = "rhcc-container-repository"
+	goldenName = "Red Hat Container Catalog"
+	goldenURI  = "https://catalog.redhat.com/software/containers/explore"
 )
 
 type nodeInventoryHandlerImpl struct {

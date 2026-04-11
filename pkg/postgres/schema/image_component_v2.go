@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,15 +24,15 @@ var (
 	}
 
 	// ImageComponentV2Schema is the go schema for table `image_component_v2`.
-	ImageComponentV2Schema = func() *walker.Schema {
+	ImageComponentV2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("image_component_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentV2)(nil)), "image_component_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":   ImagesSchema,
-			"storage.ImageV2": ImagesV2Schema,
+			"storage.Image":   ImagesSchema(),
+			"storage.ImageV2": ImagesV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -51,7 +52,7 @@ var (
 		RegisterTable(schema, CreateTableImageComponentV2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

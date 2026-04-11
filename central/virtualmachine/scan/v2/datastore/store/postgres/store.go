@@ -28,7 +28,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.VirtualMachineScanV2Schema
+	schema         = pkgSchema.VirtualMachineScanV2Schema()
 	targetResource = resources.VirtualMachine
 )
 

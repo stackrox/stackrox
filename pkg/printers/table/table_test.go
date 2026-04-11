@@ -1,4 +1,4 @@
-package printers
+package table
 
 import (
 	"strings"

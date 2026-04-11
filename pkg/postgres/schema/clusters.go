@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// ClustersSchema is the go schema for table `clusters`.
-	ClustersSchema = func() *walker.Schema {
+	ClustersSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("clusters")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableClustersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

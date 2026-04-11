@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,14 +29,14 @@ var (
 	}
 
 	// ReportConfigurationsSchema is the go schema for table `report_configurations`.
-	ReportConfigurationsSchema = func() *walker.Schema {
+	ReportConfigurationsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("report_configurations")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Notifier": NotifiersSchema,
+			"storage.Notifier": NotifiersSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -49,7 +50,7 @@ var (
 		RegisterTable(schema, CreateTableReportConfigurationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_CONFIGURATIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

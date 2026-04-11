@@ -90,7 +90,7 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 	}
 
 	var listSecrets []*storage.ListSecret
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema(), query,
 		func(r *listSecretResponse) error {
 			listSecrets = append(listSecrets, r.toListSecret())
 			return nil

@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
+	tabprinters "github.com/stackrox/rox/pkg/printers/table"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -153,9 +154,9 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	}
 	switch strings.ToLower(format) {
 	case "table":
-		return printers.NewTablePrinter(t.RowJSONPathExpression,
-			printers.WithTableHeadersOption(t.Headers, t.Merge, t.NoHeader),
-			printers.WithTableHideUnpopulatedRowsOption(requiredHeadersJSON)), nil
+		return tabprinters.NewTablePrinter(t.RowJSONPathExpression,
+			tabprinters.WithTableHeadersOption(t.Headers, t.Merge, t.NoHeader),
+			tabprinters.WithTableHideUnpopulatedRowsOption(requiredHeadersJSON)), nil
 	case "csv":
 		return printers.NewCSVPrinter(t.RowJSONPathExpression,
 			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment),

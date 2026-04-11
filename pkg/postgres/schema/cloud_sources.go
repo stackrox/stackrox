@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// CloudSourcesSchema is the go schema for table `cloud_sources`.
-	CloudSourcesSchema = func() *walker.Schema {
+	CloudSourcesSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cloud_sources")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableCloudSourcesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLOUD_SOURCES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

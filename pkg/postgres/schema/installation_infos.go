@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// InstallationInfosSchema is the go schema for table `installation_infos`.
-	InstallationInfosSchema = func() *walker.Schema {
+	InstallationInfosSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("installation_infos")
 		if schema != nil {
 			return schema
@@ -31,7 +32,7 @@ var (
 		schema.ScopingResource = resources.InstallationInfo
 		RegisterTable(schema, CreateTableInstallationInfosStmt)
 		return schema
-	}()
+	})
 )
 
 const (

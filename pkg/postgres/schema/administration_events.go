@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ var (
 	}
 
 	// AdministrationEventsSchema is the go schema for table `administration_events`.
-	AdministrationEventsSchema = func() *walker.Schema {
+	AdministrationEventsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("administration_events")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableAdministrationEventsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_EVENTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (
