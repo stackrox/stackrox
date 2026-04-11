@@ -25,27 +25,15 @@ scannerV4:
       disable: true
     resources:
       requests:
-        memory: "4Gi"
         cpu: "400m"
-      limits:
-        memory: "4Gi"
-        cpu: "2000m"
   indexer:
     replicas: 1
     autoscaling:
       disable: true
     resources:
       requests:
-        memory: "2Gi"
         cpu: "400m"
-      limits:
-        memory: "4Gi"
-        cpu: "2000m"
   db:
     resources:
       requests:
-        memory: "2Gi"
         cpu: "500m"
-      limits:
-        memory: "4Gi"
-        cpu: "2000m"
