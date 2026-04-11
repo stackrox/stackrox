@@ -270,8 +270,15 @@ deploy_central() {
         # The busybox-style consolidated binary (ROX-33958) runs init() for all
         # components at startup. Under the race detector's ~5-10x memory multiplier
         # this causes OOMKills for components with tight memory limits.
-        info "Race build detected: increasing memory limits for config-controller"
-        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
+        if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
+            # Operator reconciles away kubectl overrides, so patch the CR instead.
+            info "Race build detected: patching Central CR to increase config-controller memory"
+            retrying_kubectl </dev/null -n "${central_namespace}" patch central stackrox-central-services --type=merge \
+                -p '{"spec":{"configAsCode":{"resources":{"limits":{"memory":"512Mi"}}}}}'
+        else
+            info "Race build detected: increasing memory limits for config-controller"
+            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
+        fi
     fi
 }
 
@@ -438,8 +445,14 @@ deploy_sensor() {
         # The busybox-style consolidated binary (ROX-33958) runs init() for all
         # components at startup. Under the race detector's ~5-10x memory multiplier
         # this causes OOMKills for components with tight memory limits.
-        info "Race build detected: increasing memory limits for admission-control and config-controller"
-        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
+        if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
+            info "Race build detected: patching SecuredCluster CR to increase admission-control memory"
+            retrying_kubectl </dev/null -n "${sensor_namespace}" patch securedcluster stackrox-secured-cluster-services --type=merge \
+                -p '{"spec":{"admissionControl":{"resources":{"limits":{"memory":"2Gi"}}}}}'
+        else
+            info "Race build detected: increasing memory limits for admission-control"
+            retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
+        fi
     fi
 }
 
