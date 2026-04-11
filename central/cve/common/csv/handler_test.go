@@ -157,7 +157,7 @@ func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
 			NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
 			NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeDataStore),
-			NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema().OptionsMap, resolver.ClusterDataStore),
 		},
 	)
 }

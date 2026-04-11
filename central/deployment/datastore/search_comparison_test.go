@@ -56,7 +56,7 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 	} else {
 		imageDS := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 		s.imageDatastore = imageDS
-		s.optionsMap = pkgSchema.ImagesSchema.OptionsMap
+		s.optionsMap = pkgSchema.ImagesSchema().OptionsMap
 	}
 }
 
