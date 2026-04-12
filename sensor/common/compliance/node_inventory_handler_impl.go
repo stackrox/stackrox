@@ -3,10 +3,9 @@ package compliance
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/quay/claircore/indexer/controller"
-	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -450,16 +449,21 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	}
 }
 
+// normalizeVersion extracts the major.minor components from an RHCOS version string.
+// Only two first fields matter for the initial db query that matches the vulnerabilities.
+// This is inlined from claircore/pkg/rhctag to avoid importing the claircore package
+// which transitively pulls in scanner-only dependencies.
 func normalizeVersion(version string) []int32 {
-	rhctagVersion, err := rhctag.Parse(version)
-	if err != nil {
-		return []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	result := []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	parts := strings.SplitN(version, ".", 3)
+	for i := 0; i < len(parts) && i < 2; i++ {
+		val, err := strconv.ParseInt(parts[i], 10, 32)
+		if err != nil {
+			return result
+		}
+		result[i] = int32(val)
 	}
-	m := rhctagVersion.MinorStart()
-	v := m.Version(true).V
-	// Only two first fields matter for the initial db query that matches the vulnerabilities.
-	// The results of that query will be further filtered using the string value of the Version field.
-	return []int32{v[0], v[1], 0, 0, 0, 0, 0, 0, 0, 0}
+	return result
 }
 
 func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
@@ -530,7 +534,7 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 	return &v4.IndexReport{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
 		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		State:   controller.IndexFinished.String(),
+		State:   "IndexFinished",
 		Success: true,
 		Err:     "",
 		Contents: &v4.Contents{
