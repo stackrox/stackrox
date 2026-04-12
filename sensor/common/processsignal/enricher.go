@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/sensor/queue"
@@ -19,7 +20,6 @@ import (
 )
 
 const (
-	enrichIntervalMin = 5 * time.Second
 	enrichIntervalMax = 2 * time.Minute
 
 	pruneInterval       = 5 * time.Minute
@@ -171,11 +171,17 @@ func (e *enricher) processLoop(ctx context.Context) {
 	defer e.stopper.Flow().ReportStopped()
 	defer close(e.indicators)
 
-	// Adaptive ticker: starts at enrichIntervalMin and backs off to
-	// enrichIntervalMax when no unresolved containers are found. Resets
-	// to min on new metadata callbacks. This avoids 720 LRU scans/hour
-	// on idle clusters while keeping fast enrichment on active ones.
-	currentInterval := enrichIntervalMin
+	// The base interval is configurable via ROX_SENSOR_PROCESS_ENRICHER_INTERVAL.
+	// Default 5s for fast enrichment; set higher (e.g. "30s", "5m") on stable/edge clusters.
+	baseInterval := env.ProcessEnricherInterval.DurationSetting()
+	if baseInterval <= 0 {
+		baseInterval = 5 * time.Second
+	}
+
+	// Adaptive ticker: backs off to enrichIntervalMax when the LRU cache
+	// is empty (no unresolved containers). Resets to baseInterval on new
+	// activity. This avoids hundreds of idle scans/hour on stable clusters.
+	currentInterval := baseInterval
 	ticker := time.NewTicker(currentInterval)
 	expirationTicker := time.NewTicker(pruneInterval)
 	for {
@@ -184,19 +190,18 @@ func (e *enricher) processLoop(ctx context.Context) {
 			log.Debugf("process indicator enricher stopped: %s", ctx.Err())
 			return
 		case <-ticker.C:
-			enriched := false
+			// Skip the full LRU scan if there's nothing to resolve.
+			if e.lru.Len() == 0 {
+				currentInterval = min(currentInterval*2, enrichIntervalMax)
+				ticker.Reset(currentInterval)
+				continue
+			}
 			for _, containerID := range e.lru.Keys() {
 				if metadata, ok, _ := e.clusterEntities.LookupByContainerID(containerID); ok {
 					e.scanAndEnrich(metadata)
-					enriched = true
 				}
 			}
-			// Back off when idle: double the interval up to the max.
-			if !enriched && e.lru.Len() == 0 {
-				currentInterval = min(currentInterval*2, enrichIntervalMax)
-			} else {
-				currentInterval = enrichIntervalMin
-			}
+			currentInterval = baseInterval
 			ticker.Reset(currentInterval)
 		case <-expirationTicker.C:
 			for _, containerID := range e.lru.Keys() {
@@ -213,7 +218,7 @@ func (e *enricher) processLoop(ctx context.Context) {
 		case metadata := <-e.metadataCallbackChan:
 			e.scanAndEnrich(metadata)
 			// Reset to fast interval on new activity.
-			currentInterval = enrichIntervalMin
+			currentInterval = baseInterval
 			ticker.Reset(currentInterval)
 		}
 	}
