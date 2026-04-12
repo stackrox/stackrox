@@ -5,10 +5,11 @@ import (
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
-// CompilePolicy compiles the given policy with label providers, making it ready for matching.
-// The providers enable cluster_label and namespace_label scope matching.
-// Pass nil for providers if label-based scoping is not needed.
+// CompilePolicy returns a lazily-compiled policy. The expensive compilation
+// (regexp building, matcher construction) is deferred until the policy is
+// first evaluated via Match* or AppliesTo. This saves ~6 MB on idle sensors
+// where most of ~100 default policies are never checked against any resource.
 func CompilePolicy(policy *storage.Policy, clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) (CompiledPolicy, error) {
 	cloned := policy.CloneVT()
-	return newCompiledPolicy(cloned, clusterLabelProvider, namespaceLabelProvider)
+	return newLazyCompiledPolicy(cloned, clusterLabelProvider, namespaceLabelProvider), nil
 }
