@@ -5,12 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/pkg/errors"
 	"github.com/stackrox/pkcs7"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,14 +32,12 @@ var httpClient = &http.Client{
 	Transport: proxy.Without(),
 }
 
-// GetMetadata tries to obtain the AWS instance metadata.
+// GetMetadata tries to obtain the AWS instance metadata via IMDS.
+// Uses a lightweight HTTP client instead of the AWS SDK.
 // If not on AWS, returns nil, nil.
 func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
-	awsConfig, err := config.LoadDefaultConfig(ctx, config.WithHTTPClient(httpClient))
-	if err != nil {
-		return nil, errors.Wrap(err, "creating AWS config")
-	}
-	mdClient := imds.NewFromConfig(awsConfig)
+	mdClient := NewIMDSClient(httpClient)
+	mdClient.GetToken(ctx)
 
 	errs := errorhelpers.NewErrorList("retrieving AWS EC2 metadata")
 	verified := true
@@ -74,16 +69,15 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}, nil
 }
 
-func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.InstanceIdentityDocument, error) {
-	output, err := mdClient.GetDynamicData(ctx, &imds.GetDynamicDataInput{Path: "/instance-identity/rsa2048"})
+func signedIdentityDoc(ctx context.Context, mdClient *IMDSClient) (*InstanceIdentityDocument, error) {
+	rawSig, err := mdClient.GetSignedIdentityDocument(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving RSA-2048 signature")
 	}
 
-	reader := base64.NewDecoder(base64.StdEncoding, output.Content)
-	p7Raw, err := io.ReadAll(reader)
+	p7Raw, err := base64.StdEncoding.DecodeString(string(rawSig))
 	if err != nil {
-		return nil, errors.Wrap(err, "reading RSA-2048 signature")
+		return nil, errors.Wrap(err, "decoding RSA-2048 signature")
 	}
 
 	p7, err := pkcs7.Parse(p7Raw)
@@ -96,7 +90,7 @@ func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.Instan
 		return nil, errors.Wrap(err, "verifying RSA-2048 signature")
 	}
 
-	doc := &imds.InstanceIdentityDocument{}
+	doc := &InstanceIdentityDocument{}
 	if err := json.Unmarshal(p7.Content, doc); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling instance identity document")
 	}
@@ -104,23 +98,14 @@ func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.Instan
 	return doc, nil
 }
 
-func plaintextIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.InstanceIdentityDocument, error) {
-	output, err := mdClient.GetInstanceIdentityDocument(ctx, &imds.GetInstanceIdentityDocumentInput{})
-	if err != nil {
-		return nil, err
-	}
-	return &output.InstanceIdentityDocument, nil
+func plaintextIdentityDoc(ctx context.Context, mdClient *IMDSClient) (*InstanceIdentityDocument, error) {
+	return mdClient.GetIdentityDocument(ctx)
 }
 
-// getClusterMetadata attempts to get the EKS cluster name on a best effort basis.
-// First, it tries to get the cluster name from the EC2 instance tags. Access to
-// the tags must be explicitly enabled for the EC2 instance beforehand.
-// Second, it tries the node labels. The label is only set when the EKS cluster
-// was created via eksctl.
 func getClusterMetadata(ctx context.Context,
-	client *imds.Client, doc *imds.InstanceIdentityDocument,
+	mdClient *IMDSClient, doc *InstanceIdentityDocument,
 ) *storage.ClusterMetadata {
-	clusterName, err := getClusterNameFromInstanceTags(ctx, client)
+	clusterName, err := getClusterNameFromInstanceTags(ctx, mdClient)
 	if err == nil {
 		return clusterMetadataFromName(clusterName, doc)
 	}
@@ -144,16 +129,16 @@ func getClusterMetadata(ctx context.Context,
 	return clusterMetadataFromName(clusterName, doc)
 }
 
-func getClusterNameFromInstanceTags(ctx context.Context, client *imds.Client) (string, error) {
-	output, err := client.GetMetadata(ctx, &imds.GetMetadataInput{Path: instanceTagsPath})
+func getClusterNameFromInstanceTags(ctx context.Context, mdClient *IMDSClient) (string, error) {
+	// Instance tags are at /latest/meta-data/tags/instance/<tag-key>
+	tagValue, err := mdClient.GetMetadata(ctx, instanceTagsPath+"/"+eksClusterNameTag)
 	if err != nil {
-		return "", errors.Wrap(err, "getting cluster metadata")
+		return "", errors.Wrap(err, "getting cluster name tag")
 	}
-	clusterName, ok := output.ResultMetadata.Get(eksClusterNameTag).(string)
-	if !ok {
-		return "", errors.New("getting cluster name tag")
+	if tagValue == "" {
+		return "", errors.New("empty cluster name tag")
 	}
-	return clusterName, nil
+	return tagValue, nil
 }
 
 func getClusterNameFromNodeLabels(ctx context.Context, k8sClient kubernetes.Interface) (string, error) {
@@ -167,7 +152,7 @@ func getClusterNameFromNodeLabels(ctx context.Context, k8sClient kubernetes.Inte
 	return "", errors.Errorf("node label %q not found", eksClusterNameLabel)
 }
 
-func clusterMetadataFromName(clusterName string, doc *imds.InstanceIdentityDocument,
+func clusterMetadataFromName(clusterName string, doc *InstanceIdentityDocument,
 ) *storage.ClusterMetadata {
 	clusterARN := fmt.Sprintf("arn:aws:eks:%s:%s:cluster/%s", doc.Region, doc.AccountID, clusterName)
 	return &storage.ClusterMetadata{Type: storage.ClusterMetadata_EKS, Name: clusterName, Id: clusterARN}

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/pkg/errors"
+	awsimds "github.com/stackrox/rox/pkg/cloudproviders/aws"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -176,24 +176,18 @@ func (m *ecrCredentialsManager) authWillExpireIn(duration time.Duration) bool {
 	return time.Now().Add(duration).After(m.expiresAt)
 }
 
-// getRegion reads the EC2 instance region via the AWS metadata service.
+// getRegion reads the EC2 instance region via our lightweight IMDS client.
 func getRegion(ctx context.Context) (string, error) {
-	imdsConfig, err := awsConfig.LoadDefaultConfig(ctx,
-		awsConfig.WithHTTPClient(&http.Client{
-			Timeout: clientTimeout,
-			// Only EC2 internal network requests are allowed to the metadata service.
-			Transport: proxy.Without(),
-		}),
-	)
+	mdClient := awsimds.NewIMDSClient(&http.Client{
+		Timeout:   clientTimeout,
+		Transport: proxy.Without(),
+	})
+	mdClient.GetToken(ctx)
+	region, err := mdClient.GetRegion(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "getting region from EC2 metadata service")
 	}
-	imdsClient := imds.NewFromConfig(imdsConfig)
-	regionOutput, err := imdsClient.GetRegion(ctx, &imds.GetRegionInput{})
-	if err != nil {
-		return "", errors.Wrap(err, "getting region from EC2 metadata service")
-	}
-	return regionOutput.Region, nil
+	return region, nil
 }
 
 // createECRClient creates an AWS ECR SDK client based on the integration config.
