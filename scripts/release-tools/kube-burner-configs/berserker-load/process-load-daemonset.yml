@@ -12,8 +12,6 @@ spec:
       labels:
         app: process-load-{{.Replica}}
     spec:
-      imagePullSecrets:
-        - name: {{.JobName}}-{{.Replica}}
       containers:
       - args:
         - sleep

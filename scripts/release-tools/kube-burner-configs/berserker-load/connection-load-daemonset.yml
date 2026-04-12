@@ -20,8 +20,6 @@ spec:
       labels:
         app: connection-load-{{.Replica}}
     spec:
-      imagePullSecrets:
-      - name: {{.JobName}}-{{.Replica}}
       containers:
       - image: quay.io/stackrox-io/berserker:network-1.0-86-g3464e60064
         resources:
