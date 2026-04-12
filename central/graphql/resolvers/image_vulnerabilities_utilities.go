@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type imageCVEV2Resolver struct {
@@ -94,7 +93,7 @@ func (resolver *imageCVEV2Resolver) Cvss(ctx context.Context) float64 {
 
 func (resolver *imageCVEV2Resolver) FirstImageOccurrence(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFirstImageOccurrence()
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+	return timestamp(value)
 }
 
 func (resolver *imageCVEV2Resolver) Id(ctx context.Context) graphql.ID {

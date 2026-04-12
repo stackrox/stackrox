@@ -393,7 +393,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilityLastScanned() {
 	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	lastScanned, err := vuln.LastScanned(ctx)
 	s.NoError(err)
-	expected, err := protocompat.ConvertTimestampToGraphqlTimeOrError(node.data.GetScan().GetScanTime())
+	expected, err := timestamp(node.data.GetScan().GetScanTime())
 	s.NoError(err)
 	s.Equal(expected, lastScanned)
 }

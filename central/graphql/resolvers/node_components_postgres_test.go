@@ -245,7 +245,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	lastScanned, err := comp.LastScanned(ctx)
 	s.NoError(err)
-	expected, err := protocompat.ConvertTimestampToGraphqlTimeOrError(node.data.GetScan().GetScanTime())
+	expected, err := timestamp(node.data.GetScan().GetScanTime())
 	s.NoError(err)
 	s.Equal(expected, lastScanned)
 
@@ -258,7 +258,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 	lastScanned, err = comp.LastScanned(ctx)
 	s.NoError(err)
-	expected, err = protocompat.ConvertTimestampToGraphqlTimeOrError(node.data.GetScan().GetScanTime())
+	expected, err = timestamp(node.data.GetScan().GetScanTime())
 	s.NoError(err)
 	s.Equal(expected, lastScanned)
 }

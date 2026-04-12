@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -74,16 +73,6 @@ func ConvertTimeToTimestampOrNil(goTime *time.Time) *timestamppb.Timestamp {
 		return nil
 	}
 	return pbTime
-}
-
-// ConvertTimestampToGraphqlTimeOrError converts a proto timestamp
-// to a graphql Time, or returns an error if there is one.
-func ConvertTimestampToGraphqlTimeOrError(pbTime *timestamppb.Timestamp) (*graphql.Time, error) {
-	if pbTime == nil {
-		return nil, nil
-	}
-
-	return &graphql.Time{Time: pbTime.AsTime()}, pbTime.CheckValid()
 }
 
 // ConvertTimestampToTimeOrError converts a proto timestamp

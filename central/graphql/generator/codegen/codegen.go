@@ -30,7 +30,7 @@ var templates = map[string]string{
 	"pointerslice": `resolver.root.wrap{{plural .Type.Elem.Elem.Name}}(value, nil)`,
 	"raw":          `value`,
 	"rawslice":     `value`,
-	"time":         `protocompat.ConvertTimestampToGraphqlTimeOrError(value)`,
+	"time":         `timestamp(value)`,
 }
 
 func listName(td typeData) string {

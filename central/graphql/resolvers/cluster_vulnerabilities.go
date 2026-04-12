@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -399,7 +398,7 @@ func (resolver *clusterCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 }
 
 func (resolver *clusterCVEResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
+	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
 func (resolver *clusterCVEResolver) CVE(_ context.Context) string {
@@ -407,7 +406,7 @@ func (resolver *clusterCVEResolver) CVE(_ context.Context) string {
 }
 
 func (resolver *clusterCVEResolver) LastModified(_ context.Context) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetLastModified())
+	return timestamp(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
 func (resolver *clusterCVEResolver) Link(_ context.Context) string {
@@ -415,7 +414,7 @@ func (resolver *clusterCVEResolver) Link(_ context.Context) string {
 }
 
 func (resolver *clusterCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
+	return timestamp(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
 func (resolver *clusterCVEResolver) ScoreVersion(_ context.Context) string {
@@ -427,11 +426,11 @@ func (resolver *clusterCVEResolver) Summary(_ context.Context) string {
 }
 
 func (resolver *clusterCVEResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeStart())
+	return timestamp(resolver.data.GetSnoozeStart())
 }
 
 func (resolver *clusterCVEResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeExpiry())
+	return timestamp(resolver.data.GetSnoozeExpiry())
 }
 
 func (resolver *clusterCVEResolver) Suppressed(_ context.Context) bool {

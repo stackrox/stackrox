@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
@@ -347,7 +346,7 @@ func (resolver *imageCVEV2Resolver) CreatedAt(_ context.Context) (*graphql.Time,
 	if resolver.flatData != nil {
 		return convertTimeToGraphQLTime(resolver.flatData.GetFirstDiscoveredInSystem()), nil
 	}
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
+	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
 func (resolver *imageCVEV2Resolver) CVE(_ context.Context) string {
@@ -355,7 +354,7 @@ func (resolver *imageCVEV2Resolver) CVE(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) LastModified(_ context.Context) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetLastModified())
+	return timestamp(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
 func (resolver *imageCVEV2Resolver) Link(_ context.Context) string {
@@ -366,7 +365,7 @@ func (resolver *imageCVEV2Resolver) PublishedOn(_ context.Context) (*graphql.Tim
 	if resolver.flatData != nil {
 		return convertTimeToGraphQLTime(resolver.flatData.GetPublishDate()), nil
 	}
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
+	return timestamp(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
 func (resolver *imageCVEV2Resolver) ScoreVersion(_ context.Context) string {
@@ -480,7 +479,7 @@ func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.T
 			return nil, errors.New("multiple images matched for last scanned image vulnerability query")
 		}
 
-		return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+		return timestamp(images[0].GetScan().GetScanTime())
 	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
@@ -496,7 +495,7 @@ func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.T
 		return nil, errors.New("multiple images matched for last scanned image vulnerability query")
 	}
 
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	return timestamp(images[0].GetScan().GetScanTime())
 }
 
 func (resolver *imageCVEV2Resolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
@@ -605,7 +604,7 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 	if resolver.flatData != nil {
 		return convertTimeToGraphQLTime(resolver.flatData.GetFirstImageOccurrence()), nil
 	}
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetFirstImageOccurrence())
+	return timestamp(resolver.data.GetFirstImageOccurrence())
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {

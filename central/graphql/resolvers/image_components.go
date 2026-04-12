@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -311,7 +310,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 			return nil, errors.New("multiple images matched for last scanned image component query")
 		}
 
-		return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+		return timestamp(images[0].GetScan().GetScanTime())
 	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
@@ -327,7 +326,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		return nil, errors.New("multiple images matched for last scanned image component query")
 	}
 
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	return timestamp(images[0].GetScan().GetScanTime())
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard

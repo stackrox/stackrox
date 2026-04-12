@@ -324,7 +324,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 					assert.NotNil(t, actualCreated)
 					expectedTimestamp, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 3000))
 					assert.NoError(t, err)
-					expectedCreated, err := protocompat.ConvertTimestampToGraphqlTimeOrError(expectedTimestamp)
+					expectedCreated, err := timestamp(expectedTimestamp)
 					assert.NoError(t, err)
 					assert.Equal(t, expectedCreated, actualCreated)
 				}

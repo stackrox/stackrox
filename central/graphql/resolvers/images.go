@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -412,7 +411,7 @@ func (resolver *imageResolver) OperatingSystem(_ context.Context) string {
 
 func (resolver *imageResolver) ScanTime(_ context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScan().GetScanTime()
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+	return timestamp(value)
 }
 
 func (resolver *imageResolver) ScannerVersion(_ context.Context) string {
@@ -549,7 +548,7 @@ func (resolver *Resolver) wrapBaseImage(baseImageInfos []*storage.BaseImageInfo)
 	// All entries should have the same digest and create time, take the first one
 	imageSha := baseImageInfos[0].GetBaseImageDigest()
 	createTimestamp := baseImageInfos[0].GetCreated()
-	created, err := protocompat.ConvertTimestampToGraphqlTimeOrError(createTimestamp)
+	created, err := timestamp(createTimestamp)
 	if err != nil {
 		return nil, err
 	}
