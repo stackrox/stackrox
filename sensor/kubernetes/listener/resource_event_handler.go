@@ -550,9 +550,15 @@ func handle(
 	eventLock *sync.Mutex,
 	tracker *informerSyncTracker,
 ) {
-	// Strip unnecessary fields before caching to reduce memory.
-	if err := informer.SetTransform(stripCacheTransform); err != nil {
-		log.Warnf("Failed to set transform for informer %s: %v", name, err)
+	// If this is a k8swatch adapter (not a real informer), start its watch goroutine.
+	// Real informers are started by SharedInformerFactory.Start(); adapters manage themselves.
+	if adapter, ok := informer.(*k8swatch.InformerAdapter); ok {
+		go adapter.Run(stopSignal.Done())
+	} else {
+		// Strip unnecessary fields before caching to reduce memory.
+		if err := informer.SetTransform(stripCacheTransform); err != nil {
+			log.Warnf("Failed to set transform for informer %s: %v", name, err)
+		}
 	}
 	tracker.register(name)
 	utils.Should(func() error {
