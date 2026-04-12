@@ -211,7 +211,7 @@ func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.Sco
 			},
 		},
 	}
-	return sac.TestScopeCheckerCoreFromFullScopeMap(t, testScope)
+	return sac.TestScopeCheckerCoreFromFullScopeMap(testScope)
 }
 
 func createTestReadMultipleResourcesWithDifferentNamespaceScope(t *testing.T) sac.ScopeCheckerCore {
@@ -237,7 +237,7 @@ func createTestReadMultipleResourcesWithDifferentNamespaceScope(t *testing.T) sa
 			},
 		},
 	}
-	return sac.TestScopeCheckerCoreFromFullScopeMap(t, testScope)
+	return sac.TestScopeCheckerCoreFromFullScopeMap(testScope)
 }
 
 func createTestResourceLevelReadAndReadWriteMixScope(t *testing.T) sac.ScopeCheckerCore {
@@ -253,5 +253,5 @@ func createTestResourceLevelReadAndReadWriteMixScope(t *testing.T) sac.ScopeChec
 		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resourceImage),
 		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resourceRisk),
 	}
-	return sac.TestScopeCheckerCoreFromAccessResourceMap(t, resourcesWithAccess)
+	return sac.TestScopeCheckerCoreFromAccessResourceMap(resourcesWithAccess)
 }

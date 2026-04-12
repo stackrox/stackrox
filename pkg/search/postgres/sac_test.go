@@ -95,7 +95,7 @@ func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.Sco
 			},
 		},
 	}
-	return sac.TestScopeCheckerCoreFromFullScopeMap(t, testScope)
+	return sac.TestScopeCheckerCoreFromFullScopeMap(testScope)
 }
 
 func TestEnrichQueryWithSACFilter(t *testing.T) {

@@ -1,7 +1,6 @@
 package sac
 
 import (
-	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -33,7 +32,7 @@ type testScopeCheckerCore struct {
 
 // TestScopeCheckerCoreFromAccessResourceMap creates a ScopeCheckerCore that allows full access to the input
 // (accessMode, Resource) pairs for testing purposes.
-func TestScopeCheckerCoreFromAccessResourceMap(_ *testing.T, targetResources []permissions.ResourceWithAccess) ScopeCheckerCore {
+func TestScopeCheckerCoreFromAccessResourceMap(targetResources []permissions.ResourceWithAccess) ScopeCheckerCore {
 	includedResourceScope := &TestResourceScope{
 		Included: true,
 	}
@@ -52,7 +51,7 @@ func TestScopeCheckerCoreFromAccessResourceMap(_ *testing.T, targetResources []p
 
 // TestScopeCheckerCoreFromFullScopeMap creates a ScopeCheckerCore that allows scoped access to the input
 // scope tree for testing purposes.
-func TestScopeCheckerCoreFromFullScopeMap(_ *testing.T, targetScope TestScopeMap) ScopeCheckerCore {
+func TestScopeCheckerCoreFromFullScopeMap(targetScope TestScopeMap) ScopeCheckerCore {
 	return &testScopeCheckerCore{
 		scope: targetScope,
 	}

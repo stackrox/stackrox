@@ -28,7 +28,7 @@ const (
 
 type testCase struct {
 	description    string
-	scopeGenerator func(*testing.T) *effectiveaccessscope.ScopeTree
+	scopeGenerator func() *effectiveaccessscope.ScopeTree
 	expected       *v1.Query
 	hasError       bool
 }
@@ -100,7 +100,7 @@ func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 
 	for _, tc := range testCases {
 		topLevelTest.Run(tc.description, func(t *testing.T) {
-			eas := tc.scopeGenerator(t)
+			eas := tc.scopeGenerator()
 			filter, err := BuildClusterLevelSACQueryFilter(eas)
 			assert.True(t, tc.hasError == (err != nil))
 			correctFilter := isSameQuery(tc.expected, filter)
@@ -254,7 +254,7 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 
 	for _, tc := range testCases {
 		topLevelTest.Run(tc.description, func(t *testing.T) {
-			eas := tc.scopeGenerator(t)
+			eas := tc.scopeGenerator()
 			filter, err := BuildClusterNamespaceLevelSACQueryFilter(eas)
 			assert.True(t, tc.hasError == (err != nil))
 			correctFilter := isSameQuery(tc.expected, filter)

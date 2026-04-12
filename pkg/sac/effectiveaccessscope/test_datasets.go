@@ -1,7 +1,6 @@
 package effectiveaccessscope
 
 import (
-	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -206,22 +205,22 @@ var (
 )
 
 // TestTreeNil provides a nil mock ScopeTree for testing purposes.
-func TestTreeNil(_ *testing.T) *ScopeTree {
+func TestTreeNil() *ScopeTree {
 	return nil
 }
 
 // TestTreeDenyAllEffectiveAccessScope provides a getter on DenyAllAccessScope for testing purposes.
-func TestTreeDenyAllEffectiveAccessScope(_ *testing.T) *ScopeTree {
+func TestTreeDenyAllEffectiveAccessScope() *ScopeTree {
 	return DenyAllEffectiveAccessScope()
 }
 
 // TestTreeUnrestrictedEffectiveAccessScope provides a getter on UnrestrictedEffectiveAccessScope for testing purposes.
-func TestTreeUnrestrictedEffectiveAccessScope(_ *testing.T) *ScopeTree {
+func TestTreeUnrestrictedEffectiveAccessScope() *ScopeTree {
 	return UnrestrictedEffectiveAccessScope()
 }
 
 // TestTreeAllExcluded provides a mock ScopeTree with an excluded root for testing purposes.
-func TestTreeAllExcluded(_ *testing.T) *ScopeTree {
+func TestTreeAllExcluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Excluded,
 		clusterIDToName: clusterIDs,
@@ -253,14 +252,14 @@ func TestTreeAllExcluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeInvalidPartialRootWithoutChildren provides a mock ScopeTree for testing purposes.
-func TestTreeInvalidPartialRootWithoutChildren(_ *testing.T) *ScopeTree {
+func TestTreeInvalidPartialRootWithoutChildren() *ScopeTree {
 	return &ScopeTree{
 		State: Partial,
 	}
 }
 
 // TestTreeInvalidExcludedRootPartialBranch provides a mock ScopeTree with an excluded root for testing purposes.
-func TestTreeInvalidExcludedRootPartialBranch(_ *testing.T) *ScopeTree {
+func TestTreeInvalidExcludedRootPartialBranch() *ScopeTree {
 	return &ScopeTree{
 		State:           Excluded,
 		clusterIDToName: clusterIDs,
@@ -292,7 +291,7 @@ func TestTreeInvalidExcludedRootPartialBranch(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeOneClusterTreeFullyIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeOneClusterTreeFullyIncluded(_ *testing.T) *ScopeTree {
+func TestTreeOneClusterTreeFullyIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -324,7 +323,7 @@ func TestTreeOneClusterTreeFullyIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeOneClusterRootFullyIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeOneClusterRootFullyIncluded(_ *testing.T) *ScopeTree {
+func TestTreeOneClusterRootFullyIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -338,7 +337,7 @@ func TestTreeOneClusterRootFullyIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeOneClusterNamespacePairOnlyIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeOneClusterNamespacePairOnlyIncluded(_ *testing.T) *ScopeTree {
+func TestTreeOneClusterNamespacePairOnlyIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -370,7 +369,7 @@ func TestTreeOneClusterNamespacePairOnlyIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeOneClusterTwoNamespacesIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeOneClusterTwoNamespacesIncluded(_ *testing.T) *ScopeTree {
+func TestTreeOneClusterTwoNamespacesIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -402,7 +401,7 @@ func TestTreeOneClusterTwoNamespacesIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeOneClusterMultipleNamespacesIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeOneClusterMultipleNamespacesIncluded(_ *testing.T) *ScopeTree {
+func TestTreeOneClusterMultipleNamespacesIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -434,7 +433,7 @@ func TestTreeOneClusterMultipleNamespacesIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeTwoClusterNamespacePairsIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeTwoClusterNamespacePairsIncluded(_ *testing.T) *ScopeTree {
+func TestTreeTwoClusterNamespacePairsIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -466,7 +465,7 @@ func TestTreeTwoClusterNamespacePairsIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeClusterNamespaceMixIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeClusterNamespaceMixIncluded(_ *testing.T) *ScopeTree {
+func TestTreeClusterNamespaceMixIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -498,7 +497,7 @@ func TestTreeClusterNamespaceMixIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeClusterNamespaceFullClusterMixIncluded provides a mock ScopeTree for testing purposes.
-func TestTreeClusterNamespaceFullClusterMixIncluded(_ *testing.T) *ScopeTree {
+func TestTreeClusterNamespaceFullClusterMixIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -530,7 +529,7 @@ func TestTreeClusterNamespaceFullClusterMixIncluded(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeMinimalPartialTree provides a mock ScopeTree for testing purposes
-func TestTreeMinimalPartialTree(_ *testing.T) *ScopeTree {
+func TestTreeMinimalPartialTree() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,
@@ -554,7 +553,7 @@ func TestTreeMinimalPartialTree(_ *testing.T) *ScopeTree {
 }
 
 // TestTreeTwoClustersFullyIncluded provides a mock ScopeTree for testing purposes
-func TestTreeTwoClustersFullyIncluded(_ *testing.T) *ScopeTree {
+func TestTreeTwoClustersFullyIncluded() *ScopeTree {
 	return &ScopeTree{
 		State:           Partial,
 		clusterIDToName: clusterIDs,

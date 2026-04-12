@@ -247,7 +247,7 @@ func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resources
 	}
 	contextMap[MixedClusterAndNamespaceReadCtx] =
 		sac.WithGlobalAccessScopeChecker(ctx,
-			sac.TestScopeCheckerCoreFromFullScopeMap(t,
+			sac.TestScopeCheckerCoreFromFullScopeMap(
 				sac.TestScopeMap{
 					storage.Access_READ_ACCESS: mixedAccessScope,
 				}))
