@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"runtime"
 	"strings"
 	"time"
@@ -92,14 +93,28 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(responseJSON)
 }
 
-// Handler returns an HTTP handler for the graphql api endpoint
+// Handler returns an HTTP handler for the graphql api endpoint.
+// The GraphQL schema is parsed lazily on the first request to avoid
+// 5 MB of upfront memory allocation when no UI/API client is connected.
 func Handler() http.Handler {
-	opts := []graphql.SchemaOpt{graphql.Logger(&logger{})}
-	s := resolvers.Schema()
-	ourSchema, err := graphql.ParseSchema(s, resolvers.New(), opts...)
-	if err != nil {
-		log.Errorf("Unable to parse schema:\n%q", s)
-		panic(err)
-	}
-	return &relayHandler{Schema: ourSchema}
+	return &lazyRelayHandler{}
+}
+
+type lazyRelayHandler struct {
+	once    sync.Once
+	handler *relayHandler
+}
+
+func (h *lazyRelayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.once.Do(func() {
+		opts := []graphql.SchemaOpt{graphql.Logger(&logger{})}
+		s := resolvers.Schema()
+		ourSchema, err := graphql.ParseSchema(s, resolvers.New(), opts...)
+		if err != nil {
+			log.Errorf("Unable to parse schema:\n%q", s)
+			panic(err)
+		}
+		h.handler = &relayHandler{Schema: ourSchema}
+	})
+	h.handler.ServeHTTP(w, r)
 }
