@@ -37,10 +37,11 @@ type Handler func(eventType string, object json.RawMessage)
 
 // Watcher watches a Kubernetes API resource and delivers events to a handler.
 type Watcher struct {
-	apiPath string
-	handler Handler
-	client  *http.Client
-	baseURL string // override for testing; defaults to "https://kubernetes.default.svc"
+	apiPath   string
+	handler   Handler
+	client    *http.Client
+	baseURL   string // override for testing; defaults to "https://kubernetes.default.svc"
+	initialRV string // start watching from this resourceVersion (from LIST)
 }
 
 // New creates a watcher for the given API path (e.g., "/apis/apps/v1/deployments").
@@ -56,7 +57,7 @@ func New(apiPath string, client *http.Client, handler Handler) *Watcher {
 // Run starts watching and blocks until the context is cancelled.
 // It automatically reconnects on failures with exponential backoff.
 func (w *Watcher) Run(ctx context.Context) {
-	var resourceVersion string
+	resourceVersion := w.initialRV
 	backoff := time.Second
 
 	var eventCount, reconnectCount int

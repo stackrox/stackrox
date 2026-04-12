@@ -64,10 +64,9 @@ func (a *InformerAdapter) Run(stopCh <-chan struct{}) {
 
 	log.Infof("k8swatch adapter: starting for %s (handlers=%d)", a.apiPath, len(a.handlers))
 
-	// Do an initial LIST to populate existing objects (like informers do).
-	// This ensures HasSynced() returns true and all existing resources are
-	// delivered as ADDED events before the watch begins.
-	a.initialList(ctx)
+	// Do LIST first, then WATCH from the LIST's resourceVersion.
+	// This ensures no events are missed between LIST and WATCH.
+	listRV := a.initialList(ctx)
 
 	watcher := New(a.apiPath, a.client, func(eventType string, raw json.RawMessage) {
 
@@ -104,70 +103,71 @@ func (a *InformerAdapter) Run(stopCh <-chan struct{}) {
 	})
 
 	watcher.baseURL = a.baseURL
+	watcher.initialRV = listRV
 	watcher.Run(ctx)
 }
 
-// initialList performs a LIST request to get all existing objects and delivers
-// them as ADDED events. This replicates what informers do before starting a watch.
-func (a *InformerAdapter) initialList(ctx context.Context) {
+// initialList performs a LIST request, delivers existing objects as ADDED events,
+// and returns the list resourceVersion so the WATCH can resume from the right point.
+func (a *InformerAdapter) initialList(ctx context.Context) string {
 	base := a.baseURL
 	if base == "" {
 		base = "https://kubernetes.default.svc"
 	}
-	url := fmt.Sprintf("%s%s", base, a.apiPath)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s%s", base, a.apiPath), nil)
 	if err != nil {
-		log.Warnf("k8swatch adapter %s: failed to create list request: %v", a.apiPath, err)
+		log.Warnf("k8swatch adapter %s: list request: %v", a.apiPath, err)
 		a.hasSynced.Signal()
-		return
+		return ""
 	}
 
-	// Add auth token for in-cluster; skip for test servers
 	if a.baseURL == "" {
 		token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 		if err != nil {
-			log.Warnf("k8swatch adapter %s: can't read token for initial list: %v", a.apiPath, err)
+			log.Warnf("k8swatch adapter %s: token: %v", a.apiPath, err)
 			a.hasSynced.Signal()
-			return
+			return ""
 		}
 		req.Header.Set("Authorization", "Bearer "+string(token))
 	}
 
 	resp, err := a.client.Do(req)
 	if err != nil {
-		log.Warnf("k8swatch adapter %s: initial list failed: %v", a.apiPath, err)
+		log.Warnf("k8swatch adapter %s: list failed: %v", a.apiPath, err)
 		a.hasSynced.Signal()
-		return
+		return ""
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Warnf("k8swatch adapter %s: initial list returned %d", a.apiPath, resp.StatusCode)
+		log.Warnf("k8swatch adapter %s: list returned %d", a.apiPath, resp.StatusCode)
 		a.hasSynced.Signal()
-		return
+		return ""
 	}
 
-	// Parse the list response — k8s list responses have {"items": [...]}
 	var listResp struct {
+		Metadata struct {
+			ResourceVersion string `json:"resourceVersion"`
+		} `json:"metadata"`
 		Items []json.RawMessage `json:"items"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
-		log.Warnf("k8swatch adapter %s: failed to decode list response: %v", a.apiPath, err)
+		log.Warnf("k8swatch adapter %s: decode list: %v", a.apiPath, err)
 		a.hasSynced.Signal()
-		return
+		return ""
 	}
 
-	log.Infof("k8swatch adapter: %s initial list: %d objects", a.apiPath, len(listResp.Items))
+	log.Infof("k8swatch adapter: %s initial list: %d objects (rv=%s)",
+		a.apiPath, len(listResp.Items), listResp.Metadata.ResourceVersion)
 
-	// Deliver each existing object as an ADDED event
 	a.handlerMu.RLock()
 	defer a.handlerMu.RUnlock()
 
 	for _, raw := range listResp.Items {
 		obj := a.newObject()
 		if err := json.Unmarshal(raw, obj); err != nil {
-			log.Warnf("k8swatch adapter %s: failed to unmarshal list item: %v", a.apiPath, err)
+			log.Warnf("k8swatch adapter %s: unmarshal list item: %v", a.apiPath, err)
 			continue
 		}
 		for _, handler := range a.handlers {
@@ -176,7 +176,8 @@ func (a *InformerAdapter) initialList(ctx context.Context) {
 	}
 
 	a.hasSynced.Signal()
-	log.Infof("k8swatch adapter: %s marked synced after initial list", a.apiPath)
+	log.Infof("k8swatch adapter: %s synced (rv=%s)", a.apiPath, listResp.Metadata.ResourceVersion)
+	return listResp.Metadata.ResourceVersion
 }
 
 // Stubs for cache.SharedIndexInformer interface methods we don't use.
