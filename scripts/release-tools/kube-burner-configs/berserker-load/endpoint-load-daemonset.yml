@@ -15,7 +15,7 @@ spec:
       imagePullSecrets:
       - name: {{.JobName}}-{{.Replica}}
       containers:
-      - image: quay.io/rhacs-eng/qa:berserker-1.0-40-ge3bd96aa5a
+      - image: quay.io/stackrox-io/berserker:1.0-86-g3464e60064
         resources:
           requests:
             memory: "100Mi"
