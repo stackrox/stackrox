@@ -171,7 +171,9 @@ func TestAdapter_ImplementsSharedIndexInformer(t *testing.T) {
 	// Verify stub methods don't panic
 	assert.Nil(t, adapter.GetStore())
 	assert.Nil(t, adapter.GetController())
-	assert.Nil(t, adapter.GetIndexer())
+	// GetIndexer must return non-nil (handle() calls .List() on it)
+	assert.NotNil(t, adapter.GetIndexer())
+	assert.Empty(t, adapter.GetIndexer().List())
 	assert.Equal(t, "", adapter.LastSyncResourceVersion())
 	assert.False(t, adapter.IsStopped())
 	assert.NoError(t, adapter.AddIndexers(nil))

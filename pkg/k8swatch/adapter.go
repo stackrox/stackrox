@@ -201,8 +201,10 @@ func (a *InformerAdapter) SetWatchErrorHandlerWithContext(_ cache.WatchErrorHand
 func (a *InformerAdapter) SetTransform(_ cache.TransformFunc) error { return nil }
 func (a *InformerAdapter) IsStopped() bool                          { return false }
 func (a *InformerAdapter) AddIndexers(_ cache.Indexers) error       { return nil }
-func (a *InformerAdapter) GetIndexer() cache.Indexer                { return nil }
-func (a *InformerAdapter) RunWithContext(_ context.Context)         { /* Run() handles lifecycle */ }
+func (a *InformerAdapter) GetIndexer() cache.Indexer {
+	return cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+}
+func (a *InformerAdapter) RunWithContext(_ context.Context) { /* Run() handles lifecycle */ }
 func (a *InformerAdapter) String() string {
 	return fmt.Sprintf("k8swatch.InformerAdapter{%s}", a.apiPath)
 }
