@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -23,12 +24,12 @@ var (
 	}
 
 	// TestSingleUUIDKeyStructsSchema is the go schema for table `test_single_uuid_key_structs`.
-	TestSingleUUIDKeyStructsSchema = func() *walker.Schema {
+	TestSingleUUIDKeyStructsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.TestSingleUUIDKeyStruct)(nil)), "test_single_uuid_key_structs")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testsingleuuidkeystruct", (*storage.TestSingleUUIDKeyStruct)(nil)))
 		schema.ScopingResource = resources.Namespace
 		return schema
-	}()
+	})
 )
 
 const (

@@ -10,8 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/normalize"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sensor/queue"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	enrichInterval = 5 * time.Second
+	enrichIntervalMin = 5 * time.Second
+	enrichIntervalMax = 2 * time.Minute
 
 	pruneInterval       = 5 * time.Minute
 	containerExpiration = 30 * time.Second
@@ -169,36 +170,51 @@ func (e *enricher) Stopped() concurrency.ReadOnlyErrorSignal {
 func (e *enricher) processLoop(ctx context.Context) {
 	defer e.stopper.Flow().ReportStopped()
 	defer close(e.indicators)
-	ticker := time.NewTicker(enrichInterval)
+
+	// Adaptive ticker: starts at enrichIntervalMin and backs off to
+	// enrichIntervalMax when no unresolved containers are found. Resets
+	// to min on new metadata callbacks. This avoids 720 LRU scans/hour
+	// on idle clusters while keeping fast enrichment on active ones.
+	currentInterval := enrichIntervalMin
+	ticker := time.NewTicker(currentInterval)
 	expirationTicker := time.NewTicker(pruneInterval)
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debugf("process indicator enricher stopped: %s", ctx.Err())
 			return
-		// unresolved indicators
 		case <-ticker.C:
+			enriched := false
 			for _, containerID := range e.lru.Keys() {
 				if metadata, ok, _ := e.clusterEntities.LookupByContainerID(containerID); ok {
 					e.scanAndEnrich(metadata)
+					enriched = true
 				}
 			}
+			// Back off when idle: double the interval up to the max.
+			if !enriched && e.lru.Len() == 0 {
+				currentInterval = min(currentInterval*2, enrichIntervalMax)
+			} else {
+				currentInterval = enrichIntervalMin
+			}
+			ticker.Reset(currentInterval)
 		case <-expirationTicker.C:
 			for _, containerID := range e.lru.Keys() {
 				wrap, exists := e.lru.Peek(containerID)
 				if !exists {
 					continue
 				}
-				// If the current value has not expired, then break because all the next values are newer
 				if wrap.expiration.After(time.Now()) {
 					break
 				}
 				e.lru.Remove(containerID)
 			}
 			metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
-		// call backs
 		case metadata := <-e.metadataCallbackChan:
 			e.scanAndEnrich(metadata)
+			// Reset to fast interval on new activity.
+			currentInterval = enrichIntervalMin
+			ticker.Reset(currentInterval)
 		}
 	}
 }

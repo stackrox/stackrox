@@ -123,27 +123,8 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	assert.Nil(t, protoTSInvalid)
 }
 
-func TestConvertTimestampToGraphqlTimeOrError(t *testing.T) {
-	gqlTime, err := ConvertTimestampToGraphqlTimeOrError(nil)
-	assert.NoError(t, err)
-	assert.Nil(t, gqlTime)
-
-	protoTime := &timestamppb.Timestamp{
-		Seconds: 2345678901,
-		Nanos:   234567891,
-	}
-	gqlTime, err = ConvertTimestampToGraphqlTimeOrError(protoTime)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(2345678901234567891), gqlTime.UnixNano())
-
-	// Negative Nanos is not valid for Timestamp.
-	invalidProtoTime := &timestamppb.Timestamp{
-		Nanos: -1,
-	}
-	gqlTime, err = ConvertTimestampToGraphqlTimeOrError(invalidProtoTime)
-	assert.Error(t, err)
-	assert.NotNil(t, gqlTime)
-}
+// TestConvertTimestampToGraphqlTimeOrError was moved to
+// central/graphql/resolvers/ along with the function it tests.
 
 func TestGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
 	timeString := "2017-11-16T19:35:32.012345678Z"

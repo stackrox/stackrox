@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,10 +23,10 @@ var (
 	}
 
 	// TestChild1P4Schema is the go schema for table `test_child1_p4`.
-	TestChild1P4Schema = func() *walker.Schema {
+	TestChild1P4Schema = sync.OnceValue(func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.TestChild1P4)(nil)), "test_child1_p4")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.TestParent4": TestParent4Schema,
+			"storage.TestParent4": TestParent4Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -37,7 +38,7 @@ var (
 		}...)
 		schema.ScopingResource = resources.Namespace
 		return schema
-	}()
+	})
 )
 
 const (
