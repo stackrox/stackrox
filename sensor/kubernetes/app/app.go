@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -40,10 +39,9 @@ func Run() {
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
-	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
-		continuousprofiling.WithDefaultAppName("sensor")); err != nil {
-		log.Errorf("unable to start continuous profiling: %v", err)
-	}
+	// Continuous profiling (pyroscope) removed from sensor — it added 16 deps
+	// including klauspost/compress. The pprof server at :6060 provides equivalent
+	// profiling data via pull-based access. Use `go tool pprof` to collect profiles.
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
