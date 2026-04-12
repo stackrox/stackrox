@@ -1,34 +1,33 @@
 package postgres
 
-import "github.com/stackrox/rox/pkg/set"
+import "github.com/stackrox/rox/pkg/postgres/datatypes"
 
-// DataType is the internal enum representation of the type
-type DataType string
+// DataType is re-exported from datatypes for backward compatibility.
+// New code should import pkg/postgres/datatypes directly to avoid
+// pulling in the pgx database driver.
+type DataType = datatypes.DataType
 
-// Defines all the internal types derived from the struct fields
+// Re-export all DataType constants from the lightweight datatypes package.
 const (
-	Bytes       DataType = "bytes"
-	Bool        DataType = "bool"
-	Numeric     DataType = "numeric"
-	String      DataType = "string"
-	DateTime    DataType = "datetime"
-	Map         DataType = "map"
-	Enum        DataType = "enum"
-	StringArray DataType = "stringarray"
-	EnumArray   DataType = "enumarray"
-	Integer     DataType = "integer"
-	IntArray    DataType = "intarray"
-	BigInteger  DataType = "biginteger"
-	UUID        DataType = "uuid"
-	CIDR        DataType = "cidr"
-	DateTimeTZ  DataType = "datetimetz"
+	Bytes       = datatypes.Bytes
+	Bool        = datatypes.Bool
+	Numeric     = datatypes.Numeric
+	String      = datatypes.String
+	DateTime    = datatypes.DateTime
+	Map         = datatypes.Map
+	Enum        = datatypes.Enum
+	StringArray = datatypes.StringArray
+	EnumArray   = datatypes.EnumArray
+	Integer     = datatypes.Integer
+	IntArray    = datatypes.IntArray
+	BigInteger  = datatypes.BigInteger
+	UUID        = datatypes.UUID
+	CIDR        = datatypes.CIDR
+	DateTimeTZ  = datatypes.DateTimeTZ
 )
 
-var (
-	// UnsupportedDerivedFieldDataTypes are the data types to which aggregation functions cannot be applied.
-	// Therefore, any base field having this type cannot be used for derived fields.
-	UnsupportedDerivedFieldDataTypes = set.NewFrozenSet(StringArray, EnumArray, IntArray, Map)
-)
+// UnsupportedDerivedFieldDataTypes is re-exported from datatypes.
+var UnsupportedDerivedFieldDataTypes = datatypes.UnsupportedDerivedFieldDataTypes
 
 // DataTypeToSQLType converts the internal representation to SQL
 func DataTypeToSQLType(dataType DataType) string {

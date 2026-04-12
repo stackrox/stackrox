@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
 
 func authorizerHandler(h http.Handler, authorizer authz.Authorizer, postAuthInterceptor httputil.HTTPInterceptor, route string) http.Handler {
@@ -63,9 +62,11 @@ func NotImplementedOnManagedServices(fn http.Handler) http.Handler {
 	return fn
 }
 
-// NotImplementedWithExternalDatabase returns 501 Not Implemented if the database is running externally
-func NotImplementedWithExternalDatabase(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
+// NotImplementedWithExternalDatabase returns 501 Not Implemented if the database
+// is running externally. The isExternalDB parameter avoids importing pgconfig
+// (and transitively pgx) into non-database binaries like sensor.
+func NotImplementedWithExternalDatabase(fn http.Handler, isExternalDB bool) http.Handler {
+	if env.ManagedCentral.BooleanSetting() || isExternalDB {
 		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
 	}
 

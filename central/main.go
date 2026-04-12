@@ -878,6 +878,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
 			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
+				pgconfig.IsExternalDatabase(),
 			),
 			Compression: true,
 		},
@@ -886,6 +887,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: user.WithRole(accesscontrol.Admin),
 			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
+				pgconfig.IsExternalDatabase(),
 			),
 			Compression: true,
 		},

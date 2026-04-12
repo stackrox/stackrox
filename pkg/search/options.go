@@ -3,7 +3,7 @@ package search
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/datatypes"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -367,25 +367,25 @@ var (
 	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
 	// Custom derived fields to support query aliases.  These fields are only supported in pagination sort options.
-	CompliancePassCount          = newDerivedFieldLabelWithType("Compliance Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceFailCount          = newDerivedFieldLabelWithType("Compliance Fail Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceErrorCount         = newDerivedFieldLabelWithType("Compliance Error Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceInfoCount          = newDerivedFieldLabelWithType("Compliance Info Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceManualCount        = newDerivedFieldLabelWithType("Compliance Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Compliance Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Compliance Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	CompliancePassCount          = newDerivedFieldLabelWithType("Compliance Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
+	ComplianceFailCount          = newDerivedFieldLabelWithType("Compliance Fail Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
+	ComplianceErrorCount         = newDerivedFieldLabelWithType("Compliance Error Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
+	ComplianceInfoCount          = newDerivedFieldLabelWithType("Compliance Info Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
+	ComplianceManualCount        = newDerivedFieldLabelWithType("Compliance Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
+	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Compliance Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
+	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Compliance Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, datatypes.Integer)
 
 	// VM custom fields for sorting severity counts
-	CriticalSeverityCount         = newDerivedFieldLabelWithType("Critical Severity Count", Severity, CustomFieldType, postgres.Integer)
-	FixableCriticalSeverityCount  = newDerivedFieldLabelWithType("Fixable Critical Severity Count", Severity, CustomFieldType, postgres.Integer)
-	ImportantSeverityCount        = newDerivedFieldLabelWithType("Important Severity Count", Severity, CustomFieldType, postgres.Integer)
-	FixableImportantSeverityCount = newDerivedFieldLabelWithType("Fixable Important Severity Count", Severity, CustomFieldType, postgres.Integer)
-	ModerateSeverityCount         = newDerivedFieldLabelWithType("Moderate Severity Count", Severity, CustomFieldType, postgres.Integer)
-	FixableModerateSeverityCount  = newDerivedFieldLabelWithType("Fixable Moderate Severity Count", Severity, CustomFieldType, postgres.Integer)
-	LowSeverityCount              = newDerivedFieldLabelWithType("Low Severity Count", Severity, CustomFieldType, postgres.Integer)
-	FixableLowSeverityCount       = newDerivedFieldLabelWithType("Fixable Low Severity Count", Severity, CustomFieldType, postgres.Integer)
-	UnknownSeverityCount          = newDerivedFieldLabelWithType("Unknown Severity Count", Severity, CustomFieldType, postgres.Integer)
-	FixableUnknownSeverityCount   = newDerivedFieldLabelWithType("Fixable Unknown Severity Count", Severity, CustomFieldType, postgres.Integer)
+	CriticalSeverityCount         = newDerivedFieldLabelWithType("Critical Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	FixableCriticalSeverityCount  = newDerivedFieldLabelWithType("Fixable Critical Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	ImportantSeverityCount        = newDerivedFieldLabelWithType("Important Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	FixableImportantSeverityCount = newDerivedFieldLabelWithType("Fixable Important Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	ModerateSeverityCount         = newDerivedFieldLabelWithType("Moderate Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	FixableModerateSeverityCount  = newDerivedFieldLabelWithType("Fixable Moderate Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	LowSeverityCount              = newDerivedFieldLabelWithType("Low Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	FixableLowSeverityCount       = newDerivedFieldLabelWithType("Fixable Low Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	UnknownSeverityCount          = newDerivedFieldLabelWithType("Unknown Severity Count", Severity, CustomFieldType, datatypes.Integer)
+	FixableUnknownSeverityCount   = newDerivedFieldLabelWithType("Fixable Unknown Severity Count", Severity, CustomFieldType, datatypes.Integer)
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
@@ -563,9 +563,9 @@ var (
 	TestNestedStringCount       = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
 	TestNestedString2Count      = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
 	TestParent1StringSliceCount = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
-	TestEnum1Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
-	TestEnum2Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum2", TestEnum, CustomFieldType, postgres.Integer)
-	TestInvalidEnumCustom       = newDerivedFieldLabelWithType("Invalid Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
+	TestEnum1Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum1", TestEnum, CustomFieldType, datatypes.Integer)
+	TestEnum2Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum2", TestEnum, CustomFieldType, datatypes.Integer)
+	TestInvalidEnumCustom       = newDerivedFieldLabelWithType("Invalid Test String Affected By Enum1", TestEnum, CustomFieldType, datatypes.Integer)
 )
 
 func init() {
@@ -630,7 +630,7 @@ func newDerivedFieldLabel(s string, derivedFrom FieldLabel, derivationType Deriv
 	})
 }
 
-func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationType DerivationType, dataType postgres.DataType) FieldLabel {
+func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationType DerivationType, dataType datatypes.DataType) FieldLabel {
 	return newFieldLabelWithMetadata(s, &DerivedFieldLabelMetadata{
 		DerivedFrom:     derivedFrom,
 		DerivationType:  derivationType,
@@ -654,13 +654,13 @@ func (f FieldLabel) Alias() string {
 type DerivedFieldLabelMetadata struct {
 	DerivedFrom     FieldLabel
 	DerivationType  DerivationType
-	DerivedDataType postgres.DataType
+	DerivedDataType datatypes.DataType
 }
 
 // DerivedTypeData includes metadata showing that a field is derived.
 type DerivedTypeData struct {
 	DerivationType  DerivationType
-	DerivedDataType postgres.DataType
+	DerivedDataType datatypes.DataType
 }
 
 // DerivationType represents a type of derivation.
