@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"sync"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
