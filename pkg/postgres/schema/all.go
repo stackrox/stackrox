@@ -29,8 +29,7 @@ type registeredTable struct {
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
 func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts, featureFlagFuncs ...func() bool) {
 	if _, ok := registeredTables[schema.Table]; ok {
-		log.Fatalf("table %q is already registered for %s", schema.Table, schema.Type)
-		return
+		return // Already registered — idempotent for sync.OnceValue schemas
 	}
 	featureFlagFunc := func() bool { return true }
 	if len(featureFlagFuncs) != 0 {

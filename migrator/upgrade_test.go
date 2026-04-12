@@ -51,7 +51,7 @@ func (s *UpgradeSuite) TearDownTest() {
 }
 
 func (s *UpgradeSuite) setDBVersion(seqNum int, version string) {
-	pkgSchema.ApplySchema()ForTable(s.ctx, s.gormDB, pkgSchema.VersionsSchema().Table)
+	pkgSchema.ApplySchemaForTable(s.ctx, s.gormDB, pkgSchema.VersionsSchema().Table)
 	migVer.SetVersion(s.ctx, s.gormDB, &storage.Version{
 		SeqNum:  int32(seqNum),
 		Version: version,
