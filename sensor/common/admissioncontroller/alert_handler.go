@@ -36,7 +36,7 @@ func (h *alertHandlerImpl) Name() string {
 }
 
 func (h *alertHandlerImpl) Start() error {
-	go h.run()
+	// No goroutine needed — ProcessAlerts handles events on-demand.
 	return nil
 }
 
@@ -60,10 +60,6 @@ func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 
 func (h *alertHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.output
-}
-
-func (h *alertHandlerImpl) run() {
-	<-h.stopSig.Done()
 }
 
 func (h *alertHandlerImpl) ProcessAlerts(alerts *sensor.AdmissionControlAlerts) error {
