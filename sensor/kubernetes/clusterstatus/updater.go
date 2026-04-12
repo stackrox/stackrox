@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,6 +26,8 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	apimachineryversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 )
@@ -203,26 +204,22 @@ func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
 	return metadata
 }
 
+var clusterOperatorGVR = schema.GroupVersionResource{
+	Group: "config.openshift.io", Version: "v1", Resource: "clusteroperators",
+}
+
 func (u *updaterImpl) getOpenshiftVersion() (string, error) {
-	openShiftCfg := u.client.OpenshiftConfig()
-	if openShiftCfg == nil {
-		return "", errors.New("failed to get OpenShift config")
+	if !env.OpenshiftAPI.BooleanSetting() {
+		return "", errors.New("not an OpenShift cluster")
 	}
-	configV1 := openShiftCfg.ConfigV1()
-	if configV1 == nil {
-		return "", errors.Errorf("invalid OpenShift config, %v", openShiftCfg)
-	}
-	operators := configV1.ClusterOperators()
-	if operators == nil {
-		return "", errors.Errorf("cannot get cluster operators from ConfigV1 %v", configV1)
-	}
-	var clusterOperator *configv1.ClusterOperator
+
+	var obj *unstructured.Unstructured
 	err := retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
 			defer cancel()
 			var err error
-			clusterOperator, err = operators.Get(ctx, "openshift-apiserver", metav1.GetOptions{})
+			obj, err = u.client.Dynamic().Resource(clusterOperatorGVR).Get(ctx, "openshift-apiserver", metav1.GetOptions{})
 			if err != nil {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
@@ -242,9 +239,15 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 		return "", err
 	}
 
-	for _, ver := range clusterOperator.Status.Versions {
-		if ver.Name == "operator" {
-			return ver.Version, nil
+	// Extract status.versions[].name=="operator" → version
+	versions, _, _ := unstructured.NestedSlice(obj.Object, "status", "versions")
+	for _, v := range versions {
+		if vm, ok := v.(map[string]interface{}); ok {
+			if name, _ := vm["name"].(string); name == "operator" {
+				if ver, _ := vm["version"].(string); ver != "" {
+					return ver, nil
+				}
+			}
 		}
 	}
 	return "", nil
@@ -307,7 +310,7 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 	// In the case of OpenShift _and_ not having collected metadata previously through cloud providers metadata service,
 	// we can read out the Infrastructure CR for provider specific information.
 	if env.OpenshiftAPI.BooleanSetting() {
-		m, err := u.getProviderMetadataFromOpenShift(ctx, u.client.OpenshiftConfig())
+		m, err := u.getProviderMetadataFromOpenShift(ctx, u.client.Dynamic())
 		if err != nil {
 			log.Error("Failed to obtain provider metadata from config.openshift.io/v1/Infrastructure: ", err)
 		}

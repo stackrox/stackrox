@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	configv1 "github.com/openshift/api/config/v1"
-	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -17,106 +17,129 @@ const (
 	redHatClusterTypeTagKey = "red-hat-clustertype"
 )
 
-type providerMetadataFromOpenShift = func(ctx context.Context, p configVersioned.Interface) (*storage.ProviderMetadata, error)
+var (
+	infrastructureGVR = schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "infrastructures"}
+	clusterVersionGVR = schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "clusterversions"}
+)
 
+type providerMetadataFromOpenShift = func(ctx context.Context, p dynamic.Interface) (*storage.ProviderMetadata, error)
+
+// getProviderMetadataFromOpenShiftConfig reads Infrastructure and ClusterVersion CRs
+// via the dynamic client to determine cloud provider metadata.
 func getProviderMetadataFromOpenShiftConfig(ctx context.Context,
-	client configVersioned.Interface) (*storage.ProviderMetadata, error) {
-	infraCR, err := client.ConfigV1().Infrastructures().Get(ctx, "cluster", metav1.GetOptions{})
+	client dynamic.Interface) (*storage.ProviderMetadata, error) {
+	infraObj, err := client.Resource(infrastructureGVR).Get(ctx, "cluster", metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving cluster infrastructure CR")
 	}
 
-	clusterVersionCR, err := client.ConfigV1().ClusterVersions().Get(ctx, "version", metav1.GetOptions{})
+	versionObj, err := client.Resource(clusterVersionGVR).Get(ctx, "version", metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving cluster version CR")
 	}
 
-	return openShiftCRsToProviderMetadata(infraCR, clusterVersionCR), nil
+	return unstructuredToProviderMetadata(infraObj.Object, versionObj.Object), nil
 }
 
-func openShiftCRsToProviderMetadata(infra *configv1.Infrastructure,
-	clusterVersion *configv1.ClusterVersion) *storage.ProviderMetadata {
-	// The platform status is required to read out the provider specific information. If it is unset,
-	// we can short-circuit here.
-	if infra.Status.PlatformStatus == nil {
+func unstructuredToProviderMetadata(infra, clusterVersion map[string]interface{}) *storage.ProviderMetadata {
+	platformType, _, _ := nestedString(infra, "status", "platformStatus", "type")
+	if platformType == "" {
 		return nil
 	}
 
-	switch infra.Status.PlatformStatus.Type {
-	case configv1.AWSPlatformType:
+	infraName, _, _ := nestedString(infra, "status", "infrastructureName")
+	clusterID, _, _ := nestedString(clusterVersion, "spec", "clusterID")
+
+	clusterMeta := &storage.ClusterMetadata{
+		Type: storage.ClusterMetadata_OCP,
+		Name: infraName,
+		Id:   clusterID,
+	}
+
+	// Check resource tags for managed cluster types (OSD, ROSA, ARO)
+	clusterMeta.Type = clusterTypeFromResourceTags(infra, platformType)
+
+	switch strings.ToLower(platformType) {
+	case "aws":
+		region, _, _ := nestedString(infra, "status", "platformStatus", "aws", "region")
 		return &storage.ProviderMetadata{
-			Region:   infra.Status.PlatformStatus.AWS.Region,
+			Region:   region,
 			Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
 			Verified: true,
-			Cluster: &storage.ClusterMetadata{
-				Type: clusterTypeFromAWSResourceTags(infra.Status.PlatformStatus.AWS.ResourceTags),
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
+			Cluster:  clusterMeta,
 		}
-	case configv1.GCPPlatformType:
+	case "gcp":
+		region, _, _ := nestedString(infra, "status", "platformStatus", "gcp", "region")
+		projectID, _, _ := nestedString(infra, "status", "platformStatus", "gcp", "projectID")
 		return &storage.ProviderMetadata{
-			Region: infra.Status.PlatformStatus.GCP.Region,
+			Region: region,
 			Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
-				Project: infra.Status.PlatformStatus.GCP.ProjectID,
+				Project: projectID,
 			}},
 			Verified: true,
-			Cluster: &storage.ClusterMetadata{
-				Type: clusterTypeFromGCPResourceTags(infra.Status.PlatformStatus.GCP.ResourceTags),
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
+			Cluster:  clusterMeta,
 		}
-	case configv1.AzurePlatformType:
+	case "azure":
 		return &storage.ProviderMetadata{
-			Region:   "",
 			Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
 			Verified: true,
-			Cluster: &storage.ClusterMetadata{
-				Type: clusterTypeFromAzureResourceTags(infra.Status.PlatformStatus.Azure.ResourceTags),
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
+			Cluster:  clusterMeta,
 		}
 	default:
-		return &storage.ProviderMetadata{
-			Cluster: &storage.ClusterMetadata{
-				Type: storage.ClusterMetadata_OCP,
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
-		}
+		return &storage.ProviderMetadata{Cluster: clusterMeta}
 	}
 }
 
-func clusterTypeFromAWSResourceTags(tags []configv1.AWSResourceTag) storage.ClusterMetadata_Type {
-	var clusterType string
+// clusterTypeFromResourceTags extracts the cluster type from resource tags
+// for the given platform type in an unstructured Infrastructure object.
+func clusterTypeFromResourceTags(infra map[string]interface{}, platformType string) storage.ClusterMetadata_Type {
+	platform := strings.ToLower(platformType)
+	tagsPath := []string{"status", "platformStatus", platform, "resourceTags"}
+	tags, _, _ := nestedSlice(infra, tagsPath...)
 	for _, tag := range tags {
-		if tag.Key == redHatClusterTypeTagKey {
-			clusterType = tag.Value
+		if tm, ok := tag.(map[string]interface{}); ok {
+			if key, _ := tm["key"].(string); key == redHatClusterTypeTagKey {
+				if val, _ := tm["value"].(string); val != "" {
+					return clusterMetadataTypeFromResourceTag(strings.ToLower(val))
+				}
+			}
 		}
 	}
-	return clusterMetadataTypeFromResourceTag(strings.ToLower(clusterType))
+	return storage.ClusterMetadata_OCP
 }
 
-func clusterTypeFromGCPResourceTags(tags []configv1.GCPResourceTag) storage.ClusterMetadata_Type {
-	var clusterType string
-	for _, tag := range tags {
-		if tag.Key == redHatClusterTypeTagKey {
-			clusterType = tag.Value
-		}
+// nestedString is a helper to extract a string from nested maps.
+func nestedString(obj map[string]interface{}, fields ...string) (string, bool, error) {
+	val, found, err := nestedField(obj, fields...)
+	if !found || err != nil {
+		return "", found, err
 	}
-	return clusterMetadataTypeFromResourceTag(strings.ToLower(clusterType))
+	s, ok := val.(string)
+	return s, ok, nil
 }
 
-func clusterTypeFromAzureResourceTags(tags []configv1.AzureResourceTag) storage.ClusterMetadata_Type {
-	var clusterType string
-	for _, tag := range tags {
-		if tag.Key == redHatClusterTypeTagKey {
-			clusterType = tag.Value
+func nestedSlice(obj map[string]interface{}, fields ...string) ([]interface{}, bool, error) {
+	val, found, err := nestedField(obj, fields...)
+	if !found || err != nil {
+		return nil, found, err
+	}
+	s, ok := val.([]interface{})
+	return s, ok, nil
+}
+
+func nestedField(obj map[string]interface{}, fields ...string) (interface{}, bool, error) {
+	var val interface{} = obj
+	for _, field := range fields {
+		m, ok := val.(map[string]interface{})
+		if !ok {
+			return nil, false, nil
+		}
+		val, ok = m[field]
+		if !ok {
+			return nil, false, nil
 		}
 	}
-	return clusterMetadataTypeFromResourceTag(strings.ToLower(clusterType))
+	return val, true, nil
 }
 
 func clusterMetadataTypeFromResourceTag(tagValue string) storage.ClusterMetadata_Type {

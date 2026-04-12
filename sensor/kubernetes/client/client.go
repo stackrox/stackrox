@@ -1,11 +1,6 @@
 package client
 
 import (
-	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
-	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
-	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
-	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/client-go/dynamic"
@@ -17,67 +12,18 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Interface implements an interface that bridges Kubernetes and Openshift
+// Interface provides access to Kubernetes and dynamic clients.
+// OpenShift resources are accessed via the Dynamic() client with GVR constants,
+// eliminating the need to import typed OpenShift client-go packages that
+// register scheme types at init() (~10 MB RSS overhead).
 type Interface interface {
 	Kubernetes() kubernetes.Interface
 	Dynamic() dynamic.Interface
-	OpenshiftApps() appVersioned.Interface
-	OpenshiftConfig() configVersioned.Interface
-	OpenshiftRoute() routeVersioned.Interface
-	OpenshiftOperator() operatorVersioned.Interface
 }
 
 type clientSet struct {
-	dynamic           dynamic.Interface
-	k8s               kubernetes.Interface
-	openshiftApps     appVersioned.Interface
-	openshiftConfig   configVersioned.Interface
-	openshiftRoute    routeVersioned.Interface
-	openshiftOperator operatorVersioned.Interface
-}
-
-func mustCreateOpenshiftRouteClient(config *rest.Config) routeVersioned.Interface {
-	if !env.OpenshiftAPI.BooleanSetting() {
-		return nil
-	}
-	client, err := routeVersioned.NewForConfig(config)
-	if err != nil {
-		log.Panicf("Could not generate openshift routes client: %v", err)
-	}
-	return client
-}
-
-func mustCreateOpenshiftAppsClient(config *rest.Config) appVersioned.Interface {
-	if !env.OpenshiftAPI.BooleanSetting() {
-		return nil
-	}
-	client, err := appVersioned.NewForConfig(config)
-	if err != nil {
-		log.Panicf("Could not generate openshift apps client: %v", err)
-	}
-	return client
-}
-
-func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interface {
-	if !env.OpenshiftAPI.BooleanSetting() {
-		return nil
-	}
-	client, err := configVersioned.NewForConfig(config)
-	if err != nil {
-		log.Warnf("Could not generate openshift config client: %v", err)
-	}
-	return client
-}
-
-func mustCreateOpenshiftOperatorClient(config *rest.Config) operatorVersioned.Interface {
-	if !env.OpenshiftAPI.BooleanSetting() {
-		return nil
-	}
-	client, err := operatorVersioned.NewForConfig(config)
-	if err != nil {
-		log.Warnf("Could not generate openshift operator client: %v", err)
-	}
-	return client
+	dynamic dynamic.Interface
+	k8s     kubernetes.Interface
 }
 
 func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
@@ -91,12 +37,8 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 // MustCreateInterfaceFromRest creates a client interface using a rest config as a parameter
 func MustCreateInterfaceFromRest(config *rest.Config) Interface {
 	return &clientSet{
-		dynamic:           mustCreateDynamicClient(config),
-		k8s:               k8sutil.MustCreateK8sClient(config),
-		openshiftApps:     mustCreateOpenshiftAppsClient(config),
-		openshiftConfig:   mustCreateOpenshiftConfigClient(config),
-		openshiftRoute:    mustCreateOpenshiftRouteClient(config),
-		openshiftOperator: mustCreateOpenshiftOperatorClient(config),
+		dynamic: mustCreateDynamicClient(config),
+		k8s:     k8sutil.MustCreateK8sClient(config),
 	}
 }
 
@@ -111,22 +53,6 @@ func MustCreateInterface() Interface {
 
 func (c *clientSet) Kubernetes() kubernetes.Interface {
 	return c.k8s
-}
-
-func (c *clientSet) OpenshiftApps() appVersioned.Interface {
-	return c.openshiftApps
-}
-
-func (c *clientSet) OpenshiftConfig() configVersioned.Interface {
-	return c.openshiftConfig
-}
-
-func (c *clientSet) OpenshiftRoute() routeVersioned.Interface {
-	return c.openshiftRoute
-}
-
-func (c *clientSet) OpenshiftOperator() operatorVersioned.Interface {
-	return c.openshiftOperator
 }
 
 func (c *clientSet) Dynamic() dynamic.Interface {
