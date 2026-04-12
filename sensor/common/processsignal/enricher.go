@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -19,11 +20,21 @@ import (
 
 const (
 	enrichInterval = 5 * time.Second
-	maxLRUCache    = 100000
 
 	pruneInterval       = 5 * time.Minute
 	containerExpiration = 30 * time.Second
 )
+
+// maxLRUCacheSize returns the process enrichment cache size, scaled based
+// on available memory. Default 100K is designed for enterprise clusters;
+// edge clusters with tight memory get proportionally smaller caches.
+func maxLRUCacheSize() int {
+	size, err := queue.ScaleSize(100000)
+	if err != nil || size < 100 {
+		return 100 // minimum for any environment
+	}
+	return size
+}
 
 type enricher struct {
 	lru                  *lru.Cache[string, *containerWrap]
@@ -63,7 +74,7 @@ func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store, pu
 	evictfunc := func(key string, value *containerWrap) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
-	unenrichedCache, err := lru.NewWithEvict[string, *containerWrap](maxLRUCache, evictfunc)
+	unenrichedCache, err := lru.NewWithEvict[string, *containerWrap](maxLRUCacheSize(), evictfunc)
 	if err != nil {
 		panic(err)
 	}
