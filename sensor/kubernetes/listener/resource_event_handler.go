@@ -4,10 +4,6 @@ import (
 	"context"
 	"time"
 
-	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
-	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
-	osOperatorExtVersions "github.com/openshift/client-go/operator/informers/externalversions"
-	osRouteExtVersions "github.com/openshift/client-go/route/informers/externalversions"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
@@ -30,10 +26,24 @@ import (
 	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
+)
+
+// OpenShift GVRs for dynamic informers. Using dynamic informers instead of
+// typed OpenShift client-go informers avoids importing 4 OpenShift scheme
+// packages that register ~8400 types at init(), consuming ~10 MB RSS even
+// on vanilla k8s clusters that never use OpenShift APIs.
+var (
+	deploymentConfigGVR     = schema.GroupVersionResource{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"}
+	routeGVR                = schema.GroupVersionResource{Group: "route.openshift.io", Version: "v1", Resource: "routes"}
+	clusterOperatorGVR      = schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "clusteroperators"}
+	imageDigestMirrorSetGVR = schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "imagedigestmirrorsets"}
+	imageTagMirrorSetGVR    = schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "imagetagmirrorsets"}
+	imageContentSourceGVR   = schema.GroupVersionResource{Group: "operator.openshift.io", Version: "v1alpha1", Resource: "imagecontentsourcepolicies"}
 )
 
 type startable interface {
@@ -136,22 +146,10 @@ func (k *listenerImpl) handleAllEvents() {
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
 	})
 
-	// Create informer factories for needed orchestrators.
-	var osAppsFactory osAppsExtVersions.SharedInformerFactory
-	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osAppsFactory)
-		})
-	}
-
-	var osRouteFactory osRouteExtVersions.SharedInformerFactory
-	if k.client.OpenshiftRoute() != nil {
-		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osRouteFactory)
-		})
-	}
+	// OpenShift informers use the dynamic client instead of typed OpenShift
+	// client-go packages. This avoids importing 4 OpenShift scheme packages
+	// that register ~8400 types at init(), saving ~10 MB RSS on vanilla k8s.
+	isOpenShift := env.OpenshiftAPI.BooleanSetting()
 
 	// We want creates to be treated as updates while existing objects are loaded.
 	var syncingResources concurrency.Flag
@@ -294,49 +292,38 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, informerRoles, roleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerClusterRoles, clusterRoleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 
-	// For openshift clusters only
-	var osConfigFactory osConfigExtVersions.SharedInformerFactory
-	if k.client.OpenshiftConfig() != nil {
+	// OpenShift config and operator informers — using dynamic client to avoid
+	// importing typed OpenShift scheme packages (saves ~10 MB RSS on vanilla k8s).
+	if isOpenShift {
 		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
 			log.Errorf("Checking API resources for group %q: %v", osConfigGroupVersion, err)
 		} else {
-			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
-			concurrency.WithLock(&k.sifLock, func() {
-				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osConfigFactory)
-			})
-
 			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName, osConfigGroupVersion) {
 				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
-				handle(k.context, informerClusterOperators, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.pubSubDispatcher, k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+				handle(k.context, informerClusterOperators, dynamicSif.ForResource(clusterOperatorGVR).Informer(), dispatchers.ForClusterOperators(), k.pubSubDispatcher, k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 
 			if env.RegistryMirroringEnabled.BooleanSetting() {
 				if listenerUtils.ResourceExists(resourceList, osImageDigestMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
-					handle(k.context, informerImageDigestMirrorSets, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+					handle(k.context, informerImageDigestMirrorSets, dynamicSif.ForResource(imageDigestMirrorSetGVR).Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 				}
 
 				if listenerUtils.ResourceExists(resourceList, osImageTagMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
-					handle(k.context, informerImageTagMirrorSets, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+					handle(k.context, informerImageTagMirrorSets, dynamicSif.ForResource(imageTagMirrorSetGVR).Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 				}
 			}
 		}
 	}
 
-	var osOperatorFactory osOperatorExtVersions.SharedInformerFactory
-	if k.client.OpenshiftOperator() != nil && env.RegistryMirroringEnabled.BooleanSetting() {
+	if isOpenShift && env.RegistryMirroringEnabled.BooleanSetting() {
 		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osOperatorAlphaGroupVersion); err != nil {
 			log.Errorf("Checking API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
 		} else {
-			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
-			concurrency.WithLock(&k.sifLock, func() {
-				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osOperatorFactory)
-			})
-
 			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName, osOperatorAlphaGroupVersion) {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
-				handle(k.context, informerImageContentSourcePolicies, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+				handle(k.context, informerImageContentSourcePolicies, dynamicSif.ForResource(imageContentSourceGVR).Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 		}
 	}
@@ -364,7 +351,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerVirtualMachineInstances, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, dynamicSif, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -375,7 +362,7 @@ func (k *listenerImpl) handleAllEvents() {
 		virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
 		vmWaitGroup := &concurrency.WaitGroup{}
 		handle(k.context, informerVirtualMachines, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.pubSubDispatcher, k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock, informerTracker)
-		if !startAndWait(stopSignal, vmWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+		if !startAndWait(stopSignal, vmWaitGroup, sif, dynamicSif, crdSharedInformerFactory) {
 			return
 		}
 		log.Info("Successfully synced virtual machines")
@@ -415,8 +402,8 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, informerNodes, sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerServices, sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
-	if osRouteFactory != nil {
-		handle(k.context, informerRoutes, osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	if isOpenShift {
+		handle(k.context, informerRoutes, dynamicSif.ForResource(routeGVR).Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
@@ -432,7 +419,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerComplianceProfiles, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, osRouteFactory) {
+	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, dynamicSif) {
 		return
 	}
 
@@ -452,8 +439,8 @@ func (k *listenerImpl) handleAllEvents() {
 	} else {
 		handle(k.context, informerCronJobs, sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
-	if osAppsFactory != nil {
-		handle(k.context, informerDeploymentConfigs, osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	if isOpenShift {
+		handle(k.context, informerDeploymentConfigs, dynamicSif.ForResource(deploymentConfigGVR).Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 
 	// Compliance operator tailored profiles may depend on non-tailored profiles, so we need to start the informer after those were synced
@@ -463,7 +450,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	if !startAndWait(stopSignal, wg, sif, osAppsFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, wg, sif, dynamicSif, crdSharedInformerFactory) {
 		return
 	}
 
