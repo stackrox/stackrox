@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stackrox/rox/pkg/errox"
 	erroxgrpc "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -115,8 +114,9 @@ func sanitizeErrorMessage(err error) string {
 		return ""
 	}
 
-	// Check if this is a PostgreSQL error - if so, don't expose internal details
-	var pgErr *pgconn.PgError
+	// Check if this is a PostgreSQL error - if so, don't expose internal details.
+	// Uses duck typing to avoid importing pgx into non-database binaries (sensor, AC).
+	var pgErr interface{ SQLState() string }
 	if errors.As(err, &pgErr) {
 		return "Database operation failed"
 	}
