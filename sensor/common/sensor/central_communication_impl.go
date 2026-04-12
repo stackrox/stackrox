@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -86,8 +87,13 @@ func isUnimplemented(err error) bool {
 }
 
 // CommunicateWithAutoSensedEncoding creates a bidirectional stream (optionally using gzip compression) for a given SensorServiceClient.
+// Compression can be disabled via ROX_SENSOR_GRPC_COMPRESSION=false to save
+// ~3 MB of compression buffers and reduce CPU usage on local/same-cluster networks.
 func CommunicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
-	opts := []grpc.CallOption{grpc.UseCompressor(gzip.Name)}
+	var opts []grpc.CallOption
+	if env.SensorGRPCCompression.BooleanSetting() {
+		opts = []grpc.CallOption{grpc.UseCompressor(gzip.Name)}
+	}
 
 	for {
 		stream, err := client.Communicate(ctx, opts...)
