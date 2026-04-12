@@ -13,7 +13,7 @@ import (
 
 func TestSelectQueryField_EnumPostTransform(t *testing.T) {
 
-	testSchema := schema.TestStructsSchema()
+	testSchema := schema.TestStructsSchema
 	var enumField *walker.Field
 	for i := range testSchema.Fields {
 		if testSchema.Fields[i].Name == "Enum" {
