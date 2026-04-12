@@ -500,6 +500,31 @@ func (k *listenerImpl) handleAllEvents() {
 // Helper function that creates and adds a handler to an informer.
 // The name parameter identifies the informer for sync tracking.
 // The tracker parameter may be nil when the watchdog feature is disabled.
+// stripCacheTransform removes fields from cached objects that sensor never reads.
+// This reduces informer cache memory by stripping bulky metadata like
+// last-applied-configuration annotations and managedFields.
+func stripCacheTransform(obj interface{}) (interface{}, error) {
+	if accessor, ok := obj.(v1.ObjectMetaAccessor); ok {
+		meta := accessor.GetObjectMeta()
+		// last-applied-configuration is a duplicate of the entire spec
+		// stored as a JSON annotation — often 50%+ of the object size.
+		annotations := meta.GetAnnotations()
+		if _, exists := annotations["kubectl.kubernetes.io/last-applied-configuration"]; exists {
+			filtered := make(map[string]string, len(annotations)-1)
+			for k, v := range annotations {
+				if k != "kubectl.kubernetes.io/last-applied-configuration" {
+					filtered[k] = v
+				}
+			}
+			meta.SetAnnotations(filtered)
+		}
+		// managedFields tracks field ownership for server-side apply.
+		// Sensor never reads them.
+		meta.SetManagedFields(nil)
+	}
+	return obj, nil
+}
+
 func handle(
 	ctx context.Context,
 	name string,
@@ -513,6 +538,10 @@ func handle(
 	eventLock *sync.Mutex,
 	tracker *informerSyncTracker,
 ) {
+	// Strip unnecessary fields before caching to reduce memory.
+	if err := informer.SetTransform(stripCacheTransform); err != nil {
+		log.Warnf("Failed to set transform for informer %s: %v", name, err)
+	}
 	tracker.register(name)
 	utils.Should(func() error {
 		if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
