@@ -397,7 +397,7 @@ func newMockServer(s *sensorServiceTestSuite, identity *storage.ServiceIdentity)
 	mockIdentity.EXPECT().Service().AnyTimes().Return(identity)
 	mockIdentity.EXPECT().ValidityPeriod().AnyTimes().Return(notBefore, notAfter)
 	md := metadata.Pairs(centralsensor.SensorHelloMetadataKey, "true")
-	ctx := authn.ContextWithIdentity(s.internalContext, mockIdentity, nil)
+	ctx := authn.ContextWithIdentity(s.internalContext, mockIdentity)
 	ctx = metadata.NewIncomingContext(ctx, md)
 	return &mockServer{
 		context: ctx,

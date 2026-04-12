@@ -14,7 +14,7 @@ func TestCopyContextIdentity(t *testing.T) {
 	mid := mocks.NewMockIdentity(ctrl)
 	mid.EXPECT().UID().AnyTimes().Return("username")
 
-	original := ContextWithIdentity(context.Background(), mid, t)
+	original := ContextWithIdentity(context.Background(), mid)
 
 	type testKey string
 	original = context.WithValue(original, testKey("key"), "value")

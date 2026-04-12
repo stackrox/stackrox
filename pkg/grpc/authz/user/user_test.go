@@ -32,7 +32,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	testRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
 
 	id := mocks.NewMockIdentity(gomock.NewController(t))
-	ctx := authn.ContextWithIdentity(context.Background(), id, t)
+	ctx := authn.ContextWithIdentity(context.Background(), id)
 	id.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	id.EXPECT().Permissions().Return(map[string]storage.Access{
 		string(clusterScopedResource.Resource): storage.Access_READ_WRITE_ACCESS,
@@ -45,12 +45,12 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	// no permissions.
 
 	idWithNoPermissions := mocks.NewMockIdentity(gomock.NewController(t))
-	ctxWithNoPermissions := authn.ContextWithIdentity(context.Background(), idWithNoPermissions, t)
+	ctxWithNoPermissions := authn.ContextWithIdentity(context.Background(), idWithNoPermissions)
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
 	idWithEmptyPermissions := mocks.NewMockIdentity(gomock.NewController(t))
-	ctxWithEmptyPermissions := authn.ContextWithIdentity(context.Background(), idWithEmptyPermissions, t)
+	ctxWithEmptyPermissions := authn.ContextWithIdentity(context.Background(), idWithEmptyPermissions)
 	idWithEmptyPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithEmptyPermissions.EXPECT().Permissions().Return(map[string]storage.Access{}).AnyTimes()
 

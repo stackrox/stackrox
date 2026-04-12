@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,8 +15,8 @@ import (
 
 type PurgerOption func(purger *NetworkFlowPurger)
 
-// WithPurgerTicker overrides the default enrichment ticker - use only for testing!
-func WithPurgerTicker(_ *testing.T, ticker <-chan time.Time) PurgerOption {
+// WithPurgerTicker overrides the default enrichment ticker (for testing only).
+func WithPurgerTicker(ticker <-chan time.Time) PurgerOption {
 	return func(purger *NetworkFlowPurger) {
 		if ticker != nil {
 			purger.purgerTickerC = ticker

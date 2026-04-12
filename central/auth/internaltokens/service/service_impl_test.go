@@ -46,7 +46,7 @@ func sensorContext(t testing.TB, ctrl *gomock.Controller, clusterID string) cont
 		Id:   clusterID,
 		Type: storage.ServiceType_SENSOR_SERVICE,
 	}).AnyTimes()
-	return authn.ContextWithIdentity(t.Context(), mockIdentity, t)
+	return authn.ContextWithIdentity(t.Context(), mockIdentity)
 }
 
 func TestGetExpiresAt(t *testing.T) {

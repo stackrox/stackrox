@@ -1216,7 +1216,7 @@ func getContextForUser(t *testing.T, ctrl *gomock.Controller, ctx context.Contex
 	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
 	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
-	return authn.ContextWithIdentity(ctx, mockID, t)
+	return authn.ContextWithIdentity(ctx, mockID)
 }
 
 func validateBlobContext(ctx context.Context, access storage.Access) bool {

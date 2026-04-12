@@ -50,7 +50,7 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(purgerTickerC))
 
 	s.ErrorContains(purger.Start(), "purger is disabled")
 
@@ -73,7 +73,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	defer mockCtrl.Finish()
 	_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 	// Don't set manager to explicitly simulate disconnected purger
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(s.T(), purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(purgerTickerC))
 
 	s.ErrorContains(purger.Start(), "not bound to a network flow manager")
 	select {
@@ -124,7 +124,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
 			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
+			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithManager(m), WithPurgerTicker(purgerTickerC))
 
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)

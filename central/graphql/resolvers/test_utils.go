@@ -755,7 +755,7 @@ func getTestImagesV2(imageCount int) []*storage.ImageV2 {
 func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()
-	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id)
 }
 
 func getTestNodes(nodeCount int) []*storage.Node {
@@ -773,13 +773,13 @@ func getTestNodes(nodeCount int) []*storage.Node {
 func contextWithNodePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Node": storage.Access_READ_ACCESS}).AnyTimes()
-	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id)
 }
 
 func contextWithClusterPerm(t testing.TB, ctrl *gomock.Controller) context.Context {
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS}).AnyTimes()
-	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id)
 }
 
 func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string, index int) string {

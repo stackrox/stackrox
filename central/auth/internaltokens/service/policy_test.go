@@ -265,7 +265,7 @@ func TestEnforce(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		mockIdentity := authnMocks.NewMockIdentity(ctrl)
 		mockIdentity.EXPECT().Service().Return(nil).AnyTimes()
-		ctx := authn.ContextWithIdentity(t.Context(), mockIdentity, t)
+		ctx := authn.ContextWithIdentity(t.Context(), mockIdentity)
 
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
@@ -284,7 +284,7 @@ func TestEnforce(t *testing.T) {
 			Id:   "some-service-id",
 			Type: storage.ServiceType_CENTRAL_SERVICE,
 		}).AnyTimes()
-		ctx := authn.ContextWithIdentity(t.Context(), mockIdentity, t)
+		ctx := authn.ContextWithIdentity(t.Context(), mockIdentity)
 
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},

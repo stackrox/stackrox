@@ -533,10 +533,10 @@ func (s *roleServiceGetMyPermissionsTestSuite) SetupTest() {
 		authproviders.WithName("Test Auth Provider"),
 	)
 	s.Require().NoError(err)
-	s.withAdminRoleCtx = basic.ContextWithAdminIdentity(s.T(), authProvider)
-	s.withNoneRoleCtx = basic.ContextWithNoneIdentity(s.T(), authProvider)
-	s.withNoAccessCtx = basic.ContextWithNoAccessIdentity(s.T(), authProvider)
-	s.withNoRoleCtx = basic.ContextWithNoRoleIdentity(s.T(), authProvider)
+	s.withAdminRoleCtx = basic.ContextWithAdminIdentity(authProvider)
+	s.withNoneRoleCtx = basic.ContextWithNoneIdentity(authProvider)
+	s.withNoAccessCtx = basic.ContextWithNoAccessIdentity(authProvider)
+	s.withNoRoleCtx = basic.ContextWithNoRoleIdentity(authProvider)
 	s.anonymousCtx = context.Background()
 }
 

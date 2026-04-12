@@ -180,5 +180,5 @@ func makeAdminContext(t *testing.T) context.Context {
 		authproviders.WithID(uuid.NewDummy().String()),
 		authproviders.WithName("Test Auth Provider"),
 	)
-	return basic.ContextWithAdminIdentity(t, authProvider)
+	return basic.ContextWithAdminIdentity(authProvider)
 }

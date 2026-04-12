@@ -67,10 +67,10 @@ func (s *BaseImageRepositoryDatastoreTestSuite) SetupSuite() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ImageAdministration),
 		))
-	s.imgAdminCtx = authn.ContextWithIdentity(ctx, mockID, s.T())
+	s.imgAdminCtx = authn.ContextWithIdentity(ctx, mockID)
 
 	ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
-	s.normalUserCtx = authn.ContextWithIdentity(ctx, mockID, s.T())
+	s.normalUserCtx = authn.ContextWithIdentity(ctx, mockID)
 }
 
 func (s *BaseImageRepositoryDatastoreTestSuite) SetupTest() {
@@ -183,7 +183,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestListRepositoriesAccessDenied
 	)
 	s.Require().NoError(err)
 
-	noAccessCtx := sac.WithNoAccess(basic.ContextWithNoAccessIdentity(s.T(), authProvider))
+	noAccessCtx := sac.WithNoAccess(basic.ContextWithNoAccessIdentity(authProvider))
 
 	repos, err := s.datastore.ListRepositories(noAccessCtx)
 	s.Error(err, "ListRepositories should fail for user with no access")

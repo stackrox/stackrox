@@ -229,7 +229,7 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	s.NoError(err)
 	req.Header.Add(userAgentHeaderKey, testRP.Headers.Get(userAgentHeaderKey)[0])
 
-	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
+	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID)
 	rp := getHTTPRequestDetails(ctx, req, 200)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)

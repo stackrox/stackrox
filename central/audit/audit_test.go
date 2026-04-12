@@ -140,7 +140,7 @@ func (suite *AuditLogTestSuite) TestServiceRequestsForInternalTokenEndpointAreAu
 	suite.identityMock.EXPECT().Service().Return(serviceIdentity).AnyTimes()
 	suite.identityMock.EXPECT().User().Return(nil).AnyTimes()
 
-	ctxWithServiceIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock, suite.T())
+	ctxWithServiceIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock))
 	ctxWithAuth := interceptor.ContextWithAuthStatus(ctxWithServiceIdentity, nil)
 
 	a := &audit{notifications: suite.notifierMock}
@@ -169,7 +169,7 @@ func (suite *AuditLogTestSuite) TestServiceRequestsForOtherEndpointsAreNotAudite
 	}
 	suite.identityMock.EXPECT().Service().Return(serviceIdentity).AnyTimes()
 
-	ctxWithServiceIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock, suite.T())
+	ctxWithServiceIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock))
 	ctxWithAuth := interceptor.ContextWithAuthStatus(ctxWithServiceIdentity, nil)
 
 	a := &audit{notifications: suite.notifierMock}
@@ -191,7 +191,7 @@ func (suite *AuditLogTestSuite) TestServiceRequestsForInternalTokenEndpointWithA
 	suite.identityMock.EXPECT().Service().Return(serviceIdentity).AnyTimes()
 	suite.identityMock.EXPECT().User().Return(nil).AnyTimes()
 
-	ctxWithServiceIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock, suite.T())
+	ctxWithServiceIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock))
 	ctxWithAuth := interceptor.ContextWithAuthStatus(ctxWithServiceIdentity, nil)
 
 	a := &audit{notifications: suite.notifierMock}
@@ -219,7 +219,7 @@ func (suite *AuditLogTestSuite) TestUserRequestsContinueToBeAudited() {
 	suite.identityMock.EXPECT().Service().Return(nil).AnyTimes()
 	suite.identityMock.EXPECT().User().Return(userInfo).AnyTimes()
 
-	ctxWithUserIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock, suite.T())
+	ctxWithUserIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock))
 	ctxWithAuth := interceptor.ContextWithAuthStatus(ctxWithUserIdentity, nil)
 
 	a := &audit{notifications: suite.notifierMock}

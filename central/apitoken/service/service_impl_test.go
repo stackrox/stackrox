@@ -42,7 +42,7 @@ func TestServiceImpl_ListAllowedRoles_SortsRoleAlphabetically(t *testing.T) {
 	s := &serviceImpl{roles: mockDatastore}
 
 	ctx := context.Background()
-	ctx = authn.ContextWithIdentity(ctx, mockIdentity, t)
+	ctx = authn.ContextWithIdentity(ctx, mockIdentity)
 
 	actual, err := s.ListAllowedTokenRoles(ctx, &v1.Empty{})
 

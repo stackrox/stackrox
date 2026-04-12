@@ -99,7 +99,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigClusterStatus(gomock.Any(), newGetScanConfigClusterStatusMatcher(getTestScanConfig())).AnyTimes().Return(getTestClusterStatusFromScanConfig(getTestScanConfig()), nil)
 	m.suiteDataStore.EXPECT().GetSuites(gomock.Any(), newGetSuitesMatcher(getTestScanConfig())).AnyTimes()
 	m.bindingsDataStore.EXPECT().GetScanSettingBindings(gomock.Any(), newGetBindingMatcher(getTestScanConfig())).AnyTimes()
-	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
+	ctx := authn.ContextWithIdentity(context.Background(), identity))
 
 	m.Run("Successful report, no watchers running", func() {
 		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
@@ -216,7 +216,7 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigClusterStatus(gomock.Any(), newGetScanConfigClusterStatusMatcher(getTestScanConfig())).AnyTimes().Return(getTestClusterStatusFromScanConfig(getTestScanConfig()), nil)
 	m.suiteDataStore.EXPECT().GetSuites(gomock.Any(), newGetSuitesMatcher(getTestScanConfig())).AnyTimes()
 	m.bindingsDataStore.EXPECT().GetScanSettingBindings(gomock.Any(), newGetBindingMatcher(getTestScanConfig())).AnyTimes()
-	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
+	ctx := authn.ContextWithIdentity(context.Background(), identity))
 
 	// Set the timeouts to 2 so the scan watchers timeout fast
 	m.T().Setenv(env.ComplianceScanWatcherTimeout.EnvVar(), "2s")

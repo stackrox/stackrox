@@ -56,10 +56,10 @@ func (s *developmentServiceAccessControlTestSuite) SetupSuite() {
 	)
 	s.Require().NoError(err)
 	s.authProvider = authProvider
-	s.withAdminRoleCtx = basic.ContextWithAdminIdentity(s.T(), s.authProvider)
-	s.withNoneRoleCtx = basic.ContextWithNoneIdentity(s.T(), s.authProvider)
-	s.withNoAccessCtx = basic.ContextWithNoAccessIdentity(s.T(), s.authProvider)
-	s.withNoRoleCtx = basic.ContextWithNoRoleIdentity(s.T(), s.authProvider)
+	s.withAdminRoleCtx = basic.ContextWithAdminIdentity(s.authProvider)
+	s.withNoneRoleCtx = basic.ContextWithNoneIdentity(s.authProvider)
+	s.withNoAccessCtx = basic.ContextWithNoAccessIdentity(s.authProvider)
+	s.withNoRoleCtx = basic.ContextWithNoRoleIdentity(s.authProvider)
 	s.anonymousCtx = context.Background()
 }
 

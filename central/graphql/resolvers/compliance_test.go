@@ -134,7 +134,7 @@ func TestComplianceClusters(t *testing.T) {
 	)
 
 	ctx := sac.WithAllAccess(context.Background())
-	ctx = authn.ContextWithIdentity(ctx, identity, t)
+	ctx = authn.ContextWithIdentity(ctx, identity)
 
 	query := PaginatedQuery{}
 
@@ -178,7 +178,7 @@ func TestComplianceClustersBadPermissions(t *testing.T) {
 		),
 	)
 
-	ctx = authn.ContextWithIdentity(ctx, identity, t)
+	ctx = authn.ContextWithIdentity(ctx, identity)
 
 	query := PaginatedQuery{}
 

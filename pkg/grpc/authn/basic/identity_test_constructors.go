@@ -2,7 +2,6 @@ package basic
 
 import (
 	"context"
-	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -13,7 +12,6 @@ import (
 )
 
 func contextWithBasicIdentityForTest(
-	t *testing.T,
 	name string,
 	roles []permissions.ResolvedRole,
 	authProvider authproviders.Provider,
@@ -23,13 +21,12 @@ func contextWithBasicIdentityForTest(
 		resolvedRoles: roles,
 		authProvider:  authProvider,
 	}
-	return authn.ContextWithIdentity(context.Background(), contextIdentity, t)
+	return authn.ContextWithIdentity(context.Background(), contextIdentity)
 }
 
 // ContextWithAdminIdentity returns a context enriched with an Identity
 // that is granted full admin role.
 func ContextWithAdminIdentity(
-	t *testing.T,
 	authProvider authproviders.Provider,
 ) context.Context {
 	adminPermissions := make(map[string]storage.Access)
@@ -43,13 +40,12 @@ func ContextWithAdminIdentity(
 		accessScope: accessScopeIncludeAll,
 	}
 	roles := []permissions.ResolvedRole{adminRole}
-	return contextWithBasicIdentityForTest(t, accesscontrol.Admin, roles, authProvider)
+	return contextWithBasicIdentityForTest(accesscontrol.Admin, roles, authProvider)
 }
 
 // ContextWithNoAccessIdentity returns a context enriched with an Identity
 // that is granted a role with neither permissions nor scope.
 func ContextWithNoAccessIdentity(
-	t *testing.T,
 	authProvider authproviders.Provider,
 ) context.Context {
 	const noAccessName = "No Access"
@@ -64,13 +60,12 @@ func ContextWithNoAccessIdentity(
 		accessScope: accessScopeIncludeAll,
 	}
 	roles := []permissions.ResolvedRole{adminRole}
-	return contextWithBasicIdentityForTest(t, noAccessName, roles, authProvider)
+	return contextWithBasicIdentityForTest(noAccessName, roles, authProvider)
 }
 
 // ContextWithNoneIdentity returns a context enriched with an Identity
 // that is granted only the None role.
 func ContextWithNoneIdentity(
-	t *testing.T,
 	authProvider authproviders.Provider,
 ) context.Context {
 	noneRole := &testRole{
@@ -78,18 +73,17 @@ func ContextWithNoneIdentity(
 		accessScope: accessScopeIncludeAll,
 	}
 	roles := []permissions.ResolvedRole{noneRole}
-	return contextWithBasicIdentityForTest(t, accesscontrol.None, roles, authProvider)
+	return contextWithBasicIdentityForTest(accesscontrol.None, roles, authProvider)
 }
 
 // ContextWithNoRoleIdentity returns a context enriched with an Identity
 // that is granted full admin role.
 func ContextWithNoRoleIdentity(
-	t *testing.T,
 	authProvider authproviders.Provider,
 ) context.Context {
 	const noRoleName = "No Role"
 	roles := []permissions.ResolvedRole{}
-	return contextWithBasicIdentityForTest(t, noRoleName, roles, authProvider)
+	return contextWithBasicIdentityForTest(noRoleName, roles, authProvider)
 }
 
 type testRole struct {

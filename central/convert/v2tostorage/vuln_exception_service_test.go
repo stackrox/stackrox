@@ -109,7 +109,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 	id.EXPECT().UID().Return("userID").AnyTimes()
 	id.EXPECT().FullName().Return("userName").AnyTimes()
 	id.EXPECT().FriendlyName().Return("userName").AnyTimes()
-	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), id, t)
+	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), id)
 
 	protoassert.Equal(
 		t,
