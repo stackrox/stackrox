@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"encoding/json"
+	"io"
+
 	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -290,28 +290,41 @@ func (r *Registry) buildTransport() http.RoundTripper {
 // This function does not impose an overall timeout. The transport's per-request
 // timeouts (DialTimeout, ResponseHeaderTimeout) protect against hung requests.
 // Callers needing an overall timeout should pass a context with deadline.
+// ListTags lists tags for a repository using the Docker Registry V2 API directly.
+// This replaces go-containerregistry/pkg/v1/remote.List (which pulled in 558 deps)
+// with a simple HTTP GET to /v2/<repo>/tags/list.
 func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	repoPath := fmt.Sprintf("%s/%s", r.registry, repository)
-	repo, err := name.NewRepository(repoPath)
+
+	url := fmt.Sprintf("https://%s/v2/%s/tags/list", r.registry, repository)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse repository %q", repoPath)
+		return nil, errors.Wrapf(err, "creating tags list request for %q", repository)
 	}
 
 	username, password := r.cfg.GetCredentials()
-	opts := []remote.Option{
-		remote.WithContext(ctx),
-		remote.WithTransport(r.buildTransport()),
-		remote.WithAuth(&authn.Basic{
-			Username: username,
-			Password: password,
-		}),
+	if username != "" || password != "" {
+		req.SetBasicAuth(username, password)
 	}
-	tags, err := remote.List(repo, opts...)
+
+	resp, err := r.buildTransport().RoundTrip(req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list tags for repository %q", repository)
+		return nil, errors.Wrapf(err, "listing tags for %q", repository)
 	}
-	return tags, nil
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return nil, errors.Errorf("listing tags for %q: %d %s", repository, resp.StatusCode, body)
+	}
+
+	var tagList struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tagList); err != nil {
+		return nil, errors.Wrapf(err, "decoding tags for %q", repository)
+	}
+	return tagList.Tags, nil
 }
