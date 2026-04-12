@@ -1,3 +1,5 @@
+//go:build awsecr
+
 // Package awscredentials provides Sensor components that can retrieve, cache,
 // refresh and offer AWS-based credentials and tokens.
 package awscredentials
@@ -29,27 +31,6 @@ var (
 
 	log = logging.LoggerForModule()
 )
-
-// RegistryCredentials carries credential information to access AWS-based
-// registries.
-type RegistryCredentials struct {
-	AWSAccount   string
-	AWSRegion    string
-	DockerConfig *config.DockerConfigEntry
-	ExpirestAt   time.Time
-}
-
-// RegistryCredentialsManager is a sensor component that manages
-// credentials for docker registries.
-//
-//go:generate mockgen-wrapper
-type RegistryCredentialsManager interface {
-	// GetRegistryCredentials returns the most recent registry credential for the given
-	// registry URI, or `nil` if not available.
-	GetRegistryCredentials(r string) *RegistryCredentials
-	Start()
-	Stop()
-}
 
 // ecrCredentialsManager manages credentials pulled from global ECR registries.
 type ecrCredentialsManager struct {

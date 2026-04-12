@@ -1,9 +1,9 @@
 package mtls
 
 import (
+	"crypto/x509/pkix"
 	"testing"
 
-	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,61 +14,49 @@ func TestSubject(t *testing.T) {
 		cn       string
 		hostname string
 		ou       string
-		name     cfcsr.Name
+		name     pkix.Name
 	}{
 		{
 			input:    Subject{ServiceType: storage.ServiceType_CENTRAL_SERVICE, Identifier: "Central"},
 			cn:       "CENTRAL_SERVICE: Central",
 			hostname: "central.stackrox",
 			ou:       "CENTRAL_SERVICE",
-			name: cfcsr.Name{
-				OU: "CENTRAL_SERVICE",
-			},
+			name:     pkix.Name{OrganizationalUnit: []string{"CENTRAL_SERVICE"}},
 		},
 		{
 			input:    Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "1234"},
 			cn:       "SENSOR_SERVICE: 1234",
 			hostname: "sensor.stackrox",
 			ou:       "SENSOR_SERVICE",
-			name: cfcsr.Name{
-				OU: "SENSOR_SERVICE",
-			},
+			name:     pkix.Name{OrganizationalUnit: []string{"SENSOR_SERVICE"}},
 		},
 		{
 			input:    Subject{ServiceType: storage.ServiceType_COLLECTOR_SERVICE, Identifier: "456"},
 			cn:       "COLLECTOR_SERVICE: 456",
 			hostname: "collector.stackrox",
 			ou:       "COLLECTOR_SERVICE",
-			name: cfcsr.Name{
-				OU: "COLLECTOR_SERVICE",
-			},
+			name:     pkix.Name{OrganizationalUnit: []string{"COLLECTOR_SERVICE"}},
 		},
 		{
 			input:    Subject{ServiceType: storage.ServiceType_SCANNER_DB_SERVICE, Identifier: "456"},
 			cn:       "SCANNER_DB_SERVICE: 456",
 			hostname: "scanner-db.stackrox",
 			ou:       "SCANNER_DB_SERVICE",
-			name: cfcsr.Name{
-				OU: "SCANNER_DB_SERVICE",
-			},
+			name:     pkix.Name{OrganizationalUnit: []string{"SCANNER_DB_SERVICE"}},
 		},
 		{
 			input:    Subject{ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE, Identifier: "456"},
 			cn:       "ADMISSION_CONTROL_SERVICE: 456",
 			hostname: "admission-control.stackrox",
 			ou:       "ADMISSION_CONTROL_SERVICE",
-			name: cfcsr.Name{
-				OU: "ADMISSION_CONTROL_SERVICE",
-			},
+			name:     pkix.Name{OrganizationalUnit: []string{"ADMISSION_CONTROL_SERVICE"}},
 		},
 		{
 			input:    Subject{ServiceType: storage.ServiceType_CENTRAL_DB_SERVICE, Identifier: "Central DB/serialNumber=14079776202872467048"},
 			cn:       "CENTRAL_DB_SERVICE: Central DB/serialNumber=14079776202872467048",
 			hostname: "central-db.stackrox",
 			ou:       "CENTRAL_DB_SERVICE",
-			name: cfcsr.Name{
-				OU: "CENTRAL_DB_SERVICE",
-			},
+			name:     pkix.Name{OrganizationalUnit: []string{"CENTRAL_DB_SERVICE"}},
 		},
 	}
 

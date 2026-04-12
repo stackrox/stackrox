@@ -30,6 +30,16 @@ func ConvertPEMToDERs(certBytes []byte) ([][]byte, error) {
 	}
 }
 
+// ParseCertificatePEM parses the first PEM-encoded certificate from data.
+// This is a stdlib replacement for cfssl/helpers.ParseCertificatePEM.
+func ParseCertificatePEM(data []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(data)
+	if block == nil {
+		return nil, errors.New("no PEM block found in certificate data")
+	}
+	return x509.ParseCertificate(block.Bytes)
+}
+
 // ConvertPEMTox509Certs convert a PEM encoded certificate chain to a slice of x509 certificates.
 func ConvertPEMTox509Certs(certBytes []byte) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate

@@ -1,14 +1,44 @@
 package mtls
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// newTestCA creates a self-signed CA for testing (replaces cfssl/initca).
+func newTestCA(t *testing.T, cn string) (certPEM, keyPEM []byte) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	require.NoError(t, err)
+	template := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: cn},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	require.NoError(t, err)
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+	return certPEM, keyPEM
+}
 
 func Test_CA_IssueCertForSubject(t *testing.T) {
 	tests := map[string]struct {
@@ -33,11 +63,7 @@ func Test_CA_IssueCertForSubject(t *testing.T) {
 		},
 	}
 
-	cert, _, key, err := initca.New(&csr.CertificateRequest{
-		CN: "Fake CA",
-	})
-	require.NoError(t, err)
-
+	cert, key := newTestCA(t, "Fake CA")
 	ca, err := LoadCAForSigning(cert, key)
 	require.NoError(t, err)
 
@@ -54,10 +80,7 @@ func Test_CA_IssueCertForSubject(t *testing.T) {
 }
 
 func Test_CA_LoadForValidation(t *testing.T) {
-	certPEM, _, keyPEM, err := initca.New(&csr.CertificateRequest{
-		CN: "Fake CA",
-	})
-	require.NoError(t, err)
+	certPEM, keyPEM := newTestCA(t, "Fake CA")
 
 	ca, err := LoadCAForValidation(certPEM)
 	require.NoError(t, err)
@@ -85,10 +108,7 @@ func Test_CA_LoadForValidation(t *testing.T) {
 	assert.Equal(t, CentralSubject, subject, "extracted subject should match issued one")
 
 	// issue a leaf certificate with an unrelated CA and try to validate it
-	unrelatedCertPEM, _, unrelatedKeyPEM, err := initca.New(&csr.CertificateRequest{
-		CN: "Unrelated CA",
-	})
-	require.NoError(t, err)
+	unrelatedCertPEM, unrelatedKeyPEM := newTestCA(t, "Unrelated CA")
 
 	unrelatedSigningCA, err := LoadCAForSigning(unrelatedCertPEM, unrelatedKeyPEM)
 	require.NoError(t, err)

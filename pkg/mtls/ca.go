@@ -4,11 +4,9 @@ import (
 	"crypto"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"slices"
 
-	"github.com/cloudflare/cfssl/helpers"
-	cfsslSigner "github.com/cloudflare/cfssl/signer"
-	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
 )
 
@@ -40,7 +38,7 @@ type CA interface {
 type ca struct {
 	certPEM, keyPEM []byte
 	tlsCert         tls.Certificate
-	signer          cfsslSigner.Signer
+	cs              *certSigner
 }
 
 // LoadCAForSigning loads and instantiates a CA that can be used for signing
@@ -61,14 +59,15 @@ func LoadCAForSigning(certPEM, keyPEM []byte) (CA, error) {
 
 	ca.tlsCert.Leaf, _ = x509.ParseCertificate(ca.tlsCert.Certificate[0])
 
-	priv, err := helpers.ParsePrivateKeyPEM(keyPEM)
-	if err != nil {
-		return nil, err
+	caKey, ok := ca.tlsCert.PrivateKey.(crypto.Signer)
+	if !ok {
+		return nil, errors.New("CA private key does not implement crypto.Signer")
 	}
 
-	ca.signer, err = local.NewSigner(priv, ca.tlsCert.Leaf, cfsslSigner.DefaultSigAlgo(priv), createSigningPolicy())
-	if err != nil {
-		return nil, err
+	ca.cs = &certSigner{
+		caCert: ca.tlsCert.Leaf,
+		caKey:  caKey,
+		policy: defaultSigningPolicy(),
 	}
 
 	return ca, nil
@@ -82,8 +81,12 @@ func LoadCAForValidation(certPEM []byte) (CA, error) {
 		certPEM: slices.Clone(certPEM),
 	}
 
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return nil, errors.New("no PEM block found in certificate data")
+	}
 	var err error
-	ca.tlsCert.Leaf, err = helpers.ParseCertificatePEM(certPEM)
+	ca.tlsCert.Leaf, err = x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +129,10 @@ func (c *ca) CertPool() *x509.CertPool {
 }
 
 func (c *ca) IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*IssuedCert, error) {
-	if c.signer == nil {
+	if c.cs == nil {
 		return nil, errors.New("CA is not set up for signing")
 	}
-	return issueNewCertFromSigner(subj, c.signer, opts)
+	return issueNewCertFromSigner(subj, c.cs, opts)
 }
 
 func (c *ca) ValidateAndExtractSubject(cert *x509.Certificate, opts ...VerifyCertOption) (Subject, error) {

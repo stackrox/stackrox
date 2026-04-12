@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 // AddCertToFileMap adds `cert.pem` and `key.pem` entries for the given certificate (prefixed with
@@ -52,7 +52,7 @@ func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, c
 	if len(certPEM) == 0 {
 		return fmt.Errorf("no service certificate for %s in file map", serviceType.String())
 	}
-	cert, err := helpers.ParseCertificatePEM(certPEM)
+	cert, err := x509utils.ParseCertificatePEM(certPEM)
 	if err != nil {
 		return errors.New("unparseable certificate in file map")
 	}

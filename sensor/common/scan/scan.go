@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/registries/docker"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/registrymirror"
-	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -49,11 +48,30 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// signatureFetcher is a local interface matching signatures.SignatureFetcher.
+// Sensor uses a no-op implementation to avoid importing the heavy cosign/sigstore
+// dependency chain. Signature verification is handled by Central.
+type signatureFetcher interface {
+	FetchSignatures(ctx context.Context, image *storage.Image, fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
+}
+
+type noopSignatureFetcher struct{}
+
+func (noopSignatureFetcher) FetchSignatures(_ context.Context, _ *storage.Image, _ string, _ registryTypes.Registry) ([]*storage.Signature, error) {
+	return nil, nil
+}
+
+var noopSignatureFetcherInstance signatureFetcher = noopSignatureFetcher{}
+
+func noopFetchSignatures(_ context.Context, _ signatureFetcher, _ *storage.Image, _ string, _ registryTypes.Registry) ([]*storage.Signature, error) {
+	return nil, nil
+}
+
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
 	scanImg                   func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
-	fetchSignaturesWithRetry  func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
+	fetchSignaturesWithRetry  func(context.Context, signatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
 	scannerClientSingleton    func() scannerclient.ScannerClient
 	createNoAuthImageRegistry func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
 	getCentralRegistries      func(*storage.ImageName) []registryTypes.ImageRegistry
@@ -111,7 +129,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 
 	ls := &LocalScan{
 		scanImg:                   scanImage,
-		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
+		fetchSignaturesWithRetry:  noopFetchSignatures,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
 		scanSemaphore:             semaphore.NewWeighted(int64(activeScanLimit)),
 		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocScanLimit)),
@@ -429,7 +447,7 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 // fetchSignatures fetches signatures from the registry for an image.
 func (s *LocalScan) fetchSignatures(ctx context.Context, registry registryTypes.ImageRegistry, image *storage.Image) []*storage.Signature {
 	// Fetch signatures from cluster-local registry.
-	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(), registry)
+	sigs, err := s.fetchSignaturesWithRetry(ctx, noopSignatureFetcherInstance, image, image.GetName().GetFullName(), registry)
 	if err != nil {
 		// Like Central, only log errors related to fetching signatures.
 		if !errors.Is(err, errox.NotAuthorized) {

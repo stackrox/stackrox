@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -121,12 +120,15 @@ func (s Subject) O() string {
 	return s.InitBundleID
 }
 
-// Name generates a cfssl Name for the subject, as a convenience.
-func (s Subject) Name() cfcsr.Name {
-	return cfcsr.Name{
-		OU: s.OU(),
-		O:  s.O(),
+// Name generates a pkix.Name for the subject, as a convenience.
+func (s Subject) Name() pkix.Name {
+	name := pkix.Name{
+		OrganizationalUnit: []string{s.OU()},
 	}
+	if o := s.O(); o != "" {
+		name.Organization = []string{o}
+	}
+	return name
 }
 
 func convertCertSubject(subject pkix.Name) Subject {

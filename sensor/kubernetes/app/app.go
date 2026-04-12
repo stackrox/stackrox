@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/kubernetes/certinit"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
@@ -120,14 +119,12 @@ func Run() {
 	utils.CrashOnError(err)
 
 	s.Start()
-	gcp.Singleton().Start()
 
 	for {
 		select {
 		case sig := <-sigs:
 			log.Infof("Caught %s signal", sig)
 			s.Stop()
-			gcp.Singleton().Stop()
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				log.Fatalf("Sensor exited with error: %v", err)

@@ -1,6 +1,9 @@
 package mtls
 
 import (
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
@@ -9,12 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/cloudflare/cfssl/config"
-	cfcsr "github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/helpers"
-	cflog "github.com/cloudflare/cfssl/log"
-	cfsigner "github.com/cloudflare/cfssl/signer"
-	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -90,12 +87,67 @@ var (
 	}()
 )
 
-func init() {
-	// The cfssl library prints logs at Info level when it processes a
-	// Certificate Signing Request (CSR) or issues a new certificate.
-	// These logs do not help the user understand anything, so here
-	// we adjust the log level to exclude them.
-	cflog.Level = cflog.LevelWarning
+// certSigner signs certificates using a CA certificate and private key.
+// It replaces the cfssl signer with stdlib crypto operations.
+type certSigner struct {
+	caCert *x509.Certificate
+	caKey  crypto.Signer
+	policy signingPolicy
+}
+
+// signingPolicy defines certificate validity profiles.
+type signingPolicy struct {
+	defaultProfile certProfile
+	profiles       map[string]certProfile
+}
+
+// certProfile defines the lifetime and grace period for a certificate.
+type certProfile struct {
+	lifetime    time.Duration
+	gracePeriod time.Duration
+}
+
+func defaultSigningPolicy() signingPolicy {
+	return signingPolicy{
+		defaultProfile: certProfile{lifetime: certLifetime, gracePeriod: beforeGracePeriod},
+		profiles: map[string]certProfile{
+			ephemeralProfileWithExpirationInHours: {lifetime: ephemeralProfileWithExpirationInHoursCertLifetime},
+			ephemeralProfileWithExpirationInDays:  {lifetime: ephemeralProfileWithExpirationInDaysCertLifetime},
+		},
+	}
+}
+
+func crsSigningPolicy() signingPolicy {
+	return signingPolicy{
+		defaultProfile: certProfile{lifetime: crsProfileDefaultValidityPeriod, gracePeriod: beforeGracePeriod},
+	}
+}
+
+func newCertSignerFromFile(certPath, keyPath string, policy signingPolicy) (*certSigner, error) {
+	certPEM, err := os.ReadFile(certPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading CA certificate")
+	}
+	keyPEM, err := os.ReadFile(keyPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading CA key")
+	}
+
+	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing CA cert/key pair")
+	}
+	leaf, err := x509.ParseCertificate(tlsCert.Certificate[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing CA certificate")
+	}
+
+	caKey, ok := tlsCert.PrivateKey.(crypto.Signer)
+	if !ok {
+		return nil, errors.New("CA private key does not implement crypto.Signer")
+	}
+
+	return &certSigner{caCert: leaf, caKey: caKey, policy: policy}, nil
 }
 
 var (
@@ -306,42 +358,12 @@ func SecondaryCAForSigning() (CA, error) {
 	return secondaryCAForSigning, secondaryCAForSigningErr
 }
 
-func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
+func newSigner() (*certSigner, error) {
+	return newCertSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), defaultSigningPolicy())
 }
 
-func crsSigner() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createCrsSigningPolicy())
-}
-
-func createSigningPolicy() *config.Signing {
-	return &config.Signing{
-		Default: createSigningProfile(certLifetime, beforeGracePeriod),
-		Profiles: map[string]*config.SigningProfile{
-			ephemeralProfileWithExpirationInHours: createSigningProfile(ephemeralProfileWithExpirationInHoursCertLifetime, 0),
-			ephemeralProfileWithExpirationInDays:  createSigningProfile(ephemeralProfileWithExpirationInDaysCertLifetime, 0),
-		},
-	}
-}
-
-func createCrsSigningPolicy() *config.Signing {
-	return &config.Signing{
-		Default: createSigningProfile(crsProfileDefaultValidityPeriod, beforeGracePeriod),
-	}
-}
-
-func createSigningProfile(lifetime time.Duration, gracePeriod time.Duration) *config.SigningProfile {
-	return &config.SigningProfile{
-		Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
-		Expiry:   lifetime + gracePeriod,
-		Backdate: gracePeriod,
-		CSRWhitelist: &config.CSRWhitelist{
-			PublicKey:          true,
-			PublicKeyAlgorithm: true,
-			SignatureAlgorithm: true,
-		},
-		ClientProvidesSerialNumbers: true,
-	}
+func newCrsSigner() (*certSigner, error) {
+	return newCertSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), crsSigningPolicy())
 }
 
 func validateSubject(subj Subject) error {
@@ -355,9 +377,8 @@ func validateSubject(subj Subject) error {
 	return errorList.ToError()
 }
 
-func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCertOption) (*IssuedCert, error) {
+func issueNewCertFromSigner(subj Subject, s *certSigner, opts []IssueCertOption) (*IssuedCert, error) {
 	if err := validateSubject(subj); err != nil {
-		// Purposefully didn't use returnErr because errorList.ToError() returned from validateSubject is already prefixed
 		return nil, err
 	}
 
@@ -366,52 +387,77 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 		return nil, errors.Wrap(err, "serial generation")
 	}
 
-	csr := &cfcsr.CertificateRequest{
-		KeyRequest:   cfcsr.NewKeyRequest(),
-		SerialNumber: serial.String(),
-	}
-	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
+	// Generate ECDSA P-256 key pair (matches cfssl default).
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, errors.Wrap(err, "request parsing")
+		return nil, errors.Wrap(err, "key generation")
 	}
 
 	var issueOpts issueOptions
 	issueOpts.apply(opts)
 
+	// Collect hostnames as SANs.
 	var hosts []string
 	hosts = append(hosts, subj.AllHostnames()...)
 	if ns := issueOpts.namespace; ns != "" && ns != namespaces.StackRox {
 		hosts = append(hosts, subj.AllHostnamesForNamespace(ns)...)
 	}
 
-	req := cfsigner.SignRequest{
-		Hosts:   hosts,
-		Request: string(csrBytes),
-		Subject: &cfsigner.Subject{
-			CN:           subj.CN(),
-			Names:        []cfcsr.Name{subj.Name()},
-			SerialNumber: serial.String(),
-		},
-		Serial:    serial,
-		Profile:   issueOpts.signerProfile,
-		NotBefore: issueOpts.notBefore,
-		NotAfter:  issueOpts.expiresAt,
+	// Determine certificate validity from profile.
+	profile := s.policy.defaultProfile
+	if issueOpts.signerProfile != "" {
+		if p, ok := s.policy.profiles[issueOpts.signerProfile]; ok {
+			profile = p
+		}
 	}
-	certBytes, err := signer.Sign(req)
+	now := time.Now()
+	notBefore := now.Add(-profile.gracePeriod)
+	notAfter := now.Add(profile.lifetime)
+	if !issueOpts.notBefore.IsZero() {
+		notBefore = issueOpts.notBefore
+	}
+	if !issueOpts.expiresAt.IsZero() {
+		notAfter = issueOpts.expiresAt
+	}
+
+	// Build the certificate subject from the mtls Subject.
+	certSubject := subj.Name()
+	certSubject.CommonName = subj.CN()
+	certSubject.SerialNumber = serial.String()
+
+	template := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               certSubject,
+		DNSNames:              hosts,
+		NotBefore:             notBefore,
+		NotAfter:              notAfter,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, s.caCert, &key.PublicKey, s.caKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "signing")
 	}
 
-	x509Cert, err := helpers.ParseCertificatePEM(certBytes)
+	x509Cert, err := x509.ParseCertificate(certDER)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse generated PEM cert")
+		return nil, errors.Wrap(err, "parsing generated certificate")
 	}
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshaling private key")
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 
 	id := generateIdentity(subj, serial)
 
 	return &IssuedCert{
-		CertPEM:  certBytes,
-		KeyPEM:   keyBytes,
+		CertPEM:  certPEM,
+		KeyPEM:   keyPEM,
 		X509Cert: x509Cert,
 		ID:       id,
 	}, nil
@@ -419,7 +465,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
 func IssueNewCert(subj Subject, opts ...IssueCertOption) (cert *IssuedCert, err error) {
-	s, err := signer()
+	s, err := newSigner()
 	if err != nil {
 		return nil, errors.Wrap(err, "signer creation")
 	}
@@ -433,12 +479,12 @@ func IssueNewCrsCert(crsId uuid.UUID, validUntil time.Time) (cert *IssuedCert, e
 	}
 
 	subj := NewInitSubject(centralsensor.RegisteredInitCertClusterID, storage.ServiceType_REGISTRANT_SERVICE, crsId)
-	signer, err := crsSigner()
+	s, err := newCrsSigner()
 	if err != nil {
 		return nil, errors.Wrap(err, "CRS signer creation")
 	}
 
-	return issueNewCertFromSigner(subj, signer, opts)
+	return issueNewCertFromSigner(subj, s, opts)
 }
 
 // RandomSerial returns a new integer that can be used as a certificate serial number (i.e., it is positive and contains

@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	mirrorStoreMocks "github.com/stackrox/rox/pkg/registrymirror/mocks"
-	"github.com/stackrox/rox/pkg/signatures"
+
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
@@ -126,7 +126,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
 			registry registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
-		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
+		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatureFetcher, image *storage.Image,
 			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getRegistries          func(image *storage.ImageName, ns string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
 		fakeImageServiceClient *fakeImageServiceClient
@@ -197,7 +197,7 @@ func (suite *scanTestSuite) TestMetadataBeingSet() {
 
 	scan := LocalScan{
 		scanImg: successfulScan,
-		fetchSignaturesWithRetry: func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
+		fetchSignaturesWithRetry: func(_ context.Context, _ signatureFetcher, img *storage.Image, _ string,
 			_ registryTypes.Registry) ([]*storage.Signature, error) {
 			if img.GetMetadata().GetV2() == nil {
 				return nil, errors.New("image metadata missing, not attempting fetch of signatures")
@@ -722,7 +722,7 @@ func successfulScan(_ context.Context, _ *storage.Image,
 	}, nil
 }
 
-func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
+func successfulFetchSignatures(_ context.Context, _ signatureFetcher, _ *storage.Image, _ string,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return []*storage.Signature{{
 		Signature: &storage.Signature_Cosign{Cosign: &storage.CosignSignature{
@@ -737,12 +737,12 @@ func failingScan(_ context.Context, _ *storage.Image,
 	return nil, errors.New("failed scanning image")
 }
 
-func failingFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
+func failingFetchSignatures(_ context.Context, _ signatureFetcher, _ *storage.Image, _ string,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return nil, errors.New("failed fetching signatures")
 }
 
-func failingFetchSignaturesUnauthorized(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
+func failingFetchSignaturesUnauthorized(_ context.Context, _ signatureFetcher, _ *storage.Image, _ string,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return nil, errox.NotAuthorized
 }

@@ -4,8 +4,8 @@ import (
 	"crypto/x509"
 	"sync"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 // awsCerts lists all known AWS certificates as of time of writing.
@@ -16,7 +16,7 @@ import (
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.
 // It is probably in everyone's best interest to check on this periodically.
 var awsCerts = sync.OnceValue(func() []*x509.Certificate {
-	certs, err := helpers.ParseCertificatesPEM([]byte(`
+	certs, err := x509utils.ConvertPEMTox509Certs([]byte(`
 -----BEGIN CERTIFICATE-----
 MIIEEjCCAvqgAwIBAgIJALFpzEAVWaQZMA0GCSqGSIb3DQEBCwUAMFwxCzAJBgNV
 BAYTAlVTMRkwFwYDVQQIExBXYXNoaW5ndG9uIFN0YXRlMRAwDgYDVQQHEwdTZWF0

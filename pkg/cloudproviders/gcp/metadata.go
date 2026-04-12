@@ -1,3 +1,5 @@
+//go:build gcpcloud
+
 package gcp
 
 import (
@@ -8,16 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-type gcpMetadata struct {
-	ProjectID string
-	Zone      string
-}
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func isNotDefinedError(err error) bool {

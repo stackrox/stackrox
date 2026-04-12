@@ -17,6 +17,12 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/registries"
+	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
+	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
+	ghcrFactory "github.com/stackrox/rox/pkg/registries/ghcr"
+	ibmFactory "github.com/stackrox/rox/pkg/registries/ibm"
+	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
+	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,7 +30,6 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	registryMetrics "github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
@@ -93,8 +98,21 @@ func NewRegistryStore(checkTLSFunc tlscheckcache.CheckTLSFunc) *Store {
 		tlscheckcache.WithTTL(env.RegistryTLSCheckTTL.DurationSetting()),
 	)
 
+	// Sensor uses only lightweight registry creators that don't pull in
+	// heavy cloud SDKs (AWS, Azure, GCP). Cloud-specific registries
+	// (ECR, Azure CR, Google AR/GCR) are handled by Central.
+	sensorCreatorFuncs := []types.CreatorWrapper{
+		artifactoryFactory.CreatorWithoutRepoList,
+		dockerFactory.CreatorWithoutRepoList,
+		ghcrFactory.CreatorWithoutRepoList,
+		ibmFactory.CreatorWithoutRepoList,
+		nexusFactory.CreatorWithoutRepoList,
+		quayFactory.CreatorWithoutRepoList,
+		rhelFactory.CreatorWithoutRepoList,
+	}
+
 	defaultFactory := registries.NewFactory(registries.FactoryOptions{
-		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
+		CreatorFuncs: sensorCreatorFuncs,
 	})
 
 	factory := newLazyFactory(tlsCheckCache)
@@ -106,12 +124,10 @@ func NewRegistryStore(checkTLSFunc tlscheckcache.CheckTLSFunc) *Store {
 		globalRegistries: registries.NewSet(
 			factory,
 			types.WithMetricsHandler(registryMetrics.Singleton()),
-			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		centralRegistryIntegrations: registries.NewSet(
 			defaultFactory,
 			types.WithMetricsHandler(registryMetrics.Singleton()),
-			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		clusterLocalRegistryHosts: set.NewStringSet(),
 		tlsCheckCache:             tlsCheckCache,
@@ -159,7 +175,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 
 	regs := rs.storeByHost[namespace]
 	if regs == nil {
-		regs = registries.NewSet(rs.factory, types.WithGCPTokenManager(gcp.Singleton()))
+		regs = registries.NewSet(rs.factory, types.WithMetricsHandler(registryMetrics.Singleton()))
 		rs.storeByHost[namespace] = regs
 	}
 
@@ -520,7 +536,7 @@ func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registry, h
 	name := genIntegrationName(types.PullSecretNamePrefix, namespace, secretName, registry)
 	ii := createImageIntegration(host, dce, name)
 
-	reg, err := rs.factory.CreateRegistry(ii, types.WithGCPTokenManager(gcp.Singleton()))
+	reg, err := rs.factory.CreateRegistry(ii, types.WithMetricsHandler(registryMetrics.Singleton()))
 	if err != nil {
 		log.Errorf("Creating registry for pull secret %q, namespace %q, registry %q, host %q: %v", secretName, namespace, registry, host, err)
 		return

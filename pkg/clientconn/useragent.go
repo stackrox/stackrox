@@ -2,10 +2,10 @@ package clientconn
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -35,7 +35,7 @@ func init() {
 // e.g. grpc-go/1.50.1.
 func SetUserAgent(agent string) {
 	var ci string
-	if testutils.IsRunningInCI() {
+	if _, isCI := os.LookupEnv("CI"); isCI {
 		ci = " CI"
 	}
 	userAgentMutex.Lock()
