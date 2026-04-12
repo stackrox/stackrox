@@ -40,6 +40,7 @@ type Watcher struct {
 	apiPath string
 	handler Handler
 	client  *http.Client
+	baseURL string // override for testing; defaults to "https://kubernetes.default.svc"
 }
 
 // New creates a watcher for the given API path (e.g., "/apis/apps/v1/deployments").
@@ -113,7 +114,11 @@ func (w *Watcher) Run(ctx context.Context) {
 }
 
 func (w *Watcher) doWatch(ctx context.Context, resourceVersion string, handle func(Event, string)) error {
-	url := fmt.Sprintf("https://kubernetes.default.svc%s?watch=true&allowWatchBookmarks=true", w.apiPath)
+	base := w.baseURL
+	if base == "" {
+		base = "https://kubernetes.default.svc"
+	}
+	url := fmt.Sprintf("%s%s?watch=true&allowWatchBookmarks=true", base, w.apiPath)
 	if resourceVersion != "" {
 		url += "&resourceVersion=" + resourceVersion
 	}
@@ -124,11 +129,14 @@ func (w *Watcher) doWatch(ctx context.Context, resourceVersion string, handle fu
 	}
 
 	// Re-read token on each connection to handle rotation.
-	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		return fmt.Errorf("reading service account token: %w", err)
+	// Skip if baseURL is overridden (testing with httptest).
+	if w.baseURL == "" {
+		token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+		if err != nil {
+			return fmt.Errorf("reading service account token: %w", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+string(token))
 	}
-	req.Header.Set("Authorization", "Bearer "+string(token))
 
 	resp, err := w.client.Do(req)
 	if err != nil {

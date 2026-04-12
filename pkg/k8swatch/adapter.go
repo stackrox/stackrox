@@ -25,6 +25,7 @@ type InformerAdapter struct {
 	handlerMu  sync.RWMutex
 	hasSynced  concurrency.Signal
 	cancelFunc context.CancelFunc
+	baseURL    string // override for testing; defaults to "https://kubernetes.default.svc"
 }
 
 // NewInformerAdapter creates an adapter that watches the given API path and
@@ -102,20 +103,18 @@ func (a *InformerAdapter) Run(stopCh <-chan struct{}) {
 		}
 	})
 
+	watcher.baseURL = a.baseURL
 	watcher.Run(ctx)
 }
 
 // initialList performs a LIST request to get all existing objects and delivers
 // them as ADDED events. This replicates what informers do before starting a watch.
 func (a *InformerAdapter) initialList(ctx context.Context) {
-	url := fmt.Sprintf("https://kubernetes.default.svc%s", a.apiPath)
-
-	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		log.Warnf("k8swatch adapter %s: can't read token for initial list: %v", a.apiPath, err)
-		a.hasSynced.Signal()
-		return
+	base := a.baseURL
+	if base == "" {
+		base = "https://kubernetes.default.svc"
 	}
+	url := fmt.Sprintf("%s%s", base, a.apiPath)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -123,7 +122,17 @@ func (a *InformerAdapter) initialList(ctx context.Context) {
 		a.hasSynced.Signal()
 		return
 	}
-	req.Header.Set("Authorization", "Bearer "+string(token))
+
+	// Add auth token for in-cluster; skip for test servers
+	if a.baseURL == "" {
+		token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+		if err != nil {
+			log.Warnf("k8swatch adapter %s: can't read token for initial list: %v", a.apiPath, err)
+			a.hasSynced.Signal()
+			return
+		}
+		req.Header.Set("Authorization", "Bearer "+string(token))
+	}
 
 	resp, err := a.client.Do(req)
 	if err != nil {
