@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -25,13 +27,49 @@ func New(ctx context.Context, config *Config) (*db, error) {
 	}, nil
 }
 
-// ParseConfig wraps pgxpool.ParseConfig
+// ParseConfig wraps pgxpool.ParseConfig and applies memory-aware tuning.
+// When ROX_MEMLIMIT is set (via Kubernetes downward API), the pool size
+// and per-connection caches are scaled down to reduce memory usage.
+// By default, pgx creates max(4, NumCPU) connections, each with 512-entry
+// statement and description caches — this duplicates cache data across
+// connections and can use 10+ MB on systems with many CPUs.
 func ParseConfig(source string) (*Config, error) {
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
 		return nil, err
 	}
+	applyMemoryAwarePoolConfig(config)
 	return &Config{Config: config}, nil
+}
+
+func applyMemoryAwarePoolConfig(config *pgxpool.Config) {
+	memLimitStr := os.Getenv("ROX_MEMLIMIT")
+	if memLimitStr == "" {
+		return
+	}
+	memLimit, err := strconv.ParseInt(memLimitStr, 10, 64)
+	if err != nil || memLimit <= 0 {
+		return
+	}
+
+	const (
+		mb             = 1024 * 1024
+		smallThreshold = 512 * mb  // 512 Mi
+		medThreshold   = 2048 * mb // 2 Gi
+	)
+
+	if memLimit < smallThreshold {
+		// Small memory: minimize pool overhead
+		config.MaxConns = 2
+		config.ConnConfig.RuntimeParams["statement_cache_capacity"] = "64"
+		config.ConnConfig.RuntimeParams["description_cache_capacity"] = "64"
+	} else if memLimit < medThreshold {
+		// Medium memory: moderate pool
+		config.MaxConns = 4
+		config.ConnConfig.RuntimeParams["statement_cache_capacity"] = "128"
+		config.ConnConfig.RuntimeParams["description_cache_capacity"] = "128"
+	}
+	// Large memory (>2Gi): use pgx defaults
 }
 
 // Connect wraps pgxpool.Connect
