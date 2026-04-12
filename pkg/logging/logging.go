@@ -180,7 +180,9 @@ func init() {
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach
 	// such that we can easily propagate changes to log levels.
-	addOutput(&config, LoggingPath)
+	if env.LoggingToFile.BooleanSetting() {
+		addOutput(&config, LoggingPath)
+	}
 
 	if buildinfo.ReleaseBuild {
 		config.DisableStacktrace = true
