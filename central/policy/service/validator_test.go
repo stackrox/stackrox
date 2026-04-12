@@ -1050,10 +1050,10 @@ func (s *PolicyValidatorTestSuite) TestValidateDeploymentFileActivityEventSource
 	// reset once for these tests, and then reset on return after the feature flag has been disabled
 	// again to ensure consistent state in other tests
 	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
-	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+	booleanpolicy.ResetFieldMetadataSingleton()
 
 	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
-	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+	defer booleanpolicy.ResetFieldMetadataSingleton()
 
 	for _, c := range testCases {
 		s.T().Run(c.description, func(t *testing.T) {
@@ -1200,10 +1200,10 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 	// reset once for these tests, and then reset on return after the feature flag has been disabled
 	// again to ensure consistent state in other tests
 	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
-	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+	booleanpolicy.ResetFieldMetadataSingleton()
 
 	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
-	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+	defer booleanpolicy.ResetFieldMetadataSingleton()
 
 	for _, c := range testCases {
 		s.T().Run(c.description, func(t *testing.T) {

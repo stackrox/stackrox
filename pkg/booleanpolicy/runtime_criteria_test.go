@@ -956,8 +956,8 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccess() {
 	} {
 		testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, false)
-		ResetFieldMetadataSingleton(suite.T())
-		defer ResetFieldMetadataSingleton(suite.T())
+		ResetFieldMetadataSingleton()
+		defer ResetFieldMetadataSingleton()
 
 		suite.Run(tc.description, func() {
 			matcher, err := BuildDeploymentWithFileAccessMatcher(tc.policy)
@@ -1260,8 +1260,8 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentEffectiveFileAccess() {
 	} {
 		testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, false)
-		ResetFieldMetadataSingleton(suite.T())
-		defer ResetFieldMetadataSingleton(suite.T())
+		ResetFieldMetadataSingleton()
+		defer ResetFieldMetadataSingleton()
 
 		suite.Run(tc.description, func() {
 			matcher, err := BuildDeploymentWithFileAccessMatcher(tc.policy)
@@ -1639,8 +1639,8 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentDualPathMatching() {
 	} {
 		testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, false)
-		ResetFieldMetadataSingleton(suite.T())
-		defer ResetFieldMetadataSingleton(suite.T())
+		ResetFieldMetadataSingleton()
+		defer ResetFieldMetadataSingleton()
 
 		suite.Run(tc.description, func() {
 			matcher, err := BuildDeploymentWithFileAccessMatcher(tc.policy)
@@ -1974,8 +1974,8 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 	} {
 		testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, false)
-		ResetFieldMetadataSingleton(suite.T())
-		defer ResetFieldMetadataSingleton(suite.T())
+		ResetFieldMetadataSingleton()
+		defer ResetFieldMetadataSingleton()
 
 		suite.Run(tc.description, func() {
 			matcher, err := BuildDeploymentWithFileAccessMatcher(tc.policy)

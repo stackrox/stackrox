@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"testing"
 
 	globstar "github.com/bmatcuk/doublestar/v4"
 	"github.com/pkg/errors"
@@ -43,7 +42,7 @@ func FieldMetadataSingleton() *FieldMetadata {
 // ResetFieldMetadataSingleton is for testing purposes only, and can be
 // used to ensure that criteria are added / removed when feature flags
 // are enabled / disabled respectively.
-func ResetFieldMetadataSingleton(_ *testing.T) {
+func ResetFieldMetadataSingleton() {
 	fieldMetadataInstanceInit = sync.Once{}
 }
 

@@ -610,8 +610,8 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
 
-	ResetFieldMetadataSingleton(s.T())
-	defer ResetFieldMetadataSingleton(s.T())
+	ResetFieldMetadataSingleton()
+	defer ResetFieldMetadataSingleton()
 
 	s.Error(Validate(&storage.Policy{
 

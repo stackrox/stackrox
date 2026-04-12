@@ -294,8 +294,8 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
-		ResetFieldMetadataSingleton(s.T())
-		defer ResetFieldMetadataSingleton(s.T())
+		ResetFieldMetadataSingleton()
+		defer ResetFieldMetadataSingleton()
 
 		s.Run(tc.description, func() {
 			matcher, err := BuildNodeEventMatcher(tc.policy)
