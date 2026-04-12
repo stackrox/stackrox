@@ -141,7 +141,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
+	imageCacheTTL := env.ReprocessInterval.DurationSetting()
+	if env.SensorLite.BooleanSetting() {
+		imageCacheTTL = time.Second // Effectively disable caching in lite mode
+	}
+	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](imageCacheTTL)
 
 	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
 	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.Registries(), localScan)
