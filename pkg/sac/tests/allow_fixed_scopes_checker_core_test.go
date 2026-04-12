@@ -176,7 +176,7 @@ func TestAllowFixedScopes(t *testing.T) {
 
 func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 	resA := resources.RegisterDeprecatedResourceMetadataForTest(
-		t,
+
 		"resourceA",
 		permissions.NamespaceScope,
 		permissions.ResourceMetadata{
@@ -185,12 +185,12 @@ func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 		},
 	)
 	resB := resources.RegisterResourceMetadataForTest(
-		t,
+
 		"resourceB",
 		permissions.GlobalScope,
 	)
 	resD := resources.RegisterResourceMetadataForTest(
-		t,
+
 		"resourceD",
 		permissions.ClusterScope,
 	)

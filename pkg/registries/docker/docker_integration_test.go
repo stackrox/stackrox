@@ -37,9 +37,9 @@ func TestGetMetadataIntegration(t *testing.T) {
 	require.Nil(t, err)
 
 	// Make sure that request and histogram metrics but no timeouts have been recorded.
-	assert.NotEmpty(t, metricsHandler.TestCollectRequestCounter(t))
-	assert.Empty(t, metricsHandler.TestCollectTimeoutCounter(t))
-	assert.NotEmpty(t, metricsHandler.TestCollectHistogramCounter(t))
+	assert.NotEmpty(t, metricsHandler.TestCollectRequestCounter())
+	assert.Empty(t, metricsHandler.TestCollectTimeoutCounter())
+	assert.NotEmpty(t, metricsHandler.TestCollectHistogramCounter())
 }
 
 func TestOCIImageIndexManifest(t *testing.T) {

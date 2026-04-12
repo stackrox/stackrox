@@ -3,7 +3,6 @@ package resources
 
 import (
 	"sort"
-	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -275,7 +274,6 @@ func MetadataForInternalResource(res permissions.Resource) (permissions.Resource
 
 // RegisterResourceMetadataForTest allows to register resourceMetadata for test resources.
 func RegisterResourceMetadataForTest(
-	_ *testing.T,
 	name permissions.Resource,
 	scope permissions.ResourceScope,
 ) permissions.ResourceMetadata {
@@ -289,7 +287,6 @@ func RegisterResourceMetadataForTest(
 
 // RegisterDeprecatedResourceMetadataForTest allows to register resourceMetadata for test resources.
 func RegisterDeprecatedResourceMetadataForTest(
-	_ *testing.T,
 	name permissions.Resource,
 	scope permissions.ResourceScope,
 	replacingResourceMD permissions.ResourceMetadata,
