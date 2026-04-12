@@ -264,7 +264,7 @@ func newAPIForTest(t *testing.T, config Config) API {
 }
 
 func setUpPrintSocketInfoFunction(t *testing.T) {
-	printSocketInfo = func(_ *testing.T) {
+	printSocketInfo = func(_ any) {
 		if r := recover(); r != nil {
 			if err, ok := r.(string); ok {
 				if strings.Contains(err, syscall.EADDRINUSE.Error()) {
