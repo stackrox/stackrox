@@ -1,5 +1,3 @@
-//go:build awsecr
-
 // Package awscredentials provides Sensor components that can retrieve, cache,
 // refresh and offer AWS-based credentials and tokens.
 package awscredentials

@@ -1,5 +1,3 @@
-//go:build awscloud
-
 package aws
 
 import (

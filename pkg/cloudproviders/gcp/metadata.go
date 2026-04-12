@@ -1,5 +1,3 @@
-//go:build gcpcloud
-
 package gcp
 
 import (

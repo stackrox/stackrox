@@ -1,5 +1,3 @@
-//go:build awsecr
-
 package awscredentials
 
 import (
