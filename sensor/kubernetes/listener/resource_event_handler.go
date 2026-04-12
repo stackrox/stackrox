@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8swatch"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,7 +26,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
 	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -269,12 +276,14 @@ func (k *listenerImpl) handleAllEvents() {
 		k.client.Kubernetes(),
 	)
 
-	namespaceInformer := sif.Core().V1().Namespaces().Informer()
-	secretInformer := sif.Core().V1().Secrets().Informer()
-	saInformer := sif.Core().V1().ServiceAccounts().Informer()
+	k8sClient := k8swatch.InClusterClient()
 
-	roleInformer := sif.Rbac().V1().Roles().Informer()
-	clusterRoleInformer := sif.Rbac().V1().ClusterRoles().Informer()
+	namespaceInformer := k8swatch.NewInformerAdapter("/api/v1/namespaces", k8sClient, func() runtime.Object { return &corev1.Namespace{} })
+	secretInformer := k8swatch.NewInformerAdapter("/api/v1/secrets", k8sClient, func() runtime.Object { return &corev1.Secret{} })
+	saInformer := k8swatch.NewInformerAdapter("/api/v1/serviceaccounts", k8sClient, func() runtime.Object { return &corev1.ServiceAccount{} })
+
+	roleInformer := k8swatch.NewInformerAdapter("/apis/rbac.authorization.k8s.io/v1/roles", k8sClient, func() runtime.Object { return &rbacv1.Role{} })
+	clusterRoleInformer := k8swatch.NewInformerAdapter("/apis/rbac.authorization.k8s.io/v1/clusterroles", k8sClient, func() runtime.Object { return &rbacv1.ClusterRole{} })
 
 	// The group that has no other object dependencies
 	noDependencyWaitGroup := &concurrency.WaitGroup{}
@@ -371,8 +380,8 @@ func (k *listenerImpl) handleAllEvents() {
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}
 
-	roleBindingInformer := sif.Rbac().V1().RoleBindings().Informer()
-	clusterRoleBindingInformer := sif.Rbac().V1().ClusterRoleBindings().Informer()
+	roleBindingInformer := k8swatch.NewInformerAdapter("/apis/rbac.authorization.k8s.io/v1/rolebindings", k8sClient, func() runtime.Object { return &rbacv1.RoleBinding{} })
+	clusterRoleBindingInformer := k8swatch.NewInformerAdapter("/apis/rbac.authorization.k8s.io/v1/clusterrolebindings", k8sClient, func() runtime.Object { return &rbacv1.ClusterRoleBinding{} })
 
 	handle(k.context, informerRoleBindings, roleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerClusterRoleBindings, clusterRoleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
@@ -398,18 +407,26 @@ func (k *listenerImpl) handleAllEvents() {
 	preTopLevelDeploymentWaitGroup := &concurrency.WaitGroup{}
 
 	// Non-deployment types.
-	handle(k.context, informerNetworkPolicies, sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
-	handle(k.context, informerNodes, sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
-	handle(k.context, informerServices, sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerNetworkPolicies, k8swatch.NewInformerAdapter("/apis/networking.k8s.io/v1/networkpolicies", k8sClient, func() runtime.Object { return &networkingv1.NetworkPolicy{} }), dispatchers.ForNetworkPolicies(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+
+	// Nodes and Services use the minimal k8swatch watcher instead of client-go
+	// informers. This saves 2 goroutines and the full object cache per resource,
+	// and validates the minimal watcher pattern for broader adoption.
+	handle(k.context, informerNodes,
+		k8swatch.NewInformerAdapter("/api/v1/nodes", k8sClient, func() runtime.Object { return &corev1.Node{} }),
+		dispatchers.ForNodes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerServices,
+		k8swatch.NewInformerAdapter("/api/v1/services", k8sClient, func() runtime.Object { return &corev1.Service{} }),
+		dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	if isOpenShift {
 		handle(k.context, informerRoutes, dynamicSif.ForResource(routeGVR).Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
-	handle(k.context, informerJobs, sif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
-	handle(k.context, informerReplicaSets, sif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
-	handle(k.context, informerReplicationControllers, sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerJobs, k8swatch.NewInformerAdapter("/apis/batch/v1/jobs", k8sClient, func() runtime.Object { return &batchv1.Job{} }), dispatchers.ForJobs(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerReplicaSets, k8swatch.NewInformerAdapter("/apis/apps/v1/replicasets", k8sClient, func() runtime.Object { return &appsv1.ReplicaSet{} }), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerReplicationControllers, k8swatch.NewInformerAdapter("/api/v1/replicationcontrollers", k8sClient, func() runtime.Object { return &corev1.ReplicationController{} }), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 	if coAvailable {
@@ -428,17 +445,12 @@ func (k *listenerImpl) handleAllEvents() {
 	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
-	handle(k.context, informerDaemonSets, sif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.DaemonSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
-	handle(k.context, informerDeployments, sif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
-	handle(k.context, informerStatefulSets, sif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerDaemonSets, k8swatch.NewInformerAdapter("/apis/apps/v1/daemonsets", k8sClient, func() runtime.Object { return &appsv1.DaemonSet{} }), dispatchers.ForDeployments(kubernetesPkg.DaemonSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerDeployments, k8swatch.NewInformerAdapter("/apis/apps/v1/deployments", k8sClient, func() runtime.Object { return &appsv1.Deployment{} }), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerStatefulSets, k8swatch.NewInformerAdapter("/apis/apps/v1/statefulsets", k8sClient, func() runtime.Object { return &appsv1.StatefulSet{} }), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 
-	if ok, err := sensorUtils.HasAPI(k.client.Kubernetes(), "batch/v1", kubernetesPkg.CronJob); err != nil {
-		log.Errorf("error determining API version to use for CronJobs: %v", err)
-	} else if ok {
-		handle(k.context, informerCronJobs, sif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
-	} else {
-		handle(k.context, informerCronJobs, sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
-	}
+	// k8swatch adapter uses JSON, so it handles both v1 and v1beta1 CronJobs
+	handle(k.context, informerCronJobs, k8swatch.NewInformerAdapter("/apis/batch/v1/cronjobs", k8sClient, func() runtime.Object { return &batchv1.CronJob{} }), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	if isOpenShift {
 		handle(k.context, informerDeploymentConfigs, dynamicSif.ForResource(deploymentConfigGVR).Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
