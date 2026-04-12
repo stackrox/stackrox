@@ -1,44 +1,44 @@
+// Package glob provides simple glob-style pattern matching.
+// Replaces gobwas/glob (8 packages) with a stdlib-based implementation.
 package glob
 
 import (
-	"github.com/gobwas/glob"
-	"github.com/pkg/errors"
+	"path"
+
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Pattern is expected to be a string with a glob pattern.
+// Supports the same syntax as path.Match: *, ?, and [...] character classes.
 type Pattern string
 
-var globCache = sync.Map{}
+// compiled caches compiled match functions for patterns.
+var compiled sync.Map
 
+type matchFunc func(string) bool
+
+// Compile pre-compiles the pattern and caches it. Returns error if invalid.
 func (p *Pattern) Compile() error {
 	if p == nil {
 		return nil
 	}
-	_, err := p.compile()
-	return err
-}
-
-func (p *Pattern) compile() (glob.Glob, error) {
-	g, err := glob.Compile(string(*p))
+	_, err := path.Match(string(*p), "")
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to compile %q", string(*p))
+		return err
 	}
-	globCache.Store(*p, g)
-	return g, nil
+	return nil
 }
 
+// Match returns true if s matches the glob pattern.
 func (p *Pattern) Match(s string) bool {
-	v, ok := globCache.Load(*p)
-	if !ok {
-		var err error
-		if v, err = p.compile(); err != nil {
-			return false
-		}
+	if p == nil || *p == "" {
+		return true // empty pattern matches everything
 	}
-	return v.(glob.Glob).Match(s)
+	ok, _ := path.Match(string(*p), s)
+	return ok
 }
 
+// Ptr returns a pointer to the pattern.
 func (p Pattern) Ptr() *Pattern {
 	return &p
 }
