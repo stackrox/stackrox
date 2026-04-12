@@ -3,7 +3,11 @@ package env
 import "time"
 
 // ProcessEnricherInterval controls how often the process signal enricher
-// scans for unresolved container metadata. Lower values detect new
-// processes faster; higher values reduce CPU on stable clusters.
-// Default: 5s. Set to e.g. "30s" or "5m" for edge/stable environments.
-var ProcessEnricherInterval = registerDurationSetting("ROX_SENSOR_PROCESS_ENRICHER_INTERVAL", 5*time.Second)
+// scans the LRU cache for unresolved container metadata as a fallback.
+//
+// Most containers are resolved event-driven via the cluster entity store
+// callback when the pod informer processes the container. This ticker
+// only catches the rare race where a process signal arrives before the
+// pod event — typically a 1-2s window.
+// Default: 30s. The previous 5s default was unnecessarily aggressive.
+var ProcessEnricherInterval = registerDurationSetting("ROX_SENSOR_PROCESS_ENRICHER_INTERVAL", 30*time.Second)
