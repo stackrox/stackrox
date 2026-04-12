@@ -1,17 +1,26 @@
 package types
 
 import (
-	gcpAuth "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
+	"golang.org/x/oauth2"
 )
+
+// TokenManager provides OAuth2 token management for cloud provider authentication.
+// Defined here instead of importing cloud-specific packages to avoid dragging
+// the entire GCP/AWS/Azure SDK chain into every registry type.
+type TokenManager interface {
+	Start()
+	Stop()
+	TokenSource() oauth2.TokenSource
+}
 
 // CreatorConfig specifies optional configuration parameters for registry creators.
 type CreatorConfig struct {
-	GCPTokenManager gcpAuth.STSTokenManager
+	GCPTokenManager TokenManager
 	MetricsHandler  *MetricsHandler
 }
 
 // GetGCPTokenManager is a nil-safe getter for GCPTokenManager.
-func (c *CreatorConfig) GetGCPTokenManager() gcpAuth.STSTokenManager {
+func (c *CreatorConfig) GetGCPTokenManager() TokenManager {
 	if c == nil {
 		return nil
 	}
@@ -30,7 +39,7 @@ func (c *CreatorConfig) GetMetricsHandler() *MetricsHandler {
 type CreatorOption func(opt *CreatorConfig) *CreatorConfig
 
 // WithGCPTokenManager adds a GCP token manager.
-func WithGCPTokenManager(manager gcpAuth.STSTokenManager) CreatorOption {
+func WithGCPTokenManager(manager TokenManager) CreatorOption {
 	return func(opt *CreatorConfig) *CreatorConfig {
 		if opt == nil {
 			opt = &CreatorConfig{}
