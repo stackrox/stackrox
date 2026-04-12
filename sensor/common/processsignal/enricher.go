@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/sensor/queue"
@@ -20,8 +19,6 @@ import (
 )
 
 const (
-	enrichIntervalMax = 2 * time.Minute
-
 	pruneInterval       = 5 * time.Minute
 	containerExpiration = 30 * time.Second
 )
@@ -161,6 +158,14 @@ func (e *enricher) add(indicator *storage.ProcessIndicator) {
 	wrap.addProcess(indicator)
 	e.lru.Add(signal.GetContainerId(), wrap)
 	metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
+
+	// Re-check after adding to LRU to close the race window where
+	// metadata arrived between our first lookup and the LRU insert.
+	// Without this, the entry would sit in the LRU until the next
+	// periodic scan or callback.
+	if metadata, ok, _ = e.clusterEntities.LookupByContainerID(signal.GetContainerId()); ok {
+		e.scanAndEnrich(metadata)
+	}
 }
 
 func (e *enricher) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -171,38 +176,18 @@ func (e *enricher) processLoop(ctx context.Context) {
 	defer e.stopper.Flow().ReportStopped()
 	defer close(e.indicators)
 
-	// The base interval is configurable via ROX_SENSOR_PROCESS_ENRICHER_INTERVAL.
-	// Default 5s for fast enrichment; set higher (e.g. "30s", "5m") on stable/edge clusters.
-	baseInterval := env.ProcessEnricherInterval.DurationSetting()
-	if baseInterval <= 0 {
-		baseInterval = 5 * time.Second
-	}
-
-	// Adaptive ticker: backs off to enrichIntervalMax when the LRU cache
-	// is empty (no unresolved containers). Resets to baseInterval on new
-	// activity. This avoids hundreds of idle scans/hour on stable clusters.
-	currentInterval := baseInterval
-	ticker := time.NewTicker(currentInterval)
+	// No enrichment ticker — resolution is fully event-driven:
+	// 1. add() tries immediate lookup; if metadata missing, caches in LRU
+	// 2. add() re-checks after LRU insert (closes race with concurrent callback)
+	// 3. metadataCallbackChan fires when pod informer processes the container
+	//
+	// The only periodic work is pruning expired entries from the LRU.
 	expirationTicker := time.NewTicker(pruneInterval)
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debugf("process indicator enricher stopped: %s", ctx.Err())
 			return
-		case <-ticker.C:
-			// Skip the full LRU scan if there's nothing to resolve.
-			if e.lru.Len() == 0 {
-				currentInterval = min(currentInterval*2, enrichIntervalMax)
-				ticker.Reset(currentInterval)
-				continue
-			}
-			for _, containerID := range e.lru.Keys() {
-				if metadata, ok, _ := e.clusterEntities.LookupByContainerID(containerID); ok {
-					e.scanAndEnrich(metadata)
-				}
-			}
-			currentInterval = baseInterval
-			ticker.Reset(currentInterval)
 		case <-expirationTicker.C:
 			for _, containerID := range e.lru.Keys() {
 				wrap, exists := e.lru.Peek(containerID)
@@ -217,9 +202,6 @@ func (e *enricher) processLoop(ctx context.Context) {
 			metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
 		case metadata := <-e.metadataCallbackChan:
 			e.scanAndEnrich(metadata)
-			// Reset to fast interval on new activity.
-			currentInterval = baseInterval
-			ticker.Reset(currentInterval)
 		}
 	}
 }
