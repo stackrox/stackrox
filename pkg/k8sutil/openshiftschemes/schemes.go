@@ -1,4 +1,8 @@
-package k8sutil
+// Package openshiftschemes provides registration of all OpenShift API schemes.
+// This is in a separate package from k8sutil so that non-OpenShift binaries
+// (sensor on vanilla k8s) don't pay the init-time cost of 17 scheme
+// registrations (~100-200 KB of maps) from packages they never use.
+package openshiftschemes
 
 import (
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
