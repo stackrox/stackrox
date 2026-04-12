@@ -10,24 +10,14 @@ import (
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
+	"github.com/stackrox/rox/pkg/k8swatch"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var (
-	fieldSelector = fmt.Sprintf("metadata.name=%s", admissioncontrol.ConfigMapName)
-
-	log = logging.LoggerForModule()
-)
-
-func tweakListOpts(listOpts *metav1.ListOptions) {
-	listOpts.FieldSelector = fieldSelector
-}
+var log = logging.LoggerForModule()
 
 // WatchK8sForSettingsUpdatesAsync watches kubernetes
 func WatchK8sForSettingsUpdatesAsync(ctx concurrency.Waitable, settingsC chan<- *sensor.AdmissionControlSettings, namespace string) error {
@@ -144,23 +134,18 @@ func (w *k8sSettingsWatch) sendSettings(settings *sensor.AdmissionControlSetting
 }
 
 func (w *k8sSettingsWatch) start() error {
-	restConfig, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "could not retrieve Kubernetes config")
-	}
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return errors.Wrap(err, "could not create kubernetes client")
-	}
+	// Use k8squatch minimal watcher instead of client-go informer.
+	// Saves: 2 goroutines → 1, informer cache, scheme registration.
+	apiPath := fmt.Sprintf("/api/v1/namespaces/%s/configmaps?fieldSelector=metadata.name=%s",
+		w.namespace, admissioncontrol.ConfigMapName)
 
-	sif := informers.NewSharedInformerFactoryWithOptions(k8sClient, 0,
-		informers.WithNamespace(w.namespace),
-		informers.WithTweakListOptions(tweakListOpts))
+	adapter := k8swatch.NewInformerAdapter(apiPath, k8swatch.InClusterClient(),
+		func() runtime.Object { return &v1.ConfigMap{} })
 
-	if _, err := sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w); err != nil {
+	if _, err := adapter.AddEventHandler(w); err != nil {
 		return errors.Wrap(err, "could not add event handler")
 	}
-	sif.Start(w.ctx.Done())
 
+	go adapter.Run(w.ctx.Done())
 	return nil
 }
