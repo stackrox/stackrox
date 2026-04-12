@@ -107,20 +107,28 @@ func (u *updaterImpl) getCurrentContext() context.Context {
 }
 
 func (u *updaterImpl) run(tickerC <-chan time.Time) {
+	// Health data (component pod counts, versions) changes rarely — only on
+	// upgrades or pod restarts. Refresh it every 10th tick (~5 minutes) instead
+	// of every tick. The heartbeat message is still sent every tick (30s) to
+	// keep ingress controllers from killing the gRPC stream (see ROX-18609).
+	const refreshEveryN = 10
+	tickCount := 0
+	var cachedHealth *central.RawClusterHealthInfo
 	for {
 		select {
 		case <-tickerC:
-			collectorHealthInfo := u.getCollectorInfo()
-			admissionControlHealthInfo := u.getAdmissionControlInfo()
-			scannerHealthInfo := u.getLocalScannerInfo()
+			if cachedHealth == nil || tickCount%refreshEveryN == 0 {
+				cachedHealth = &central.RawClusterHealthInfo{
+					CollectorHealthInfo:        u.getCollectorInfo(),
+					AdmissionControlHealthInfo: u.getAdmissionControlInfo(),
+					ScannerHealthInfo:          u.getLocalScannerInfo(),
+				}
+			}
+			tickCount++
 			select {
 			case u.updates <- message.NewExpiring(u.getCurrentContext(), &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
-					ClusterHealthInfo: &central.RawClusterHealthInfo{
-						CollectorHealthInfo:        collectorHealthInfo,
-						AdmissionControlHealthInfo: admissionControlHealthInfo,
-						ScannerHealthInfo:          scannerHealthInfo,
-					},
+					ClusterHealthInfo: cachedHealth,
 				},
 			}):
 				continue

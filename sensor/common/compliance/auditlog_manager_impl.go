@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -50,6 +51,11 @@ func (a *auditLogCollectionManagerImpl) Name() string {
 }
 
 func (a *auditLogCollectionManagerImpl) Start() error {
+	// Audit log collection is an OpenShift-only feature. On vanilla k8s,
+	// skip starting the goroutines and ticker to save resources.
+	if !env.OpenshiftAPI.BooleanSetting() {
+		return nil
+	}
 	go a.runStateSaver()
 	go a.runUpdater(a.updaterTicker.C)
 	return nil
