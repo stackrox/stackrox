@@ -218,9 +218,15 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// i.e., after nodeInventoryHandler
 	components = append(components, nodeInventoryHandler, complianceMultiplexer)
 
-	coReadySignal := concurrency.NewSignal()
-	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
-	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
+	// Compliance operator components only run on OpenShift clusters.
+	// On vanilla k8s, the compliance operator is not available and the
+	// 15-second polling ticker would waste 240 k8s API calls/hour
+	// searching for a deployment that doesn't exist.
+	if env.OpenshiftAPI.BooleanSetting() {
+		coReadySignal := concurrency.NewSignal()
+		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
+		components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
+	}
 
 	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(clusterID, configHandler)
