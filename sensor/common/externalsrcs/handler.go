@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -80,6 +81,11 @@ func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 }
 
 func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
+	if env.SensorLite.BooleanSetting() {
+		// In lite mode, skip loading network entity knowledge base.
+		// Saves ~16 MB. Network flows show raw IPs instead of cloud labels.
+		return nil
+	}
 	request := msg.GetPushNetworkEntitiesRequest()
 	if request == nil {
 		return nil

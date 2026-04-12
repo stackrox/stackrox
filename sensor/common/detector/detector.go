@@ -307,6 +307,14 @@ func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 
 // ProcessPolicySync reconciles policies and flush all deployments through the detector
 func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error {
+	if env.SensorLite.BooleanSetting() {
+		// In lite mode, skip local policy compilation and detection.
+		// Central evaluates policies. Still forward to admission controller.
+		if d.admCtrlSettingsMgr != nil {
+			d.admCtrlSettingsMgr.UpdatePolicies(sync.GetPolicies())
+		}
+		return nil
+	}
 	// Note: Assume the version of the policies received from central is never
 	// older than sensor's version. Convert to latest if this proves wrong.
 	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
