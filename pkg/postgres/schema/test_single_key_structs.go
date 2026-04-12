@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -24,7 +25,7 @@ var (
 	}
 
 	// TestSingleKeyStructsSchema is the go schema for table `test_single_key_structs`.
-	TestSingleKeyStructsSchema = func() *walker.Schema {
+	TestSingleKeyStructsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_single_key_structs")
 		if schema != nil {
 			return schema
@@ -35,7 +36,7 @@ var (
 		RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(100), schema)
 		return schema
-	}()
+	})
 )
 
 const (

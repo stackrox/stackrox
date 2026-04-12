@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ var (
 	}
 
 	// TestGGrandChild1Schema is the go schema for table `test_g_grand_child1`.
-	TestGGrandChild1Schema = func() *walker.Schema {
+	TestGGrandChild1Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_g_grand_child1")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableTestGGrandChild1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(107), schema)
 		return schema
-	}()
+	})
 )
 
 const (
