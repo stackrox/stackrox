@@ -1,6 +1,7 @@
 package app
 
 import (
+	centralChecks "github.com/stackrox/rox/central/compliance/checks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/compliance/checks"
@@ -25,4 +26,5 @@ func Run() {
 	metrics.Init()
 	loaders.Init()
 	checks.Init()
+	centralChecks.Init()
 }
