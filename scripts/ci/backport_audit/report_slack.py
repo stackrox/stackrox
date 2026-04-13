@@ -157,6 +157,7 @@ def generate_slack_payload(
                         issue.team or "No team",
                         issue.component or "No component",
                         issue.priority or "No priority",
+                        issue.severity,
                         deadline_info,
                         urgency_level,
                         urgency_icon
@@ -165,12 +166,12 @@ def generate_slack_payload(
                         issues_with_problems.append(issue_info)
 
         if issues_with_problems:
-            issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[8], 99))
+            issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[9], 99))
 
             section_lines.append(f"\n*Jira Issues with Missing Metadata ({len(issues_with_problems)})*")
 
             for (jira_key, fix_icon, affected_icon, assignee, team, component,
-                 priority, deadline_info, urgency_level, urgency_icon) in issues_with_problems:
+                 priority, severity, deadline_info, urgency_level, urgency_icon) in issues_with_problems:
                 jira_link = f"<https://redhat.atlassian.net/browse/{jira_key}|{jira_key}>"
                 pr_refs = jira_to_prs.get(jira_key, [])
                 pr_links = ', '.join([
@@ -179,9 +180,13 @@ def generate_slack_payload(
                 ])
                 pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
 
+                priority_info = f"P: {priority}"
+                if severity:
+                    priority_info += f", S: {severity}"
+
                 section_lines.append(
                     f"• {urgency_icon} {jira_link}: {fix_icon} fixVer, {affected_icon} affectedVer | "
-                    f"P: {priority} | {deadline_info}{pr_suffix}"
+                    f"{priority_info} | {deadline_info}{pr_suffix}"
                 )
 
         if orphaned:

@@ -36,7 +36,10 @@ class JiraClient:
         Returns:
             JiraIssue or None if not found
         """
-        fields = "fixVersions,versions,summary,status,assignee,components,customfield_10001,priority,duedate"
+        # Standard fields: priority, duedate
+        # Custom fields: customfield_10001 (Team), customfield_10840 (Severity for CVE trackers)
+        # TODO: Add SLA Date field once discovered (likely only present on CVE tracker issues)
+        fields = "fixVersions,versions,summary,status,assignee,components,customfield_10001,priority,duedate,customfield_10840"
         url = f"https://{self.base_url}/rest/api/3/issue/{issue_key}?fields={fields}"
 
         req = Request(url)
@@ -84,6 +87,10 @@ class JiraClient:
 
         due_date = fields.get('duedate')
 
+        severity = None
+        if fields.get('customfield_10840'):
+            severity = fields['customfield_10840'].get('value')
+
         return JiraIssue(
             key=data['key'],
             summary=fields.get('summary', ''),
@@ -93,7 +100,7 @@ class JiraClient:
             team=team,
             component=component,
             priority=priority,
-            severity=None,
+            severity=severity,
             due_date=due_date,
             sla_date=None
         )
