@@ -71,14 +71,14 @@ def _create_table_cell_text(text: str) -> dict[str, Any]:
     return {"type": "raw_text", "text": text}
 
 
-def _create_table_cell_rich_text(text: str) -> dict[str, Any]:
-    """Create a rich text cell (supports emojis, formatting)."""
+def _create_table_cell_emoji(emoji_name: str) -> dict[str, Any]:
+    """Create a rich text cell with emoji element."""
     return {
         "type": "rich_text",
         "elements": [
             {
                 "type": "rich_text_section",
-                "elements": [{"type": "text", "text": text}],
+                "elements": [{"type": "emoji", "name": emoji_name}],
             }
         ],
     }
@@ -143,14 +143,20 @@ def _create_issue_table_row(
 
     severity_display = severity if severity else "—"
 
+    # Extract emoji names from shortcodes (":red_circle:" → "red_circle")
+    urgency_emoji = urgency_icon.strip(":")
+    fix_emoji = fix_icon.strip(":")
+    affected_emoji = affected_icon.strip(":")
+    priority_emoji = priority_display.strip(":")
+
     return [
-        _create_table_cell_rich_text(urgency_icon),
+        _create_table_cell_emoji(urgency_emoji),
         _create_table_cell_link(
             f"https://redhat.atlassian.net/browse/{jira_key}", jira_key
         ),
-        _create_table_cell_rich_text(fix_icon),
-        _create_table_cell_rich_text(affected_icon),
-        _create_table_cell_rich_text(priority_display),
+        _create_table_cell_emoji(fix_emoji),
+        _create_table_cell_emoji(affected_emoji),
+        _create_table_cell_emoji(priority_emoji),
         _create_table_cell_text(severity_display),
         _create_table_cell_text(deadline_info),
         pr_cell,
