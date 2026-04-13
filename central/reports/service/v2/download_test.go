@@ -221,5 +221,5 @@ func (s *handlerTestSuite) getContextForUser(user *storage.SlimUser) context.Con
 	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
 	mockID.EXPECT().FullName().Return(user.GetName()).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
-	return authn.ContextWithIdentity(s.ctx, mockID))
+	return authn.ContextWithIdentity(s.ctx, mockID)
 }

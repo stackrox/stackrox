@@ -32,7 +32,6 @@ func TestExportImages(t *testing.T) {
 	fakeService := &fakeImageService{tb: t}
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		context.Background(),
-		t,
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterImageServiceServer(registrar, fakeService)
 		},

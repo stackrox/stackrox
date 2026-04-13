@@ -32,7 +32,6 @@ func TestExportNodes(t *testing.T) {
 	fakeService := &fakeNodeService{tb: t}
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		context.Background(),
-		t,
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterNodeServiceServer(registrar, fakeService)
 		},

@@ -25,7 +25,6 @@ func TestListProvidersOptJSON(t *testing.T) {
 	fakeService := &fakeAccessService{tb: t}
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		context.Background(),
-		t,
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterAuthProviderServiceServer(registrar, fakeService)
 			v1.RegisterGroupServiceServer(registrar, fakeService)

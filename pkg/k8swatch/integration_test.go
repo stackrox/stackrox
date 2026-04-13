@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -59,20 +60,12 @@ func setupCluster(t *testing.T) (kubernetes.Interface, *http.Client, string) {
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
 	clientset.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
 
-	// Build an HTTP client that uses the same TLS config as the k8s client
-	transport, err := config.TransportConfig()
+	// Build an HTTP client that uses the k8s rest client's transport
+	k8sTransport, err := rest.TransportFor(config)
 	require.NoError(t, err)
 
-	tlsConfig, err := transport.TLSConfigFor(transport)
-	if err != nil || tlsConfig == nil {
-		// Fallback for insecure configs (like KinD with --insecure)
-		tlsConfig = nil
-	}
-
 	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
+		Transport: k8sTransport,
 	}
 
 	// API server base URL

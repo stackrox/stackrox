@@ -32,7 +32,6 @@ func TestExportDeployments(t *testing.T) {
 	fakeService := &fakeDeploymentService{tb: t}
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		context.Background(),
-		t,
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterDeploymentServiceServer(registrar, fakeService)
 		},

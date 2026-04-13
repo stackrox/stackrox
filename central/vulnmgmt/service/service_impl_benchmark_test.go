@@ -31,7 +31,6 @@ func getExportServiceBenchmark(
 	return func(b *testing.B) {
 		conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 			helper.Ctx,
-			b,
 			func(registrar grpc.ServiceRegistrar) {
 				v1.RegisterVulnMgmtServiceServer(registrar, service)
 			},

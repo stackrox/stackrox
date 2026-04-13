@@ -111,7 +111,6 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.requestContext = sac.WithGlobalAccessScopeChecker(
 		context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(
-			suite.T(),
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 					resources.NetworkPolicy.GetResource(): {
@@ -157,7 +156,6 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 	testCtx := sac.WithGlobalAccessScopeChecker(
 		suite.requestContext,
 		sac.TestScopeCheckerCoreFromFullScopeMap(
-			suite.T(),
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 					resources.NetworkPolicy.GetResource(): {

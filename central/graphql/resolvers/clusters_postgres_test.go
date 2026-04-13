@@ -113,7 +113,6 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.TestScopeCheckerCoreFromFullScopeMap(
-					s.T(),
 					sac.TestScopeMap{
 						storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
 							resources.Compliance.Resource: {

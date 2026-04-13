@@ -7,11 +7,6 @@ import (
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
-	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
-	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
-	configFake "github.com/openshift/client-go/config/clientset/versioned/fake"
-	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
-	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -19,7 +14,11 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -34,8 +33,8 @@ func TestClusterStatusUpdater(t *testing.T) {
 }
 
 type fakeClientSet struct {
-	k8s    kubernetes.Interface
-	config configVersioned.Interface
+	k8s     kubernetes.Interface
+	dynamic dynamic.Interface
 }
 
 func (c *fakeClientSet) Kubernetes() kubernetes.Interface {
@@ -43,34 +42,25 @@ func (c *fakeClientSet) Kubernetes() kubernetes.Interface {
 }
 
 func (c *fakeClientSet) Dynamic() dynamic.Interface {
-	return nil
-}
-
-func (c *fakeClientSet) OpenshiftApps() appVersioned.Interface {
-	return nil
-}
-
-func (c *fakeClientSet) OpenshiftConfig() configVersioned.Interface {
-	return c.config
-}
-
-func (c *fakeClientSet) OpenshiftRoute() routeVersioned.Interface {
-	return nil
-}
-
-func (c *fakeClientSet) OpenshiftOperator() operatorVersioned.Interface {
-	return nil
+	return c.dynamic
 }
 
 func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata,
-	getMetadata providerMetadataFromOpenShift, configClient ...*configFake.Clientset) {
-	config := configFake.NewClientset()
-	if len(configClient) != 0 {
-		config = configClient[0]
+	getMetadata providerMetadataFromOpenShift, objects ...runtime.Object) {
+	var dynClient dynamic.Interface
+	if len(objects) > 0 {
+		scheme := runtime.NewScheme()
+		dynClient = dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme,
+			map[schema.GroupVersionResource]string{
+				{Group: "config.openshift.io", Version: "v1", Resource: "infrastructures"}: "InfrastructureList",
+				{Group: "config.openshift.io", Version: "v1", Resource: "clusterversions"}: "ClusterVersionList",
+			},
+			objects...,
+		)
 	}
 	s.updater = NewUpdater(&fakeClientSet{
-		k8s:    fake.NewClientset(),
-		config: config,
+		k8s:     fake.NewClientset(),
+		dynamic: dynClient,
 	})
 	s.updater.(*updaterImpl).getProviders = getProviders
 	s.updater.(*updaterImpl).getProviderMetadataFromOpenShift = getMetadata
@@ -139,7 +129,7 @@ func mockGetMetadata(_ context.Context) *storage.ProviderMetadata {
 	return &storage.ProviderMetadata{}
 }
 
-func mockProviderMetadata(_ context.Context, _ configVersioned.Interface) (*storage.ProviderMetadata, error) {
+func mockProviderMetadata(_ context.Context, _ dynamic.Interface) (*storage.ProviderMetadata, error) {
 	return nil, nil
 }
 
@@ -157,6 +147,16 @@ func (s *updaterSuite) Test_OfflineMode() {
 			}
 		})
 	}
+}
+
+// toUnstructured converts a typed k8s object to *unstructured.Unstructured for use with dynamicfake.
+func toUnstructured(t *testing.T, obj runtime.Object) *unstructured.Unstructured {
+	t.Helper()
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		t.Fatalf("failed to convert to unstructured: %v", err)
+	}
+	return &unstructured.Unstructured{Object: data}
 }
 
 func (s *updaterSuite) Test_GetCloudProviderMetadata() {
@@ -478,11 +478,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 	for name, tc := range cases {
 		s.Run(name, func() {
 			s.T().Setenv(env.OpenshiftAPI.EnvVar(), strconv.FormatBool(tc.openshift))
-			config := configFake.NewClientset()
+			var objects []runtime.Object
 			if tc.infra != nil {
-				config = configFake.NewClientset(tc.infra, tc.cv)
+				objects = append(objects, toUnstructured(s.T(), tc.infra), toUnstructured(s.T(), tc.cv))
 			}
-			s.createUpdater(tc.getProviders, getProviderMetadataFromOpenShiftConfig, config)
+			s.createUpdater(tc.getProviders, getProviderMetadataFromOpenShiftConfig, objects...)
 			u := s.updater.(*updaterImpl)
 			providerMetadata := u.getCloudProviderMetadata(context.Background())
 			protoassert.Equal(s.T(), tc.metadata, providerMetadata)

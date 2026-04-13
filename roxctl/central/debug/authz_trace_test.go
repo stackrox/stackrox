@@ -28,7 +28,6 @@ func TestStreamAuthzTraces(t *testing.T) {
 	svc := &fakeService{}
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		context.Background(),
-		t,
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterDebugServiceServer(registrar, svc)
 		},

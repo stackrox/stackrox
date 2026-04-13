@@ -30,7 +30,6 @@ func TestExportPods(t *testing.T) {
 	fakeService := &fakePodsService{tb: t}
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		context.Background(),
-		t,
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterPodServiceServer(registrar, fakeService)
 		},
