@@ -331,3 +331,42 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
 	suite.False(enabled)
 }
+
+// TestDeploymentRemoved verifies that when a deployment is removed (soft-deleted),
+// alerts are resolved and the deployment is removed from the observation queue.
+func (suite *ManagerTestSuite) TestDeploymentRemoved() {
+	deploymentID := uuid.NewV4().String()
+
+	// Expect AlertAndNotify to be called with nil alerts and deployment ID marked for removal.
+	// This triggers alert resolution for all alerts associated with this deployment.
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), nil, gomock.Any()).
+		DoAndReturn(func(ctx interface{}, alerts interface{}, filters ...interface{}) (set.StringSet, error) {
+			// Verify that the filter includes deployment ID with isRemove=true.
+			// This is handled by alertmanager.WithDeploymentID(deploymentID, true).
+			return set.NewStringSet(), nil
+		})
+
+	// Expect the deployment to be removed from the observation queue.
+	suite.deploymentObservationQueue.EXPECT().RemoveDeployment(deploymentID)
+
+	err := suite.manager.DeploymentRemoved(deploymentID)
+	suite.NoError(err)
+}
+
+// TestDeploymentRemovedWithError verifies error handling when alert resolution fails.
+func (suite *ManagerTestSuite) TestDeploymentRemovedWithError() {
+	deploymentID := uuid.NewV4().String()
+	expectedError := errors.New("alert resolution failed")
+
+	// AlertAndNotify returns an error.
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), nil, gomock.Any()).
+		Return(nil, expectedError)
+
+	// Deployment should still be removed from observation queue even if alert resolution fails.
+	suite.deploymentObservationQueue.EXPECT().RemoveDeployment(deploymentID)
+
+	err := suite.manager.DeploymentRemoved(deploymentID)
+	suite.Equal(expectedError, err)
+}

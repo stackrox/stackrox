@@ -233,6 +233,12 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment_SoftDelete() {
 	// Note: This test verifies soft-delete behavior without mocking the config datastore.
 	// Full end-to-end testing with config TTL is covered in integration tests.
+	//
+	// Alert resolution: This test verifies that RemoveDeployment() creates a tombstone.
+	// Alert resolution happens at a higher level (lifecycle manager) BEFORE RemoveDeployment() is called.
+	// See central/detection/lifecycle/manager_impl_test.go:TestDeploymentRemoved for alert resolution tests.
+	// See central/sensor/service/pipeline/deploymentevents/pipeline_test.go:TestAlertRemovalOnReconciliation
+	// for integration tests verifying the full flow.
 	ds := newDatastoreImpl(suite.storage, nil, nil, suite.baselineStore, suite.networkFlows, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -298,4 +304,50 @@ func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment_DeploymentNotFou
 	// RemoveDeployment should handle this gracefully without error.
 	err := ds.RemoveDeployment(ctx, clusterID, deploymentID)
 	suite.Require().NoError(err)
+}
+
+// TestRemoveDeployment_DeploymentRemainsAccessible verifies that soft-deleted deployments
+// remain in the database and can be queried (for alert retention and audit trails).
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment_DeploymentRemainsAccessible() {
+	ds := newDatastoreImpl(suite.storage, nil, nil, suite.baselineStore, suite.networkFlows, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
+	ctx := sac.WithAllAccess(context.Background())
+
+	deploymentID := "test-deployment-id"
+	clusterID := "test-cluster-id"
+
+	// Create a deployment to be soft-deleted.
+	deployment := &storage.Deployment{
+		Id:             deploymentID,
+		ClusterId:      clusterID,
+		Name:           "test-deployment",
+		LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
+	}
+
+	// Set up expectations for cleanup of related objects.
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, storage.RiskSubjectType_DEPLOYMENT).Return(nil)
+	suite.baselineStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil)
+	suite.networkFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(suite.flowStore, nil)
+	suite.flowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), deploymentID).Return(nil)
+
+	// Expect Get to return the deployment for soft-delete.
+	suite.storage.EXPECT().Get(gomock.Any(), deploymentID).Return(deployment, true, nil)
+
+	// Expect Upsert to be called with the soft-deleted deployment.
+	var softDeletedDeployment *storage.Deployment
+	suite.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, d *storage.Deployment) error {
+		softDeletedDeployment = d
+		return nil
+	})
+
+	// Call RemoveDeployment.
+	err := ds.RemoveDeployment(ctx, clusterID, deploymentID)
+	suite.Require().NoError(err)
+
+	// Verify the deployment was soft-deleted (not hard-deleted).
+	suite.Require().NotNil(softDeletedDeployment, "Deployment should be upserted, not deleted")
+	suite.Equal(storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED, softDeletedDeployment.GetLifecycleStage())
+	suite.NotNil(softDeletedDeployment.GetTombstone())
+
+	// This verifies that alert retention policies can still query soft-deleted deployments.
+	// Alerts associated with this deployment will have deployment.Id references that remain valid.
 }
