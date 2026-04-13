@@ -65,14 +65,17 @@ def _calculate_urgency_stats(
     return total_prs_no_jira, total_jira_issues, urgency_counts
 
 
-def _create_table_cell_text(text: str) -> dict[str, Any]:
+def _create_table_cell_text(text: str, align: str | None = None) -> dict[str, Any]:
     """Create a simple text cell for table."""
-    return {"type": "raw_text", "text": text}
+    cell = {"type": "raw_text", "text": text}
+    if align:
+        cell["align"] = align
+    return cell
 
 
-def _create_table_cell_emoji(emoji_name: str) -> dict[str, Any]:
+def _create_table_cell_emoji(emoji_name: str, align: str | None = None) -> dict[str, Any]:
     """Create a rich text cell with emoji element."""
-    return {
+    cell = {
         "type": "rich_text",
         "elements": [
             {
@@ -81,9 +84,12 @@ def _create_table_cell_emoji(emoji_name: str) -> dict[str, Any]:
             }
         ],
     }
+    if align:
+        cell["align"] = align
+    return cell
 
 
-def _create_table_cell_mention(mention: str) -> dict[str, Any]:
+def _create_table_cell_mention(mention: str, align: str | None = None) -> dict[str, Any]:
     """Create a rich text cell for Slack mentions/emojis.
 
     Handles:
@@ -105,15 +111,18 @@ def _create_table_cell_mention(mention: str) -> dict[str, Any]:
     else:
         elements.append({"type": "text", "text": mention})
 
-    return {
+    cell = {
         "type": "rich_text",
         "elements": [{"type": "rich_text_section", "elements": elements}],
     }
+    if align:
+        cell["align"] = align
+    return cell
 
 
-def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
+def _create_table_cell_link(url: str, text: str, align: str | None = None) -> dict[str, Any]:
     """Create a rich text link cell for table."""
-    return {
+    cell = {
         "type": "rich_text",
         "elements": [
             {
@@ -122,6 +131,9 @@ def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
             }
         ],
     }
+    if align:
+        cell["align"] = align
+    return cell
 
 
 def _create_all_pr_rows(
@@ -212,6 +224,7 @@ def _create_all_pr_rows(
 
             pr_cell = {
                 "type": "rich_text",
+                "align": "right",
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
 
@@ -256,7 +269,7 @@ def _create_all_pr_rows(
                     "elements": [{"type": "rich_text_section", "elements": author_elements}],
                 }
         else:
-            pr_cell = _create_table_cell_text("—")
+            pr_cell = _create_table_cell_text("—", align="right")
             author_cell = _create_table_cell_text("—")
 
         urgency_emoji = urgency_icon.strip(":")
@@ -267,14 +280,14 @@ def _create_all_pr_rows(
         severity_display = severity if severity else "—"
 
         all_rows.append([
-            _create_table_cell_emoji(urgency_emoji),
+            _create_table_cell_emoji(urgency_emoji, align="center"),
             _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
             pr_cell,
-            _create_table_cell_text(pr_title),
+            _create_table_cell_text(pr_title, align="left"),
             author_cell,  # Author from associated PRs
-            _create_table_cell_emoji(fix_emoji),
-            _create_table_cell_emoji(affected_emoji),
-            _create_table_cell_emoji(priority_emoji),
+            _create_table_cell_emoji(fix_emoji, align="center"),
+            _create_table_cell_emoji(affected_emoji, align="center"),
+            _create_table_cell_emoji(priority_emoji, align="center"),
             _create_table_cell_text(severity_display),
         ])
 
@@ -284,6 +297,7 @@ def _create_all_pr_rows(
     for pr in prs_no_jira:
         pr_cell = {
             "type": "rich_text",
+            "align": "right",
             "elements": [{
                 "type": "rich_text_section",
                 "elements": [{
@@ -297,14 +311,14 @@ def _create_all_pr_rows(
         author_mention = get_slack_mention(pr.author)
 
         no_jira_rows.append([
-            _create_table_cell_text("—"),  # Urgency
-            _create_table_cell_emoji("x"),  # Issue (missing)
+            _create_table_cell_text("—", align="center"),  # Urgency
+            _create_table_cell_emoji("x", align="center"),  # Issue (missing)
             pr_cell,  # PRs
-            _create_table_cell_text(pr.title),  # PR Title
+            _create_table_cell_text(pr.title, align="left"),  # PR Title
             _create_table_cell_mention(author_mention),  # Author
-            _create_table_cell_emoji("x"),  # fixVersion (missing)
-            _create_table_cell_emoji("x"),  # affectedVersion (missing)
-            _create_table_cell_emoji("jira-undefined"),  # Priority
+            _create_table_cell_emoji("x", align="center"),  # fixVersion (missing)
+            _create_table_cell_emoji("x", align="center"),  # affectedVersion (missing)
+            _create_table_cell_emoji("jira-undefined", align="center"),  # Priority
             _create_table_cell_text("—"),  # Severity
         ])
 
@@ -351,14 +365,14 @@ def _generate_branch_blocks(
         table_rows = [
             # Header row
             [
-                _create_table_cell_text("Urgency"),
+                _create_table_cell_text("Urgency", align="center"),
                 _create_table_cell_text("Issue"),
-                _create_table_cell_text("PRs"),
-                _create_table_cell_text("PR Title"),
+                _create_table_cell_text("PRs", align="right"),
+                _create_table_cell_text("PR Title", align="left"),
                 _create_table_cell_text("Author"),
-                _create_table_cell_text("fixVersion"),
-                _create_table_cell_text("affectedVersion"),
-                _create_table_cell_text("Priority"),
+                _create_table_cell_text("fixVersion", align="center"),
+                _create_table_cell_text("affectedVersion", align="center"),
+                _create_table_cell_text("Priority", align="center"),
                 _create_table_cell_text("Severity"),
             ]
         ]
