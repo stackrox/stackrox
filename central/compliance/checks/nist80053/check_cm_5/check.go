@@ -15,7 +15,7 @@ const (
 ` + common.LimitedUsersAndGroupsWithClusterAdminInterpretation
 )
 
-func init() {
+func RegisterCM5() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

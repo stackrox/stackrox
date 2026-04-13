@@ -12,7 +12,7 @@ const (
 	interpretationText = common.CheckNetworkPoliciesByDeploymentInterpretation
 )
 
-func init() {
+func RegisterCA9() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

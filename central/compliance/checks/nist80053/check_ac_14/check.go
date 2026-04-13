@@ -106,7 +106,7 @@ func checkNoExtraPrivilegesForUnauthenticated(ctx framework.ComplianceContext) {
 	}
 }
 
-func init() {
+func RegisterAC14() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

@@ -15,7 +15,7 @@ const (
 For this control, StackRox checks that at least one runtime policy is set to notify at least one workflow tool.`
 )
 
-func init() {
+func RegisterIR61() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

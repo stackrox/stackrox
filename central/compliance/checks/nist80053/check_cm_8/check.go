@@ -14,7 +14,7 @@ const (
 For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpretation
 )
 
-func init() {
+func RegisterCM8() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
