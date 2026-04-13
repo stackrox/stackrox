@@ -4,14 +4,12 @@ package awscredentials
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	awsConfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/ecr"
-	"github.com/pkg/errors"
 	awsimds "github.com/stackrox/rox/pkg/cloudproviders/aws"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
@@ -34,7 +32,7 @@ var (
 type ecrCredentialsManager struct {
 	dockerConfigEntry *config.DockerConfigEntry
 	dockerConfigLock  sync.RWMutex
-	ecrClient         *ecr.Client
+	region            string
 	expiresAt         time.Time
 	stopSignal        concurrency.Signal
 }
@@ -43,15 +41,24 @@ type ecrCredentialsManager struct {
 // creates an ECR credential manager instance.
 func NewECRCredentialsManager(providerID string) (RegistryCredentialsManager, error) {
 	if !strings.HasPrefix(providerID, "aws://") {
-		return nil, errors.Errorf("node provider is not AWS: %v", providerID)
+		return nil, fmt.Errorf("node provider is not AWS: %v", providerID)
 	}
 	log.Infof("detected AWS-based node: providerId=%s", providerID)
-	client, err := createECRClient(context.Background())
+
+	ctx := context.Background()
+	mdClient := awsimds.NewIMDSClient(&http.Client{
+		Timeout:   clientTimeout,
+		Transport: proxy.Without(),
+	})
+	mdClient.GetToken(ctx)
+	region, err := mdClient.GetRegion(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating ECR client")
+		return nil, fmt.Errorf("getting region from EC2 metadata service: %v", err)
 	}
+	log.Infof("EC2 instance metadata service is active: awsRegion=%q", region)
+
 	return &ecrCredentialsManager{
-		ecrClient:  client,
+		region:     region,
 		stopSignal: concurrency.NewSignal(),
 	}, nil
 }
@@ -124,23 +131,25 @@ func findECRURLAccountAndRegion(registry string) (account, region string, ok boo
 	return
 }
 
-// refreshAuthToken Contact AWS ECR to get a new auth token.
+// refreshAuthToken resolves AWS credentials and calls ECR GetAuthorizationToken.
 func (m *ecrCredentialsManager) refreshAuthToken(ctx context.Context) error {
-	authToken, err := m.ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
+	creds, err := awsimds.ResolveCredentials(ctx, m.region)
 	if err != nil {
-		return errors.Errorf("failed to get token: %v", err)
+		return fmt.Errorf("resolving AWS credentials: %v", err)
 	}
-	if len(authToken.AuthorizationData) == 0 {
-		return errors.Errorf("received empty token: %v", authToken)
-	}
-	authData := authToken.AuthorizationData[0]
-	dockerConfigEntry, err := config.CreateFromAuthString(*authData.AuthorizationToken)
+
+	token, err := awsimds.GetECRAuthorizationToken(ctx, creds, m.region)
 	if err != nil {
-		return errors.Errorf("failed to create docker config from token: %v", err)
+		return fmt.Errorf("getting ECR auth token: %v", err)
 	}
-	expiresAt := *authData.ExpiresAt
-	m.setConfig(dockerConfigEntry, expiresAt)
-	log.Infof("ECR's auth token refreshed, expires at: %v", expiresAt)
+
+	dockerConfigEntry, err := config.CreateFromAuthString(token.AuthorizationToken)
+	if err != nil {
+		return fmt.Errorf("creating docker config from token: %v", err)
+	}
+
+	m.setConfig(dockerConfigEntry, token.ExpiresAt)
+	log.Infof("ECR's auth token refreshed, expires at: %v", token.ExpiresAt)
 	return nil
 }
 
@@ -174,40 +183,4 @@ func (m *ecrCredentialsManager) authIsValid() bool {
 // the given duration.
 func (m *ecrCredentialsManager) authWillExpireIn(duration time.Duration) bool {
 	return time.Now().Add(duration).After(m.expiresAt)
-}
-
-// getRegion reads the EC2 instance region via our lightweight IMDS client.
-func getRegion(ctx context.Context) (string, error) {
-	mdClient := awsimds.NewIMDSClient(&http.Client{
-		Timeout:   clientTimeout,
-		Transport: proxy.Without(),
-	})
-	mdClient.GetToken(ctx)
-	region, err := mdClient.GetRegion(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "getting region from EC2 metadata service")
-	}
-	return region, nil
-}
-
-// createECRClient creates an AWS ECR SDK client based on the integration config.
-func createECRClient(ctx context.Context) (*ecr.Client, error) {
-	region, err := getRegion(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get the region of the EC2 instance")
-	}
-	log.Infof("EC2 instance metadata service is active: awsRegion=%q", region)
-
-	opts := []func(*awsConfig.LoadOptions) error{
-		awsConfig.WithRegion(region),
-		awsConfig.WithHTTPClient(&http.Client{
-			Timeout:   clientTimeout,
-			Transport: proxy.RoundTripper(),
-		}),
-	}
-	awsConfig, err := awsConfig.LoadDefaultConfig(ctx, opts...)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to load the aws config")
-	}
-	return ecr.NewFromConfig(awsConfig), nil
 }
