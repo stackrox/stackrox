@@ -10,6 +10,8 @@ spec:
       requests:
         memory: "100Mi"
         cpu: "100m"
+      limits:
+        memory: "$admissionControlMemoryLimit"
   sensor:
     resources:
       requests:
@@ -65,7 +67,7 @@ spec:
           memory: "1500Mi"
         limits:
           cpu: "2000m"
-          memory: "2Gi"
+          memory: "$scannerV4IndexerMemoryLimit"
     db:
       resources:
         requests:
@@ -73,6 +75,6 @@ spec:
           memory: "2Gi"
         limits:
           cpu: "1000m"
-          memory: "2500Mi"
+          memory: "$scannerV4DbMemoryLimit"
   customize:
     envVars:$customize_envVars

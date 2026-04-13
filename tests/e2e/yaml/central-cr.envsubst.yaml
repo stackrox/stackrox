@@ -39,6 +39,10 @@ $centralAdditionalCAIndented
       scaling:
         autoScaling: Disabled
         replicas: 1
+  configAsCode:
+    resources:
+      limits:
+        memory: "$configControllerMemoryLimit"
   scannerV4:
     scannerComponent: "$scannerV4ScannerComponent"
     indexer:
@@ -48,6 +52,10 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
+          memory: "1Gi"
+        limits:
+          cpu: "1000m"
+          memory: "$scannerV4IndexerMemoryLimit"
     matcher:
       scaling:
         autoScaling: Disabled
@@ -55,10 +63,18 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
+          memory: "2000Mi"
+        limits:
+          cpu: "6000m"
+          memory: "$scannerV4MatcherMemoryLimit"
     db:
       resources:
         requests:
           cpu: "500m"
+          memory: "500Mi"
+        limits:
+          cpu: "1000m"
+          memory: "$scannerV4DbMemoryLimit"
 ---
 apiVersion: v1
 kind: Secret

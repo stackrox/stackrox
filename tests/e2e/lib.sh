@@ -266,22 +266,15 @@ deploy_central() {
         CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
     fi
 
-    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
-        # The busybox-style consolidated binary (ROX-33958) runs init() for all
-        # components at startup. Under the race detector's ~5-10x memory multiplier
-        # this causes OOMKills for components with tight memory limits.
-        if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-            # Operator reconciles away kubectl overrides, so patch the CR instead.
-            info "Race build detected: patching Central CR to increase memory limits"
-            retrying_kubectl </dev/null -n "${central_namespace}" patch central stackrox-central-services --type=merge \
-                -p '{"spec":{"configAsCode":{"resources":{"limits":{"memory":"512Mi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"matcher":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"16Gi"}}}}}}'
-        else
-            info "Race build detected: increasing memory limits for central-namespace components"
-            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
-            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-indexer -c indexer --limits 'memory=6Gi' 2>/dev/null || true
-            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-matcher -c matcher --limits 'memory=6Gi' 2>/dev/null || true
-            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-db -c db --limits 'memory=16Gi' 2>/dev/null || true
-        fi
+    if [[ -n "${IS_RACE_BUILD:-}" && "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" ]]; then
+        # The race detector's ~5-10x memory multiplier causes OOMKills for
+        # components with tight memory limits. For operator deployments, limits
+        # are set in the CR template; for Helm/roxctl, patch after deploy.
+        info "Race build detected: increasing memory limits for central-namespace components"
+        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
+        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-indexer -c indexer --limits 'memory=6Gi' 2>/dev/null || true
+        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-matcher -c matcher --limits 'memory=6Gi' 2>/dev/null || true
+        retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-db -c db --limits 'memory=4Gi' 2>/dev/null || true
     fi
 }
 
@@ -383,6 +376,19 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
+    # Resource limits — increased for race-detector builds to avoid OOMKills.
+    local configControllerMemoryLimit="128Mi"
+    local scannerV4IndexerMemoryLimit="2Gi"
+    local scannerV4MatcherMemoryLimit="2000Mi"
+    local scannerV4DbMemoryLimit="1000Mi"
+    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+        info "Race build detected: using increased memory limits for Central CR"
+        configControllerMemoryLimit="512Mi"
+        scannerV4IndexerMemoryLimit="6Gi"
+        scannerV4MatcherMemoryLimit="6Gi"
+        scannerV4DbMemoryLimit="4Gi"
+    fi
+
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
@@ -398,6 +404,10 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
+      configControllerMemoryLimit="$configControllerMemoryLimit" \
+      scannerV4IndexerMemoryLimit="$scannerV4IndexerMemoryLimit" \
+      scannerV4MatcherMemoryLimit="$scannerV4MatcherMemoryLimit" \
+      scannerV4DbMemoryLimit="$scannerV4DbMemoryLimit" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | retrying_kubectl apply -n "${central_namespace}" -f -
 
@@ -444,20 +454,13 @@ deploy_sensor() {
         retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
     fi
 
-    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
-        # The busybox-style consolidated binary (ROX-33958) runs init() for all
-        # components at startup. Under the race detector's ~5-10x memory multiplier
-        # this causes OOMKills for components with tight memory limits.
-        if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-            info "Race build detected: patching SecuredCluster CR to increase memory limits"
-            retrying_kubectl </dev/null -n "${sensor_namespace}" patch securedcluster stackrox-secured-cluster-services --type=merge \
-                -p '{"spec":{"admissionControl":{"resources":{"limits":{"memory":"2Gi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"16Gi"}}}}}}'
-        else
-            info "Race build detected: increasing memory limits for sensor-namespace components"
-            retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
-            retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/scanner-v4-indexer -c indexer --limits 'memory=6Gi' 2>/dev/null || true
-            retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/scanner-v4-db -c db --limits 'memory=16Gi' 2>/dev/null || true
-        fi
+    if [[ -n "${IS_RACE_BUILD:-}" && "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" ]]; then
+        # For operator deployments, limits are set in the CR template;
+        # for Helm/roxctl, patch after deploy.
+        info "Race build detected: increasing memory limits for sensor-namespace components"
+        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
+        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/scanner-v4-indexer -c indexer --limits 'memory=6Gi' 2>/dev/null || true
+        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/scanner-v4-db -c db --limits 'memory=4Gi' 2>/dev/null || true
     fi
 }
 
@@ -509,11 +512,25 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
 
+    # Resource limits — increased for race-detector builds to avoid OOMKills.
+    local admissionControlMemoryLimit="500Mi"
+    local scannerV4IndexerMemoryLimit="2Gi"
+    local scannerV4DbMemoryLimit="2500Mi"
+    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+        info "Race build detected: using increased memory limits for SecuredCluster CR"
+        admissionControlMemoryLimit="2Gi"
+        scannerV4IndexerMemoryLimit="6Gi"
+        scannerV4DbMemoryLimit="4Gi"
+    fi
+
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
+      admissionControlMemoryLimit="$admissionControlMemoryLimit" \
+      scannerV4IndexerMemoryLimit="$scannerV4IndexerMemoryLimit" \
+      scannerV4DbMemoryLimit="$scannerV4DbMemoryLimit" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | retrying_kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
