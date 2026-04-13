@@ -105,7 +105,7 @@ func (c *s3configWrapper) Validate() error {
 	return errorList.ToError()
 }
 
-func init() {
+func RegisterS3() {
 	plugins.Add(types.S3Type, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
 		return s3common.NewS3Client(&s3configWrapper{integration: backup})
 	})
