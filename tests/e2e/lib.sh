@@ -266,6 +266,7 @@ deploy_central() {
         CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
     fi
 
+    info "IS_RACE_BUILD check (deploy_central): IS_RACE_BUILD='${IS_RACE_BUILD:-}' at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     if [[ -n "${IS_RACE_BUILD:-}" ]]; then
         # The busybox-style consolidated binary (ROX-33958) runs init() for all
         # components at startup. Under the race detector's ~5-10x memory multiplier
@@ -280,6 +281,7 @@ deploy_central() {
             retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
         fi
     fi
+    info "IS_RACE_BUILD check (deploy_central) done at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 }
 
 # shellcheck disable=SC2120
@@ -441,6 +443,7 @@ deploy_sensor() {
         retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
     fi
 
+    info "IS_RACE_BUILD check (deploy_sensor): IS_RACE_BUILD='${IS_RACE_BUILD:-}' at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     if [[ -n "${IS_RACE_BUILD:-}" ]]; then
         # The busybox-style consolidated binary (ROX-33958) runs init() for all
         # components at startup. Under the race detector's ~5-10x memory multiplier
@@ -454,6 +457,7 @@ deploy_sensor() {
             retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
         fi
     fi
+    info "IS_RACE_BUILD check (deploy_sensor) done at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 }
 
 # shellcheck disable=SC2120
