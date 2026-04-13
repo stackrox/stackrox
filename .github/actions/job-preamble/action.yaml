@@ -140,7 +140,7 @@ runs:
       shell: bash
 
     - name: Record job info
-      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
