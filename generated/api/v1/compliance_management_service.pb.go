@@ -65,10 +65,12 @@ func (x ComplianceRun_State) String() string {
 }
 
 func (ComplianceRun_State) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	return file_api_v1_compliance_management_service_proto_enumTypes[0].Descriptor()
 }
 
 func (ComplianceRun_State) Type() protoreflect.EnumType {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	return &file_api_v1_compliance_management_service_proto_enumTypes[0]
 }
 

@@ -54,10 +54,12 @@ func (x MsgToCompliance_ComplianceACK_Action) String() string {
 }
 
 func (MsgToCompliance_ComplianceACK_Action) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[0].Descriptor()
 }
 
 func (MsgToCompliance_ComplianceACK_Action) Type() protoreflect.EnumType {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[0]
 }
 
@@ -103,10 +105,12 @@ func (x MsgToCompliance_ComplianceACK_MessageType) String() string {
 }
 
 func (MsgToCompliance_ComplianceACK_MessageType) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[1].Descriptor()
 }
 
 func (MsgToCompliance_ComplianceACK_MessageType) Type() protoreflect.EnumType {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[1]
 }
 
@@ -149,10 +153,12 @@ func (x MsgToCompliance_NodeInventoryACK_Action) String() string {
 }
 
 func (MsgToCompliance_NodeInventoryACK_Action) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[2].Descriptor()
 }
 
 func (MsgToCompliance_NodeInventoryACK_Action) Type() protoreflect.EnumType {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[2]
 }
 
@@ -195,10 +201,12 @@ func (x MsgToCompliance_NodeInventoryACK_MessageType) String() string {
 }
 
 func (MsgToCompliance_NodeInventoryACK_MessageType) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[3].Descriptor()
 }
 
 func (MsgToCompliance_NodeInventoryACK_MessageType) Type() protoreflect.EnumType {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[3]
 }
 

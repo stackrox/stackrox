@@ -53,10 +53,12 @@ func (x GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) String() 
 }
 
 func (GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_sensor_upgrade_service_proto_init_ensure()
 	return file_api_v1_sensor_upgrade_service_proto_enumTypes[0].Descriptor()
 }
 
 func (GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) Type() protoreflect.EnumType {
+	file_api_v1_sensor_upgrade_service_proto_init_ensure()
 	return &file_api_v1_sensor_upgrade_service_proto_enumTypes[0]
 }
 

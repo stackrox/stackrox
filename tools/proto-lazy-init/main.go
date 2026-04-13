@@ -38,12 +38,19 @@ func main() {
 	content := string(data)
 	lines := strings.Split(content, "\n")
 
-	// First pass: find the init function name (it's at the end of the file)
+	// First pass: find the init function name AND check if this file
+	// defines the actual _proto_init() function (not just calls it).
+	// Split proto files (e.g., image.pb.go + image_v2.pb.go) share
+	// the same init function — only the file with the definition
+	// should declare _once and _ensure.
 	var initFuncName string
+	hasInitDef := false
 	for _, line := range lines {
 		if m := initRe.FindStringSubmatch(line); m != nil {
 			initFuncName = m[1]
-			break
+		}
+		if initFuncName != "" && strings.HasPrefix(line, "func "+initFuncName+"()") {
+			hasInitDef = true
 		}
 	}
 	if initFuncName == "" {
@@ -56,12 +63,20 @@ func main() {
 	for _, line := range lines {
 		// Transform the init() line
 		if m := initRe.FindStringSubmatch(line); m != nil {
-			// Replace eager init() with sync.Once lazy trigger
-			out = append(out,
-				fmt.Sprintf("var %s_once sync.Once", initFuncName),
-				fmt.Sprintf("func %s_ensure() { %s_once.Do(%s) }", initFuncName, initFuncName, initFuncName),
-				"func init() {} // proto registration is lazy — triggered by first ProtoReflect() call",
-			)
+			if hasInitDef {
+				// This file defines the _proto_init function — add Once and ensure
+				out = append(out,
+					fmt.Sprintf("var %s_once sync.Once", initFuncName),
+					fmt.Sprintf("func %s_ensure() { %s_once.Do(%s) }", initFuncName, initFuncName, initFuncName),
+					"func init() {} // proto registration is lazy — triggered by first ProtoReflect() call",
+				)
+			} else {
+				// This file calls _proto_init but doesn't define it (split proto file).
+				// Just make init() a no-op — the _ensure function is in the other file.
+				out = append(out,
+					"func init() {} // proto registration handled by primary file",
+				)
+			}
 			continue
 		}
 
@@ -72,9 +87,12 @@ func main() {
 			continue
 		}
 
-		// Add ensure() call at the top of every enum Descriptor() method
+		// Add ensure() call at the top of every enum Descriptor() and Type() method.
 		// Enum String() calls EnumStringOf(x.Descriptor(),...) which needs the registry.
-		if strings.Contains(line, ".Descriptor()") && strings.Contains(line, "func (") && strings.Contains(line, ") Descriptor() protoreflect.EnumDescriptor {") {
+		// Pattern: func (EnumTypeName) Descriptor() protoreflect.EnumDescriptor {
+		// Also: func (EnumTypeName) Type() protoreflect.EnumType {
+		if strings.Contains(line, ") Descriptor() protoreflect.EnumDescriptor {") ||
+			strings.Contains(line, ") Type() protoreflect.EnumType {") {
 			out = append(out, line)
 			out = append(out, fmt.Sprintf("\t%s_ensure()", initFuncName))
 			continue

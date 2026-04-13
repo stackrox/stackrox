@@ -49,10 +49,12 @@ func (x ReportSnapshot_ReportType) String() string {
 }
 
 func (ReportSnapshot_ReportType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_snapshot_proto_init_ensure()
 	return file_storage_report_snapshot_proto_enumTypes[0].Descriptor()
 }
 
 func (ReportSnapshot_ReportType) Type() protoreflect.EnumType {
+	file_storage_report_snapshot_proto_init_ensure()
 	return &file_storage_report_snapshot_proto_enumTypes[0]
 }
 
@@ -104,10 +106,12 @@ func (x ReportStatus_RunState) String() string {
 }
 
 func (ReportStatus_RunState) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_snapshot_proto_init_ensure()
 	return file_storage_report_snapshot_proto_enumTypes[1].Descriptor()
 }
 
 func (ReportStatus_RunState) Type() protoreflect.EnumType {
+	file_storage_report_snapshot_proto_init_ensure()
 	return &file_storage_report_snapshot_proto_enumTypes[1]
 }
 
@@ -150,10 +154,12 @@ func (x ReportStatus_NotificationMethod) String() string {
 }
 
 func (ReportStatus_NotificationMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_snapshot_proto_init_ensure()
 	return file_storage_report_snapshot_proto_enumTypes[2].Descriptor()
 }
 
 func (ReportStatus_NotificationMethod) Type() protoreflect.EnumType {
+	file_storage_report_snapshot_proto_init_ensure()
 	return &file_storage_report_snapshot_proto_enumTypes[2]
 }
 
@@ -199,10 +205,12 @@ func (x ReportStatus_RunMethod) String() string {
 }
 
 func (ReportStatus_RunMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_snapshot_proto_init_ensure()
 	return file_storage_report_snapshot_proto_enumTypes[3].Descriptor()
 }
 
 func (ReportStatus_RunMethod) Type() protoreflect.EnumType {
+	file_storage_report_snapshot_proto_init_ensure()
 	return &file_storage_report_snapshot_proto_enumTypes[3]
 }
 

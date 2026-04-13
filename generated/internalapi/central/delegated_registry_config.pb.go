@@ -54,10 +54,12 @@ func (x DelegatedRegistryConfig_EnabledFor) String() string {
 }
 
 func (DelegatedRegistryConfig_EnabledFor) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_delegated_registry_config_proto_init_ensure()
 	return file_internalapi_central_delegated_registry_config_proto_enumTypes[0].Descriptor()
 }
 
 func (DelegatedRegistryConfig_EnabledFor) Type() protoreflect.EnumType {
+	file_internalapi_central_delegated_registry_config_proto_init_ensure()
 	return &file_internalapi_central_delegated_registry_config_proto_enumTypes[0]
 }
 

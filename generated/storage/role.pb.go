@@ -54,10 +54,12 @@ func (x Access) String() string {
 }
 
 func (Access) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_role_proto_init_ensure()
 	return file_storage_role_proto_enumTypes[0].Descriptor()
 }
 
 func (Access) Type() protoreflect.EnumType {
+	file_storage_role_proto_init_ensure()
 	return &file_storage_role_proto_enumTypes[0]
 }
 
@@ -106,10 +108,12 @@ func (x EffectiveAccessScope_State) String() string {
 }
 
 func (EffectiveAccessScope_State) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_role_proto_init_ensure()
 	return file_storage_role_proto_enumTypes[1].Descriptor()
 }
 
 func (EffectiveAccessScope_State) Type() protoreflect.EnumType {
+	file_storage_role_proto_init_ensure()
 	return &file_storage_role_proto_enumTypes[1]
 }
 

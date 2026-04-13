@@ -58,10 +58,12 @@ func (x SubjectKind) String() string {
 }
 
 func (SubjectKind) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_rbac_proto_init_ensure()
 	return file_storage_rbac_proto_enumTypes[0].Descriptor()
 }
 
 func (SubjectKind) Type() protoreflect.EnumType {
+	file_storage_rbac_proto_init_ensure()
 	return &file_storage_rbac_proto_enumTypes[0]
 }
 
@@ -119,10 +121,12 @@ func (x PermissionLevel) String() string {
 }
 
 func (PermissionLevel) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_rbac_proto_init_ensure()
 	return file_storage_rbac_proto_enumTypes[1].Descriptor()
 }
 
 func (PermissionLevel) Type() protoreflect.EnumType {
+	file_storage_rbac_proto_init_ensure()
 	return &file_storage_rbac_proto_enumTypes[1]
 }
 

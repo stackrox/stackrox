@@ -58,10 +58,12 @@ func (x VirtualMachine_Note) String() string {
 }
 
 func (VirtualMachine_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_virtual_machine_proto_init_ensure()
 	return file_storage_virtual_machine_proto_enumTypes[0].Descriptor()
 }
 
 func (VirtualMachine_Note) Type() protoreflect.EnumType {
+	file_storage_virtual_machine_proto_init_ensure()
 	return &file_storage_virtual_machine_proto_enumTypes[0]
 }
 
@@ -107,10 +109,12 @@ func (x VirtualMachine_State) String() string {
 }
 
 func (VirtualMachine_State) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_virtual_machine_proto_init_ensure()
 	return file_storage_virtual_machine_proto_enumTypes[1].Descriptor()
 }
 
 func (VirtualMachine_State) Type() protoreflect.EnumType {
+	file_storage_virtual_machine_proto_init_ensure()
 	return &file_storage_virtual_machine_proto_enumTypes[1]
 }
 
@@ -156,10 +160,12 @@ func (x VirtualMachineScan_Note) String() string {
 }
 
 func (VirtualMachineScan_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_virtual_machine_proto_init_ensure()
 	return file_storage_virtual_machine_proto_enumTypes[2].Descriptor()
 }
 
 func (VirtualMachineScan_Note) Type() protoreflect.EnumType {
+	file_storage_virtual_machine_proto_init_ensure()
 	return &file_storage_virtual_machine_proto_enumTypes[2]
 }
 
@@ -202,10 +208,12 @@ func (x EmbeddedVirtualMachineScanComponent_Note) String() string {
 }
 
 func (EmbeddedVirtualMachineScanComponent_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_virtual_machine_proto_init_ensure()
 	return file_storage_virtual_machine_proto_enumTypes[3].Descriptor()
 }
 
 func (EmbeddedVirtualMachineScanComponent_Note) Type() protoreflect.EnumType {
+	file_storage_virtual_machine_proto_init_ensure()
 	return &file_storage_virtual_machine_proto_enumTypes[3]
 }
 

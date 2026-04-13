@@ -52,10 +52,12 @@ func (x SensorACK_Action) String() string {
 }
 
 func (SensorACK_Action) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return file_internalapi_central_sensor_iservice_proto_enumTypes[0].Descriptor()
 }
 
 func (SensorACK_Action) Type() protoreflect.EnumType {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return &file_internalapi_central_sensor_iservice_proto_enumTypes[0]
 }
 
@@ -101,10 +103,12 @@ func (x SensorACK_MessageType) String() string {
 }
 
 func (SensorACK_MessageType) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return file_internalapi_central_sensor_iservice_proto_enumTypes[1].Descriptor()
 }
 
 func (SensorACK_MessageType) Type() protoreflect.EnumType {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return &file_internalapi_central_sensor_iservice_proto_enumTypes[1]
 }
 
@@ -147,10 +151,12 @@ func (x NodeInventoryACK_Action) String() string {
 }
 
 func (NodeInventoryACK_Action) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return file_internalapi_central_sensor_iservice_proto_enumTypes[2].Descriptor()
 }
 
 func (NodeInventoryACK_Action) Type() protoreflect.EnumType {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return &file_internalapi_central_sensor_iservice_proto_enumTypes[2]
 }
 
@@ -193,10 +199,12 @@ func (x NodeInventoryACK_MessageType) String() string {
 }
 
 func (NodeInventoryACK_MessageType) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return file_internalapi_central_sensor_iservice_proto_enumTypes[3].Descriptor()
 }
 
 func (NodeInventoryACK_MessageType) Type() protoreflect.EnumType {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	return &file_internalapi_central_sensor_iservice_proto_enumTypes[3]
 }
 

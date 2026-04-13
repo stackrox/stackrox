@@ -58,10 +58,12 @@ func (x BannerConfig_Size) String() string {
 }
 
 func (BannerConfig_Size) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_config_proto_init_ensure()
 	return file_storage_config_proto_enumTypes[0].Descriptor()
 }
 
 func (BannerConfig_Size) Type() protoreflect.EnumType {
+	file_storage_config_proto_init_ensure()
 	return &file_storage_config_proto_enumTypes[0]
 }
 

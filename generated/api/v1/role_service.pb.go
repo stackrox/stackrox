@@ -56,10 +56,12 @@ func (x ComputeEffectiveAccessScopeRequest_Detail) String() string {
 }
 
 func (ComputeEffectiveAccessScopeRequest_Detail) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_role_service_proto_init_ensure()
 	return file_api_v1_role_service_proto_enumTypes[0].Descriptor()
 }
 
 func (ComputeEffectiveAccessScopeRequest_Detail) Type() protoreflect.EnumType {
+	file_api_v1_role_service_proto_init_ensure()
 	return &file_api_v1_role_service_proto_enumTypes[0]
 }
 

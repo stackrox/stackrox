@@ -51,10 +51,12 @@ func (x LayerType) String() string {
 }
 
 func (LayerType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_image_component_proto_init_ensure()
 	return file_storage_image_component_proto_enumTypes[0].Descriptor()
 }
 
 func (LayerType) Type() protoreflect.EnumType {
+	file_storage_image_component_proto_init_ensure()
 	return &file_storage_image_component_proto_enumTypes[0]
 }
 

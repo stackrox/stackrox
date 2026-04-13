@@ -58,10 +58,12 @@ func (x Protocol) String() string {
 }
 
 func (Protocol) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_network_policy_proto_init_ensure()
 	return file_storage_network_policy_proto_enumTypes[0].Descriptor()
 }
 
 func (Protocol) Type() protoreflect.EnumType {
+	file_storage_network_policy_proto_init_ensure()
 	return &file_storage_network_policy_proto_enumTypes[0]
 }
 
@@ -107,10 +109,12 @@ func (x NetworkPolicyType) String() string {
 }
 
 func (NetworkPolicyType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_network_policy_proto_init_ensure()
 	return file_storage_network_policy_proto_enumTypes[1].Descriptor()
 }
 
 func (NetworkPolicyType) Type() protoreflect.EnumType {
+	file_storage_network_policy_proto_init_ensure()
 	return &file_storage_network_policy_proto_enumTypes[1]
 }
 

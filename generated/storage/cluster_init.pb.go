@@ -52,10 +52,12 @@ func (x InitBundleMeta_InitBundleVersion) String() string {
 }
 
 func (InitBundleMeta_InitBundleVersion) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_init_proto_init_ensure()
 	return file_storage_cluster_init_proto_enumTypes[0].Descriptor()
 }
 
 func (InitBundleMeta_InitBundleVersion) Type() protoreflect.EnumType {
+	file_storage_cluster_init_proto_init_ensure()
 	return &file_storage_cluster_init_proto_enumTypes[0]
 }
 

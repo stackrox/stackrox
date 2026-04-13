@@ -57,10 +57,12 @@ func (x Schedule_IntervalType) String() string {
 }
 
 func (Schedule_IntervalType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_schedule_proto_init_ensure()
 	return file_storage_schedule_proto_enumTypes[0].Descriptor()
 }
 
 func (Schedule_IntervalType) Type() protoreflect.EnumType {
+	file_storage_schedule_proto_init_ensure()
 	return &file_storage_schedule_proto_enumTypes[0]
 }
 

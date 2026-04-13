@@ -73,10 +73,12 @@ func (x KubernetesEvent_APIVerb) String() string {
 }
 
 func (KubernetesEvent_APIVerb) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_kube_event_proto_init_ensure()
 	return file_storage_kube_event_proto_enumTypes[0].Descriptor()
 }
 
 func (KubernetesEvent_APIVerb) Type() protoreflect.EnumType {
+	file_storage_kube_event_proto_init_ensure()
 	return &file_storage_kube_event_proto_enumTypes[0]
 }
 
@@ -147,10 +149,12 @@ func (x KubernetesEvent_Object_Resource) String() string {
 }
 
 func (KubernetesEvent_Object_Resource) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_kube_event_proto_init_ensure()
 	return file_storage_kube_event_proto_enumTypes[1].Descriptor()
 }
 
 func (KubernetesEvent_Object_Resource) Type() protoreflect.EnumType {
+	file_storage_kube_event_proto_init_ensure()
 	return &file_storage_kube_event_proto_enumTypes[1]
 }
 

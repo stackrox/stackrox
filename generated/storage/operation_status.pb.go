@@ -51,10 +51,12 @@ func (x OperationStatus) String() string {
 }
 
 func (OperationStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_operation_status_proto_init_ensure()
 	return file_storage_operation_status_proto_enumTypes[0].Descriptor()
 }
 
 func (OperationStatus) Type() protoreflect.EnumType {
+	file_storage_operation_status_proto_init_ensure()
 	return &file_storage_operation_status_proto_enumTypes[0]
 }
 

@@ -52,10 +52,12 @@ func (x PolicySource) String() string {
 }
 
 func (PolicySource) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[0].Descriptor()
 }
 
 func (PolicySource) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[0]
 }
 
@@ -104,10 +106,12 @@ func (x EventSource) String() string {
 }
 
 func (EventSource) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[1].Descriptor()
 }
 
 func (EventSource) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[1]
 }
 
@@ -150,10 +154,12 @@ func (x BooleanOperator) String() string {
 }
 
 func (BooleanOperator) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[2].Descriptor()
 }
 
 func (BooleanOperator) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[2]
 }
 
@@ -217,10 +223,12 @@ func (x EnforcementAction) String() string {
 }
 
 func (EnforcementAction) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[3].Descriptor()
 }
 
 func (EnforcementAction) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[3]
 }
 
@@ -272,10 +280,12 @@ func (x Severity) String() string {
 }
 
 func (Severity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[4].Descriptor()
 }
 
 func (Severity) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[4]
 }
 
@@ -321,10 +331,12 @@ func (x LifecycleStage) String() string {
 }
 
 func (LifecycleStage) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[5].Descriptor()
 }
 
 func (LifecycleStage) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[5]
 }
 
@@ -376,10 +388,12 @@ func (x Comparator) String() string {
 }
 
 func (Comparator) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_policy_proto_init_ensure()
 	return file_storage_policy_proto_enumTypes[6].Descriptor()
 }
 
 func (Comparator) Type() protoreflect.EnumType {
+	file_storage_policy_proto_init_ensure()
 	return &file_storage_policy_proto_enumTypes[6]
 }
 

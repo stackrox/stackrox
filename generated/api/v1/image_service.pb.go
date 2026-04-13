@@ -61,10 +61,12 @@ func (x WatchImageResponse_ErrorType) String() string {
 }
 
 func (WatchImageResponse_ErrorType) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_image_service_proto_init_ensure()
 	return file_api_v1_image_service_proto_enumTypes[0].Descriptor()
 }
 
 func (WatchImageResponse_ErrorType) Type() protoreflect.EnumType {
+	file_api_v1_image_service_proto_init_ensure()
 	return &file_api_v1_image_service_proto_enumTypes[0]
 }
 

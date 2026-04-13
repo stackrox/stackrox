@@ -64,10 +64,12 @@ func (x ResourceAction) String() string {
 }
 
 func (ResourceAction) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	return file_internalapi_central_sensor_events_proto_enumTypes[0].Descriptor()
 }
 
 func (ResourceAction) Type() protoreflect.EnumType {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	return &file_internalapi_central_sensor_events_proto_enumTypes[0]
 }
 
@@ -113,10 +115,12 @@ func (x AlertResults_Source) String() string {
 }
 
 func (AlertResults_Source) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	return file_internalapi_central_sensor_events_proto_enumTypes[1].Descriptor()
 }
 
 func (AlertResults_Source) Type() protoreflect.EnumType {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	return &file_internalapi_central_sensor_events_proto_enumTypes[1]
 }
 

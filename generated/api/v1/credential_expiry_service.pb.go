@@ -62,10 +62,12 @@ func (x GetCertExpiry_Component) String() string {
 }
 
 func (GetCertExpiry_Component) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_credential_expiry_service_proto_init_ensure()
 	return file_api_v1_credential_expiry_service_proto_enumTypes[0].Descriptor()
 }
 
 func (GetCertExpiry_Component) Type() protoreflect.EnumType {
+	file_api_v1_credential_expiry_service_proto_init_ensure()
 	return &file_api_v1_credential_expiry_service_proto_enumTypes[0]
 }
 

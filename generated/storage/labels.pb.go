@@ -60,10 +60,12 @@ func (x LabelSelector_Operator) String() string {
 }
 
 func (LabelSelector_Operator) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_labels_proto_init_ensure()
 	return file_storage_labels_proto_enumTypes[0].Descriptor()
 }
 
 func (LabelSelector_Operator) Type() protoreflect.EnumType {
+	file_storage_labels_proto_init_ensure()
 	return &file_storage_labels_proto_enumTypes[0]
 }
 
@@ -115,10 +117,12 @@ func (x SetBasedLabelSelector_Operator) String() string {
 }
 
 func (SetBasedLabelSelector_Operator) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_labels_proto_init_ensure()
 	return file_storage_labels_proto_enumTypes[1].Descriptor()
 }
 
 func (SetBasedLabelSelector_Operator) Type() protoreflect.EnumType {
+	file_storage_labels_proto_init_ensure()
 	return &file_storage_labels_proto_enumTypes[1]
 }
 

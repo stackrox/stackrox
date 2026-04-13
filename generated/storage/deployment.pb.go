@@ -55,10 +55,12 @@ func (x Volume_MountPropagation) String() string {
 }
 
 func (Volume_MountPropagation) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_deployment_proto_init_ensure()
 	return file_storage_deployment_proto_enumTypes[0].Descriptor()
 }
 
 func (Volume_MountPropagation) Type() protoreflect.EnumType {
+	file_storage_deployment_proto_init_ensure()
 	return &file_storage_deployment_proto_enumTypes[0]
 }
 
@@ -113,10 +115,12 @@ func (x PortConfig_ExposureLevel) String() string {
 }
 
 func (PortConfig_ExposureLevel) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_deployment_proto_init_ensure()
 	return file_storage_deployment_proto_enumTypes[1].Descriptor()
 }
 
 func (PortConfig_ExposureLevel) Type() protoreflect.EnumType {
+	file_storage_deployment_proto_init_ensure()
 	return &file_storage_deployment_proto_enumTypes[1]
 }
 
@@ -175,10 +179,12 @@ func (x ContainerConfig_EnvironmentConfig_EnvVarSource) String() string {
 }
 
 func (ContainerConfig_EnvironmentConfig_EnvVarSource) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_deployment_proto_init_ensure()
 	return file_storage_deployment_proto_enumTypes[2].Descriptor()
 }
 
 func (ContainerConfig_EnvironmentConfig_EnvVarSource) Type() protoreflect.EnumType {
+	file_storage_deployment_proto_init_ensure()
 	return &file_storage_deployment_proto_enumTypes[2]
 }
 
@@ -224,10 +230,12 @@ func (x SecurityContext_SeccompProfile_ProfileType) String() string {
 }
 
 func (SecurityContext_SeccompProfile_ProfileType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_deployment_proto_init_ensure()
 	return file_storage_deployment_proto_enumTypes[3].Descriptor()
 }
 
 func (SecurityContext_SeccompProfile_ProfileType) Type() protoreflect.EnumType {
+	file_storage_deployment_proto_init_ensure()
 	return &file_storage_deployment_proto_enumTypes[3]
 }
 

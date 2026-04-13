@@ -57,10 +57,12 @@ func (x AdministrationEventType) String() string {
 }
 
 func (AdministrationEventType) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_administration_events_service_proto_init_ensure()
 	return file_api_v1_administration_events_service_proto_enumTypes[0].Descriptor()
 }
 
 func (AdministrationEventType) Type() protoreflect.EnumType {
+	file_api_v1_administration_events_service_proto_init_ensure()
 	return &file_api_v1_administration_events_service_proto_enumTypes[0]
 }
 
@@ -113,10 +115,12 @@ func (x AdministrationEventLevel) String() string {
 }
 
 func (AdministrationEventLevel) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_administration_events_service_proto_init_ensure()
 	return file_api_v1_administration_events_service_proto_enumTypes[1].Descriptor()
 }
 
 func (AdministrationEventLevel) Type() protoreflect.EnumType {
+	file_api_v1_administration_events_service_proto_init_ensure()
 	return &file_api_v1_administration_events_service_proto_enumTypes[1]
 }
 

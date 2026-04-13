@@ -55,10 +55,12 @@ func (x CloudSource_Type) String() string {
 }
 
 func (CloudSource_Type) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	return file_api_v1_cloud_source_service_proto_enumTypes[0].Descriptor()
 }
 
 func (CloudSource_Type) Type() protoreflect.EnumType {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	return &file_api_v1_cloud_source_service_proto_enumTypes[0]
 }
 

@@ -54,10 +54,12 @@ func (x ClientServerRole) String() string {
 }
 
 func (ClientServerRole) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_network_enums_proto_init_ensure()
 	return file_internalapi_sensor_network_enums_proto_enumTypes[0].Descriptor()
 }
 
 func (ClientServerRole) Type() protoreflect.EnumType {
+	file_internalapi_sensor_network_enums_proto_init_ensure()
 	return &file_internalapi_sensor_network_enums_proto_enumTypes[0]
 }
 
@@ -103,10 +105,12 @@ func (x SocketFamily) String() string {
 }
 
 func (SocketFamily) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_network_enums_proto_init_ensure()
 	return file_internalapi_sensor_network_enums_proto_enumTypes[1].Descriptor()
 }
 
 func (SocketFamily) Type() protoreflect.EnumType {
+	file_internalapi_sensor_network_enums_proto_init_ensure()
 	return &file_internalapi_sensor_network_enums_proto_enumTypes[1]
 }
 

@@ -70,10 +70,12 @@ func (x SourceType) String() string {
 }
 
 func (SourceType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_image_proto_init_ensure()
 	return file_storage_image_proto_enumTypes[0].Descriptor()
 }
 
 func (SourceType) Type() protoreflect.EnumType {
+	file_storage_image_proto_init_ensure()
 	return &file_storage_image_proto_enumTypes[0]
 }
 
@@ -122,10 +124,12 @@ func (x Image_Note) String() string {
 }
 
 func (Image_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_image_proto_init_ensure()
 	return file_storage_image_proto_enumTypes[1].Descriptor()
 }
 
 func (Image_Note) Type() protoreflect.EnumType {
+	file_storage_image_proto_init_ensure()
 	return &file_storage_image_proto_enumTypes[1]
 }
 
@@ -183,10 +187,12 @@ func (x ImageScan_Note) String() string {
 }
 
 func (ImageScan_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_image_proto_init_ensure()
 	return file_storage_image_proto_enumTypes[2].Descriptor()
 }
 
 func (ImageScan_Note) Type() protoreflect.EnumType {
+	file_storage_image_proto_init_ensure()
 	return &file_storage_image_proto_enumTypes[2]
 }
 
@@ -248,10 +254,12 @@ func (x ImageSignatureVerificationResult_Status) String() string {
 }
 
 func (ImageSignatureVerificationResult_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_image_proto_init_ensure()
 	return file_storage_image_proto_enumTypes[3].Descriptor()
 }
 
 func (ImageSignatureVerificationResult_Status) Type() protoreflect.EnumType {
+	file_storage_image_proto_init_ensure()
 	return &file_storage_image_proto_enumTypes[3]
 }
 

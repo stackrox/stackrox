@@ -82,10 +82,12 @@ func (x SecretType) String() string {
 }
 
 func (SecretType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_secret_proto_init_ensure()
 	return file_storage_secret_proto_enumTypes[0].Descriptor()
 }
 
 func (SecretType) Type() protoreflect.EnumType {
+	file_storage_secret_proto_init_ensure()
 	return &file_storage_secret_proto_enumTypes[0]
 }
 

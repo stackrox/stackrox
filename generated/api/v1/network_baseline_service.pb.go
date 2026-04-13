@@ -57,10 +57,12 @@ func (x NetworkBaselinePeerStatus_Status) String() string {
 }
 
 func (NetworkBaselinePeerStatus_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	return file_api_v1_network_baseline_service_proto_enumTypes[0].Descriptor()
 }
 
 func (NetworkBaselinePeerStatus_Status) Type() protoreflect.EnumType {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	return &file_api_v1_network_baseline_service_proto_enumTypes[0]
 }
 

@@ -54,10 +54,12 @@ func (x VulnDefinitionsInfoRequest_Component) String() string {
 }
 
 func (VulnDefinitionsInfoRequest_Component) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_integration_health_service_proto_init_ensure()
 	return file_api_v1_integration_health_service_proto_enumTypes[0].Descriptor()
 }
 
 func (VulnDefinitionsInfoRequest_Component) Type() protoreflect.EnumType {
+	file_api_v1_integration_health_service_proto_init_ensure()
 	return &file_api_v1_integration_health_service_proto_enumTypes[0]
 }
 

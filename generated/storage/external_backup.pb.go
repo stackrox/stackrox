@@ -54,10 +54,12 @@ func (x S3URLStyle) String() string {
 }
 
 func (S3URLStyle) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_external_backup_proto_init_ensure()
 	return file_storage_external_backup_proto_enumTypes[0].Descriptor()
 }
 
 func (S3URLStyle) Type() protoreflect.EnumType {
+	file_storage_external_backup_proto_init_ensure()
 	return &file_storage_external_backup_proto_enumTypes[0]
 }
 

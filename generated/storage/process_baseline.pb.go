@@ -58,10 +58,12 @@ func (x ContainerNameAndBaselineStatus_BaselineStatus) String() string {
 }
 
 func (ContainerNameAndBaselineStatus_BaselineStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_process_baseline_proto_init_ensure()
 	return file_storage_process_baseline_proto_enumTypes[0].Descriptor()
 }
 
 func (ContainerNameAndBaselineStatus_BaselineStatus) Type() protoreflect.EnumType {
+	file_storage_process_baseline_proto_init_ensure()
 	return &file_storage_process_baseline_proto_enumTypes[0]
 }
 

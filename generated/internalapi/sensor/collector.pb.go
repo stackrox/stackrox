@@ -52,10 +52,12 @@ func (x ExternalIpsEnabled) String() string {
 }
 
 func (ExternalIpsEnabled) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	return file_internalapi_sensor_collector_proto_enumTypes[0].Descriptor()
 }
 
 func (ExternalIpsEnabled) Type() protoreflect.EnumType {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	return &file_internalapi_sensor_collector_proto_enumTypes[0]
 }
 
@@ -104,10 +106,12 @@ func (x ExternalIpsDirection) String() string {
 }
 
 func (ExternalIpsDirection) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	return file_internalapi_sensor_collector_proto_enumTypes[1].Descriptor()
 }
 
 func (ExternalIpsDirection) Type() protoreflect.EnumType {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	return &file_internalapi_sensor_collector_proto_enumTypes[1]
 }
 

@@ -55,10 +55,12 @@ func (x DiscoveredCluster_Status) String() string {
 }
 
 func (DiscoveredCluster_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_discovered_cluster_proto_init_ensure()
 	return file_storage_discovered_cluster_proto_enumTypes[0].Descriptor()
 }
 
 func (DiscoveredCluster_Status) Type() protoreflect.EnumType {
+	file_storage_discovered_cluster_proto_init_ensure()
 	return &file_storage_discovered_cluster_proto_enumTypes[0]
 }
 
@@ -107,10 +109,12 @@ func (x DiscoveredCluster_Metadata_ProviderType) String() string {
 }
 
 func (DiscoveredCluster_Metadata_ProviderType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_discovered_cluster_proto_init_ensure()
 	return file_storage_discovered_cluster_proto_enumTypes[1].Descriptor()
 }
 
 func (DiscoveredCluster_Metadata_ProviderType) Type() protoreflect.EnumType {
+	file_storage_discovered_cluster_proto_init_ensure()
 	return &file_storage_discovered_cluster_proto_enumTypes[1]
 }
 

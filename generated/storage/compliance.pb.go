@@ -64,10 +64,12 @@ func (x ComplianceState) String() string {
 }
 
 func (ComplianceState) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_proto_init_ensure()
 	return file_storage_compliance_proto_enumTypes[0].Descriptor()
 }
 
 func (ComplianceState) Type() protoreflect.EnumType {
+	file_storage_compliance_proto_init_ensure()
 	return &file_storage_compliance_proto_enumTypes[0]
 }
 
@@ -131,10 +133,12 @@ func (x ComplianceAggregation_Scope) String() string {
 }
 
 func (ComplianceAggregation_Scope) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_proto_init_ensure()
 	return file_storage_compliance_proto_enumTypes[1].Descriptor()
 }
 
 func (ComplianceAggregation_Scope) Type() protoreflect.EnumType {
+	file_storage_compliance_proto_init_ensure()
 	return &file_storage_compliance_proto_enumTypes[1]
 }
 

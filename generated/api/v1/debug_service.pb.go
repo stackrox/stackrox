@@ -58,10 +58,12 @@ func (x AuthorizationTraceResponse_Response_Status) String() string {
 }
 
 func (AuthorizationTraceResponse_Response_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_debug_service_proto_init_ensure()
 	return file_api_v1_debug_service_proto_enumTypes[0].Descriptor()
 }
 
 func (AuthorizationTraceResponse_Response_Status) Type() protoreflect.EnumType {
+	file_api_v1_debug_service_proto_init_ensure()
 	return &file_api_v1_debug_service_proto_enumTypes[0]
 }
 

@@ -64,10 +64,12 @@ func (x FileAccess_Operation) String() string {
 }
 
 func (FileAccess_Operation) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_file_access_proto_init_ensure()
 	return file_storage_file_access_proto_enumTypes[0].Descriptor()
 }
 
 func (FileAccess_Operation) Type() protoreflect.EnumType {
+	file_storage_file_access_proto_init_ensure()
 	return &file_storage_file_access_proto_enumTypes[0]
 }
 

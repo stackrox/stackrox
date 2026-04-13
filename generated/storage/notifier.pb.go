@@ -54,10 +54,12 @@ func (x Email_AuthMethod) String() string {
 }
 
 func (Email_AuthMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_notifier_proto_init_ensure()
 	return file_storage_notifier_proto_enumTypes[0].Descriptor()
 }
 
 func (Email_AuthMethod) Type() protoreflect.EnumType {
+	file_storage_notifier_proto_init_ensure()
 	return &file_storage_notifier_proto_enumTypes[0]
 }
 
@@ -118,10 +120,12 @@ func (x Syslog_LocalFacility) String() string {
 }
 
 func (Syslog_LocalFacility) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_notifier_proto_init_ensure()
 	return file_storage_notifier_proto_enumTypes[1].Descriptor()
 }
 
 func (Syslog_LocalFacility) Type() protoreflect.EnumType {
+	file_storage_notifier_proto_init_ensure()
 	return &file_storage_notifier_proto_enumTypes[1]
 }
 
@@ -164,10 +168,12 @@ func (x Syslog_MessageFormat) String() string {
 }
 
 func (Syslog_MessageFormat) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_notifier_proto_init_ensure()
 	return file_storage_notifier_proto_enumTypes[2].Descriptor()
 }
 
 func (Syslog_MessageFormat) Type() protoreflect.EnumType {
+	file_storage_notifier_proto_init_ensure()
 	return &file_storage_notifier_proto_enumTypes[2]
 }
 

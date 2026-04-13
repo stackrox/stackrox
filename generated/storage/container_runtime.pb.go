@@ -54,10 +54,12 @@ func (x ContainerRuntime) String() string {
 }
 
 func (ContainerRuntime) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_container_runtime_proto_init_ensure()
 	return file_storage_container_runtime_proto_enumTypes[0].Descriptor()
 }
 
 func (ContainerRuntime) Type() protoreflect.EnumType {
+	file_storage_container_runtime_proto_init_ensure()
 	return &file_storage_container_runtime_proto_enumTypes[0]
 }
 

@@ -55,10 +55,12 @@ func (x ViolationState) String() string {
 }
 
 func (ViolationState) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_alert_proto_init_ensure()
 	return file_storage_alert_proto_enumTypes[0].Descriptor()
 }
 
 func (ViolationState) Type() protoreflect.EnumType {
+	file_storage_alert_proto_init_ensure()
 	return &file_storage_alert_proto_enumTypes[0]
 }
 
@@ -110,10 +112,12 @@ func (x Alert_EntityType) String() string {
 }
 
 func (Alert_EntityType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_alert_proto_init_ensure()
 	return file_storage_alert_proto_enumTypes[1].Descriptor()
 }
 
 func (Alert_EntityType) Type() protoreflect.EnumType {
+	file_storage_alert_proto_init_ensure()
 	return &file_storage_alert_proto_enumTypes[1]
 }
 
@@ -174,10 +178,12 @@ func (x Alert_Resource_ResourceType) String() string {
 }
 
 func (Alert_Resource_ResourceType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_alert_proto_init_ensure()
 	return file_storage_alert_proto_enumTypes[2].Descriptor()
 }
 
 func (Alert_Resource_ResourceType) Type() protoreflect.EnumType {
+	file_storage_alert_proto_init_ensure()
 	return &file_storage_alert_proto_enumTypes[2]
 }
 
@@ -229,10 +235,12 @@ func (x Alert_Violation_Type) String() string {
 }
 
 func (Alert_Violation_Type) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_alert_proto_init_ensure()
 	return file_storage_alert_proto_enumTypes[3].Descriptor()
 }
 
 func (Alert_Violation_Type) Type() protoreflect.EnumType {
+	file_storage_alert_proto_init_ensure()
 	return &file_storage_alert_proto_enumTypes[3]
 }
 
@@ -295,10 +303,12 @@ func (x ListAlert_ResourceType) String() string {
 }
 
 func (ListAlert_ResourceType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_alert_proto_init_ensure()
 	return file_storage_alert_proto_enumTypes[4].Descriptor()
 }
 
 func (ListAlert_ResourceType) Type() protoreflect.EnumType {
+	file_storage_alert_proto_init_ensure()
 	return &file_storage_alert_proto_enumTypes[4]
 }
 

@@ -55,10 +55,12 @@ func (x SensorHello_SensorState) String() string {
 }
 
 func (SensorHello_SensorState) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_hello_proto_init_ensure()
 	return file_internalapi_central_hello_proto_enumTypes[0].Descriptor()
 }
 
 func (SensorHello_SensorState) Type() protoreflect.EnumType {
+	file_internalapi_central_hello_proto_init_ensure()
 	return &file_internalapi_central_hello_proto_enumTypes[0]
 }
 

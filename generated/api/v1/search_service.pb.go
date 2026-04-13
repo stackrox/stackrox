@@ -290,10 +290,12 @@ func (x SearchCategory) String() string {
 }
 
 func (SearchCategory) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_search_service_proto_init_ensure()
 	return file_api_v1_search_service_proto_enumTypes[0].Descriptor()
 }
 
 func (SearchCategory) Type() protoreflect.EnumType {
+	file_api_v1_search_service_proto_init_ensure()
 	return &file_api_v1_search_service_proto_enumTypes[0]
 }
 
@@ -348,10 +350,12 @@ func (x SearchDataType) String() string {
 }
 
 func (SearchDataType) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_search_service_proto_init_ensure()
 	return file_api_v1_search_service_proto_enumTypes[1].Descriptor()
 }
 
 func (SearchDataType) Type() protoreflect.EnumType {
+	file_api_v1_search_service_proto_init_ensure()
 	return &file_api_v1_search_service_proto_enumTypes[1]
 }
 

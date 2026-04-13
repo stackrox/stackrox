@@ -56,10 +56,12 @@ func (x VulnerabilityState) String() string {
 }
 
 func (VulnerabilityState) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[0].Descriptor()
 }
 
 func (VulnerabilityState) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[0]
 }
 
@@ -111,10 +113,12 @@ func (x VulnerabilitySeverity) String() string {
 }
 
 func (VulnerabilitySeverity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[1].Descriptor()
 }
 
 func (VulnerabilitySeverity) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[1]
 }
 
@@ -163,10 +167,12 @@ func (x Source) String() string {
 }
 
 func (Source) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[2].Descriptor()
 }
 
 func (Source) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[2]
 }
 
@@ -213,10 +219,12 @@ func (x CvssScoreVersion) String() string {
 }
 
 func (CvssScoreVersion) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[3].Descriptor()
 }
 
 func (CvssScoreVersion) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[3]
 }
 
@@ -271,10 +279,12 @@ func (x CVE_CVEType) String() string {
 }
 
 func (CVE_CVEType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[4].Descriptor()
 }
 
 func (CVE_CVEType) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[4]
 }
 
@@ -320,10 +330,12 @@ func (x CVE_ScoreVersion) String() string {
 }
 
 func (CVE_ScoreVersion) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[5].Descriptor()
 }
 
 func (CVE_ScoreVersion) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[5]
 }
 
@@ -370,10 +382,12 @@ func (x CVEInfo_ScoreVersion) String() string {
 }
 
 func (CVEInfo_ScoreVersion) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[6].Descriptor()
 }
 
 func (CVEInfo_ScoreVersion) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[6]
 }
 
@@ -419,10 +433,12 @@ func (x CVSSV2_Impact) String() string {
 }
 
 func (CVSSV2_Impact) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[7].Descriptor()
 }
 
 func (CVSSV2_Impact) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[7]
 }
 
@@ -468,10 +484,12 @@ func (x CVSSV2_AttackVector) String() string {
 }
 
 func (CVSSV2_AttackVector) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[8].Descriptor()
 }
 
 func (CVSSV2_AttackVector) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[8]
 }
 
@@ -517,10 +535,12 @@ func (x CVSSV2_AccessComplexity) String() string {
 }
 
 func (CVSSV2_AccessComplexity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[9].Descriptor()
 }
 
 func (CVSSV2_AccessComplexity) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[9]
 }
 
@@ -566,10 +586,12 @@ func (x CVSSV2_Authentication) String() string {
 }
 
 func (CVSSV2_Authentication) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[10].Descriptor()
 }
 
 func (CVSSV2_Authentication) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[10]
 }
 
@@ -618,10 +640,12 @@ func (x CVSSV2_Severity) String() string {
 }
 
 func (CVSSV2_Severity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[11].Descriptor()
 }
 
 func (CVSSV2_Severity) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[11]
 }
 
@@ -667,10 +691,12 @@ func (x CVSSV3_Impact) String() string {
 }
 
 func (CVSSV3_Impact) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[12].Descriptor()
 }
 
 func (CVSSV3_Impact) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[12]
 }
 
@@ -719,10 +745,12 @@ func (x CVSSV3_AttackVector) String() string {
 }
 
 func (CVSSV3_AttackVector) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[13].Descriptor()
 }
 
 func (CVSSV3_AttackVector) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[13]
 }
 
@@ -765,10 +793,12 @@ func (x CVSSV3_Complexity) String() string {
 }
 
 func (CVSSV3_Complexity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[14].Descriptor()
 }
 
 func (CVSSV3_Complexity) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[14]
 }
 
@@ -814,10 +844,12 @@ func (x CVSSV3_Privileges) String() string {
 }
 
 func (CVSSV3_Privileges) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[15].Descriptor()
 }
 
 func (CVSSV3_Privileges) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[15]
 }
 
@@ -860,10 +892,12 @@ func (x CVSSV3_UserInteraction) String() string {
 }
 
 func (CVSSV3_UserInteraction) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[16].Descriptor()
 }
 
 func (CVSSV3_UserInteraction) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[16]
 }
 
@@ -906,10 +940,12 @@ func (x CVSSV3_Scope) String() string {
 }
 
 func (CVSSV3_Scope) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[17].Descriptor()
 }
 
 func (CVSSV3_Scope) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[17]
 }
 
@@ -964,10 +1000,12 @@ func (x CVSSV3_Severity) String() string {
 }
 
 func (CVSSV3_Severity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cve_proto_init_ensure()
 	return file_storage_cve_proto_enumTypes[18].Descriptor()
 }
 
 func (CVSSV3_Severity) Type() protoreflect.EnumType {
+	file_storage_cve_proto_init_ensure()
 	return &file_storage_cve_proto_enumTypes[18]
 }
 

@@ -58,10 +58,12 @@ func (x ClusterType) String() string {
 }
 
 func (ClusterType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[0].Descriptor()
 }
 
 func (ClusterType) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[0]
 }
 
@@ -115,10 +117,12 @@ func (x CollectionMethod) String() string {
 }
 
 func (CollectionMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[1].Descriptor()
 }
 
 func (CollectionMethod) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[1]
 }
 
@@ -167,10 +171,12 @@ func (x ManagerType) String() string {
 }
 
 func (ManagerType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[2].Descriptor()
 }
 
 func (ManagerType) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[2]
 }
 
@@ -231,10 +237,12 @@ func (x ClusterMetadata_Type) String() string {
 }
 
 func (ClusterMetadata_Type) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[3].Descriptor()
 }
 
 func (ClusterMetadata_Type) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[3]
 }
 
@@ -294,10 +302,12 @@ func (x ClusterUpgradeStatus_Upgradability) String() string {
 }
 
 func (ClusterUpgradeStatus_Upgradability) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[4].Descriptor()
 }
 
 func (ClusterUpgradeStatus_Upgradability) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[4]
 }
 
@@ -343,10 +353,12 @@ func (x ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) String() s
 }
 
 func (ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[5].Descriptor()
 }
 
 func (ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[5]
 }
 
@@ -427,10 +439,12 @@ func (x UpgradeProgress_UpgradeState) String() string {
 }
 
 func (UpgradeProgress_UpgradeState) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[6].Descriptor()
 }
 
 func (UpgradeProgress_UpgradeState) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[6]
 }
 
@@ -483,10 +497,12 @@ func (x ClusterHealthStatus_HealthStatusLabel) String() string {
 }
 
 func (ClusterHealthStatus_HealthStatusLabel) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_cluster_proto_init_ensure()
 	return file_storage_cluster_proto_enumTypes[7].Descriptor()
 }
 
 func (ClusterHealthStatus_HealthStatusLabel) Type() protoreflect.EnumType {
+	file_storage_cluster_proto_init_ensure()
 	return &file_storage_cluster_proto_enumTypes[7]
 }
 

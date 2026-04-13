@@ -62,10 +62,12 @@ func (x BaseImageRepository_Status) String() string {
 }
 
 func (BaseImageRepository_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_base_image_repository_proto_init_ensure()
 	return file_storage_base_image_repository_proto_enumTypes[0].Descriptor()
 }
 
 func (BaseImageRepository_Status) Type() protoreflect.EnumType {
+	file_storage_base_image_repository_proto_init_ensure()
 	return &file_storage_base_image_repository_proto_enumTypes[0]
 }
 
@@ -112,10 +114,12 @@ func (x BaseImageRepository_HealthStatus) String() string {
 }
 
 func (BaseImageRepository_HealthStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_base_image_repository_proto_init_ensure()
 	return file_storage_base_image_repository_proto_enumTypes[1].Descriptor()
 }
 
 func (BaseImageRepository_HealthStatus) Type() protoreflect.EnumType {
+	file_storage_base_image_repository_proto_init_ensure()
 	return &file_storage_base_image_repository_proto_enumTypes[1]
 }
 

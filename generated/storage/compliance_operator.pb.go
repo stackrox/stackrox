@@ -69,10 +69,12 @@ func (x ComplianceOperatorCheckResult_CheckStatus) String() string {
 }
 
 func (ComplianceOperatorCheckResult_CheckStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_proto_init_ensure()
 	return file_storage_compliance_operator_proto_enumTypes[0].Descriptor()
 }
 
 func (ComplianceOperatorCheckResult_CheckStatus) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_proto_init_ensure()
 	return &file_storage_compliance_operator_proto_enumTypes[0]
 }
 

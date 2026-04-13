@@ -62,10 +62,12 @@ func (x Traits_MutabilityMode) String() string {
 }
 
 func (Traits_MutabilityMode) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_traits_proto_init_ensure()
 	return file_storage_traits_proto_enumTypes[0].Descriptor()
 }
 
 func (Traits_MutabilityMode) Type() protoreflect.EnumType {
+	file_storage_traits_proto_init_ensure()
 	return &file_storage_traits_proto_enumTypes[0]
 }
 
@@ -110,10 +112,12 @@ func (x Traits_Visibility) String() string {
 }
 
 func (Traits_Visibility) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_traits_proto_init_ensure()
 	return file_storage_traits_proto_enumTypes[1].Descriptor()
 }
 
 func (Traits_Visibility) Type() protoreflect.EnumType {
+	file_storage_traits_proto_init_ensure()
 	return &file_storage_traits_proto_enumTypes[1]
 }
 
@@ -185,10 +189,12 @@ func (x Traits_Origin) String() string {
 }
 
 func (Traits_Origin) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_traits_proto_init_ensure()
 	return file_storage_traits_proto_enumTypes[2].Descriptor()
 }
 
 func (Traits_Origin) Type() protoreflect.EnumType {
+	file_storage_traits_proto_init_ensure()
 	return &file_storage_traits_proto_enumTypes[2]
 }
 

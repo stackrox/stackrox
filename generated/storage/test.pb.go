@@ -55,10 +55,12 @@ func (x TestSingleKeyStruct_Enum) String() string {
 }
 
 func (TestSingleKeyStruct_Enum) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_test_proto_init_ensure()
 	return file_storage_test_proto_enumTypes[0].Descriptor()
 }
 
 func (TestSingleKeyStruct_Enum) Type() protoreflect.EnumType {
+	file_storage_test_proto_init_ensure()
 	return &file_storage_test_proto_enumTypes[0]
 }
 
@@ -104,10 +106,12 @@ func (x TestSingleUUIDKeyStruct_Enum) String() string {
 }
 
 func (TestSingleUUIDKeyStruct_Enum) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_test_proto_init_ensure()
 	return file_storage_test_proto_enumTypes[1].Descriptor()
 }
 
 func (TestSingleUUIDKeyStruct_Enum) Type() protoreflect.EnumType {
+	file_storage_test_proto_init_ensure()
 	return &file_storage_test_proto_enumTypes[1]
 }
 
@@ -153,10 +157,12 @@ func (x TestStruct_Enum) String() string {
 }
 
 func (TestStruct_Enum) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_test_proto_init_ensure()
 	return file_storage_test_proto_enumTypes[2].Descriptor()
 }
 
 func (TestStruct_Enum) Type() protoreflect.EnumType {
+	file_storage_test_proto_init_ensure()
 	return &file_storage_test_proto_enumTypes[2]
 }
 

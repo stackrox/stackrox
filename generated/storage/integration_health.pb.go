@@ -55,10 +55,12 @@ func (x IntegrationHealth_Status) String() string {
 }
 
 func (IntegrationHealth_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_integration_health_proto_init_ensure()
 	return file_storage_integration_health_proto_enumTypes[0].Descriptor()
 }
 
 func (IntegrationHealth_Status) Type() protoreflect.EnumType {
+	file_storage_integration_health_proto_init_ensure()
 	return &file_storage_integration_health_proto_enumTypes[0]
 }
 
@@ -110,10 +112,12 @@ func (x IntegrationHealth_Type) String() string {
 }
 
 func (IntegrationHealth_Type) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_integration_health_proto_init_ensure()
 	return file_storage_integration_health_proto_enumTypes[1].Descriptor()
 }
 
 func (IntegrationHealth_Type) Type() protoreflect.EnumType {
+	file_storage_integration_health_proto_init_ensure()
 	return &file_storage_integration_health_proto_enumTypes[1]
 }
 

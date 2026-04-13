@@ -52,10 +52,12 @@ func (x DeclarativeConfigHealth_Status) String() string {
 }
 
 func (DeclarativeConfigHealth_Status) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_declarative_config_health_proto_init_ensure()
 	return file_storage_declarative_config_health_proto_enumTypes[0].Descriptor()
 }
 
 func (DeclarativeConfigHealth_Status) Type() protoreflect.EnumType {
+	file_storage_declarative_config_health_proto_init_ensure()
 	return &file_storage_declarative_config_health_proto_enumTypes[0]
 }
 
@@ -116,10 +118,12 @@ func (x DeclarativeConfigHealth_ResourceType) String() string {
 }
 
 func (DeclarativeConfigHealth_ResourceType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_declarative_config_health_proto_init_ensure()
 	return file_storage_declarative_config_health_proto_enumTypes[1].Descriptor()
 }
 
 func (DeclarativeConfigHealth_ResourceType) Type() protoreflect.EnumType {
+	file_storage_declarative_config_health_proto_init_ensure()
 	return &file_storage_declarative_config_health_proto_enumTypes[1]
 }
 

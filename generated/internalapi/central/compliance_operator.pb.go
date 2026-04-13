@@ -65,10 +65,12 @@ func (x ComplianceOperatorRuleSeverity) String() string {
 }
 
 func (ComplianceOperatorRuleSeverity) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return file_internalapi_central_compliance_operator_proto_enumTypes[0].Descriptor()
 }
 
 func (ComplianceOperatorRuleSeverity) Type() protoreflect.EnumType {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return &file_internalapi_central_compliance_operator_proto_enumTypes[0]
 }
 
@@ -129,10 +131,12 @@ func (x ComplianceOperatorCheckResultV2_CheckStatus) String() string {
 }
 
 func (ComplianceOperatorCheckResultV2_CheckStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return file_internalapi_central_compliance_operator_proto_enumTypes[1].Descriptor()
 }
 
 func (ComplianceOperatorCheckResultV2_CheckStatus) Type() protoreflect.EnumType {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return &file_internalapi_central_compliance_operator_proto_enumTypes[1]
 }
 
@@ -178,10 +182,12 @@ func (x ComplianceOperatorProfileV2_OperatorKind) String() string {
 }
 
 func (ComplianceOperatorProfileV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return file_internalapi_central_compliance_operator_proto_enumTypes[2].Descriptor()
 }
 
 func (ComplianceOperatorProfileV2_OperatorKind) Type() protoreflect.EnumType {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return &file_internalapi_central_compliance_operator_proto_enumTypes[2]
 }
 
@@ -227,10 +233,12 @@ func (x ComplianceOperatorRuleV2_OperatorKind) String() string {
 }
 
 func (ComplianceOperatorRuleV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return file_internalapi_central_compliance_operator_proto_enumTypes[3].Descriptor()
 }
 
 func (ComplianceOperatorRuleV2_OperatorKind) Type() protoreflect.EnumType {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	return &file_internalapi_central_compliance_operator_proto_enumTypes[3]
 }
 

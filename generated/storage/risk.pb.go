@@ -73,10 +73,12 @@ func (x RiskSubjectType) String() string {
 }
 
 func (RiskSubjectType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_risk_proto_init_ensure()
 	return file_storage_risk_proto_enumTypes[0].Descriptor()
 }
 
 func (RiskSubjectType) Type() protoreflect.EnumType {
+	file_storage_risk_proto_init_ensure()
 	return &file_storage_risk_proto_enumTypes[0]
 }
 

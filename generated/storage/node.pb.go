@@ -49,10 +49,12 @@ func (x Node_Note) String() string {
 }
 
 func (Node_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_node_proto_init_ensure()
 	return file_storage_node_proto_enumTypes[0].Descriptor()
 }
 
 func (Node_Note) Type() protoreflect.EnumType {
+	file_storage_node_proto_init_ensure()
 	return &file_storage_node_proto_enumTypes[0]
 }
 
@@ -101,10 +103,12 @@ func (x NodeScan_Note) String() string {
 }
 
 func (NodeScan_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_node_proto_init_ensure()
 	return file_storage_node_proto_enumTypes[1].Descriptor()
 }
 
 func (NodeScan_Note) Type() protoreflect.EnumType {
+	file_storage_node_proto_init_ensure()
 	return &file_storage_node_proto_enumTypes[1]
 }
 
@@ -147,10 +151,12 @@ func (x NodeScan_Scanner) String() string {
 }
 
 func (NodeScan_Scanner) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_node_proto_init_ensure()
 	return file_storage_node_proto_enumTypes[2].Descriptor()
 }
 
 func (NodeScan_Scanner) Type() protoreflect.EnumType {
+	file_storage_node_proto_init_ensure()
 	return &file_storage_node_proto_enumTypes[2]
 }
 
@@ -199,10 +205,12 @@ func (x NodeInventory_Note) String() string {
 }
 
 func (NodeInventory_Note) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_node_proto_init_ensure()
 	return file_storage_node_proto_enumTypes[3].Descriptor()
 }
 
 func (NodeInventory_Note) Type() protoreflect.EnumType {
+	file_storage_node_proto_init_ensure()
 	return &file_storage_node_proto_enumTypes[3]
 }
 

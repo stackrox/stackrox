@@ -52,10 +52,12 @@ func (x COStatus) String() string {
 }
 
 func (COStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_integration_proto_init_ensure()
 	return file_storage_compliance_integration_proto_enumTypes[0].Descriptor()
 }
 
 func (COStatus) Type() protoreflect.EnumType {
+	file_storage_compliance_integration_proto_init_ensure()
 	return &file_storage_compliance_integration_proto_enumTypes[0]
 }
 

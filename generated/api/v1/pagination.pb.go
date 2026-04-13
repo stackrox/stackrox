@@ -57,10 +57,12 @@ func (x Aggregation) String() string {
 }
 
 func (Aggregation) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_pagination_proto_init_ensure()
 	return file_api_v1_pagination_proto_enumTypes[0].Descriptor()
 }
 
 func (Aggregation) Type() protoreflect.EnumType {
+	file_api_v1_pagination_proto_init_ensure()
 	return &file_api_v1_pagination_proto_enumTypes[0]
 }
 

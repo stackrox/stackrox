@@ -64,10 +64,12 @@ func (x RequestStatus) String() string {
 }
 
 func (RequestStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_vuln_requests_proto_init_ensure()
 	return file_storage_vuln_requests_proto_enumTypes[0].Descriptor()
 }
 
 func (RequestStatus) Type() protoreflect.EnumType {
+	file_storage_vuln_requests_proto_init_ensure()
 	return &file_storage_vuln_requests_proto_enumTypes[0]
 }
 
@@ -113,10 +115,12 @@ func (x RequestExpiry_ExpiryType) String() string {
 }
 
 func (RequestExpiry_ExpiryType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_vuln_requests_proto_init_ensure()
 	return file_storage_vuln_requests_proto_enumTypes[1].Descriptor()
 }
 
 func (RequestExpiry_ExpiryType) Type() protoreflect.EnumType {
+	file_storage_vuln_requests_proto_init_ensure()
 	return &file_storage_vuln_requests_proto_enumTypes[1]
 }
 

@@ -54,10 +54,12 @@ func (x DetectedOS) String() string {
 }
 
 func (DetectedOS) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[0].Descriptor()
 }
 
 func (DetectedOS) Type() protoreflect.EnumType {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[0]
 }
 
@@ -104,10 +106,12 @@ func (x ActivationStatus) String() string {
 }
 
 func (ActivationStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[1].Descriptor()
 }
 
 func (ActivationStatus) Type() protoreflect.EnumType {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[1]
 }
 
@@ -154,10 +158,12 @@ func (x DnfMetadataStatus) String() string {
 }
 
 func (DnfMetadataStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[2].Descriptor()
 }
 
 func (DnfMetadataStatus) Type() protoreflect.EnumType {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[2]
 }
 

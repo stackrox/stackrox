@@ -67,10 +67,12 @@ func (x L4Protocol) String() string {
 }
 
 func (L4Protocol) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_network_flow_proto_init_ensure()
 	return file_storage_network_flow_proto_enumTypes[0].Descriptor()
 }
 
 func (L4Protocol) Type() protoreflect.EnumType {
+	file_storage_network_flow_proto_init_ensure()
 	return &file_storage_network_flow_proto_enumTypes[0]
 }
 
@@ -126,10 +128,12 @@ func (x NetworkEntityInfo_Type) String() string {
 }
 
 func (NetworkEntityInfo_Type) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_network_flow_proto_init_ensure()
 	return file_storage_network_flow_proto_enumTypes[1].Descriptor()
 }
 
 func (NetworkEntityInfo_Type) Type() protoreflect.EnumType {
+	file_storage_network_flow_proto_init_ensure()
 	return &file_storage_network_flow_proto_enumTypes[1]
 }
 

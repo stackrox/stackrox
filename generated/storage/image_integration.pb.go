@@ -58,10 +58,12 @@ func (x ImageIntegrationCategory) String() string {
 }
 
 func (ImageIntegrationCategory) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_image_integration_proto_init_ensure()
 	return file_storage_image_integration_proto_enumTypes[0].Descriptor()
 }
 
 func (ImageIntegrationCategory) Type() protoreflect.EnumType {
+	file_storage_image_integration_proto_init_ensure()
 	return &file_storage_image_integration_proto_enumTypes[0]
 }
 

@@ -56,10 +56,12 @@ func (x NodeRole) String() string {
 }
 
 func (NodeRole) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[0].Descriptor()
 }
 
 func (NodeRole) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[0]
 }
 
@@ -106,10 +108,12 @@ func (x ScanType) String() string {
 }
 
 func (ScanType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[1].Descriptor()
 }
 
 func (ScanType) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[1]
 }
 
@@ -165,10 +169,12 @@ func (x RuleSeverity) String() string {
 }
 
 func (RuleSeverity) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[2].Descriptor()
 }
 
 func (RuleSeverity) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[2]
 }
 
@@ -214,10 +220,12 @@ func (x ComplianceOperatorProfileV2_OperatorKind) String() string {
 }
 
 func (ComplianceOperatorProfileV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[3].Descriptor()
 }
 
 func (ComplianceOperatorProfileV2_OperatorKind) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[3]
 }
 
@@ -263,10 +271,12 @@ func (x ComplianceOperatorRuleV2_OperatorKind) String() string {
 }
 
 func (ComplianceOperatorRuleV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[4].Descriptor()
 }
 
 func (ComplianceOperatorRuleV2_OperatorKind) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[4]
 }
 
@@ -327,10 +337,12 @@ func (x ComplianceOperatorCheckResultV2_CheckStatus) String() string {
 }
 
 func (ComplianceOperatorCheckResultV2_CheckStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[5].Descriptor()
 }
 
 func (ComplianceOperatorCheckResultV2_CheckStatus) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[5]
 }
 
@@ -391,10 +403,12 @@ func (x ComplianceOperatorReportStatus_RunState) String() string {
 }
 
 func (ComplianceOperatorReportStatus_RunState) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[6].Descriptor()
 }
 
 func (ComplianceOperatorReportStatus_RunState) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[6]
 }
 
@@ -437,10 +451,12 @@ func (x ComplianceOperatorReportStatus_NotificationMethod) String() string {
 }
 
 func (ComplianceOperatorReportStatus_NotificationMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[7].Descriptor()
 }
 
 func (ComplianceOperatorReportStatus_NotificationMethod) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[7]
 }
 
@@ -483,10 +499,12 @@ func (x ComplianceOperatorReportStatus_RunMethod) String() string {
 }
 
 func (ComplianceOperatorReportStatus_RunMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return file_storage_compliance_operator_v2_proto_enumTypes[8].Descriptor()
 }
 
 func (ComplianceOperatorReportStatus_RunMethod) Type() protoreflect.EnumType {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	return &file_storage_compliance_operator_v2_proto_enumTypes[8]
 }
 

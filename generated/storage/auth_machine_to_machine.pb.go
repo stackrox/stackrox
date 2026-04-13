@@ -54,10 +54,12 @@ func (x AuthMachineToMachineConfig_Type) String() string {
 }
 
 func (AuthMachineToMachineConfig_Type) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_auth_machine_to_machine_proto_init_ensure()
 	return file_storage_auth_machine_to_machine_proto_enumTypes[0].Descriptor()
 }
 
 func (AuthMachineToMachineConfig_Type) Type() protoreflect.EnumType {
+	file_storage_auth_machine_to_machine_proto_init_ensure()
 	return &file_storage_auth_machine_to_machine_proto_enumTypes[0]
 }
 

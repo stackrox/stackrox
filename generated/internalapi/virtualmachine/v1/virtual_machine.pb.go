@@ -54,10 +54,12 @@ func (x VirtualMachine_State) String() string {
 }
 
 func (VirtualMachine_State) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_virtualmachine_v1_virtual_machine_proto_init_ensure()
 	return file_internalapi_virtualmachine_v1_virtual_machine_proto_enumTypes[0].Descriptor()
 }
 
 func (VirtualMachine_State) Type() protoreflect.EnumType {
+	file_internalapi_virtualmachine_v1_virtual_machine_proto_init_ensure()
 	return &file_internalapi_virtualmachine_v1_virtual_machine_proto_enumTypes[0]
 }
 

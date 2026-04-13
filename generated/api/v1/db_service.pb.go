@@ -62,10 +62,12 @@ func (x DBRestoreProcessStatus_State) String() string {
 }
 
 func (DBRestoreProcessStatus_State) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_db_service_proto_init_ensure()
 	return file_api_v1_db_service_proto_enumTypes[0].Descriptor()
 }
 
 func (DBRestoreProcessStatus_State) Type() protoreflect.EnumType {
+	file_api_v1_db_service_proto_init_ensure()
 	return &file_api_v1_db_service_proto_enumTypes[0]
 }
 
@@ -112,10 +114,12 @@ func (x DBExportManifest_EncodingType) String() string {
 }
 
 func (DBExportManifest_EncodingType) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_db_service_proto_init_ensure()
 	return file_api_v1_db_service_proto_enumTypes[1].Descriptor()
 }
 
 func (DBExportManifest_EncodingType) Type() protoreflect.EnumType {
+	file_api_v1_db_service_proto_init_ensure()
 	return &file_api_v1_db_service_proto_enumTypes[1]
 }
 

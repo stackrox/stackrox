@@ -101,10 +101,12 @@ func (x ServiceType) String() string {
 }
 
 func (ServiceType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_service_identity_proto_init_ensure()
 	return file_storage_service_identity_proto_enumTypes[0].Descriptor()
 }
 
 func (ServiceType) Type() protoreflect.EnumType {
+	file_storage_service_identity_proto_init_ensure()
 	return &file_storage_service_identity_proto_enumTypes[0]
 }
 

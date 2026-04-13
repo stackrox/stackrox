@@ -58,10 +58,12 @@ func (x PullTelemetryDataRequest_TelemetryDataType) String() string {
 }
 
 func (PullTelemetryDataRequest_TelemetryDataType) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	return file_internalapi_central_telemetry_proto_enumTypes[0].Descriptor()
 }
 
 func (PullTelemetryDataRequest_TelemetryDataType) Type() protoreflect.EnumType {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	return &file_internalapi_central_telemetry_proto_enumTypes[0]
 }
 

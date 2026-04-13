@@ -66,10 +66,12 @@ func (x Metadata_LicenseStatus) String() string {
 }
 
 func (Metadata_LicenseStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_metadata_service_proto_init_ensure()
 	return file_api_v1_metadata_service_proto_enumTypes[0].Descriptor()
 }
 
 func (Metadata_LicenseStatus) Type() protoreflect.EnumType {
+	file_api_v1_metadata_service_proto_init_ensure()
 	return &file_api_v1_metadata_service_proto_enumTypes[0]
 }
 
@@ -115,10 +117,12 @@ func (x DatabaseStatus_DatabaseType) String() string {
 }
 
 func (DatabaseStatus_DatabaseType) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_metadata_service_proto_init_ensure()
 	return file_api_v1_metadata_service_proto_enumTypes[1].Descriptor()
 }
 
 func (DatabaseStatus_DatabaseType) Type() protoreflect.EnumType {
+	file_api_v1_metadata_service_proto_init_ensure()
 	return &file_api_v1_metadata_service_proto_enumTypes[1]
 }
 
@@ -167,10 +171,12 @@ func (x CentralServicesCapabilities_CapabilityStatus) String() string {
 }
 
 func (CentralServicesCapabilities_CapabilityStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_metadata_service_proto_init_ensure()
 	return file_api_v1_metadata_service_proto_enumTypes[2].Descriptor()
 }
 
 func (CentralServicesCapabilities_CapabilityStatus) Type() protoreflect.EnumType {
+	file_api_v1_metadata_service_proto_init_ensure()
 	return &file_api_v1_metadata_service_proto_enumTypes[2]
 }
 

@@ -60,10 +60,12 @@ func (x Audit_RequestStatus) String() string {
 }
 
 func (Audit_RequestStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_audit_proto_init_ensure()
 	return file_api_v1_audit_proto_enumTypes[0].Descriptor()
 }
 
 func (Audit_RequestStatus) Type() protoreflect.EnumType {
+	file_api_v1_audit_proto_init_ensure()
 	return &file_api_v1_audit_proto_enumTypes[0]
 }
 
@@ -112,10 +114,12 @@ func (x Audit_Interaction) String() string {
 }
 
 func (Audit_Interaction) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_audit_proto_init_ensure()
 	return file_api_v1_audit_proto_enumTypes[1].Descriptor()
 }
 
 func (Audit_Interaction) Type() protoreflect.EnumType {
+	file_api_v1_audit_proto_init_ensure()
 	return &file_api_v1_audit_proto_enumTypes[1]
 }
 
@@ -164,10 +168,12 @@ func (x Audit_AccessMethod) String() string {
 }
 
 func (Audit_AccessMethod) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_audit_proto_init_ensure()
 	return file_api_v1_audit_proto_enumTypes[2].Descriptor()
 }
 
 func (Audit_AccessMethod) Type() protoreflect.EnumType {
+	file_api_v1_audit_proto_init_ensure()
 	return &file_api_v1_audit_proto_enumTypes[2]
 }
 

@@ -57,10 +57,12 @@ func (x TaintEffect) String() string {
 }
 
 func (TaintEffect) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_taints_proto_init_ensure()
 	return file_storage_taints_proto_enumTypes[0].Descriptor()
 }
 
 func (TaintEffect) Type() protoreflect.EnumType {
+	file_storage_taints_proto_init_ensure()
 	return &file_storage_taints_proto_enumTypes[0]
 }
 
@@ -106,10 +108,12 @@ func (x Toleration_Operator) String() string {
 }
 
 func (Toleration_Operator) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_taints_proto_init_ensure()
 	return file_storage_taints_proto_enumTypes[1].Descriptor()
 }
 
 func (Toleration_Operator) Type() protoreflect.EnumType {
+	file_storage_taints_proto_init_ensure()
 	return &file_storage_taints_proto_enumTypes[1]
 }
 

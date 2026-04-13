@@ -58,10 +58,12 @@ func (x EntityType) String() string {
 }
 
 func (EntityType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_configuration_proto_init_ensure()
 	return file_storage_report_configuration_proto_enumTypes[0].Descriptor()
 }
 
 func (EntityType) Type() protoreflect.EnumType {
+	file_storage_report_configuration_proto_init_ensure()
 	return &file_storage_report_configuration_proto_enumTypes[0]
 }
 
@@ -113,10 +115,12 @@ func (x EntityField) String() string {
 }
 
 func (EntityField) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_configuration_proto_init_ensure()
 	return file_storage_report_configuration_proto_enumTypes[1].Descriptor()
 }
 
 func (EntityField) Type() protoreflect.EnumType {
+	file_storage_report_configuration_proto_init_ensure()
 	return &file_storage_report_configuration_proto_enumTypes[1]
 }
 
@@ -156,10 +160,12 @@ func (x ReportConfiguration_ReportType) String() string {
 }
 
 func (ReportConfiguration_ReportType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_configuration_proto_init_ensure()
 	return file_storage_report_configuration_proto_enumTypes[2].Descriptor()
 }
 
 func (ReportConfiguration_ReportType) Type() protoreflect.EnumType {
+	file_storage_report_configuration_proto_init_ensure()
 	return &file_storage_report_configuration_proto_enumTypes[2]
 }
 
@@ -202,10 +208,12 @@ func (x ReportLastRunStatus_RunStatus) String() string {
 }
 
 func (ReportLastRunStatus_RunStatus) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_configuration_proto_init_ensure()
 	return file_storage_report_configuration_proto_enumTypes[3].Descriptor()
 }
 
 func (ReportLastRunStatus_RunStatus) Type() protoreflect.EnumType {
+	file_storage_report_configuration_proto_init_ensure()
 	return &file_storage_report_configuration_proto_enumTypes[3]
 }
 
@@ -251,10 +259,12 @@ func (x VulnerabilityReportFilters_Fixability) String() string {
 }
 
 func (VulnerabilityReportFilters_Fixability) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_configuration_proto_init_ensure()
 	return file_storage_report_configuration_proto_enumTypes[4].Descriptor()
 }
 
 func (VulnerabilityReportFilters_Fixability) Type() protoreflect.EnumType {
+	file_storage_report_configuration_proto_init_ensure()
 	return &file_storage_report_configuration_proto_enumTypes[4]
 }
 
@@ -297,10 +307,12 @@ func (x VulnerabilityReportFilters_ImageType) String() string {
 }
 
 func (VulnerabilityReportFilters_ImageType) Descriptor() protoreflect.EnumDescriptor {
+	file_storage_report_configuration_proto_init_ensure()
 	return file_storage_report_configuration_proto_enumTypes[5].Descriptor()
 }
 
 func (VulnerabilityReportFilters_ImageType) Type() protoreflect.EnumType {
+	file_storage_report_configuration_proto_init_ensure()
 	return &file_storage_report_configuration_proto_enumTypes[5]
 }
 

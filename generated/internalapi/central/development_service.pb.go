@@ -64,10 +64,12 @@ func (x URLHasValidCertResponse_URLResult) String() string {
 }
 
 func (URLHasValidCertResponse_URLResult) Descriptor() protoreflect.EnumDescriptor {
+	file_internalapi_central_development_service_proto_init_ensure()
 	return file_internalapi_central_development_service_proto_enumTypes[0].Descriptor()
 }
 
 func (URLHasValidCertResponse_URLResult) Type() protoreflect.EnumType {
+	file_internalapi_central_development_service_proto_init_ensure()
 	return &file_internalapi_central_development_service_proto_enumTypes[0]
 }
 

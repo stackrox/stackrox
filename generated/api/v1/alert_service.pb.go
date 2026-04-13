@@ -53,10 +53,12 @@ func (x Type) String() string {
 }
 
 func (Type) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_alert_service_proto_init_ensure()
 	return file_api_v1_alert_service_proto_enumTypes[0].Descriptor()
 }
 
 func (Type) Type() protoreflect.EnumType {
+	file_api_v1_alert_service_proto_init_ensure()
 	return &file_api_v1_alert_service_proto_enumTypes[0]
 }
 
@@ -102,10 +104,12 @@ func (x GetAlertsCountsRequest_RequestGroup) String() string {
 }
 
 func (GetAlertsCountsRequest_RequestGroup) Descriptor() protoreflect.EnumDescriptor {
+	file_api_v1_alert_service_proto_init_ensure()
 	return file_api_v1_alert_service_proto_enumTypes[1].Descriptor()
 }
 
 func (GetAlertsCountsRequest_RequestGroup) Type() protoreflect.EnumType {
+	file_api_v1_alert_service_proto_init_ensure()
 	return &file_api_v1_alert_service_proto_enumTypes[1]
 }
 
