@@ -10,7 +10,7 @@ const (
 	checkID = "4_2_1"
 )
 
-func init() {
+func RegisterCheck421() {
 	standards.RegisterChecksForStandard(standards.NIST800190, map[string]*standards.CheckAndMetadata{
 		standards.NIST800190CheckName(checkID): {
 			CheckFunc: common.CheckNoInsecureRegistries,

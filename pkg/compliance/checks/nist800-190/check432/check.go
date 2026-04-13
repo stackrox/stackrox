@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func RegisterCheck432() {
 	standards.RegisterChecksForStandard(standards.NIST800190, map[string]*standards.CheckAndMetadata{
 		standards.NIST800190CheckName("4_3_2"): clusterIsCompliant(),
 	})
