@@ -6,9 +6,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 var (
@@ -19,11 +20,11 @@ var (
 )
 
 // EnforceKill kills the pod holding the container info specified container instance.
-func EnforceKill(ctx context.Context, client kubernetes.Interface, containerInfo *central.ContainerInstanceEnforcement) (bool, error) {
+func EnforceKill(ctx context.Context, dynClient dynamic.Interface, containerInfo *central.ContainerInstanceEnforcement) (bool, error) {
 	podID := containerInfo.GetPodId()
 	ns := containerInfo.GetDeploymentEnforcement().GetNamespace()
 
-	err := client.CoreV1().Pods(ns).Delete(ctx, podID, podDeleteOptions)
+	err := dynClient.Resource(client.PodGVR).Namespace(ns).Delete(ctx, podID, podDeleteOptions)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil

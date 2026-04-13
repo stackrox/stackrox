@@ -14,7 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
 	"github.com/stackrox/rox/sensor/common/store"
 	"k8s.io/apimachinery/pkg/version"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 )
 
 // ClusterGatherer gathers cluster-related metrics
@@ -22,17 +23,17 @@ type ClusterGatherer struct {
 	componentGatherer *gatherers.ComponentInfoGatherer
 	nodeGatherer      *nodeGatherer
 	namespaceGatherer *namespaceGatherer
-	k8sClient         kubernetes.Interface
+	discoveryClient   discovery.DiscoveryInterface
 }
 
 // NewClusterGatherer returns a new ClusterGatherer which will gather telemetry data about the cluster monitored by this
 // sensor
-func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore store.DeploymentStore) *ClusterGatherer {
+func NewClusterGatherer(dynClient dynamic.Interface, discoveryClient discovery.DiscoveryInterface, deploymentStore store.DeploymentStore) *ClusterGatherer {
 	return &ClusterGatherer{
 		componentGatherer: gatherers.NewComponentInfoGatherer(),
-		nodeGatherer:      newNodeGatherer(k8sClient),
-		namespaceGatherer: newNamespaceGatherer(k8sClient, deploymentStore),
-		k8sClient:         k8sClient,
+		nodeGatherer:      newNodeGatherer(dynClient),
+		namespaceGatherer: newNamespaceGatherer(dynClient, deploymentStore),
+		discoveryClient:   discoveryClient,
 	}
 }
 
@@ -73,7 +74,7 @@ func (c *ClusterGatherer) getOrchestrator(ctx context.Context) (*data.Orchestrat
 	// The default API client we use does not have a global timeout set and the discovery API does not respect context
 	// cancellation, hence need to wrap this with concurrency.DoInWaitable.
 	if ctxErr := concurrency.DoInWaitable(ctx, func() {
-		serverVersion, err = c.k8sClient.Discovery().ServerVersion()
+		serverVersion, err = c.discoveryClient.ServerVersion()
 	}); ctxErr != nil {
 		return nil, errors.Wrap(ctxErr, "getting Kubernetes server version (context cancelled)")
 	}

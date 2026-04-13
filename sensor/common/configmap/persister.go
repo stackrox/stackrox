@@ -11,11 +11,13 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -40,15 +42,17 @@ type configMapPersister struct {
 
 	stopSig concurrency.ErrorSignal
 
-	client v1client.ConfigMapInterface
+	dynClient dynamic.Interface
+	namespace string
 
 	settingsStreamIt concurrency.ValueStreamIter[*v1.ConfigMap]
 }
 
-func NewConfigMapPersister(name, namespace string, k8s kubernetes.Interface, settings concurrency.ValueStreamIter[*v1.ConfigMap]) common.SensorComponent {
+func NewConfigMapPersister(name, namespace string, dynClient dynamic.Interface, settings concurrency.ValueStreamIter[*v1.ConfigMap]) common.SensorComponent {
 	return &configMapPersister{
 		name:             name,
-		client:           k8s.CoreV1().ConfigMaps(namespace),
+		dynClient:        dynClient,
+		namespace:        namespace,
 		settingsStreamIt: settings,
 	}
 }
@@ -105,25 +109,45 @@ func (p *configMapPersister) run() {
 	}
 }
 
+func (p *configMapPersister) toUnstructured(configMap *v1.ConfigMap) (*unstructured.Unstructured, error) {
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(configMap)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting configmap to unstructured")
+	}
+	return &unstructured.Unstructured{Object: obj}, nil
+}
+
 func (p *configMapPersister) applyCurrentConfigMap(ctx context.Context) error {
 	configMap := p.settingsStreamIt.Value()
 	if configMap == nil {
 		return nil
 	}
 
-	_, err := p.client.Create(ctx, configMap, metav1.CreateOptions{})
+	unstructuredCM, err := p.toUnstructured(configMap)
+	if err != nil {
+		return err
+	}
+
+	cmClient := p.dynClient.Resource(client.ConfigMapGVR).Namespace(p.namespace)
+
+	_, err = cmClient.Create(ctx, unstructuredCM, metav1.CreateOptions{})
 	if err != nil {
 		if !k8serrors.IsAlreadyExists(err) {
 			return errors.Wrap(err, "telling Kubernetes to create config map")
 		}
 
-		existing, err := p.client.Get(ctx, configMap.Name, metav1.GetOptions{})
+		existing, err := cmClient.Get(ctx, configMap.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "getting existing config map")
 		}
-		configMap.ResourceVersion = existing.ResourceVersion
+		configMap.ResourceVersion = existing.GetResourceVersion()
 
-		if _, err := p.client.Update(ctx, configMap, metav1.UpdateOptions{}); err != nil {
+		unstructuredCM, err = p.toUnstructured(configMap)
+		if err != nil {
+			return err
+		}
+
+		if _, err := cmClient.Update(ctx, unstructuredCM, metav1.UpdateOptions{}); err != nil {
 			return errors.Wrap(err, "telling Kubernetes to update existing config map")
 		}
 	}

@@ -7,16 +7,15 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	clientCoreV1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
-// Helper setup func which creates the event recorder.
-func eventRecorder(kubeClient kubernetes.Interface) record.EventRecorder {
+// eventRecorder creates a local event recorder that does not need a k8s client.
+// Events are logged locally rather than sent to the API server, avoiding the
+// need for the typed kubernetes.Interface.
+func eventRecorder() record.EventRecorder {
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&clientCoreV1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(
 		scheme.Scheme,
 		corev1.EventSource{Component: "stackrox/sensor"})

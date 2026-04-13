@@ -6,17 +6,19 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	appsv1 "k8s.io/api/apps/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 var ErrUnableToExtractVersion = errors.New("compliance operator found " +
 	"but labels required for extracting the version are missing")
 
-func GetInstalledVersion(ctx context.Context, ns string, cli kubernetes.Interface) (ver, namespace string, err error) {
-	complianceOperatorDeployment, err := searchForDeployment(ctx, ns, cli)
+func GetInstalledVersion(ctx context.Context, ns string, dynClient dynamic.Interface) (ver, namespace string, err error) {
+	complianceOperatorDeployment, err := searchForDeployment(ctx, ns, dynClient)
 	if err != nil {
 		return "", ns, errors.Wrapf(err, "could not find compliance operator deployment %q", ns)
 	}
@@ -40,22 +42,22 @@ func extractVersionFromLabels(labels map[string]string) string {
 	return ""
 }
 
-func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interface) (*appsv1.Deployment, error) {
+func searchForDeployment(ctx context.Context, ns string, dynClient dynamic.Interface) (*appsv1.Deployment, error) {
 	// Use cached namespace, if compliance operator deployment was not found search again in all namespaces.
 	if ns != "" {
-		if complianceOperator, err := getComplianceOperatorDeployment(ns, cli, ctx); err == nil {
+		if complianceOperator, err := getComplianceOperatorDeployment(ns, dynClient, ctx); err == nil {
 			return complianceOperator, nil
 		}
 	}
 
 	// List all namespaces to begin the lookup for compliance operator.
-	namespaceList, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	namespaceList, err := dynClient.Resource(client.NamespaceGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing all namespaces")
 	}
 
 	for _, namespace := range namespaceList.Items {
-		complianceOperator, err := getComplianceOperatorDeployment(namespace.GetName(), cli, ctx)
+		complianceOperator, err := getComplianceOperatorDeployment(namespace.GetName(), dynClient, ctx)
 		if err == nil {
 			return complianceOperator, nil
 		}
@@ -69,7 +71,14 @@ func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interfac
 	return nil, errors.Errorf("The %q deployment was not found in any namespace.", complianceoperator.Name)
 }
 
-func getComplianceOperatorDeployment(ns string, cli kubernetes.Interface, ctx context.Context) (*appsv1.Deployment, error) {
-	deployment, err := cli.AppsV1().Deployments(ns).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
-	return deployment, errors.Wrap(err, "getting compliance operator deployment")
+func getComplianceOperatorDeployment(ns string, dynClient dynamic.Interface, ctx context.Context) (*appsv1.Deployment, error) {
+	unstructuredObj, err := dynClient.Resource(client.DeploymentGVR).Namespace(ns).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting compliance operator deployment")
+	}
+	var deployment appsv1.Deployment
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, &deployment); err != nil {
+		return nil, errors.Wrap(err, "converting compliance operator deployment")
+	}
+	return &deployment, nil
 }

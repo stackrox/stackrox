@@ -23,7 +23,11 @@ import (
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -63,7 +67,7 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 			GVK: complianceoperator.Rule.GroupVersionKind(),
 		})
 		for _, resource := range complianceoperator.GetOptionalResources() {
-			isAvailable, err := utils.HasAPI(u.client, complianceoperator.GetGroupVersion().String(), resource.Kind)
+			isAvailable, err := utils.HasAPI(u.discoveryClient, complianceoperator.GetGroupVersion().String(), resource.Kind)
 			if err != nil {
 				log.Warnf("Error checking whether CRD %q exists in cluster, skipping adding to diagnostic bundles. Error: %s", resource.Name, err)
 				continue
@@ -86,7 +90,7 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 }
 
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
-func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, readySignal *concurrency.Signal) InfoUpdater {
+func NewInfoUpdater(dynClient dynamic.Interface, discoveryClient discovery.DiscoveryInterface, updateInterval time.Duration, readySignal *concurrency.Signal) InfoUpdater {
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
@@ -95,7 +99,8 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, r
 	// We start the signal untriggered
 	readySignal.Reset()
 	return &updaterImpl{
-		client:               client,
+		dynClient:            dynClient,
+		discoveryClient:      discoveryClient,
 		updateInterval:       updateInterval,
 		response:             make(chan *message.ExpiringMessage),
 		stopSig:              concurrency.NewSignal(),
@@ -107,7 +112,8 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, r
 
 type updaterImpl struct {
 	unimplemented.Receiver
-	client               kubernetes.Interface
+	dynClient            dynamic.Interface
+	discoveryClient      discovery.DiscoveryInterface
 	updateTicker         *time.Ticker
 	updateInterval       time.Duration
 	response             chan *message.ExpiringMessage
@@ -204,7 +210,7 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 }
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	complianceOperatorDeployment, err := searchForDeployment(u.ctx(), u.complianceOperatorNS, u.client)
+	complianceOperatorDeployment, err := searchForDeployment(u.ctx(), u.complianceOperatorNS, u.dynClient)
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
@@ -226,12 +232,12 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	}
 
 	// Check Sensor access to compliance.openshift.io resources
-	if err := checkWriteAccess(u.client); err != nil {
+	if err := checkWriteAccess(u.dynClient); err != nil {
 		info.StatusError = err.Error()
 		return info
 	}
 
-	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
+	resourceList, err := getResourceListForComplianceGroupVersion(u.discoveryClient)
 	if err != nil {
 		info.StatusError = err.Error()
 		return info
@@ -245,8 +251,13 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 }
 
 // checkWriteAccess checks if Sensor has permissions to write to compliance operator CRs.
-func checkWriteAccess(client kubernetes.Interface) error {
-	sac := &v1.SelfSubjectAccessReview{
+func checkWriteAccess(dynClient dynamic.Interface) error {
+	sarGVR := schema.GroupVersionResource{Group: "authorization.k8s.io", Version: "v1", Resource: "selfsubjectaccessreviews"}
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&v1.SelfSubjectAccessReview{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "authorization.k8s.io/v1",
+			Kind:       "SelfSubjectAccessReview",
+		},
 		Spec: v1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &v1.ResourceAttributes{
 				Verb:     "*",
@@ -254,14 +265,17 @@ func checkWriteAccess(client kubernetes.Interface) error {
 				Group:    "compliance.openshift.io",
 			},
 		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "marshalling SelfSubjectAccessReview")
 	}
-
-	response, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sac, metav1.CreateOptions{})
+	result, err := dynClient.Resource(sarGVR).Create(context.Background(), &unstructured.Unstructured{Object: obj}, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "could not perform compliance operator access review")
 	}
 
-	if !response.Status.Allowed {
+	allowed, _, _ := unstructured.NestedBool(result.Object, "status", "allowed")
+	if !allowed {
 		return errors.New("Sensor cannot write compliance.openshift.io API group resources. Please check Sensor's RBAC permissions.")
 	}
 	return nil
@@ -271,8 +285,8 @@ func (u *updaterImpl) ctx() context.Context {
 	return concurrency.AsContext(&u.stopSig)
 }
 
-func getResourceListForComplianceGroupVersion(client kubernetes.Interface) (*metav1.APIResourceList, error) {
-	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(complianceoperator.GetGroupVersion().String())
+func getResourceListForComplianceGroupVersion(discoveryClient discovery.DiscoveryInterface) (*metav1.APIResourceList, error) {
+	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(complianceoperator.GetGroupVersion().String())
 	if err != nil {
 		return nil, errors.Wrapf(err, "discovering resources for %q", complianceoperator.GetGroupVersion().String())
 	}

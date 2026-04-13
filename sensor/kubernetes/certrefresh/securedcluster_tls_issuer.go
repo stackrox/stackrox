@@ -23,8 +23,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/dynamic"
 )
 
 var (
@@ -50,7 +49,7 @@ var (
 
 // NewSecuredClusterTLSIssuer creates a Sensor component that will keep the Secured Cluster certificates up to date
 func NewSecuredClusterTLSIssuer(
-	k8sClient kubernetes.Interface,
+	dynClient dynamic.Interface,
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
@@ -60,7 +59,7 @@ func NewSecuredClusterTLSIssuer(
 		getResponseFn:                securedClusterResponseFn,
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
-		k8sClient:                    k8sClient,
+		dynClient:                    dynClient,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
@@ -96,10 +95,10 @@ func currentSensorCAFingerprint() string {
 }
 
 type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, k8sClient kubernetes.Interface) concurrency.RetryTicker
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, dynClient dynamic.Interface) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
+	dynClient dynamic.Interface, sensorNamespace string) certrepo.ServiceCertificatesRepo
 
 type newMsgFromSensor func(requestID string) *central.MsgFromSensor
 
@@ -109,7 +108,7 @@ type tlsIssuerImpl struct {
 	getResponseFn                func(*central.MsgToSensor) *Response
 	sensorNamespace              string
 	sensorPodName                string
-	k8sClient                    kubernetes.Interface
+	dynClient                    dynamic.Interface
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
@@ -158,16 +157,16 @@ func (i *tlsIssuerImpl) activate() error {
 	defer cancel()
 
 	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
-		i.sensorNamespace, i.k8sClient, wait.Backoff{})
+		i.sensorNamespace, i.dynClient, wait.Backoff{})
 	if fetchSensorDeploymentErr != nil {
 		i.started.Store(false)
 		return fmt.Errorf("fetching sensor deployment: %w", fetchSensorDeploymentErr)
 	}
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
-		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
+		i.dynClient, i.sensorNamespace)
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
-		certRefreshTimeout, i.certRefreshBackoff, i.k8sClient)
+		certRefreshTimeout, i.certRefreshBackoff, i.dynClient)
 
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
 	i.cancelRefresher = cancelFunc

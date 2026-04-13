@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/informers"
+	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -144,11 +144,9 @@ func (k *listenerImpl) handleAllEvents() {
 		defer informerTracker.stop()
 	}
 
-	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
 	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 	concurrency.WithLock(&k.sifLock, func() {
-		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, sif)
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
 	})
@@ -202,7 +200,7 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
 
-		customRulesAvailable, err = sensorUtils.HasAPI(k.client.Kubernetes(), complianceoperator.GetGroupVersion().String(), complianceoperator.CustomRule.Kind)
+		customRulesAvailable, err = sensorUtils.HasAPI(k.client.Discovery(), complianceoperator.GetGroupVersion().String(), complianceoperator.CustomRule.Kind)
 		if err != nil {
 			log.Errorf("Failed to check the availability of Compliance Operator Custom Rules, they won't be tracked: %v", err)
 		}
@@ -263,20 +261,23 @@ func (k *listenerImpl) handleAllEvents() {
 	// This call to clusterID.Get might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := k.clusterID.Get()
 
+	// Create the pod informer using k8swatch adapter (not the typed SharedInformerFactory)
+	// to avoid importing k8s.io/client-go/informers which pulls in all typed client packages.
+	k8sClient := k8swatch.InClusterClient()
+	podInformer := k8swatch.NewInformerAdapter("/api/v1/pods", k8sClient, func() runtime.Object { return &corev1.Pod{} })
+	podLister := v1Listers.NewPodLister(podInformer.GetIndexer())
+
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
-	podInformer := sif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
 		clusterID,
-		podInformer.Lister(),
+		podLister,
 		processfilter.Singleton(),
 		k.configHandler,
 		k.credentialsManager,
 		k.traceWriter,
 		k.storeProvider,
-		k.client.Kubernetes(),
+		k.client.Dynamic(),
 	)
-
-	k8sClient := k8swatch.InClusterClient()
 
 	namespaceInformer := k8swatch.NewInformerAdapter("/api/v1/namespaces", k8sClient, func() runtime.Object { return &corev1.Namespace{} })
 	secretInformer := k8swatch.NewInformerAdapter("/api/v1/secrets", k8sClient, func() runtime.Object { return &corev1.Secret{} })
@@ -360,7 +361,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerVirtualMachineInstances, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, dynamicSif, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, dynamicSif, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -371,7 +372,7 @@ func (k *listenerImpl) handleAllEvents() {
 		virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
 		vmWaitGroup := &concurrency.WaitGroup{}
 		handle(k.context, informerVirtualMachines, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.pubSubDispatcher, k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock, informerTracker)
-		if !startAndWait(stopSignal, vmWaitGroup, sif, dynamicSif, crdSharedInformerFactory) {
+		if !startAndWait(stopSignal, vmWaitGroup, dynamicSif, crdSharedInformerFactory) {
 			return
 		}
 		log.Info("Successfully synced virtual machines")
@@ -386,7 +387,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, informerRoleBindings, roleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerClusterRoleBindings, clusterRoleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
 
-	if !startAndWait(stopSignal, prePodWaitGroup, sif) {
+	if !startAndWait(stopSignal, prePodWaitGroup) {
 		return
 	}
 
@@ -397,8 +398,10 @@ func (k *listenerImpl) handleAllEvents() {
 	// However, do not ACTUALLY handle, pod events yet -- those need to wait for deployments to be
 	// synced, since we need to enrich pods with the deployment ids, and for that we need the entire
 	// hierarchy to be populated.
+	// Start the pod adapter's watch goroutine so it can sync its cache.
+	go podInformer.Run(stopSignal.Done())
 	informerTracker.register(informerPodCache)
-	if !cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced) {
+	if !cache.WaitForCacheSync(stopSignal.Done(), podInformer.HasSynced) {
 		return
 	}
 	informerTracker.markSynced(informerPodCache)
@@ -436,7 +439,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerComplianceProfiles, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, dynamicSif) {
+	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, crdSharedInformerFactory, dynamicSif) {
 		return
 	}
 
@@ -462,16 +465,16 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	if !startAndWait(stopSignal, wg, sif, dynamicSif, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, wg, dynamicSif, crdSharedInformerFactory) {
 		return
 	}
 
 	log.Info("Successfully synced daemonsets, deployments, stateful sets and cronjobs")
 
-	// Finally, run the pod informer, and process pod events.
+	// Finally, process pod events. The pod informer is already running (started above for cache sync).
 	podWaitGroup := &concurrency.WaitGroup{}
-	handle(k.context, informerPods, podInformer.Informer(), dispatchers.ForDeployments(kubernetesPkg.Pod), k.pubSubDispatcher, k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock, informerTracker)
-	if !startAndWait(stopSignal, podWaitGroup, sif) {
+	handle(k.context, informerPods, podInformer, dispatchers.ForDeployments(kubernetesPkg.Pod), k.pubSubDispatcher, k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock, informerTracker)
+	if !startAndWait(stopSignal, podWaitGroup) {
 		return
 	}
 

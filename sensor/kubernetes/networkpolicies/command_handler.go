@@ -12,8 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-	"k8s.io/client-go/kubernetes"
-	networkingV1Client "k8s.io/client-go/kubernetes/typed/networking/v1"
+	"k8s.io/client-go/dynamic"
 )
 
 var (
@@ -21,7 +20,7 @@ var (
 )
 
 type commandHandler struct {
-	networkingV1Client networkingV1Client.NetworkingV1Interface
+	dynClient dynamic.Interface
 
 	commandsC  chan *central.NetworkPoliciesCommand
 	responsesC chan *message.ExpiringMessage
@@ -34,16 +33,12 @@ func (h *commandHandler) Name() string {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
-	return newCommandHandler(client.NetworkingV1())
-}
-
-func newCommandHandler(networkingV1Client networkingV1Client.NetworkingV1Interface) *commandHandler {
+func NewCommandHandler(dynClient dynamic.Interface) common.SensorComponent {
 	return &commandHandler{
-		networkingV1Client: networkingV1Client,
-		commandsC:          make(chan *central.NetworkPoliciesCommand),
-		responsesC:         make(chan *message.ExpiringMessage),
-		stopSig:            concurrency.NewSignal(),
+		dynClient:  dynClient,
+		commandsC:  make(chan *central.NetworkPoliciesCommand),
+		responsesC: make(chan *message.ExpiringMessage),
+		stopSig:    concurrency.NewSignal(),
 	}
 }
 

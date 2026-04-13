@@ -14,9 +14,12 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 var (
@@ -42,12 +45,12 @@ type ClusterMetrics interface {
 }
 
 // New returns a new cluster metrics Sensor component.
-func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface) ClusterMetrics {
+func New(clusterID clusterIDPeeker, k8sClient dynamic.Interface) ClusterMetrics {
 	return NewWithInterval(clusterID, k8sClient, defaultInterval)
 }
 
 // NewWithInterval returns a new cluster metrics Sensor component.
-func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+func NewWithInterval(clusterID clusterIDPeeker, k8sClient dynamic.Interface, pollInterval time.Duration) ClusterMetrics {
 	ticker := time.NewTicker(pollInterval)
 	ticker.Stop()
 	return &clusterMetricsImpl{
@@ -74,7 +77,7 @@ type clusterMetricsImpl struct {
 	stopper         concurrency.Stopper
 	pollingInterval time.Duration
 	pollingTimeout  time.Duration
-	k8sClient       kubernetes.Interface
+	k8sClient       dynamic.Interface
 	pollTicker      *time.Ticker
 
 	clusterID clusterIDPeeker
@@ -148,15 +151,19 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), cm.pollingTimeout)
 	defer cancel()
 
-	nodes, err := cm.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	nodeList, err := cm.k8sClient.Resource(client.NodeGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing nodes for cluster metrics")
 	}
 
-	var nodeCount int64 = int64(len(nodes.Items))
+	var nodeCount int64 = int64(len(nodeList.Items))
 
 	var capacity int64
-	for _, node := range nodes.Items {
+	for _, item := range nodeList.Items {
+		var node corev1.Node
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, &node); err != nil {
+			continue
+		}
 		if cpu := node.Status.Capacity.Cpu(); cpu != nil {
 			// Rounds up to the nearest integer away from zero.
 			capacity += cpu.Value()

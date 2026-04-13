@@ -8,12 +8,14 @@ import (
 	"github.com/pkg/errors"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	commonLabels "github.com/stackrox/rox/pkg/labels"
-	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -22,16 +24,16 @@ const (
 )
 
 // CreateTLSCABundleConfigMapFromCerts creates or updates the TLS CA bundle ConfigMap from x509 certificates.
-func CreateTLSCABundleConfigMapFromCerts(ctx context.Context, certs []*x509.Certificate, configMapClient corev1.ConfigMapInterface, ownerRef *metav1.OwnerReference) error {
+func CreateTLSCABundleConfigMapFromCerts(ctx context.Context, certs []*x509.Certificate, dynClient dynamic.Interface, namespace string, ownerRef *metav1.OwnerReference) error {
 	pemData, err := convertCertsToPEM(certs)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert certificates to PEM")
 	}
-	return CreateTLSCABundleConfigMapFromPEM(ctx, pemData, configMapClient, ownerRef)
+	return CreateTLSCABundleConfigMapFromPEM(ctx, pemData, dynClient, namespace, ownerRef)
 }
 
 // CreateTLSCABundleConfigMapFromPEM creates or updates the TLS CA bundle ConfigMap from PEM data.
-func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, configMapClient corev1.ConfigMapInterface, ownerRef *metav1.OwnerReference) error {
+func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, dynClient dynamic.Interface, namespace string, ownerRef *metav1.OwnerReference) error {
 	if len(pemData) == 0 {
 		return errors.New("no PEM data provided")
 	}
@@ -40,7 +42,6 @@ func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, conf
 	// This label is required by the Operator in order to cache the ConfigMap.
 	labels[commonLabels.ManagedByLabelKey] = commonLabels.ManagedBySensor
 
-	namespace := pods.GetPodNamespace()
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pkgKubernetes.TLSCABundleConfigMapName,
@@ -60,7 +61,13 @@ func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, conf
 		configMap.ObjectMeta.OwnerReferences = []metav1.OwnerReference{*ownerRef}
 	}
 
-	_, err := configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(configMap)
+	if err != nil {
+		return errors.Wrap(err, "converting configmap to unstructured")
+	}
+	unstructuredCM := &unstructured.Unstructured{Object: unstructuredObj}
+
+	_, err = dynClient.Resource(client.ConfigMapGVR).Namespace(namespace).Create(ctx, unstructuredCM, metav1.CreateOptions{})
 	if err == nil {
 		log.Infof("Created TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
 		return nil
@@ -70,7 +77,7 @@ func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, conf
 		return errors.Wrap(err, "failed to create TLS CA bundle ConfigMap")
 	}
 
-	_, err = configMapClient.Update(ctx, configMap, metav1.UpdateOptions{})
+	_, err = dynClient.Resource(client.ConfigMapGVR).Namespace(namespace).Update(ctx, unstructuredCM, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update TLS CA bundle ConfigMap")
 	}

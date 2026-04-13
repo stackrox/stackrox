@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -59,11 +61,16 @@ func New(clusterID clusterIDWaiter,
 }
 
 // createCredentialsManager retrieves Sensor's node provider ID and creates an AWS credentials manager.
-func createCredentialsManager(client client.Interface, nodeName string) (credentialsManager awscredentials.RegistryCredentialsManager) {
-	node, err := client.Kubernetes().CoreV1().Nodes().Get(
+func createCredentialsManager(c client.Interface, nodeName string) (credentialsManager awscredentials.RegistryCredentialsManager) {
+	unstructuredNode, err := c.Dynamic().Resource(client.NodeGVR).Get(
 		context.Background(), nodeName, metav1.GetOptions{})
 	if err != nil {
 		log.Warnf("ECR credential manager is not available: failed to read node provider: %v", err)
+		return
+	}
+	var node corev1.Node
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredNode.Object, &node); err != nil {
+		log.Warnf("ECR credential manager is not available: failed to convert node: %v", err)
 		return
 	}
 	credentialsManager, err = awscredentials.NewECRCredentialsManager(node.Spec.ProviderID)

@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -97,7 +97,7 @@ type Manager struct {
 	cache            []*SensorMetadata
 }
 
-func NewHeritageManager(ns string, client corev1.ConfigMapsGetter, start time.Time) *Manager {
+func NewHeritageManager(ns string, dynClient dynamic.Interface, start time.Time) *Manager {
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		cache:            []*SensorMetadata{},
@@ -107,7 +107,7 @@ func NewHeritageManager(ns string, client corev1.ConfigMapsGetter, start time.Ti
 			SensorStart:   start,
 		},
 		cmWriter: &cmWriter{
-			k8sClient: client,
+			dynClient: dynClient,
 			namespace: ns,
 		},
 		maxSize: env.PastSensorsMaxEntries.IntegerSetting(), // Setting value is already validated

@@ -21,7 +21,7 @@ type enforcerImpl struct {
 func New(c client.Interface) (enforcer.Enforcer, error) {
 	e := &enforcerImpl{
 		client:   c,
-		recorder: eventRecorder(c.Kubernetes()),
+		recorder: eventRecorder(),
 	}
 
 	enforcementMap := map[storage.EnforcementAction]enforcer.EnforceFunc{

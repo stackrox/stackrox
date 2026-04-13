@@ -11,8 +11,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -66,20 +67,18 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 
 // populateFromKubernetes populates the system, default, and app namespace IDs in out from information returned by the
 // Kubernetes API server.
-func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface, out *storage.SensorDeploymentIdentification) error {
-	nsClient := k8sClient.CoreV1().Namespaces()
-
+func populateFromKubernetes(ctx context.Context, dynClient dynamic.Interface, out *storage.SensorDeploymentIdentification) error {
 	out.K8SNodeName = k8sNodeName.Setting()
 
 	var errResult error
-	systemNS, err := k8sClient.CoreV1().Namespaces().Get(ctx, namespaces.KubeSystem, metav1.GetOptions{})
+	systemNS, err := dynClient.Resource(client.NamespaceGVR).Get(ctx, namespaces.KubeSystem, metav1.GetOptions{})
 	if err != nil {
 		errResult = multierror.Append(errResult, errors.Wrapf(err, "failed to look up system namespace %q", namespaces.KubeSystem))
 	} else {
 		out.SystemNamespaceId = string(systemNS.GetUID())
 	}
 
-	defaultNS, err := k8sClient.CoreV1().Namespaces().Get(ctx, namespaces.Default, metav1.GetOptions{})
+	defaultNS, err := dynClient.Resource(client.NamespaceGVR).Get(ctx, namespaces.Default, metav1.GetOptions{})
 	if err != nil {
 		errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up default namespace"))
 	} else {
@@ -94,7 +93,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 		return errors.New("application namespace not set")
 	}
 
-	appNSObj, err := nsClient.Get(ctx, appNS, metav1.GetOptions{})
+	appNSObj, err := dynClient.Resource(client.NamespaceGVR).Get(ctx, appNS, metav1.GetOptions{})
 	if err != nil {
 		errResult = multierror.Append(errResult, errors.Wrapf(err, "failed to look up application namespace %q", appNS))
 	} else {
@@ -109,7 +108,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 
 // FetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
 // secret mounts and information from the Kubernetes API server.
-func FetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface) *storage.SensorDeploymentIdentification {
+func FetchDeploymentIdentification(ctx context.Context, dynClient dynamic.Interface) *storage.SensorDeploymentIdentification {
 	ctx, cancel := context.WithTimeout(ctx, fetchClusterIdentificationTimeout)
 	defer cancel()
 
@@ -121,7 +120,7 @@ func FetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Int
 	if err := populateFromServiceAccountNamespaceFile(&deploymentIdentification); err != nil {
 		log.Warnf("Could not populate cluster identification from service account namespace file: %s", err)
 	}
-	if err := populateFromKubernetes(ctx, k8sClient, &deploymentIdentification); err != nil {
+	if err := populateFromKubernetes(ctx, dynClient, &deploymentIdentification); err != nil {
 		log.Warnf("Could not populate cluster identification from Kubernetes API: %s", err)
 	}
 

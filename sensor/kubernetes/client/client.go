@@ -1,10 +1,9 @@
 package client
 
 import (
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -12,18 +11,17 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Interface provides access to Kubernetes and dynamic clients.
-// OpenShift resources are accessed via the Dynamic() client with GVR constants,
-// eliminating the need to import typed OpenShift client-go packages that
-// register scheme types at init() (~10 MB RSS overhead).
+// Interface provides access to the dynamic Kubernetes client and discovery.
+// All CRUD operations use the dynamic client with GVR constants from gvr.go,
+// eliminating ~113 typed client-go packages (informers, listers, applyconfigurations).
 type Interface interface {
-	Kubernetes() kubernetes.Interface
 	Dynamic() dynamic.Interface
+	Discovery() discovery.DiscoveryInterface
 }
 
 type clientSet struct {
-	dynamic dynamic.Interface
-	k8s     kubernetes.Interface
+	dynamic   dynamic.Interface
+	discovery discovery.DiscoveryInterface
 }
 
 func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
@@ -34,27 +32,35 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 	return client
 }
 
+func mustCreateDiscoveryClient(config *rest.Config) discovery.DiscoveryInterface {
+	client, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		log.Panicf("Creating discovery client: %v", err)
+	}
+	return client
+}
+
 // MustCreateInterfaceFromRest creates a client interface using a rest config as a parameter
 func MustCreateInterfaceFromRest(config *rest.Config) Interface {
 	return &clientSet{
-		dynamic: mustCreateDynamicClient(config),
-		k8s:     k8sutil.MustCreateK8sClient(config),
+		dynamic:   mustCreateDynamicClient(config),
+		discovery: mustCreateDiscoveryClient(config),
 	}
 }
 
 // MustCreateInterface creates a client interface for both Kubernetes and Openshift clients
 func MustCreateInterface() Interface {
-	config, err := k8sutil.GetK8sInClusterConfig()
+	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
 	}
 	return MustCreateInterfaceFromRest(config)
 }
 
-func (c *clientSet) Kubernetes() kubernetes.Interface {
-	return c.k8s
-}
-
 func (c *clientSet) Dynamic() dynamic.Interface {
 	return c.dynamic
+}
+
+func (c *clientSet) Discovery() discovery.DiscoveryInterface {
+	return c.discovery
 }

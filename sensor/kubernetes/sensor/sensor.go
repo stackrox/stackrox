@@ -90,7 +90,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	clusterID := cfg.clusterIDHandler
 
-	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
+	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Dynamic(), time.Now())
 	storeProvider := resources.InitializeStore(hm)
 
 	var namespaces store.NamespaceStore
@@ -123,14 +123,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		log.Infof("Using provided deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 	} else {
 		// Fetch deployment identification from service account files and Kubernetes API
-		deploymentIdentification = FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
+		deploymentIdentification = FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Dynamic())
 		log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
 
-	o := orchestrator.New(cfg.k8sClient.Kubernetes())
+	o := orchestrator.New(cfg.k8sClient.Dynamic())
 	complianceMultiplexer := compliance.NewMultiplexer()
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
@@ -188,13 +188,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
-		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
+		networkpolicies.NewCommandHandler(cfg.k8sClient.Dynamic()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
-		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
+		clusterhealth.NewUpdater(cfg.k8sClient.Dynamic(), 0),
+		clustermetrics.New(clusterID, cfg.k8sClient.Dynamic()),
 		complianceCommandHandler,
 		processSignals,
-		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
+		telemetry.NewCommandHandler(cfg.k8sClient.Dynamic(), cfg.k8sClient.Discovery(), storeProvider),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
@@ -224,7 +224,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// searching for a deployment that doesn't exist.
 	if env.OpenshiftAPI.BooleanSetting() {
 		coReadySignal := concurrency.NewSignal()
-		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
+		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Dynamic(), cfg.k8sClient.Discovery(), 0, &coReadySignal)
 		components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
 	}
 
@@ -243,7 +243,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			configmap.NewConfigMapPersister(
 				"admissionController",
 				sensorNamespace,
-				cfg.k8sClient.Kubernetes(),
+				cfg.k8sClient.Dynamic(),
 				admCtrlSettingsMgr.ConfigMapStream().Iterator(false),
 			),
 		)
@@ -252,7 +252,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
+			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Dynamic(), sensorNamespace, podName))
 	}
 
 	s, err := sensor.NewSensor(

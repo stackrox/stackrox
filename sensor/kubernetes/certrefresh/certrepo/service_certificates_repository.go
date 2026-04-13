@@ -10,12 +10,16 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/dynamic"
+	// Keep client, unstructured, runtime - they're used in methods below
 )
 
 var (
@@ -42,7 +46,7 @@ type ServiceCertificatesRepoSecrets struct {
 	Secrets        map[storage.ServiceType]ServiceCertSecretSpec
 	OwnerReference metav1.OwnerReference
 	Namespace      string
-	SecretsClient  corev1.SecretInterface
+	DynClient      dynamic.Interface
 }
 
 // ServiceCertSecretSpec specifies the name of the secret where certificates for a service are stored, and
@@ -107,9 +111,14 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Context, serviceType storage.ServiceType,
 	secretSpec ServiceCertSecretSpec) (cert *storage.TypedServiceCertificate, ca []byte, err error) {
 
-	secret, getErr := r.SecretsClient.Get(ctx, secretSpec.SecretName, metav1.GetOptions{})
+	unstructuredSecret, getErr := r.DynClient.Resource(client.SecretGVR).Namespace(r.Namespace).Get(ctx, secretSpec.SecretName, metav1.GetOptions{})
 	if getErr != nil {
 		return nil, nil, errors.Wrapf(getErr, "getting secret %q", secretSpec.SecretName)
+	}
+
+	var secret v1.Secret
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredSecret.Object, &secret); err != nil {
+		return nil, nil, errors.Wrap(err, "converting unstructured to secret")
 	}
 
 	ownerReferences := secret.GetOwnerReferences()
@@ -196,7 +205,7 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 	if marshallingErr != nil {
 		return errors.Wrapf(marshallingErr, errForServiceFormat, cert.GetServiceType())
 	}
-	if _, patchErr := r.SecretsClient.Patch(ctx, secretSpec.SecretName, k8sTypes.JSONPatchType, patchBytes,
+	if _, patchErr := r.DynClient.Resource(client.SecretGVR).Namespace(r.Namespace).Patch(ctx, secretSpec.SecretName, k8sTypes.JSONPatchType, patchBytes,
 		metav1.PatchOptions{}); patchErr != nil {
 		return errors.Wrapf(patchErr, errForServiceFormat, cert.GetServiceType())
 	}
@@ -213,7 +222,7 @@ type patchSecretDataByteMap struct {
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
 	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
 
-	created, err := r.SecretsClient.Create(ctx, &v1.Secret{
+	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
@@ -222,11 +231,24 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 			OwnerReferences: []metav1.OwnerReference{r.OwnerReference},
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
-	}, metav1.CreateOptions{})
+	}
+
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(secret)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting secret to unstructured")
+	}
+	unstructuredSecret := &unstructured.Unstructured{Object: unstructuredObj}
+
+	createdUnstructured, err := r.DynClient.Resource(client.SecretGVR).Namespace(r.Namespace).Create(ctx, unstructuredSecret, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating secret %s", secretSpec.SecretName)
 	}
-	return created, nil
+
+	var created v1.Secret
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(createdUnstructured.Object, &created); err != nil {
+		return nil, errors.Wrap(err, "converting unstructured to secret")
+	}
+	return &created, nil
 }
 
 func (r *ServiceCertificatesRepoSecrets) secretDataForCertificate(secretSpec ServiceCertSecretSpec, caPem []byte,

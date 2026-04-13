@@ -10,9 +10,9 @@ import (
 
 func (h *commandHandler) createApplyTx(id string) *applyTx {
 	return &applyTx{
-		id:               id,
-		networkingClient: h.networkingV1Client,
-		timestamp:        time.Now().Format(time.RFC3339),
+		id:        id,
+		dynClient: h.dynClient,
+		timestamp: time.Now().Format(time.RFC3339),
 	}
 }
 

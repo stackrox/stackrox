@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -70,7 +70,7 @@ func NewDispatcherRegistry(
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
 	storeProvider *StoreProvider,
-	k8sAPI kubernetes.Interface,
+	dynClient dynamic.Interface,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -88,7 +88,7 @@ func NewDispatcherRegistry(
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
+		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, dynClient),
 		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore, storeProvider.VirtualMachines()),
 		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),

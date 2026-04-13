@@ -83,7 +83,7 @@ func (k *listenerImpl) Start() error {
 	}
 
 	// Patch namespaces to include labels
-	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
+	patchNamespaces(k.client.Dynamic(), &k.stopSig)
 	// Start credentials manager.
 	if k.credentialsManager != nil {
 		k.credentialsManager.Start()

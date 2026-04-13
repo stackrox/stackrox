@@ -10,11 +10,14 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
-	networkingV1Client "k8s.io/client-go/kubernetes/typed/networking/v1"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -37,16 +40,36 @@ const (
 )
 
 type rollbackAction interface {
-	Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error
+	Execute(ctx context.Context, dynClient dynamic.Interface) error
 	Record(mod *storage.NetworkPolicyModification)
 }
 
 type applyTx struct {
-	id               string
-	networkingClient networkingV1Client.NetworkingV1Interface
-	timestamp        string
+	id        string
+	dynClient dynamic.Interface
+	timestamp string
 
 	rollbackActions []rollbackAction
+}
+
+func npClient(dynClient dynamic.Interface, ns string) dynamic.ResourceInterface {
+	return dynClient.Resource(client.NetworkPolicyGVR).Namespace(ns)
+}
+
+func toUnstructuredNP(np *networkingV1.NetworkPolicy) (*unstructured.Unstructured, error) {
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(np)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: obj}, nil
+}
+
+func fromUnstructuredNP(u *unstructured.Unstructured) (*networkingV1.NetworkPolicy, error) {
+	var np networkingV1.NetworkPolicy
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &np); err != nil {
+		return nil, err
+	}
+	return &np, nil
 }
 
 func (t *applyTx) Do(ctx context.Context, newOrUpdated []*networkingV1.NetworkPolicy, toDelete map[k8sutil.NSObjRef]struct{}) error {
@@ -95,8 +118,8 @@ type deletePolicy struct {
 	name, namespace string
 }
 
-func (a *deletePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
-	err := client.NetworkPolicies(a.namespace).Delete(ctx, a.name, kubernetes.DeleteBackgroundOption)
+func (a *deletePolicy) Execute(ctx context.Context, dynClient dynamic.Interface) error {
+	err := npClient(dynClient, a.namespace).Delete(ctx, a.name, kubernetes.DeleteBackgroundOption)
 	if err != nil {
 		return errors.Wrapf(err, "deleting network policy %s/%s", a.namespace, a.name)
 	}
@@ -115,8 +138,12 @@ type restorePolicy struct {
 	wasDeleted bool
 }
 
-func (a *restorePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
-	_, err := client.NetworkPolicies(a.oldPolicy.Namespace).Update(ctx, a.oldPolicy, metav1.UpdateOptions{})
+func (a *restorePolicy) Execute(ctx context.Context, dynClient dynamic.Interface) error {
+	u, err := toUnstructuredNP(a.oldPolicy)
+	if err != nil {
+		return errors.Wrap(err, "converting network policy to unstructured for restore")
+	}
+	_, err = npClient(dynClient, a.oldPolicy.Namespace).Update(ctx, u, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "restoring network policy")
 	}
@@ -129,8 +156,6 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 	}
 	yaml, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: a.oldPolicy}.ToYaml()
 	if err != nil {
-		// This makes the YAML malformed, but it is still better than failing to provide any value here. If something
-		// goes wrong, having the user look into the returned YAML seems the right thing to do.
 		yaml = fmt.Sprintf("ERROR serializing networkpolicy YAML: %v\n", err)
 	}
 	mod.ApplyYaml += yaml
@@ -146,7 +171,7 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 func (t *applyTx) Rollback(ctx context.Context) error {
 	var errList errorhelpers.ErrorList
 	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
-		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
+		errList.AddError(t.rollbackActions[i].Execute(ctx, t.dynClient))
 	}
 	if err := errList.ToError(); err != nil {
 		return errors.Wrap(err, "reverting network policy modifications")
@@ -155,14 +180,19 @@ func (t *applyTx) Rollback(ctx context.Context) error {
 }
 
 func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {
-	nsClient := t.networkingClient.NetworkPolicies(policy.Namespace)
+	c := npClient(t.dynClient, policy.Namespace)
 
 	if policy.ResourceVersion != "" {
 		policy = policy.DeepCopy()
 		policy.ResourceVersion = ""
 	}
 
-	_, err := nsClient.Create(ctx, policy, metav1.CreateOptions{})
+	u, err := toUnstructuredNP(policy)
+	if err != nil {
+		return errors.Wrap(err, "converting network policy")
+	}
+
+	_, err = c.Create(ctx, u, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "creating network policy %s/%s", policy.Namespace, policy.Name)
 	}
@@ -174,17 +204,21 @@ func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.
 }
 
 func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {
-	nsClient := t.networkingClient.NetworkPolicies(policy.Namespace)
+	c := npClient(t.dynClient, policy.Namespace)
 
 	for retryCount := 0; retryCount < maxConflictRetries; retryCount++ {
-		old, err := nsClient.Get(ctx, policy.Name, metav1.GetOptions{})
+		oldU, err := c.Get(ctx, policy.Name, metav1.GetOptions{})
 
 		if err != nil {
 			if k8sErrors.IsNotFound(err) {
-				// The policy has possibly been deleted. Either way, doesn't matter for us.
 				return t.createNetworkPolicy(ctx, policy)
 			}
 			return errors.Wrap(err, "retrieving network policy")
+		}
+
+		old, err := fromUnstructuredNP(oldU)
+		if err != nil {
+			return errors.Wrap(err, "converting old network policy")
 		}
 
 		// Do not serialize the `previous JSON` annotation when JSON-encoding.
@@ -198,7 +232,12 @@ func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1
 		t.annotateAndLabel(policy)
 		policy.Annotations[previousJSONAnnotationKey] = string(oldJSON)
 
-		updated, err := nsClient.Update(ctx, policy, metav1.UpdateOptions{})
+		u, err := toUnstructuredNP(policy)
+		if err != nil {
+			return errors.Wrap(err, "converting policy to unstructured")
+		}
+
+		updatedU, err := c.Update(ctx, u, metav1.UpdateOptions{})
 		if err != nil {
 			if k8sErrors.IsConflict(err) {
 				log.Errorf("Encountered conflict when trying to update network policy %s/%s: %v. Retrying (attempt %d of %d)...", old.GetNamespace(), old.GetName(), err, retryCount+1, maxConflictRetries)
@@ -207,9 +246,8 @@ func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1
 			return errors.Wrap(err, "updating network policy")
 		}
 
-		// For rollback, update the resource version of the original network policy to the updated one, so we don't
-		// accidentally overwrite a concurrent modification.
-		old.ResourceVersion = updated.ResourceVersion
+		// For rollback, update the resource version of the original network policy to the updated one.
+		old.ResourceVersion = updatedU.GetResourceVersion()
 		t.rollbackActions = append(t.rollbackActions, &restorePolicy{
 			oldPolicy: old,
 		})
@@ -221,15 +259,19 @@ func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1
 }
 
 func (t *applyTx) deleteNetworkPolicy(ctx context.Context, namespace, name string) error {
-	nsClient := t.networkingClient.NetworkPolicies(namespace)
+	c := npClient(t.dynClient, namespace)
 
-	existing, err := nsClient.Get(ctx, name, metav1.GetOptions{})
+	existingU, err := c.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "retrieving network policy")
 	}
 
+	existing, err := fromUnstructuredNP(existingU)
+	if err != nil {
+		return errors.Wrap(err, "converting existing network policy")
+	}
+
 	deleted := existing.DeepCopy()
-	// no need to worry about max length, name will automatically be truncated.
 	deleted.GenerateName = fmt.Sprintf("deleted-%s-", deleted.Name)
 	t.annotateAndLabel(deleted)
 	deleted.Annotations[deletedAnnotationKey] = deletedAnnotationValue
@@ -241,16 +283,21 @@ func (t *applyTx) deleteNetworkPolicy(ctx context.Context, namespace, name strin
 	deleted.Name = ""
 	deleted.ResourceVersion = ""
 
-	deleted, err = nsClient.Create(ctx, deleted, metav1.CreateOptions{})
+	deletedU, err := toUnstructuredNP(deleted)
+	if err != nil {
+		return errors.Wrap(err, "converting deleted network policy")
+	}
+
+	createdU, err := c.Create(ctx, deletedU, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "creating backup network policy")
 	}
 	t.rollbackActions = append(t.rollbackActions, norecordAction{rollbackAction: &deletePolicy{
-		namespace: deleted.Namespace,
-		name:      deleted.Name,
+		namespace: createdU.GetNamespace(),
+		name:      createdU.GetName(),
 	}})
 
-	err = nsClient.Delete(ctx, existing.Name, kubernetes.DeleteBackgroundOption)
+	err = c.Delete(ctx, existing.Name, kubernetes.DeleteBackgroundOption)
 	if err != nil {
 		return errors.Wrapf(err, "deleting network policy %s/%s", existing.Namespace, existing.Name)
 	}

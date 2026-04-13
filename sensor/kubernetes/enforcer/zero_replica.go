@@ -23,36 +23,38 @@ func (e *enforcerImpl) scaleToZero(ctx context.Context, enforcement *central.Sen
 		return errors.New("unable to apply constraint to non-deployment")
 	}
 
+	dynClient := e.client.Dynamic()
+
 	// Set enforcement function based on deployment type.
 	var function func(ctx context.Context) error
 	switch deploymentInfo.GetDeploymentType() {
 	case pkgKubernetes.Deployment:
 		function = func(ctx context.Context) error {
-			return deployment.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+			return deployment.EnforceZeroReplica(ctx, dynClient, deploymentInfo)
 		}
 	case pkgKubernetes.DeploymentConfig:
 		function = func(ctx context.Context) error {
-			return deploymentconfig.EnforceZeroReplica(ctx, e.client.Dynamic(), deploymentInfo)
+			return deploymentconfig.EnforceZeroReplica(ctx, dynClient, deploymentInfo)
 		}
 	case pkgKubernetes.DaemonSet:
 		function = func(ctx context.Context) error {
-			return daemonset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+			return daemonset.EnforceZeroReplica(ctx, dynClient, deploymentInfo)
 		}
 	case pkgKubernetes.ReplicaSet:
 		function = func(ctx context.Context) error {
-			return replicaset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+			return replicaset.EnforceZeroReplica(ctx, dynClient, deploymentInfo)
 		}
 	case pkgKubernetes.ReplicationController:
 		function = func(ctx context.Context) error {
-			return replicationcontroller.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+			return replicationcontroller.EnforceZeroReplica(ctx, dynClient, deploymentInfo)
 		}
 	case pkgKubernetes.StatefulSet:
 		function = func(ctx context.Context) error {
-			return statefulset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+			return statefulset.EnforceZeroReplica(ctx, dynClient, deploymentInfo)
 		}
 	case pkgKubernetes.CronJob:
 		function = func(ctx context.Context) error {
-			return cronjob.Suspend(ctx, e.client.Kubernetes(), deploymentInfo)
+			return cronjob.Suspend(ctx, dynClient, deploymentInfo)
 		}
 	default:
 		return fmt.Errorf("unknown type: %s", deploymentInfo.GetDeploymentType())

@@ -5,32 +5,33 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	coreV1Listers "k8s.io/client-go/listers/core/v1"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 type kubernetesOrchestrator struct {
-	client     kubernetes.Interface
-	nodeLister coreV1Listers.NodeLister
+	dynClient dynamic.Interface
 }
 
 // New returns a new kubernetes orchestrator client.
-func New(kubernetes kubernetes.Interface) orchestrator.Orchestrator {
-	sif := informers.NewSharedInformerFactory(kubernetes, 0)
-	nodeLister := sif.Core().V1().Nodes().Lister()
-	sif.Start(context.Background().Done())
-
+func New(dynClient dynamic.Interface) orchestrator.Orchestrator {
 	return &kubernetesOrchestrator{
-		client:     kubernetes,
-		nodeLister: nodeLister,
+		dynClient: dynClient,
 	}
 }
 
 func (k *kubernetesOrchestrator) GetNodeScrapeConfig(nodeName string) (*orchestrator.NodeScrapeConfig, error) {
-	node, err := k.nodeLister.Get(nodeName)
+	unstructuredNode, err := k.dynClient.Resource(client.NodeGVR).Get(context.Background(), nodeName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting node %q", nodeName)
+	}
+
+	var node v1.Node
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredNode.Object, &node); err != nil {
+		return nil, errors.Wrap(err, "converting unstructured to node")
 	}
 
 	_, hasControlPlaneNodeLabel := node.GetLabels()["node-role.kubernetes.io/control-plane"]

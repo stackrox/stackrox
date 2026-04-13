@@ -5,14 +5,14 @@ import (
 	"github.com/stackrox/rox/pkg/securedcluster"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/dynamic"
 )
 
 // NewServiceCertificatesRepo creates a new ServiceCertificatesRepoSecrets that persists certificates for
 // all the Secured Cluster services in k8s secrets.
 // Those secrets have to have ownerReference as the only owner reference.
 func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo {
+	dynClient dynamic.Interface, _ string) certrepo.ServiceCertificatesRepo {
 
 	secretsByServiceType := map[storage.ServiceType]certrepo.ServiceCertSecretSpec{
 		storage.ServiceType_SENSOR_SERVICE:             certrepo.NewServiceCertSecretSpec(securedcluster.SensorTLSSecretName),
@@ -28,6 +28,6 @@ func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 		Secrets:        secretsByServiceType,
 		OwnerReference: ownerReference,
 		Namespace:      namespace,
-		SecretsClient:  secretsClient,
+		DynClient:      dynClient,
 	}
 }

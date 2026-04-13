@@ -7,30 +7,36 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/telemetry/data"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 type nodeGatherer struct {
-	k8sClient kubernetes.Interface
+	dynClient dynamic.Interface
 }
 
-func newNodeGatherer(k8sClient kubernetes.Interface) *nodeGatherer {
+func newNodeGatherer(dynClient dynamic.Interface) *nodeGatherer {
 	return &nodeGatherer{
-		k8sClient: k8sClient,
+		dynClient: dynClient,
 	}
 }
 
 // Gather returns a list of stats about all the nodes in the cluster this Sensor is monitoring
 func (c *nodeGatherer) Gather(ctx context.Context) ([]*data.NodeInfo, error) {
-	nodesList, err := c.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	nodesList, err := c.dynClient.Resource(client.NodeGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing Kubernetes nodes")
 	}
 
 	nodeInfoList := make([]*data.NodeInfo, 0, len(nodesList.Items))
-	for _, node := range nodesList.Items {
+	for _, item := range nodesList.Items {
+		var node v1.Node
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, &node); err != nil {
+			continue
+		}
 		adverseConditions := make([]string, 0, len(node.Status.Conditions))
 		for _, condition := range node.Status.Conditions {
 			if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
@@ -62,8 +68,8 @@ func (c *nodeGatherer) Gather(ctx context.Context) ([]*data.NodeInfo, error) {
 			KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
 			OperatingSystem:         node.Status.NodeInfo.OperatingSystem,
 			Architecture:            node.Status.NodeInfo.Architecture,
-			Collector:               nil, // TODO: Wire up request/response to get collector RoxComponentInfo
-			Compliance:              nil, // TODO: Wire up request/response to get compliance RoxComponentInfo
+			Collector:               nil,
+			Compliance:              nil,
 		})
 	}
 	return nodeInfoList, nil
@@ -71,9 +77,8 @@ func (c *nodeGatherer) Gather(ctx context.Context) ([]*data.NodeInfo, error) {
 
 func getResources(resources v1.ResourceList) *data.NodeResourceInfo {
 	return &data.NodeResourceInfo{
-		MilliCores:  int(resources.Cpu().MilliValue()),
-		MemoryBytes: resources.Memory().Value(),
-		// TODO: Account for attached volumes if possible
+		MilliCores:   int(resources.Cpu().MilliValue()),
+		MemoryBytes:  resources.Memory().Value(),
 		StorageBytes: resources.StorageEphemeral().Value(),
 	}
 }

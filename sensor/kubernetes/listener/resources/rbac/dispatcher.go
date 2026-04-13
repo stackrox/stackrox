@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 // Dispatcher handles RBAC-related events
@@ -26,10 +26,10 @@ type rbacUpdate struct {
 }
 
 // NewDispatcher creates new instance of Dispatcher
-func NewDispatcher(store Store, k8sAPI kubernetes.Interface) *Dispatcher {
+func NewDispatcher(store Store, dynClient dynamic.Interface) *Dispatcher {
 	return &Dispatcher{
 		store:   store,
-		fetcher: newBindingFetcher(k8sAPI),
+		fetcher: newBindingFetcher(dynClient),
 	}
 }
 

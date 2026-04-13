@@ -21,8 +21,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -31,7 +34,6 @@ const (
 	collectorContainerName = "collector"
 
 	admissionControlDeploymentName = "admission-control"
-	admissionControlContainerName  = "admission-control"
 
 	localScannerDeploymentName   = "scanner"
 	localScannerDBDeploymentName = "scanner-db"
@@ -47,7 +49,7 @@ var (
 type updaterImpl struct {
 	unimplemented.Receiver
 
-	client         kubernetes.Interface
+	dynClient      dynamic.Interface
 	updates        chan *message.ExpiringMessage
 	stopSig        concurrency.Signal
 	updateInterval time.Duration
@@ -107,10 +109,6 @@ func (u *updaterImpl) getCurrentContext() context.Context {
 }
 
 func (u *updaterImpl) run(tickerC <-chan time.Time) {
-	// Health data (component pod counts, versions) changes rarely — only on
-	// upgrades or pod restarts. Refresh it every 10th tick (~5 minutes) instead
-	// of every tick. The heartbeat message is still sent every tick (30s) to
-	// keep ingress controllers from killing the gRPC stream (see ROX-18609).
 	const refreshEveryN = 10
 	tickCount := 0
 	var cachedHealth *central.RawClusterHealthInfo
@@ -144,38 +142,42 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 	result := storage.CollectorHealthInfo{}
 
-	nodes, err := u.client.CoreV1().Nodes().List(u.ctx(), metav1.ListOptions{})
+	nodeList, err := u.dynClient.Resource(client.NodeGVR).List(u.ctx(), metav1.ListOptions{})
 	if err != nil {
 		result.StatusErrors = append(result.StatusErrors, errors.Wrap(err, "unable to list cluster nodes").Error())
 	} else {
 		result.TotalRegisteredNodesOpt = &storage.CollectorHealthInfo_TotalRegisteredNodes{
-			TotalRegisteredNodes: int32(len(nodes.Items)),
+			TotalRegisteredNodes: int32(len(nodeList.Items)),
 		}
 	}
 
-	// Collector DaemonSet is looked up in the same namespace as Sensor because that is how they should be deployed.
-	collectorDS, err := u.client.AppsV1().DaemonSets(u.namespace).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
+	unstructuredDS, err := u.dynClient.Resource(client.DaemonSetGVR).Namespace(u.namespace).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
 	if err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("unable to find collector DaemonSet in namespace %q", u.namespace))
 		result.StatusErrors = append(result.StatusErrors, err.Error())
 	} else {
-		for _, container := range collectorDS.Spec.Template.Spec.Containers {
-			if container.Name == collectorContainerName {
-				result.Version = stringutils.GetAfterLast(container.Image, ":")
-				result.Version = strings.TrimSuffix(result.GetVersion(), "-slim")
-				result.Version = strings.TrimSuffix(result.GetVersion(), "-latest")
-				break
+		var collectorDS appsv1.DaemonSet
+		if convErr := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDS.Object, &collectorDS); convErr != nil {
+			result.StatusErrors = append(result.StatusErrors, convErr.Error())
+		} else {
+			for _, container := range collectorDS.Spec.Template.Spec.Containers {
+				if container.Name == collectorContainerName {
+					result.Version = stringutils.GetAfterLast(container.Image, ":")
+					result.Version = strings.TrimSuffix(result.GetVersion(), "-slim")
+					result.Version = strings.TrimSuffix(result.GetVersion(), "-latest")
+					break
+				}
 			}
-		}
-		if result.GetVersion() == "" {
-			result.StatusErrors = append(result.StatusErrors, "unable to determine collector version")
-		}
+			if result.GetVersion() == "" {
+				result.StatusErrors = append(result.StatusErrors, "unable to determine collector version")
+			}
 
-		result.TotalDesiredPodsOpt = &storage.CollectorHealthInfo_TotalDesiredPods{
-			TotalDesiredPods: collectorDS.Status.DesiredNumberScheduled,
-		}
-		result.TotalReadyPodsOpt = &storage.CollectorHealthInfo_TotalReadyPods{
-			TotalReadyPods: collectorDS.Status.NumberReady,
+			result.TotalDesiredPodsOpt = &storage.CollectorHealthInfo_TotalDesiredPods{
+				TotalDesiredPods: collectorDS.Status.DesiredNumberScheduled,
+			}
+			result.TotalReadyPodsOpt = &storage.CollectorHealthInfo_TotalReadyPods{
+				TotalReadyPods: collectorDS.Status.NumberReady,
+			}
 		}
 	}
 
@@ -186,19 +188,29 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 	return &result
 }
 
+func (u *updaterImpl) getDeploymentStatus(name string) (*appsv1.DeploymentStatus, error) {
+	unstructuredDeploy, err := u.dynClient.Resource(client.DeploymentGVR).Namespace(u.namespace).Get(u.ctx(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var deploy appsv1.Deployment
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDeploy.Object, &deploy); err != nil {
+		return nil, err
+	}
+	return &deploy.Status, nil
+}
+
 func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthInfo {
 	result := storage.AdmissionControlHealthInfo{}
-	// Admission Control deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
-	admissionControl, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), admissionControlDeploymentName, metav1.GetOptions{})
+	status, err := u.getDeploymentStatus(admissionControlDeploymentName)
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find admission control deployments in namespace %q", u.namespace))
 		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find admission control deployments in namespace %q: %v", u.namespace, err))
 	} else {
 		result.TotalDesiredPodsOpt = &storage.AdmissionControlHealthInfo_TotalDesiredPods{
-			TotalDesiredPods: admissionControl.Status.Replicas,
+			TotalDesiredPods: status.Replicas,
 		}
 		result.TotalReadyPodsOpt = &storage.AdmissionControlHealthInfo_TotalReadyPods{
-			TotalReadyPods: admissionControl.Status.ReadyReplicas,
+			TotalReadyPods: status.ReadyReplicas,
 		}
 	}
 
@@ -213,9 +225,6 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		return nil
 	}
 
-	// It's possible that both Scanner and Scanner V4 are installed in the secured cluster
-	// at the same time, but only one will be used by Sensor at any given time, therefore
-	// only report the health of the active scanner.
 	scannerV4Active := features.ScannerV4.Enabled() && centralcaps.Has(centralsensor.ScannerV4Supported)
 
 	analyzerDeploymentName := localScannerDeploymentName
@@ -236,29 +245,26 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 func (u *updaterImpl) getScannerHealthInfo(analyzerDeployName string, dbDeployName string) *storage.ScannerHealthInfo {
 	var result storage.ScannerHealthInfo
 
-	// Local Scanner deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
-	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), analyzerDeployName, metav1.GetOptions{})
+	analyzerStatus, err := u.getDeploymentStatus(analyzerDeployName)
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find %q deployment in namespace %q", analyzerDeployName, u.namespace))
-		result.StatusErrors = append(result.StatusErrors, err.Error())
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find %q deployment in namespace %q: %v", analyzerDeployName, u.namespace, err))
 	} else {
 		result.TotalDesiredAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{
-			TotalDesiredAnalyzerPods: localScanner.Status.Replicas,
+			TotalDesiredAnalyzerPods: analyzerStatus.Replicas,
 		}
 		result.TotalReadyAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalReadyAnalyzerPods{
-			TotalReadyAnalyzerPods: localScanner.Status.ReadyReplicas,
+			TotalReadyAnalyzerPods: analyzerStatus.ReadyReplicas,
 		}
 	}
-	localScannerDB, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), dbDeployName, metav1.GetOptions{})
+	dbStatus, err := u.getDeploymentStatus(dbDeployName)
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find %q deployment in namespace %q", dbDeployName, u.namespace))
-		result.StatusErrors = append(result.StatusErrors, err.Error())
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find %q deployment in namespace %q: %v", dbDeployName, u.namespace, err))
 	} else {
 		result.TotalDesiredDbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredDbPods{
-			TotalDesiredDbPods: localScannerDB.Status.Replicas,
+			TotalDesiredDbPods: dbStatus.Replicas,
 		}
 		result.TotalReadyDbPodsOpt = &storage.ScannerHealthInfo_TotalReadyDbPods{
-			TotalReadyDbPods: localScannerDB.Status.ReadyReplicas,
+			TotalReadyDbPods: dbStatus.ReadyReplicas,
 		}
 	}
 
@@ -271,7 +277,7 @@ func (u *updaterImpl) ctx() context.Context {
 
 // NewUpdater returns a new ready-to-use updater.
 // updateInterval is optional argument, default 30 seconds interval is used.
-func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) common.SensorComponent {
+func NewUpdater(dynClient dynamic.Interface, updateInterval time.Duration) common.SensorComponent {
 	interval := updateInterval
 	if interval == 0 {
 		interval = defaultInterval
@@ -279,7 +285,7 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 	updateTicker := time.NewTicker(interval)
 	updateTicker.Stop()
 	return &updaterImpl{
-		client:         client,
+		dynClient:      dynClient,
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,

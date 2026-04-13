@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/pkg/errors"
 	commonLabels "github.com/stackrox/rox/pkg/labels"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/discovery"
 )
 
 const (
@@ -38,8 +38,8 @@ func GetSensorKubernetesAnnotations() map[string]string {
 }
 
 // HasAPI checks whether the kubernetes server supports the groupVersion API for the specified kind
-func HasAPI(client kubernetes.Interface, groupVersion, kind string) (bool, error) {
-	apiResourceList, err := client.Discovery().ServerResourcesForGroupVersion(groupVersion)
+func HasAPI(discoveryClient discovery.DiscoveryInterface, groupVersion, kind string) (bool, error) {
+	apiResourceList, err := discoveryClient.ServerResourcesForGroupVersion(groupVersion)
 	if err != nil {
 		return false, errors.Wrap(err, "checking API support for groupVersion "+groupVersion)
 	}

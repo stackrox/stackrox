@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apimachineryversion "k8s.io/apimachinery/pkg/version"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -42,8 +41,7 @@ var (
 type updaterImpl struct {
 	unimplemented.Receiver
 
-	client     client.Interface
-	kubeClient kubernetes.Interface
+	client client.Interface
 
 	updates chan *message.ExpiringMessage
 	stopSig concurrency.Signal
@@ -165,7 +163,7 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
-	serverVersion, err := u.kubeClient.Discovery().ServerVersion()
+	serverVersion, err := u.client.Discovery().ServerVersion()
 	if err != nil {
 		log.Errorf("Could not get cluster metadata: %v", err)
 		return nil
@@ -260,7 +258,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
 			defer cancel()
 			var err error
-			oVersionBody, err = u.kubeClient.Discovery().RESTClient().Get().AbsPath("/version/openshift").Do(ctx).Raw()
+			oVersionBody, err = u.client.Discovery().RESTClient().Get().AbsPath("/version/openshift").Do(ctx).Raw()
 			if err != nil {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
@@ -289,7 +287,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 
 // API versions exists as the fields in the kube client.
 func (u *updaterImpl) getAPIVersions() []string {
-	groupList, err := u.kubeClient.Discovery().ServerGroups()
+	groupList, err := u.client.Discovery().ServerGroups()
 	if err != nil {
 		log.Errorf("unable to fetch api-versions: %s", err)
 		return nil
@@ -329,7 +327,6 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 	offlineMode.Store(true)
 	return &updaterImpl{
 		client:                           client,
-		kubeClient:                       client.Kubernetes(),
 		updates:                          make(chan *message.ExpiringMessage),
 		stopSig:                          concurrency.NewSignal(),
 		offlineMode:                      offlineMode,

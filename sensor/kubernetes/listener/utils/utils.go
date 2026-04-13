@@ -12,8 +12,8 @@ var (
 )
 
 // ServerResourcesForGroup retrieves the APIResourceList of the given group.
-func ServerResourcesForGroup(client client.Interface, group string) (*metav1.APIResourceList, error) {
-	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(group)
+func ServerResourcesForGroup(c client.Interface, group string) (*metav1.APIResourceList, error) {
+	resourceList, err := c.Discovery().ServerResourcesForGroupVersion(group)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting server resources for group %q", group)
 	}

@@ -25,7 +25,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -67,14 +68,14 @@ func RegisterDiagnosticConfigurationFunc(fn DiagnosticConfigurationFunc) {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler(client kubernetes.Interface, provider store.Provider) common.SensorComponent {
-	return newCommandHandler(client, provider)
+func NewCommandHandler(dynClient dynamic.Interface, discoveryClient discovery.DiscoveryInterface, provider store.Provider) common.SensorComponent {
+	return newCommandHandler(dynClient, discoveryClient, provider)
 }
 
-func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider) *commandHandler {
+func newCommandHandler(dynClient dynamic.Interface, discoveryClient discovery.DiscoveryInterface, provider store.Provider) *commandHandler {
 	return &commandHandler{
 		responsesC:            make(chan *message.ExpiringMessage),
-		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, provider.Deployments()),
+		clusterGatherer:       gatherers.NewClusterGatherer(dynClient, discoveryClient, provider.Deployments()),
 		stopSig:               concurrency.NewErrorSignal(),
 		pendingContextCancels: make(map[string]context.CancelFunc),
 	}

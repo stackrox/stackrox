@@ -5,10 +5,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -28,7 +32,7 @@ var (
 // If the provided backoff is empty, a sensible default backoff strategy will be used, which is time-capped
 // according to the provided context.
 func FetchSensorDeploymentOwnerRef(ctx context.Context, sensorPodName, sensorNamespace string,
-	k8sClient kubernetes.Interface, backoff wait.Backoff) (*metav1.OwnerReference, error) {
+	dynClient dynamic.Interface, backoff wait.Backoff) (*metav1.OwnerReference, error) {
 	if sensorPodName == "" {
 		return nil, errors.New("fetching sensor deployment: empty pod name")
 	}
@@ -40,11 +44,14 @@ func FetchSensorDeploymentOwnerRef(ctx context.Context, sensorPodName, sensorNam
 		backoff = defaultBackoff
 	}
 
-	podsClient := k8sClient.CoreV1().Pods(sensorNamespace)
 	sensorPodMeta, getPodErr := getObjectMetaWithRetries(ctx, backoff, func(ctx context.Context) (metav1.Object, error) {
-		pod, err := podsClient.Get(ctx, sensorPodName, metav1.GetOptions{})
+		unstructuredPod, err := dynClient.Resource(client.PodGVR).Namespace(sensorNamespace).Get(ctx, sensorPodName, metav1.GetOptions{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching sensor pod %q", sensorPodName)
+		}
+		var pod corev1.Pod
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredPod.Object, &pod); err != nil {
+			return nil, errors.Wrap(err, "converting unstructured to pod")
 		}
 		return pod.GetObjectMeta(), nil
 	})
@@ -58,12 +65,15 @@ func FetchSensorDeploymentOwnerRef(ctx context.Context, sensorPodName, sensorNam
 	}
 	podOwnerName := podOwners[0].Name
 
-	replicaSetClient := k8sClient.AppsV1().ReplicaSets(sensorNamespace)
 	ownerReplicaSetMeta, getReplicaSetErr := getObjectMetaWithRetries(ctx, backoff,
 		func(ctx context.Context) (metav1.Object, error) {
-			replicaSet, err := replicaSetClient.Get(ctx, podOwnerName, metav1.GetOptions{})
+			unstructuredRS, err := dynClient.Resource(client.ReplicaSetGVR).Namespace(sensorNamespace).Get(ctx, podOwnerName, metav1.GetOptions{})
 			if err != nil {
 				return nil, errors.Wrapf(err, "fetching owner replica set %q", podOwnerName)
+			}
+			var replicaSet appsv1.ReplicaSet
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredRS.Object, &replicaSet); err != nil {
+				return nil, errors.Wrap(err, "converting unstructured to replicaset")
 			}
 			return replicaSet.GetObjectMeta(), nil
 		})

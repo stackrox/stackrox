@@ -5,13 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/sensor/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -51,35 +50,30 @@ func makePatch(deploymentInfo *central.DeploymentEnforcement, apiVersion string)
 }
 
 // Suspend suspends the cron job
-func Suspend(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
-	ok, apiErr := utils.HasAPI(client, batchV1, kubernetesPkg.CronJob)
-	if apiErr != nil {
-		return retry.MakeRetryable(apiErr)
+func Suspend(ctx context.Context, dynClient dynamic.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+	// Try batch/v1 first (available in k8s 1.21+), fall back to v1beta1.
+	patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1)
+	if err != nil {
+		return err
+	}
+	_, err = dynClient.Resource(client.CronJobGVR).Namespace(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(),
+		types.ApplyPatchType,
+		patchBytes,
+		patchOptions)
+	if err == nil {
+		return nil
 	}
 
-	if ok {
-		patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1)
-		if err != nil {
-			return err
-		}
-		_, err = client.BatchV1().CronJobs(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(),
-			types.ApplyPatchType,
-			patchBytes,
-			patchOptions)
-		if err != nil {
-			return retry.MakeRetryable(err)
-		}
-	} else {
-		patchBytes, patchOptions, err := makePatch(deploymentInfo, batchV1beta1)
-		if err != nil {
-			return err
-		}
-		_, err = client.BatchV1beta1().CronJobs(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(), types.ApplyPatchType,
-			patchBytes,
-			patchOptions)
-		if err != nil {
-			return retry.MakeRetryable(err)
-		}
+	// Fall back to v1beta1
+	patchBytes, patchOptions, err = makePatch(deploymentInfo, batchV1beta1)
+	if err != nil {
+		return err
+	}
+	_, err = dynClient.Resource(client.CronJobBetaGVR).Namespace(deploymentInfo.GetNamespace()).Patch(ctx, deploymentInfo.GetDeploymentName(), types.ApplyPatchType,
+		patchBytes,
+		patchOptions)
+	if err != nil {
+		return retry.MakeRetryable(err)
 	}
 	return nil
 }

@@ -34,7 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc/metadata"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 var (
@@ -104,16 +104,19 @@ func registerCluster() error {
 	if err != nil {
 		return errors.Wrap(err, "obtaining in-cluster Kubernetes config")
 	}
-	k8sClient := k8sutil.MustCreateK8sClient(config)
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "creating dynamic client")
+	}
 
-	centralHello, err := centralHandshake(ctx, k8sClient, centralConnection)
+	centralHello, err := centralHandshake(ctx, dynClient, centralConnection)
 	if err != nil {
 		return errors.Wrap(err, "handshake with central")
 	}
 
 	// Store certificates+keys contained in Central's centralHello response as
 	// Kubernetes secrets named `tls-cert-<service slug name>`.
-	err = persistCertificates(ctx, centralHello.GetCertBundle(), k8sClient)
+	err = persistCertificates(ctx, centralHello.GetCertBundle(), dynClient)
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
 	}
@@ -188,8 +191,8 @@ func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 }
 
 // centralHandshake performs the hello-handshake with Central and returns Central's CentralHello reponse on success.
-func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centralConnection *grpcUtil.LazyClientConn) (*central.CentralHello, error) {
-	sensorHello, err := prepareSensorHelloMessage(ctx, k8sClient)
+func centralHandshake(ctx context.Context, dynClient dynamic.Interface, centralConnection *grpcUtil.LazyClientConn) (*central.CentralHello, error) {
+	sensorHello, err := prepareSensorHelloMessage(ctx, dynClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "preparing SensorHello message")
 	}
@@ -251,7 +254,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 }
 
 // persistCertificates persists as Kubernetes Secrets the certificates and keys retrieved from Central during the cluster-registration handshake.
-func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
+func persistCertificates(ctx context.Context, certsFileMap map[string]string, dynClient dynamic.Interface) error {
 	for fileName := range certsFileMap {
 		log.Debugf("Received certificate from Central named %s.", fileName)
 	}
@@ -259,7 +262,6 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 	podName := os.Getenv("POD_NAME")
 	sensorNamespace := pods.GetPodNamespace()
 	log.Infof("Persisting retrieved certificates as Kubernetes Secrets in namespace %q.", sensorNamespace)
-	secretsClient := k8sClient.CoreV1().Secrets(sensorNamespace)
 
 	typedServiceCerts, unknownServices, err := protoconv.ConvertFileMapToTypedServiceCertificateSet(certsFileMap)
 	if err != nil {
@@ -272,11 +274,11 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 		unknownServicesJoined := strings.Join(unknownServices, ", ")
 		log.Warnf("Central's certificate bundle contained certificates for the following unknown services: %s.", unknownServicesJoined)
 	}
-	ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, sensorNamespace, k8sClient, wait.Backoff{})
+	ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, sensorNamespace, dynClient, wait.Backoff{})
 	if err != nil {
 		return errors.Wrap(err, "fetching sensor deployment owner reference")
 	}
-	repository := securedcluster.NewServiceCertificatesRepo(*ownerRef, sensorNamespace, secretsClient)
+	repository := securedcluster.NewServiceCertificatesRepo(*ownerRef, sensorNamespace, dynClient, sensorNamespace)
 	persistedCertificates, err := repository.EnsureServiceCertificates(ctx, typedServiceCerts)
 	if err != nil {
 		return errors.Wrap(err, "ensuring service certificates are persisted")
@@ -297,8 +299,8 @@ func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate)
 }
 
 // prepareSensorHelloMessage assembles the SensorHello message to be sent to Central for the hello-handshake.
-func prepareSensorHelloMessage(ctx context.Context, k8sClient kubernetes.Interface) (*central.SensorHello, error) {
-	deploymentIdentification := sensor.FetchDeploymentIdentification(ctx, k8sClient)
+func prepareSensorHelloMessage(ctx context.Context, dynClient dynamic.Interface) (*central.SensorHello, error) {
+	deploymentIdentification := sensor.FetchDeploymentIdentification(ctx, dynClient)
 	log.Infof("Sensor deployment identification for this secured cluster: %s.", protoutils.NewWrapper(deploymentIdentification))
 	helmManagedConfigInit, err := helm.GetHelmManagedConfig(storage.ServiceType_REGISTRANT_SERVICE)
 	if err != nil {
