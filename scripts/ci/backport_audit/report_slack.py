@@ -229,10 +229,10 @@ def _generate_branch_blocks(
         table_rows = [
             # Header row
             [
-                _create_table_cell_text("U"),
+                _create_table_cell_text("Urgency"),
                 _create_table_cell_text("Issue"),
-                _create_table_cell_text("Fix"),
-                _create_table_cell_text("Aff"),
+                _create_table_cell_text("fixVersion"),
+                _create_table_cell_text("affectedVersion"),
                 _create_table_cell_text("Priority"),
                 _create_table_cell_text("Severity"),
                 _create_table_cell_text("Deadline"),
@@ -366,9 +366,9 @@ def generate_slack_payload(
                 {
                     "type": "mrkdwn",
                     "text": (
-                        "*Legend:* :red_circle: overdue/critical | "
-                        ":large_yellow_circle: high | :large_green_circle: normal | "
-                        ":white_check_mark: present | :x: missing"
+                        "*Legend:* Urgency: :red_circle: overdue/critical | "
+                        ":large_yellow_circle: high | :large_green_circle: normal • "
+                        "Versions: :white_check_mark: present | :x: missing"
                     ),
                 }
             ],
