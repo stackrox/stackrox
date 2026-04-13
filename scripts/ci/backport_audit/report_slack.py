@@ -65,18 +65,19 @@ def _calculate_urgency_stats(
     return total_prs_no_jira, total_jira_issues, urgency_counts
 
 
-def _create_table_cell_text(text: str, align: str | None = None) -> dict[str, Any]:
+def _create_table_cell_text(text: str, align: str | None = None, is_wrapped: bool = True) -> dict[str, Any]:
     """Create a simple text cell for table."""
-    cell = {"type": "raw_text", "text": text}
+    cell = {"type": "raw_text", "text": text, "is_wrapped": is_wrapped}
     if align:
         cell["align"] = align
     return cell
 
 
-def _create_table_cell_emoji(emoji_name: str, align: str | None = None) -> dict[str, Any]:
+def _create_table_cell_emoji(emoji_name: str, align: str | None = None, is_wrapped: bool = False) -> dict[str, Any]:
     """Create a rich text cell with emoji element."""
     cell = {
         "type": "rich_text",
+        "is_wrapped": is_wrapped,
         "elements": [
             {
                 "type": "rich_text_section",
@@ -89,7 +90,7 @@ def _create_table_cell_emoji(emoji_name: str, align: str | None = None) -> dict[
     return cell
 
 
-def _create_table_cell_mention(mention: str, align: str | None = None) -> dict[str, Any]:
+def _create_table_cell_mention(mention: str, align: str | None = None, is_wrapped: bool = True) -> dict[str, Any]:
     """Create a rich text cell for Slack mentions/emojis.
 
     Handles:
@@ -113,6 +114,7 @@ def _create_table_cell_mention(mention: str, align: str | None = None) -> dict[s
 
     cell = {
         "type": "rich_text",
+        "is_wrapped": is_wrapped,
         "elements": [{"type": "rich_text_section", "elements": elements}],
     }
     if align:
@@ -120,10 +122,11 @@ def _create_table_cell_mention(mention: str, align: str | None = None) -> dict[s
     return cell
 
 
-def _create_table_cell_link(url: str, text: str, align: str | None = None) -> dict[str, Any]:
+def _create_table_cell_link(url: str, text: str, align: str | None = None, is_wrapped: bool = True) -> dict[str, Any]:
     """Create a rich text link cell for table."""
     cell = {
         "type": "rich_text",
+        "is_wrapped": is_wrapped,
         "elements": [
             {
                 "type": "rich_text_section",
@@ -225,6 +228,7 @@ def _create_all_pr_rows(
             pr_cell = {
                 "type": "rich_text",
                 "align": "right",
+                "is_wrapped": True,
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
 
@@ -266,11 +270,12 @@ def _create_all_pr_rows(
 
                 author_cell = {
                     "type": "rich_text",
+                    "is_wrapped": True,
                     "elements": [{"type": "rich_text_section", "elements": author_elements}],
                 }
         else:
-            pr_cell = _create_table_cell_text("—", align="right")
-            author_cell = _create_table_cell_text("—")
+            pr_cell = _create_table_cell_text("—", align="right", is_wrapped=False)
+            author_cell = _create_table_cell_text("—", is_wrapped=False)
 
         urgency_emoji = urgency_icon.strip(":")
         fix_emoji = fix_icon.strip(":")
@@ -298,6 +303,7 @@ def _create_all_pr_rows(
         pr_cell = {
             "type": "rich_text",
             "align": "right",
+            "is_wrapped": True,
             "elements": [{
                 "type": "rich_text_section",
                 "elements": [{
@@ -311,7 +317,7 @@ def _create_all_pr_rows(
         author_mention = get_slack_mention(pr.author)
 
         no_jira_rows.append([
-            _create_table_cell_text("—", align="center"),  # Urgency
+            _create_table_cell_text("—", align="center", is_wrapped=False),  # Urgency
             _create_table_cell_emoji("x", align="center"),  # Issue (missing)
             pr_cell,  # PRs
             _create_table_cell_text(pr.title, align="left"),  # PR Title
@@ -319,7 +325,7 @@ def _create_all_pr_rows(
             _create_table_cell_emoji("x", align="center"),  # fixVersion (missing)
             _create_table_cell_emoji("x", align="center"),  # affectedVersion (missing)
             _create_table_cell_emoji("jira-undefined", align="center"),  # Priority
-            _create_table_cell_text("—"),  # Severity
+            _create_table_cell_text("—", is_wrapped=False),  # Severity
         ])
 
     # Prepend No Jira PRs to put them at the top
