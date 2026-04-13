@@ -2,7 +2,7 @@ package dblock
 
 import (
 	"context"
-	"sync"
+
 	"time"
 
 	"github.com/pkg/errors"
