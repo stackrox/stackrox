@@ -237,7 +237,9 @@ func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
+	query := search.NewQueryBuilder().
+		AddStringsHighlighted(search.ClusterID, search.WildcardString).
+		AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String())
 	if len(deploymentIDs) > 0 {
 		query = query.AddDocIDs(deploymentIDs...)
 	}

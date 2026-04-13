@@ -115,7 +115,12 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
-	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
+	// Only include active deployments in compliance reporting (exclude soft-deleted).
+	deploymentQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterID).
+		AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+		ProtoQuery()
+	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, deploymentQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
