@@ -254,13 +254,13 @@ def _create_all_pr_rows(
         all_rows.append([
             _create_table_cell_emoji(urgency_emoji),
             _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
+            pr_cell,
+            _create_table_cell_text(pr_title),
+            author_cell,  # Author from associated PRs
             _create_table_cell_emoji(fix_emoji),
             _create_table_cell_emoji(affected_emoji),
             _create_table_cell_emoji(priority_emoji),
             _create_table_cell_text(severity_display),
-            _create_table_cell_text(pr_title),
-            pr_cell,
-            author_cell,  # Author from associated PRs
         ])
 
     # Add PRs without Jira reference at the TOP (prepend)
@@ -284,13 +284,13 @@ def _create_all_pr_rows(
         no_jira_rows.append([
             _create_table_cell_text("—"),  # Urgency
             _create_table_cell_text("No Jira"),  # Issue
+            pr_cell,  # PRs
+            _create_table_cell_text(pr.title),  # PR Title
+            _create_table_cell_mention(author_mention),  # Author
             _create_table_cell_emoji("x"),  # fixVersion (missing)
             _create_table_cell_emoji("x"),  # affectedVersion (missing)
             _create_table_cell_emoji("jira-undefined"),  # Priority
             _create_table_cell_text("—"),  # Severity
-            _create_table_cell_text(pr.title),  # PR Title
-            pr_cell,  # PRs
-            _create_table_cell_mention(author_mention),  # Author
         ])
 
     # Prepend No Jira PRs to put them at the top
@@ -338,13 +338,13 @@ def _generate_branch_blocks(
             [
                 _create_table_cell_text("Urgency"),
                 _create_table_cell_text("Issue"),
+                _create_table_cell_text("PRs"),
+                _create_table_cell_text("PR Title"),
+                _create_table_cell_text("Author"),
                 _create_table_cell_text("fixVersion"),
                 _create_table_cell_text("affectedVersion"),
                 _create_table_cell_text("Priority"),
                 _create_table_cell_text("Severity"),
-                _create_table_cell_text("PR Title"),
-                _create_table_cell_text("PRs"),
-                _create_table_cell_text("Author"),
             ]
         ]
 
