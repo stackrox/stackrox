@@ -8,9 +8,6 @@ from .report_markdown import _collect_issue_problems
 from .slack import get_slack_mention
 from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
 
-# Minimum length for a valid markdown header (e.g., "*X*" has len > 2)
-MIN_HEADER_LENGTH = 2
-
 
 @dataclass
 class ReportData:
@@ -69,11 +66,29 @@ def _calculate_urgency_stats(
     return total_prs_no_jira, total_jira_issues, urgency_counts
 
 
-def _format_slack_issue_line(
+def _create_table_cell_text(text: str) -> dict[str, Any]:
+    """Create a simple text cell for table."""
+    return {"type": "raw_text", "text": text}
+
+
+def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
+    """Create a rich text link cell for table."""
+    return {
+        "type": "rich_text",
+        "elements": [
+            {
+                "type": "rich_text_section",
+                "elements": [{"type": "link", "url": url, "text": text}],
+            }
+        ],
+    }
+
+
+def _create_issue_table_row(
     issue_info: tuple,
     jira_to_prs: dict[str, list[int]],
-) -> str:
-    """Format a single issue line for Slack report."""
+) -> list[dict[str, Any]]:
+    """Create table row for a single issue."""
     (
         jira_key,
         fix_icon,
@@ -88,51 +103,75 @@ def _format_slack_issue_line(
         urgency_icon,
     ) = issue_info
 
-    jira_link = f"<https://redhat.atlassian.net/browse/{jira_key}|{jira_key}>"
     pr_refs = jira_to_prs.get(jira_key, [])
-    pr_links = ", ".join(
-        [f"<https://github.com/stackrox/stackrox/pull/{pr}|#{pr}>" for pr in pr_refs]
-    )
-    pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
-
-    # Format priority as Slack emoji, keep severity as text
-    if priority and priority != "No priority":
-        priority_info = f":jira-{priority.lower()}:"
+    if pr_refs:
+        pr_links = ", ".join([f"#{pr}" for pr in pr_refs])
     else:
-        priority_info = ":jira-undefined:"
+        pr_links = "—"
 
-    if severity:
-        priority_info += f", S: {severity}"
+    # Format priority as Slack emoji
+    if priority and priority != "No priority":
+        priority_display = f":jira-{priority.lower()}:"
+    else:
+        priority_display = ":jira-undefined:"
 
-    return (
-        f"• {urgency_icon} {jira_link}: {fix_icon} fixVer, "
-        f"{affected_icon} affectedVer | "
-        f"{priority_info} | {deadline_info}{pr_suffix}"
-    )
+    severity_display = severity if severity else "—"
+
+    return [
+        _create_table_cell_text(urgency_icon),
+        _create_table_cell_link(
+            f"https://redhat.atlassian.net/browse/{jira_key}", jira_key
+        ),
+        _create_table_cell_text(fix_icon),
+        _create_table_cell_text(affected_icon),
+        _create_table_cell_text(priority_display),
+        _create_table_cell_text(severity_display),
+        _create_table_cell_text(deadline_info),
+        _create_table_cell_text(pr_links),
+    ]
 
 
-def _generate_branch_section(
+def _generate_branch_blocks(
     branch: ReleaseBranch,
     prs: list[PR],
     orphaned: list[str],
     jira_issues: dict[str, JiraIssue],
-) -> list[str]:
-    """Generate section lines for a single branch."""
-    section_lines = []
-    section_lines.append(f"*{branch.name} (Expected: {branch.expected_version})*\n")
+) -> list[dict[str, Any]]:
+    """Generate Slack blocks for a single branch."""
+    blocks = []
 
+    # Branch header
+    blocks.append(
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*{branch.name} (Expected: {branch.expected_version})*",
+            },
+        }
+    )
+
+    # PRs without Jira reference
     prs_no_jira = [pr for pr in prs if not pr.jira_keys]
     if prs_no_jira:
-        section_lines.append(f"\n*PRs Missing Jira Reference ({len(prs_no_jira)})*")
         prs_no_jira.sort(key=lambda p: p.author)
+        pr_lines = [f"*PRs Missing Jira Reference ({len(prs_no_jira)})*\n"]
 
         for pr in prs_no_jira:
             mention = get_slack_mention(pr.author)
             pr_link = (
                 f"<https://github.com/stackrox/stackrox/pull/{pr.number}|#{pr.number}>"
             )
-            section_lines.append(f"- {mention} {pr_link}: {pr.title}")
+            pr_lines.append(f"• {mention} {pr_link}: {pr.title}")
 
+        blocks.append(
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "\n".join(pr_lines)},
+            }
+        )
+
+    # Jira issues with missing metadata (as table)
     issues_with_problems, jira_to_prs = _collect_issue_problems(
         prs,
         jira_issues,
@@ -142,25 +181,62 @@ def _generate_branch_section(
     if issues_with_problems:
         issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[9], 99))
         count = len(issues_with_problems)
-        section_lines.append(f"\n*Jira Issues with Missing Metadata ({count})*")
 
-        for issue_info in issues_with_problems:
-            section_lines.append(_format_slack_issue_line(issue_info, jira_to_prs))
-
-    if orphaned:
-        section_lines.extend(
-            (
-                f"\n*Orphaned Jira Issues ({len(orphaned)})*",
-                f"Issues with fixVersion={branch.expected_version} but no "
-                "corresponding PR:",
-            )
+        # Section header with legend
+        blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*Jira Issues with Missing Metadata ({count})*\n"
+                        "_Legend: 🔴 overdue/critical | 🟡 high | 🟢 normal | "
+                        "✅ present | ❌ missing_"
+                    ),
+                },
+            }
         )
+
+        # Table with issues
+        table_rows = [
+            # Header row
+            [
+                _create_table_cell_text("U"),
+                _create_table_cell_text("Issue"),
+                _create_table_cell_text("Fix"),
+                _create_table_cell_text("Aff"),
+                _create_table_cell_text("Priority"),
+                _create_table_cell_text("Severity"),
+                _create_table_cell_text("Deadline"),
+                _create_table_cell_text("PRs"),
+            ]
+        ]
+
+        # Data rows
+        for issue_info in issues_with_problems:
+            table_rows.append(_create_issue_table_row(issue_info, jira_to_prs))
+
+        blocks.append({"type": "table", "rows": table_rows})
+
+    # Orphaned Jira issues
+    if orphaned:
+        orphan_lines = [
+            f"*Orphaned Jira Issues ({len(orphaned)})*",
+            f"Issues with fixVersion={branch.expected_version} but no corresponding PR:\n",
+        ]
 
         for jira_key in sorted(orphaned):
             jira_link = f"<https://redhat.atlassian.net/browse/{jira_key}|{jira_key}>"
-            section_lines.append(f"- {jira_link}")
+            orphan_lines.append(f"• {jira_link}")
 
-    return section_lines
+        blocks.append(
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "\n".join(orphan_lines)},
+            }
+        )
+
+    return blocks
 
 
 def generate_slack_payload(
@@ -251,20 +327,8 @@ def generate_slack_payload(
         if not prs and not orphaned:
             continue
 
-        section_lines = _generate_branch_section(branch, prs, orphaned, jira_issues)
-        section_text = "\n".join(section_lines)
-        sections = _split_slack_sections(section_text, branch.name)
-
-        blocks.extend(
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": section,
-                },
-            }
-            for section in sections
-        )
+        branch_blocks = _generate_branch_blocks(branch, prs, orphaned, jira_issues)
+        blocks.extend(branch_blocks)
 
     return {
         "channel": slack_channel,
@@ -272,44 +336,3 @@ def generate_slack_payload(
     }
 
 
-def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) -> list[str]:
-    """Split text into Slack-compatible sections.
-
-    Args:
-        text: Text to split
-        branch_name: Branch name for continuation headers
-        max_chars: Maximum characters per section
-
-    Returns:
-        List of section strings
-
-    """
-    lines = text.split("\n")
-    sections = []
-    current_section = []
-    current_length = 0
-    current_header = None
-
-    for line in lines:
-        line_length = len(line) + 1
-
-        if line.startswith("*") and line.endswith("*") and len(line) > MIN_HEADER_LENGTH:
-            current_header = line
-
-        if current_length + line_length > max_chars and current_section:
-            sections.append("\n".join(current_section))
-
-            if current_header:
-                current_section = [f"*{branch_name} (continued)*\n", current_header]
-            else:
-                current_section = [f"*{branch_name} (continued)*"]
-
-            current_length = sum(len(section_line) + 1 for section_line in current_section)
-
-        current_section.append(line)
-        current_length += line_length
-
-    if current_section:
-        sections.append("\n".join(current_section))
-
-    return sections
