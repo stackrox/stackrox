@@ -275,7 +275,7 @@ var file_storage_auth_machine_to_machine_proto_depIdxs = []int32{
 
 func init() { file_storage_auth_machine_to_machine_proto_init() }
 func file_storage_auth_machine_to_machine_proto_init() {
-	if File_storage_auth_machine_to_machine_proto != nil {
+	if File_storage_auth_machine_to_machine_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_traits_proto_init()

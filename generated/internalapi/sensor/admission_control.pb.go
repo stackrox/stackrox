@@ -526,7 +526,7 @@ var file_internalapi_sensor_admission_control_proto_depIdxs = []int32{
 
 func init() { file_internalapi_sensor_admission_control_proto_init() }
 func file_internalapi_sensor_admission_control_proto_init() {
-	if File_internalapi_sensor_admission_control_proto != nil {
+	if File_internalapi_sensor_admission_control_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_sensor_admission_control_proto_msgTypes[3].OneofWrappers = []any{

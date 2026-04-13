@@ -318,7 +318,7 @@ var file_storage_network_baseline_proto_depIdxs = []int32{
 
 func init() { file_storage_network_baseline_proto_init() }
 func file_storage_network_baseline_proto_init() {
-	if File_storage_network_baseline_proto != nil {
+	if File_storage_network_baseline_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_network_flow_proto_init()

@@ -259,7 +259,7 @@ var file_internalapi_central_secured_cluster_cert_refresh_proto_depIdxs = []int3
 
 func init() { file_internalapi_central_secured_cluster_cert_refresh_proto_init() }
 func file_internalapi_central_secured_cluster_cert_refresh_proto_init() {
-	if File_internalapi_central_secured_cluster_cert_refresh_proto != nil {
+	if File_internalapi_central_secured_cluster_cert_refresh_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_central_secured_cluster_cert_refresh_proto_msgTypes[2].OneofWrappers = []any{

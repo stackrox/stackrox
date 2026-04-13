@@ -394,7 +394,7 @@ var file_storage_file_access_proto_depIdxs = []int32{
 
 func init() { file_storage_file_access_proto_init() }
 func file_storage_file_access_proto_init() {
-	if File_storage_file_access_proto != nil {
+	if File_storage_file_access_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_process_indicator_proto_init()

@@ -604,7 +604,7 @@ var file_internalapi_central_development_service_proto_depIdxs = []int32{
 
 func init() { file_internalapi_central_development_service_proto_init() }
 func file_internalapi_central_development_service_proto_init() {
-	if File_internalapi_central_development_service_proto != nil {
+	if File_internalapi_central_development_service_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

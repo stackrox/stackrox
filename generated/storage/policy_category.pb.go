@@ -118,7 +118,7 @@ var file_storage_policy_category_proto_depIdxs = []int32{
 
 func init() { file_storage_policy_category_proto_init() }
 func file_storage_policy_category_proto_init() {
-	if File_storage_policy_category_proto != nil {
+	if File_storage_policy_category_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

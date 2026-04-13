@@ -413,7 +413,7 @@ var file_internalapi_sensor_network_connection_info_proto_depIdxs = []int32{
 
 func init() { file_internalapi_sensor_network_connection_info_proto_init() }
 func file_internalapi_sensor_network_connection_info_proto_init() {
-	if File_internalapi_sensor_network_connection_info_proto != nil {
+	if File_internalapi_sensor_network_connection_info_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_sensor_network_enums_proto_init()

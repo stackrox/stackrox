@@ -102,7 +102,7 @@ var file_internalapi_central_cluster_config_proto_depIdxs = []int32{
 
 func init() { file_internalapi_central_cluster_config_proto_init() }
 func file_internalapi_central_cluster_config_proto_init() {
-	if File_internalapi_central_cluster_config_proto != nil {
+	if File_internalapi_central_cluster_config_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

@@ -91,7 +91,7 @@ var file_api_v1_empty_proto_depIdxs = []int32{
 
 func init() { file_api_v1_empty_proto_init() }
 func file_api_v1_empty_proto_init() {
-	if File_api_v1_empty_proto != nil {
+	if File_api_v1_empty_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

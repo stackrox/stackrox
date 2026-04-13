@@ -103,7 +103,7 @@ var file_storage_notification_schedule_proto_depIdxs = []int32{
 
 func init() { file_storage_notification_schedule_proto_init() }
 func file_storage_notification_schedule_proto_init() {
-	if File_storage_notification_schedule_proto != nil {
+	if File_storage_notification_schedule_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

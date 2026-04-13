@@ -3201,7 +3201,7 @@ var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 
 func init() { file_internalapi_central_compliance_operator_proto_init() }
 func file_internalapi_central_compliance_operator_proto_init() {
-	if File_internalapi_central_compliance_operator_proto != nil {
+	if File_internalapi_central_compliance_operator_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[0].OneofWrappers = []any{

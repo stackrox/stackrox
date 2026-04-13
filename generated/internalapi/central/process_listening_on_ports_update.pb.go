@@ -114,7 +114,7 @@ var file_internalapi_central_process_listening_on_ports_update_proto_depIdxs = [
 
 func init() { file_internalapi_central_process_listening_on_ports_update_proto_init() }
 func file_internalapi_central_process_listening_on_ports_update_proto_init() {
-	if File_internalapi_central_process_listening_on_ports_update_proto != nil {
+	if File_internalapi_central_process_listening_on_ports_update_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

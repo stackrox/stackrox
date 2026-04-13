@@ -669,7 +669,7 @@ var file_internalapi_compliance_compliance_data_proto_depIdxs = []int32{
 
 func init() { file_internalapi_compliance_compliance_data_proto_init() }
 func file_internalapi_compliance_compliance_data_proto_init() {
-	if File_internalapi_compliance_compliance_data_proto != nil {
+	if File_internalapi_compliance_compliance_data_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

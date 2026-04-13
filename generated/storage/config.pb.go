@@ -1477,7 +1477,7 @@ var file_storage_config_proto_depIdxs = []int32{
 
 func init() { file_storage_config_proto_init() }
 func file_storage_config_proto_init() {
-	if File_storage_config_proto != nil {
+	if File_storage_config_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_telemetry_proto_init()

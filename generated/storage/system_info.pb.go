@@ -176,7 +176,7 @@ var file_storage_system_info_proto_depIdxs = []int32{
 
 func init() { file_storage_system_info_proto_init() }
 func file_storage_system_info_proto_init() {
-	if File_storage_system_info_proto != nil {
+	if File_storage_system_info_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_operation_status_proto_init()

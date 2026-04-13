@@ -1253,7 +1253,7 @@ var file_storage_vuln_requests_proto_depIdxs = []int32{
 
 func init() { file_storage_vuln_requests_proto_init() }
 func file_storage_vuln_requests_proto_init() {
-	if File_storage_vuln_requests_proto != nil {
+	if File_storage_vuln_requests_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_cve_proto_init()

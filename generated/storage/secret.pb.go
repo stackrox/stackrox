@@ -1040,7 +1040,7 @@ var file_storage_secret_proto_depIdxs = []int32{
 
 func init() { file_storage_secret_proto_init() }
 func file_storage_secret_proto_init() {
-	if File_storage_secret_proto != nil {
+	if File_storage_secret_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_secret_proto_msgTypes[6].OneofWrappers = []any{

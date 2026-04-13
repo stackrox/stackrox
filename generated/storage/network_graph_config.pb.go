@@ -109,7 +109,7 @@ var file_storage_network_graph_config_proto_depIdxs = []int32{
 
 func init() { file_storage_network_graph_config_proto_init() }
 func file_storage_network_graph_config_proto_init() {
-	if File_storage_network_graph_config_proto != nil {
+	if File_storage_network_graph_config_proto != nil || skipProtoInit {
 		return
 	}
 	type x struct{}

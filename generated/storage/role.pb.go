@@ -863,7 +863,7 @@ var file_storage_role_proto_depIdxs = []int32{
 
 func init() { file_storage_role_proto_init() }
 func file_storage_role_proto_init() {
-	if File_storage_role_proto != nil {
+	if File_storage_role_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_labels_proto_init()

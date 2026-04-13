@@ -45,7 +45,7 @@ var file_internalapi_sensor_sfa_iservice_proto_depIdxs = []int32{
 
 func init() { file_internalapi_sensor_sfa_iservice_proto_init() }
 func file_internalapi_sensor_sfa_iservice_proto_init() {
-	if File_internalapi_sensor_sfa_iservice_proto != nil {
+	if File_internalapi_sensor_sfa_iservice_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_sensor_sfa_proto_init()

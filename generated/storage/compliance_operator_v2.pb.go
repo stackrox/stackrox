@@ -3482,7 +3482,7 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 
 func init() { file_storage_compliance_operator_v2_proto_init() }
 func file_storage_compliance_operator_v2_proto_init() {
-	if File_storage_compliance_operator_v2_proto != nil {
+	if File_storage_compliance_operator_v2_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_report_notifier_configuration_proto_init()
