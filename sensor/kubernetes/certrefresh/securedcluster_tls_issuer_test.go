@@ -34,9 +34,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
@@ -713,14 +714,14 @@ type componentGetterMock struct {
 }
 
 func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, k8sClient kubernetes.Interface) concurrency.RetryTicker {
-	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff, k8sClient)
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, dynClient dynamic.Interface) concurrency.RetryTicker {
+	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff, dynClient)
 	return args.Get(0).(concurrency.RetryTicker)
 }
 
 func (m *componentGetterMock) getServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo {
-	args := m.Called(ownerReference, namespace, secretsClient)
+	dynClient dynamic.Interface, ns string) certrepo.ServiceCertificatesRepo {
+	args := m.Called(ownerReference, namespace, dynClient, ns)
 	return args.Get(0).(certrepo.ServiceCertificatesRepo)
 }
 
@@ -897,7 +898,10 @@ func newSecuredClusterTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) *tlsIssuerImpl {
-	tlsIssuer := NewSecuredClusterTLSIssuer(k8sClient, sensorNamespace, sensorPodName)
+	// Tests use the typed fake client for setup. Create a dynamic fake
+	// for the production code path.
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
+	tlsIssuer := NewSecuredClusterTLSIssuer(dynClient, sensorNamespace, sensorPodName)
 	require.IsType(t, &tlsIssuerImpl{}, tlsIssuer)
 	return tlsIssuer.(*tlsIssuerImpl)
 }

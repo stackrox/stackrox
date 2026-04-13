@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -23,7 +25,8 @@ func TestHandleCABundleConfigMapUpdate(t *testing.T) {
 		centralCAs := []*x509.Certificate{testutils.IssueSelfSignedCert(t, "Primary CA").Leaf,
 			testutils.IssueSelfSignedCert(t, "Secondary CA").Leaf}
 
-		handleCABundleConfigMapUpdate(context.Background(), centralCAs, k8sClient)
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
+		handleCABundleConfigMapUpdate(context.Background(), centralCAs, dynClient)
 
 		configMap, err := k8sClient.CoreV1().ConfigMaps("test-namespace").Get(
 			context.Background(), pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})

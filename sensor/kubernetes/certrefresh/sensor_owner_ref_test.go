@@ -9,8 +9,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -145,7 +147,8 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ownerRef, err := FetchSensorDeploymentOwnerRef(context.Background(), tt.podName, tt.namespace, tt.k8sClient, backoff)
+			dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
+			ownerRef, err := FetchSensorDeploymentOwnerRef(context.Background(), tt.podName, tt.namespace, dynClient, backoff)
 
 			if tt.expectedErr {
 				assert.Error(t, err)

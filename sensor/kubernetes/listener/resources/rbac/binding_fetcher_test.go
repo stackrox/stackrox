@@ -13,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes/fake"
-	fakeRBAC "k8s.io/client-go/kubernetes/typed/rbac/v1/fake"
 	k8stesting "k8s.io/client-go/testing"
 )
 

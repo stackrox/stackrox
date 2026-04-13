@@ -25,6 +25,26 @@ import (
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
+// createUnstructured converts a typed k8s object to unstructured and creates it via dynamic client.
+func createUnstructured(dynClient *dynamicfake.FakeDynamicClient, gvr schema.GroupVersionResource, namespace string, obj runtime.Object) (*unstructured.Unstructured, error) {
+	data, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	u := &unstructured.Unstructured{Object: data}
+	if namespace != "" {
+		return dynClient.Resource(gvr).Namespace(namespace).Create(context.TODO(), u, metav1.CreateOptions{})
+	}
+	return dynClient.Resource(gvr).Create(context.TODO(), u, metav1.CreateOptions{})
+}
+
+// updateUnstructured converts a typed k8s object to unstructured and updates it via dynamic client.
+func updateUnstructured(dynClient *dynamicfake.FakeDynamicClient, gvr schema.GroupVersionResource, namespace string, obj runtime.Object) (*unstructured.Unstructured, error) {
+	data, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	u := &unstructured.Unstructured{Object: data}
+	if namespace != "" {
+		return dynClient.Resource(gvr).Namespace(namespace).Update(context.TODO(), u, metav1.UpdateOptions{})
+	}
+	return dynClient.Resource(gvr).Update(context.TODO(), u, metav1.UpdateOptions{})
+}
+
 func TestStore_DispatcherEvents(t *testing.T) {
 	// Namespace: n1
 	// Role: r1
@@ -247,7 +267,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: bindings[2],
 			action:   central.ResourceAction_CREATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().RoleBindings(bindings[2].Namespace).Create(context.TODO(), bindings[2], metav1.CreateOptions{})
+				_, err := createUnstructured(dynClient, client.RoleBindingGVR, bindings[2].Namespace, bindings[2])
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
@@ -272,7 +292,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: clusterBindings[0],
 			action:   central.ResourceAction_CREATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterBindings[0], metav1.CreateOptions{})
+				_, err := createUnstructured(dynClient, client.ClusterRoleBindingGVR, "", clusterBindings[0])
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{{
@@ -294,7 +314,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: clusterRoles[0],
 			action:   central.ResourceAction_CREATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().ClusterRoles().Create(context.TODO(), clusterRoles[0], metav1.CreateOptions{})
+				_, err := createUnstructured(dynClient, client.ClusterRoleGVR, "", clusterRoles[0])
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
@@ -345,7 +365,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: bindings[2],
 			action:   central.ResourceAction_UPDATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().RoleBindings(bindings[2].Namespace).Update(context.TODO(), bindings[2], metav1.UpdateOptions{})
+				_, err := updateUnstructured(dynClient, client.RoleBindingGVR, bindings[2].Namespace, bindings[2])
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{{
@@ -368,7 +388,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: clusterBindings[0],
 			action:   central.ResourceAction_UPDATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterBindings[0], metav1.UpdateOptions{})
+				_, err := updateUnstructured(dynClient, client.ClusterRoleBindingGVR, "", clusterBindings[0])
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{{
@@ -390,7 +410,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: clusterRoles[0],
 			action:   central.ResourceAction_REMOVE_RESOURCE,
 			createK8sResource: func() error {
-				return fakeClient.RbacV1().ClusterRoles().Delete(context.TODO(), clusterRoles[0].Name, metav1.DeleteOptions{})
+				return dynClient.Resource(client.ClusterRoleGVR).Delete(context.TODO(), clusterRoles[0].Name, metav1.DeleteOptions{})
 			},
 			unorderedMessages: []*central.SensorEvent{{
 				Id:     "r2",
@@ -539,8 +559,10 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			tested := NewStore().(*storeImpl)
-			fakeClient := fake.NewClientset()
-			dispatcher := NewDispatcher(tested, fakeClient)
+			scheme := runtime.NewScheme()
+			_ = rbacv1.AddToScheme(scheme)
+			dynClient := dynamicfake.NewSimpleDynamicClient(scheme)
+			dispatcher := NewDispatcher(tested, dynClient)
 			var ref []resolver.DeploymentResolution
 			for _, update := range testCase.orderedUpdates {
 				event := dispatcher.ProcessEvent(update, nil, central.ResourceAction_CREATE_RESOURCE)
