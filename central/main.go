@@ -233,6 +233,7 @@ import (
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 
 	// BusyBox-style consolidation - import app packages
+	app "github.com/stackrox/rox/central/app"
 	complianceapp "github.com/stackrox/rox/compliance/cmd/compliance/app"
 	roxagentapp "github.com/stackrox/rox/compliance/virtualmachines/roxagent/app"
 	configcontrollerapp "github.com/stackrox/rox/config-controller/app"
@@ -281,7 +282,9 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
-func centralRun() {
+// CentralRun is the main central application logic.
+// Exported temporarily to allow central/app package to call it.
+func CentralRun() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()
@@ -1086,7 +1089,8 @@ func main() {
 
 	switch binaryName {
 	case "central":
-		centralRun()
+		app.Run()
+		CentralRun()
 	case "migrator":
 		migratorapp.Run()
 	case "compliance":
@@ -1106,6 +1110,6 @@ func main() {
 	default:
 		// Default to central if called with unknown name
 		log.Warnf("Unknown binary name %q, defaulting to central mode", binaryName)
-		centralRun()
+		CentralRun()
 	}
 }
