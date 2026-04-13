@@ -29,21 +29,21 @@ const (
 )
 
 var (
-	imageCacheOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+	ImageCacheOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.AdmissionControlSubsystem.String(),
 		Name:      "image_cache_operations_total",
 		Help:      "Total image cache lookups.",
 	}, []string{"result"})
 
-	imageFetchTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	ImageFetchTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.AdmissionControlSubsystem.String(),
 		Name:      "image_fetch_total",
 		Help:      "Total image fetch RPCs issued to Sensor or Central.",
 	}, []string{"source"})
 
-	imageFetchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	ImageFetchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.AdmissionControlSubsystem.String(),
 		Name:      "image_fetch_duration_seconds",
@@ -51,7 +51,7 @@ var (
 		Buckets:   prometheus.ExponentialBuckets(0.05, 2, 9), // 50ms to ~12.8s
 	}, []string{"source", "status"})
 
-	policyevalReviewDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	PolicyevalReviewDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.AdmissionControlSubsystem.String(),
 		Name:      "policyeval_review_duration_seconds",
@@ -59,14 +59,14 @@ var (
 		Buckets:   prometheus.ExponentialBuckets(0.005, 2, 12), // 5ms to ~10s
 	}, []string{"result"})
 
-	policyevalReviewTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	PolicyevalReviewTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.AdmissionControlSubsystem.String(),
 		Name:      "policyeval_review_total",
 		Help:      "Total deploy time policy enforcement admission reviews processed.",
 	}, []string{"result"})
 
-	imageFetchesPerReview = prometheus.NewHistogram(prometheus.HistogramOpts{
+	ImageFetchesPerReview = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.AdmissionControlSubsystem.String(),
 		Name:      "image_fetches_per_review",
@@ -75,32 +75,21 @@ var (
 	})
 )
 
-func init() {
-	prometheus.MustRegister(
-		imageCacheOperations,
-		imageFetchTotal,
-		imageFetchDuration,
-		imageFetchesPerReview,
-		policyevalReviewDuration,
-		policyevalReviewTotal,
-	)
-}
-
 func observeCacheHit() {
-	imageCacheOperations.WithLabelValues(cacheResultHit).Inc()
+	ImageCacheOperations.WithLabelValues(cacheResultHit).Inc()
 }
 
 func observeCacheMiss() {
-	imageCacheOperations.WithLabelValues(cacheResultMiss).Inc()
+	ImageCacheOperations.WithLabelValues(cacheResultMiss).Inc()
 }
 
 func observeCacheExpired() {
-	imageCacheOperations.WithLabelValues(cacheResultExpired).Inc()
+	ImageCacheOperations.WithLabelValues(cacheResultExpired).Inc()
 }
 
 // observeCacheSkip records lookups bypassed because the image has no ID to use as cache key.
 func observeCacheSkip() {
-	imageCacheOperations.WithLabelValues(cacheResultSkip).Inc()
+	ImageCacheOperations.WithLabelValues(cacheResultSkip).Inc()
 }
 
 func observeImageFetch(source string, duration time.Duration, err error) {
@@ -112,17 +101,17 @@ func observeImageFetch(source string, duration time.Duration, err error) {
 			fetchStatus = fetchStatusError
 		}
 	}
-	imageFetchTotal.WithLabelValues(source).Inc()
-	imageFetchDuration.WithLabelValues(source, fetchStatus).Observe(duration.Seconds())
+	ImageFetchTotal.WithLabelValues(source).Inc()
+	ImageFetchDuration.WithLabelValues(source, fetchStatus).Observe(duration.Seconds())
 }
 
 func observeAdmissionReview(result string, duration time.Duration) {
-	policyevalReviewTotal.WithLabelValues(result).Inc()
+	PolicyevalReviewTotal.WithLabelValues(result).Inc()
 	if result != reviewResultBypassed {
-		policyevalReviewDuration.WithLabelValues(result).Observe(duration.Seconds())
+		PolicyevalReviewDuration.WithLabelValues(result).Observe(duration.Seconds())
 	}
 }
 
 func observeImageFetchesPerReview(count int) {
-	imageFetchesPerReview.Observe(float64(count))
+	ImageFetchesPerReview.Observe(float64(count))
 }

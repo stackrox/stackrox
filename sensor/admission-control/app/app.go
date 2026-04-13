@@ -42,6 +42,7 @@ var (
 // Run is the main entry point for the admission-control application.
 func Run() {
 	memlimit.SetMemoryLimit()
+	initMetrics()
 
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
 	features.LogFeatureFlags()
