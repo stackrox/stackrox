@@ -115,26 +115,44 @@ func TestWithRetryable(t *testing.T) {
 }
 
 func TestMultipleResources(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	baseInterval := time.Second
-	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
+		baseInterval := time.Second
+		umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
 
-	// Send for two different resources
-	umh.ObserveSending("resource-1")
-	umh.ObserveSending("resource-2")
+		retries := make(chan string, 10)
+		go func() {
+			for rid := range umh.RetryCommand() {
+				retries <- rid
+			}
+		}()
 
-	// ACK only resource-1
-	umh.HandleACK("resource-1")
+		umh.ObserveSending("resource-1")
+		umh.ObserveSending("resource-2")
 
-	// Wait for resource-2 to trigger retry (baseInterval + margin)
-	select {
-	case resourceID := <-umh.RetryCommand():
-		assert.Equal(t, "resource-2", resourceID, "should retry resource-2")
-	case <-time.After(baseInterval + 500*time.Millisecond):
-		t.Fatal("expected retry for resource-2")
-	}
+		// ACK only resource-1
+		umh.HandleACK("resource-1")
+
+		// Advance past the first retry interval for resource-2.
+		time.Sleep(baseInterval)
+		synctest.Wait()
+
+		select {
+		case resourceID := <-retries:
+			assert.Equal(t, "resource-2", resourceID, "should retry resource-2")
+		default:
+			t.Fatal("expected retry for resource-2")
+		}
+
+		// No additional retries should be pending (resource-1 was ACKed).
+		select {
+		case rid := <-retries:
+			t.Fatalf("unexpected extra retry: %s", rid)
+		default:
+		}
+	})
 }
 
 func TestNonPositiveBaseIntervalUsesDefaultForFirstRetry(t *testing.T) {
@@ -282,11 +300,11 @@ func TestOnTimerFiredDoesNotBlockWhenRetryQueueFull(t *testing.T) {
 		umh := NewUnconfirmedMessageHandler(ctx, "test-full-queue", 100*time.Millisecond)
 
 		// Seed one resource with an unacked sending so timer logic is exercised.
-		umh.mu.Lock()
-		umh.resources["resource-full-queue"] = &resourceState{
-			numUnackedSendings: 1,
-		}
-		umh.mu.Unlock()
+		concurrency.WithLock(&umh.mu, func() {
+			umh.resources["resource-full-queue"] = &resourceState{
+				numUnackedSendings: 1,
+			}
+		})
 
 		// Fill the single-slot notify queue to force coalescing/default branch.
 		umh.retryNotifyCh <- struct{}{}
@@ -326,12 +344,12 @@ func TestACKClearsPendingRetryBeforeDispatch(t *testing.T) {
 		umh := NewUnconfirmedMessageHandler(ctx, "test-ack-clears-pending", time.Minute)
 
 		// Simulate two resources whose timers have fired and are queued in pendingRetries.
-		umh.mu.Lock()
-		umh.resources["res-acked"] = &resourceState{numUnackedSendings: 1}
-		umh.resources["res-pending"] = &resourceState{numUnackedSendings: 1}
-		umh.pendingRetries.Add("res-acked")
-		umh.pendingRetries.Add("res-pending")
-		umh.mu.Unlock()
+		concurrency.WithLock(&umh.mu, func() {
+			umh.resources["res-acked"] = &resourceState{numUnackedSendings: 1}
+			umh.resources["res-pending"] = &resourceState{numUnackedSendings: 1}
+			umh.pendingRetries.Add("res-acked")
+			umh.pendingRetries.Add("res-pending")
+		})
 
 		// ACK one resource before the dispatcher drains pendingRetries.
 		umh.HandleACK("res-acked")
@@ -367,9 +385,9 @@ func TestDispatcherSkipsRetryForACKedResource(t *testing.T) {
 		umh := NewUnconfirmedMessageHandler(ctx, "test-dispatcher-skip", time.Minute)
 
 		// Seed a tracked resource.
-		umh.mu.Lock()
-		umh.resources[testResourceID] = &resourceState{numUnackedSendings: 1}
-		umh.mu.Unlock()
+		concurrency.WithLock(&umh.mu, func() {
+			umh.resources[testResourceID] = &resourceState{numUnackedSendings: 1}
+		})
 
 		// Before ACK, the dispatcher would consider this resource active.
 		assert.True(t, umh.isResourceActive(testResourceID),
@@ -389,9 +407,9 @@ func TestShutdownWithPendingRetrySignal(t *testing.T) {
 		umh := NewUnconfirmedMessageHandler(ctx, "test-shutdown-signal", time.Second)
 
 		// Queue a pending retry and notify the worker without a retry consumer.
-		umh.mu.Lock()
-		umh.pendingRetries.Add("pending-retry")
-		umh.mu.Unlock()
+		concurrency.WithLock(&umh.mu, func() {
+			umh.pendingRetries.Add("pending-retry")
+		})
 		umh.retryNotifyCh <- struct{}{}
 		// Let the worker run and potentially block on sending to RetryCommand.
 		synctest.Wait()

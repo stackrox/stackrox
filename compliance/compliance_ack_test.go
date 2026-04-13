@@ -8,17 +8,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// fakeUMH is a minimal test double for node.UnconfirmedMessageHandler.
+// Set retryC to a non-nil channel when tests need RetryCommand() to be selectable.
 type fakeUMH struct {
 	ackCount  int
 	nackCount int
+	retryC    chan string
 }
 
-func (f *fakeUMH) HandleACK(string)                         { f.ackCount++ }
-func (f *fakeUMH) HandleNACK(string)                        { f.nackCount++ }
-func (f *fakeUMH) ObserveSending(string)                    {}
-func (f *fakeUMH) RetryCommand() <-chan string              { return nil }
-func (f *fakeUMH) OnACK(func(resourceID string))            {}
-func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal { return nil }
+func (f *fakeUMH) HandleACK(string)      { f.ackCount++ }
+func (f *fakeUMH) HandleNACK(string)     { f.nackCount++ }
+func (f *fakeUMH) ObserveSending(string) {}
+func (f *fakeUMH) OnACK(func(string))    {}
+
+func (f *fakeUMH) RetryCommand() <-chan string {
+	if f.retryC != nil {
+		return f.retryC
+	}
+	return nil
+}
+
+func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal {
+	s := concurrency.NewStopper()
+	s.Flow().ReportStopped()
+	return s.Client().Stopped()
+}
 
 func TestHandleNodeScanningComplianceAck(t *testing.T) {
 	inv := &fakeUMH{}

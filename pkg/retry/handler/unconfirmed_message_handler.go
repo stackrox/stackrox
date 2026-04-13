@@ -139,7 +139,7 @@ func (h *UnconfirmedMessageHandlerImpl) ObserveSending(resourceID string) {
 
 	// First unacked message - start/reset timer
 	state.retry = 0
-	h.resetTimer(resourceID, state, h.calculateNextInterval(0))
+	h.resetTimerNoLock(resourceID, state, h.calculateNextInterval(0))
 }
 
 // HandleACK is called when an ACK is received for a resource.
@@ -193,8 +193,9 @@ func (h *UnconfirmedMessageHandlerImpl) getOrCreateStateNoLock(resourceID string
 	return state
 }
 
-// resetTimer sets up the retry timer for a resource.
-func (h *UnconfirmedMessageHandlerImpl) resetTimer(resourceID string, state *resourceState, interval time.Duration) {
+// resetTimerNoLock sets up the retry timer for a resource.
+// Caller must hold h.mu.
+func (h *UnconfirmedMessageHandlerImpl) resetTimerNoLock(resourceID string, state *resourceState, interval time.Duration) {
 	if state.timer != nil {
 		state.timer.Stop()
 	}
@@ -224,7 +225,7 @@ func (h *UnconfirmedMessageHandlerImpl) onTimerFired(resourceID string) {
 		h.handlerName, resourceID, state.numUnackedSendings, state.retry, nextInterval)
 
 	// Schedule next retry
-	h.resetTimer(resourceID, state, nextInterval)
+	h.resetTimerNoLock(resourceID, state, nextInterval)
 
 	// Mark this resource as pending for retry and coalesce notifications.
 	h.pendingRetries.Add(resourceID)
@@ -251,6 +252,10 @@ func (h *UnconfirmedMessageHandlerImpl) runRetryDispatcher() {
 			}
 		}
 
+		// Drain all pending retries. Each takePendingRetries atomically swaps the set,
+		// so new entries only appear from subsequent timer firings (which are spaced
+		// by backoff intervals). The unbuffered retryCommandCh naturally back-pressures
+		// here, ensuring the loop terminates once the current batch is delivered.
 		for {
 			pending := h.takePendingRetries()
 			if len(pending) == 0 {

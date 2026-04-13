@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -14,44 +13,6 @@ func TestCompliance(t *testing.T) {
 
 type ComplianceTestSuite struct {
 	suite.Suite
-}
-
-// mockUnconfirmedMessageHandler is a test mock for node.UnconfirmedMessageHandler
-type mockUnconfirmedMessageHandler struct {
-	ackCount  int
-	nackCount int
-	retryC    chan string
-}
-
-func newMockUnconfirmedMessageHandler() *mockUnconfirmedMessageHandler {
-	return &mockUnconfirmedMessageHandler{
-		retryC: make(chan string),
-	}
-}
-
-func (m *mockUnconfirmedMessageHandler) HandleACK(_ string) {
-	m.ackCount++
-}
-
-func (m *mockUnconfirmedMessageHandler) HandleNACK(_ string) {
-	m.nackCount++
-}
-
-func (m *mockUnconfirmedMessageHandler) ObserveSending(_ string) {}
-
-func (m *mockUnconfirmedMessageHandler) RetryCommand() <-chan string {
-	return m.retryC
-}
-
-func (m *mockUnconfirmedMessageHandler) OnACK(_ func(resourceID string)) {
-	// no-op for test mock
-}
-
-func (m *mockUnconfirmedMessageHandler) Stopped() concurrency.ReadOnlyErrorSignal {
-	// Return an already-stopped signal so callers that wait on it don't hang.
-	s := concurrency.NewStopper()
-	s.Flow().ReportStopped()
-	return s.Client().Stopped()
 }
 
 func (s *ComplianceTestSuite) TestHandleComplianceACK() {
@@ -100,8 +61,8 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			mockInventory := newMockUnconfirmedMessageHandler()
-			mockIndex := newMockUnconfirmedMessageHandler()
+			mockInventory := &fakeUMH{retryC: make(chan string)}
+			mockIndex := &fakeUMH{retryC: make(chan string)}
 
 			c := &Compliance{
 				umhNodeInventory: mockInventory,
@@ -119,8 +80,8 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 }
 
 func (s *ComplianceTestSuite) TestHandleComplianceACK_NilACK() {
-	mockInventory := newMockUnconfirmedMessageHandler()
-	mockIndex := newMockUnconfirmedMessageHandler()
+	mockInventory := &fakeUMH{retryC: make(chan string)}
+	mockIndex := &fakeUMH{retryC: make(chan string)}
 
 	c := &Compliance{
 		umhNodeInventory: mockInventory,
