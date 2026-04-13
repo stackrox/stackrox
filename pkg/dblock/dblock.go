@@ -2,6 +2,7 @@ package dblock
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,20 +39,18 @@ func TryAcquireAdvisoryLock(ctx context.Context, pool postgres.DB, lockID int64)
 }
 
 func makeRelease(conn *postgres.Conn, lockID int64) func() {
-	released := false
+	once := sync.Once{}
 	return func() {
-		if released {
-			return
-		}
-		released = true
-		unlockCtx, unlockCancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer unlockCancel()
-		_, err := conn.Exec(unlockCtx, "SELECT pg_advisory_unlock($1)", lockID)
-		if err != nil {
-			log.Errorf("Failed to release advisory lock %d: %v", lockID, err)
-		} else {
-			log.Infof("Advisory lock %d released.", lockID)
-		}
-		conn.Release()
+		once.Do(func() {
+			unlockCtx, unlockCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer unlockCancel()
+			_, err := conn.Exec(unlockCtx, "SELECT pg_advisory_unlock($1)", lockID)
+			if err != nil {
+				log.Errorf("Failed to release advisory lock %d: %v", lockID, err)
+			} else {
+				log.Infof("Advisory lock %d released.", lockID)
+			}
+			conn.Release()
+		})
 	}
 }
