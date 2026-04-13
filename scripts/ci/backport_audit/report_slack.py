@@ -118,9 +118,22 @@ def _create_issue_table_row(
 
     pr_refs = jira_to_prs.get(jira_key, [])
     if pr_refs:
-        pr_links = ", ".join([f"#{pr}" for pr in pr_refs])
+        # Create rich text cell with clickable PR links
+        pr_elements = []
+        for i, pr in enumerate(pr_refs):
+            if i > 0:
+                pr_elements.append({"type": "text", "text": ", "})
+            pr_elements.append({
+                "type": "link",
+                "url": f"https://github.com/stackrox/stackrox/pull/{pr}",
+                "text": f"#{pr}",
+            })
+        pr_cell = {
+            "type": "rich_text",
+            "elements": [{"type": "rich_text_section", "elements": pr_elements}],
+        }
     else:
-        pr_links = "—"
+        pr_cell = _create_table_cell_text("—")
 
     # Format priority as Slack emoji
     if priority and priority != "No priority":
@@ -140,7 +153,7 @@ def _create_issue_table_row(
         _create_table_cell_rich_text(priority_display),
         _create_table_cell_text(severity_display),
         _create_table_cell_text(deadline_info),
-        _create_table_cell_text(pr_links),
+        pr_cell,
     ]
 
 
