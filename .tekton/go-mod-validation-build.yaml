@@ -38,6 +38,8 @@ spec:
     value: 'false'
   - name: oci-artifact-expires-after
     value: '1d'
+  - name: hermetic
+    value: "true"
 
   pipelineRef:
     name: go-mod-validation-pipeline
