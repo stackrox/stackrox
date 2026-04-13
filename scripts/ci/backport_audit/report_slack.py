@@ -286,8 +286,8 @@ def _create_all_pr_rows(
 
         all_rows.append([
             _create_table_cell_emoji(urgency_emoji, align="center"),
-            _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
             pr_cell,
+            _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
             _create_table_cell_text(pr_title, align="left"),
             author_cell,  # Author from associated PRs
             _create_table_cell_emoji(fix_emoji, align="center"),
@@ -318,8 +318,8 @@ def _create_all_pr_rows(
 
         no_jira_rows.append([
             _create_table_cell_text("—", align="center", is_wrapped=False),  # Urgency
-            _create_table_cell_emoji("x", align="center"),  # Issue (missing)
             pr_cell,  # PRs
+            _create_table_cell_emoji("x", align="center"),  # Issue (missing)
             _create_table_cell_text(pr.title, align="left"),  # PR Title
             _create_table_cell_mention(author_mention),  # Author
             _create_table_cell_emoji("x", align="center"),  # fixVersion (missing)
@@ -372,8 +372,8 @@ def _generate_branch_blocks(
             # Header row
             [
                 _create_table_cell_text("Urgency", align="center"),
-                _create_table_cell_text("Issue"),
                 _create_table_cell_text("PRs", align="right"),
+                _create_table_cell_text("Issue"),
                 _create_table_cell_text("PR Title", align="left"),
                 _create_table_cell_text("Author"),
                 _create_table_cell_text("fixVersion", align="center"),
