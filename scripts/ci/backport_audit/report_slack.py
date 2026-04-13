@@ -203,6 +203,12 @@ def _create_all_pr_rows(
             for i, pr_obj in enumerate(pr_refs):
                 if i > 0:
                     pr_elements.append({"type": "text", "text": ", "})
+
+                # Add PR status emoji if merged
+                if pr_obj.merged:
+                    pr_elements.append({"type": "emoji", "name": "pr-merged"})
+                    pr_elements.append({"type": "text", "text": " "})
+
                 pr_elements.append({
                     "type": "link",
                     "url": f"https://github.com/stackrox/stackrox/pull/{pr_obj.number}",
@@ -282,15 +288,23 @@ def _create_all_pr_rows(
     prs_no_jira = [pr for pr in prs if not pr.jira_keys and pr.number not in processed_prs]
     no_jira_rows = []
     for pr in prs_no_jira:
+        # Build PR cell with optional merged icon
+        pr_link_elements = []
+        if pr.merged:
+            pr_link_elements.append({"type": "emoji", "name": "pr-merged"})
+            pr_link_elements.append({"type": "text", "text": " "})
+
+        pr_link_elements.append({
+            "type": "link",
+            "url": f"https://github.com/stackrox/stackrox/pull/{pr.number}",
+            "text": f"#{pr.number}",
+        })
+
         pr_cell = {
             "type": "rich_text",
             "elements": [{
                 "type": "rich_text_section",
-                "elements": [{
-                    "type": "link",
-                    "url": f"https://github.com/stackrox/stackrox/pull/{pr.number}",
-                    "text": f"#{pr.number}",
-                }],
+                "elements": pr_link_elements,
             }],
         }
 

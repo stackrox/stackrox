@@ -26,6 +26,8 @@ class PR:
     base_ref: str
     jira_keys: list[str]
     body: str
+    merged: bool = False  # True if PR is merged (from git commits)
+    commit_sha: str | None = None  # Git commit SHA (for merged PRs)
 
 
 @dataclass
