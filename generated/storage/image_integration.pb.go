@@ -118,6 +118,7 @@ func (x *ImageIntegration) String() string {
 func (*ImageIntegration) ProtoMessage() {}
 
 func (x *ImageIntegration) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -374,6 +375,7 @@ func (x *IBMRegistryConfig) String() string {
 func (*IBMRegistryConfig) ProtoMessage() {}
 
 func (x *IBMRegistryConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -430,6 +432,7 @@ func (x *QuayConfig) String() string {
 func (*QuayConfig) ProtoMessage() {}
 
 func (x *QuayConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -496,6 +499,7 @@ func (x *ClairConfig) String() string {
 func (*ClairConfig) ProtoMessage() {}
 
 func (x *ClairConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -548,6 +552,7 @@ func (x *ClairV4Config) String() string {
 func (*ClairV4Config) ProtoMessage() {}
 
 func (x *ClairV4Config) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -601,6 +606,7 @@ func (x *ClairifyConfig) String() string {
 func (*ClairifyConfig) ProtoMessage() {}
 
 func (x *ClairifyConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -666,6 +672,7 @@ func (x *DockerConfig) String() string {
 func (*DockerConfig) ProtoMessage() {}
 
 func (x *DockerConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -742,6 +749,7 @@ func (x *ECRConfig) String() string {
 func (*ECRConfig) ProtoMessage() {}
 
 func (x *ECRConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -853,6 +861,7 @@ func (x *GoogleConfig) String() string {
 func (*GoogleConfig) ProtoMessage() {}
 
 func (x *GoogleConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -920,6 +929,7 @@ func (x *ScannerV4Config) String() string {
 func (*ScannerV4Config) ProtoMessage() {}
 
 func (x *ScannerV4Config) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -984,6 +994,7 @@ func (x *AzureConfig) String() string {
 func (*AzureConfig) ProtoMessage() {}
 
 func (x *AzureConfig) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1051,6 +1062,7 @@ func (x *ImageIntegration_Source) String() string {
 func (*ImageIntegration_Source) ProtoMessage() {}
 
 func (x *ImageIntegration_Source) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1113,6 +1125,7 @@ func (x *QuayConfig_RobotAccount) String() string {
 func (*QuayConfig_RobotAccount) ProtoMessage() {}
 
 func (x *QuayConfig_RobotAccount) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1169,6 +1182,7 @@ func (x *ECRConfig_AuthorizationData) String() string {
 func (*ECRConfig_AuthorizationData) ProtoMessage() {}
 
 func (x *ECRConfig_AuthorizationData) ProtoReflect() protoreflect.Message {
+	file_storage_image_integration_proto_init_ensure()
 	mi := &file_storage_image_integration_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1365,9 +1379,11 @@ var file_storage_image_integration_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_storage_image_integration_proto_init() }
+var file_storage_image_integration_proto_init_once sync.Once
+func file_storage_image_integration_proto_init_ensure() { file_storage_image_integration_proto_init_once.Do(file_storage_image_integration_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_image_integration_proto_init() {
-	if File_storage_image_integration_proto != nil || skipProtoInit {
+	if File_storage_image_integration_proto != nil {
 		return
 	}
 	file_storage_image_integration_proto_msgTypes[0].OneofWrappers = []any{

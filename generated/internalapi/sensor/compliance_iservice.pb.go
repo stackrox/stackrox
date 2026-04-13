@@ -233,6 +233,7 @@ func (x *GetScrapeConfigRequest) String() string {
 func (*GetScrapeConfigRequest) ProtoMessage() {}
 
 func (x *GetScrapeConfigRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -285,6 +286,7 @@ func (x *AuditEvents) String() string {
 func (*AuditEvents) ProtoMessage() {}
 
 func (x *AuditEvents) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -336,6 +338,7 @@ func (x *MsgFromCompliance) String() string {
 func (*MsgFromCompliance) ProtoMessage() {}
 
 func (x *MsgFromCompliance) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -458,6 +461,7 @@ func (x *MsgToCompliance) String() string {
 func (*MsgToCompliance) ProtoMessage() {}
 
 func (x *MsgToCompliance) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -582,6 +586,7 @@ func (x *MsgToCompliance_ScrapeConfig) String() string {
 func (*MsgToCompliance_ScrapeConfig) ProtoMessage() {}
 
 func (x *MsgToCompliance_ScrapeConfig) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -634,6 +639,7 @@ func (x *MsgToCompliance_TriggerRun) String() string {
 func (*MsgToCompliance_TriggerRun) ProtoMessage() {}
 
 func (x *MsgToCompliance_TriggerRun) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -689,6 +695,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) String() string {
 func (*MsgToCompliance_AuditLogCollectionRequest) ProtoMessage() {}
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -774,6 +781,7 @@ func (x *MsgToCompliance_ComplianceACK) String() string {
 func (*MsgToCompliance_ComplianceACK) ProtoMessage() {}
 
 func (x *MsgToCompliance_ComplianceACK) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -844,6 +852,7 @@ func (x *MsgToCompliance_NodeInventoryACK) String() string {
 func (*MsgToCompliance_NodeInventoryACK) ProtoMessage() {}
 
 func (x *MsgToCompliance_NodeInventoryACK) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -896,6 +905,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) String() string
 func (*MsgToCompliance_AuditLogCollectionRequest_StartRequest) ProtoMessage() {}
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -946,6 +956,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StopRequest) String() string 
 func (*MsgToCompliance_AuditLogCollectionRequest_StopRequest) ProtoMessage() {}
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StopRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_compliance_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1092,9 +1103,11 @@ var file_internalapi_sensor_compliance_iservice_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_compliance_iservice_proto_init() }
+var file_internalapi_sensor_compliance_iservice_proto_init_once sync.Once
+func file_internalapi_sensor_compliance_iservice_proto_init_ensure() { file_internalapi_sensor_compliance_iservice_proto_init_once.Do(file_internalapi_sensor_compliance_iservice_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_compliance_iservice_proto_init() {
-	if File_internalapi_sensor_compliance_iservice_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_compliance_iservice_proto != nil {
 		return
 	}
 	file_internalapi_sensor_compliance_iservice_proto_msgTypes[2].OneofWrappers = []any{

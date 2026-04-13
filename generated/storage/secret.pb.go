@@ -135,6 +135,7 @@ func (x *Secret) String() string {
 func (*Secret) ProtoMessage() {}
 
 func (x *Secret) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -255,6 +256,7 @@ func (x *ListSecret) String() string {
 func (*ListSecret) ProtoMessage() {}
 
 func (x *ListSecret) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -348,6 +350,7 @@ func (x *SecretRelationship) String() string {
 func (*SecretRelationship) ProtoMessage() {}
 
 func (x *SecretRelationship) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -411,6 +414,7 @@ func (x *SecretDeploymentRelationship) String() string {
 func (*SecretDeploymentRelationship) ProtoMessage() {}
 
 func (x *SecretDeploymentRelationship) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -467,6 +471,7 @@ func (x *SecretContainerRelationship) String() string {
 func (*SecretContainerRelationship) ProtoMessage() {}
 
 func (x *SecretContainerRelationship) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -518,6 +523,7 @@ func (x *ImagePullSecret) String() string {
 func (*ImagePullSecret) ProtoMessage() {}
 
 func (x *ImagePullSecret) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -570,6 +576,7 @@ func (x *SecretDataFile) String() string {
 func (*SecretDataFile) ProtoMessage() {}
 
 func (x *SecretDataFile) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -667,6 +674,7 @@ func (x *Cert) String() string {
 func (*Cert) ProtoMessage() {}
 
 func (x *Cert) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -754,6 +762,7 @@ func (x *CertName) String() string {
 func (*CertName) ProtoMessage() {}
 
 func (x *CertName) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -855,6 +864,7 @@ func (x *ImagePullSecret_Registry) String() string {
 func (*ImagePullSecret_Registry) ProtoMessage() {}
 
 func (x *ImagePullSecret_Registry) ProtoReflect() protoreflect.Message {
+	file_storage_secret_proto_init_ensure()
 	mi := &file_storage_secret_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1038,9 +1048,11 @@ var file_storage_secret_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_storage_secret_proto_init() }
+var file_storage_secret_proto_init_once sync.Once
+func file_storage_secret_proto_init_ensure() { file_storage_secret_proto_init_once.Do(file_storage_secret_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_secret_proto_init() {
-	if File_storage_secret_proto != nil || skipProtoInit {
+	if File_storage_secret_proto != nil {
 		return
 	}
 	file_storage_secret_proto_msgTypes[6].OneofWrappers = []any{

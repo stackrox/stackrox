@@ -156,6 +156,7 @@ func (x *DBRestoreRequestHeader) String() string {
 func (*DBRestoreRequestHeader) ProtoMessage() {}
 
 func (x *DBRestoreRequestHeader) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -223,6 +224,7 @@ func (x *DBRestoreProcessMetadata) String() string {
 func (*DBRestoreProcessMetadata) ProtoMessage() {}
 
 func (x *DBRestoreProcessMetadata) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -294,6 +296,7 @@ func (x *DBRestoreProcessStatus) String() string {
 func (*DBRestoreProcessStatus) ProtoMessage() {}
 
 func (x *DBRestoreProcessStatus) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -383,6 +386,7 @@ func (x *DBExportManifest) String() string {
 func (*DBExportManifest) ProtoMessage() {}
 
 func (x *DBExportManifest) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -429,6 +433,7 @@ func (x *DBExportFormat) String() string {
 func (*DBExportFormat) ProtoMessage() {}
 
 func (x *DBExportFormat) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -481,6 +486,7 @@ func (x *GetDBExportCapabilitiesResponse) String() string {
 func (*GetDBExportCapabilitiesResponse) ProtoMessage() {}
 
 func (x *GetDBExportCapabilitiesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -532,6 +538,7 @@ func (x *GetActiveDBRestoreProcessResponse) String() string {
 func (*GetActiveDBRestoreProcessResponse) ProtoMessage() {}
 
 func (x *GetActiveDBRestoreProcessResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -577,6 +584,7 @@ func (x *InterruptDBRestoreProcessRequest) String() string {
 func (*InterruptDBRestoreProcessRequest) ProtoMessage() {}
 
 func (x *InterruptDBRestoreProcessRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -628,6 +636,7 @@ func (x *InterruptDBRestoreProcessResponse) String() string {
 func (*InterruptDBRestoreProcessResponse) ProtoMessage() {}
 
 func (x *InterruptDBRestoreProcessResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -677,6 +686,7 @@ func (x *DBRestoreRequestHeader_LocalFileInfo) String() string {
 func (*DBRestoreRequestHeader_LocalFileInfo) ProtoMessage() {}
 
 func (x *DBRestoreRequestHeader_LocalFileInfo) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -728,6 +738,7 @@ func (x *DBRestoreProcessStatus_ResumeInfo) String() string {
 func (*DBRestoreProcessStatus_ResumeInfo) ProtoMessage() {}
 
 func (x *DBRestoreProcessStatus_ResumeInfo) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -780,6 +791,7 @@ func (x *DBExportManifest_File) String() string {
 func (*DBExportManifest_File) ProtoMessage() {}
 
 func (x *DBExportManifest_File) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -853,6 +865,7 @@ func (x *DBExportFormat_File) String() string {
 func (*DBExportFormat_File) ProtoMessage() {}
 
 func (x *DBExportFormat_File) ProtoReflect() protoreflect.Message {
+	file_api_v1_db_service_proto_init_ensure()
 	mi := &file_api_v1_db_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1028,9 +1041,11 @@ var file_api_v1_db_service_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_db_service_proto_init() }
+var file_api_v1_db_service_proto_init_once sync.Once
+func file_api_v1_db_service_proto_init_ensure() { file_api_v1_db_service_proto_init_once.Do(file_api_v1_db_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_db_service_proto_init() {
-	if File_api_v1_db_service_proto != nil || skipProtoInit {
+	if File_api_v1_db_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

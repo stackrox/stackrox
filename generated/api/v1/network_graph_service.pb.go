@@ -45,6 +45,7 @@ func (x *NetworkGraphScope) String() string {
 func (*NetworkGraphScope) ProtoMessage() {}
 
 func (x *NetworkGraphScope) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -91,6 +92,7 @@ func (x *NetworkEdgeProperties) String() string {
 func (*NetworkEdgeProperties) ProtoMessage() {}
 
 func (x *NetworkEdgeProperties) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -149,6 +151,7 @@ func (x *NetworkEdgePropertiesBundle) String() string {
 func (*NetworkEdgePropertiesBundle) ProtoMessage() {}
 
 func (x *NetworkEdgePropertiesBundle) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -199,6 +202,7 @@ func (x *NetworkNode) String() string {
 func (*NetworkNode) ProtoMessage() {}
 
 func (x *NetworkNode) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -290,6 +294,7 @@ func (x *NetworkGraphRequest) String() string {
 func (*NetworkGraphRequest) ProtoMessage() {}
 
 func (x *NetworkGraphRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -370,6 +375,7 @@ func (x *NetworkGraph) String() string {
 func (*NetworkGraph) ProtoMessage() {}
 
 func (x *NetworkGraph) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -422,6 +428,7 @@ func (x *CreateNetworkEntityRequest) String() string {
 func (*CreateNetworkEntityRequest) ProtoMessage() {}
 
 func (x *CreateNetworkEntityRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -474,6 +481,7 @@ func (x *PatchNetworkEntityRequest) String() string {
 func (*PatchNetworkEntityRequest) ProtoMessage() {}
 
 func (x *PatchNetworkEntityRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -526,6 +534,7 @@ func (x *GetExternalNetworkEntitiesRequest) String() string {
 func (*GetExternalNetworkEntitiesRequest) ProtoMessage() {}
 
 func (x *GetExternalNetworkEntitiesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -577,6 +586,7 @@ func (x *GetExternalNetworkEntitiesResponse) String() string {
 func (*GetExternalNetworkEntitiesResponse) ProtoMessage() {}
 
 func (x *GetExternalNetworkEntitiesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -625,6 +635,7 @@ func (x *GetExternalNetworkFlowsRequest) String() string {
 func (*GetExternalNetworkFlowsRequest) ProtoMessage() {}
 
 func (x *GetExternalNetworkFlowsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -699,6 +710,7 @@ func (x *GetExternalNetworkFlowsResponse) String() string {
 func (*GetExternalNetworkFlowsResponse) ProtoMessage() {}
 
 func (x *GetExternalNetworkFlowsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -760,6 +772,7 @@ func (x *GetExternalNetworkFlowsMetadataRequest) String() string {
 func (*GetExternalNetworkFlowsMetadataRequest) ProtoMessage() {}
 
 func (x *GetExternalNetworkFlowsMetadataRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -826,6 +839,7 @@ func (x *ExternalNetworkFlowMetadata) String() string {
 func (*ExternalNetworkFlowMetadata) ProtoMessage() {}
 
 func (x *ExternalNetworkFlowMetadata) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -878,6 +892,7 @@ func (x *GetExternalNetworkFlowsMetadataResponse) String() string {
 func (*GetExternalNetworkFlowsMetadataResponse) ProtoMessage() {}
 
 func (x *GetExternalNetworkFlowsMetadataResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -929,6 +944,7 @@ func (x *PutNetworkGraphConfigRequest) String() string {
 func (*PutNetworkGraphConfigRequest) ProtoMessage() {}
 
 func (x *PutNetworkGraphConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_graph_service_proto_init_ensure()
 	mi := &file_api_v1_network_graph_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1137,9 +1153,11 @@ var file_api_v1_network_graph_service_proto_depIdxs = []int32{
 	0,  // [0:20] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_network_graph_service_proto_init() }
+var file_api_v1_network_graph_service_proto_init_once sync.Once
+func file_api_v1_network_graph_service_proto_init_ensure() { file_api_v1_network_graph_service_proto_init_once.Do(file_api_v1_network_graph_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_network_graph_service_proto_init() {
-	if File_api_v1_network_graph_service_proto != nil || skipProtoInit {
+	if File_api_v1_network_graph_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

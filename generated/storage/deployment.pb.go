@@ -292,6 +292,7 @@ func (x *Deployment) String() string {
 func (*Deployment) ProtoMessage() {}
 
 func (x *Deployment) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -552,6 +553,7 @@ func (x *ContainerImage) String() string {
 func (*ContainerImage) ProtoMessage() {}
 
 func (x *ContainerImage) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -635,6 +637,7 @@ func (x *Container) String() string {
 func (*Container) ProtoMessage() {}
 
 func (x *Container) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -752,6 +755,7 @@ func (x *Resources) String() string {
 func (*Resources) ProtoMessage() {}
 
 func (x *Resources) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -822,6 +826,7 @@ func (x *Volume) String() string {
 func (*Volume) ProtoMessage() {}
 
 func (x *Volume) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -901,6 +906,7 @@ func (x *LivenessProbe) String() string {
 func (*LivenessProbe) ProtoMessage() {}
 
 func (x *LivenessProbe) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -945,6 +951,7 @@ func (x *ReadinessProbe) String() string {
 func (*ReadinessProbe) ProtoMessage() {}
 
 func (x *ReadinessProbe) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1001,6 +1008,7 @@ func (x *Pod) String() string {
 func (*Pod) ProtoMessage() {}
 
 func (x *Pod) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1112,6 +1120,7 @@ func (x *ContainerInstance) String() string {
 func (*ContainerInstance) ProtoMessage() {}
 
 func (x *ContainerInstance) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1217,6 +1226,7 @@ func (x *ContainerInstanceID) String() string {
 func (*ContainerInstanceID) ProtoMessage() {}
 
 func (x *ContainerInstanceID) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1276,6 +1286,7 @@ func (x *EmbeddedSecret) String() string {
 func (*EmbeddedSecret) ProtoMessage() {}
 
 func (x *EmbeddedSecret) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1334,6 +1345,7 @@ func (x *PortConfig) String() string {
 func (*PortConfig) ProtoMessage() {}
 
 func (x *PortConfig) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1420,6 +1432,7 @@ func (x *ContainerConfig) String() string {
 func (*ContainerConfig) ProtoMessage() {}
 
 func (x *ContainerConfig) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1512,6 +1525,7 @@ func (x *SecurityContext) String() string {
 func (*SecurityContext) ProtoMessage() {}
 
 func (x *SecurityContext) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1606,6 +1620,7 @@ func (x *ListDeployment) String() string {
 func (*ListDeployment) ProtoMessage() {}
 
 func (x *ListDeployment) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1699,6 +1714,7 @@ func (x *Pod_ContainerInstanceList) String() string {
 func (*Pod_ContainerInstanceList) ProtoMessage() {}
 
 func (x *Pod_ContainerInstanceList) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1754,6 +1770,7 @@ func (x *PortConfig_ExposureInfo) String() string {
 func (*PortConfig_ExposureInfo) ProtoMessage() {}
 
 func (x *PortConfig_ExposureInfo) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1849,6 +1866,7 @@ func (x *ContainerConfig_EnvironmentConfig) String() string {
 func (*ContainerConfig_EnvironmentConfig) ProtoMessage() {}
 
 func (x *ContainerConfig_EnvironmentConfig) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1910,6 +1928,7 @@ func (x *SecurityContext_SELinux) String() string {
 func (*SecurityContext_SELinux) ProtoMessage() {}
 
 func (x *SecurityContext_SELinux) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1976,6 +1995,7 @@ func (x *SecurityContext_SeccompProfile) String() string {
 func (*SecurityContext_SeccompProfile) ProtoMessage() {}
 
 func (x *SecurityContext_SeccompProfile) ProtoReflect() protoreflect.Message {
+	file_storage_deployment_proto_init_ensure()
 	mi := &file_storage_deployment_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2306,9 +2326,11 @@ var file_storage_deployment_proto_depIdxs = []int32{
 	0,  // [0:37] is the sub-list for field type_name
 }
 
-func init() { file_storage_deployment_proto_init() }
+var file_storage_deployment_proto_init_once sync.Once
+func file_storage_deployment_proto_init_ensure() { file_storage_deployment_proto_init_once.Do(file_storage_deployment_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_deployment_proto_init() {
-	if File_storage_deployment_proto != nil || skipProtoInit {
+	if File_storage_deployment_proto != nil {
 		return
 	}
 	file_storage_container_runtime_proto_init()

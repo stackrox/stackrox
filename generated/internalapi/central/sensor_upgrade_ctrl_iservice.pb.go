@@ -50,6 +50,7 @@ func (x *UpgradeCheckInFromUpgraderRequest) String() string {
 func (*UpgradeCheckInFromUpgraderRequest) ProtoMessage() {}
 
 func (x *UpgradeCheckInFromUpgraderRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -122,6 +123,7 @@ func (x *UpgradeCheckInFromUpgraderResponse) String() string {
 func (*UpgradeCheckInFromUpgraderResponse) ProtoMessage() {}
 
 func (x *UpgradeCheckInFromUpgraderResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -173,6 +175,7 @@ func (x *UpgradeCheckInFromSensorRequest) String() string {
 func (*UpgradeCheckInFromSensorRequest) ProtoMessage() {}
 
 func (x *UpgradeCheckInFromSensorRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -281,6 +284,7 @@ func (x *UpgradeCheckInResponseDetails) String() string {
 func (*UpgradeCheckInResponseDetails) ProtoMessage() {}
 
 func (x *UpgradeCheckInResponseDetails) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -319,6 +323,7 @@ func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) String() string {
 func (*UpgradeCheckInFromSensorRequest_PodErrorCondition) ProtoMessage() {}
 
 func (x *UpgradeCheckInFromSensorRequest_PodErrorCondition) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -372,6 +377,7 @@ func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) String() string {
 func (*UpgradeCheckInFromSensorRequest_UpgraderPodState) ProtoMessage() {}
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodState) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -430,6 +436,7 @@ func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) String() string {
 func (*UpgradeCheckInFromSensorRequest_UpgraderPodStates) ProtoMessage() {}
 
 func (x *UpgradeCheckInFromSensorRequest_UpgraderPodStates) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -473,6 +480,7 @@ func (x *UpgradeCheckInResponseDetails_NoUpgradeInProgress) String() string {
 func (*UpgradeCheckInResponseDetails_NoUpgradeInProgress) ProtoMessage() {}
 
 func (x *UpgradeCheckInResponseDetails_NoUpgradeInProgress) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -566,9 +574,11 @@ var file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_depIdxs = []int3
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init() }
+var file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_once sync.Once
+func file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure() { file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_once.Do(file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init() {
-	if File_internalapi_central_sensor_upgrade_ctrl_iservice_proto != nil || skipProtoInit {
+	if File_internalapi_central_sensor_upgrade_ctrl_iservice_proto != nil {
 		return
 	}
 	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[2].OneofWrappers = []any{

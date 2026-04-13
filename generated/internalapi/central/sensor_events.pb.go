@@ -150,6 +150,7 @@ func (x *ReprocessDeploymentRisk) String() string {
 func (*ReprocessDeploymentRisk) ProtoMessage() {}
 
 func (x *ReprocessDeploymentRisk) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -198,6 +199,7 @@ func (x *AlertResults) String() string {
 func (*AlertResults) ProtoMessage() {}
 
 func (x *AlertResults) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -265,6 +267,7 @@ func (x *Timing) String() string {
 func (*Timing) ProtoMessage() {}
 
 func (x *Timing) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -366,6 +369,7 @@ func (x *SensorEvent) String() string {
 func (*SensorEvent) ProtoMessage() {}
 
 func (x *SensorEvent) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -947,6 +951,7 @@ func (x *SensorEnforcement) String() string {
 func (*SensorEnforcement) ProtoMessage() {}
 
 func (x *SensorEnforcement) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1037,6 +1042,7 @@ func (x *DeploymentEnforcement) String() string {
 func (*DeploymentEnforcement) ProtoMessage() {}
 
 func (x *DeploymentEnforcement) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1117,6 +1123,7 @@ func (x *ContainerInstanceEnforcement) String() string {
 func (*ContainerInstanceEnforcement) ProtoMessage() {}
 
 func (x *ContainerInstanceEnforcement) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1173,6 +1180,7 @@ func (x *ScrapeCommand) String() string {
 func (*ScrapeCommand) ProtoMessage() {}
 
 func (x *ScrapeCommand) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1261,6 +1269,7 @@ func (x *StartScrape) String() string {
 func (*StartScrape) ProtoMessage() {}
 
 func (x *StartScrape) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1311,6 +1320,7 @@ func (x *KillScrape) String() string {
 func (*KillScrape) ProtoMessage() {}
 
 func (x *KillScrape) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1354,6 +1364,7 @@ func (x *ScrapeUpdate) String() string {
 func (*ScrapeUpdate) ProtoMessage() {}
 
 func (x *ScrapeUpdate) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1454,6 +1465,7 @@ func (x *ScrapeStarted) String() string {
 func (*ScrapeStarted) ProtoMessage() {}
 
 func (x *ScrapeStarted) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1498,6 +1510,7 @@ func (x *ScrapeKilled) String() string {
 func (*ScrapeKilled) ProtoMessage() {}
 
 func (x *ScrapeKilled) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1543,6 +1556,7 @@ func (x *NetworkPoliciesCommand) String() string {
 func (*NetworkPoliciesCommand) ProtoMessage() {}
 
 func (x *NetworkPoliciesCommand) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1595,6 +1609,7 @@ func (x *NetworkPoliciesResponse) String() string {
 func (*NetworkPoliciesResponse) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1646,6 +1661,7 @@ func (x *SensorEvent_ResourcesSynced) String() string {
 func (*SensorEvent_ResourcesSynced) ProtoMessage() {}
 
 func (x *SensorEvent_ResourcesSynced) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1691,6 +1707,7 @@ func (x *NetworkPoliciesCommand_Apply) String() string {
 func (*NetworkPoliciesCommand_Apply) ProtoMessage() {}
 
 func (x *NetworkPoliciesCommand_Apply) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1745,6 +1762,7 @@ func (x *NetworkPoliciesCommand_Payload) String() string {
 func (*NetworkPoliciesCommand_Payload) ProtoMessage() {}
 
 func (x *NetworkPoliciesCommand_Payload) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1809,6 +1827,7 @@ func (x *NetworkPoliciesResponse_Apply) String() string {
 func (*NetworkPoliciesResponse_Apply) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse_Apply) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1860,6 +1879,7 @@ func (x *NetworkPoliciesResponse_Error) String() string {
 func (*NetworkPoliciesResponse_Error) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse_Error) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1908,6 +1928,7 @@ func (x *NetworkPoliciesResponse_Payload) String() string {
 func (*NetworkPoliciesResponse_Payload) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse_Payload) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_events_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_events_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2236,9 +2257,11 @@ var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
 	0,  // [0:53] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_sensor_events_proto_init() }
+var file_internalapi_central_sensor_events_proto_init_once sync.Once
+func file_internalapi_central_sensor_events_proto_init_ensure() { file_internalapi_central_sensor_events_proto_init_once.Do(file_internalapi_central_sensor_events_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_sensor_events_proto_init() {
-	if File_internalapi_central_sensor_events_proto != nil || skipProtoInit {
+	if File_internalapi_central_sensor_events_proto != nil {
 		return
 	}
 	file_internalapi_central_compliance_operator_proto_init()

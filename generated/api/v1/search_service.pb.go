@@ -392,6 +392,7 @@ func (x *RawQuery) String() string {
 func (*RawQuery) ProtoMessage() {}
 
 func (x *RawQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -446,6 +447,7 @@ func (x *RawSearchRequest) String() string {
 func (*RawSearchRequest) ProtoMessage() {}
 
 func (x *RawSearchRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -503,6 +505,7 @@ func (x *QuerySortOption) String() string {
 func (*QuerySortOption) ProtoMessage() {}
 
 func (x *QuerySortOption) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -592,6 +595,7 @@ func (x *QueryField) String() string {
 func (*QueryField) ProtoMessage() {}
 
 func (x *QueryField) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -651,6 +655,7 @@ func (x *QuerySelectFilter) String() string {
 func (*QuerySelectFilter) ProtoMessage() {}
 
 func (x *QuerySelectFilter) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -703,6 +708,7 @@ func (x *QuerySelect) String() string {
 func (*QuerySelect) ProtoMessage() {}
 
 func (x *QuerySelect) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -754,6 +760,7 @@ func (x *QueryGroupBy) String() string {
 func (*QueryGroupBy) ProtoMessage() {}
 
 func (x *QueryGroupBy) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -800,6 +807,7 @@ func (x *QueryPagination) String() string {
 func (*QueryPagination) ProtoMessage() {}
 
 func (x *QueryPagination) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -859,6 +867,7 @@ func (x *BooleanQuery) String() string {
 func (*BooleanQuery) ProtoMessage() {}
 
 func (x *BooleanQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -920,6 +929,7 @@ func (x *Query) String() string {
 func (*Query) ProtoMessage() {}
 
 func (x *Query) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1051,6 +1061,7 @@ func (x *StringQuery) String() string {
 func (*StringQuery) ProtoMessage() {}
 
 func (x *StringQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1099,6 +1110,7 @@ func (x *MatchFieldQuery) String() string {
 func (*MatchFieldQuery) ProtoMessage() {}
 
 func (x *MatchFieldQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1159,6 +1171,7 @@ func (x *MatchLinkedFieldsQuery) String() string {
 func (*MatchLinkedFieldsQuery) ProtoMessage() {}
 
 func (x *MatchLinkedFieldsQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1204,6 +1217,7 @@ func (x *DocIDQuery) String() string {
 func (*DocIDQuery) ProtoMessage() {}
 
 func (x *DocIDQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1254,6 +1268,7 @@ func (x *BaseQuery) String() string {
 func (*BaseQuery) ProtoMessage() {}
 
 func (x *BaseQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1362,6 +1377,7 @@ func (x *ConjunctionQuery) String() string {
 func (*ConjunctionQuery) ProtoMessage() {}
 
 func (x *ConjunctionQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1406,6 +1422,7 @@ func (x *DisjunctionQuery) String() string {
 func (*DisjunctionQuery) ProtoMessage() {}
 
 func (x *DisjunctionQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1449,6 +1466,7 @@ func (x *MatchNoneQuery) String() string {
 func (*MatchNoneQuery) ProtoMessage() {}
 
 func (x *MatchNoneQuery) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1496,6 +1514,7 @@ func (x *SearchResult) String() string {
 func (*SearchResult) ProtoMessage() {}
 
 func (x *SearchResult) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1576,6 +1595,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1627,6 +1647,7 @@ func (x *SearchOptionsRequest) String() string {
 func (*SearchOptionsRequest) ProtoMessage() {}
 
 func (x *SearchOptionsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1671,6 +1692,7 @@ func (x *SearchOptionsResponse) String() string {
 func (*SearchOptionsResponse) ProtoMessage() {}
 
 func (x *SearchOptionsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1715,6 +1737,7 @@ func (x *AutocompleteResponse) String() string {
 func (*AutocompleteResponse) ProtoMessage() {}
 
 func (x *AutocompleteResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1759,6 +1782,7 @@ func (x *SearchResult_Matches) String() string {
 func (*SearchResult_Matches) ProtoMessage() {}
 
 func (x *SearchResult_Matches) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1804,6 +1828,7 @@ func (x *SearchResponse_Count) String() string {
 func (*SearchResponse_Count) ProtoMessage() {}
 
 func (x *SearchResponse_Count) ProtoReflect() protoreflect.Message {
+	file_api_v1_search_service_proto_init_ensure()
 	mi := &file_api_v1_search_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2128,9 +2153,11 @@ var file_api_v1_search_service_proto_depIdxs = []int32{
 	0,  // [0:30] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_search_service_proto_init() }
+var file_api_v1_search_service_proto_init_once sync.Once
+func file_api_v1_search_service_proto_init_ensure() { file_api_v1_search_service_proto_init_once.Do(file_api_v1_search_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_search_service_proto_init() {
-	if File_api_v1_search_service_proto != nil || skipProtoInit {
+	if File_api_v1_search_service_proto != nil {
 		return
 	}
 	file_api_v1_pagination_proto_init()

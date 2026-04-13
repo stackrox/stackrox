@@ -58,6 +58,7 @@ func (x *BuildDetectionRequest) String() string {
 func (*BuildDetectionRequest) ProtoMessage() {}
 
 func (x *BuildDetectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -178,6 +179,7 @@ func (x *BuildDetectionResponse) String() string {
 func (*BuildDetectionResponse) ProtoMessage() {}
 
 func (x *BuildDetectionResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -228,6 +230,7 @@ func (x *DeployDetectionRequest) String() string {
 func (*DeployDetectionRequest) ProtoMessage() {}
 
 func (x *DeployDetectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -319,6 +322,7 @@ func (x *DeployYAMLDetectionRequest) String() string {
 func (*DeployYAMLDetectionRequest) ProtoMessage() {}
 
 func (x *DeployYAMLDetectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -408,6 +412,7 @@ func (x *DeployDetectionResponse) String() string {
 func (*DeployDetectionResponse) ProtoMessage() {}
 
 func (x *DeployDetectionResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -468,6 +473,7 @@ func (x *DeployDetectionRemark) String() string {
 func (*DeployDetectionRemark) ProtoMessage() {}
 
 func (x *DeployDetectionRemark) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -528,6 +534,7 @@ func (x *ResultAggregation) String() string {
 func (*ResultAggregation) ProtoMessage() {}
 
 func (x *ResultAggregation) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -581,6 +588,7 @@ func (x *DeployDetectionResponse_Run) String() string {
 func (*DeployDetectionResponse_Run) ProtoMessage() {}
 
 func (x *DeployDetectionResponse_Run) ProtoReflect() protoreflect.Message {
+	file_api_v1_detection_service_proto_init_ensure()
 	mi := &file_api_v1_detection_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -724,9 +732,11 @@ var file_api_v1_detection_service_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_detection_service_proto_init() }
+var file_api_v1_detection_service_proto_init_once sync.Once
+func file_api_v1_detection_service_proto_init_ensure() { file_api_v1_detection_service_proto_init_once.Do(file_api_v1_detection_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_detection_service_proto_init() {
-	if File_api_v1_detection_service_proto != nil || skipProtoInit {
+	if File_api_v1_detection_service_proto != nil {
 		return
 	}
 	file_api_v1_detection_service_proto_msgTypes[0].OneofWrappers = []any{

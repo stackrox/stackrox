@@ -153,6 +153,7 @@ func (x *RequestComment) String() string {
 func (*RequestComment) ProtoMessage() {}
 
 func (x *RequestComment) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -229,6 +230,7 @@ func (x *RequestExpiry) String() string {
 func (*RequestExpiry) ProtoMessage() {}
 
 func (x *RequestExpiry) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -316,6 +318,7 @@ func (x *DeferralRequest) String() string {
 func (*DeferralRequest) ProtoMessage() {}
 
 func (x *DeferralRequest) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -359,6 +362,7 @@ func (x *FalsePositiveRequest) String() string {
 func (*FalsePositiveRequest) ProtoMessage() {}
 
 func (x *FalsePositiveRequest) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -397,6 +401,7 @@ func (x *DeferralUpdate) String() string {
 func (*DeferralUpdate) ProtoMessage() {}
 
 func (x *DeferralUpdate) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -448,6 +453,7 @@ func (x *FalsePositiveUpdate) String() string {
 func (*FalsePositiveUpdate) ProtoMessage() {}
 
 func (x *FalsePositiveUpdate) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -493,6 +499,7 @@ func (x *Requester) String() string {
 func (*Requester) ProtoMessage() {}
 
 func (x *Requester) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -545,6 +552,7 @@ func (x *Approver) String() string {
 func (*Approver) ProtoMessage() {}
 
 func (x *Approver) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -637,6 +645,7 @@ func (x *VulnerabilityRequest) String() string {
 func (*VulnerabilityRequest) ProtoMessage() {}
 
 func (x *VulnerabilityRequest) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -894,6 +903,7 @@ func (x *VulnerabilityRequest_CVEs) String() string {
 func (*VulnerabilityRequest_CVEs) ProtoMessage() {}
 
 func (x *VulnerabilityRequest_CVEs) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -942,6 +952,7 @@ func (x *VulnerabilityRequest_Scope) String() string {
 func (*VulnerabilityRequest_Scope) ProtoMessage() {}
 
 func (x *VulnerabilityRequest_Scope) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1027,6 +1038,7 @@ func (x *VulnerabilityRequest_Scope_Image) String() string {
 func (*VulnerabilityRequest_Scope_Image) ProtoMessage() {}
 
 func (x *VulnerabilityRequest_Scope_Image) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1084,6 +1096,7 @@ func (x *VulnerabilityRequest_Scope_Global) String() string {
 func (*VulnerabilityRequest_Scope_Global) ProtoMessage() {}
 
 func (x *VulnerabilityRequest_Scope_Global) ProtoReflect() protoreflect.Message {
+	file_storage_vuln_requests_proto_init_ensure()
 	mi := &file_storage_vuln_requests_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1251,9 +1264,11 @@ var file_storage_vuln_requests_proto_depIdxs = []int32{
 	0,  // [0:24] is the sub-list for field type_name
 }
 
-func init() { file_storage_vuln_requests_proto_init() }
+var file_storage_vuln_requests_proto_init_once sync.Once
+func file_storage_vuln_requests_proto_init_ensure() { file_storage_vuln_requests_proto_init_once.Do(file_storage_vuln_requests_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_vuln_requests_proto_init() {
-	if File_storage_vuln_requests_proto != nil || skipProtoInit {
+	if File_storage_vuln_requests_proto != nil {
 		return
 	}
 	file_storage_cve_proto_init()

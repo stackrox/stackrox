@@ -105,6 +105,7 @@ func (x *ComplianceRunSelection) String() string {
 func (*ComplianceRunSelection) ProtoMessage() {}
 
 func (x *ComplianceRunSelection) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -156,6 +157,7 @@ func (x *GetActiveComplianceRunsRequest) String() string {
 func (*GetActiveComplianceRunsRequest) ProtoMessage() {}
 
 func (x *GetActiveComplianceRunsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -200,6 +202,7 @@ func (x *GetActiveComplianceRunsResponse) String() string {
 func (*GetActiveComplianceRunsResponse) ProtoMessage() {}
 
 func (x *GetActiveComplianceRunsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -250,6 +253,7 @@ func (x *ComplianceRun) String() string {
 func (*ComplianceRun) ProtoMessage() {}
 
 func (x *ComplianceRun) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -344,6 +348,7 @@ func (x *GetRecentComplianceRunsRequest) String() string {
 func (*GetRecentComplianceRunsRequest) ProtoMessage() {}
 
 func (x *GetRecentComplianceRunsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -440,6 +445,7 @@ func (x *GetRecentComplianceRunsResponse) String() string {
 func (*GetRecentComplianceRunsResponse) ProtoMessage() {}
 
 func (x *GetRecentComplianceRunsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -485,6 +491,7 @@ func (x *TriggerComplianceRunRequest) String() string {
 func (*TriggerComplianceRunRequest) ProtoMessage() {}
 
 func (x *TriggerComplianceRunRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -536,6 +543,7 @@ func (x *TriggerComplianceRunResponse) String() string {
 func (*TriggerComplianceRunResponse) ProtoMessage() {}
 
 func (x *TriggerComplianceRunResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -580,6 +588,7 @@ func (x *TriggerComplianceRunsRequest) String() string {
 func (*TriggerComplianceRunsRequest) ProtoMessage() {}
 
 func (x *TriggerComplianceRunsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -624,6 +633,7 @@ func (x *TriggerComplianceRunsResponse) String() string {
 func (*TriggerComplianceRunsResponse) ProtoMessage() {}
 
 func (x *TriggerComplianceRunsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -669,6 +679,7 @@ func (x *GetComplianceRunStatusesRequest) String() string {
 func (*GetComplianceRunStatusesRequest) ProtoMessage() {}
 
 func (x *GetComplianceRunStatusesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -721,6 +732,7 @@ func (x *GetComplianceRunStatusesResponse) String() string {
 func (*GetComplianceRunStatusesResponse) ProtoMessage() {}
 
 func (x *GetComplianceRunStatusesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_compliance_management_service_proto_init_ensure()
 	mi := &file_api_v1_compliance_management_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -874,9 +886,11 @@ var file_api_v1_compliance_management_service_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_compliance_management_service_proto_init() }
+var file_api_v1_compliance_management_service_proto_init_once sync.Once
+func file_api_v1_compliance_management_service_proto_init_ensure() { file_api_v1_compliance_management_service_proto_init_once.Do(file_api_v1_compliance_management_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_compliance_management_service_proto_init() {
-	if File_api_v1_compliance_management_service_proto != nil || skipProtoInit {
+	if File_api_v1_compliance_management_service_proto != nil {
 		return
 	}
 	file_api_v1_compliance_management_service_proto_msgTypes[4].OneofWrappers = []any{

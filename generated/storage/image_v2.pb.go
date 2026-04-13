@@ -112,6 +112,7 @@ func (x *ImageV2) String() string {
 func (*ImageV2) ProtoMessage() {}
 
 func (x *ImageV2) ProtoReflect() protoreflect.Message {
+	file_storage_image_v2_proto_init_ensure()
 	mi := &file_storage_image_v2_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -268,6 +269,7 @@ func (x *ListImageV2) String() string {
 func (*ListImageV2) ProtoMessage() {}
 
 func (x *ListImageV2) ProtoReflect() protoreflect.Message {
+	file_storage_image_v2_proto_init_ensure()
 	mi := &file_storage_image_v2_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -386,6 +388,7 @@ func (x *ImageV2_ScanStats) String() string {
 func (*ImageV2_ScanStats) ProtoMessage() {}
 
 func (x *ImageV2_ScanStats) ProtoReflect() protoreflect.Message {
+	file_storage_image_v2_proto_init_ensure()
 	mi := &file_storage_image_v2_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -597,9 +600,11 @@ var file_storage_image_v2_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_storage_image_v2_proto_init() }
+var file_storage_image_v2_proto_init_once sync.Once
+func file_storage_image_v2_proto_init_ensure() { file_storage_image_v2_proto_init_once.Do(file_storage_image_v2_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_image_v2_proto_init() {
-	if File_storage_image_v2_proto != nil || skipProtoInit {
+	if File_storage_image_v2_proto != nil {
 		return
 	}
 	file_storage_image_proto_init()

@@ -44,6 +44,7 @@ func (x *GetReportConfigurationsResponse) String() string {
 func (*GetReportConfigurationsResponse) ProtoMessage() {}
 
 func (x *GetReportConfigurationsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_report_configuration_service_proto_init_ensure()
 	mi := &file_api_v1_report_configuration_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -88,6 +89,7 @@ func (x *GetReportConfigurationResponse) String() string {
 func (*GetReportConfigurationResponse) ProtoMessage() {}
 
 func (x *GetReportConfigurationResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_report_configuration_service_proto_init_ensure()
 	mi := &file_api_v1_report_configuration_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -132,6 +134,7 @@ func (x *PostReportConfigurationResponse) String() string {
 func (*PostReportConfigurationResponse) ProtoMessage() {}
 
 func (x *PostReportConfigurationResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_report_configuration_service_proto_init_ensure()
 	mi := &file_api_v1_report_configuration_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -176,6 +179,7 @@ func (x *PostReportConfigurationRequest) String() string {
 func (*PostReportConfigurationRequest) ProtoMessage() {}
 
 func (x *PostReportConfigurationRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_report_configuration_service_proto_init_ensure()
 	mi := &file_api_v1_report_configuration_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -221,6 +225,7 @@ func (x *UpdateReportConfigurationRequest) String() string {
 func (*UpdateReportConfigurationRequest) ProtoMessage() {}
 
 func (x *UpdateReportConfigurationRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_report_configuration_service_proto_init_ensure()
 	mi := &file_api_v1_report_configuration_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -272,6 +277,7 @@ func (x *CountReportConfigurationsResponse) String() string {
 func (*CountReportConfigurationsResponse) ProtoMessage() {}
 
 func (x *CountReportConfigurationsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_report_configuration_service_proto_init_ensure()
 	mi := &file_api_v1_report_configuration_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -372,9 +378,11 @@ var file_api_v1_report_configuration_service_proto_depIdxs = []int32{
 	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_report_configuration_service_proto_init() }
+var file_api_v1_report_configuration_service_proto_init_once sync.Once
+func file_api_v1_report_configuration_service_proto_init_ensure() { file_api_v1_report_configuration_service_proto_init_once.Do(file_api_v1_report_configuration_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_report_configuration_service_proto_init() {
-	if File_api_v1_report_configuration_service_proto != nil || skipProtoInit {
+	if File_api_v1_report_configuration_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

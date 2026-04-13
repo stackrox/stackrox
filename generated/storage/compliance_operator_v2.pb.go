@@ -521,6 +521,7 @@ func (x *ProfileShim) String() string {
 func (*ProfileShim) ProtoMessage() {}
 
 func (x *ProfileShim) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -590,6 +591,7 @@ func (x *ComplianceOperatorProfileV2) String() string {
 func (*ComplianceOperatorProfileV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorProfileV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -757,6 +759,7 @@ func (x *ComplianceOperatorRuleV2) String() string {
 func (*ComplianceOperatorRuleV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -924,6 +927,7 @@ func (x *RuleControls) String() string {
 func (*RuleControls) ProtoMessage() {}
 
 func (x *RuleControls) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1007,6 +1011,7 @@ func (x *ComplianceOperatorScanConfigurationV2) String() string {
 func (*ComplianceOperatorScanConfigurationV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1178,6 +1183,7 @@ func (x *ComplianceOperatorClusterScanConfigStatus) String() string {
 func (*ComplianceOperatorClusterScanConfigStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorClusterScanConfigStatus) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1266,6 +1272,7 @@ func (x *ComplianceOperatorBenchmarkV2) String() string {
 func (*ComplianceOperatorBenchmarkV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorBenchmarkV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1376,6 +1383,7 @@ func (x *ComplianceOperatorCheckResultV2) String() string {
 func (*ComplianceOperatorCheckResultV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorCheckResultV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1557,6 +1565,7 @@ func (x *ScanStatus) String() string {
 func (*ScanStatus) ProtoMessage() {}
 
 func (x *ScanStatus) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1634,6 +1643,7 @@ func (x *ComplianceOperatorScanV2) String() string {
 func (*ComplianceOperatorScanV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1799,6 +1809,7 @@ func (x *ComplianceOperatorScanSettingBindingV2) String() string {
 func (*ComplianceOperatorScanSettingBindingV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1898,6 +1909,7 @@ func (x *ComplianceOperatorCondition) String() string {
 func (*ComplianceOperatorCondition) ProtoMessage() {}
 
 func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1975,6 +1987,7 @@ func (x *ComplianceOperatorStatus) String() string {
 func (*ComplianceOperatorStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2045,6 +2058,7 @@ func (x *ComplianceOperatorSuiteV2) String() string {
 func (*ComplianceOperatorSuiteV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2124,6 +2138,7 @@ func (x *ComplianceOperatorRemediationV2) String() string {
 func (*ComplianceOperatorRemediationV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2226,6 +2241,7 @@ func (x *ComplianceOperatorReportSnapshotV2) String() string {
 func (*ComplianceOperatorReportSnapshotV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportSnapshotV2) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2329,6 +2345,7 @@ func (x *ComplianceOperatorReportData) String() string {
 func (*ComplianceOperatorReportData) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2393,6 +2410,7 @@ func (x *ComplianceOperatorReportStatus) String() string {
 func (*ComplianceOperatorReportStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportStatus) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2472,6 +2490,7 @@ func (x *ComplianceOperatorProfileV2_Rule) String() string {
 func (*ComplianceOperatorProfileV2_Rule) ProtoMessage() {}
 
 func (x *ComplianceOperatorProfileV2_Rule) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2517,6 +2536,7 @@ func (x *ComplianceOperatorRuleV2_Fix) String() string {
 func (*ComplianceOperatorRuleV2_Fix) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2_Fix) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2568,6 +2588,7 @@ func (x *ComplianceOperatorScanConfigurationV2_ProfileName) String() string {
 func (*ComplianceOperatorScanConfigurationV2_ProfileName) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileName) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2616,6 +2637,7 @@ func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) String() string
 func (*ComplianceOperatorScanConfigurationV2_ProfileReference) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2667,6 +2689,7 @@ func (x *ComplianceOperatorScanConfigurationV2_Cluster) String() string {
 func (*ComplianceOperatorScanConfigurationV2_Cluster) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2_Cluster) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2712,6 +2735,7 @@ func (x *ComplianceOperatorBenchmarkV2_Profile) String() string {
 func (*ComplianceOperatorBenchmarkV2_Profile) ProtoMessage() {}
 
 func (x *ComplianceOperatorBenchmarkV2_Profile) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2764,6 +2788,7 @@ func (x *ComplianceOperatorReportSnapshotV2_Scan) String() string {
 func (*ComplianceOperatorReportSnapshotV2_Scan) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportSnapshotV2_Scan) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2819,6 +2844,7 @@ func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) String() string {
 func (*ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2895,6 +2921,7 @@ func (x *ComplianceOperatorReportData_SuiteStatus) String() string {
 func (*ComplianceOperatorReportData_SuiteStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData_SuiteStatus) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2964,6 +2991,7 @@ func (x *ComplianceOperatorReportData_ClusterStatus) String() string {
 func (*ComplianceOperatorReportData_ClusterStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData_ClusterStatus) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_operator_v2_proto_init_ensure()
 	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3480,9 +3508,11 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	0,  // [0:61] is the sub-list for field type_name
 }
 
-func init() { file_storage_compliance_operator_v2_proto_init() }
+var file_storage_compliance_operator_v2_proto_init_once sync.Once
+func file_storage_compliance_operator_v2_proto_init_ensure() { file_storage_compliance_operator_v2_proto_init_once.Do(file_storage_compliance_operator_v2_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_compliance_operator_v2_proto_init() {
-	if File_storage_compliance_operator_v2_proto != nil || skipProtoInit {
+	if File_storage_compliance_operator_v2_proto != nil {
 		return
 	}
 	file_storage_report_notifier_configuration_proto_init()

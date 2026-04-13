@@ -100,6 +100,7 @@ func (x *GetImageRequest) String() string {
 func (*GetImageRequest) ProtoMessage() {}
 
 func (x *GetImageRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -158,6 +159,7 @@ func (x *ListImagesResponse) String() string {
 func (*ListImagesResponse) ProtoMessage() {}
 
 func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -202,6 +204,7 @@ func (x *CountImagesResponse) String() string {
 func (*CountImagesResponse) ProtoMessage() {}
 
 func (x *CountImagesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -254,6 +257,7 @@ func (x *ScanImageRequest) String() string {
 func (*ScanImageRequest) ProtoMessage() {}
 
 func (x *ScanImageRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -328,6 +332,7 @@ func (x *ScanImageInternalRequest) String() string {
 func (*ScanImageInternalRequest) ProtoMessage() {}
 
 func (x *ScanImageInternalRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -386,6 +391,7 @@ func (x *ScanImageInternalResponse) String() string {
 func (*ScanImageInternalResponse) ProtoMessage() {}
 
 func (x *ScanImageInternalResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -435,6 +441,7 @@ func (x *GetImageVulnerabilitiesInternalRequest) String() string {
 func (*GetImageVulnerabilitiesInternalRequest) ProtoMessage() {}
 
 func (x *GetImageVulnerabilitiesInternalRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -525,6 +532,7 @@ func (x *EnrichLocalImageInternalRequest) String() string {
 func (*EnrichLocalImageInternalRequest) ProtoMessage() {}
 
 func (x *EnrichLocalImageInternalRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -647,6 +655,7 @@ func (x *UpdateLocalScanStatusInternalRequest) String() string {
 func (*UpdateLocalScanStatusInternalRequest) ProtoMessage() {}
 
 func (x *UpdateLocalScanStatusInternalRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -699,6 +708,7 @@ func (x *DeleteImagesRequest) String() string {
 func (*DeleteImagesRequest) ProtoMessage() {}
 
 func (x *DeleteImagesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -751,6 +761,7 @@ func (x *DeleteImagesResponse) String() string {
 func (*DeleteImagesResponse) ProtoMessage() {}
 
 func (x *DeleteImagesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -805,6 +816,7 @@ func (x *WatchImageRequest) String() string {
 func (*WatchImageRequest) ProtoMessage() {}
 
 func (x *WatchImageRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -855,6 +867,7 @@ func (x *WatchImageResponse) String() string {
 func (*WatchImageResponse) ProtoMessage() {}
 
 func (x *WatchImageResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -915,6 +928,7 @@ func (x *UnwatchImageRequest) String() string {
 func (*UnwatchImageRequest) ProtoMessage() {}
 
 func (x *UnwatchImageRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -959,6 +973,7 @@ func (x *GetWatchedImagesResponse) String() string {
 func (*GetWatchedImagesResponse) ProtoMessage() {}
 
 func (x *GetWatchedImagesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1004,6 +1019,7 @@ func (x *ScanImageInternalResponseDetails) String() string {
 func (*ScanImageInternalResponseDetails) ProtoMessage() {}
 
 func (x *ScanImageInternalResponseDetails) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1042,6 +1058,7 @@ func (x *ExportImageRequest) String() string {
 func (*ExportImageRequest) ProtoMessage() {}
 
 func (x *ExportImageRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1093,6 +1110,7 @@ func (x *ExportImageResponse) String() string {
 func (*ExportImageResponse) ProtoMessage() {}
 
 func (x *ExportImageResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1139,6 +1157,7 @@ func (x *ScanImageInternalRequest_Source) String() string {
 func (*ScanImageInternalRequest_Source) ProtoMessage() {}
 
 func (x *ScanImageInternalRequest_Source) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1198,6 +1217,7 @@ func (x *ScanImageInternalResponseDetails_TooManyParallelScans) String() string 
 func (*ScanImageInternalResponseDetails_TooManyParallelScans) ProtoMessage() {}
 
 func (x *ScanImageInternalResponseDetails_TooManyParallelScans) ProtoReflect() protoreflect.Message {
+	file_api_v1_image_service_proto_init_ensure()
 	mi := &file_api_v1_image_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1436,9 +1456,11 @@ var file_api_v1_image_service_proto_depIdxs = []int32{
 	0,  // [0:19] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_image_service_proto_init() }
+var file_api_v1_image_service_proto_init_once sync.Once
+func file_api_v1_image_service_proto_init_ensure() { file_api_v1_image_service_proto_init_once.Do(file_api_v1_image_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_image_service_proto_init() {
-	if File_api_v1_image_service_proto != nil || skipProtoInit {
+	if File_api_v1_image_service_proto != nil {
 		return
 	}
 	file_api_v1_empty_proto_init()

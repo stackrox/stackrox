@@ -43,6 +43,7 @@ func (x *NetworkBaselineSync) String() string {
 func (*NetworkBaselineSync) ProtoMessage() {}
 
 func (x *NetworkBaselineSync) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_network_baseline_sync_proto_init_ensure()
 	mi := &file_internalapi_central_network_baseline_sync_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -100,9 +101,11 @@ var file_internalapi_central_network_baseline_sync_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_network_baseline_sync_proto_init() }
+var file_internalapi_central_network_baseline_sync_proto_init_once sync.Once
+func file_internalapi_central_network_baseline_sync_proto_init_ensure() { file_internalapi_central_network_baseline_sync_proto_init_once.Do(file_internalapi_central_network_baseline_sync_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_network_baseline_sync_proto_init() {
-	if File_internalapi_central_network_baseline_sync_proto != nil || skipProtoInit {
+	if File_internalapi_central_network_baseline_sync_proto != nil {
 		return
 	}
 	type x struct{}

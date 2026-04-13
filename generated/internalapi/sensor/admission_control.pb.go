@@ -52,6 +52,7 @@ func (x *AdmissionControlSettings) String() string {
 func (*AdmissionControlSettings) ProtoMessage() {}
 
 func (x *AdmissionControlSettings) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_admission_control_proto_init_ensure()
 	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -146,6 +147,7 @@ func (x *ClusterLabels) String() string {
 func (*ClusterLabels) ProtoMessage() {}
 
 func (x *ClusterLabels) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_admission_control_proto_init_ensure()
 	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -190,6 +192,7 @@ func (x *AdmissionControlAlerts) String() string {
 func (*AdmissionControlAlerts) ProtoMessage() {}
 
 func (x *AdmissionControlAlerts) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_admission_control_proto_init_ensure()
 	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -242,6 +245,7 @@ func (x *AdmCtrlUpdateResourceRequest) String() string {
 func (*AdmCtrlUpdateResourceRequest) ProtoMessage() {}
 
 func (x *AdmCtrlUpdateResourceRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_admission_control_proto_init_ensure()
 	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -375,6 +379,7 @@ func (x *AdmCtrlImageCacheInvalidation) String() string {
 func (*AdmCtrlImageCacheInvalidation) ProtoMessage() {}
 
 func (x *AdmCtrlImageCacheInvalidation) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_admission_control_proto_init_ensure()
 	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -418,6 +423,7 @@ func (x *AdmCtrlUpdateResourceRequest_ResourcesSynced) String() string {
 func (*AdmCtrlUpdateResourceRequest_ResourcesSynced) ProtoMessage() {}
 
 func (x *AdmCtrlUpdateResourceRequest_ResourcesSynced) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_admission_control_proto_init_ensure()
 	mi := &file_internalapi_sensor_admission_control_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -524,9 +530,11 @@ var file_internalapi_sensor_admission_control_proto_depIdxs = []int32{
 	0,  // [0:13] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_admission_control_proto_init() }
+var file_internalapi_sensor_admission_control_proto_init_once sync.Once
+func file_internalapi_sensor_admission_control_proto_init_ensure() { file_internalapi_sensor_admission_control_proto_init_once.Do(file_internalapi_sensor_admission_control_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_admission_control_proto_init() {
-	if File_internalapi_sensor_admission_control_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_admission_control_proto != nil {
 		return
 	}
 	file_internalapi_sensor_admission_control_proto_msgTypes[3].OneofWrappers = []any{

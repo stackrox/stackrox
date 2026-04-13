@@ -95,6 +95,7 @@ func (x *GetLogLevelRequest) String() string {
 func (*GetLogLevelRequest) ProtoMessage() {}
 
 func (x *GetLogLevelRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,6 +141,7 @@ func (x *LogLevelRequest) String() string {
 func (*LogLevelRequest) ProtoMessage() {}
 
 func (x *LogLevelRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -192,6 +194,7 @@ func (x *ModuleLevel) String() string {
 func (*ModuleLevel) ProtoMessage() {}
 
 func (x *ModuleLevel) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -244,6 +247,7 @@ func (x *LogLevelResponse) String() string {
 func (*LogLevelResponse) ProtoMessage() {}
 
 func (x *LogLevelResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -300,6 +304,7 @@ func (x *AuthorizationTraceResponse) String() string {
 func (*AuthorizationTraceResponse) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -380,6 +385,7 @@ func (x *AuthorizationTraceResponse_Request) String() string {
 func (*AuthorizationTraceResponse_Request) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse_Request) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -432,6 +438,7 @@ func (x *AuthorizationTraceResponse_Response) String() string {
 func (*AuthorizationTraceResponse_Response) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse_Response) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -486,6 +493,7 @@ func (x *AuthorizationTraceResponse_User) String() string {
 func (*AuthorizationTraceResponse_User) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse_User) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -555,6 +563,7 @@ func (x *AuthorizationTraceResponse_Trace) String() string {
 func (*AuthorizationTraceResponse_Trace) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse_Trace) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -628,6 +637,7 @@ func (x *AuthorizationTraceResponse_User_Role) String() string {
 func (*AuthorizationTraceResponse_User_Role) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse_User_Role) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -697,6 +707,7 @@ func (x *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) String() string {
 func (*AuthorizationTraceResponse_Trace_BuiltInAuthorizer) ProtoMessage() {}
 
 func (x *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) ProtoReflect() protoreflect.Message {
+	file_api_v1_debug_service_proto_init_ensure()
 	mi := &file_api_v1_debug_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -897,9 +908,11 @@ var file_api_v1_debug_service_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_debug_service_proto_init() }
+var file_api_v1_debug_service_proto_init_once sync.Once
+func file_api_v1_debug_service_proto_init_ensure() { file_api_v1_debug_service_proto_init_once.Do(file_api_v1_debug_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_debug_service_proto_init() {
-	if File_api_v1_debug_service_proto != nil || skipProtoInit {
+	if File_api_v1_debug_service_proto != nil {
 		return
 	}
 	file_api_v1_empty_proto_init()

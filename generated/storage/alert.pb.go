@@ -8,10 +8,10 @@ package storage
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	"sync"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -357,6 +357,7 @@ func (x *Alert) String() string {
 func (*Alert) ProtoMessage() {}
 
 func (x *Alert) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -600,6 +601,7 @@ func (x *ListAlert) String() string {
 func (*ListAlert) ProtoMessage() {}
 
 func (x *ListAlert) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -761,6 +763,7 @@ func (x *ListAlertPolicy) String() string {
 func (*ListAlertPolicy) ProtoMessage() {}
 
 func (x *ListAlertPolicy) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -859,6 +862,7 @@ func (x *ListAlertDeployment) String() string {
 func (*ListAlertDeployment) ProtoMessage() {}
 
 func (x *ListAlertDeployment) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -966,6 +970,7 @@ func (x *Alert_Deployment) String() string {
 func (*Alert_Deployment) ProtoMessage() {}
 
 func (x *Alert_Deployment) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1086,6 +1091,7 @@ func (x *Alert_Resource) String() string {
 func (*Alert_Resource) ProtoMessage() {}
 
 func (x *Alert_Resource) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1168,6 +1174,7 @@ func (x *Alert_Node) String() string {
 func (*Alert_Node) ProtoMessage() {}
 
 func (x *Alert_Node) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1245,6 +1252,7 @@ func (x *Alert_Violation) String() string {
 func (*Alert_Violation) ProtoMessage() {}
 
 func (x *Alert_Violation) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1360,6 +1368,7 @@ func (x *Alert_ProcessViolation) String() string {
 func (*Alert_ProcessViolation) ProtoMessage() {}
 
 func (x *Alert_ProcessViolation) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1412,6 +1421,7 @@ func (x *Alert_Enforcement) String() string {
 func (*Alert_Enforcement) ProtoMessage() {}
 
 func (x *Alert_Enforcement) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1464,6 +1474,7 @@ func (x *Alert_Deployment_Container) String() string {
 func (*Alert_Deployment_Container) ProtoMessage() {}
 
 func (x *Alert_Deployment_Container) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1515,6 +1526,7 @@ func (x *Alert_Violation_KeyValueAttrs) String() string {
 func (*Alert_Violation_KeyValueAttrs) ProtoMessage() {}
 
 func (x *Alert_Violation_KeyValueAttrs) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1561,6 +1573,7 @@ func (x *Alert_Violation_NetworkFlowInfo) String() string {
 func (*Alert_Violation_NetworkFlowInfo) ProtoMessage() {}
 
 func (x *Alert_Violation_NetworkFlowInfo) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1620,6 +1633,7 @@ func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) String() string {
 func (*Alert_Violation_KeyValueAttrs_KeyValueAttr) ProtoMessage() {}
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1675,6 +1689,7 @@ func (x *Alert_Violation_NetworkFlowInfo_Entity) String() string {
 func (*Alert_Violation_NetworkFlowInfo_Entity) ProtoMessage() {}
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1752,6 +1767,7 @@ func (x *ListAlert_CommonEntityInfo) String() string {
 func (*ListAlert_CommonEntityInfo) ProtoMessage() {}
 
 func (x *ListAlert_CommonEntityInfo) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1824,6 +1840,7 @@ func (x *ListAlert_ResourceEntity) String() string {
 func (*ListAlert_ResourceEntity) ProtoMessage() {}
 
 func (x *ListAlert_ResourceEntity) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1868,6 +1885,7 @@ func (x *ListAlert_NodeEntity) String() string {
 func (*ListAlert_NodeEntity) ProtoMessage() {}
 
 func (x *ListAlert_NodeEntity) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1912,6 +1930,7 @@ func (x *ListAlertPolicy_DevFields) String() string {
 func (*ListAlertPolicy_DevFields) ProtoMessage() {}
 
 func (x *ListAlertPolicy_DevFields) ProtoReflect() protoreflect.Message {
+	file_storage_alert_proto_init_ensure()
 	mi := &file_storage_alert_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2236,9 +2255,11 @@ var file_storage_alert_proto_depIdxs = []int32{
 	0,  // [0:43] is the sub-list for field type_name
 }
 
-func init() { file_storage_alert_proto_init() }
+var file_storage_alert_proto_init_once sync.Once
+func file_storage_alert_proto_init_ensure() { file_storage_alert_proto_init_once.Do(file_storage_alert_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_alert_proto_init() {
-	if File_storage_alert_proto != nil || skipProtoInit {
+	if File_storage_alert_proto != nil {
 		return
 	}
 	file_storage_deployment_proto_init()

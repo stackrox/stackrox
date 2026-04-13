@@ -98,6 +98,7 @@ func (x *GetCertExpiry) String() string {
 func (*GetCertExpiry) ProtoMessage() {}
 
 func (x *GetCertExpiry) ProtoReflect() protoreflect.Message {
+	file_api_v1_credential_expiry_service_proto_init_ensure()
 	mi := &file_api_v1_credential_expiry_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -135,6 +136,7 @@ func (x *GetCertExpiry_Request) String() string {
 func (*GetCertExpiry_Request) ProtoMessage() {}
 
 func (x *GetCertExpiry_Request) ProtoReflect() protoreflect.Message {
+	file_api_v1_credential_expiry_service_proto_init_ensure()
 	mi := &file_api_v1_credential_expiry_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -179,6 +181,7 @@ func (x *GetCertExpiry_Response) String() string {
 func (*GetCertExpiry_Response) ProtoMessage() {}
 
 func (x *GetCertExpiry_Response) ProtoReflect() protoreflect.Message {
+	file_api_v1_credential_expiry_service_proto_init_ensure()
 	mi := &file_api_v1_credential_expiry_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -257,9 +260,11 @@ var file_api_v1_credential_expiry_service_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_credential_expiry_service_proto_init() }
+var file_api_v1_credential_expiry_service_proto_init_once sync.Once
+func file_api_v1_credential_expiry_service_proto_init_ensure() { file_api_v1_credential_expiry_service_proto_init_once.Do(file_api_v1_credential_expiry_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_credential_expiry_service_proto_init() {
-	if File_api_v1_credential_expiry_service_proto != nil || skipProtoInit {
+	if File_api_v1_credential_expiry_service_proto != nil {
 		return
 	}
 	type x struct{}

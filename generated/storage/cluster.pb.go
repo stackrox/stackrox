@@ -529,6 +529,7 @@ func (x *ClusterMetadata) String() string {
 func (*ClusterMetadata) ProtoMessage() {}
 
 func (x *ClusterMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -591,6 +592,7 @@ func (x *GoogleProviderMetadata) String() string {
 func (*GoogleProviderMetadata) ProtoMessage() {}
 
 func (x *GoogleProviderMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -643,6 +645,7 @@ func (x *AWSProviderMetadata) String() string {
 func (*AWSProviderMetadata) ProtoMessage() {}
 
 func (x *AWSProviderMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -687,6 +690,7 @@ func (x *AzureProviderMetadata) String() string {
 func (*AzureProviderMetadata) ProtoMessage() {}
 
 func (x *AzureProviderMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -740,6 +744,7 @@ func (x *ProviderMetadata) String() string {
 func (*ProviderMetadata) ProtoMessage() {}
 
 func (x *ProviderMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -867,6 +872,7 @@ func (x *OrchestratorMetadata) String() string {
 func (*OrchestratorMetadata) ProtoMessage() {}
 
 func (x *OrchestratorMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -955,6 +961,7 @@ func (x *AdmissionControllerConfig) String() string {
 func (*AdmissionControllerConfig) ProtoMessage() {}
 
 func (x *AdmissionControllerConfig) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1027,6 +1034,7 @@ func (x *TolerationsConfig) String() string {
 func (*TolerationsConfig) ProtoMessage() {}
 
 func (x *TolerationsConfig) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1082,6 +1090,7 @@ func (x *StaticClusterConfig) String() string {
 func (*StaticClusterConfig) ProtoMessage() {}
 
 func (x *StaticClusterConfig) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1198,6 +1207,7 @@ func (x *AutoLockProcessBaselinesConfig) String() string {
 func (*AutoLockProcessBaselinesConfig) ProtoMessage() {}
 
 func (x *AutoLockProcessBaselinesConfig) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1246,6 +1256,7 @@ func (x *DynamicClusterConfig) String() string {
 func (*DynamicClusterConfig) ProtoMessage() {}
 
 func (x *DynamicClusterConfig) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1316,6 +1327,7 @@ func (x *CompleteClusterConfig) String() string {
 func (*CompleteClusterConfig) ProtoMessage() {}
 
 func (x *CompleteClusterConfig) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1389,6 +1401,7 @@ func (x *SensorDeploymentIdentification) String() string {
 func (*SensorDeploymentIdentification) ProtoMessage() {}
 
 func (x *SensorDeploymentIdentification) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1497,6 +1510,7 @@ func (x *Cluster) String() string {
 func (*Cluster) ProtoMessage() {}
 
 func (x *Cluster) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1711,6 +1725,7 @@ func (x *ClusterCertExpiryStatus) String() string {
 func (*ClusterCertExpiryStatus) ProtoMessage() {}
 
 func (x *ClusterCertExpiryStatus) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1768,6 +1783,7 @@ func (x *ClusterStatus) String() string {
 func (*ClusterStatus) ProtoMessage() {}
 
 func (x *ClusterStatus) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1853,6 +1869,7 @@ func (x *ClusterUpgradeStatus) String() string {
 func (*ClusterUpgradeStatus) ProtoMessage() {}
 
 func (x *ClusterUpgradeStatus) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1913,6 +1930,7 @@ func (x *UpgradeProgress) String() string {
 func (*UpgradeProgress) ProtoMessage() {}
 
 func (x *UpgradeProgress) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1974,6 +1992,7 @@ func (x *AuditLogFileState) String() string {
 func (*AuditLogFileState) ProtoMessage() {}
 
 func (x *AuditLogFileState) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2047,6 +2066,7 @@ func (x *ClusterHealthStatus) String() string {
 func (*ClusterHealthStatus) ProtoMessage() {}
 
 func (x *ClusterHealthStatus) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2179,6 +2199,7 @@ func (x *CollectorHealthInfo) String() string {
 func (*CollectorHealthInfo) ProtoMessage() {}
 
 func (x *CollectorHealthInfo) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2321,6 +2342,7 @@ func (x *AdmissionControlHealthInfo) String() string {
 func (*AdmissionControlHealthInfo) ProtoMessage() {}
 
 func (x *AdmissionControlHealthInfo) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2441,6 +2463,7 @@ func (x *ScannerHealthInfo) String() string {
 func (*ScannerHealthInfo) ProtoMessage() {}
 
 func (x *ScannerHealthInfo) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2596,6 +2619,7 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) String() string {
 func (*ClusterUpgradeStatus_UpgradeProcessStatus) ProtoMessage() {}
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ProtoReflect() protoreflect.Message {
+	file_storage_cluster_proto_init_ensure()
 	mi := &file_storage_cluster_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3012,9 +3036,11 @@ var file_storage_cluster_proto_depIdxs = []int32{
 	0,  // [0:50] is the sub-list for field type_name
 }
 
-func init() { file_storage_cluster_proto_init() }
+var file_storage_cluster_proto_init_once sync.Once
+func file_storage_cluster_proto_init_ensure() { file_storage_cluster_proto_init_once.Do(file_storage_cluster_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_cluster_proto_init() {
-	if File_storage_cluster_proto != nil || skipProtoInit {
+	if File_storage_cluster_proto != nil {
 		return
 	}
 	file_storage_cluster_proto_msgTypes[4].OneofWrappers = []any{

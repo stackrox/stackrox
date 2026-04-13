@@ -44,6 +44,7 @@ func (x *MitreTactic) String() string {
 func (*MitreTactic) ProtoMessage() {}
 
 func (x *MitreTactic) ProtoReflect() protoreflect.Message {
+	file_storage_mitre_proto_init_ensure()
 	mi := &file_storage_mitre_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -104,6 +105,7 @@ func (x *MitreTechnique) String() string {
 func (*MitreTechnique) ProtoMessage() {}
 
 func (x *MitreTechnique) ProtoReflect() protoreflect.Message {
+	file_storage_mitre_proto_init_ensure()
 	mi := &file_storage_mitre_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -163,6 +165,7 @@ func (x *MitreAttackVector) String() string {
 func (*MitreAttackVector) ProtoMessage() {}
 
 func (x *MitreAttackVector) ProtoReflect() protoreflect.Message {
+	file_storage_mitre_proto_init_ensure()
 	mi := &file_storage_mitre_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -215,6 +218,7 @@ func (x *MitreAttackMatrix) String() string {
 func (*MitreAttackMatrix) ProtoMessage() {}
 
 func (x *MitreAttackMatrix) ProtoReflect() protoreflect.Message {
+	file_storage_mitre_proto_init_ensure()
 	mi := &file_storage_mitre_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -267,6 +271,7 @@ func (x *MitreAttackBundle) String() string {
 func (*MitreAttackBundle) ProtoMessage() {}
 
 func (x *MitreAttackBundle) ProtoReflect() protoreflect.Message {
+	file_storage_mitre_proto_init_ensure()
 	mi := &file_storage_mitre_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -319,6 +324,7 @@ func (x *MitreAttackMatrix_MatrixInfo) String() string {
 func (*MitreAttackMatrix_MatrixInfo) ProtoMessage() {}
 
 func (x *MitreAttackMatrix_MatrixInfo) ProtoReflect() protoreflect.Message {
+	file_storage_mitre_proto_init_ensure()
 	mi := &file_storage_mitre_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -414,9 +420,11 @@ var file_storage_mitre_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_storage_mitre_proto_init() }
+var file_storage_mitre_proto_init_once sync.Once
+func file_storage_mitre_proto_init_ensure() { file_storage_mitre_proto_init_once.Do(file_storage_mitre_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_mitre_proto_init() {
-	if File_storage_mitre_proto != nil || skipProtoInit {
+	if File_storage_mitre_proto != nil {
 		return
 	}
 	type x struct{}

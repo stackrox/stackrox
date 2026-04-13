@@ -47,6 +47,7 @@ func (x *MsgFromCollector) String() string {
 func (*MsgFromCollector) ProtoMessage() {}
 
 func (x *MsgFromCollector) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_iservice_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -144,6 +145,7 @@ func (x *MsgToCollector) String() string {
 func (*MsgToCollector) ProtoMessage() {}
 
 func (x *MsgToCollector) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_iservice_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_iservice_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -256,9 +258,11 @@ var file_internalapi_sensor_collector_iservice_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_collector_iservice_proto_init() }
+var file_internalapi_sensor_collector_iservice_proto_init_once sync.Once
+func file_internalapi_sensor_collector_iservice_proto_init_ensure() { file_internalapi_sensor_collector_iservice_proto_init_once.Do(file_internalapi_sensor_collector_iservice_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_collector_iservice_proto_init() {
-	if File_internalapi_sensor_collector_iservice_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_collector_iservice_proto != nil {
 		return
 	}
 	file_internalapi_sensor_collector_proto_init()

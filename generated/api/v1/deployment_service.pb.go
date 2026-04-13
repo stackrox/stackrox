@@ -45,6 +45,7 @@ func (x *DeploymentLabelsResponse) String() string {
 func (*DeploymentLabelsResponse) ProtoMessage() {}
 
 func (x *DeploymentLabelsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -96,6 +97,7 @@ func (x *ListDeploymentsResponse) String() string {
 func (*ListDeploymentsResponse) ProtoMessage() {}
 
 func (x *ListDeploymentsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,6 +142,7 @@ func (x *CountDeploymentsResponse) String() string {
 func (*CountDeploymentsResponse) ProtoMessage() {}
 
 func (x *CountDeploymentsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,6 +187,7 @@ func (x *ListDeploymentsWithProcessInfoResponse) String() string {
 func (*ListDeploymentsWithProcessInfoResponse) ProtoMessage() {}
 
 func (x *ListDeploymentsWithProcessInfoResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -229,6 +233,7 @@ func (x *GetDeploymentWithRiskResponse) String() string {
 func (*GetDeploymentWithRiskResponse) ProtoMessage() {}
 
 func (x *GetDeploymentWithRiskResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -281,6 +286,7 @@ func (x *ExportDeploymentRequest) String() string {
 func (*ExportDeploymentRequest) ProtoMessage() {}
 
 func (x *ExportDeploymentRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -332,6 +338,7 @@ func (x *ExportDeploymentResponse) String() string {
 func (*ExportDeploymentResponse) ProtoMessage() {}
 
 func (x *ExportDeploymentResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -376,6 +383,7 @@ func (x *DeploymentLabelsResponse_LabelValues) String() string {
 func (*DeploymentLabelsResponse_LabelValues) ProtoMessage() {}
 
 func (x *DeploymentLabelsResponse_LabelValues) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -421,6 +429,7 @@ func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Strin
 func (*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) ProtoMessage() {}
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) ProtoReflect() protoreflect.Message {
+	file_api_v1_deployment_service_proto_init_ensure()
 	mi := &file_api_v1_deployment_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -560,9 +569,11 @@ var file_api_v1_deployment_service_proto_depIdxs = []int32{
 	0,  // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_deployment_service_proto_init() }
+var file_api_v1_deployment_service_proto_init_once sync.Once
+func file_api_v1_deployment_service_proto_init_ensure() { file_api_v1_deployment_service_proto_init_once.Do(file_api_v1_deployment_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_deployment_service_proto_init() {
-	if File_api_v1_deployment_service_proto != nil || skipProtoInit {
+	if File_api_v1_deployment_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

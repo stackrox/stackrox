@@ -99,6 +99,7 @@ func (x *VirtualMachine) String() string {
 func (*VirtualMachine) ProtoMessage() {}
 
 func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
+	file_internalapi_virtualmachine_v1_virtual_machine_proto_init_ensure()
 	mi := &file_internalapi_virtualmachine_v1_virtual_machine_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -224,9 +225,11 @@ var file_internalapi_virtualmachine_v1_virtual_machine_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_virtualmachine_v1_virtual_machine_proto_init() }
+var file_internalapi_virtualmachine_v1_virtual_machine_proto_init_once sync.Once
+func file_internalapi_virtualmachine_v1_virtual_machine_proto_init_ensure() { file_internalapi_virtualmachine_v1_virtual_machine_proto_init_once.Do(file_internalapi_virtualmachine_v1_virtual_machine_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_virtualmachine_v1_virtual_machine_proto_init() {
-	if File_internalapi_virtualmachine_v1_virtual_machine_proto != nil || skipProtoInit {
+	if File_internalapi_virtualmachine_v1_virtual_machine_proto != nil {
 		return
 	}
 	type x struct{}

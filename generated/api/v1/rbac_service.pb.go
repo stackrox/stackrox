@@ -46,6 +46,7 @@ func (x *ListRolesResponse) String() string {
 func (*ListRolesResponse) ProtoMessage() {}
 
 func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -90,6 +91,7 @@ func (x *GetRoleResponse) String() string {
 func (*GetRoleResponse) ProtoMessage() {}
 
 func (x *GetRoleResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -136,6 +138,7 @@ func (x *ListRoleBindingsResponse) String() string {
 func (*ListRoleBindingsResponse) ProtoMessage() {}
 
 func (x *ListRoleBindingsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -180,6 +183,7 @@ func (x *GetRoleBindingResponse) String() string {
 func (*GetRoleBindingResponse) ProtoMessage() {}
 
 func (x *GetRoleBindingResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,6 +230,7 @@ func (x *ListSubjectsResponse) String() string {
 func (*ListSubjectsResponse) ProtoMessage() {}
 
 func (x *ListSubjectsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -271,6 +276,7 @@ func (x *SubjectAndRoles) String() string {
 func (*SubjectAndRoles) ProtoMessage() {}
 
 func (x *SubjectAndRoles) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -324,6 +330,7 @@ func (x *GetSubjectResponse) String() string {
 func (*GetSubjectResponse) ProtoMessage() {}
 
 func (x *GetSubjectResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -383,6 +390,7 @@ func (x *ScopedRoles) String() string {
 func (*ScopedRoles) ProtoMessage() {}
 
 func (x *ScopedRoles) ProtoReflect() protoreflect.Message {
+	file_api_v1_rbac_service_proto_init_ensure()
 	mi := &file_api_v1_rbac_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -507,9 +515,11 @@ var file_api_v1_rbac_service_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_rbac_service_proto_init() }
+var file_api_v1_rbac_service_proto_init_once sync.Once
+func file_api_v1_rbac_service_proto_init_ensure() { file_api_v1_rbac_service_proto_init_once.Do(file_api_v1_rbac_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_rbac_service_proto_init() {
-	if File_api_v1_rbac_service_proto != nil || skipProtoInit {
+	if File_api_v1_rbac_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

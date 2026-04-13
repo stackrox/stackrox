@@ -44,6 +44,7 @@ func (x *DeploymentEnhancementMessage) String() string {
 func (*DeploymentEnhancementMessage) ProtoMessage() {}
 
 func (x *DeploymentEnhancementMessage) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_deployment_enhancement_proto_init_ensure()
 	mi := &file_internalapi_central_deployment_enhancement_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -95,6 +96,7 @@ func (x *DeploymentEnhancementRequest) String() string {
 func (*DeploymentEnhancementRequest) ProtoMessage() {}
 
 func (x *DeploymentEnhancementRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_deployment_enhancement_proto_init_ensure()
 	mi := &file_internalapi_central_deployment_enhancement_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -139,6 +141,7 @@ func (x *DeploymentEnhancementResponse) String() string {
 func (*DeploymentEnhancementResponse) ProtoMessage() {}
 
 func (x *DeploymentEnhancementResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_deployment_enhancement_proto_init_ensure()
 	mi := &file_internalapi_central_deployment_enhancement_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -205,9 +208,11 @@ var file_internalapi_central_deployment_enhancement_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_deployment_enhancement_proto_init() }
+var file_internalapi_central_deployment_enhancement_proto_init_once sync.Once
+func file_internalapi_central_deployment_enhancement_proto_init_ensure() { file_internalapi_central_deployment_enhancement_proto_init_once.Do(file_internalapi_central_deployment_enhancement_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_deployment_enhancement_proto_init() {
-	if File_internalapi_central_deployment_enhancement_proto != nil || skipProtoInit {
+	if File_internalapi_central_deployment_enhancement_proto != nil {
 		return
 	}
 	type x struct{}

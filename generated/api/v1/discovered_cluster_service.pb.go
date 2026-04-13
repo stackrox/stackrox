@@ -223,6 +223,7 @@ func (x *DiscoveredCluster) String() string {
 func (*DiscoveredCluster) ProtoMessage() {}
 
 func (x *DiscoveredCluster) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -295,6 +296,7 @@ func (x *DiscoveredClustersFilter) String() string {
 func (*DiscoveredClustersFilter) ProtoMessage() {}
 
 func (x *DiscoveredClustersFilter) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -361,6 +363,7 @@ func (x *CountDiscoveredClustersRequest) String() string {
 func (*CountDiscoveredClustersRequest) ProtoMessage() {}
 
 func (x *CountDiscoveredClustersRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -405,6 +408,7 @@ func (x *CountDiscoveredClustersResponse) String() string {
 func (*CountDiscoveredClustersResponse) ProtoMessage() {}
 
 func (x *CountDiscoveredClustersResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -449,6 +453,7 @@ func (x *GetDiscoveredClusterRequest) String() string {
 func (*GetDiscoveredClusterRequest) ProtoMessage() {}
 
 func (x *GetDiscoveredClusterRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -493,6 +498,7 @@ func (x *GetDiscoveredClusterResponse) String() string {
 func (*GetDiscoveredClusterResponse) ProtoMessage() {}
 
 func (x *GetDiscoveredClusterResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -540,6 +546,7 @@ func (x *ListDiscoveredClustersRequest) String() string {
 func (*ListDiscoveredClustersRequest) ProtoMessage() {}
 
 func (x *ListDiscoveredClustersRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -591,6 +598,7 @@ func (x *ListDiscoveredClustersResponse) String() string {
 func (*ListDiscoveredClustersResponse) ProtoMessage() {}
 
 func (x *ListDiscoveredClustersResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -648,6 +656,7 @@ func (x *DiscoveredCluster_Metadata) String() string {
 func (*DiscoveredCluster_Metadata) ProtoMessage() {}
 
 func (x *DiscoveredCluster_Metadata) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -727,6 +736,7 @@ func (x *DiscoveredCluster_CloudSource) String() string {
 func (*DiscoveredCluster_CloudSource) ProtoMessage() {}
 
 func (x *DiscoveredCluster_CloudSource) ProtoReflect() protoreflect.Message {
+	file_api_v1_discovered_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_discovered_cluster_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -872,9 +882,11 @@ var file_api_v1_discovered_cluster_service_proto_depIdxs = []int32{
 	0,  // [0:13] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_discovered_cluster_service_proto_init() }
+var file_api_v1_discovered_cluster_service_proto_init_once sync.Once
+func file_api_v1_discovered_cluster_service_proto_init_ensure() { file_api_v1_discovered_cluster_service_proto_init_once.Do(file_api_v1_discovered_cluster_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_discovered_cluster_service_proto_init() {
-	if File_api_v1_discovered_cluster_service_proto != nil || skipProtoInit {
+	if File_api_v1_discovered_cluster_service_proto != nil {
 		return
 	}
 	file_api_v1_pagination_proto_init()

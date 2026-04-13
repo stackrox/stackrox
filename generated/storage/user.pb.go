@@ -43,6 +43,7 @@ func (x *SlimUser) String() string {
 func (*SlimUser) ProtoMessage() {}
 
 func (x *SlimUser) ProtoReflect() protoreflect.Message {
+	file_storage_user_proto_init_ensure()
 	mi := &file_storage_user_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -98,6 +99,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
+	file_storage_user_proto_init_ensure()
 	mi := &file_storage_user_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -164,6 +166,7 @@ func (x *UserAttribute) String() string {
 func (*UserAttribute) ProtoMessage() {}
 
 func (x *UserAttribute) ProtoReflect() protoreflect.Message {
+	file_storage_user_proto_init_ensure()
 	mi := &file_storage_user_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -218,6 +221,7 @@ func (x *UserInfo) String() string {
 func (*UserInfo) ProtoMessage() {}
 
 func (x *UserInfo) ProtoReflect() protoreflect.Message {
+	file_storage_user_proto_init_ensure()
 	mi := &file_storage_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -286,6 +290,7 @@ func (x *UserInfo_Role) String() string {
 func (*UserInfo_Role) ProtoMessage() {}
 
 func (x *UserInfo_Role) ProtoReflect() protoreflect.Message {
+	file_storage_user_proto_init_ensure()
 	mi := &file_storage_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -340,6 +345,7 @@ func (x *UserInfo_ResourceToAccess) String() string {
 func (*UserInfo_ResourceToAccess) ProtoMessage() {}
 
 func (x *UserInfo_ResourceToAccess) ProtoReflect() protoreflect.Message {
+	file_storage_user_proto_init_ensure()
 	mi := &file_storage_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -438,9 +444,11 @@ var file_storage_user_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_storage_user_proto_init() }
+var file_storage_user_proto_init_once sync.Once
+func file_storage_user_proto_init_ensure() { file_storage_user_proto_init_once.Do(file_storage_user_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_user_proto_init() {
-	if File_storage_user_proto != nil || skipProtoInit {
+	if File_storage_user_proto != nil {
 		return
 	}
 	file_storage_role_proto_init()

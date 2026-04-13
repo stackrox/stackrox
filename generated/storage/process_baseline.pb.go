@@ -100,6 +100,7 @@ func (x *ProcessBaselineKey) String() string {
 func (*ProcessBaselineKey) ProtoMessage() {}
 
 func (x *ProcessBaselineKey) ProtoReflect() protoreflect.Message {
+	file_storage_process_baseline_proto_init_ensure()
 	mi := &file_storage_process_baseline_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -172,6 +173,7 @@ func (x *ProcessBaseline) String() string {
 func (*ProcessBaseline) ProtoMessage() {}
 
 func (x *ProcessBaseline) ProtoReflect() protoreflect.Message {
+	file_storage_process_baseline_proto_init_ensure()
 	mi := &file_storage_process_baseline_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -266,6 +268,7 @@ func (x *BaselineElement) String() string {
 func (*BaselineElement) ProtoMessage() {}
 
 func (x *BaselineElement) ProtoReflect() protoreflect.Message {
+	file_storage_process_baseline_proto_init_ensure()
 	mi := &file_storage_process_baseline_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -320,6 +323,7 @@ func (x *BaselineItem) String() string {
 func (*BaselineItem) ProtoMessage() {}
 
 func (x *BaselineItem) ProtoReflect() protoreflect.Message {
+	file_storage_process_baseline_proto_init_ensure()
 	mi := &file_storage_process_baseline_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -387,6 +391,7 @@ func (x *ContainerNameAndBaselineStatus) String() string {
 func (*ContainerNameAndBaselineStatus) ProtoMessage() {}
 
 func (x *ContainerNameAndBaselineStatus) ProtoReflect() protoreflect.Message {
+	file_storage_process_baseline_proto_init_ensure()
 	mi := &file_storage_process_baseline_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -449,6 +454,7 @@ func (x *ProcessBaselineResults) String() string {
 func (*ProcessBaselineResults) ProtoMessage() {}
 
 func (x *ProcessBaselineResults) ProtoReflect() protoreflect.Message {
+	file_storage_process_baseline_proto_init_ensure()
 	mi := &file_storage_process_baseline_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -580,9 +586,11 @@ var file_storage_process_baseline_proto_depIdxs = []int32{
 	0,  // [0:10] is the sub-list for field type_name
 }
 
-func init() { file_storage_process_baseline_proto_init() }
+var file_storage_process_baseline_proto_init_once sync.Once
+func file_storage_process_baseline_proto_init_ensure() { file_storage_process_baseline_proto_init_once.Do(file_storage_process_baseline_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_process_baseline_proto_init() {
-	if File_storage_process_baseline_proto != nil || skipProtoInit {
+	if File_storage_process_baseline_proto != nil {
 		return
 	}
 	file_storage_process_baseline_proto_msgTypes[3].OneofWrappers = []any{

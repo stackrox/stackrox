@@ -321,6 +321,7 @@ func (x *Image) String() string {
 func (*Image) ProtoMessage() {}
 
 func (x *Image) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -562,6 +563,7 @@ func (x *DataSource) String() string {
 func (*DataSource) ProtoMessage() {}
 
 func (x *DataSource) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -631,6 +633,7 @@ func (x *ImageScan) String() string {
 func (*ImageScan) ProtoMessage() {}
 
 func (x *ImageScan) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -736,6 +739,7 @@ func (x *ImageSignatureVerificationData) String() string {
 func (*ImageSignatureVerificationData) ProtoMessage() {}
 
 func (x *ImageSignatureVerificationData) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -790,6 +794,7 @@ func (x *ImageSignatureVerificationResult) String() string {
 func (*ImageSignatureVerificationResult) ProtoMessage() {}
 
 func (x *ImageSignatureVerificationResult) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -890,6 +895,7 @@ func (x *EmbeddedImageScanComponent) String() string {
 func (*EmbeddedImageScanComponent) ProtoMessage() {}
 
 func (x *EmbeddedImageScanComponent) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1058,6 +1064,7 @@ func (x *License) String() string {
 func (*License) ProtoMessage() {}
 
 func (x *License) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1131,6 +1138,7 @@ func (x *ImageMetadata) String() string {
 func (*ImageMetadata) ProtoMessage() {}
 
 func (x *ImageMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1204,6 +1212,7 @@ func (x *ImageSignature) String() string {
 func (*ImageSignature) ProtoMessage() {}
 
 func (x *ImageSignature) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1258,6 +1267,7 @@ func (x *Signature) String() string {
 func (*Signature) ProtoMessage() {}
 
 func (x *Signature) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1325,6 +1335,7 @@ func (x *CosignSignature) String() string {
 func (*CosignSignature) ProtoMessage() {}
 
 func (x *CosignSignature) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1397,6 +1408,7 @@ func (x *V2Metadata) String() string {
 func (*V2Metadata) ProtoMessage() {}
 
 func (x *V2Metadata) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1449,6 +1461,7 @@ func (x *V1Metadata) String() string {
 func (*V1Metadata) ProtoMessage() {}
 
 func (x *V1Metadata) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1553,6 +1566,7 @@ func (x *ImageLayer) String() string {
 func (*ImageLayer) ProtoMessage() {}
 
 func (x *ImageLayer) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1628,6 +1642,7 @@ func (x *ImageName) String() string {
 func (*ImageName) ProtoMessage() {}
 
 func (x *ImageName) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1709,6 +1724,7 @@ func (x *ListImage) String() string {
 func (*ListImage) ProtoMessage() {}
 
 func (x *ListImage) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1859,6 +1875,7 @@ func (x *WatchedImage) String() string {
 func (*WatchedImage) ProtoMessage() {}
 
 func (x *WatchedImage) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1909,6 +1926,7 @@ func (x *BaseImageInfo) String() string {
 func (*BaseImageInfo) ProtoMessage() {}
 
 func (x *BaseImageInfo) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1982,6 +2000,7 @@ func (x *EmbeddedImageScanComponent_Executable) String() string {
 func (*EmbeddedImageScanComponent_Executable) ProtoMessage() {}
 
 func (x *EmbeddedImageScanComponent_Executable) ProtoReflect() protoreflect.Message {
+	file_storage_image_proto_init_ensure()
 	mi := &file_storage_image_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2294,9 +2313,11 @@ var file_storage_image_proto_depIdxs = []int32{
 	0,  // [0:33] is the sub-list for field type_name
 }
 
-func init() { file_storage_image_proto_init() }
+var file_storage_image_proto_init_once sync.Once
+func file_storage_image_proto_init_ensure() { file_storage_image_proto_init_once.Do(file_storage_image_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_image_proto_init() {
-	if File_storage_image_proto != nil || skipProtoInit {
+	if File_storage_image_proto != nil {
 		return
 	}
 	file_storage_vulnerability_proto_init()

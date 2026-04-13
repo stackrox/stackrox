@@ -174,6 +174,7 @@ func (x *ComplianceResource) String() string {
 func (*ComplianceResource) ProtoMessage() {}
 
 func (x *ComplianceResource) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -283,6 +284,7 @@ func (x *ComplianceResultValue) String() string {
 func (*ComplianceResultValue) ProtoMessage() {}
 
 func (x *ComplianceResultValue) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -336,6 +338,7 @@ func (x *ComplianceControlResult) String() string {
 func (*ComplianceControlResult) ProtoMessage() {}
 
 func (x *ComplianceControlResult) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -398,6 +401,7 @@ func (x *ComplianceDomain) String() string {
 func (*ComplianceDomain) ProtoMessage() {}
 
 func (x *ComplianceDomain) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -471,6 +475,7 @@ func (x *ComplianceRunMetadata) String() string {
 func (*ComplianceRunMetadata) ProtoMessage() {}
 
 func (x *ComplianceRunMetadata) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -570,6 +575,7 @@ func (x *ComplianceRunResults) String() string {
 func (*ComplianceRunResults) ProtoMessage() {}
 
 func (x *ComplianceRunResults) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -651,6 +657,7 @@ func (x *ComplianceStrings) String() string {
 func (*ComplianceStrings) ProtoMessage() {}
 
 func (x *ComplianceStrings) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -701,6 +708,7 @@ func (x *ComplianceAggregation) String() string {
 func (*ComplianceAggregation) ProtoMessage() {}
 
 func (x *ComplianceAggregation) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -740,6 +748,7 @@ func (x *PreComputedComplianceAggregation) String() string {
 func (*PreComputedComplianceAggregation) ProtoMessage() {}
 
 func (x *PreComputedComplianceAggregation) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -799,6 +808,7 @@ func (x *ComplianceResource_ClusterName) String() string {
 func (*ComplianceResource_ClusterName) ProtoMessage() {}
 
 func (x *ComplianceResource_ClusterName) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -853,6 +863,7 @@ func (x *ComplianceResource_DeploymentName) String() string {
 func (*ComplianceResource_DeploymentName) ProtoMessage() {}
 
 func (x *ComplianceResource_DeploymentName) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -920,6 +931,7 @@ func (x *ComplianceResource_NodeName) String() string {
 func (*ComplianceResource_NodeName) ProtoMessage() {}
 
 func (x *ComplianceResource_NodeName) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -980,6 +992,7 @@ func (x *ComplianceResultValue_Evidence) String() string {
 func (*ComplianceResultValue_Evidence) ProtoMessage() {}
 
 func (x *ComplianceResultValue_Evidence) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1040,6 +1053,7 @@ func (x *ComplianceDomain_Cluster) String() string {
 func (*ComplianceDomain_Cluster) ProtoMessage() {}
 
 func (x *ComplianceDomain_Cluster) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1095,6 +1109,7 @@ func (x *ComplianceDomain_Node) String() string {
 func (*ComplianceDomain_Node) ProtoMessage() {}
 
 func (x *ComplianceDomain_Node) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1167,6 +1182,7 @@ func (x *ComplianceDomain_Deployment) String() string {
 func (*ComplianceDomain_Deployment) ProtoMessage() {}
 
 func (x *ComplianceDomain_Deployment) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1253,6 +1269,7 @@ func (x *ComplianceRunResults_EntityResults) String() string {
 func (*ComplianceRunResults_EntityResults) ProtoMessage() {}
 
 func (x *ComplianceRunResults_EntityResults) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1299,6 +1316,7 @@ func (x *ComplianceAggregation_AggregationKey) String() string {
 func (*ComplianceAggregation_AggregationKey) ProtoMessage() {}
 
 func (x *ComplianceAggregation_AggregationKey) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1355,6 +1373,7 @@ func (x *ComplianceAggregation_Result) String() string {
 func (*ComplianceAggregation_Result) ProtoMessage() {}
 
 func (x *ComplianceAggregation_Result) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1431,6 +1450,7 @@ func (x *ComplianceAggregation_Source) String() string {
 func (*ComplianceAggregation_Source) ProtoMessage() {}
 
 func (x *ComplianceAggregation_Source) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1499,6 +1519,7 @@ func (x *ComplianceAggregation_Response) String() string {
 func (*ComplianceAggregation_Response) ProtoMessage() {}
 
 func (x *ComplianceAggregation_Response) ProtoReflect() protoreflect.Message {
+	file_storage_compliance_proto_init_ensure()
 	mi := &file_storage_compliance_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1784,9 +1805,11 @@ var file_storage_compliance_proto_depIdxs = []int32{
 	0,  // [0:38] is the sub-list for field type_name
 }
 
-func init() { file_storage_compliance_proto_init() }
+var file_storage_compliance_proto_init_once sync.Once
+func file_storage_compliance_proto_init_ensure() { file_storage_compliance_proto_init_once.Do(file_storage_compliance_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_compliance_proto_init() {
-	if File_storage_compliance_proto != nil || skipProtoInit {
+	if File_storage_compliance_proto != nil {
 		return
 	}
 	file_storage_image_proto_init()

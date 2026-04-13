@@ -195,6 +195,7 @@ func (x *VMReport) String() string {
 func (*VMReport) ProtoMessage() {}
 
 func (x *VMReport) ProtoReflect() protoreflect.Message {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -252,6 +253,7 @@ func (x *DiscoveredData) String() string {
 func (*DiscoveredData) ProtoMessage() {}
 
 func (x *DiscoveredData) ProtoReflect() protoreflect.Message {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -320,6 +322,7 @@ func (x *IndexReport) String() string {
 func (*IndexReport) ProtoMessage() {}
 
 func (x *IndexReport) ProtoReflect() protoreflect.Message {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -376,6 +379,7 @@ func (x *IndexReportEvent) String() string {
 func (*IndexReportEvent) ProtoMessage() {}
 
 func (x *IndexReportEvent) ProtoReflect() protoreflect.Message {
+	file_internalapi_virtualmachine_v1_index_report_proto_init_ensure()
 	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -480,9 +484,11 @@ var file_internalapi_virtualmachine_v1_index_report_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_virtualmachine_v1_index_report_proto_init() }
+var file_internalapi_virtualmachine_v1_index_report_proto_init_once sync.Once
+func file_internalapi_virtualmachine_v1_index_report_proto_init_ensure() { file_internalapi_virtualmachine_v1_index_report_proto_init_once.Do(file_internalapi_virtualmachine_v1_index_report_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_virtualmachine_v1_index_report_proto_init() {
-	if File_internalapi_virtualmachine_v1_index_report_proto != nil || skipProtoInit {
+	if File_internalapi_virtualmachine_v1_index_report_proto != nil {
 		return
 	}
 	type x struct{}

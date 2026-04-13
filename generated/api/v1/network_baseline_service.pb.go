@@ -97,6 +97,7 @@ func (x *NetworkBaselinePeerEntity) String() string {
 func (*NetworkBaselinePeerEntity) ProtoMessage() {}
 
 func (x *NetworkBaselinePeerEntity) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -175,6 +176,7 @@ func (x *NetworkBaselineStatusPeer) String() string {
 func (*NetworkBaselineStatusPeer) ProtoMessage() {}
 
 func (x *NetworkBaselineStatusPeer) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -241,6 +243,7 @@ func (x *NetworkBaselinePeerStatus) String() string {
 func (*NetworkBaselinePeerStatus) ProtoMessage() {}
 
 func (x *NetworkBaselinePeerStatus) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -293,6 +296,7 @@ func (x *NetworkBaselineStatusRequest) String() string {
 func (*NetworkBaselineStatusRequest) ProtoMessage() {}
 
 func (x *NetworkBaselineStatusRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -344,6 +348,7 @@ func (x *NetworkBaselineStatusResponse) String() string {
 func (*NetworkBaselineStatusResponse) ProtoMessage() {}
 
 func (x *NetworkBaselineStatusResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -391,6 +396,7 @@ func (x *NetworkBaselineExternalStatusRequest) String() string {
 func (*NetworkBaselineExternalStatusRequest) ProtoMessage() {}
 
 func (x *NetworkBaselineExternalStatusRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -459,6 +465,7 @@ func (x *NetworkBaselineExternalStatusResponse) String() string {
 func (*NetworkBaselineExternalStatusResponse) ProtoMessage() {}
 
 func (x *NetworkBaselineExternalStatusResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -525,6 +532,7 @@ func (x *ModifyBaselineStatusForPeersRequest) String() string {
 func (*ModifyBaselineStatusForPeersRequest) ProtoMessage() {}
 
 func (x *ModifyBaselineStatusForPeersRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_network_baseline_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -671,9 +679,11 @@ var file_api_v1_network_baseline_service_proto_depIdxs = []int32{
 	0,  // [0:12] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_network_baseline_service_proto_init() }
+var file_api_v1_network_baseline_service_proto_init_once sync.Once
+func file_api_v1_network_baseline_service_proto_init_ensure() { file_api_v1_network_baseline_service_proto_init_once.Do(file_api_v1_network_baseline_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_network_baseline_service_proto_init() {
-	if File_api_v1_network_baseline_service_proto != nil || skipProtoInit {
+	if File_api_v1_network_baseline_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

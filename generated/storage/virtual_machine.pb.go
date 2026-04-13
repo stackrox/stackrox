@@ -249,6 +249,7 @@ func (x *VirtualMachine) String() string {
 func (*VirtualMachine) ProtoMessage() {}
 
 func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -375,6 +376,7 @@ func (x *VirtualMachineScan) String() string {
 func (*VirtualMachineScan) ProtoMessage() {}
 
 func (x *VirtualMachineScan) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -449,6 +451,7 @@ func (x *EmbeddedVirtualMachineScanComponent) String() string {
 func (*EmbeddedVirtualMachineScanComponent) ProtoMessage() {}
 
 func (x *EmbeddedVirtualMachineScanComponent) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -561,6 +564,7 @@ func (x *VirtualMachineVulnerability) String() string {
 func (*VirtualMachineVulnerability) ProtoMessage() {}
 
 func (x *VirtualMachineVulnerability) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -658,6 +662,7 @@ func (x *VirtualMachineCVEInfo) String() string {
 func (*VirtualMachineCVEInfo) ProtoMessage() {}
 
 func (x *VirtualMachineCVEInfo) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -768,6 +773,7 @@ func (x *VirtualMachineEPSS) String() string {
 func (*VirtualMachineEPSS) ProtoMessage() {}
 
 func (x *VirtualMachineEPSS) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -820,6 +826,7 @@ func (x *VirtualMachineAdvisory) String() string {
 func (*VirtualMachineAdvisory) ProtoMessage() {}
 
 func (x *VirtualMachineAdvisory) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -872,6 +879,7 @@ func (x *VirtualMachineCVEInfo_Reference) String() string {
 func (*VirtualMachineCVEInfo_Reference) ProtoMessage() {}
 
 func (x *VirtualMachineCVEInfo_Reference) ProtoReflect() protoreflect.Message {
+	file_storage_virtual_machine_proto_init_ensure()
 	mi := &file_storage_virtual_machine_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1051,9 +1059,11 @@ var file_storage_virtual_machine_proto_depIdxs = []int32{
 	0,  // [0:20] is the sub-list for field type_name
 }
 
-func init() { file_storage_virtual_machine_proto_init() }
+var file_storage_virtual_machine_proto_init_once sync.Once
+func file_storage_virtual_machine_proto_init_ensure() { file_storage_virtual_machine_proto_init_once.Do(file_storage_virtual_machine_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_virtual_machine_proto_init() {
-	if File_storage_virtual_machine_proto != nil || skipProtoInit {
+	if File_storage_virtual_machine_proto != nil {
 		return
 	}
 	file_storage_cve_proto_init()

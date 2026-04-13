@@ -150,6 +150,7 @@ func (x *DecommissionedClusterRetentionInfo) String() string {
 func (*DecommissionedClusterRetentionInfo) ProtoMessage() {}
 
 func (x *DecommissionedClusterRetentionInfo) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -233,6 +234,7 @@ func (x *ClusterResponse) String() string {
 func (*ClusterResponse) ProtoMessage() {}
 
 func (x *ClusterResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -286,6 +288,7 @@ func (x *ClusterDefaultsResponse) String() string {
 func (*ClusterDefaultsResponse) ProtoMessage() {}
 
 func (x *ClusterDefaultsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -346,6 +349,7 @@ func (x *ClustersList) String() string {
 func (*ClustersList) ProtoMessage() {}
 
 func (x *ClustersList) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -397,6 +401,7 @@ func (x *GetClustersRequest) String() string {
 func (*GetClustersRequest) ProtoMessage() {}
 
 func (x *GetClustersRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -442,6 +447,7 @@ func (x *KernelSupportAvailableResponse) String() string {
 func (*KernelSupportAvailableResponse) ProtoMessage() {}
 
 func (x *KernelSupportAvailableResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -568,9 +574,11 @@ var file_api_v1_cluster_service_proto_depIdxs = []int32{
 	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_cluster_service_proto_init() }
+var file_api_v1_cluster_service_proto_init_once sync.Once
+func file_api_v1_cluster_service_proto_init_ensure() { file_api_v1_cluster_service_proto_init_once.Do(file_api_v1_cluster_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_cluster_service_proto_init() {
-	if File_api_v1_cluster_service_proto != nil || skipProtoInit {
+	if File_api_v1_cluster_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

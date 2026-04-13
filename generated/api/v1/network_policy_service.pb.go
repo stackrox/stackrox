@@ -154,6 +154,7 @@ func (x *GetNetworkPoliciesRequest) String() string {
 func (*GetNetworkPoliciesRequest) ProtoMessage() {}
 
 func (x *GetNetworkPoliciesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -212,6 +213,7 @@ func (x *NetworkPoliciesResponse) String() string {
 func (*NetworkPoliciesResponse) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -258,6 +260,7 @@ func (x *SendNetworkPolicyYamlRequest) String() string {
 func (*SendNetworkPolicyYamlRequest) ProtoMessage() {}
 
 func (x *SendNetworkPolicyYamlRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -320,6 +323,7 @@ func (x *GetNetworkGraphRequest) String() string {
 func (*GetNetworkGraphRequest) ProtoMessage() {}
 
 func (x *GetNetworkGraphRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -391,6 +395,7 @@ func (x *SimulateNetworkGraphRequest) String() string {
 func (*SimulateNetworkGraphRequest) ProtoMessage() {}
 
 func (x *SimulateNetworkGraphRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -471,6 +476,7 @@ func (x *ApplyNetworkPolicyYamlRequest) String() string {
 func (*ApplyNetworkPolicyYamlRequest) ProtoMessage() {}
 
 func (x *ApplyNetworkPolicyYamlRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -522,6 +528,7 @@ func (x *GetUndoModificationRequest) String() string {
 func (*GetUndoModificationRequest) ProtoMessage() {}
 
 func (x *GetUndoModificationRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -566,6 +573,7 @@ func (x *GetUndoModificationResponse) String() string {
 func (*GetUndoModificationResponse) ProtoMessage() {}
 
 func (x *GetUndoModificationResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -612,6 +620,7 @@ func (x *NetworkPolicyInSimulation) String() string {
 func (*NetworkPolicyInSimulation) ProtoMessage() {}
 
 func (x *NetworkPolicyInSimulation) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -675,6 +684,7 @@ func (x *NetworkNodeDiff) String() string {
 func (*NetworkNodeDiff) ProtoMessage() {}
 
 func (x *NetworkNodeDiff) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -750,6 +760,7 @@ func (x *NetworkGraphDiff) String() string {
 func (*NetworkGraphDiff) ProtoMessage() {}
 
 func (x *NetworkGraphDiff) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -805,6 +816,7 @@ func (x *SimulateNetworkGraphResponse) String() string {
 func (*SimulateNetworkGraphResponse) ProtoMessage() {}
 
 func (x *SimulateNetworkGraphResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -870,6 +882,7 @@ func (x *GetNetworkGraphEpochRequest) String() string {
 func (*GetNetworkGraphEpochRequest) ProtoMessage() {}
 
 func (x *GetNetworkGraphEpochRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -914,6 +927,7 @@ func (x *NetworkGraphEpoch) String() string {
 func (*NetworkGraphEpoch) ProtoMessage() {}
 
 func (x *NetworkGraphEpoch) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -963,6 +977,7 @@ func (x *GenerateNetworkPoliciesRequest) String() string {
 func (*GenerateNetworkPoliciesRequest) ProtoMessage() {}
 
 func (x *GenerateNetworkPoliciesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1036,6 +1051,7 @@ func (x *GenerateNetworkPoliciesResponse) String() string {
 func (*GenerateNetworkPoliciesResponse) ProtoMessage() {}
 
 func (x *GenerateNetworkPoliciesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1082,6 +1098,7 @@ func (x *GetBaselineGeneratedPolicyForDeploymentRequest) String() string {
 func (*GetBaselineGeneratedPolicyForDeploymentRequest) ProtoMessage() {}
 
 func (x *GetBaselineGeneratedPolicyForDeploymentRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1140,6 +1157,7 @@ func (x *GetBaselineGeneratedPolicyForDeploymentResponse) String() string {
 func (*GetBaselineGeneratedPolicyForDeploymentResponse) ProtoMessage() {}
 
 func (x *GetBaselineGeneratedPolicyForDeploymentResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1184,6 +1202,7 @@ func (x *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) String() string 
 func (*GetAllowedPeersFromCurrentPolicyForDeploymentResponse) ProtoMessage() {}
 
 func (x *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1229,6 +1248,7 @@ func (x *ApplyNetworkPolicyYamlForDeploymentRequest) String() string {
 func (*ApplyNetworkPolicyYamlForDeploymentRequest) ProtoMessage() {}
 
 func (x *ApplyNetworkPolicyYamlForDeploymentRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1280,6 +1300,7 @@ func (x *GetUndoModificationForDeploymentResponse) String() string {
 func (*GetUndoModificationForDeploymentResponse) ProtoMessage() {}
 
 func (x *GetUndoModificationForDeploymentResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1327,6 +1348,7 @@ func (x *GetDiffFlowsReconciledFlow) String() string {
 func (*GetDiffFlowsReconciledFlow) ProtoMessage() {}
 
 func (x *GetDiffFlowsReconciledFlow) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1393,6 +1415,7 @@ func (x *GetDiffFlowsGroupedFlow) String() string {
 func (*GetDiffFlowsGroupedFlow) ProtoMessage() {}
 
 func (x *GetDiffFlowsGroupedFlow) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1446,6 +1469,7 @@ func (x *GetDiffFlowsResponse) String() string {
 func (*GetDiffFlowsResponse) ProtoMessage() {}
 
 func (x *GetDiffFlowsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_network_policy_service_proto_init_ensure()
 	mi := &file_api_v1_network_policy_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1765,9 +1789,11 @@ var file_api_v1_network_policy_service_proto_depIdxs = []int32{
 	0,  // [0:39] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_network_policy_service_proto_init() }
+var file_api_v1_network_policy_service_proto_init_once sync.Once
+func file_api_v1_network_policy_service_proto_init_ensure() { file_api_v1_network_policy_service_proto_init_once.Do(file_api_v1_network_policy_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_network_policy_service_proto_init() {
-	if File_api_v1_network_policy_service_proto != nil || skipProtoInit {
+	if File_api_v1_network_policy_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

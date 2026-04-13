@@ -205,6 +205,7 @@ func (x *KubernetesEvent) String() string {
 func (*KubernetesEvent) ProtoMessage() {}
 
 func (x *KubernetesEvent) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -371,6 +372,7 @@ func (x *KubernetesEvent_Object) String() string {
 func (*KubernetesEvent_Object) ProtoMessage() {}
 
 func (x *KubernetesEvent_Object) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -437,6 +439,7 @@ func (x *KubernetesEvent_PodExecArgs) String() string {
 func (*KubernetesEvent_PodExecArgs) ProtoMessage() {}
 
 func (x *KubernetesEvent_PodExecArgs) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -488,6 +491,7 @@ func (x *KubernetesEvent_PodPortForwardArgs) String() string {
 func (*KubernetesEvent_PodPortForwardArgs) ProtoMessage() {}
 
 func (x *KubernetesEvent_PodPortForwardArgs) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -532,6 +536,7 @@ func (x *KubernetesEvent_PodAttachArgs) String() string {
 func (*KubernetesEvent_PodAttachArgs) ProtoMessage() {}
 
 func (x *KubernetesEvent_PodAttachArgs) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -577,6 +582,7 @@ func (x *KubernetesEvent_ResponseStatus) String() string {
 func (*KubernetesEvent_ResponseStatus) ProtoMessage() {}
 
 func (x *KubernetesEvent_ResponseStatus) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -629,6 +635,7 @@ func (x *KubernetesEvent_User) String() string {
 func (*KubernetesEvent_User) ProtoMessage() {}
 
 func (x *KubernetesEvent_User) ProtoReflect() protoreflect.Message {
+	file_storage_kube_event_proto_init_ensure()
 	mi := &file_storage_kube_event_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -776,9 +783,11 @@ var file_storage_kube_event_proto_depIdxs = []int32{
 	0,  // [0:10] is the sub-list for field type_name
 }
 
-func init() { file_storage_kube_event_proto_init() }
+var file_storage_kube_event_proto_init_once sync.Once
+func file_storage_kube_event_proto_init_ensure() { file_storage_kube_event_proto_init_once.Do(file_storage_kube_event_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_kube_event_proto_init() {
-	if File_storage_kube_event_proto != nil || skipProtoInit {
+	if File_storage_kube_event_proto != nil {
 		return
 	}
 	file_storage_kube_event_proto_msgTypes[0].OneofWrappers = []any{

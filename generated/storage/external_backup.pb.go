@@ -106,6 +106,7 @@ func (x *ExternalBackup) String() string {
 func (*ExternalBackup) ProtoMessage() {}
 
 func (x *ExternalBackup) ProtoReflect() protoreflect.Message {
+	file_storage_external_backup_proto_init_ensure()
 	mi := &file_storage_external_backup_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -271,6 +272,7 @@ func (x *S3Config) String() string {
 func (*S3Config) ProtoMessage() {}
 
 func (x *S3Config) ProtoReflect() protoreflect.Message {
+	file_storage_external_backup_proto_init_ensure()
 	mi := &file_storage_external_backup_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -370,6 +372,7 @@ func (x *S3Compatible) String() string {
 func (*S3Compatible) ProtoMessage() {}
 
 func (x *S3Compatible) ProtoReflect() protoreflect.Message {
+	file_storage_external_backup_proto_init_ensure()
 	mi := &file_storage_external_backup_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -460,6 +463,7 @@ func (x *GCSConfig) String() string {
 func (*GCSConfig) ProtoMessage() {}
 
 func (x *GCSConfig) ProtoReflect() protoreflect.Message {
+	file_storage_external_backup_proto_init_ensure()
 	mi := &file_storage_external_backup_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -584,9 +588,11 @@ var file_storage_external_backup_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_storage_external_backup_proto_init() }
+var file_storage_external_backup_proto_init_once sync.Once
+func file_storage_external_backup_proto_init_ensure() { file_storage_external_backup_proto_init_once.Do(file_storage_external_backup_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_external_backup_proto_init() {
-	if File_storage_external_backup_proto != nil || skipProtoInit {
+	if File_storage_external_backup_proto != nil {
 		return
 	}
 	file_storage_schedule_proto_init()

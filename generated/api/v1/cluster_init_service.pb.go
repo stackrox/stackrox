@@ -52,6 +52,7 @@ func (x *InitBundleMeta) String() string {
 func (*InitBundleMeta) ProtoMessage() {}
 
 func (x *InitBundleMeta) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -138,6 +139,7 @@ func (x *CRSMeta) String() string {
 func (*CRSMeta) ProtoMessage() {}
 
 func (x *CRSMeta) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -234,6 +236,7 @@ func (x *InitBundleGenResponse) String() string {
 func (*InitBundleGenResponse) ProtoMessage() {}
 
 func (x *InitBundleGenResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -293,6 +296,7 @@ func (x *CRSGenResponse) String() string {
 func (*CRSGenResponse) ProtoMessage() {}
 
 func (x *CRSGenResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -344,6 +348,7 @@ func (x *GetCAConfigResponse) String() string {
 func (*GetCAConfigResponse) ProtoMessage() {}
 
 func (x *GetCAConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -389,6 +394,7 @@ func (x *InitBundleMetasResponse) String() string {
 func (*InitBundleMetasResponse) ProtoMessage() {}
 
 func (x *InitBundleMetasResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -433,6 +439,7 @@ func (x *CRSMetasResponse) String() string {
 func (*CRSMetasResponse) ProtoMessage() {}
 
 func (x *CRSMetasResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -478,6 +485,7 @@ func (x *InitBundleGenRequest) String() string {
 func (*InitBundleGenRequest) ProtoMessage() {}
 
 func (x *InitBundleGenRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -522,6 +530,7 @@ func (x *CRSGenRequest) String() string {
 func (*CRSGenRequest) ProtoMessage() {}
 
 func (x *CRSGenRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -570,6 +579,7 @@ func (x *CRSGenRequestExtended) String() string {
 func (*CRSGenRequestExtended) ProtoMessage() {}
 
 func (x *CRSGenRequestExtended) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -637,6 +647,7 @@ func (x *InitBundleRevokeRequest) String() string {
 func (*InitBundleRevokeRequest) ProtoMessage() {}
 
 func (x *InitBundleRevokeRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -688,6 +699,7 @@ func (x *CRSRevokeRequest) String() string {
 func (*CRSRevokeRequest) ProtoMessage() {}
 
 func (x *CRSRevokeRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -734,6 +746,7 @@ func (x *InitBundleRevokeResponse) String() string {
 func (*InitBundleRevokeResponse) ProtoMessage() {}
 
 func (x *InitBundleRevokeResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -786,6 +799,7 @@ func (x *CRSRevokeResponse) String() string {
 func (*CRSRevokeResponse) ProtoMessage() {}
 
 func (x *CRSRevokeResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -838,6 +852,7 @@ func (x *InitBundleMeta_ImpactedCluster) String() string {
 func (*InitBundleMeta_ImpactedCluster) ProtoMessage() {}
 
 func (x *InitBundleMeta_ImpactedCluster) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -891,6 +906,7 @@ func (x *InitBundleRevokeResponse_InitBundleRevocationError) String() string {
 func (*InitBundleRevokeResponse_InitBundleRevocationError) ProtoMessage() {}
 
 func (x *InitBundleRevokeResponse_InitBundleRevocationError) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -950,6 +966,7 @@ func (x *CRSRevokeResponse_CRSRevocationError) String() string {
 func (*CRSRevokeResponse_CRSRevocationError) ProtoMessage() {}
 
 func (x *CRSRevokeResponse_CRSRevocationError) ProtoReflect() protoreflect.Message {
+	file_api_v1_cluster_init_service_proto_init_ensure()
 	mi := &file_api_v1_cluster_init_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1139,9 +1156,11 @@ var file_api_v1_cluster_init_service_proto_depIdxs = []int32{
 	0,  // [0:16] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_cluster_init_service_proto_init() }
+var file_api_v1_cluster_init_service_proto_init_once sync.Once
+func file_api_v1_cluster_init_service_proto_init_ensure() { file_api_v1_cluster_init_service_proto_init_once.Do(file_api_v1_cluster_init_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_cluster_init_service_proto_init() {
-	if File_api_v1_cluster_init_service_proto != nil || skipProtoInit {
+	if File_api_v1_cluster_init_service_proto != nil {
 		return
 	}
 	file_api_v1_empty_proto_init()

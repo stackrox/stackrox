@@ -460,6 +460,7 @@ func (x *Policy) String() string {
 func (*Policy) ProtoMessage() {}
 
 func (x *Policy) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -674,6 +675,7 @@ func (x *PolicySection) String() string {
 func (*PolicySection) ProtoMessage() {}
 
 func (x *PolicySection) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -732,6 +734,7 @@ func (x *PolicyGroup) String() string {
 func (*PolicyGroup) ProtoMessage() {}
 
 func (x *PolicyGroup) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -797,6 +800,7 @@ func (x *PolicyValue) String() string {
 func (*PolicyValue) ProtoMessage() {}
 
 func (x *PolicyValue) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -841,6 +845,7 @@ func (x *PolicyList) String() string {
 func (*PolicyList) ProtoMessage() {}
 
 func (x *PolicyList) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -895,6 +900,7 @@ func (x *ListPolicy) String() string {
 func (*ListPolicy) ProtoMessage() {}
 
 func (x *ListPolicy) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1012,6 +1018,7 @@ func (x *Exclusion) String() string {
 func (*Exclusion) ProtoMessage() {}
 
 func (x *Exclusion) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1079,6 +1086,7 @@ func (x *ExportPoliciesResponse) String() string {
 func (*ExportPoliciesResponse) ProtoMessage() {}
 
 func (x *ExportPoliciesResponse) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1124,6 +1132,7 @@ func (x *Policy_MitreAttackVectors) String() string {
 func (*Policy_MitreAttackVectors) ProtoMessage() {}
 
 func (x *Policy_MitreAttackVectors) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1175,6 +1184,7 @@ func (x *Exclusion_Container) String() string {
 func (*Exclusion_Container) ProtoMessage() {}
 
 func (x *Exclusion_Container) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1220,6 +1230,7 @@ func (x *Exclusion_Deployment) String() string {
 func (*Exclusion_Deployment) ProtoMessage() {}
 
 func (x *Exclusion_Deployment) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1271,6 +1282,7 @@ func (x *Exclusion_Image) String() string {
 func (*Exclusion_Image) ProtoMessage() {}
 
 func (x *Exclusion_Image) ProtoReflect() protoreflect.Message {
+	file_storage_policy_proto_init_ensure()
 	mi := &file_storage_policy_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1499,9 +1511,11 @@ var file_storage_policy_proto_depIdxs = []int32{
 	0,  // [0:25] is the sub-list for field type_name
 }
 
-func init() { file_storage_policy_proto_init() }
+var file_storage_policy_proto_init_once sync.Once
+func file_storage_policy_proto_init_ensure() { file_storage_policy_proto_init_once.Do(file_storage_policy_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_policy_proto_init() {
-	if File_storage_policy_proto != nil || skipProtoInit {
+	if File_storage_policy_proto != nil {
 		return
 	}
 	file_storage_image_proto_init()

@@ -257,6 +257,7 @@ func (x *ReportSnapshot) String() string {
 func (*ReportSnapshot) ProtoMessage() {}
 
 func (x *ReportSnapshot) ProtoReflect() protoreflect.Message {
+	file_storage_report_snapshot_proto_init_ensure()
 	mi := &file_storage_report_snapshot_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -420,6 +421,7 @@ func (x *CollectionSnapshot) String() string {
 func (*CollectionSnapshot) ProtoMessage() {}
 
 func (x *CollectionSnapshot) ProtoReflect() protoreflect.Message {
+	file_storage_report_snapshot_proto_init_ensure()
 	mi := &file_storage_report_snapshot_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -475,6 +477,7 @@ func (x *NotifierSnapshot) String() string {
 func (*NotifierSnapshot) ProtoMessage() {}
 
 func (x *NotifierSnapshot) ProtoReflect() protoreflect.Message {
+	file_storage_report_snapshot_proto_init_ensure()
 	mi := &file_storage_report_snapshot_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -550,6 +553,7 @@ func (x *ReportStatus) String() string {
 func (*ReportStatus) ProtoMessage() {}
 
 func (x *ReportStatus) ProtoReflect() protoreflect.Message {
+	file_storage_report_snapshot_proto_init_ensure()
 	mi := &file_storage_report_snapshot_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -719,9 +723,11 @@ var file_storage_report_snapshot_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_storage_report_snapshot_proto_init() }
+var file_storage_report_snapshot_proto_init_once sync.Once
+func file_storage_report_snapshot_proto_init_ensure() { file_storage_report_snapshot_proto_init_once.Do(file_storage_report_snapshot_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_report_snapshot_proto_init() {
-	if File_storage_report_snapshot_proto != nil || skipProtoInit {
+	if File_storage_report_snapshot_proto != nil {
 		return
 	}
 	file_storage_report_configuration_proto_init()

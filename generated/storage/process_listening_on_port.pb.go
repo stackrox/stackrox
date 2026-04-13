@@ -53,6 +53,7 @@ func (x *ProcessListeningOnPort) String() string {
 func (*ProcessListeningOnPort) ProtoMessage() {}
 
 func (x *ProcessListeningOnPort) ProtoReflect() protoreflect.Message {
+	file_storage_process_listening_on_port_proto_init_ensure()
 	mi := &file_storage_process_listening_on_port_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -168,6 +169,7 @@ func (x *ProcessListeningOnPortFromSensor) String() string {
 func (*ProcessListeningOnPortFromSensor) ProtoMessage() {}
 
 func (x *ProcessListeningOnPortFromSensor) ProtoReflect() protoreflect.Message {
+	file_storage_process_listening_on_port_proto_init_ensure()
 	mi := &file_storage_process_listening_on_port_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -278,6 +280,7 @@ func (x *ProcessListeningOnPortStorage) String() string {
 func (*ProcessListeningOnPortStorage) ProtoMessage() {}
 
 func (x *ProcessListeningOnPortStorage) ProtoReflect() protoreflect.Message {
+	file_storage_process_listening_on_port_proto_init_ensure()
 	mi := &file_storage_process_listening_on_port_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -393,6 +396,7 @@ func (x *ProcessListeningOnPort_Endpoint) String() string {
 func (*ProcessListeningOnPort_Endpoint) ProtoMessage() {}
 
 func (x *ProcessListeningOnPort_Endpoint) ProtoReflect() protoreflect.Message {
+	file_storage_process_listening_on_port_proto_init_ensure()
 	mi := &file_storage_process_listening_on_port_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -510,9 +514,11 @@ var file_storage_process_listening_on_port_proto_depIdxs = []int32{
 	0,  // [0:10] is the sub-list for field type_name
 }
 
-func init() { file_storage_process_listening_on_port_proto_init() }
+var file_storage_process_listening_on_port_proto_init_once sync.Once
+func file_storage_process_listening_on_port_proto_init_ensure() { file_storage_process_listening_on_port_proto_init_once.Do(file_storage_process_listening_on_port_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_process_listening_on_port_proto_init() {
-	if File_storage_process_listening_on_port_proto != nil || skipProtoInit {
+	if File_storage_process_listening_on_port_proto != nil {
 		return
 	}
 	file_storage_network_flow_proto_init()

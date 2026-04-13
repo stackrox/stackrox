@@ -56,6 +56,7 @@ func (x *ImageComponentEdge) String() string {
 func (*ImageComponentEdge) ProtoMessage() {}
 
 func (x *ImageComponentEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -160,6 +161,7 @@ func (x *ComponentCVEEdge) String() string {
 func (*ComponentCVEEdge) ProtoMessage() {}
 
 func (x *ComponentCVEEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -259,6 +261,7 @@ func (x *ImageCVEEdge) String() string {
 func (*ImageCVEEdge) ProtoMessage() {}
 
 func (x *ImageCVEEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -334,6 +337,7 @@ func (x *NodeComponentEdge) String() string {
 func (*NodeComponentEdge) ProtoMessage() {}
 
 func (x *NodeComponentEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -401,6 +405,7 @@ func (x *NodeComponentCVEEdge) String() string {
 func (*NodeComponentCVEEdge) ProtoMessage() {}
 
 func (x *NodeComponentCVEEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -502,6 +507,7 @@ func (x *ClusterCVEEdge) String() string {
 func (*ClusterCVEEdge) ProtoMessage() {}
 
 func (x *ClusterCVEEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -595,6 +601,7 @@ func (x *PolicyCategoryEdge) String() string {
 func (*PolicyCategoryEdge) ProtoMessage() {}
 
 func (x *PolicyCategoryEdge) ProtoReflect() protoreflect.Message {
+	file_storage_relations_proto_init_ensure()
 	mi := &file_storage_relations_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -723,9 +730,11 @@ var file_storage_relations_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_storage_relations_proto_init() }
+var file_storage_relations_proto_init_once sync.Once
+func file_storage_relations_proto_init_ensure() { file_storage_relations_proto_init_once.Do(file_storage_relations_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_relations_proto_init() {
-	if File_storage_relations_proto != nil || skipProtoInit {
+	if File_storage_relations_proto != nil {
 		return
 	}
 	file_storage_cve_proto_init()

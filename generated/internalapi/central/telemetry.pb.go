@@ -95,6 +95,7 @@ func (x *CancelPullTelemetryDataRequest) String() string {
 func (*CancelPullTelemetryDataRequest) ProtoMessage() {}
 
 func (x *CancelPullTelemetryDataRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -144,6 +145,7 @@ func (x *PullTelemetryDataRequest) String() string {
 func (*PullTelemetryDataRequest) ProtoMessage() {}
 
 func (x *PullTelemetryDataRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -222,6 +224,7 @@ func (x *TelemetryResponsePayload) String() string {
 func (*TelemetryResponsePayload) ProtoMessage() {}
 
 func (x *TelemetryResponsePayload) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -331,6 +334,7 @@ func (x *PullTelemetryDataResponse) String() string {
 func (*PullTelemetryDataResponse) ProtoMessage() {}
 
 func (x *PullTelemetryDataResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -387,6 +391,7 @@ func (x *TelemetryConfig) String() string {
 func (*TelemetryConfig) ProtoMessage() {}
 
 func (x *TelemetryConfig) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -445,6 +450,7 @@ func (x *TelemetryResponsePayload_EndOfStream) String() string {
 func (*TelemetryResponsePayload_EndOfStream) ProtoMessage() {}
 
 func (x *TelemetryResponsePayload_EndOfStream) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -489,6 +495,7 @@ func (x *TelemetryResponsePayload_KubernetesInfo) String() string {
 func (*TelemetryResponsePayload_KubernetesInfo) ProtoMessage() {}
 
 func (x *TelemetryResponsePayload_KubernetesInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -533,6 +540,7 @@ func (x *TelemetryResponsePayload_ClusterInfo) String() string {
 func (*TelemetryResponsePayload_ClusterInfo) ProtoMessage() {}
 
 func (x *TelemetryResponsePayload_ClusterInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -578,6 +586,7 @@ func (x *TelemetryResponsePayload_KubernetesInfo_File) String() string {
 func (*TelemetryResponsePayload_KubernetesInfo_File) ProtoMessage() {}
 
 func (x *TelemetryResponsePayload_KubernetesInfo_File) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_telemetry_proto_init_ensure()
 	mi := &file_internalapi_central_telemetry_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -696,9 +705,11 @@ var file_internalapi_central_telemetry_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_telemetry_proto_init() }
+var file_internalapi_central_telemetry_proto_init_once sync.Once
+func file_internalapi_central_telemetry_proto_init_ensure() { file_internalapi_central_telemetry_proto_init_once.Do(file_internalapi_central_telemetry_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_telemetry_proto_init() {
-	if File_internalapi_central_telemetry_proto != nil || skipProtoInit {
+	if File_internalapi_central_telemetry_proto != nil {
 		return
 	}
 	file_internalapi_central_telemetry_proto_msgTypes[2].OneofWrappers = []any{

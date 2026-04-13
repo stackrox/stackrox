@@ -43,6 +43,7 @@ func (x *LocalScannerCertsIssueError) String() string {
 func (*LocalScannerCertsIssueError) ProtoMessage() {}
 
 func (x *LocalScannerCertsIssueError) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_local_scanner_proto_init_ensure()
 	mi := &file_internalapi_central_local_scanner_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -87,6 +88,7 @@ func (x *IssueLocalScannerCertsRequest) String() string {
 func (*IssueLocalScannerCertsRequest) ProtoMessage() {}
 
 func (x *IssueLocalScannerCertsRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_local_scanner_proto_init_ensure()
 	mi := &file_internalapi_central_local_scanner_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -136,6 +138,7 @@ func (x *IssueLocalScannerCertsResponse) String() string {
 func (*IssueLocalScannerCertsResponse) ProtoMessage() {}
 
 func (x *IssueLocalScannerCertsResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_local_scanner_proto_init_ensure()
 	mi := &file_internalapi_central_local_scanner_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -247,9 +250,11 @@ var file_internalapi_central_local_scanner_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_local_scanner_proto_init() }
+var file_internalapi_central_local_scanner_proto_init_once sync.Once
+func file_internalapi_central_local_scanner_proto_init_ensure() { file_internalapi_central_local_scanner_proto_init_once.Do(file_internalapi_central_local_scanner_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_local_scanner_proto_init() {
-	if File_internalapi_central_local_scanner_proto != nil || skipProtoInit {
+	if File_internalapi_central_local_scanner_proto != nil {
 		return
 	}
 	file_internalapi_central_local_scanner_proto_msgTypes[2].OneofWrappers = []any{

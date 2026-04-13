@@ -113,6 +113,7 @@ func (x *Risk) String() string {
 func (*Risk) ProtoMessage() {}
 
 func (x *Risk) ProtoReflect() protoreflect.Message {
+	file_storage_risk_proto_init_ensure()
 	mi := &file_storage_risk_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -181,6 +182,7 @@ func (x *RiskSubject) String() string {
 func (*RiskSubject) ProtoMessage() {}
 
 func (x *RiskSubject) ProtoReflect() protoreflect.Message {
+	file_storage_risk_proto_init_ensure()
 	mi := &file_storage_risk_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -248,6 +250,7 @@ func (x *Risk_Result) String() string {
 func (*Risk_Result) ProtoMessage() {}
 
 func (x *Risk_Result) ProtoReflect() protoreflect.Message {
+	file_storage_risk_proto_init_ensure()
 	mi := &file_storage_risk_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -307,6 +310,7 @@ func (x *Risk_Result_Factor) String() string {
 func (*Risk_Result_Factor) ProtoMessage() {}
 
 func (x *Risk_Result_Factor) ProtoReflect() protoreflect.Message {
+	file_storage_risk_proto_init_ensure()
 	mi := &file_storage_risk_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -406,9 +410,11 @@ var file_storage_risk_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_storage_risk_proto_init() }
+var file_storage_risk_proto_init_once sync.Once
+func file_storage_risk_proto_init_ensure() { file_storage_risk_proto_init_once.Do(file_storage_risk_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_risk_proto_init() {
-	if File_storage_risk_proto != nil || skipProtoInit {
+	if File_storage_risk_proto != nil {
 		return
 	}
 	type x struct{}

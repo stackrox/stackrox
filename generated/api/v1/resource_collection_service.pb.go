@@ -44,6 +44,7 @@ func (x *ListCollectionSelectorsResponse) String() string {
 func (*ListCollectionSelectorsResponse) ProtoMessage() {}
 
 func (x *ListCollectionSelectorsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -89,6 +90,7 @@ func (x *GetCollectionRequest) String() string {
 func (*GetCollectionRequest) ProtoMessage() {}
 
 func (x *GetCollectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -141,6 +143,7 @@ func (x *CollectionDeploymentMatchOptions) String() string {
 func (*CollectionDeploymentMatchOptions) ProtoMessage() {}
 
 func (x *CollectionDeploymentMatchOptions) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -193,6 +196,7 @@ func (x *GetCollectionResponse) String() string {
 func (*GetCollectionResponse) ProtoMessage() {}
 
 func (x *GetCollectionResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -244,6 +248,7 @@ func (x *GetCollectionCountRequest) String() string {
 func (*GetCollectionCountRequest) ProtoMessage() {}
 
 func (x *GetCollectionCountRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -288,6 +293,7 @@ func (x *GetCollectionCountResponse) String() string {
 func (*GetCollectionCountResponse) ProtoMessage() {}
 
 func (x *GetCollectionCountResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -335,6 +341,7 @@ func (x *CreateCollectionRequest) String() string {
 func (*CreateCollectionRequest) ProtoMessage() {}
 
 func (x *CreateCollectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -400,6 +407,7 @@ func (x *CreateCollectionResponse) String() string {
 func (*CreateCollectionResponse) ProtoMessage() {}
 
 func (x *CreateCollectionResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -448,6 +456,7 @@ func (x *UpdateCollectionRequest) String() string {
 func (*UpdateCollectionRequest) ProtoMessage() {}
 
 func (x *UpdateCollectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -520,6 +529,7 @@ func (x *UpdateCollectionResponse) String() string {
 func (*UpdateCollectionResponse) ProtoMessage() {}
 
 func (x *UpdateCollectionResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -569,6 +579,7 @@ func (x *DryRunCollectionRequest) String() string {
 func (*DryRunCollectionRequest) ProtoMessage() {}
 
 func (x *DryRunCollectionRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -648,6 +659,7 @@ func (x *DryRunCollectionResponse) String() string {
 func (*DryRunCollectionResponse) ProtoMessage() {}
 
 func (x *DryRunCollectionResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -692,6 +704,7 @@ func (x *ListCollectionsRequest) String() string {
 func (*ListCollectionsRequest) ProtoMessage() {}
 
 func (x *ListCollectionsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -736,6 +749,7 @@ func (x *ListCollectionsResponse) String() string {
 func (*ListCollectionsResponse) ProtoMessage() {}
 
 func (x *ListCollectionsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_resource_collection_service_proto_init_ensure()
 	mi := &file_api_v1_resource_collection_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -897,9 +911,11 @@ var file_api_v1_resource_collection_service_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_resource_collection_service_proto_init() }
+var file_api_v1_resource_collection_service_proto_init_once sync.Once
+func file_api_v1_resource_collection_service_proto_init_ensure() { file_api_v1_resource_collection_service_proto_init_once.Do(file_api_v1_resource_collection_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_resource_collection_service_proto_init() {
-	if File_api_v1_resource_collection_service_proto != nil || skipProtoInit {
+	if File_api_v1_resource_collection_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

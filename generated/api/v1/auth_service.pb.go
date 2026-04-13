@@ -98,6 +98,7 @@ func (x *UserAttribute) String() string {
 func (*UserAttribute) ProtoMessage() {}
 
 func (x *UserAttribute) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -161,6 +162,7 @@ func (x *AuthStatus) String() string {
 func (*AuthStatus) ProtoMessage() {}
 
 func (x *AuthStatus) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -305,6 +307,7 @@ func (x *AuthMachineToMachineConfig) String() string {
 func (*AuthMachineToMachineConfig) ProtoMessage() {}
 
 func (x *AuthMachineToMachineConfig) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -384,6 +387,7 @@ func (x *ListAuthMachineToMachineConfigResponse) String() string {
 func (*ListAuthMachineToMachineConfigResponse) ProtoMessage() {}
 
 func (x *ListAuthMachineToMachineConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -428,6 +432,7 @@ func (x *GetAuthMachineToMachineConfigResponse) String() string {
 func (*GetAuthMachineToMachineConfigResponse) ProtoMessage() {}
 
 func (x *GetAuthMachineToMachineConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -472,6 +477,7 @@ func (x *AddAuthMachineToMachineConfigRequest) String() string {
 func (*AddAuthMachineToMachineConfigRequest) ProtoMessage() {}
 
 func (x *AddAuthMachineToMachineConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -516,6 +522,7 @@ func (x *AddAuthMachineToMachineConfigResponse) String() string {
 func (*AddAuthMachineToMachineConfigResponse) ProtoMessage() {}
 
 func (x *AddAuthMachineToMachineConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -560,6 +567,7 @@ func (x *UpdateAuthMachineToMachineConfigRequest) String() string {
 func (*UpdateAuthMachineToMachineConfigRequest) ProtoMessage() {}
 
 func (x *UpdateAuthMachineToMachineConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -605,6 +613,7 @@ func (x *ExchangeAuthMachineToMachineTokenRequest) String() string {
 func (*ExchangeAuthMachineToMachineTokenRequest) ProtoMessage() {}
 
 func (x *ExchangeAuthMachineToMachineTokenRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -650,6 +659,7 @@ func (x *ExchangeAuthMachineToMachineTokenResponse) String() string {
 func (*ExchangeAuthMachineToMachineTokenResponse) ProtoMessage() {}
 
 func (x *ExchangeAuthMachineToMachineTokenResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -703,6 +713,7 @@ func (x *AuthMachineToMachineConfig_Mapping) String() string {
 func (*AuthMachineToMachineConfig_Mapping) ProtoMessage() {}
 
 func (x *AuthMachineToMachineConfig_Mapping) ProtoReflect() protoreflect.Message {
+	file_api_v1_auth_service_proto_init_ensure()
 	mi := &file_api_v1_auth_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -871,9 +882,11 @@ var file_api_v1_auth_service_proto_depIdxs = []int32{
 	0,  // [0:13] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_auth_service_proto_init() }
+var file_api_v1_auth_service_proto_init_once sync.Once
+func file_api_v1_auth_service_proto_init_ensure() { file_api_v1_auth_service_proto_init_once.Do(file_api_v1_auth_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_auth_service_proto_init() {
-	if File_api_v1_auth_service_proto != nil || skipProtoInit {
+	if File_api_v1_auth_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

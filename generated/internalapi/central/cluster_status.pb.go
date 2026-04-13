@@ -43,6 +43,7 @@ func (x *DeploymentEnvironmentUpdate) String() string {
 func (*DeploymentEnvironmentUpdate) ProtoMessage() {}
 
 func (x *DeploymentEnvironmentUpdate) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_cluster_status_proto_init_ensure()
 	mi := &file_internalapi_central_cluster_status_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -93,6 +94,7 @@ func (x *ClusterStatusUpdate) String() string {
 func (*ClusterStatusUpdate) ProtoMessage() {}
 
 func (x *ClusterStatusUpdate) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_cluster_status_proto_init_ensure()
 	mi := &file_internalapi_central_cluster_status_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -173,6 +175,7 @@ func (x *RawClusterHealthInfo) String() string {
 func (*RawClusterHealthInfo) ProtoMessage() {}
 
 func (x *RawClusterHealthInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_cluster_status_proto_init_ensure()
 	mi := &file_internalapi_central_cluster_status_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -230,6 +233,7 @@ func (x *ClusterHealthResponse) String() string {
 func (*ClusterHealthResponse) ProtoMessage() {}
 
 func (x *ClusterHealthResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_cluster_status_proto_init_ensure()
 	mi := &file_internalapi_central_cluster_status_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -299,9 +303,11 @@ var file_internalapi_central_cluster_status_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_cluster_status_proto_init() }
+var file_internalapi_central_cluster_status_proto_init_once sync.Once
+func file_internalapi_central_cluster_status_proto_init_ensure() { file_internalapi_central_cluster_status_proto_init_once.Do(file_internalapi_central_cluster_status_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_cluster_status_proto_init() {
-	if File_internalapi_central_cluster_status_proto != nil || skipProtoInit {
+	if File_internalapi_central_cluster_status_proto != nil {
 		return
 	}
 	file_internalapi_central_cluster_status_proto_msgTypes[1].OneofWrappers = []any{

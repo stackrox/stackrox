@@ -44,6 +44,7 @@ func (x *GetAuthProviderRequest) String() string {
 func (*GetAuthProviderRequest) ProtoMessage() {}
 
 func (x *GetAuthProviderRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -89,6 +90,7 @@ func (x *GetAuthProvidersRequest) String() string {
 func (*GetAuthProvidersRequest) ProtoMessage() {}
 
 func (x *GetAuthProvidersRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,6 +142,7 @@ func (x *GetLoginAuthProvidersResponse) String() string {
 func (*GetLoginAuthProvidersResponse) ProtoMessage() {}
 
 func (x *GetLoginAuthProvidersResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,6 +187,7 @@ func (x *GetAuthProvidersResponse) String() string {
 func (*GetAuthProvidersResponse) ProtoMessage() {}
 
 func (x *GetAuthProvidersResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -228,6 +232,7 @@ func (x *PostAuthProviderRequest) String() string {
 func (*PostAuthProviderRequest) ProtoMessage() {}
 
 func (x *PostAuthProviderRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -280,6 +285,7 @@ func (x *UpdateAuthProviderRequest) String() string {
 func (*UpdateAuthProviderRequest) ProtoMessage() {}
 
 func (x *UpdateAuthProviderRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -379,6 +385,7 @@ func (x *ExchangeTokenRequest) String() string {
 func (*ExchangeTokenRequest) ProtoMessage() {}
 
 func (x *ExchangeTokenRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -440,6 +447,7 @@ func (x *ExchangeTokenResponse) String() string {
 func (*ExchangeTokenResponse) ProtoMessage() {}
 
 func (x *ExchangeTokenResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -505,6 +513,7 @@ func (x *AvailableProviderTypesResponse) String() string {
 func (*AvailableProviderTypesResponse) ProtoMessage() {}
 
 func (x *AvailableProviderTypesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -552,6 +561,7 @@ func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) String() string {
 func (*GetLoginAuthProvidersResponse_LoginAuthProvider) ProtoMessage() {}
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -618,6 +628,7 @@ func (x *AvailableProviderTypesResponse_AuthProviderType) String() string {
 func (*AvailableProviderTypesResponse_AuthProviderType) ProtoMessage() {}
 
 func (x *AvailableProviderTypesResponse_AuthProviderType) ProtoReflect() protoreflect.Message {
+	file_api_v1_authprovider_service_proto_init_ensure()
 	mi := &file_api_v1_authprovider_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -763,9 +774,11 @@ var file_api_v1_authprovider_service_proto_depIdxs = []int32{
 	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_authprovider_service_proto_init() }
+var file_api_v1_authprovider_service_proto_init_once sync.Once
+func file_api_v1_authprovider_service_proto_init_ensure() { file_api_v1_authprovider_service_proto_init_once.Do(file_api_v1_authprovider_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_authprovider_service_proto_init() {
-	if File_api_v1_authprovider_service_proto != nil || skipProtoInit {
+	if File_api_v1_authprovider_service_proto != nil {
 		return
 	}
 	file_api_v1_auth_service_proto_init()

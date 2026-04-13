@@ -51,6 +51,7 @@ func (x *NetworkConnectionInfo) String() string {
 func (*NetworkConnectionInfo) ProtoMessage() {}
 
 func (x *NetworkConnectionInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_network_connection_info_proto_init_ensure()
 	mi := &file_internalapi_sensor_network_connection_info_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -118,6 +119,7 @@ func (x *NetworkConnection) String() string {
 func (*NetworkConnection) ProtoMessage() {}
 
 func (x *NetworkConnection) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_network_connection_info_proto_init_ensure()
 	mi := &file_internalapi_sensor_network_connection_info_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -212,6 +214,7 @@ func (x *NetworkEndpoint) String() string {
 func (*NetworkEndpoint) ProtoMessage() {}
 
 func (x *NetworkEndpoint) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_network_connection_info_proto_init_ensure()
 	mi := &file_internalapi_sensor_network_connection_info_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -296,6 +299,7 @@ func (x *NetworkAddress) String() string {
 func (*NetworkAddress) ProtoMessage() {}
 
 func (x *NetworkAddress) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_network_connection_info_proto_init_ensure()
 	mi := &file_internalapi_sensor_network_connection_info_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -411,9 +415,11 @@ var file_internalapi_sensor_network_connection_info_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_network_connection_info_proto_init() }
+var file_internalapi_sensor_network_connection_info_proto_init_once sync.Once
+func file_internalapi_sensor_network_connection_info_proto_init_ensure() { file_internalapi_sensor_network_connection_info_proto_init_once.Do(file_internalapi_sensor_network_connection_info_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_network_connection_info_proto_init() {
-	if File_internalapi_sensor_network_connection_info_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_network_connection_info_proto != nil {
 		return
 	}
 	file_internalapi_sensor_network_enums_proto_init()

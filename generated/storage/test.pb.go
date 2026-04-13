@@ -212,6 +212,7 @@ func (x *TestSingleKeyStruct) String() string {
 func (*TestSingleKeyStruct) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -421,6 +422,7 @@ func (x *TestSingleUUIDKeyStruct) String() string {
 func (*TestSingleUUIDKeyStruct) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -662,6 +664,7 @@ func (x *TestStruct) String() string {
 func (*TestStruct) ProtoMessage() {}
 
 func (x *TestStruct) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -881,6 +884,7 @@ func (x *TestGrandparent) String() string {
 func (*TestGrandparent) ProtoMessage() {}
 
 func (x *TestGrandparent) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -957,6 +961,7 @@ func (x *TestParent1) String() string {
 func (*TestParent1) ProtoMessage() {}
 
 func (x *TestParent1) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1030,6 +1035,7 @@ func (x *TestChild1) String() string {
 func (*TestChild1) ProtoMessage() {}
 
 func (x *TestChild1) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1084,6 +1090,7 @@ func (x *TestGrandChild1) String() string {
 func (*TestGrandChild1) ProtoMessage() {}
 
 func (x *TestGrandChild1) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1150,6 +1157,7 @@ func (x *TestGGrandChild1) String() string {
 func (*TestGGrandChild1) ProtoMessage() {}
 
 func (x *TestGGrandChild1) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1204,6 +1212,7 @@ func (x *TestG2GrandChild1) String() string {
 func (*TestG2GrandChild1) ProtoMessage() {}
 
 func (x *TestG2GrandChild1) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1270,6 +1279,7 @@ func (x *TestG3GrandChild1) String() string {
 func (*TestG3GrandChild1) ProtoMessage() {}
 
 func (x *TestG3GrandChild1) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1323,6 +1333,7 @@ func (x *TestParent2) String() string {
 func (*TestParent2) ProtoMessage() {}
 
 func (x *TestParent2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1385,6 +1396,7 @@ func (x *TestChild2) String() string {
 func (*TestChild2) ProtoMessage() {}
 
 func (x *TestChild2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1452,6 +1464,7 @@ func (x *TestParent3) String() string {
 func (*TestParent3) ProtoMessage() {}
 
 func (x *TestParent3) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1512,6 +1525,7 @@ func (x *TestParent4) String() string {
 func (*TestParent4) ProtoMessage() {}
 
 func (x *TestParent4) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1572,6 +1586,7 @@ func (x *TestChild1P4) String() string {
 func (*TestChild1P4) ProtoMessage() {}
 
 func (x *TestChild1P4) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1632,6 +1647,7 @@ func (x *TestShortCircuit) String() string {
 func (*TestShortCircuit) ProtoMessage() {}
 
 func (x *TestShortCircuit) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1690,6 +1706,7 @@ func (x *TestSingleKeyStruct_Embedded) String() string {
 func (*TestSingleKeyStruct_Embedded) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Embedded) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1735,6 +1752,7 @@ func (x *TestSingleKeyStruct_Nested) String() string {
 func (*TestSingleKeyStruct_Nested) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Nested) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1787,6 +1805,7 @@ func (x *TestSingleKeyStruct_OneOfNested) String() string {
 func (*TestSingleKeyStruct_OneOfNested) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_OneOfNested) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1838,6 +1857,7 @@ func (x *TestSingleKeyStruct_Embedded_Embedded2) String() string {
 func (*TestSingleKeyStruct_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1882,6 +1902,7 @@ func (x *TestSingleKeyStruct_Nested_Nested2) String() string {
 func (*TestSingleKeyStruct_Nested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1926,6 +1947,7 @@ func (x *TestSingleKeyStruct_OneOfNested_Nested2) String() string {
 func (*TestSingleKeyStruct_OneOfNested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1970,6 +1992,7 @@ func (x *TestSingleUUIDKeyStruct_Embedded) String() string {
 func (*TestSingleUUIDKeyStruct_Embedded) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Embedded) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2015,6 +2038,7 @@ func (x *TestSingleUUIDKeyStruct_Nested) String() string {
 func (*TestSingleUUIDKeyStruct_Nested) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Nested) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2067,6 +2091,7 @@ func (x *TestSingleUUIDKeyStruct_OneOfNested) String() string {
 func (*TestSingleUUIDKeyStruct_OneOfNested) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2118,6 +2143,7 @@ func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) String() string {
 func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2162,6 +2188,7 @@ func (x *TestSingleUUIDKeyStruct_Nested_Nested2) String() string {
 func (*TestSingleUUIDKeyStruct_Nested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2206,6 +2233,7 @@ func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) String() string {
 func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2250,6 +2278,7 @@ func (x *TestStruct_Embedded) String() string {
 func (*TestStruct_Embedded) ProtoMessage() {}
 
 func (x *TestStruct_Embedded) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2297,6 +2326,7 @@ func (x *TestStruct_Nested) String() string {
 func (*TestStruct_Nested) ProtoMessage() {}
 
 func (x *TestStruct_Nested) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2362,6 +2392,7 @@ func (x *TestStruct_OneOfNested) String() string {
 func (*TestStruct_OneOfNested) ProtoMessage() {}
 
 func (x *TestStruct_OneOfNested) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2406,6 +2437,7 @@ func (x *TestStruct_Embedded_Embedded2) String() string {
 func (*TestStruct_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2452,6 +2484,7 @@ func (x *TestStruct_Nested_Nested2) String() string {
 func (*TestStruct_Nested_Nested2) ProtoMessage() {}
 
 func (x *TestStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2510,6 +2543,7 @@ func (x *TestStruct_OneOfNested_Nested2) String() string {
 func (*TestStruct_OneOfNested_Nested2) ProtoMessage() {}
 
 func (x *TestStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2555,6 +2589,7 @@ func (x *TestGrandparent_Embedded) String() string {
 func (*TestGrandparent_Embedded) ProtoMessage() {}
 
 func (x *TestGrandparent_Embedded) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2606,6 +2641,7 @@ func (x *TestGrandparent_Embedded_Embedded2) String() string {
 func (*TestGrandparent_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestGrandparent_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2650,6 +2686,7 @@ func (x *TestParent1_Child1Ref) String() string {
 func (*TestParent1_Child1Ref) ProtoMessage() {}
 
 func (x *TestParent1_Child1Ref) ProtoReflect() protoreflect.Message {
+	file_storage_test_proto_init_ensure()
 	mi := &file_storage_test_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2978,9 +3015,11 @@ var file_storage_test_proto_depIdxs = []int32{
 	0,  // [0:31] is the sub-list for field type_name
 }
 
-func init() { file_storage_test_proto_init() }
+var file_storage_test_proto_init_once sync.Once
+func file_storage_test_proto_init_ensure() { file_storage_test_proto_init_once.Do(file_storage_test_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_test_proto_init() {
-	if File_storage_test_proto != nil || skipProtoInit {
+	if File_storage_test_proto != nil {
 		return
 	}
 	file_storage_test_proto_msgTypes[0].OneofWrappers = []any{

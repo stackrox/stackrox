@@ -1003,6 +1003,7 @@ func (x *EPSS) String() string {
 func (*EPSS) ProtoMessage() {}
 
 func (x *EPSS) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1078,6 +1079,7 @@ func (x *CVE) String() string {
 func (*CVE) ProtoMessage() {}
 
 func (x *CVE) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1263,6 +1265,7 @@ func (x *CVEInfo) String() string {
 func (*CVEInfo) ProtoMessage() {}
 
 func (x *CVEInfo) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1385,6 +1388,7 @@ func (x *Advisory) String() string {
 func (*Advisory) ProtoMessage() {}
 
 func (x *Advisory) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1456,6 +1460,7 @@ func (x *ImageCVE) String() string {
 func (*ImageCVE) ProtoMessage() {}
 
 func (x *ImageCVE) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1609,6 +1614,7 @@ func (x *ImageCVEV2) String() string {
 func (*ImageCVEV2) ProtoMessage() {}
 
 func (x *ImageCVEV2) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1795,6 +1801,7 @@ func (x *NodeCVE) String() string {
 func (*NodeCVE) ProtoMessage() {}
 
 func (x *NodeCVE) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1917,6 +1924,7 @@ func (x *ClusterCVE) String() string {
 func (*ClusterCVE) ProtoMessage() {}
 
 func (x *ClusterCVE) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2023,6 +2031,7 @@ func (x *CVSSScore) String() string {
 func (*CVSSScore) ProtoMessage() {}
 
 func (x *CVSSScore) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2125,6 +2134,7 @@ func (x *CVSSV2) String() string {
 func (*CVSSV2) ProtoMessage() {}
 
 func (x *CVSSV2) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2251,6 +2261,7 @@ func (x *CVSSV3) String() string {
 func (*CVSSV3) ProtoMessage() {}
 
 func (x *CVSSV3) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2384,6 +2395,7 @@ func (x *ImageCVEInfo) String() string {
 func (*ImageCVEInfo) ProtoMessage() {}
 
 func (x *ImageCVEInfo) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2453,6 +2465,7 @@ func (x *CVE_DistroSpecific) String() string {
 func (*CVE_DistroSpecific) ProtoMessage() {}
 
 func (x *CVE_DistroSpecific) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2526,6 +2539,7 @@ func (x *CVE_Reference) String() string {
 func (*CVE_Reference) ProtoMessage() {}
 
 func (x *CVE_Reference) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2578,6 +2592,7 @@ func (x *CVEInfo_Reference) String() string {
 func (*CVEInfo_Reference) ProtoMessage() {}
 
 func (x *CVEInfo_Reference) ProtoReflect() protoreflect.Message {
+	file_storage_cve_proto_init_ensure()
 	mi := &file_storage_cve_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3004,9 +3019,11 @@ var file_storage_cve_proto_depIdxs = []int32{
 	0,  // [0:71] is the sub-list for field type_name
 }
 
-func init() { file_storage_cve_proto_init() }
+var file_storage_cve_proto_init_once sync.Once
+func file_storage_cve_proto_init_ensure() { file_storage_cve_proto_init_once.Do(file_storage_cve_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_cve_proto_init() {
-	if File_storage_cve_proto != nil || skipProtoInit {
+	if File_storage_cve_proto != nil {
 		return
 	}
 	file_storage_cve_proto_msgTypes[5].OneofWrappers = []any{

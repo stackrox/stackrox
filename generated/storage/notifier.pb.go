@@ -222,6 +222,7 @@ func (x *Notifier) String() string {
 func (*Notifier) ProtoMessage() {}
 
 func (x *Notifier) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -478,6 +479,7 @@ func (x *AWSSecurityHub) String() string {
 func (*AWSSecurityHub) ProtoMessage() {}
 
 func (x *AWSSecurityHub) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -539,6 +541,7 @@ func (x *CSCC) String() string {
 func (*CSCC) ProtoMessage() {}
 
 func (x *CSCC) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -604,6 +607,7 @@ func (x *Jira) String() string {
 func (*Jira) ProtoMessage() {}
 
 func (x *Jira) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -703,6 +707,7 @@ func (x *Email) String() string {
 func (*Email) ProtoMessage() {}
 
 func (x *Email) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -827,6 +832,7 @@ func (x *Splunk) String() string {
 func (*Splunk) ProtoMessage() {}
 
 func (x *Splunk) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -937,6 +943,7 @@ func (x *PagerDuty) String() string {
 func (*PagerDuty) ProtoMessage() {}
 
 func (x *PagerDuty) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -989,6 +996,7 @@ func (x *Generic) String() string {
 func (*Generic) ProtoMessage() {}
 
 func (x *Generic) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1083,6 +1091,7 @@ func (x *SumoLogic) String() string {
 func (*SumoLogic) ProtoMessage() {}
 
 func (x *SumoLogic) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1150,6 +1159,7 @@ func (x *MicrosoftSentinel) String() string {
 func (*MicrosoftSentinel) ProtoMessage() {}
 
 func (x *MicrosoftSentinel) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1252,6 +1262,7 @@ func (x *Syslog) String() string {
 func (*Syslog) ProtoMessage() {}
 
 func (x *Syslog) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1345,6 +1356,7 @@ func (x *AWSSecurityHub_Credentials) String() string {
 func (*AWSSecurityHub_Credentials) ProtoMessage() {}
 
 func (x *AWSSecurityHub_Credentials) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1404,6 +1416,7 @@ func (x *Jira_PriorityMapping) String() string {
 func (*Jira_PriorityMapping) ProtoMessage() {}
 
 func (x *Jira_PriorityMapping) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1458,6 +1471,7 @@ func (x *MicrosoftSentinel_DataCollectionRuleConfig) String() string {
 func (*MicrosoftSentinel_DataCollectionRuleConfig) ProtoMessage() {}
 
 func (x *MicrosoftSentinel_DataCollectionRuleConfig) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1520,6 +1534,7 @@ func (x *MicrosoftSentinel_ClientCertAuthConfig) String() string {
 func (*MicrosoftSentinel_ClientCertAuthConfig) ProtoMessage() {}
 
 func (x *MicrosoftSentinel_ClientCertAuthConfig) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1574,6 +1589,7 @@ func (x *Syslog_TCPConfig) String() string {
 func (*Syslog_TCPConfig) ProtoMessage() {}
 
 func (x *Syslog_TCPConfig) ProtoReflect() protoreflect.Message {
+	file_storage_notifier_proto_init_ensure()
 	mi := &file_storage_notifier_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1848,9 +1864,11 @@ var file_storage_notifier_proto_depIdxs = []int32{
 	0,  // [0:25] is the sub-list for field type_name
 }
 
-func init() { file_storage_notifier_proto_init() }
+var file_storage_notifier_proto_init_once sync.Once
+func file_storage_notifier_proto_init_ensure() { file_storage_notifier_proto_init_once.Do(file_storage_notifier_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_notifier_proto_init() {
-	if File_storage_notifier_proto != nil || skipProtoInit {
+	if File_storage_notifier_proto != nil {
 		return
 	}
 	file_storage_common_proto_init()

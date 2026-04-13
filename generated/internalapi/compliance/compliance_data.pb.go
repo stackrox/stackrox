@@ -45,6 +45,7 @@ func (x *GZIPDataChunk) String() string {
 func (*GZIPDataChunk) ProtoMessage() {}
 
 func (x *GZIPDataChunk) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -98,6 +99,7 @@ func (x *File) String() string {
 func (*File) ProtoMessage() {}
 
 func (x *File) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -200,6 +202,7 @@ func (x *CommandLine) String() string {
 func (*CommandLine) ProtoMessage() {}
 
 func (x *CommandLine) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -252,6 +255,7 @@ func (x *InsecureRegistriesConfig) String() string {
 func (*InsecureRegistriesConfig) ProtoMessage() {}
 
 func (x *InsecureRegistriesConfig) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -303,6 +307,7 @@ func (x *ContainerRuntimeInfo) String() string {
 func (*ContainerRuntimeInfo) ProtoMessage() {}
 
 func (x *ContainerRuntimeInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -348,6 +353,7 @@ func (x *ComplianceStandardResult) String() string {
 func (*ComplianceStandardResult) ProtoMessage() {}
 
 func (x *ComplianceStandardResult) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -408,6 +414,7 @@ func (x *ComplianceReturn) String() string {
 func (*ComplianceReturn) ProtoMessage() {}
 
 func (x *ComplianceReturn) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -510,6 +517,7 @@ func (x *CommandLine_Args) String() string {
 func (*CommandLine_Args) ProtoMessage() {}
 
 func (x *CommandLine_Args) ProtoReflect() protoreflect.Message {
+	file_internalapi_compliance_compliance_data_proto_init_ensure()
 	mi := &file_internalapi_compliance_compliance_data_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -667,9 +675,11 @@ var file_internalapi_compliance_compliance_data_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_compliance_compliance_data_proto_init() }
+var file_internalapi_compliance_compliance_data_proto_init_once sync.Once
+func file_internalapi_compliance_compliance_data_proto_init_ensure() { file_internalapi_compliance_compliance_data_proto_init_once.Do(file_internalapi_compliance_compliance_data_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_compliance_compliance_data_proto_init() {
-	if File_internalapi_compliance_compliance_data_proto != nil || skipProtoInit {
+	if File_internalapi_compliance_compliance_data_proto != nil {
 		return
 	}
 	type x struct{}

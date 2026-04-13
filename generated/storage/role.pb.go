@@ -164,6 +164,7 @@ func (x *Role) String() string {
 func (*Role) ProtoMessage() {}
 
 func (x *Role) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -259,6 +260,7 @@ func (x *PermissionSet) String() string {
 func (*PermissionSet) ProtoMessage() {}
 
 func (x *PermissionSet) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -339,6 +341,7 @@ func (x *SimpleAccessScope) String() string {
 func (*SimpleAccessScope) ProtoMessage() {}
 
 func (x *SimpleAccessScope) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -417,6 +420,7 @@ func (x *EffectiveAccessScope) String() string {
 func (*EffectiveAccessScope) ProtoMessage() {}
 
 func (x *EffectiveAccessScope) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -472,6 +476,7 @@ func (x *SimpleAccessScope_Rules) String() string {
 func (*SimpleAccessScope_Rules) ProtoMessage() {}
 
 func (x *SimpleAccessScope_Rules) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -548,6 +553,7 @@ func (x *SimpleAccessScope_Rules_Namespace) String() string {
 func (*SimpleAccessScope_Rules_Namespace) ProtoMessage() {}
 
 func (x *SimpleAccessScope_Rules_Namespace) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -609,6 +615,7 @@ func (x *EffectiveAccessScope_Namespace) String() string {
 func (*EffectiveAccessScope_Namespace) ProtoMessage() {}
 
 func (x *EffectiveAccessScope_Namespace) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -678,6 +685,7 @@ func (x *EffectiveAccessScope_Cluster) String() string {
 func (*EffectiveAccessScope_Cluster) ProtoMessage() {}
 
 func (x *EffectiveAccessScope_Cluster) ProtoReflect() protoreflect.Message {
+	file_storage_role_proto_init_ensure()
 	mi := &file_storage_role_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -861,9 +869,11 @@ var file_storage_role_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_storage_role_proto_init() }
+var file_storage_role_proto_init_once sync.Once
+func file_storage_role_proto_init_ensure() { file_storage_role_proto_init_once.Do(file_storage_role_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_role_proto_init() {
-	if File_storage_role_proto != nil || skipProtoInit {
+	if File_storage_role_proto != nil {
 		return
 	}
 	file_storage_labels_proto_init()

@@ -44,6 +44,7 @@ func (x *DryRunResponse) String() string {
 func (*DryRunResponse) ProtoMessage() {}
 
 func (x *DryRunResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -88,6 +89,7 @@ func (x *JobId) String() string {
 func (*JobId) ProtoMessage() {}
 
 func (x *JobId) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -133,6 +135,7 @@ func (x *DryRunJobStatusResponse) String() string {
 func (*DryRunJobStatusResponse) ProtoMessage() {}
 
 func (x *DryRunJobStatusResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,6 +187,7 @@ func (x *PolicyCategoriesResponse) String() string {
 func (*PolicyCategoriesResponse) ProtoMessage() {}
 
 func (x *PolicyCategoriesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -230,6 +234,7 @@ func (x *EnableDisablePolicyNotificationRequest) String() string {
 func (*EnableDisablePolicyNotificationRequest) ProtoMessage() {}
 
 func (x *EnableDisablePolicyNotificationRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -288,6 +293,7 @@ func (x *ListPoliciesResponse) String() string {
 func (*ListPoliciesResponse) ProtoMessage() {}
 
 func (x *ListPoliciesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -333,6 +339,7 @@ func (x *PostPolicyRequest) String() string {
 func (*PostPolicyRequest) ProtoMessage() {}
 
 func (x *PostPolicyRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -388,6 +395,7 @@ func (x *PatchPolicyRequest) String() string {
 func (*PatchPolicyRequest) ProtoMessage() {}
 
 func (x *PatchPolicyRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -458,6 +466,7 @@ func (x *ExportPoliciesRequest) String() string {
 func (*ExportPoliciesRequest) ProtoMessage() {}
 
 func (x *ExportPoliciesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -502,6 +511,7 @@ func (x *PolicyError) String() string {
 func (*PolicyError) ProtoMessage() {}
 
 func (x *PolicyError) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -547,6 +557,7 @@ func (x *PolicyOperationError) String() string {
 func (*PolicyOperationError) ProtoMessage() {}
 
 func (x *PolicyOperationError) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -598,6 +609,7 @@ func (x *PolicyOperationErrorList) String() string {
 func (*PolicyOperationErrorList) ProtoMessage() {}
 
 func (x *PolicyOperationErrorList) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -642,6 +654,7 @@ func (x *PolicyFromSearchRequest) String() string {
 func (*PolicyFromSearchRequest) ProtoMessage() {}
 
 func (x *PolicyFromSearchRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -686,6 +699,7 @@ func (x *ImportPoliciesMetadata) String() string {
 func (*ImportPoliciesMetadata) ProtoMessage() {}
 
 func (x *ImportPoliciesMetadata) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -731,6 +745,7 @@ func (x *ImportPoliciesRequest) String() string {
 func (*ImportPoliciesRequest) ProtoMessage() {}
 
 func (x *ImportPoliciesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -788,6 +803,7 @@ func (x *ImportPolicyError) String() string {
 func (*ImportPolicyError) ProtoMessage() {}
 
 func (x *ImportPolicyError) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -882,6 +898,7 @@ func (x *ImportPolicyResponse) String() string {
 func (*ImportPolicyResponse) ProtoMessage() {}
 
 func (x *ImportPolicyResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -941,6 +958,7 @@ func (x *ImportPoliciesResponse) String() string {
 func (*ImportPoliciesResponse) ProtoMessage() {}
 
 func (x *ImportPoliciesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -994,6 +1012,7 @@ func (x *PolicyFromSearchResponse) String() string {
 func (*PolicyFromSearchResponse) ProtoMessage() {}
 
 func (x *PolicyFromSearchResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1053,6 +1072,7 @@ func (x *GetPolicyMitreVectorsRequest) String() string {
 func (*GetPolicyMitreVectorsRequest) ProtoMessage() {}
 
 func (x *GetPolicyMitreVectorsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1105,6 +1125,7 @@ func (x *GetPolicyMitreVectorsResponse) String() string {
 func (*GetPolicyMitreVectorsResponse) ProtoMessage() {}
 
 func (x *GetPolicyMitreVectorsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1157,6 +1178,7 @@ func (x *DryRunResponse_Alert) String() string {
 func (*DryRunResponse_Alert) ProtoMessage() {}
 
 func (x *DryRunResponse_Alert) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1209,6 +1231,7 @@ func (x *GetPolicyMitreVectorsRequest_Options) String() string {
 func (*GetPolicyMitreVectorsRequest_Options) ProtoMessage() {}
 
 func (x *GetPolicyMitreVectorsRequest_Options) ProtoReflect() protoreflect.Message {
+	file_api_v1_policy_service_proto_init_ensure()
 	mi := &file_api_v1_policy_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1434,9 +1457,11 @@ var file_api_v1_policy_service_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_policy_service_proto_init() }
+var file_api_v1_policy_service_proto_init_once sync.Once
+func file_api_v1_policy_service_proto_init_ensure() { file_api_v1_policy_service_proto_init_once.Do(file_api_v1_policy_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_policy_service_proto_init() {
-	if File_api_v1_policy_service_proto != nil || skipProtoInit {
+	if File_api_v1_policy_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

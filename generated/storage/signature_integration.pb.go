@@ -47,6 +47,7 @@ func (x *SignatureIntegration) String() string {
 func (*SignatureIntegration) ProtoMessage() {}
 
 func (x *SignatureIntegration) ProtoReflect() protoreflect.Message {
+	file_storage_signature_integration_proto_init_ensure()
 	mi := &file_storage_signature_integration_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -126,6 +127,7 @@ func (x *CosignPublicKeyVerification) String() string {
 func (*CosignPublicKeyVerification) ProtoMessage() {}
 
 func (x *CosignPublicKeyVerification) ProtoReflect() protoreflect.Message {
+	file_storage_signature_integration_proto_init_ensure()
 	mi := &file_storage_signature_integration_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -195,6 +197,7 @@ func (x *CosignCertificateVerification) String() string {
 func (*CosignCertificateVerification) ProtoMessage() {}
 
 func (x *CosignCertificateVerification) ProtoReflect() protoreflect.Message {
+	file_storage_signature_integration_proto_init_ensure()
 	mi := &file_storage_signature_integration_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -276,6 +279,7 @@ func (x *CertificateTransparencyLogVerification) String() string {
 func (*CertificateTransparencyLogVerification) ProtoMessage() {}
 
 func (x *CertificateTransparencyLogVerification) ProtoReflect() protoreflect.Message {
+	file_storage_signature_integration_proto_init_ensure()
 	mi := &file_storage_signature_integration_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -342,6 +346,7 @@ func (x *TransparencyLogVerification) String() string {
 func (*TransparencyLogVerification) ProtoMessage() {}
 
 func (x *TransparencyLogVerification) ProtoReflect() protoreflect.Message {
+	file_storage_signature_integration_proto_init_ensure()
 	mi := &file_storage_signature_integration_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -408,6 +413,7 @@ func (x *CosignPublicKeyVerification_PublicKey) String() string {
 func (*CosignPublicKeyVerification_PublicKey) ProtoMessage() {}
 
 func (x *CosignPublicKeyVerification_PublicKey) ProtoReflect() protoreflect.Message {
+	file_storage_signature_integration_proto_init_ensure()
 	mi := &file_storage_signature_integration_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -508,9 +514,11 @@ var file_storage_signature_integration_proto_depIdxs = []int32{
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_storage_signature_integration_proto_init() }
+var file_storage_signature_integration_proto_init_once sync.Once
+func file_storage_signature_integration_proto_init_ensure() { file_storage_signature_integration_proto_init_once.Do(file_storage_signature_integration_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_signature_integration_proto_init() {
-	if File_storage_signature_integration_proto != nil || skipProtoInit {
+	if File_storage_signature_integration_proto != nil {
 		return
 	}
 	file_storage_traits_proto_init()

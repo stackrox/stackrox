@@ -170,6 +170,7 @@ func (x *NetworkFlow) String() string {
 func (*NetworkFlow) ProtoMessage() {}
 
 func (x *NetworkFlow) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -241,6 +242,7 @@ func (x *NetworkFlowProperties) String() string {
 func (*NetworkFlowProperties) ProtoMessage() {}
 
 func (x *NetworkFlowProperties) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -307,6 +309,7 @@ func (x *NetworkEndpoint) String() string {
 func (*NetworkEndpoint) ProtoMessage() {}
 
 func (x *NetworkEndpoint) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -360,6 +363,7 @@ func (x *NetworkEndpointProperties) String() string {
 func (*NetworkEndpointProperties) ProtoMessage() {}
 
 func (x *NetworkEndpointProperties) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -422,6 +426,7 @@ func (x *NetworkEntity) String() string {
 func (*NetworkEntity) ProtoMessage() {}
 
 func (x *NetworkEntity) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -479,6 +484,7 @@ func (x *NetworkEntityInfo) String() string {
 func (*NetworkEntityInfo) ProtoMessage() {}
 
 func (x *NetworkEntityInfo) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -571,6 +577,7 @@ func (x *NetworkEntity_Scope) String() string {
 func (*NetworkEntity_Scope) ProtoMessage() {}
 
 func (x *NetworkEntity_Scope) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -619,6 +626,7 @@ func (x *NetworkEntityInfo_Deployment) String() string {
 func (*NetworkEntityInfo_Deployment) ProtoMessage() {}
 
 func (x *NetworkEntityInfo_Deployment) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -694,6 +702,7 @@ func (x *NetworkEntityInfo_ExternalSource) String() string {
 func (*NetworkEntityInfo_ExternalSource) ProtoMessage() {}
 
 func (x *NetworkEntityInfo_ExternalSource) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -779,6 +788,7 @@ func (x *NetworkEntityInfo_Deployment_ListenPort) String() string {
 func (*NetworkEntityInfo_Deployment_ListenPort) ProtoMessage() {}
 
 func (x *NetworkEntityInfo_Deployment_ListenPort) ProtoReflect() protoreflect.Message {
+	file_storage_network_flow_proto_init_ensure()
 	mi := &file_storage_network_flow_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -946,9 +956,11 @@ var file_storage_network_flow_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_storage_network_flow_proto_init() }
+var file_storage_network_flow_proto_init_once sync.Once
+func file_storage_network_flow_proto_init_ensure() { file_storage_network_flow_proto_init_once.Do(file_storage_network_flow_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_network_flow_proto_init() {
-	if File_storage_network_flow_proto != nil || skipProtoInit {
+	if File_storage_network_flow_proto != nil {
 		return
 	}
 	file_storage_network_flow_proto_msgTypes[5].OneofWrappers = []any{

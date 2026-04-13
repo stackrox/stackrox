@@ -103,6 +103,7 @@ func (x *CloudSource) String() string {
 func (*CloudSource) ProtoMessage() {}
 
 func (x *CloudSource) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -220,6 +221,7 @@ func (x *PaladinCloudConfig) String() string {
 func (*PaladinCloudConfig) ProtoMessage() {}
 
 func (x *PaladinCloudConfig) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -268,6 +270,7 @@ func (x *OCMConfig) String() string {
 func (*OCMConfig) ProtoMessage() {}
 
 func (x *OCMConfig) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -315,6 +318,7 @@ func (x *CloudSourcesFilter) String() string {
 func (*CloudSourcesFilter) ProtoMessage() {}
 
 func (x *CloudSourcesFilter) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -367,6 +371,7 @@ func (x *CountCloudSourcesRequest) String() string {
 func (*CountCloudSourcesRequest) ProtoMessage() {}
 
 func (x *CountCloudSourcesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -411,6 +416,7 @@ func (x *CountCloudSourcesResponse) String() string {
 func (*CountCloudSourcesResponse) ProtoMessage() {}
 
 func (x *CountCloudSourcesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -455,6 +461,7 @@ func (x *GetCloudSourceRequest) String() string {
 func (*GetCloudSourceRequest) ProtoMessage() {}
 
 func (x *GetCloudSourceRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -499,6 +506,7 @@ func (x *GetCloudSourceResponse) String() string {
 func (*GetCloudSourceResponse) ProtoMessage() {}
 
 func (x *GetCloudSourceResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -546,6 +554,7 @@ func (x *ListCloudSourcesRequest) String() string {
 func (*ListCloudSourcesRequest) ProtoMessage() {}
 
 func (x *ListCloudSourcesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -597,6 +606,7 @@ func (x *ListCloudSourcesResponse) String() string {
 func (*ListCloudSourcesResponse) ProtoMessage() {}
 
 func (x *ListCloudSourcesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -641,6 +651,7 @@ func (x *CreateCloudSourceRequest) String() string {
 func (*CreateCloudSourceRequest) ProtoMessage() {}
 
 func (x *CreateCloudSourceRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -685,6 +696,7 @@ func (x *CreateCloudSourceResponse) String() string {
 func (*CreateCloudSourceResponse) ProtoMessage() {}
 
 func (x *CreateCloudSourceResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -733,6 +745,7 @@ func (x *UpdateCloudSourceRequest) String() string {
 func (*UpdateCloudSourceRequest) ProtoMessage() {}
 
 func (x *UpdateCloudSourceRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -784,6 +797,7 @@ func (x *DeleteCloudSourceRequest) String() string {
 func (*DeleteCloudSourceRequest) ProtoMessage() {}
 
 func (x *DeleteCloudSourceRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -832,6 +846,7 @@ func (x *TestCloudSourceRequest) String() string {
 func (*TestCloudSourceRequest) ProtoMessage() {}
 
 func (x *TestCloudSourceRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -888,6 +903,7 @@ func (x *CloudSource_Credentials) String() string {
 func (*CloudSource_Credentials) ProtoMessage() {}
 
 func (x *CloudSource_Credentials) ProtoReflect() protoreflect.Message {
+	file_api_v1_cloud_source_service_proto_init_ensure()
 	mi := &file_api_v1_cloud_source_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1062,9 +1078,11 @@ var file_api_v1_cloud_source_service_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_cloud_source_service_proto_init() }
+var file_api_v1_cloud_source_service_proto_init_once sync.Once
+func file_api_v1_cloud_source_service_proto_init_ensure() { file_api_v1_cloud_source_service_proto_init_once.Do(file_api_v1_cloud_source_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_cloud_source_service_proto_init() {
-	if File_api_v1_cloud_source_service_proto != nil || skipProtoInit {
+	if File_api_v1_cloud_source_service_proto != nil {
 		return
 	}
 	file_api_v1_empty_proto_init()

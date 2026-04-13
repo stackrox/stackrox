@@ -279,6 +279,7 @@ func (x *ComplianceOperatorInfo) String() string {
 func (*ComplianceOperatorInfo) ProtoMessage() {}
 
 func (x *ComplianceOperatorInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -396,6 +397,7 @@ func (x *EnableComplianceRequest) String() string {
 func (*EnableComplianceRequest) ProtoMessage() {}
 
 func (x *EnableComplianceRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -440,6 +442,7 @@ func (x *DisableComplianceRequest) String() string {
 func (*DisableComplianceRequest) ProtoMessage() {}
 
 func (x *DisableComplianceRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -486,6 +489,7 @@ func (x *SyncComplianceScanConfigRequest) String() string {
 func (*SyncComplianceScanConfigRequest) ProtoMessage() {}
 
 func (x *SyncComplianceScanConfigRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -539,6 +543,7 @@ func (x *ApplyComplianceScanConfigRequest) String() string {
 func (*ApplyComplianceScanConfigRequest) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -675,6 +680,7 @@ func (x *DeleteComplianceScanConfigRequest) String() string {
 func (*DeleteComplianceScanConfigRequest) ProtoMessage() {}
 
 func (x *DeleteComplianceScanConfigRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -734,6 +740,7 @@ func (x *ComplianceRequest) String() string {
 func (*ComplianceRequest) ProtoMessage() {}
 
 func (x *ComplianceRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -864,6 +871,7 @@ func (x *ComplianceResponse) String() string {
 func (*ComplianceResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -989,6 +997,7 @@ func (x *ComplianceOperatorCheckResultV2) String() string {
 func (*ComplianceOperatorCheckResultV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorCheckResultV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1150,6 +1159,7 @@ func (x *ComplianceOperatorProfileV2) String() string {
 func (*ComplianceOperatorProfileV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorProfileV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1279,6 +1289,7 @@ func (x *ComplianceOperatorRuleV2) String() string {
 func (*ComplianceOperatorRuleV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1420,6 +1431,7 @@ func (x *ComplianceOperatorScanV2) String() string {
 func (*ComplianceOperatorScanV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1516,6 +1528,7 @@ func (x *ComplianceOperatorScanStatusV2) String() string {
 func (*ComplianceOperatorScanStatusV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanStatusV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1622,6 +1635,7 @@ func (x *ComplianceOperatorScanSettingBindingV2) String() string {
 func (*ComplianceOperatorScanSettingBindingV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1712,6 +1726,7 @@ func (x *ComplianceOperatorCondition) String() string {
 func (*ComplianceOperatorCondition) ProtoMessage() {}
 
 func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1787,6 +1802,7 @@ func (x *ComplianceOperatorStatus) String() string {
 func (*ComplianceOperatorStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1854,6 +1870,7 @@ func (x *ComplianceOperatorSuiteV2) String() string {
 func (*ComplianceOperatorSuiteV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1924,6 +1941,7 @@ func (x *ComplianceOperatorRemediationV2) String() string {
 func (*ComplianceOperatorRemediationV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2022,6 +2040,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) String() string {
 func (*ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2115,6 +2134,7 @@ func (x *ApplyComplianceScanConfigRequest_OneTimeScan) String() string {
 func (*ApplyComplianceScanConfigRequest_OneTimeScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2160,6 +2180,7 @@ func (x *ApplyComplianceScanConfigRequest_ScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_ScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2211,6 +2232,7 @@ func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2255,6 +2277,7 @@ func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) String() string 
 func (*ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2299,6 +2322,7 @@ func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2344,6 +2368,7 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2396,6 +2421,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) Str
 func (*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2451,6 +2477,7 @@ func (x *ComplianceResponse_EnableComplianceResponse) String() string {
 func (*ComplianceResponse_EnableComplianceResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_EnableComplianceResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2526,6 +2553,7 @@ func (x *ComplianceResponse_DisableComplianceResponse) String() string {
 func (*ComplianceResponse_DisableComplianceResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_DisableComplianceResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2601,6 +2629,7 @@ func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) String() string {
 func (*ComplianceResponse_ApplyComplianceScanConfigResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2676,6 +2705,7 @@ func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) String() string 
 func (*ComplianceResponse_DeleteComplianceScanConfigResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2747,6 +2777,7 @@ func (x *ComplianceOperatorProfileV2_Rule) String() string {
 func (*ComplianceOperatorProfileV2_Rule) ProtoMessage() {}
 
 func (x *ComplianceOperatorProfileV2_Rule) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2792,6 +2823,7 @@ func (x *ComplianceOperatorRuleV2_Fix) String() string {
 func (*ComplianceOperatorRuleV2_Fix) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2_Fix) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_compliance_operator_proto_init_ensure()
 	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3199,9 +3231,11 @@ var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	0,  // [0:46] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_compliance_operator_proto_init() }
+var file_internalapi_central_compliance_operator_proto_init_once sync.Once
+func file_internalapi_central_compliance_operator_proto_init_ensure() { file_internalapi_central_compliance_operator_proto_init_once.Do(file_internalapi_central_compliance_operator_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_compliance_operator_proto_init() {
-	if File_internalapi_central_compliance_operator_proto != nil || skipProtoInit {
+	if File_internalapi_central_compliance_operator_proto != nil {
 		return
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[0].OneofWrappers = []any{

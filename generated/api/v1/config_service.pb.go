@@ -44,6 +44,7 @@ func (x *PutConfigRequest) String() string {
 func (*PutConfigRequest) ProtoMessage() {}
 
 func (x *PutConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -89,6 +90,7 @@ func (x *DayOption) String() string {
 func (*DayOption) ProtoMessage() {}
 
 func (x *DayOption) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,6 +142,7 @@ func (x *VulnerabilityExceptionConfig) String() string {
 func (*VulnerabilityExceptionConfig) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,6 +187,7 @@ func (x *GetVulnerabilityExceptionConfigResponse) String() string {
 func (*GetVulnerabilityExceptionConfigResponse) ProtoMessage() {}
 
 func (x *GetVulnerabilityExceptionConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -228,6 +232,7 @@ func (x *UpdateVulnerabilityExceptionConfigRequest) String() string {
 func (*UpdateVulnerabilityExceptionConfigRequest) ProtoMessage() {}
 
 func (x *UpdateVulnerabilityExceptionConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -272,6 +277,7 @@ func (x *UpdateVulnerabilityExceptionConfigResponse) String() string {
 func (*UpdateVulnerabilityExceptionConfigResponse) ProtoMessage() {}
 
 func (x *UpdateVulnerabilityExceptionConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -316,6 +322,7 @@ func (x *PutPlatformComponentConfigRequest) String() string {
 func (*PutPlatformComponentConfigRequest) ProtoMessage() {}
 
 func (x *PutPlatformComponentConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -360,6 +367,7 @@ func (x *GetDefaultRedHatLayeredProductsRegexResponse) String() string {
 func (*GetDefaultRedHatLayeredProductsRegexResponse) ProtoMessage() {}
 
 func (x *GetDefaultRedHatLayeredProductsRegexResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -409,6 +417,7 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) String() string {
 func (*VulnerabilityExceptionConfig_FixableCVEOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -466,6 +475,7 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) String() string {
 func (*VulnerabilityExceptionConfig_ExpiryOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect.Message {
+	file_api_v1_config_service_proto_init_ensure()
 	mi := &file_api_v1_config_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -625,9 +635,11 @@ var file_api_v1_config_service_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_config_service_proto_init() }
+var file_api_v1_config_service_proto_init_once sync.Once
+func file_api_v1_config_service_proto_init_ensure() { file_api_v1_config_service_proto_init_once.Do(file_api_v1_config_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_config_service_proto_init() {
-	if File_api_v1_config_service_proto != nil || skipProtoInit {
+	if File_api_v1_config_service_proto != nil {
 		return
 	}
 	file_api_v1_empty_proto_init()

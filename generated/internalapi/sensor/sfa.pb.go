@@ -44,6 +44,7 @@ func (x *FileActivityBase) String() string {
 func (*FileActivityBase) ProtoMessage() {}
 
 func (x *FileActivityBase) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -95,6 +96,7 @@ func (x *FileCreation) String() string {
 func (*FileCreation) ProtoMessage() {}
 
 func (x *FileCreation) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -139,6 +141,7 @@ func (x *FileUnlink) String() string {
 func (*FileUnlink) ProtoMessage() {}
 
 func (x *FileUnlink) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,6 +187,7 @@ func (x *FileRename) String() string {
 func (*FileRename) ProtoMessage() {}
 
 func (x *FileRename) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -236,6 +240,7 @@ func (x *FilePermissionChange) String() string {
 func (*FilePermissionChange) ProtoMessage() {}
 
 func (x *FilePermissionChange) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -291,6 +296,7 @@ func (x *FileOwnershipChange) String() string {
 func (*FileOwnershipChange) ProtoMessage() {}
 
 func (x *FileOwnershipChange) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -363,6 +369,7 @@ func (x *FileWrite) String() string {
 func (*FileWrite) ProtoMessage() {}
 
 func (x *FileWrite) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -407,6 +414,7 @@ func (x *FileOpen) String() string {
 func (*FileOpen) ProtoMessage() {}
 
 func (x *FileOpen) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -464,6 +472,7 @@ func (x *FileActivity) String() string {
 func (*FileActivity) ProtoMessage() {}
 
 func (x *FileActivity) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_sfa_proto_init_ensure()
 	mi := &file_internalapi_sensor_sfa_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -714,9 +723,11 @@ var file_internalapi_sensor_sfa_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_sfa_proto_init() }
+var file_internalapi_sensor_sfa_proto_init_once sync.Once
+func file_internalapi_sensor_sfa_proto_init_ensure() { file_internalapi_sensor_sfa_proto_init_once.Do(file_internalapi_sensor_sfa_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_sfa_proto_init() {
-	if File_internalapi_sensor_sfa_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_sfa_proto != nil {
 		return
 	}
 	file_internalapi_sensor_collector_proto_init()

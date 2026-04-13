@@ -46,6 +46,7 @@ func (x *SecretList) String() string {
 func (*SecretList) ProtoMessage() {}
 
 func (x *SecretList) ProtoReflect() protoreflect.Message {
+	file_api_v1_secret_service_proto_init_ensure()
 	mi := &file_api_v1_secret_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -92,6 +93,7 @@ func (x *ListSecretsResponse) String() string {
 func (*ListSecretsResponse) ProtoMessage() {}
 
 func (x *ListSecretsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_secret_service_proto_init_ensure()
 	mi := &file_api_v1_secret_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -136,6 +138,7 @@ func (x *CountSecretsResponse) String() string {
 func (*CountSecretsResponse) ProtoMessage() {}
 
 func (x *CountSecretsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_secret_service_proto_init_ensure()
 	mi := &file_api_v1_secret_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -215,9 +218,11 @@ var file_api_v1_secret_service_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_secret_service_proto_init() }
+var file_api_v1_secret_service_proto_init_once sync.Once
+func file_api_v1_secret_service_proto_init_ensure() { file_api_v1_secret_service_proto_init_once.Do(file_api_v1_secret_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_secret_service_proto_init() {
-	if File_api_v1_secret_service_proto != nil || skipProtoInit {
+	if File_api_v1_secret_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

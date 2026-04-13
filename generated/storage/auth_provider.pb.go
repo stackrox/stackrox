@@ -137,6 +137,7 @@ func (x *AuthProvider) String() string {
 func (*AuthProvider) ProtoMessage() {}
 
 func (x *AuthProvider) ProtoReflect() protoreflect.Message {
+	file_storage_auth_provider_proto_init_ensure()
 	mi := &file_storage_auth_provider_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -278,6 +279,7 @@ func (x *AuthProvider_RequiredAttribute) String() string {
 func (*AuthProvider_RequiredAttribute) ProtoMessage() {}
 
 func (x *AuthProvider_RequiredAttribute) ProtoReflect() protoreflect.Message {
+	file_storage_auth_provider_proto_init_ensure()
 	mi := &file_storage_auth_provider_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -375,9 +377,11 @@ var file_storage_auth_provider_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_storage_auth_provider_proto_init() }
+var file_storage_auth_provider_proto_init_once sync.Once
+func file_storage_auth_provider_proto_init_ensure() { file_storage_auth_provider_proto_init_once.Do(file_storage_auth_provider_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_auth_provider_proto_init() {
-	if File_storage_auth_provider_proto != nil || skipProtoInit {
+	if File_storage_auth_provider_proto != nil {
 		return
 	}
 	file_storage_traits_proto_init()

@@ -90,6 +90,7 @@ func (x *UpdateSensorUpgradeConfigRequest) String() string {
 func (*UpdateSensorUpgradeConfigRequest) ProtoMessage() {}
 
 func (x *UpdateSensorUpgradeConfigRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_sensor_upgrade_service_proto_init_ensure()
 	mi := &file_api_v1_sensor_upgrade_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -134,6 +135,7 @@ func (x *GetSensorUpgradeConfigResponse) String() string {
 func (*GetSensorUpgradeConfigResponse) ProtoMessage() {}
 
 func (x *GetSensorUpgradeConfigResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_sensor_upgrade_service_proto_init_ensure()
 	mi := &file_api_v1_sensor_upgrade_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -179,6 +181,7 @@ func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) String() string {
 func (*GetSensorUpgradeConfigResponse_UpgradeConfig) ProtoMessage() {}
 
 func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) ProtoReflect() protoreflect.Message {
+	file_api_v1_sensor_upgrade_service_proto_init_ensure()
 	mi := &file_api_v1_sensor_upgrade_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -273,9 +276,11 @@ var file_api_v1_sensor_upgrade_service_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_sensor_upgrade_service_proto_init() }
+var file_api_v1_sensor_upgrade_service_proto_init_once sync.Once
+func file_api_v1_sensor_upgrade_service_proto_init_ensure() { file_api_v1_sensor_upgrade_service_proto_init_once.Do(file_api_v1_sensor_upgrade_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_sensor_upgrade_service_proto_init() {
-	if File_api_v1_sensor_upgrade_service_proto != nil || skipProtoInit {
+	if File_api_v1_sensor_upgrade_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

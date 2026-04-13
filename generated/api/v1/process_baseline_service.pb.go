@@ -44,6 +44,7 @@ func (x *GetProcessBaselineRequest) String() string {
 func (*GetProcessBaselineRequest) ProtoMessage() {}
 
 func (x *GetProcessBaselineRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -90,6 +91,7 @@ func (x *UpdateProcessBaselinesRequest) String() string {
 func (*UpdateProcessBaselinesRequest) ProtoMessage() {}
 
 func (x *UpdateProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -148,6 +150,7 @@ func (x *ProcessBaselinesResponse) String() string {
 func (*ProcessBaselinesResponse) ProtoMessage() {}
 
 func (x *ProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -193,6 +196,7 @@ func (x *ProcessBaselineUpdateError) String() string {
 func (*ProcessBaselineUpdateError) ProtoMessage() {}
 
 func (x *ProcessBaselineUpdateError) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -244,6 +248,7 @@ func (x *BulkUpdateProcessBaselinesResponse) String() string {
 func (*BulkUpdateProcessBaselinesResponse) ProtoMessage() {}
 
 func (x *BulkUpdateProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -289,6 +294,7 @@ func (x *UpdateProcessBaselinesResponse) String() string {
 func (*UpdateProcessBaselinesResponse) ProtoMessage() {}
 
 func (x *UpdateProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -341,6 +347,7 @@ func (x *LockProcessBaselinesRequest) String() string {
 func (*LockProcessBaselinesRequest) ProtoMessage() {}
 
 func (x *LockProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -393,6 +400,7 @@ func (x *BulkProcessBaselinesRequest) String() string {
 func (*BulkProcessBaselinesRequest) ProtoMessage() {}
 
 func (x *BulkProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -445,6 +453,7 @@ func (x *DeleteProcessBaselinesRequest) String() string {
 func (*DeleteProcessBaselinesRequest) ProtoMessage() {}
 
 func (x *DeleteProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -497,6 +506,7 @@ func (x *DeleteProcessBaselinesResponse) String() string {
 func (*DeleteProcessBaselinesResponse) ProtoMessage() {}
 
 func (x *DeleteProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_process_baseline_service_proto_init_ensure()
 	mi := &file_api_v1_process_baseline_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -630,9 +640,11 @@ var file_api_v1_process_baseline_service_proto_depIdxs = []int32{
 	0,  // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_process_baseline_service_proto_init() }
+var file_api_v1_process_baseline_service_proto_init_once sync.Once
+func file_api_v1_process_baseline_service_proto_init_ensure() { file_api_v1_process_baseline_service_proto_init_once.Do(file_api_v1_process_baseline_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_process_baseline_service_proto_init() {
-	if File_api_v1_process_baseline_service_proto != nil || skipProtoInit {
+	if File_api_v1_process_baseline_service_proto != nil {
 		return
 	}
 	type x struct{}

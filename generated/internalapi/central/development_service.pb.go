@@ -102,6 +102,7 @@ func (x *URLHasValidCertRequest) String() string {
 func (*URLHasValidCertRequest) ProtoMessage() {}
 
 func (x *URLHasValidCertRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -154,6 +155,7 @@ func (x *URLHasValidCertResponse) String() string {
 func (*URLHasValidCertResponse) ProtoMessage() {}
 
 func (x *URLHasValidCertResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -205,6 +207,7 @@ func (x *RandomDataRequest) String() string {
 func (*RandomDataRequest) ProtoMessage() {}
 
 func (x *RandomDataRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -249,6 +252,7 @@ func (x *RandomDataResponse) String() string {
 func (*RandomDataResponse) ProtoMessage() {}
 
 func (x *RandomDataResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -293,6 +297,7 @@ func (x *EnvVarsResponse) String() string {
 func (*EnvVarsResponse) ProtoMessage() {}
 
 func (x *EnvVarsResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -337,6 +342,7 @@ func (x *ReconciliationStatsByClusterResponse) String() string {
 func (*ReconciliationStatsByClusterResponse) ProtoMessage() {}
 
 func (x *ReconciliationStatsByClusterResponse) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -382,6 +388,7 @@ func (x *ReplicateImageRequest) String() string {
 func (*ReplicateImageRequest) ProtoMessage() {}
 
 func (x *ReplicateImageRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -432,6 +439,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -471,6 +479,7 @@ func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Str
 func (*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) ProtoMessage() {}
 
 func (x *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_development_service_proto_init_ensure()
 	mi := &file_internalapi_central_development_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -602,9 +611,11 @@ var file_internalapi_central_development_service_proto_depIdxs = []int32{
 	0,  // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_development_service_proto_init() }
+var file_internalapi_central_development_service_proto_init_once sync.Once
+func file_internalapi_central_development_service_proto_init_ensure() { file_internalapi_central_development_service_proto_init_once.Do(file_internalapi_central_development_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_development_service_proto_init() {
-	if File_internalapi_central_development_service_proto != nil || skipProtoInit {
+	if File_internalapi_central_development_service_proto != nil {
 		return
 	}
 	type x struct{}

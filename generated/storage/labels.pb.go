@@ -160,6 +160,7 @@ func (x *LabelSelector) String() string {
 func (*LabelSelector) ProtoMessage() {}
 
 func (x *LabelSelector) ProtoReflect() protoreflect.Message {
+	file_storage_labels_proto_init_ensure()
 	mi := &file_storage_labels_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -214,6 +215,7 @@ func (x *SetBasedLabelSelector) String() string {
 func (*SetBasedLabelSelector) ProtoMessage() {}
 
 func (x *SetBasedLabelSelector) ProtoReflect() protoreflect.Message {
+	file_storage_labels_proto_init_ensure()
 	mi := &file_storage_labels_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -261,6 +263,7 @@ func (x *LabelSelector_Requirement) String() string {
 func (*LabelSelector_Requirement) ProtoMessage() {}
 
 func (x *LabelSelector_Requirement) ProtoReflect() protoreflect.Message {
+	file_storage_labels_proto_init_ensure()
 	mi := &file_storage_labels_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -322,6 +325,7 @@ func (x *SetBasedLabelSelector_Requirement) String() string {
 func (*SetBasedLabelSelector_Requirement) ProtoMessage() {}
 
 func (x *SetBasedLabelSelector_Requirement) ProtoReflect() protoreflect.Message {
+	file_storage_labels_proto_init_ensure()
 	mi := &file_storage_labels_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -436,9 +440,11 @@ var file_storage_labels_proto_depIdxs = []int32{
 	0, // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_storage_labels_proto_init() }
+var file_storage_labels_proto_init_once sync.Once
+func file_storage_labels_proto_init_ensure() { file_storage_labels_proto_init_once.Do(file_storage_labels_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_labels_proto_init() {
-	if File_storage_labels_proto != nil || skipProtoInit {
+	if File_storage_labels_proto != nil {
 		return
 	}
 	type x struct{}

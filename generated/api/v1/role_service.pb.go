@@ -94,6 +94,7 @@ func (x *Permission) String() string {
 func (*Permission) ProtoMessage() {}
 
 func (x *Permission) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -145,6 +146,7 @@ func (x *GetRolesResponse) String() string {
 func (*GetRolesResponse) ProtoMessage() {}
 
 func (x *GetRolesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -191,6 +193,7 @@ func (x *GetPermissionsResponse) String() string {
 func (*GetPermissionsResponse) ProtoMessage() {}
 
 func (x *GetPermissionsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -235,6 +238,7 @@ func (x *GetResourcesResponse) String() string {
 func (*GetResourcesResponse) ProtoMessage() {}
 
 func (x *GetResourcesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -279,6 +283,7 @@ func (x *ListPermissionSetsResponse) String() string {
 func (*ListPermissionSetsResponse) ProtoMessage() {}
 
 func (x *ListPermissionSetsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -323,6 +328,7 @@ func (x *ListSimpleAccessScopesResponse) String() string {
 func (*ListSimpleAccessScopesResponse) ProtoMessage() {}
 
 func (x *ListSimpleAccessScopesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -370,6 +376,7 @@ func (x *ScopeObject) String() string {
 func (*ScopeObject) ProtoMessage() {}
 
 func (x *ScopeObject) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -421,6 +428,7 @@ func (x *GetClustersForPermissionsResponse) String() string {
 func (*GetClustersForPermissionsResponse) ProtoMessage() {}
 
 func (x *GetClustersForPermissionsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -465,6 +473,7 @@ func (x *GetNamespacesForClusterAndPermissionsResponse) String() string {
 func (*GetNamespacesForClusterAndPermissionsResponse) ProtoMessage() {}
 
 func (x *GetNamespacesForClusterAndPermissionsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -510,6 +519,7 @@ func (x *ComputeEffectiveAccessScopeRequest) String() string {
 func (*ComputeEffectiveAccessScopeRequest) ProtoMessage() {}
 
 func (x *ComputeEffectiveAccessScopeRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -564,6 +574,7 @@ func (x *CreateRoleRequest) String() string {
 func (*CreateRoleRequest) ProtoMessage() {}
 
 func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -616,6 +627,7 @@ func (x *GetClustersForPermissionsRequest) String() string {
 func (*GetClustersForPermissionsRequest) ProtoMessage() {}
 
 func (x *GetClustersForPermissionsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -668,6 +680,7 @@ func (x *GetNamespaceForClusterAndPermissionsRequest) String() string {
 func (*GetNamespaceForClusterAndPermissionsRequest) ProtoMessage() {}
 
 func (x *GetNamespaceForClusterAndPermissionsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -725,6 +738,7 @@ func (x *ComputeEffectiveAccessScopeRequest_Payload) String() string {
 func (*ComputeEffectiveAccessScopeRequest_Payload) ProtoMessage() {}
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) ProtoReflect() protoreflect.Message {
+	file_api_v1_role_service_proto_init_ensure()
 	mi := &file_api_v1_role_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -949,9 +963,11 @@ var file_api_v1_role_service_proto_depIdxs = []int32{
 	0,  // [0:13] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_role_service_proto_init() }
+var file_api_v1_role_service_proto_init_once sync.Once
+func file_api_v1_role_service_proto_init_ensure() { file_api_v1_role_service_proto_init_once.Do(file_api_v1_role_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_role_service_proto_init() {
-	if File_api_v1_role_service_proto != nil || skipProtoInit {
+	if File_api_v1_role_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

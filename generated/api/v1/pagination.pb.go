@@ -95,6 +95,7 @@ func (x *AggregateBy) String() string {
 func (*AggregateBy) ProtoMessage() {}
 
 func (x *AggregateBy) ProtoReflect() protoreflect.Message {
+	file_api_v1_pagination_proto_init_ensure()
 	mi := &file_api_v1_pagination_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -149,6 +150,7 @@ func (x *SortOption) String() string {
 func (*SortOption) ProtoMessage() {}
 
 func (x *SortOption) ProtoReflect() protoreflect.Message {
+	file_api_v1_pagination_proto_init_ensure()
 	mi := &file_api_v1_pagination_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -211,6 +213,7 @@ func (x *Pagination) String() string {
 func (*Pagination) ProtoMessage() {}
 
 func (x *Pagination) ProtoReflect() protoreflect.Message {
+	file_api_v1_pagination_proto_init_ensure()
 	mi := &file_api_v1_pagination_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -314,9 +317,11 @@ var file_api_v1_pagination_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_pagination_proto_init() }
+var file_api_v1_pagination_proto_init_once sync.Once
+func file_api_v1_pagination_proto_init_ensure() { file_api_v1_pagination_proto_init_once.Do(file_api_v1_pagination_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_pagination_proto_init() {
-	if File_api_v1_pagination_proto != nil || skipProtoInit {
+	if File_api_v1_pagination_proto != nil {
 		return
 	}
 	type x struct{}

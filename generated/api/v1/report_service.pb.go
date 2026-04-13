@@ -9,6 +9,7 @@ package v1
 import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	"sync"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	unsafe "unsafe"
@@ -44,9 +45,11 @@ var file_api_v1_report_service_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_report_service_proto_init() }
+var file_api_v1_report_service_proto_init_once sync.Once
+func file_api_v1_report_service_proto_init_ensure() { file_api_v1_report_service_proto_init_once.Do(file_api_v1_report_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_report_service_proto_init() {
-	if File_api_v1_report_service_proto != nil || skipProtoInit {
+	if File_api_v1_report_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

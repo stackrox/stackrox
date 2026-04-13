@@ -96,6 +96,7 @@ func (x *LoginNotice) String() string {
 func (*LoginNotice) ProtoMessage() {}
 
 func (x *LoginNotice) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -151,6 +152,7 @@ func (x *BannerConfig) String() string {
 func (*BannerConfig) ProtoMessage() {}
 
 func (x *BannerConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,6 +228,7 @@ func (x *PublicConfig) String() string {
 func (*PublicConfig) ProtoMessage() {}
 
 func (x *PublicConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -299,6 +302,7 @@ func (x *AlertRetentionConfig) String() string {
 func (*AlertRetentionConfig) ProtoMessage() {}
 
 func (x *AlertRetentionConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -375,6 +379,7 @@ func (x *DecommissionedClusterRetentionConfig) String() string {
 func (*DecommissionedClusterRetentionConfig) ProtoMessage() {}
 
 func (x *DecommissionedClusterRetentionConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -443,6 +448,7 @@ func (x *ReportRetentionConfig) String() string {
 func (*ReportRetentionConfig) ProtoMessage() {}
 
 func (x *ReportRetentionConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -504,6 +510,7 @@ func (x *PrometheusMetrics) String() string {
 func (*PrometheusMetrics) ProtoMessage() {}
 
 func (x *PrometheusMetrics) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -576,6 +583,7 @@ func (x *PrivateConfig) String() string {
 func (*PrivateConfig) ProtoMessage() {}
 
 func (x *PrivateConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -705,6 +713,7 @@ func (x *PlatformComponentConfig) String() string {
 func (*PlatformComponentConfig) ProtoMessage() {}
 
 func (x *PlatformComponentConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -758,6 +767,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -816,6 +826,7 @@ func (x *VulnerabilityExceptionConfig) String() string {
 func (*VulnerabilityExceptionConfig) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -860,6 +871,7 @@ func (x *AdministrationEventsConfig) String() string {
 func (*AdministrationEventsConfig) ProtoMessage() {}
 
 func (x *AdministrationEventsConfig) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -905,6 +917,7 @@ func (x *DayOption) String() string {
 func (*DayOption) ProtoMessage() {}
 
 func (x *DayOption) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -964,6 +977,7 @@ func (x *PrometheusMetrics_Group) String() string {
 func (*PrometheusMetrics_Group) ProtoMessage() {}
 
 func (x *PrometheusMetrics_Group) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1033,6 +1047,7 @@ func (x *PrometheusMetrics_Group_Labels) String() string {
 func (*PrometheusMetrics_Group_Labels) ProtoMessage() {}
 
 func (x *PrometheusMetrics_Group_Labels) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1092,6 +1107,7 @@ func (x *PlatformComponentConfig_Rule) String() string {
 func (*PlatformComponentConfig_Rule) ProtoMessage() {}
 
 func (x *PlatformComponentConfig_Rule) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1143,6 +1159,7 @@ func (x *PlatformComponentConfig_Rule_NamespaceRule) String() string {
 func (*PlatformComponentConfig_Rule_NamespaceRule) ProtoMessage() {}
 
 func (x *PlatformComponentConfig_Rule_NamespaceRule) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1188,6 +1205,7 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) String() string {
 func (*VulnerabilityExceptionConfig_FixableCVEOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1242,6 +1260,7 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) String() string {
 func (*VulnerabilityExceptionConfig_ExpiryOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect.Message {
+	file_storage_config_proto_init_ensure()
 	mi := &file_storage_config_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1475,9 +1494,11 @@ var file_storage_config_proto_depIdxs = []int32{
 	0,  // [0:29] is the sub-list for field type_name
 }
 
-func init() { file_storage_config_proto_init() }
+var file_storage_config_proto_init_once sync.Once
+func file_storage_config_proto_init_ensure() { file_storage_config_proto_init_once.Do(file_storage_config_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_config_proto_init() {
-	if File_storage_config_proto != nil || skipProtoInit {
+	if File_storage_config_proto != nil {
 		return
 	}
 	file_storage_telemetry_proto_init()

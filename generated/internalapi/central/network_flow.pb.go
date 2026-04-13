@@ -47,6 +47,7 @@ func (x *NetworkFlowUpdate) String() string {
 func (*NetworkFlowUpdate) ProtoMessage() {}
 
 func (x *NetworkFlowUpdate) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_network_flow_proto_init_ensure()
 	mi := &file_internalapi_central_network_flow_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -106,6 +107,7 @@ func (x *PushNetworkEntitiesRequest) String() string {
 func (*PushNetworkEntitiesRequest) ProtoMessage() {}
 
 func (x *PushNetworkEntitiesRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_network_flow_proto_init_ensure()
 	mi := &file_internalapi_central_network_flow_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -182,9 +184,11 @@ var file_internalapi_central_network_flow_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_network_flow_proto_init() }
+var file_internalapi_central_network_flow_proto_init_once sync.Once
+func file_internalapi_central_network_flow_proto_init_ensure() { file_internalapi_central_network_flow_proto_init_once.Do(file_internalapi_central_network_flow_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_network_flow_proto_init() {
-	if File_internalapi_central_network_flow_proto != nil || skipProtoInit {
+	if File_internalapi_central_network_flow_proto != nil {
 		return
 	}
 	type x struct{}

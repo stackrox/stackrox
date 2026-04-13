@@ -154,6 +154,7 @@ func (x *NetworkPolicy) String() string {
 func (*NetworkPolicy) ProtoMessage() {}
 
 func (x *NetworkPolicy) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -271,6 +272,7 @@ func (x *NetworkPolicySpec) String() string {
 func (*NetworkPolicySpec) ProtoMessage() {}
 
 func (x *NetworkPolicySpec) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -337,6 +339,7 @@ func (x *NetworkPolicyEgressRule) String() string {
 func (*NetworkPolicyEgressRule) ProtoMessage() {}
 
 func (x *NetworkPolicyEgressRule) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -390,6 +393,7 @@ func (x *NetworkPolicyPeer) String() string {
 func (*NetworkPolicyPeer) ProtoMessage() {}
 
 func (x *NetworkPolicyPeer) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -449,6 +453,7 @@ func (x *IPBlock) String() string {
 func (*IPBlock) ProtoMessage() {}
 
 func (x *IPBlock) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -505,6 +510,7 @@ func (x *NetworkPolicyPort) String() string {
 func (*NetworkPolicyPort) ProtoMessage() {}
 
 func (x *NetworkPolicyPort) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -591,6 +597,7 @@ func (x *NetworkPolicyIngressRule) String() string {
 func (*NetworkPolicyIngressRule) ProtoMessage() {}
 
 func (x *NetworkPolicyIngressRule) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -644,6 +651,7 @@ func (x *NetworkPolicyReference) String() string {
 func (*NetworkPolicyReference) ProtoMessage() {}
 
 func (x *NetworkPolicyReference) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -697,6 +705,7 @@ func (x *NetworkPolicyModification) String() string {
 func (*NetworkPolicyModification) ProtoMessage() {}
 
 func (x *NetworkPolicyModification) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -752,6 +761,7 @@ func (x *NetworkPolicyApplicationUndoRecord) String() string {
 func (*NetworkPolicyApplicationUndoRecord) ProtoMessage() {}
 
 func (x *NetworkPolicyApplicationUndoRecord) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -828,6 +838,7 @@ func (x *NetworkPolicyApplicationUndoDeploymentRecord) String() string {
 func (*NetworkPolicyApplicationUndoDeploymentRecord) ProtoMessage() {}
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) ProtoReflect() protoreflect.Message {
+	file_storage_network_policy_proto_init_ensure()
 	mi := &file_storage_network_policy_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1016,9 +1027,11 @@ var file_storage_network_policy_proto_depIdxs = []int32{
 	0,  // [0:21] is the sub-list for field type_name
 }
 
-func init() { file_storage_network_policy_proto_init() }
+var file_storage_network_policy_proto_init_once sync.Once
+func file_storage_network_policy_proto_init_ensure() { file_storage_network_policy_proto_init_once.Do(file_storage_network_policy_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_network_policy_proto_init() {
-	if File_storage_network_policy_proto != nil || skipProtoInit {
+	if File_storage_network_policy_proto != nil {
 		return
 	}
 	file_storage_labels_proto_init()

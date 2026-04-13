@@ -200,6 +200,7 @@ func (x *Audit) String() string {
 func (*Audit) ProtoMessage() {}
 
 func (x *Audit) ProtoReflect() protoreflect.Message {
+	file_api_v1_audit_proto_init_ensure()
 	mi := &file_api_v1_audit_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -243,6 +244,7 @@ func (x *Audit_Message) String() string {
 func (*Audit_Message) ProtoMessage() {}
 
 func (x *Audit_Message) ProtoReflect() protoreflect.Message {
+	file_api_v1_audit_proto_init_ensure()
 	mi := &file_api_v1_audit_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -353,6 +355,7 @@ func (x *Audit_Message_Request) String() string {
 func (*Audit_Message_Request) ProtoMessage() {}
 
 func (x *Audit_Message_Request) ProtoReflect() protoreflect.Message {
+	file_api_v1_audit_proto_init_ensure()
 	mi := &file_api_v1_audit_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -432,6 +435,7 @@ func (x *Audit_Message_Request_SourceHeaders) String() string {
 func (*Audit_Message_Request_SourceHeaders) ProtoMessage() {}
 
 func (x *Audit_Message_Request_SourceHeaders) ProtoReflect() protoreflect.Message {
+	file_api_v1_audit_proto_init_ensure()
 	mi := &file_api_v1_audit_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -556,9 +560,11 @@ var file_api_v1_audit_proto_depIdxs = []int32{
 	0, // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_audit_proto_init() }
+var file_api_v1_audit_proto_init_once sync.Once
+func file_api_v1_audit_proto_init_ensure() { file_api_v1_audit_proto_init_once.Do(file_api_v1_audit_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_audit_proto_init() {
-	if File_api_v1_audit_proto != nil || skipProtoInit {
+	if File_api_v1_audit_proto != nil {
 		return
 	}
 	type x struct{}

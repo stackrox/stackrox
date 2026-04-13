@@ -145,6 +145,7 @@ func (x *CollectorRegisterRequest) String() string {
 func (*CollectorRegisterRequest) ProtoMessage() {}
 
 func (x *CollectorRegisterRequest) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -202,6 +203,7 @@ func (x *CollectorConfig) String() string {
 func (*CollectorConfig) ProtoMessage() {}
 
 func (x *CollectorConfig) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -277,6 +279,7 @@ func (x *ProcessSignal) String() string {
 func (*ProcessSignal) ProtoMessage() {}
 
 func (x *ProcessSignal) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -413,6 +416,7 @@ func (x *CollectorConfig_ExternalIPs) String() string {
 func (*CollectorConfig_ExternalIPs) ProtoMessage() {}
 
 func (x *CollectorConfig_ExternalIPs) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -465,6 +469,7 @@ func (x *CollectorConfig_Networking) String() string {
 func (*CollectorConfig_Networking) ProtoMessage() {}
 
 func (x *CollectorConfig_Networking) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -517,6 +522,7 @@ func (x *ProcessSignal_LineageInfo) String() string {
 func (*ProcessSignal_LineageInfo) ProtoMessage() {}
 
 func (x *ProcessSignal_LineageInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_sensor_collector_proto_init_ensure()
 	mi := &file_internalapi_sensor_collector_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -636,9 +642,11 @@ var file_internalapi_sensor_collector_proto_depIdxs = []int32{
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_collector_proto_init() }
+var file_internalapi_sensor_collector_proto_init_once sync.Once
+func file_internalapi_sensor_collector_proto_init_ensure() { file_internalapi_sensor_collector_proto_init_once.Do(file_internalapi_sensor_collector_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_collector_proto_init() {
-	if File_internalapi_sensor_collector_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_collector_proto != nil {
 		return
 	}
 	type x struct{}

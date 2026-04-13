@@ -139,6 +139,7 @@ func (x *CountAlertsResponse) String() string {
 func (*CountAlertsResponse) ProtoMessage() {}
 
 func (x *CountAlertsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,6 +185,7 @@ func (x *ListAlertsRequest) String() string {
 func (*ListAlertsRequest) ProtoMessage() {}
 
 func (x *ListAlertsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -238,6 +240,7 @@ func (x *ResolveAlertRequest) String() string {
 func (*ResolveAlertRequest) ProtoMessage() {}
 
 func (x *ResolveAlertRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -297,6 +300,7 @@ func (x *ResolveAlertsRequest) String() string {
 func (*ResolveAlertsRequest) ProtoMessage() {}
 
 func (x *ResolveAlertsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -341,6 +345,7 @@ func (x *ListAlertsResponse) String() string {
 func (*ListAlertsResponse) ProtoMessage() {}
 
 func (x *ListAlertsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -386,6 +391,7 @@ func (x *DeleteAlertsRequest) String() string {
 func (*DeleteAlertsRequest) ProtoMessage() {}
 
 func (x *DeleteAlertsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -438,6 +444,7 @@ func (x *DeleteAlertsResponse) String() string {
 func (*DeleteAlertsResponse) ProtoMessage() {}
 
 func (x *DeleteAlertsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -489,6 +496,7 @@ func (x *GetAlertsGroupResponse) String() string {
 func (*GetAlertsGroupResponse) ProtoMessage() {}
 
 func (x *GetAlertsGroupResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -534,6 +542,7 @@ func (x *GetAlertsCountsRequest) String() string {
 func (*GetAlertsCountsRequest) ProtoMessage() {}
 
 func (x *GetAlertsCountsRequest) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -585,6 +594,7 @@ func (x *GetAlertsCountsResponse) String() string {
 func (*GetAlertsCountsResponse) ProtoMessage() {}
 
 func (x *GetAlertsCountsResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -631,6 +641,7 @@ func (x *AlertEvent) String() string {
 func (*AlertEvent) ProtoMessage() {}
 
 func (x *AlertEvent) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -689,6 +700,7 @@ func (x *GetAlertTimeseriesResponse) String() string {
 func (*GetAlertTimeseriesResponse) ProtoMessage() {}
 
 func (x *GetAlertTimeseriesResponse) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -734,6 +746,7 @@ func (x *GetAlertsGroupResponse_PolicyGroup) String() string {
 func (*GetAlertsGroupResponse_PolicyGroup) ProtoMessage() {}
 
 func (x *GetAlertsGroupResponse_PolicyGroup) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -786,6 +799,7 @@ func (x *GetAlertsCountsResponse_AlertGroup) String() string {
 func (*GetAlertsCountsResponse_AlertGroup) ProtoMessage() {}
 
 func (x *GetAlertsCountsResponse_AlertGroup) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -838,6 +852,7 @@ func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) String() string {
 func (*GetAlertsCountsResponse_AlertGroup_AlertCounts) ProtoMessage() {}
 
 func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -890,6 +905,7 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts) String() string {
 func (*GetAlertTimeseriesResponse_ClusterAlerts) ProtoMessage() {}
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -942,6 +958,7 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) String() string {
 func (*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) ProtoMessage() {}
 
 func (x *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) ProtoReflect() protoreflect.Message {
+	file_api_v1_alert_service_proto_init_ensure()
 	mi := &file_api_v1_alert_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1140,9 +1157,11 @@ var file_api_v1_alert_service_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_alert_service_proto_init() }
+var file_api_v1_alert_service_proto_init_once sync.Once
+func file_api_v1_alert_service_proto_init_ensure() { file_api_v1_alert_service_proto_init_once.Do(file_api_v1_alert_service_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_alert_service_proto_init() {
-	if File_api_v1_alert_service_proto != nil || skipProtoInit {
+	if File_api_v1_alert_service_proto != nil {
 		return
 	}
 	file_api_v1_common_proto_init()

@@ -145,6 +145,7 @@ func (x *Taint) String() string {
 func (*Taint) ProtoMessage() {}
 
 func (x *Taint) ProtoReflect() protoreflect.Message {
+	file_storage_taints_proto_init_ensure()
 	mi := &file_storage_taints_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -206,6 +207,7 @@ func (x *Toleration) String() string {
 func (*Toleration) ProtoMessage() {}
 
 func (x *Toleration) ProtoReflect() protoreflect.Message {
+	file_storage_taints_proto_init_ensure()
 	mi := &file_storage_taints_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -307,9 +309,11 @@ var file_storage_taints_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_storage_taints_proto_init() }
+var file_storage_taints_proto_init_once sync.Once
+func file_storage_taints_proto_init_ensure() { file_storage_taints_proto_init_once.Do(file_storage_taints_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_taints_proto_init() {
-	if File_storage_taints_proto != nil || skipProtoInit {
+	if File_storage_taints_proto != nil {
 		return
 	}
 	type x struct{}

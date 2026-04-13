@@ -252,6 +252,7 @@ func (x *MsgFromSensor) String() string {
 func (*MsgFromSensor) ProtoMessage() {}
 
 func (x *MsgFromSensor) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -560,6 +561,7 @@ func (x *ReprocessDeployments) String() string {
 func (*ReprocessDeployments) ProtoMessage() {}
 
 func (x *ReprocessDeployments) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -629,6 +631,7 @@ func (x *MsgToSensor) String() string {
 func (*MsgToSensor) ProtoMessage() {}
 
 func (x *MsgToSensor) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1115,6 +1118,7 @@ func (x *DeduperState) String() string {
 func (*DeduperState) ProtoMessage() {}
 
 func (x *DeduperState) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1178,6 +1182,7 @@ func (x *SensorACK) String() string {
 func (*SensorACK) ProtoMessage() {}
 
 func (x *SensorACK) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1254,6 +1259,7 @@ func (x *NodeInventoryACK) String() string {
 func (*NodeInventoryACK) ProtoMessage() {}
 
 func (x *NodeInventoryACK) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1319,6 +1325,7 @@ func (x *AuditLogSync) String() string {
 func (*AuditLogSync) ProtoMessage() {}
 
 func (x *AuditLogSync) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1363,6 +1370,7 @@ func (x *AuditLogStatusInfo) String() string {
 func (*AuditLogStatusInfo) ProtoMessage() {}
 
 func (x *AuditLogStatusInfo) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1407,6 +1415,7 @@ func (x *ReprocessDeployment) String() string {
 func (*ReprocessDeployment) ProtoMessage() {}
 
 func (x *ReprocessDeployment) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1453,6 +1462,7 @@ func (x *ImageKey) String() string {
 func (*ImageKey) ProtoMessage() {}
 
 func (x *ImageKey) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1511,6 +1521,7 @@ func (x *InvalidateImageCache) String() string {
 func (*InvalidateImageCache) ProtoMessage() {}
 
 func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1558,6 +1569,7 @@ func (x *RefreshImageCacheTTL) String() string {
 func (*RefreshImageCacheTTL) ProtoMessage() {}
 
 func (x *RefreshImageCacheTTL) ProtoReflect() protoreflect.Message {
+	file_internalapi_central_sensor_iservice_proto_init_ensure()
 	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1840,9 +1852,11 @@ var file_internalapi_central_sensor_iservice_proto_depIdxs = []int32{
 	0,  // [0:56] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_sensor_iservice_proto_init() }
+var file_internalapi_central_sensor_iservice_proto_init_once sync.Once
+func file_internalapi_central_sensor_iservice_proto_init_ensure() { file_internalapi_central_sensor_iservice_proto_init_once.Do(file_internalapi_central_sensor_iservice_proto_init) }
+func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_sensor_iservice_proto_init() {
-	if File_internalapi_central_sensor_iservice_proto != nil || skipProtoInit {
+	if File_internalapi_central_sensor_iservice_proto != nil {
 		return
 	}
 	file_internalapi_central_baseline_sync_proto_init()
