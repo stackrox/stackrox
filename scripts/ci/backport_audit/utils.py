@@ -116,10 +116,10 @@ def detect_release_branches(branches_arg: str) -> list[str]:
             return sorted(set(branches))
         except subprocess.CalledProcessError as e:
             msg = f"Failed to detect release branches: {e.stderr}"
-            raise BackportAuditError(msg)
-        except subprocess.TimeoutExpired:
+            raise BackportAuditError(msg) from e
+        except subprocess.TimeoutExpired as e:
             msg = "Git command timed out"
-            raise BackportAuditError(msg)
+            raise BackportAuditError(msg) from e
     else:
         # Use provided branches
         return [b.strip() for b in branches_arg.split(",") if b.strip()]
@@ -181,7 +181,7 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
 
     except subprocess.CalledProcessError as e:
         msg = f"Failed to detect version for {branch_name}: {e.stderr}"
-        raise BackportAuditError(msg)
-    except subprocess.TimeoutExpired:
+        raise BackportAuditError(msg) from e
+    except subprocess.TimeoutExpired as e:
         msg = "Git command timed out"
-        raise BackportAuditError(msg)
+        raise BackportAuditError(msg) from e

@@ -6,7 +6,7 @@ import os
 import pathlib
 import sys
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .config import Config, parse_args
 from .github_client import GitHubClient
@@ -90,7 +90,7 @@ def main() -> int:
             if orphaned:
                 orphaned_issues[branch.name] = orphaned
 
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
         pathlib.Path(config.output_dir).mkdir(exist_ok=True, parents=True)
 

@@ -3,7 +3,7 @@
 See: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Bug Ticket Priority Guidelines from Patch Release Process:
 # - Critical: "Candidate for immediate Z-release"
@@ -40,19 +40,20 @@ URGENCY_ORDER = {
 
 
 def parse_date(date_str: str | None) -> datetime | None:
-    """Parse ISO 8601 date string to datetime.
+    """Parse ISO 8601 date string to timezone-aware datetime.
 
     Args:
         date_str: ISO date string (YYYY-MM-DD) or None
 
     Returns:
-        datetime object or None
+        Timezone-aware datetime object (UTC) or None
 
     """
     if not date_str:
         return None
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d")
+        naive_dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return naive_dt.replace(tzinfo=timezone.utc)
     except ValueError:
         return None
 
@@ -85,7 +86,7 @@ def calculate_urgency(
 
     """
     if current_date is None:
-        current_date = datetime.utcnow()
+        current_date = datetime.now(tz=timezone.utc)
 
     # Deadline priority: SLA Date (Red Hat legally binding) > Due date (internal)
     # Per Patch Release Process: "SLA Date informs about the legally binding deadline
@@ -131,7 +132,7 @@ def format_deadline_info(
 
     """
     if current_date is None:
-        current_date = datetime.utcnow()
+        current_date = datetime.now(tz=timezone.utc)
 
     deadline = parse_date(sla_date) or parse_date(due_date)
     if not deadline:

@@ -41,13 +41,13 @@ class GitHubClient:
             return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
             msg = f"Failed to fetch PRs: {e.stderr}"
-            raise GitHubError(msg)
-        except subprocess.TimeoutExpired:
+            raise GitHubError(msg) from e
+        except subprocess.TimeoutExpired as e:
             msg = "gh CLI command timed out"
-            raise GitHubError(msg)
+            raise GitHubError(msg) from e
         except json.JSONDecodeError as e:
             msg = f"Invalid JSON from gh CLI: {e}"
-            raise GitHubError(msg)
+            raise GitHubError(msg) from e
 
     def get_pr_details(self, pr_number: int) -> dict[str, Any]:
         """Get PR details via gh CLI.
@@ -72,13 +72,13 @@ class GitHubClient:
             return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
             msg = f"Failed to fetch PR #{pr_number}: {e.stderr}"
-            raise GitHubError(msg)
-        except subprocess.TimeoutExpired:
+            raise GitHubError(msg) from e
+        except subprocess.TimeoutExpired as e:
             msg = f"gh CLI command timed out for PR #{pr_number}"
-            raise GitHubError(msg)
+            raise GitHubError(msg) from e
         except json.JSONDecodeError as e:
             msg = f"Invalid JSON from gh CLI for PR #{pr_number}: {e}"
-            raise GitHubError(msg)
+            raise GitHubError(msg) from e
 
     def get_issue_events(self, pr_number: int) -> list[dict[str, Any]]:
         """Get issue events via gh API.
@@ -106,10 +106,10 @@ class GitHubClient:
             return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
             msg = f"Failed to fetch events for PR #{pr_number}: {e.stderr}"
-            raise GitHubError(msg)
-        except subprocess.TimeoutExpired:
+            raise GitHubError(msg) from e
+        except subprocess.TimeoutExpired as e:
             msg = f"gh API command timed out for PR #{pr_number}"
-            raise GitHubError(msg)
+            raise GitHubError(msg) from e
         except json.JSONDecodeError as e:
             msg = f"Invalid JSON from gh API for PR #{pr_number}: {e}"
-            raise GitHubError(msg)
+            raise GitHubError(msg) from e
