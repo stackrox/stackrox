@@ -1,9 +1,10 @@
 // This function sets up auth headers for each test in the current test group.
 export default () => {
-    const token = Cypress.env('ROX_AUTH_TOKEN');
-    if (token) {
-        beforeEach(() => {
-            localStorage.setItem('access_token', token);
+    beforeEach(() => {
+        cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+            if (ROX_AUTH_TOKEN) {
+                localStorage.setItem('access_token', ROX_AUTH_TOKEN);
+            }
         });
-    }
+    });
 };

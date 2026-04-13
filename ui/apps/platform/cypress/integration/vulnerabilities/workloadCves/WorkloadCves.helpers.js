@@ -161,22 +161,24 @@ export function extractNonZeroSeverityFromCount(severityCountText) {
 }
 
 export function cancelAllCveExceptions() {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
+        cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
 
-    return cy.get('@vulnExceptions').then((res) => {
-        return Promise.all(
-            res.body.exceptions.map(({ id, expired, requester }) => {
-                return requester?.name === 'ui_tests' && !expired
-                    ? cy.request({
-                          url: `/v2/vulnerability-exceptions/${id}/cancel`,
-                          auth,
-                          method: 'POST',
-                      })
-                    : Promise.resolve();
-            })
-        );
+        return cy.get('@vulnExceptions').then((res) => {
+            return Promise.all(
+                res.body.exceptions.map(({ id, expired, requester }) => {
+                    return requester?.name === 'ui_tests' && !expired
+                        ? cy.request({
+                              url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                              auth,
+                              method: 'POST',
+                          })
+                        : Promise.resolve();
+                })
+            );
+        });
     });
 }
 
@@ -339,13 +341,15 @@ export function verifyExceptionConfirmationDetails(params) {
  * Clean up any existing watched images via API
  */
 export function unwatchAllImages() {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({ url: '/v1/watchedimages', auth }).as('listWatchedImages');
+        cy.request({ url: '/v1/watchedimages', auth }).as('listWatchedImages');
 
-    cy.get('@listWatchedImages').then((res) => {
-        res.body.watchedImages.forEach(({ name }) => {
-            cy.request({ url: `/v1/watchedimages?name=${name}`, auth, method: 'DELETE' });
+        cy.get('@listWatchedImages').then((res) => {
+            res.body.watchedImages.forEach(({ name }) => {
+                cy.request({ url: `/v1/watchedimages?name=${name}`, auth, method: 'DELETE' });
+            });
         });
     });
 }

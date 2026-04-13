@@ -53,44 +53,48 @@ export function tryCreateCollection(
     embeddedCollectionIds = [],
     resourceSelectors = []
 ) {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({
-        url: `${baseApiUrl}?query.query=Collection Name:"${name}"`,
-        auth,
-    }).as('listCollections');
+        cy.request({
+            url: `${baseApiUrl}?query.query=Collection Name:"${name}"`,
+            auth,
+        }).as('listCollections');
 
-    cy.get('@listCollections').then((res) => {
-        if (res.body.collections.some((c) => c.name === name)) {
-            // Collection already exists
-            return;
-        }
-        const body = {
-            name,
-            description,
-            embeddedCollectionIds,
-            resourceSelectors,
-        };
-        cy.request({ url: baseApiUrl, body, auth, method: 'POST' });
+        cy.get('@listCollections').then((res) => {
+            if (res.body.collections.some((c) => c.name === name)) {
+                // Collection already exists
+                return;
+            }
+            const body = {
+                name,
+                description,
+                embeddedCollectionIds,
+                resourceSelectors,
+            };
+            cy.request({ url: baseApiUrl, body, auth, method: 'POST' });
+        });
     });
 }
 
 // Cleanup an existing collection via API call
 export function tryDeleteCollection(collectionName) {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({
-        url: `${baseApiUrl}?query.query=Collection Name:"${collectionName}"`,
-        auth,
-    }).as('listCollections');
+        cy.request({
+            url: `${baseApiUrl}?query.query=Collection Name:"${collectionName}"`,
+            auth,
+        }).as('listCollections');
 
-    cy.get('@listCollections').then((res) => {
-        const collection = res.body.collections.find(({ name }) => name === collectionName);
-        if (collection) {
-            const { id } = collection;
-            const url = `${baseApiUrl}/${id}`;
-            cy.request({ url, auth, method: 'DELETE' });
-        }
+        cy.get('@listCollections').then((res) => {
+            const collection = res.body.collections.find(({ name }) => name === collectionName);
+            if (collection) {
+                const { id } = collection;
+                const url = `${baseApiUrl}/${id}`;
+                cy.request({ url, auth, method: 'DELETE' });
+            }
+        });
     });
 }
 
