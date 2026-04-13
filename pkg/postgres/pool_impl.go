@@ -61,13 +61,9 @@ func applyMemoryAwarePoolConfig(config *pgxpool.Config) {
 	if memLimit < smallThreshold {
 		// Small memory: minimize pool overhead
 		config.MaxConns = 2
-		config.ConnConfig.RuntimeParams["statement_cache_capacity"] = "64"
-		config.ConnConfig.RuntimeParams["description_cache_capacity"] = "64"
 	} else if memLimit < medThreshold {
 		// Medium memory: moderate pool
 		config.MaxConns = 4
-		config.ConnConfig.RuntimeParams["statement_cache_capacity"] = "128"
-		config.ConnConfig.RuntimeParams["description_cache_capacity"] = "128"
 	}
 	// Large memory (>2Gi): use pgx defaults
 }
