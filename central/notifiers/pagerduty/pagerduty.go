@@ -217,7 +217,7 @@ func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
 	return jsonutil.JSONBytesToProto(data, (*storage.Alert)(a))
 }
 
-func init() {
+func RegisterPagerDuty() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

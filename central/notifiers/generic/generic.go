@@ -273,7 +273,7 @@ func (g *generic) getPassword() (string, error) {
 	return g.creds, nil
 }
 
-func init() {
+func RegisterGeneric() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

@@ -280,7 +280,7 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 	return notifiers.CreateError(s.GetName(), resp, codes.SlackGeneric)
 }
 
-func init() {
+func RegisterSlack() {
 	notifiers.Add(notifiers.SlackType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := NewSlack(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return s, err
