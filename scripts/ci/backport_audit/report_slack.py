@@ -99,13 +99,13 @@ def _format_slack_issue_line(
     priority_parts = []
     if priority and priority != "No priority":
         priority_parts.append(f":jira-{priority.lower()}:")
-    elif priority == "No priority":
-        priority_parts.append("No priority")
+    else:
+        priority_parts.append(":jira-undefined:")
 
     if severity:
         priority_parts.append(f":cve-{severity.lower()}:")
 
-    priority_info = " ".join(priority_parts) if priority_parts else "No priority"
+    priority_info = " ".join(priority_parts)
 
     return (
         f"• {urgency_icon} {jira_link}: {fix_icon} fixVer, "
