@@ -193,14 +193,12 @@ def _create_all_pr_rows(
             pr_title,
             urgency_level,
             urgency_icon,
-            _is_complete,
+            is_complete,
         ) = issue_info
 
         pr_refs = jira_to_prs.get(jira_key, [])
         if pr_refs:
             pr_elements = []
-            author_elements = []
-            unique_authors = []
 
             for i, pr_obj in enumerate(pr_refs):
                 if i > 0:
@@ -212,34 +210,45 @@ def _create_all_pr_rows(
                 })
                 processed_prs.add(pr_obj.number)
 
-                # Collect unique authors
-                author_mention = get_slack_mention(pr_obj.author)
-                if author_mention not in unique_authors:
-                    unique_authors.append(author_mention)
-
-            # Build author elements with mentions
-            for i, author_mention in enumerate(unique_authors):
-                if i > 0:
-                    author_elements.append({"type": "text", "text": ", "})
-
-                # Parse author mention to create appropriate element
-                if author_mention.startswith("<@") and author_mention.endswith(">"):
-                    user_id = author_mention[2:-1]
-                    author_elements.append({"type": "user", "user_id": user_id})
-                elif author_mention.startswith(":") and author_mention.endswith(":"):
-                    emoji_name = author_mention[1:-1]
-                    author_elements.append({"type": "emoji", "name": emoji_name})
-                else:
-                    author_elements.append({"type": "text", "text": author_mention})
-
             pr_cell = {
                 "type": "rich_text",
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
-            author_cell = {
-                "type": "rich_text",
-                "elements": [{"type": "rich_text_section", "elements": author_elements}],
-            }
+
+            # Use assignee if complete, otherwise notify PR authors
+            if is_complete:
+                issue = jira_issues.get(jira_key)
+                assignee = issue.assignee if issue and issue.assignee else "Unassigned"
+                author_cell = _create_table_cell_text(assignee)
+            else:
+                # Collect unique PR authors to notify about missing metadata
+                author_elements = []
+                unique_authors = []
+
+                for pr_obj in pr_refs:
+                    author_mention = get_slack_mention(pr_obj.author)
+                    if author_mention not in unique_authors:
+                        unique_authors.append(author_mention)
+
+                # Build author elements with mentions
+                for i, author_mention in enumerate(unique_authors):
+                    if i > 0:
+                        author_elements.append({"type": "text", "text": ", "})
+
+                    # Parse author mention to create appropriate element
+                    if author_mention.startswith("<@") and author_mention.endswith(">"):
+                        user_id = author_mention[2:-1]
+                        author_elements.append({"type": "user", "user_id": user_id})
+                    elif author_mention.startswith(":") and author_mention.endswith(":"):
+                        emoji_name = author_mention[1:-1]
+                        author_elements.append({"type": "emoji", "name": emoji_name})
+                    else:
+                        author_elements.append({"type": "text", "text": author_mention})
+
+                author_cell = {
+                    "type": "rich_text",
+                    "elements": [{"type": "rich_text_section", "elements": author_elements}],
+                }
         else:
             pr_cell = _create_table_cell_text("—")
             author_cell = _create_table_cell_text("—")
