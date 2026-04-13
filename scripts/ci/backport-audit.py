@@ -13,7 +13,7 @@ import sys
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 VERSION = "1.0.0"
 
@@ -98,12 +98,67 @@ def get_slack_mention(github_login: str) -> str:
     return f'@{github_login}'
 
 
+# Exception hierarchy
+class BackportAuditError(Exception):
+    """Base exception for backport audit tool."""
+
+
+class GitHubError(BackportAuditError):
+    """GitHub API/CLI error."""
+
+
+class JiraError(BackportAuditError):
+    """Jira API error."""
+
+
+@dataclass
+class PR:
+    """Pull request data."""
+    number: int
+    title: str
+    author: str
+    base_ref: str
+    jira_keys: List[str]
+    body: str
+
+
+@dataclass
+class JiraIssue:
+    """Jira issue data."""
+    key: str
+    summary: str
+    fix_versions: List[str]
+    affected_versions: List[str]
+    assignee: Optional[str]
+    team: Optional[str]
+    component: Optional[str]
+
+
+@dataclass
+class ReleaseBranch:
+    """Release branch with version info."""
+    name: str
+    expected_version: str
+    latest_tag: Optional[str]
+
+
 def main():
     print(f"Backport Audit Tool v{VERSION}")
-    # Test Slack mentions
-    print(f"janisz: {get_slack_mention('janisz')}")
-    print(f"unknown: {get_slack_mention('unknown-user')}")
-    print(f"konflux: {get_slack_mention('app/red-hat-konflux')}")
+
+    # Test dataclasses
+    pr = PR(
+        number=12345,
+        title="ROX-999: Fix bug",
+        author="janisz",
+        base_ref="release-4.10",
+        jira_keys=["ROX-999"],
+        body="Test PR"
+    )
+    print(f"PR: {pr.number} - {pr.title}")
+
+    branch = ReleaseBranch("release-4.10", "4.10.3", "4.10.2")
+    print(f"Branch: {branch.name} -> {branch.expected_version}")
+
     sys.exit(0)
 
 
