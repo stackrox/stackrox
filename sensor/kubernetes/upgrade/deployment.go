@@ -7,10 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -46,10 +48,16 @@ func (p *process) determineImage() (string, error) {
 
 	// If the image is not specified, sensor uses the same image it's using to launch the upgrader.
 	// This code path will be hit during cert rotation.
-	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace()).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
+	unstructuredDeploy, err := p.k8sClient.Resource(client.DeploymentGVR).Namespace(pods.GetPodNamespace()).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch sensor deployment from Kube")
 	}
+
+	var sensorDeployment appsV1.Deployment
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDeploy.Object, &sensorDeployment); err != nil {
+		return "", errors.Wrap(err, "converting sensor deployment from unstructured")
+	}
+
 	for _, container := range sensorDeployment.Spec.Template.Spec.Containers {
 		if container.Name == sensorContainerName {
 			return container.Image, nil

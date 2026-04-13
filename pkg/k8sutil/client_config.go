@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -33,13 +32,4 @@ func GetK8sInClusterConfig() (*rest.Config, error) {
 		restCfg.Host = "https://" + net.JoinHostPort("kubernetes.default.svc.cluster.local.", port)
 	}
 	return restCfg, nil
-}
-
-// MustCreateK8sClient creates a k8s client or panics.
-func MustCreateK8sClient(config *rest.Config) kubernetes.Interface {
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Panicf("Creating Kubernetes clientset: %v", err)
-	}
-	return client
 }

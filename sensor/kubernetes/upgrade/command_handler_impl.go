@@ -16,9 +16,10 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -38,7 +39,7 @@ type commandHandler struct {
 	currentProcess      *process
 	currentProcessMutex sync.Mutex
 	baseK8sRESTConfig   *rest.Config
-	k8sClient           kubernetes.Interface
+	k8sClient           dynamic.Interface
 	checkInClient       central.SensorUpgradeControlServiceClient
 
 	configHandler config.Handler
@@ -57,9 +58,9 @@ func NewCommandHandler(clusterID clusterIDWaiter, configHandler config.Handler) 
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
 	}
 
-	k8sClientSet, err := kubernetes.NewForConfig(config)
+	k8sClientSet, err := dynamic.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "create Kubernetes clientset")
+		return nil, errors.Wrap(err, "create dynamic Kubernetes client")
 	}
 
 	return &commandHandler{
@@ -188,7 +189,7 @@ func upgradesSupported(helmManagedConfig *central.HelmManagedConfigInit) error {
 func (h *commandHandler) deleteUpgraderDeployments() {
 	// Only try deleting once. There's no big issue if these linger around as the upgrader doesn't do anything without
 	// being told to by central, so we don't go out of our way to make sure they are gone.
-	err := h.k8sClient.AppsV1().Deployments(pods.GetPodNamespace()).DeleteCollection(
+	err := h.k8sClient.Resource(client.DeploymentGVR).Namespace(pods.GetPodNamespace()).DeleteCollection(
 		h.ctx(), pkgKubernetes.DeleteBackgroundOption, v1.ListOptions{
 			LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{
 				MatchExpressions: []v1.LabelSelectorRequirement{

@@ -16,13 +16,17 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"google.golang.org/grpc/status"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -48,7 +52,7 @@ type process struct {
 	trigger *central.SensorUpgradeTrigger
 
 	doneSig   concurrency.ErrorSignal
-	k8sClient kubernetes.Interface
+	k8sClient dynamic.Interface
 
 	checkInReqC chan *central.UpgradeCheckInFromSensorRequest
 
@@ -73,7 +77,7 @@ func newProcess(clusterID clusterIDWaiter, trigger *central.SensorUpgradeTrigger
 		}
 		return httputil.ContextBoundRoundTripper(&p.doneSig, rt)
 	}
-	k8sClient, err := kubernetes.NewForConfig(&config)
+	k8sClient, err := dynamic.NewForConfig(&config)
 	if err != nil {
 		return nil, utils.ShouldErr(err)
 	}
@@ -201,22 +205,22 @@ func (p *process) waitForDeploymentDeletion(ctx context.Context, name string, ui
 }
 
 func (p *process) waitForDeploymentDeletionOnce(ctx context.Context, name string, uid types.UID) error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
+	deploymentsClient := p.k8sClient.Resource(client.DeploymentGVR).Namespace(pods.GetPodNamespace())
 	listOpts := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	}
 
-	deploymentsList, err := deploymentsClient.List(ctx, listOpts)
+	unstructuredList, err := deploymentsClient.List(ctx, listOpts)
 	if err != nil {
 		return errors.Wrap(err, "listing upgrader deployments for deletion")
 	}
 
-	if len(deploymentsList.Items) == 0 || deploymentsList.Items[0].UID != uid {
+	if len(unstructuredList.Items) == 0 || unstructuredList.Items[0].GetUID() != uid {
 		return nil // deleted
 	}
 
 	watchOpts := listOpts
-	watchOpts.ResourceVersion = deploymentsList.ResourceVersion
+	watchOpts.ResourceVersion = unstructuredList.GetResourceVersion()
 
 	log.Infof("Deployment %s with UID %s is still present, watching for changes ...", name, uid)
 	watcher, err := deploymentsClient.Watch(ctx, watchOpts)
@@ -255,9 +259,9 @@ func (p *process) waitForDeploymentDeletionOnce(ctx context.Context, name string
 }
 
 func (p *process) deleteUpgraderDeploymentIfNecessary(ctx context.Context, force bool) error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
+	deploymentsClient := p.k8sClient.Resource(client.DeploymentGVR).Namespace(pods.GetPodNamespace())
 
-	upgraderDeployment, err := deploymentsClient.Get(ctx, upgraderDeploymentName, metav1.GetOptions{})
+	unstructuredDeploy, err := deploymentsClient.Get(ctx, upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if !k8sErrors.IsNotFound(err) {
 			return errors.Wrap(err, "retrieving existing upgrader deployment")
@@ -265,20 +269,21 @@ func (p *process) deleteUpgraderDeploymentIfNecessary(ctx context.Context, force
 		return nil
 	}
 
-	if !force && upgraderDeployment.GetLabels()[processIDLabelKey] == p.GetID() {
+	if !force && unstructuredDeploy.GetLabels()[processIDLabelKey] == p.GetID() {
 		log.Infof("Current upgrader deployment for process ID %s found", p.GetID())
 		return nil
 	}
 
 	log.Info("Found leftover upgrader deployment. Deleting ...")
-	err = deploymentsClient.Delete(ctx, upgraderDeployment.GetName(), metav1.DeleteOptions{
-		Preconditions:     &metav1.Preconditions{UID: &upgraderDeployment.UID},
+	uid := unstructuredDeploy.GetUID()
+	err = deploymentsClient.Delete(ctx, unstructuredDeploy.GetName(), metav1.DeleteOptions{
+		Preconditions:     &metav1.Preconditions{UID: &uid},
 		PropagationPolicy: &pkgKubernetes.DeletePolicyBackground,
 	})
 	if err != nil && !k8sErrors.IsNotFound(err) {
 		return errors.Wrap(err, "deleting old upgrader deployment")
 	}
-	if err := p.waitForDeploymentDeletion(ctx, upgraderDeployment.GetName(), upgraderDeployment.GetUID()); err != nil {
+	if err := p.waitForDeploymentDeletion(ctx, unstructuredDeploy.GetName(), uid); err != nil {
 		return errors.Wrap(err, "deleting old upgrader deployment")
 	}
 	log.Info("Deleted leftover upgrader deployment")
@@ -293,23 +298,33 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		return err
 	}
 
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
+	deploymentsClient := p.k8sClient.Resource(client.DeploymentGVR).Namespace(pods.GetPodNamespace())
 
 	// Fetch Sensor deployment to carry through some features of the pod spec
-	sensorDeployment, err := deploymentsClient.Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
+	unstructuredSensorDeploy, err := deploymentsClient.Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
+	}
+
+	var sensorDeployment appsv1.Deployment
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredSensorDeploy.Object, &sensorDeployment); err != nil {
+		return errors.Wrap(err, "converting sensor deployment from unstructured")
 	}
 
 	serviceAccountName := p.chooseServiceAccount()
 	log.Infof("Using service account %q for upgrade process %s", serviceAccountName, p.GetID())
 
-	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
+	newDeployment, err := p.createDeployment(serviceAccountName, &sensorDeployment)
 	if err != nil {
 		return errors.Wrap(err, "instantiating upgrader deployment object")
 	}
 
-	_, err = deploymentsClient.Create(p.ctx(), newDeployment, metav1.CreateOptions{})
+	unstructuredData, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newDeployment)
+	if err != nil {
+		return errors.Wrap(err, "converting new deployment to unstructured")
+	}
+
+	_, err = deploymentsClient.Create(p.ctx(), &unstructured.Unstructured{Object: unstructuredData}, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "creating new upgrader deployment")
 	}
@@ -364,19 +379,24 @@ func (p *process) watchUpgraderDeployment() {
 func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
 	errs := errorhelpers.NewErrorList("polling")
 
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
-	foundDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
+	deploymentsClient := p.k8sClient.Resource(client.DeploymentGVR).Namespace(pods.GetPodNamespace())
+	unstructuredDeploy, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, true, nil
 		}
 		errs.AddWrap(err, "upgrader deployment")
-	} else if foundDeployment != nil && foundDeployment.Labels[processIDLabelKey] != p.GetID() {
+	} else if unstructuredDeploy != nil && unstructuredDeploy.GetLabels()[processIDLabelKey] != p.GetID() {
 		return nil, true, nil // new upgrader deployment
 	}
 
-	podsClient := p.k8sClient.CoreV1().Pods(foundDeployment.GetNamespace())
-	pods, err := podsClient.List(p.ctx(), metav1.ListOptions{
+	var foundDeployment appsv1.Deployment
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDeploy.Object, &foundDeployment); err != nil {
+		return nil, false, errors.Wrap(err, "converting deployment from unstructured")
+	}
+
+	podsClient := p.k8sClient.Resource(client.PodGVR).Namespace(foundDeployment.GetNamespace())
+	unstructuredPodList, err := podsClient.List(p.ctx(), metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(foundDeployment.Spec.Selector),
 	})
 	if err != nil {
@@ -384,9 +404,14 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 		return nil, false, errors.Wrap(errs.ToError(), "polling upgrader pods")
 	}
 
-	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(pods.Items))
-	for i := range pods.Items {
-		podStates = append(podStates, p.checkPodStatus(&pods.Items[i]))
+	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(unstructuredPodList.Items))
+	for i := range unstructuredPodList.Items {
+		var pod v1.Pod
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredPodList.Items[i].Object, &pod); err != nil {
+			log.Warnf("Failed to convert pod from unstructured: %v", err)
+			continue
+		}
+		podStates = append(podStates, p.checkPodStatus(&pod))
 	}
 	return podStates, false, nil
 }
@@ -442,7 +467,7 @@ func (p *process) GetID() string {
 }
 
 func (p *process) chooseServiceAccount() string {
-	saClient := p.k8sClient.CoreV1().ServiceAccounts(pods.GetPodNamespace())
+	saClient := p.k8sClient.Resource(client.ServiceAccountGVR).Namespace(pods.GetPodNamespace())
 
 	sensorUpgraderSA, err := saClient.Get(p.ctx(), preferredServiceAccountName, metav1.GetOptions{})
 	if err != nil {
