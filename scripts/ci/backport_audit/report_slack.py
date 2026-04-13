@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from .models import PR, JiraIssue, ReleaseBranch
-from .report_markdown import _collect_issue_problems
 from .slack import get_slack_mention
 from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
 
@@ -97,70 +96,139 @@ def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
     }
 
 
-def _create_issue_table_row(
-    issue_info: tuple,
-    jira_to_prs: dict[str, list[int]],
-) -> list[dict[str, Any]]:
-    """Create table row for a single issue."""
-    (
-        jira_key,
-        fix_icon,
-        affected_icon,
-        _assignee,
-        _team,
-        _component,
-        priority,
-        severity,
-        deadline_info,
-        _urgency_level,
-        urgency_icon,
-    ) = issue_info
+def _create_all_pr_rows(
+    prs: list[PR],
+    jira_issues: dict[str, JiraIssue],
+    expected_version: str,
+) -> list[list[dict[str, Any]]]:
+    """Create table rows for all PRs, including those with and without issues."""
+    all_rows = []
+    jira_to_prs: dict[str, list[int]] = {}
 
-    pr_refs = jira_to_prs.get(jira_key, [])
-    if pr_refs:
-        # Create rich text cell with clickable PR links
-        pr_elements = []
-        for i, pr in enumerate(pr_refs):
-            if i > 0:
-                pr_elements.append({"type": "text", "text": ", "})
-            pr_elements.append({
-                "type": "link",
-                "url": f"https://github.com/stackrox/stackrox/pull/{pr}",
-                "text": f"#{pr}",
-            })
+    # Track which PRs we've already added
+    processed_prs = set()
+
+    # First, add all PRs with Jira issues
+    for pr in prs:
+        for jira_key in pr.jira_keys:
+            if jira_key not in jira_to_prs:
+                jira_to_prs[jira_key] = []
+            jira_to_prs[jira_key].append(pr.number)
+
+    # Collect all issues (both complete and with problems)
+    all_issues = []
+    for pr in prs:
+        for jira_key in pr.jira_keys:
+            if jira_key not in jira_issues:
+                continue
+
+            issue = jira_issues[jira_key]
+            has_fix = expected_version in issue.fix_versions if issue.fix_versions else False
+            has_affected = len(issue.affected_versions) > 0
+
+            urgency_level, urgency_icon = calculate_urgency(
+                issue.priority,
+                issue.severity,
+                issue.due_date,
+                issue.sla_date,
+            )
+            deadline_info = format_deadline_info(issue.due_date, issue.sla_date)
+
+            issue_info = (
+                jira_key,
+                ":white_check_mark:" if has_fix else ":x:",
+                ":white_check_mark:" if has_affected else ":x:",
+                issue.priority or "No priority",
+                issue.severity,
+                deadline_info,
+                urgency_level,
+                urgency_icon,
+                has_fix and has_affected,  # is_complete
+            )
+            if issue_info not in all_issues:
+                all_issues.append(issue_info)
+
+    # Sort: problems first (incomplete), then by urgency
+    all_issues.sort(key=lambda x: (x[8], URGENCY_ORDER.get(x[6], 99)))
+
+    # Create rows for all issues
+    for issue_info in all_issues:
+        (
+            jira_key,
+            fix_icon,
+            affected_icon,
+            priority,
+            severity,
+            deadline_info,
+            urgency_level,
+            urgency_icon,
+            _is_complete,
+        ) = issue_info
+
+        pr_refs = jira_to_prs.get(jira_key, [])
+        if pr_refs:
+            pr_elements = []
+            for i, pr_num in enumerate(pr_refs):
+                if i > 0:
+                    pr_elements.append({"type": "text", "text": ", "})
+                pr_elements.append({
+                    "type": "link",
+                    "url": f"https://github.com/stackrox/stackrox/pull/{pr_num}",
+                    "text": f"#{pr_num}",
+                })
+                processed_prs.add(pr_num)
+            pr_cell = {
+                "type": "rich_text",
+                "elements": [{"type": "rich_text_section", "elements": pr_elements}],
+            }
+        else:
+            pr_cell = _create_table_cell_text("—")
+
+        urgency_emoji = urgency_icon.strip(":")
+        fix_emoji = fix_icon.strip(":")
+        affected_emoji = affected_icon.strip(":")
+        priority_display = f":jira-{priority.lower()}:" if priority != "No priority" else ":jira-undefined:"
+        priority_emoji = priority_display.strip(":")
+        severity_display = severity if severity else "—"
+
+        all_rows.append([
+            _create_table_cell_emoji(urgency_emoji),
+            _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
+            _create_table_cell_emoji(fix_emoji),
+            _create_table_cell_emoji(affected_emoji),
+            _create_table_cell_emoji(priority_emoji),
+            _create_table_cell_text(severity_display),
+            _create_table_cell_text(deadline_info),
+            pr_cell,
+        ])
+
+    # Add PRs without Jira reference
+    prs_no_jira = [pr for pr in prs if not pr.jira_keys and pr.number not in processed_prs]
+    for pr in prs_no_jira:
         pr_cell = {
             "type": "rich_text",
-            "elements": [{"type": "rich_text_section", "elements": pr_elements}],
+            "elements": [{
+                "type": "rich_text_section",
+                "elements": [{
+                    "type": "link",
+                    "url": f"https://github.com/stackrox/stackrox/pull/{pr.number}",
+                    "text": f"#{pr.number}",
+                }],
+            }],
         }
-    else:
-        pr_cell = _create_table_cell_text("—")
 
-    # Format priority as Slack emoji
-    if priority and priority != "No priority":
-        priority_display = f":jira-{priority.lower()}:"
-    else:
-        priority_display = ":jira-undefined:"
+        all_rows.append([
+            _create_table_cell_text("—"),
+            _create_table_cell_text("No Jira"),
+            _create_table_cell_text("—"),
+            _create_table_cell_text("—"),
+            _create_table_cell_text("—"),
+            _create_table_cell_text("—"),
+            _create_table_cell_text("—"),
+            pr_cell,
+        ])
 
-    severity_display = severity if severity else "—"
-
-    # Extract emoji names from shortcodes (":red_circle:" → "red_circle")
-    urgency_emoji = urgency_icon.strip(":")
-    fix_emoji = fix_icon.strip(":")
-    affected_emoji = affected_icon.strip(":")
-    priority_emoji = priority_display.strip(":")
-
-    return [
-        _create_table_cell_emoji(urgency_emoji),
-        _create_table_cell_link(
-            f"https://redhat.atlassian.net/browse/{jira_key}", jira_key
-        ),
-        _create_table_cell_emoji(fix_emoji),
-        _create_table_cell_emoji(affected_emoji),
-        _create_table_cell_emoji(priority_emoji),
-        _create_table_cell_text(severity_display),
-        _create_table_cell_text(deadline_info),
-        pr_cell,
-    ]
+    return all_rows
 
 
 def _generate_branch_blocks(
@@ -183,36 +251,9 @@ def _generate_branch_blocks(
         }
     )
 
-    # PRs without Jira reference
-    prs_no_jira = [pr for pr in prs if not pr.jira_keys]
-    if prs_no_jira:
-        prs_no_jira.sort(key=lambda p: p.author)
-        pr_lines = [f"*PRs Missing Jira Reference ({len(prs_no_jira)})*\n"]
-
-        for pr in prs_no_jira:
-            mention = get_slack_mention(pr.author)
-            pr_link = (
-                f"<https://github.com/stackrox/stackrox/pull/{pr.number}|#{pr.number}>"
-            )
-            pr_lines.append(f"• {mention} {pr_link}: {pr.title}")
-
-        blocks.append(
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": "\n".join(pr_lines)},
-            }
-        )
-
-    # Jira issues with missing metadata (as table)
-    issues_with_problems, jira_to_prs = _collect_issue_problems(
-        prs,
-        jira_issues,
-        branch.expected_version,
-    )
-
-    if issues_with_problems:
-        issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[9], 99))
-        count = len(issues_with_problems)
+    # Comprehensive table with all PRs and issues
+    if prs:
+        all_rows = _create_all_pr_rows(prs, jira_issues, branch.expected_version)
 
         # Section header
         blocks.append(
@@ -220,12 +261,12 @@ def _generate_branch_blocks(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*Jira Issues with Missing Metadata ({count})*",
+                    "text": f"*Release Contents ({len(all_rows)} items)*",
                 },
             }
         )
 
-        # Table with issues
+        # Table with all issues and PRs
         table_rows = [
             # Header row
             [
@@ -240,9 +281,8 @@ def _generate_branch_blocks(
             ]
         ]
 
-        # Data rows
-        for issue_info in issues_with_problems:
-            table_rows.append(_create_issue_table_row(issue_info, jira_to_prs))
+        # Add all data rows
+        table_rows.extend(all_rows)
 
         blocks.append({"type": "table", "rows": table_rows})
 
