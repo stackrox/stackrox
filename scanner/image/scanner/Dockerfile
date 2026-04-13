@@ -43,6 +43,7 @@ LABEL name="scanner-v4" \
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
+COPY --from=package_installer /out/ /
 COPY scripts/entrypoint.sh \
      scripts/import-additional-cas \
      scripts/restore-all-dir-contents \
@@ -50,9 +51,8 @@ COPY scripts/entrypoint.sh \
 COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
+# Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).
 COPY --from=debugger /output/go/ /go/
-
-COPY --from=package_installer /out/ /
 
 RUN \
     chown -R 65534:65534 /tmp && \
