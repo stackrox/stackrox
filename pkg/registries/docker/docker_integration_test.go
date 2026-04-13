@@ -5,6 +5,7 @@ package docker
 import (
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stretchr/testify/assert"
@@ -37,9 +38,9 @@ func TestGetMetadataIntegration(t *testing.T) {
 	require.Nil(t, err)
 
 	// Make sure that request and histogram metrics but no timeouts have been recorded.
-	assert.NotEmpty(t, metricsHandler.TestCollectRequestCounter())
-	assert.Empty(t, metricsHandler.TestCollectTimeoutCounter())
-	assert.NotEmpty(t, metricsHandler.TestCollectHistogramCounter())
+	assert.NotEmpty(t, testutil.CollectAndCount(metricsHandler.RequestCounter()))
+	assert.Empty(t, testutil.CollectAndCount(metricsHandler.TimeoutCounter()))
+	assert.NotEmpty(t, testutil.CollectAndCount(metricsHandler.DurationHistogram()))
 }
 
 func TestOCIImageIndexManifest(t *testing.T) {

@@ -31,9 +31,9 @@ func TestMetricsRoundTripperHappyPath(t *testing.T) {
 	resp, _ := client.Do(req)
 	defer utils.IgnoreError(resp.Body.Close)
 
-	assert.Equal(t, 1, handler.TestCollectRequestCounter())
-	assert.Equal(t, 0, handler.TestCollectTimeoutCounter())
-	assert.Equal(t, 1, handler.TestCollectHistogramCounter())
+	assert.Equal(t, 1, testutil.CollectAndCount(handler.RequestCounter()))
+	assert.Equal(t, 0, testutil.CollectAndCount(handler.TimeoutCounter()))
+	assert.Equal(t, 1, testutil.CollectAndCount(handler.DurationHistogram()))
 }
 
 func TestMetricsRoundTripperTimeoutCounter(t *testing.T) {

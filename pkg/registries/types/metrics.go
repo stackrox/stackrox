@@ -3,13 +3,13 @@ package types
 import (
 	"context"
 	"errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/stackrox/rox/pkg/metrics"
 	"math"
 	"net/http"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 // MetricsHandler wraps the registry Prometheus metrics.
@@ -102,17 +102,17 @@ func (m *MetricsHandler) RoundTripper(base http.RoundTripper, registryType strin
 	)
 }
 
-// TestCollectRequestCounter returns the count of request counter metrics (for testing).
-func (m *MetricsHandler) TestCollectRequestCounter() int {
-	return testutil.CollectAndCount(m.requestCounter)
+// RequestCounter returns the request counter for testing.
+func (m *MetricsHandler) RequestCounter() *prometheus.CounterVec {
+	return m.requestCounter
 }
 
-// TestCollectTimeoutCounter returns the count of timeout counter metrics (for testing).
-func (m *MetricsHandler) TestCollectTimeoutCounter() int {
-	return testutil.CollectAndCount(m.timeoutCounter)
+// TimeoutCounter returns the timeout counter for testing.
+func (m *MetricsHandler) TimeoutCounter() *prometheus.CounterVec {
+	return m.timeoutCounter
 }
 
-// TestCollectHistogramCounter returns the count of histogram metrics (for testing).
-func (m *MetricsHandler) TestCollectHistogramCounter() int {
-	return testutil.CollectAndCount(m.durationHistogram)
+// DurationHistogram returns the duration histogram for testing.
+func (m *MetricsHandler) DurationHistogram() *prometheus.HistogramVec {
+	return m.durationHistogram
 }
