@@ -98,8 +98,8 @@ def main() -> int:
             branches, prs_by_branch, jira_issues, orphaned_issues, timestamp,
         )
 
-        markdown_path = os.path.join(config.output_dir, config.report_file)
-        pathlib.Path(markdown_path).write_text(markdown, encoding="utf-8")
+        markdown_path = pathlib.Path(config.output_dir) / config.report_file
+        markdown_path.write_text(markdown, encoding="utf-8")
 
         slack_channel = os.getenv("SLACK_CHANNEL", "C05AZF8T7GW")
         slack_payload = generate_slack_payload(
@@ -107,8 +107,8 @@ def main() -> int:
             timestamp, config.github_run_url, slack_channel,
         )
 
-        slack_path = os.path.join(config.output_dir, config.slack_payload_file)
-        with pathlib.Path(slack_path).open("w", encoding="utf-8") as f:
+        slack_path = pathlib.Path(config.output_dir) / config.slack_payload_file
+        with slack_path.open("w", encoding="utf-8") as f:
             json.dump(slack_payload, f, indent=2)
 
         return 0

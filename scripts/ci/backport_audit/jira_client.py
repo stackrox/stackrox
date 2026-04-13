@@ -9,6 +9,9 @@ from urllib.request import Request, urlopen
 
 from .models import JiraIssue
 
+# HTTP status codes
+HTTP_NOT_FOUND = 404
+
 
 class JiraClient:
     """Jira REST API client using urllib."""
@@ -53,7 +56,7 @@ class JiraClient:
                 data = json.loads(response.read())
                 return self._parse_issue(data)
         except HTTPError as e:
-            if e.code == 404:
+            if e.code == HTTP_NOT_FOUND:
                 return None
             return None
         except URLError:

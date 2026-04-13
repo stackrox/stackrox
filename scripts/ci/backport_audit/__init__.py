@@ -17,7 +17,9 @@ from .report_markdown import generate_markdown
 from .report_slack import generate_slack_payload
 from .slack import SLACK_USER_MAP, get_slack_mention
 from .urgency import (
+    CRITICAL_DEADLINE_DAYS,
     CVE_TIMEFRAMES,
+    HIGH_DEADLINE_DAYS,
     PRIORITY_URGENCY,
     URGENCY_ORDER,
     calculate_urgency,
@@ -33,7 +35,9 @@ from .utils import (
 )
 
 __all__ = [
+    "CRITICAL_DEADLINE_DAYS",
     "CVE_TIMEFRAMES",
+    "HIGH_DEADLINE_DAYS",
     "PR",
     "PRIORITY_URGENCY",
     "SLACK_USER_MAP",

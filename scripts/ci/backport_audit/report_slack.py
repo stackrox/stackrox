@@ -6,6 +6,9 @@ from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
 from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
 
+# Minimum length for a valid markdown header (e.g., "*X*" has len > 2)
+MIN_HEADER_LENGTH = 2
+
 
 def generate_slack_payload(
     branches: list[ReleaseBranch],
@@ -234,7 +237,7 @@ def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) ->
     for line in lines:
         line_length = len(line) + 1
 
-        if line.startswith("*") and line.endswith("*") and len(line) > 2:
+        if line.startswith("*") and line.endswith("*") and len(line) > MIN_HEADER_LENGTH:
             current_header = line
 
         if current_length + line_length > max_chars and current_section:

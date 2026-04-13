@@ -38,6 +38,12 @@ URGENCY_ORDER = {
     "low": 4,
 }
 
+# Deadline urgency thresholds (in days)
+# Based on typical escalation patterns for critical issues
+# requiring immediate attention vs. upcoming deadlines
+CRITICAL_DEADLINE_DAYS = 3  # ≤3 days: critical urgency (🔴)
+HIGH_DEADLINE_DAYS = 7  # ≤7 days: high urgency (🟡)
+
 
 def parse_date(date_str: str | None) -> datetime | None:
     """Parse ISO 8601 date string to timezone-aware datetime.
@@ -97,9 +103,9 @@ def calculate_urgency(
             return ("overdue", "🔴")
 
         days_remaining = (deadline - current_date).days
-        if days_remaining <= 3:
+        if days_remaining <= CRITICAL_DEADLINE_DAYS:
             return ("critical", "🔴")
-        if days_remaining <= 7:
+        if days_remaining <= HIGH_DEADLINE_DAYS:
             return ("high", "🟡")
 
     if priority:
