@@ -105,26 +105,29 @@ const (
 
 // Deployments holds the Gorm model for Postgres table `deployments`.
 type Deployments struct {
-	ID                            string                  `gorm:"column:id;type:uuid;primaryKey"`
-	Name                          string                  `gorm:"column:name;type:varchar"`
-	Hash                          uint64                  `gorm:"column:hash;type:numeric"`
-	Type                          string                  `gorm:"column:type;type:varchar"`
-	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:deployments_sac_filter,type:btree"`
-	NamespaceID                   string                  `gorm:"column:namespaceid;type:uuid"`
-	OrchestratorComponent         bool                    `gorm:"column:orchestratorcomponent;type:bool"`
-	Labels                        map[string]string       `gorm:"column:labels;type:jsonb"`
-	PodLabels                     map[string]string       `gorm:"column:podlabels;type:jsonb"`
-	Created                       *time.Time              `gorm:"column:created;type:timestamp"`
-	ClusterID                     string                  `gorm:"column:clusterid;type:uuid;index:deployments_sac_filter,type:btree"`
-	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
-	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
-	Priority                      int64                   `gorm:"column:priority;type:bigint"`
-	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
-	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
-	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
-	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
-	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
-	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
+	ID                            string                           `gorm:"column:id;type:uuid;primaryKey"`
+	Name                          string                           `gorm:"column:name;type:varchar"`
+	Hash                          uint64                           `gorm:"column:hash;type:numeric"`
+	Type                          string                           `gorm:"column:type;type:varchar"`
+	Namespace                     string                           `gorm:"column:namespace;type:varchar;index:deployments_sac_filter,type:btree"`
+	NamespaceID                   string                           `gorm:"column:namespaceid;type:uuid"`
+	OrchestratorComponent         bool                             `gorm:"column:orchestratorcomponent;type:bool"`
+	Labels                        map[string]string                `gorm:"column:labels;type:jsonb"`
+	PodLabels                     map[string]string                `gorm:"column:podlabels;type:jsonb"`
+	Created                       *time.Time                       `gorm:"column:created;type:timestamp"`
+	ClusterID                     string                           `gorm:"column:clusterid;type:uuid;index:deployments_sac_filter,type:btree"`
+	ClusterName                   string                           `gorm:"column:clustername;type:varchar"`
+	Annotations                   map[string]string                `gorm:"column:annotations;type:jsonb"`
+	Priority                      int64                            `gorm:"column:priority;type:bigint"`
+	ImagePullSecrets              *pq.StringArray                  `gorm:"column:imagepullsecrets;type:text[]"`
+	ServiceAccount                string                           `gorm:"column:serviceaccount;type:varchar"`
+	ServiceAccountPermissionLevel storage.PermissionLevel          `gorm:"column:serviceaccountpermissionlevel;type:integer"`
+	RiskScore                     float32                          `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
+	PlatformComponent             bool                             `gorm:"column:platformcomponent;type:bool"`
+	TombstoneDeletedAt            *time.Time                       `gorm:"column:tombstone_deletedat;type:timestamp"`
+	TombstoneExpiresAt            *time.Time                       `gorm:"column:tombstone_expiresat;type:timestamp"`
+	LifecycleStage                storage.DeploymentLifecycleStage `gorm:"column:lifecyclestage;type:integer"`
+	Serialized                    []byte                           `gorm:"column:serialized;type:bytea"`
 }
 
 // DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.
