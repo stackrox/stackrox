@@ -1,7 +1,14 @@
-"""Urgency calculation utilities for backport audit."""
+"""Urgency calculation utilities for backport audit.
+
+See: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
+"""
 
 from datetime import datetime
 
+# Bug Ticket Priority Guidelines from Patch Release Process:
+# - Critical: "Candidate for immediate Z-release"
+# - Major: "Next Z-stream release"
+# - Normal: "Unlikely to go into a Z-stream release"
 PRIORITY_URGENCY = {
     "Critical": "critical",
     "Blocker": "critical",
@@ -11,6 +18,11 @@ PRIORITY_URGENCY = {
     "Trivial": "low",
 }
 
+# Default delivery timeframes (2026 Q1) from ProdSec:
+# - Critical: "7 business days"
+# - Important: "28 calendar days"
+# - Moderate: "57 calendar days"
+# See: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
 CVE_TIMEFRAMES = {
     "Critical": 7,
     "Important": 28,
@@ -54,6 +66,11 @@ def calculate_urgency(
 ) -> tuple[str, str]:
     """Calculate urgency level and indicator for a Jira issue.
 
+    Urgency is determined by deadlines and issue metadata per Patch Release Process:
+    - "Jira trackers with Due date or SLA Date — whatever is sooner"
+    - CVE severity affects urgency: Critical/Important CVEs require faster resolution
+    - Bug priority determines delivery target (Critical→immediate, Major→next Z-stream)
+
     Args:
         priority: Jira priority (Critical, Major, Normal, etc.)
         severity: CVE severity (Critical, Important, Moderate, Low)
@@ -70,6 +87,9 @@ def calculate_urgency(
     if current_date is None:
         current_date = datetime.utcnow()
 
+    # Deadline priority: SLA Date (Red Hat legally binding) > Due date (internal)
+    # Per Patch Release Process: "SLA Date informs about the legally binding deadline
+    # for Red Hat; usually is Due date + some buffer"
     deadline = parse_date(sla_date) or parse_date(due_date)
     if deadline:
         if deadline < current_date:

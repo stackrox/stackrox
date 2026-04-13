@@ -35,9 +35,12 @@ class JiraClient:
             JiraIssue or None if not found
 
         """
-        # Standard fields: priority, duedate
-        # Custom fields: customfield_10001 (Team), customfield_10840 (Severity for CVE trackers)
-        # TODO: Add SLA Date field once discovered (likely only present on CVE tracker issues)
+        # Fields per Patch Release Process (https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452):
+        # - priority: Bug priority (Critical→immediate Z-release, Major→next Z-stream, Normal→unlikely)
+        # - duedate: "defines internal deadline for releasing a version with the fix"
+        # - customfield_10001: Team field
+        # - customfield_10840: Severity field - "contains the CVE severity rating which affects urgency"
+        # TODO: Add SLA Date field once discovered - "informs about the legally binding deadline for Red Hat"
         fields = "fixVersions,versions,summary,status,assignee,components,customfield_10001,priority,duedate,customfield_10840"
         url = f"https://{self.base_url}/rest/api/3/issue/{issue_key}?fields={fields}"
 

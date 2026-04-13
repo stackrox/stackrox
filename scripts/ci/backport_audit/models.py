@@ -30,7 +30,16 @@ class PR:
 
 @dataclass
 class JiraIssue:
-    """Jira issue data."""
+    """Jira issue data.
+
+    Urgency-related fields per Patch Release Process:
+    https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
+
+    - priority: Bug priority (Critical→immediate Z-release, Major→next Z-stream)
+    - severity: CVE severity rating (Critical: 7 days, Important: 28 days, Moderate: 57 days)
+    - due_date: "defines internal deadline for releasing a version with the fix"
+    - sla_date: "informs about the legally binding deadline for Red Hat; usually is Due date + some buffer"
+    """
 
     key: str
     summary: str
