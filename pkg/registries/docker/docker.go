@@ -10,9 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/manifest/manifestlist"
-	manifestV1 "github.com/docker/distribution/manifest/schema1"
-	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -194,13 +191,13 @@ func (r *Registry) lazyLoadRepoList() {
 func handleManifests(r *Registry, manifestType, remote, digest string) (*storage.ImageMetadata, error) {
 	// Note: Any updates here must be accompanied by updates to registry_without_digest.go.
 	switch manifestType {
-	case manifestV1.MediaTypeManifest:
+	case MediaTypeV1Manifest:
 		return HandleV1Manifest(r, remote, digest)
-	case manifestV1.MediaTypeSignedManifest:
+	case MediaTypeV1SignedManifest:
 		return HandleV1SignedManifest(r, remote, digest)
-	case manifestlist.MediaTypeManifestList:
+	case MediaTypeV2ManifestList:
 		return HandleV2ManifestList(r, remote, digest)
-	case manifestV2.MediaTypeManifest:
+	case MediaTypeV2Manifest:
 		return HandleV2Manifest(r, remote, digest)
 	case MediaTypeImageIndex:
 		return HandleOCIImageIndex(r, remote, digest)

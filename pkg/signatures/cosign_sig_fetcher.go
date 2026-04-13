@@ -16,7 +16,6 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v3/pkg/cosign"
 	"github.com/sigstore/cosign/v3/pkg/oci"
@@ -220,7 +219,7 @@ func optionsFromRegistry(ctx context.Context, registry registryTypes.Registry) [
 		// registries. Ideally, we would in general use the same libraries for both, but cosign doesn't support
 		// exchanging gcrRemote for now (we could however move to gcrRemote within the registry as well).
 		opts = append(opts, gcrRemote.WithTransport(
-			dockerRegistry.WrapTransport(tr, strings.TrimSuffix(registryCfg.URL, "/"),
+			wrapTransport(tr, strings.TrimSuffix(registryCfg.URL, "/"),
 				registryCfg.Username, registryCfg.Password)))
 	}
 	return opts
@@ -237,11 +236,9 @@ func isMissingSignatureError(err error) bool {
 		return true
 	}
 
-	// Since we are using the transport created by the heroku client, it will be a mix of error types returned by
-	// cosign. Cosign itself expects from registry operations the transport.Error, heroku-client will return a url.Error
-	// instead. Because of this, cosign will potentially return the registry error instead of "no signatures associated"
-	// error when no signatures are found. Hence, we have to check here the status code, if the code is
-	// http.StatusNotFound we will indicate that no signatures are available.
+	// Our auth transport wraps HTTP errors as httpStatusError, while cosign expects transport.Error.
+	// Because of this, cosign may return the registry error instead of "no signatures associated"
+	// when no signatures are found. Check the status code to detect missing signatures.
 	// Cosign ref:
 	// https://github.com/sigstore/cosign/blob/b1024041754c8171375bf1a8411d86436c654b95/pkg/oci/remote/signatures.go#L35-L40
 	return checkIfErrorContainsCode(err, http.StatusNotFound)
@@ -272,14 +269,14 @@ func isUnauthorizedError(err error) bool {
 // returned.
 func checkIfErrorContainsCode(err error, codes ...int) bool {
 	var transportErr *transport.Error
-	var statusError *dockerRegistry.HttpStatusError
+	var statusError *httpStatusError
 
 	// Transport error is returned by go-containerregistry for any errors occurred post authentication.
 	if errors.As(err, &transportErr) {
 		return slices.Index(codes, transportErr.StatusCode) != -1
 	}
 
-	// HttpStatusError is returned by heroku-client for any errors occurred during authentication.
+	// httpStatusError is returned by our auth transport for any errors occurred during authentication.
 	if errors.As(err, &statusError) && statusError.Response != nil {
 		return slices.Index(codes, statusError.Response.StatusCode) != -1
 	}

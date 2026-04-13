@@ -17,7 +17,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v3/pkg/oci/mutate"
 	ociremote "github.com/sigstore/cosign/v3/pkg/oci/remote"
@@ -288,18 +287,18 @@ func TestCosignSignatureFetcher_FetchSignature_NoSignature(t *testing.T) {
 }
 
 func TestIsMissingSignatureError(t *testing.T) {
-	notFoundErr := dockerRegistry.HttpStatusError{
+	notFoundErr := httpStatusError{
 		Response: &http.Response{
 			StatusCode: http.StatusNotFound,
 		},
 	}
-	unauthorizedErr := dockerRegistry.HttpStatusError{
+	unauthorizedErr := httpStatusError{
 		Response: &http.Response{
 			StatusCode: http.StatusUnauthorized,
 		},
 	}
 
-	emptyResponseErr := dockerRegistry.HttpStatusError{
+	emptyResponseErr := httpStatusError{
 		Response: &http.Response{},
 	}
 
@@ -368,23 +367,23 @@ func TestIsMissingSignatureError(t *testing.T) {
 }
 
 func TestIsUnauthorizedError(t *testing.T) {
-	notFoundErr := dockerRegistry.HttpStatusError{
+	notFoundErr := httpStatusError{
 		Response: &http.Response{
 			StatusCode: http.StatusNotFound,
 		},
 	}
-	unauthorizedErr := dockerRegistry.HttpStatusError{
+	unauthorizedErr := httpStatusError{
 		Response: &http.Response{
 			StatusCode: http.StatusUnauthorized,
 		},
 	}
-	forbiddenErr := dockerRegistry.HttpStatusError{
+	forbiddenErr := httpStatusError{
 		Response: &http.Response{
 			StatusCode: http.StatusForbidden,
 		},
 	}
 
-	emptyResponseErr := dockerRegistry.HttpStatusError{}
+	emptyResponseErr := httpStatusError{}
 
 	cases := map[string]struct {
 		err               error

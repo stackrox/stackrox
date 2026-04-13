@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/manifest/schema1"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -60,7 +59,7 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 	}
 }
 
-func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*storage.ImageMetadata, error) {
+func (r *Registry) populateV1DataFromManifest(manifest *v1SignedManifest, ref string) (*storage.ImageMetadata, error) {
 	// Get the latest layer and author
 	var latest *storage.ImageLayer
 	var layers []*storage.ImageLayer
@@ -110,7 +109,7 @@ func HandleV1SignedManifest(r *Registry, remote, ref string) (*storage.ImageMeta
 	if err != nil {
 		return nil, err
 	}
-	var manifest schema1.SignedManifest
+	var manifest v1SignedManifest
 	if err := json.Unmarshal(body, &manifest); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling signed manifest")
 	}
@@ -123,7 +122,7 @@ func HandleV1Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 	if err != nil {
 		return nil, err
 	}
-	var manifest schema1.SignedManifest
+	var manifest v1SignedManifest
 	if err := json.Unmarshal(body, &manifest); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling manifest")
 	}
