@@ -536,6 +536,56 @@ func (ds *datastoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query
 	return ds.deploymentStore.GetContainerImageViews(ctx, q)
 }
 
+// GetActiveDeployments returns deployments with lifecycle_stage = ACTIVE.
+func (ds *datastoreImpl) GetActiveDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetActiveDeployments")
+
+	query := pkgSearch.NewQueryBuilder().
+		AddStrings(pkgSearch.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+		ProtoQuery()
+	return ds.SearchRawDeployments(ctx, query)
+}
+
+// GetSoftDeletedDeployments returns deployments with lifecycle_stage = DELETED.
+func (ds *datastoreImpl) GetSoftDeletedDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetSoftDeletedDeployments")
+
+	query := pkgSearch.NewQueryBuilder().
+		AddStrings(pkgSearch.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED.String()).
+		ProtoQuery()
+	return ds.SearchRawDeployments(ctx, query)
+}
+
+// GetExpiredDeployments returns deployments where tombstone.expires_at < now.
+func (ds *datastoreImpl) GetExpiredDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetExpiredDeployments")
+
+	// Query for soft-deleted deployments.
+	query := pkgSearch.NewQueryBuilder().
+		AddStrings(pkgSearch.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED.String()).
+		ProtoQuery()
+
+	now := time.Now()
+	var expiredDeployments []*storage.Deployment
+
+	// Filter by expires_at in Go code since we don't have a search field for tombstone.expires_at yet.
+	err := ds.deploymentStore.WalkByQuery(ctx, query, func(deployment *storage.Deployment) error {
+		if tombstone := deployment.GetTombstone(); tombstone != nil && tombstone.GetExpiresAt() != nil {
+			expiresAt := tombstone.GetExpiresAt().AsTime()
+			if expiresAt.Before(now) {
+				expiredDeployments = append(expiredDeployments, deployment)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ds.updateDeploymentPriority(expiredDeployments...)
+	return expiredDeployments, nil
+}
+
 type DeploymentSearchResultConverter struct{}
 
 func (c *DeploymentSearchResultConverter) BuildName(result *pkgSearch.Result) string {

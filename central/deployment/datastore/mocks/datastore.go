@@ -74,6 +74,21 @@ func (mr *MockDataStoreMockRecorder) CountDeployments(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockDataStore)(nil).CountDeployments), ctx)
 }
 
+// GetActiveDeployments mocks base method.
+func (m *MockDataStore) GetActiveDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveDeployments", ctx)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveDeployments indicates an expected call of GetActiveDeployments.
+func (mr *MockDataStoreMockRecorder) GetActiveDeployments(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveDeployments", reflect.TypeOf((*MockDataStore)(nil).GetActiveDeployments), ctx)
+}
+
 // GetContainerImageViews mocks base method.
 func (m *MockDataStore) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
 	m.ctrl.T.Helper()
@@ -135,6 +150,21 @@ func (mr *MockDataStoreMockRecorder) GetDeployments(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployments", reflect.TypeOf((*MockDataStore)(nil).GetDeployments), ctx, ids)
 }
 
+// GetExpiredDeployments mocks base method.
+func (m *MockDataStore) GetExpiredDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetExpiredDeployments", ctx)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetExpiredDeployments indicates an expected call of GetExpiredDeployments.
+func (mr *MockDataStoreMockRecorder) GetExpiredDeployments(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExpiredDeployments", reflect.TypeOf((*MockDataStore)(nil).GetExpiredDeployments), ctx)
+}
+
 // GetImagesForDeployment mocks base method.
 func (m *MockDataStore) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
 	m.ctrl.T.Helper()
@@ -148,6 +178,21 @@ func (m *MockDataStore) GetImagesForDeployment(ctx context.Context, deployment *
 func (mr *MockDataStoreMockRecorder) GetImagesForDeployment(ctx, deployment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesForDeployment", reflect.TypeOf((*MockDataStore)(nil).GetImagesForDeployment), ctx, deployment)
+}
+
+// GetSoftDeletedDeployments mocks base method.
+func (m *MockDataStore) GetSoftDeletedDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSoftDeletedDeployments", ctx)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSoftDeletedDeployments indicates an expected call of GetSoftDeletedDeployments.
+func (mr *MockDataStoreMockRecorder) GetSoftDeletedDeployments(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSoftDeletedDeployments", reflect.TypeOf((*MockDataStore)(nil).GetSoftDeletedDeployments), ctx)
 }
 
 // ListDeployment mocks base method.

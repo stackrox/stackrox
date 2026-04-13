@@ -48,6 +48,15 @@ type DataStore interface {
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 
 	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
+
+	// GetActiveDeployments returns deployments with lifecycle_stage = ACTIVE.
+	GetActiveDeployments(ctx context.Context) ([]*storage.Deployment, error)
+
+	// GetSoftDeletedDeployments returns deployments with lifecycle_stage = DELETED.
+	GetSoftDeletedDeployments(ctx context.Context) ([]*storage.Deployment, error)
+
+	// GetExpiredDeployments returns deployments where tombstone.expires_at < now.
+	GetExpiredDeployments(ctx context.Context) ([]*storage.Deployment, error)
 }
 
 func newDataStore(
