@@ -7,9 +7,11 @@ package storage
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	durationpb1 "github.com/planetscale/vtprotobuf/types/known/durationpb"
 	timestamppb1 "github.com/planetscale/vtprotobuf/types/known/timestamppb"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	unsafe "unsafe"
@@ -237,6 +239,7 @@ func (m *PrivateConfig) CloneVT() *PrivateConfig {
 	r.VulnerabilityExceptionConfig = m.VulnerabilityExceptionConfig.CloneVT()
 	r.AdministrationEventsConfig = m.AdministrationEventsConfig.CloneVT()
 	r.Metrics = m.Metrics.CloneVT()
+	r.DeploymentTombstoneTtl = (*durationpb.Duration)((*durationpb1.Duration)(m.DeploymentTombstoneTtl).CloneVT())
 	if m.AlertRetention != nil {
 		r.AlertRetention = m.AlertRetention.(interface {
 			CloneVT() isPrivateConfig_AlertRetention
@@ -769,6 +772,9 @@ func (this *PrivateConfig) EqualVT(that *PrivateConfig) bool {
 		return false
 	}
 	if !this.Metrics.EqualVT(that.Metrics) {
+		return false
+	}
+	if !(*durationpb1.Duration)(this.DeploymentTombstoneTtl).EqualVT((*durationpb1.Duration)(that.DeploymentTombstoneTtl)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1666,6 +1672,16 @@ func (m *PrivateConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.DeploymentTombstoneTtl != nil {
+		size, err := (*durationpb1.Duration)(m.DeploymentTombstoneTtl).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x52
+	}
 	if m.Metrics != nil {
 		size, err := m.Metrics.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -2486,6 +2502,10 @@ func (m *PrivateConfig) SizeVT() (n int) {
 	}
 	if m.Metrics != nil {
 		l = m.Metrics.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.DeploymentTombstoneTtl != nil {
+		l = (*durationpb1.Duration)(m.DeploymentTombstoneTtl).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -4680,6 +4700,42 @@ func (m *PrivateConfig) UnmarshalVT(dAtA []byte) error {
 				m.Metrics = &PrometheusMetrics{}
 			}
 			if err := m.Metrics.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentTombstoneTtl", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DeploymentTombstoneTtl == nil {
+				m.DeploymentTombstoneTtl = &durationpb.Duration{}
+			}
+			if err := (*durationpb1.Duration)(m.DeploymentTombstoneTtl).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7725,6 +7781,42 @@ func (m *PrivateConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Metrics = &PrometheusMetrics{}
 			}
 			if err := m.Metrics.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentTombstoneTtl", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DeploymentTombstoneTtl == nil {
+				m.DeploymentTombstoneTtl = &durationpb.Duration{}
+			}
+			if err := (*durationpb1.Duration)(m.DeploymentTombstoneTtl).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

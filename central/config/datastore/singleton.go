@@ -2,6 +2,9 @@ package datastore
 
 import (
 	"context"
+	"time"
+
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -38,6 +41,8 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
+	// DefaultDeploymentTombstoneRetentionHours is the number of hours to retain soft-deleted deployments before permanent deletion.
+	DefaultDeploymentTombstoneRetentionHours = 24
 	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
 	PlatformComponentSystemRuleName = "system rule"
 	// PlatformComponentSystemRegex is the system defined regex for matching kube and openshift workloads, this is un-editable by users
@@ -67,6 +72,7 @@ var (
 		ImageRetentionDurationDays:          DefaultImageRetention,
 		AlertRetention:                      defaultAlertRetention,
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		DeploymentTombstoneTtl:              defaultDeploymentTombstoneTTL,
 	}
 
 	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
@@ -111,6 +117,8 @@ var (
 	defaultAdministrationEventsConfig = &storage.AdministrationEventsConfig{
 		RetentionDurationDays: DefaultAdministrationEventsRetention,
 	}
+
+	defaultDeploymentTombstoneTTL = durationpb.New(DefaultDeploymentTombstoneRetentionHours * time.Hour)
 
 	defaultPlatformConfigSystemRule = &storage.PlatformComponentConfig_Rule{
 		Name: PlatformComponentSystemRuleName,
@@ -168,6 +176,11 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 
 	if privateConfig.GetAdministrationEventsConfig() == nil {
 		privateConfig.AdministrationEventsConfig = defaultAdministrationEventsConfig
+		needsUpsert = true
+	}
+
+	if privateConfig.GetDeploymentTombstoneTtl() == nil {
+		privateConfig.DeploymentTombstoneTtl = defaultDeploymentTombstoneTTL
 		needsUpsert = true
 	}
 

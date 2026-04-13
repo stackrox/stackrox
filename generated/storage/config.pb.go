@@ -9,6 +9,7 @@ package storage
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -541,7 +542,7 @@ func (x *PrometheusMetrics) GetNodeVulnerabilities() *PrometheusMetrics_Group {
 	return nil
 }
 
-// next available tag: 10
+// next available tag: 11
 type PrivateConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to AlertRetention:
@@ -557,9 +558,13 @@ type PrivateConfig struct {
 	AdministrationEventsConfig          *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig,proto3" json:"administration_events_config,omitempty"`
 	// This field defines groups of custom Prometheus metrics to be exposed by the
 	// backend on the API endpoint.
-	Metrics       *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics,proto3" json:"metrics,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Metrics *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	// Tombstone retention duration for soft-deleted deployments.
+	// After this duration, soft-deleted deployments are permanently purged.
+	// Default: 24 hours.
+	DeploymentTombstoneTtl *durationpb.Duration `protobuf:"bytes,10,opt,name=deployment_tombstone_ttl,json=deploymentTombstoneTtl,proto3" json:"deployment_tombstone_ttl,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PrivateConfig) Reset() {
@@ -662,6 +667,13 @@ func (x *PrivateConfig) GetAdministrationEventsConfig() *AdministrationEventsCon
 func (x *PrivateConfig) GetMetrics() *PrometheusMetrics {
 	if x != nil {
 		return x.Metrics
+	}
+	return nil
+}
+
+func (x *PrivateConfig) GetDeploymentTombstoneTtl() *durationpb.Duration {
+	if x != nil {
+		return x.DeploymentTombstoneTtl
 	}
 	return nil
 }
@@ -1290,7 +1302,7 @@ var File_storage_config_proto protoreflect.FileDescriptor
 
 const file_storage_config_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/config.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17storage/telemetry.proto\";\n" +
+	"\x14storage/config.proto\x12\astorage\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17storage/telemetry.proto\";\n" +
 	"\vLoginNotice\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"\xe2\x01\n" +
@@ -1349,7 +1361,7 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1ag\n" +
 	"\x10DescriptorsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
-	"\x05value\x18\x02 \x01(\v2'.storage.PrometheusMetrics.Group.LabelsR\x05value:\x028\x01\"\xb5\x06\n" +
+	"\x05value\x18\x02 \x01(\v2'.storage.PrometheusMetrics.Group.LabelsR\x05value:\x028\x01\"\x8a\a\n" +
 	"\rPrivateConfig\x12X\n" +
 	"(DEPRECATED_alert_retention_duration_days\x18\x01 \x01(\x05H\x00R$DEPRECATEDAlertRetentionDurationDays\x12B\n" +
 	"\falert_config\x18\x03 \x01(\v2\x1d.storage.AlertRetentionConfigH\x00R\valertConfig\x12A\n" +
@@ -1359,7 +1371,9 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17report_retention_config\x18\x06 \x01(\v2\x1e.storage.ReportRetentionConfigR\x15reportRetentionConfig\x12k\n" +
 	"\x1evulnerability_exception_config\x18\a \x01(\v2%.storage.VulnerabilityExceptionConfigR\x1cvulnerabilityExceptionConfig\x12e\n" +
 	"\x1cadministration_events_config\x18\b \x01(\v2#.storage.AdministrationEventsConfigR\x1aadministrationEventsConfig\x124\n" +
-	"\ametrics\x18\t \x01(\v2\x1a.storage.PrometheusMetricsR\ametricsB\x11\n" +
+	"\ametrics\x18\t \x01(\v2\x1a.storage.PrometheusMetricsR\ametrics\x12S\n" +
+	"\x18deployment_tombstone_ttl\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\x16deploymentTombstoneTtlB\x11\n" +
 	"\x0falert_retention\"\xa5\x02\n" +
 	"\x17PlatformComponentConfig\x12;\n" +
 	"\x05rules\x18\x01 \x03(\v2%.storage.PlatformComponentConfig.RuleR\x05rules\x12-\n" +
@@ -1437,6 +1451,7 @@ var file_storage_config_proto_goTypes = []any{
 	(*VulnerabilityExceptionConfig_ExpiryOptions)(nil),     // 23: storage.VulnerabilityExceptionConfig.ExpiryOptions
 	(*TelemetryConfiguration)(nil),                         // 24: storage.TelemetryConfiguration
 	(*timestamppb.Timestamp)(nil),                          // 25: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),                            // 26: google.protobuf.Duration
 }
 var file_storage_config_proto_depIdxs = []int32{
 	0,  // 0: storage.BannerConfig.size:type_name -> storage.BannerConfig.Size
@@ -1456,23 +1471,24 @@ var file_storage_config_proto_depIdxs = []int32{
 	11, // 14: storage.PrivateConfig.vulnerability_exception_config:type_name -> storage.VulnerabilityExceptionConfig
 	12, // 15: storage.PrivateConfig.administration_events_config:type_name -> storage.AdministrationEventsConfig
 	7,  // 16: storage.PrivateConfig.metrics:type_name -> storage.PrometheusMetrics
-	20, // 17: storage.PlatformComponentConfig.rules:type_name -> storage.PlatformComponentConfig.Rule
-	3,  // 18: storage.Config.public_config:type_name -> storage.PublicConfig
-	8,  // 19: storage.Config.private_config:type_name -> storage.PrivateConfig
-	9,  // 20: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
-	23, // 21: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
-	17, // 22: storage.PrometheusMetrics.Group.descriptors:type_name -> storage.PrometheusMetrics.Group.DescriptorsEntry
-	18, // 23: storage.PrometheusMetrics.Group.Labels.include_filters:type_name -> storage.PrometheusMetrics.Group.Labels.IncludeFiltersEntry
-	19, // 24: storage.PrometheusMetrics.Group.Labels.exclude_filters:type_name -> storage.PrometheusMetrics.Group.Labels.ExcludeFiltersEntry
-	16, // 25: storage.PrometheusMetrics.Group.DescriptorsEntry.value:type_name -> storage.PrometheusMetrics.Group.Labels
-	21, // 26: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
-	13, // 27: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
-	22, // 28: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	26, // 17: storage.PrivateConfig.deployment_tombstone_ttl:type_name -> google.protobuf.Duration
+	20, // 18: storage.PlatformComponentConfig.rules:type_name -> storage.PlatformComponentConfig.Rule
+	3,  // 19: storage.Config.public_config:type_name -> storage.PublicConfig
+	8,  // 20: storage.Config.private_config:type_name -> storage.PrivateConfig
+	9,  // 21: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
+	23, // 22: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
+	17, // 23: storage.PrometheusMetrics.Group.descriptors:type_name -> storage.PrometheusMetrics.Group.DescriptorsEntry
+	18, // 24: storage.PrometheusMetrics.Group.Labels.include_filters:type_name -> storage.PrometheusMetrics.Group.Labels.IncludeFiltersEntry
+	19, // 25: storage.PrometheusMetrics.Group.Labels.exclude_filters:type_name -> storage.PrometheusMetrics.Group.Labels.ExcludeFiltersEntry
+	16, // 26: storage.PrometheusMetrics.Group.DescriptorsEntry.value:type_name -> storage.PrometheusMetrics.Group.Labels
+	21, // 27: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
+	13, // 28: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
+	22, // 29: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_storage_config_proto_init() }

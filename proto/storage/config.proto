@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package storage;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/telemetry.proto";
 
@@ -101,7 +102,7 @@ message PrometheusMetrics {
   Group node_vulnerabilities = 3;
 }
 
-// next available tag: 10
+// next available tag: 11
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -120,6 +121,11 @@ message PrivateConfig {
   // This field defines groups of custom Prometheus metrics to be exposed by the
   // backend on the API endpoint.
   PrometheusMetrics metrics = 9;
+
+  // Tombstone retention duration for soft-deleted deployments.
+  // After this duration, soft-deleted deployments are permanently purged.
+  // Default: 24 hours.
+  google.protobuf.Duration deployment_tombstone_ttl = 10;
 }
 
 message PlatformComponentConfig {

@@ -511,9 +511,13 @@
         "metrics": {
           "$ref": "#/definitions/storagePrometheusMetrics",
           "description": "This field defines groups of custom Prometheus metrics to be exposed by the\nbackend on the API endpoint."
+        },
+        "deploymentTombstoneTtl": {
+          "type": "string",
+          "description": "Tombstone retention duration for soft-deleted deployments.\nAfter this duration, soft-deleted deployments are permanently purged.\nDefault: 24 hours."
         }
       },
-      "title": "next available tag: 10"
+      "title": "next available tag: 11"
     },
     "storagePrometheusMetrics": {
       "type": "object",
