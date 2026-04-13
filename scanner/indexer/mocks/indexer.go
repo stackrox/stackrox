@@ -152,18 +152,18 @@ func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.
 }
 
 // GetRepositoryToCPEMapping mocks base method.
-func (m *MockIndexer) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*indexer.FetchResult, error) {
+func (m *MockIndexer) GetRepositoryToCPEMapping(arg0 context.Context, arg1 string) (*indexer.FetchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", ctx, ifModifiedSince)
+	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", arg0, arg1)
 	ret0, _ := ret[0].(*indexer.FetchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRepositoryToCPEMapping indicates an expected call of GetRepositoryToCPEMapping.
-func (mr *MockIndexerMockRecorder) GetRepositoryToCPEMapping(ctx, ifModifiedSince any) *gomock.Call {
+func (mr *MockIndexerMockRecorder) GetRepositoryToCPEMapping(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockIndexer)(nil).GetRepositoryToCPEMapping), ctx, ifModifiedSince)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockIndexer)(nil).GetRepositoryToCPEMapping), arg0, arg1)
 }
 
 // IndexContainerImage mocks base method.
