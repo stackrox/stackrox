@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -116,12 +116,12 @@ func getClusterMetadata(ctx context.Context,
 		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata: Obtaining in-cluster Kubernetes config: %s", err)
 		return nil
 	}
-	k8sClient, err := kubernetes.NewForConfig(config)
+	dynClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata: Creating Kubernetes clientset: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata: Creating dynamic Kubernetes client: %s", err)
 		return nil
 	}
-	clusterName, err = getClusterNameFromNodeLabels(ctx, k8sClient)
+	clusterName, err = getClusterNameFromNodeLabels(ctx, dynClient)
 	if err != nil {
 		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get EKS cluster metadata from node labels: %s", err)
 		return nil
@@ -141,8 +141,8 @@ func getClusterNameFromInstanceTags(ctx context.Context, mdClient *IMDSClient) (
 	return tagValue, nil
 }
 
-func getClusterNameFromNodeLabels(ctx context.Context, k8sClient kubernetes.Interface) (string, error) {
-	nodeLabels, err := utils.GetAnyNodeLabels(ctx, k8sClient)
+func getClusterNameFromNodeLabels(ctx context.Context, dynClient dynamic.Interface) (string, error) {
+	nodeLabels, err := utils.GetAnyNodeLabels(ctx, dynClient)
 	if err != nil {
 		return "", errors.Wrap(err, "getting node labels")
 	}

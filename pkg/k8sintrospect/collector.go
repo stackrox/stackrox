@@ -21,16 +21,23 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+
+	podGVR       = schema.GroupVersionResource{Version: "v1", Resource: "pods"}
+	namespaceGVR = schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}
+	eventGVR     = schema.GroupVersionResource{Version: "v1", Resource: "events"}
+)
 
 const (
 	logWindow = 20 * time.Minute
@@ -46,8 +53,9 @@ type collector struct {
 
 	cfg Config
 
-	client        kubernetes.Interface
-	dynamicClient dynamic.Interface
+	dynamicClient   dynamic.Interface
+	discoveryClient discovery.DiscoveryInterface
+	restClient      rest.Interface
 
 	since  time.Time
 	errors []error
@@ -64,22 +72,34 @@ func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, c
 		return httputil.ContextBoundRoundTripper(ctx, rt)
 	}
 
-	k8sClient, err := kubernetes.NewForConfig(&restConfigShallowCopy)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create Kubernetes client set")
-	}
 	dynamicClient, err := dynamic.NewForConfig(&restConfigShallowCopy)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create dynamic Kubernetes client")
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(&restConfigShallowCopy)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create discovery client")
+	}
+
+	// Create a REST client for core v1 API (needed for pod logs subresource)
+	coreV1Config := restConfigShallowCopy
+	coreV1Config.GroupVersion = &schema.GroupVersion{Version: "v1"}
+	coreV1Config.APIPath = "/api"
+	coreV1Config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	restClient, err := rest.RESTClientFor(&coreV1Config)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create REST client")
+	}
+
 	return &collector{
-		ctx:           ctx,
-		callback:      cb,
-		cfg:           cfg,
-		client:        k8sClient,
-		dynamicClient: dynamicClient,
-		since:         since,
+		ctx:             ctx,
+		callback:        cb,
+		cfg:             cfg,
+		dynamicClient:   dynamicClient,
+		discoveryClient: discoveryClient,
+		restClient:      restClient,
+		since:           since,
 	}, nil
 }
 
@@ -124,7 +144,7 @@ func (c *collector) createDynamicClients() map[schema.GroupVersionKind]dynamic.N
 		gvkSet[objCfg.GVK] = struct{}{}
 	}
 
-	_, apiResourceLists, err := c.client.Discovery().ServerGroupsAndResources()
+	_, apiResourceLists, err := c.discoveryClient.ServerGroupsAndResources()
 	if err != nil {
 		c.recordError(errors.Wrap(err, "failed to obtain server resources"))
 		return nil
@@ -186,7 +206,14 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 			podLogOpts.Container = container.Name
 			podLogOpts.SinceSeconds = pointer.Int64(sinceSeconds)
 
-			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
+			logsData, err := c.restClient.Get().
+				Namespace(pod.GetNamespace()).
+				Resource("pods").
+				Name(pod.GetName()).
+				SubResource("log").
+				VersionedParams(podLogOpts, scheme.ParameterCodec).
+				Do(c.ctx).
+				Raw()
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v\n", err))
 				logsData = appendDebugError(logsData, err)
@@ -212,7 +239,14 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 			podLogOpts.SinceSeconds = pointer.Int64(sinceSeconds)
 			podLogOpts.Previous = true
 
-			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
+			logsData, err := c.restClient.Get().
+				Namespace(pod.GetNamespace()).
+				Resource("pods").
+				Name(pod.GetName()).
+				SubResource("log").
+				VersionedParams(podLogOpts, scheme.ParameterCodec).
+				Do(c.ctx).
+				Raw()
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v\n", err))
 				logsData = appendDebugError(logsData, err)
@@ -286,17 +320,22 @@ func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClie
 }
 
 func (c *collector) collectNamespaceData(ns string) (bool, error) {
-	namespace, err := c.client.CoreV1().Namespaces().Get(c.ctx, ns, metav1.GetOptions{})
+	unstructured, err := c.dynamicClient.Resource(namespaceGVR).Get(c.ctx, ns, metav1.GetOptions{})
 	if err != nil && k8sErrors.IsNotFound(err) {
 		return false, nil
 	}
 	var nsYAML []byte
-	if err == nil && namespace != nil {
-		namespace.TypeMeta = metav1.TypeMeta{
-			Kind:       "Namespace",
-			APIVersion: "v1",
+	if err == nil && unstructured != nil {
+		var namespace v1.Namespace
+		if convErr := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured.Object, &namespace); convErr != nil {
+			nsYAML = []byte(fmt.Sprintf("Failed to convert namespace: %v", convErr))
+		} else {
+			namespace.TypeMeta = metav1.TypeMeta{
+				Kind:       "Namespace",
+				APIVersion: "v1",
+			}
+			nsYAML, err = yaml.Marshal(&namespace)
 		}
-		nsYAML, err = yaml.Marshal(namespace)
 	}
 
 	if err != nil && len(nsYAML) == 0 {
@@ -307,15 +346,24 @@ func (c *collector) collectNamespaceData(ns string) (bool, error) {
 }
 
 func (c *collector) collectEventsData(ns string) error {
-	eventList, err := c.client.CoreV1().Events(ns).List(c.ctx, metav1.ListOptions{
+	unstructuredList, err := c.dynamicClient.Resource(eventGVR).Namespace(ns).List(c.ctx, metav1.ListOptions{
 		Limit: 500,
 	})
 	if err != nil {
 		return c.emitFileRaw(fmt.Sprintf("%s/event-list-error.txt", ns), []byte(err.Error()))
 	}
 
+	// Convert to typed events
+	var events []v1.Event
+	for i := range unstructuredList.Items {
+		var event v1.Event
+		if convErr := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredList.Items[i].Object, &event); convErr != nil {
+			continue
+		}
+		events = append(events, event)
+	}
+
 	// Sort events, newest first
-	events := eventList.Items
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].LastTimestamp.After(events[j].LastTimestamp.Time)
 	})
@@ -337,7 +385,7 @@ func (c *collector) collectEventsData(ns string) error {
 		return err
 	}
 
-	for _, event := range eventList.Items {
+	for _, event := range events {
 		var frequency string
 		if event.Count > 1 {
 			period := event.LastTimestamp.Sub(event.FirstTimestamp.Time)
@@ -364,14 +412,18 @@ func (c *collector) collectEventsData(ns string) error {
 }
 
 func (c *collector) collectPodsData(ns string) error {
-	podList, err := c.client.CoreV1().Pods(ns).List(c.ctx, metav1.ListOptions{})
+	unstructuredList, err := c.dynamicClient.Resource(podGVR).Namespace(ns).List(c.ctx, metav1.ListOptions{})
 	if err != nil {
 		c.recordError(errors.Wrapf(err, "could not list pods in namespace %q", ns))
 		return nil
 	}
 
-	for i := range podList.Items {
-		pod := podList.Items[i]
+	for i := range unstructuredList.Items {
+		var pod v1.Pod
+		if convErr := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredList.Items[i].Object, &pod); convErr != nil {
+			c.recordError(errors.Wrapf(convErr, "could not convert pod in namespace %q", ns))
+			continue
+		}
 		pod.TypeMeta = metav1.TypeMeta{
 			Kind:       "Pod",
 			APIVersion: "v1",

@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokensource"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"golang.org/x/oauth2"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 type stsTokenManagerImpl struct {
@@ -37,13 +37,13 @@ func NewSTSTokenManager(namespace string, secretName string) STSTokenManager {
 		log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
 		return fallbackSTSClientManager()
 	}
-	k8sClient, err := kubernetes.NewForConfig(restCfg)
+	dynClient, err := dynamic.NewForConfig(restCfg)
 	if err != nil {
 		log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
 		return fallbackSTSClientManager()
 	}
 	mgr := &stsTokenManagerImpl{}
-	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.invalidateToken)
+	mgr.credManager = newCredentialsManagerImpl(dynClient, namespace, secretName, mgr.invalidateToken)
 	mgr.tokenSource = tokensource.NewReuseTokenSourceWithInvalidate(
 		&CredentialManagerTokenSource{mgr.credManager},
 		expiryDelta,

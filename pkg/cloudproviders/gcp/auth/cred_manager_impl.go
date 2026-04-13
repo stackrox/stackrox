@@ -12,7 +12,7 @@ import (
 	"golang.org/x/oauth2/google"
 	storagev1 "google.golang.org/api/storage/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -33,7 +33,7 @@ type gcpCredentialsManagerImpl struct {
 var _ CredentialsManager = &gcpCredentialsManagerImpl{}
 
 func newCredentialsManagerImpl(
-	k8sClient kubernetes.Interface,
+	dynClient dynamic.Interface,
 	namespace string,
 	secretName string,
 	onChangeFn func(),
@@ -47,7 +47,7 @@ func newCredentialsManagerImpl(
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
 		secretName,
-		k8sClient,
+		dynClient,
 		mgr.updateSecret,
 		mgr.updateSecret,
 		mgr.deleteSecret,

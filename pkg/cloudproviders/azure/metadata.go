@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -103,18 +103,18 @@ func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *s
 		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Obtaining in-cluster Kubernetes config: %s", err)
 		return nil
 	}
-	k8sClient, err := kubernetes.NewForConfig(config)
+	dynClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Creating Kubernetes clientset: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Creating dynamic Kubernetes client: %s", err)
 		return nil
 	}
-	return getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)
+	return getClusterMetadataFromNodeLabels(ctx, dynClient, metadata)
 }
 
 func getClusterMetadataFromNodeLabels(ctx context.Context,
-	k8sClient kubernetes.Interface, metadata *azureInstanceMetadata,
+	dynClient dynamic.Interface, metadata *azureInstanceMetadata,
 ) *storage.ClusterMetadata {
-	nodeLabels, err := cpUtils.GetAnyNodeLabels(ctx, k8sClient)
+	nodeLabels, err := cpUtils.GetAnyNodeLabels(ctx, dynClient)
 	if err != nil {
 		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get node labels: %s", err)
 		return nil

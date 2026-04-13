@@ -17,7 +17,10 @@ import (
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
@@ -26,6 +29,11 @@ const (
 	// k8sAPITimeout is the maximum time allowed for Kubernetes API calls (TokenReview, SubjectAccessReview).
 	// This ensures that API calls don't hang indefinitely when all callers have cancelled.
 	k8sAPITimeout = 30 * time.Second
+)
+
+var (
+	tokenReviewGVR         = schema.GroupVersionResource{Group: "authentication.k8s.io", Version: "v1", Resource: "tokenreviews"}
+	subjectAccessReviewGVR = schema.GroupVersionResource{Group: "authorization.k8s.io", Version: "v1", Resource: "subjectaccessreviews"}
 )
 
 // authzCacheKey uniquely identifies an authorization check for caching.
@@ -68,7 +76,7 @@ func (r k8sResource) String() string {
 // The user is authorized if they have get and list permissions to all deployment-like
 // resources.
 type k8sAuthorizer struct {
-	client           kubernetes.Interface
+	dynamicClient    dynamic.Interface
 	tokenCache       expiringcache.Cache[string, *authenticationv1.UserInfo]
 	authzCache       expiringcache.Cache[authzCacheKey, authzResult]
 	verbsToCheck     []string
@@ -81,9 +89,9 @@ type k8sAuthorizer struct {
 
 // newK8sAuthorizer creates a new Kubernetes-based authorizer with TokenReview and
 // SubjectAccessReview caching.
-func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
+func newK8sAuthorizer(dynamicClient dynamic.Interface) *k8sAuthorizer {
 	return &k8sAuthorizer{
-		client:           client,
+		dynamicClient:    dynamicClient,
 		tokenCache:       expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
 		authzCache:       expiringcache.NewExpiringCache[authzCacheKey, authzResult](defaultCacheTTL),
 		verbsToCheck:     []string{"get", "list"},
@@ -183,9 +191,24 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 		},
 	}
 
-	result, err := a.client.AuthenticationV1().TokenReviews().Create(ctx, tokenReview, metav1.CreateOptions{})
+	// Convert to unstructured
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tokenReview)
+	if err != nil {
+		return nil, pkghttputil.Errorf(http.StatusInternalServerError, "converting token review to unstructured: %v", err)
+	}
+	unstructuredReview := &unstructured.Unstructured{Object: unstructuredObj}
+	unstructuredReview.SetAPIVersion("authentication.k8s.io/v1")
+	unstructuredReview.SetKind("TokenReview")
+
+	resultUnstructured, err := a.dynamicClient.Resource(tokenReviewGVR).Create(ctx, unstructuredReview, metav1.CreateOptions{})
 	if err != nil {
 		return nil, pkghttputil.Errorf(http.StatusInternalServerError, "performing token review: %v", err)
+	}
+
+	// Convert back to typed object
+	var result authenticationv1.TokenReview
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(resultUnstructured.Object, &result); err != nil {
+		return nil, pkghttputil.Errorf(http.StatusInternalServerError, "converting token review result: %v", err)
 	}
 
 	if result.Status.Error != "" {
@@ -321,9 +344,24 @@ func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo
 		},
 	}
 
-	result, err := a.client.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})
+	// Convert to unstructured
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sar)
+	if err != nil {
+		return false, errors.Wrap(err, "converting subject access review to unstructured")
+	}
+	unstructuredSAR := &unstructured.Unstructured{Object: unstructuredObj}
+	unstructuredSAR.SetAPIVersion("authorization.k8s.io/v1")
+	unstructuredSAR.SetKind("SubjectAccessReview")
+
+	resultUnstructured, err := a.dynamicClient.Resource(subjectAccessReviewGVR).Create(ctx, unstructuredSAR, metav1.CreateOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "performing subject access review")
+	}
+
+	// Convert back to typed object
+	var result authv1.SubjectAccessReview
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(resultUnstructured.Object, &result); err != nil {
+		return false, errors.Wrap(err, "converting subject access review result")
 	}
 
 	if result.Status.EvaluationError != "" {

@@ -9,33 +9,31 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
-	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/dynamic"
 )
 
 var (
 	log          = logging.LoggerForModule()
 	timeout      = 10 * time.Second
 	retryBackoff = 30 * time.Second
+
+	configMapGVR = schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}
 )
 
 // ConfigMapWatcher watches a config map in a given namespaces and evokes a callback function
 // when changes are detected.
 type ConfigMapWatcher struct {
-	configMapsClient configMapsClient
-	modifiedFunc     func(*v1.ConfigMap)
-}
-
-// configMapsClient is the minimal interface needed for ConfigMap watching.
-// Using this instead of kubernetes.Interface avoids importing the full k8s
-// client-go scheme which registers all 58+ API groups at init (~1.3 MB).
-type configMapsClient interface {
-	CoreV1() corev1client.CoreV1Interface
+	dynamicClient dynamic.Interface
+	modifiedFunc  func(*v1.ConfigMap)
 }
 
 // NewConfigMapWatcher creates a new config map watcher.
-func NewConfigMapWatcher(k8sClient configMapsClient, modifiedFunc func(*v1.ConfigMap)) *ConfigMapWatcher {
-	return &ConfigMapWatcher{configMapsClient: k8sClient, modifiedFunc: modifiedFunc}
+func NewConfigMapWatcher(dynamicClient dynamic.Interface, modifiedFunc func(*v1.ConfigMap)) *ConfigMapWatcher {
+	return &ConfigMapWatcher{dynamicClient: dynamicClient, modifiedFunc: modifiedFunc}
 }
 
 // Watch a config map in the given namespace bound by the context.
@@ -52,11 +50,15 @@ func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, nam
 func (w *ConfigMapWatcher) init(ctx concurrency.Waitable, namespace string, name string) error {
 	initCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(concurrency.AsContext(ctx), timeout)
 	defer cancel()
-	cfgMap, err := w.configMapsClient.CoreV1().ConfigMaps(namespace).Get(initCtx, name, metav1.GetOptions{})
+	unstructured, err := w.dynamicClient.Resource(configMapGVR).Namespace(namespace).Get(initCtx, name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	w.modifiedFunc(cfgMap)
+	var cfgMap v1.ConfigMap
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured.Object, &cfgMap); err != nil {
+		return err
+	}
+	w.modifiedFunc(&cfgMap)
 	return nil
 }
 
@@ -73,7 +75,7 @@ func (w *ConfigMapWatcher) run(ctx concurrency.Waitable, namespace string, name 
 }
 
 func (w *ConfigMapWatcher) startWatcher(ctx concurrency.Waitable, namespace string, name string) {
-	watcher, err := w.configMapsClient.CoreV1().ConfigMaps(namespace).Watch(
+	watcher, err := w.dynamicClient.Resource(configMapGVR).Namespace(namespace).Watch(
 		concurrency.AsContext(ctx),
 		metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}),
 	)
@@ -100,9 +102,16 @@ func (w *ConfigMapWatcher) onChange(ctx concurrency.Waitable, eventChannel <-cha
 			if event.Type != watch.Added && event.Type != watch.Modified {
 				continue
 			}
-			if cm, ok := event.Object.(*v1.ConfigMap); ok {
-				w.modifiedFunc(cm)
+			uns, ok := event.Object.(*unstructured.Unstructured)
+			if !ok {
+				continue
 			}
+			var cm v1.ConfigMap
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(uns.Object, &cm); err != nil {
+				log.Errorw("Failed to convert ConfigMap from unstructured", logging.Err(err))
+				continue
+			}
+			w.modifiedFunc(&cm)
 		}
 	}
 }

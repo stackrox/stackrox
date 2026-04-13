@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/x509utils"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 )
 
 func certFilePath() string {
@@ -64,7 +64,7 @@ type tlsConfigurerImpl struct {
 var _ verifier.TLSConfigurer = (*tlsConfigurerImpl)(nil)
 
 // newTLSConfigurer creates a new TLS configurer.
-func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) verifier.TLSConfigurer {
+func newTLSConfigurer(certDir string, dynClient dynamic.Interface, clientCANamespace, clientCAConfigMap string) verifier.TLSConfigurer {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
 	tlsConfigHolder := certwatch.NewTLSConfigHolder(tlsRootConfig, tls.RequireAndVerifyClientCert)
@@ -80,7 +80,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 		subjectCN: env.SecureMetricsClientCertCN.Setting(),
 	}
 	cfgr.tlsConfigHolder.SetCustomCertVerifier(tlsVerifier)
-	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
+	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(dynClient, cfgr.updateClientCA)
 	cfgr.watchForChanges()
 	return cfgr
 }
@@ -96,15 +96,15 @@ func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 		log.Errorw("Failed to get in-cluster config", logging.Err(err))
 		return &nilTLSConfigurer{}
 	}
-	clientset, err := kubernetes.NewForConfig(config)
+	dynClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		log.Errorw("Failed to create Kubernetes client", logging.Err(err))
+		log.Errorw("Failed to create dynamic Kubernetes client", logging.Err(err))
 		return &nilTLSConfigurer{}
 	}
 	certDir := env.SecureMetricsCertDir.Setting()
 	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
 	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
-	cfgr := newTLSConfigurer(certDir, clientset, clientCANamespace, clientCAConfigMap)
+	cfgr := newTLSConfigurer(certDir, dynClient, clientCANamespace, clientCAConfigMap)
 	return cfgr
 }
 
