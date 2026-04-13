@@ -54,6 +54,9 @@ __all__ = [
     "calculate_urgency",
     "format_deadline_info",
     "parse_date",
+    "CVE_TIMEFRAMES",
+    "PRIORITY_URGENCY",
+    "URGENCY_ORDER",
     "generate_markdown",
     "generate_slack_payload",
 ]

@@ -247,7 +247,7 @@ def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) ->
             else:
                 current_section = [f"*{branch_name} (continued)*"]
 
-            current_length = sum(len(l) + 1 for l in current_section)
+            current_length = sum(len(section_line) + 1 for section_line in current_section)
 
         current_section.append(line)
         current_length += line_length

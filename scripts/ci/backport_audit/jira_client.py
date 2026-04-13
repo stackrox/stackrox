@@ -88,8 +88,9 @@ class JiraClient:
         due_date = fields.get('duedate')
 
         severity = None
-        if fields.get('customfield_10840'):
-            severity = fields['customfield_10840'].get('value')
+        severity_field = fields.get('customfield_10840')
+        if severity_field:
+            severity = severity_field.get('value')
 
         return JiraIssue(
             key=data['key'],
