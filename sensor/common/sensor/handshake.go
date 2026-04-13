@@ -13,9 +13,9 @@ const sensorHelloNotAcknowledgedMsg = "central did not acknowledge SensorHello,"
 
 // ProbeStreamForConnectionError probes a stream via Recv() to retrieve the
 // actual server-side error when central did not echo the SensorHello metadata
-// key. deniedMsg is the suggestion shown when central returns PermissionDenied
-// (e.g. revoked or expired credentials). For any other error, or when Recv()
-// succeeds without an error, a generic networking/TLS suggestion is returned.
+// key. When central responds with PermissionDenied (e.g. revoked or expired credentials),
+// the returned error incorporates deniedMsg. For any other error, or when Recv()
+// succeeds without an error, this function returns a generic networking/TLS suggestion.
 func ProbeStreamForConnectionError(stream central.SensorService_CommunicateClient, deniedMsg string) error {
 	if _, recvErr := stream.Recv(); recvErr != nil {
 		if st, ok := status.FromError(recvErr); ok && st.Code() == codes.PermissionDenied {
