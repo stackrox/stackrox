@@ -273,12 +273,15 @@ deploy_central() {
         # this causes OOMKills for components with tight memory limits.
         if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
             # Operator reconciles away kubectl overrides, so patch the CR instead.
-            info "Race build detected: patching Central CR to increase config-controller memory"
+            info "Race build detected: patching Central CR to increase memory limits"
             retrying_kubectl </dev/null -n "${central_namespace}" patch central stackrox-central-services --type=merge \
-                -p '{"spec":{"configAsCode":{"resources":{"limits":{"memory":"512Mi"}}}}}'
+                -p '{"spec":{"configAsCode":{"resources":{"limits":{"memory":"512Mi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"matcher":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"16Gi"}}}}}}'
         else
-            info "Race build detected: increasing memory limits for config-controller"
+            info "Race build detected: increasing memory limits for central-namespace components"
             retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/config-controller -c manager --limits 'memory=512Mi'
+            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-indexer -c indexer --limits 'memory=6Gi' 2>/dev/null || true
+            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-matcher -c matcher --limits 'memory=6Gi' 2>/dev/null || true
+            retrying_kubectl </dev/null -n "${central_namespace}" set resources deploy/scanner-v4-db -c db --limits 'memory=16Gi' 2>/dev/null || true
         fi
     fi
     info "IS_RACE_BUILD check (deploy_central) done at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -449,12 +452,14 @@ deploy_sensor() {
         # components at startup. Under the race detector's ~5-10x memory multiplier
         # this causes OOMKills for components with tight memory limits.
         if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-            info "Race build detected: patching SecuredCluster CR to increase admission-control memory"
+            info "Race build detected: patching SecuredCluster CR to increase memory limits"
             retrying_kubectl </dev/null -n "${sensor_namespace}" patch securedcluster stackrox-secured-cluster-services --type=merge \
-                -p '{"spec":{"admissionControl":{"resources":{"limits":{"memory":"2Gi"}}}}}'
+                -p '{"spec":{"admissionControl":{"resources":{"limits":{"memory":"2Gi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"16Gi"}}}}}}'
         else
-            info "Race build detected: increasing memory limits for admission-control"
+            info "Race build detected: increasing memory limits for sensor-namespace components"
             retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/admission-control -c admission-control --limits 'memory=2Gi'
+            retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/scanner-v4-indexer -c indexer --limits 'memory=6Gi' 2>/dev/null || true
+            retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/scanner-v4-db -c db --limits 'memory=16Gi' 2>/dev/null || true
         fi
     fi
     info "IS_RACE_BUILD check (deploy_sensor) done at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
