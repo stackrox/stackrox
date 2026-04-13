@@ -534,7 +534,7 @@ var file_internalapi_sensor_admission_control_proto_init_once sync.Once
 func file_internalapi_sensor_admission_control_proto_init_ensure() { file_internalapi_sensor_admission_control_proto_init_once.Do(file_internalapi_sensor_admission_control_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_admission_control_proto_init() {
-	if File_internalapi_sensor_admission_control_proto != nil {
+	if File_internalapi_sensor_admission_control_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_sensor_admission_control_proto_msgTypes[3].OneofWrappers = []any{

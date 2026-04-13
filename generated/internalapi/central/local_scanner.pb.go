@@ -254,7 +254,7 @@ var file_internalapi_central_local_scanner_proto_init_once sync.Once
 func file_internalapi_central_local_scanner_proto_init_ensure() { file_internalapi_central_local_scanner_proto_init_once.Do(file_internalapi_central_local_scanner_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_local_scanner_proto_init() {
-	if File_internalapi_central_local_scanner_proto != nil {
+	if File_internalapi_central_local_scanner_proto != nil || skipProtoInit {
 		return
 	}
 	file_internalapi_central_local_scanner_proto_msgTypes[2].OneofWrappers = []any{

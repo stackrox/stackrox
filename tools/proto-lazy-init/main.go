@@ -72,6 +72,14 @@ func main() {
 			continue
 		}
 
+		// Add ensure() call at the top of every enum Descriptor() method
+		// Enum String() calls EnumStringOf(x.Descriptor(),...) which needs the registry.
+		if strings.Contains(line, ".Descriptor()") && strings.Contains(line, "func (") && strings.Contains(line, ") Descriptor() protoreflect.EnumDescriptor {") {
+			out = append(out, line)
+			out = append(out, fmt.Sprintf("\t%s_ensure()", initFuncName))
+			continue
+		}
+
 		// Add "sync" to imports if needed (only if not already imported)
 		if !addedSync && strings.Contains(line, `protoimpl "google.golang.org/protobuf/runtime/protoimpl"`) {
 			if !strings.Contains(content, "\"sync\"") {

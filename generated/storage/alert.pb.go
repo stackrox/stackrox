@@ -8,10 +8,10 @@ package storage
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	"sync"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -2259,7 +2259,7 @@ var file_storage_alert_proto_init_once sync.Once
 func file_storage_alert_proto_init_ensure() { file_storage_alert_proto_init_once.Do(file_storage_alert_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_alert_proto_init() {
-	if File_storage_alert_proto != nil {
+	if File_storage_alert_proto != nil || skipProtoInit {
 		return
 	}
 	file_storage_deployment_proto_init()

@@ -915,7 +915,7 @@ var file_api_v1_resource_collection_service_proto_init_once sync.Once
 func file_api_v1_resource_collection_service_proto_init_ensure() { file_api_v1_resource_collection_service_proto_init_once.Do(file_api_v1_resource_collection_service_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_resource_collection_service_proto_init() {
-	if File_api_v1_resource_collection_service_proto != nil {
+	if File_api_v1_resource_collection_service_proto != nil || skipProtoInit {
 		return
 	}
 	file_api_v1_common_proto_init()
