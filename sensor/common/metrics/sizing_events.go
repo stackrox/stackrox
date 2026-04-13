@@ -29,11 +29,11 @@ func (s *sizingEventStream) incrementMetric(msg *central.MsgFromSensor) {
 		"Type": messageType,
 	}
 
-	SensorMessageSizeSent.With(labels).Observe(messageSize)
-	SensorLastMessageSizeSent.With(labels).Set(messageSize)
+	sensorMessageSizeSent.With(labels).Observe(messageSize)
+	sensorLastMessageSizeSent.With(labels).Set(messageSize)
 
 	s.maxSeen[messageType] = math.Max(s.maxSeen[messageType], messageSize)
-	SensorMaxMessageSizeSent.With(labels).Set(s.maxSeen[messageType])
+	sensorMaxMessageSizeSent.With(labels).Set(s.maxSeen[messageType])
 }
 
 func (s *sizingEventStream) metricKey(typ, eventType string) string {

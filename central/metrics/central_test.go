@@ -27,19 +27,19 @@ func TestIncrementMsgToSensorNotSentCounter(t *testing.T) {
 
 	t.Run("inc and extract type", func(t *testing.T) {
 		// Clear any prior values.
-		prometheus.Unregister(MsgToSensorNotSentCounter)
-		require.NoError(t, prometheus.Register(MsgToSensorNotSentCounter))
+		prometheus.Unregister(msgToSensorNotSentCounter)
+		require.NoError(t, prometheus.Register(msgToSensorNotSentCounter))
 
 		// Get references to the counters.
-		updImgErrCounter, err := MsgToSensorNotSentCounter.GetMetricWith(
+		updImgErrCounter, err := msgToSensorNotSentCounter.GetMetricWith(
 			prometheus.Labels{"ClusterID": "a", "type": "UpdatedImage", "reason": NotSentError},
 		)
 		require.NoError(t, err)
-		updImgSkipCounter, err := MsgToSensorNotSentCounter.GetMetricWith(
+		updImgSkipCounter, err := msgToSensorNotSentCounter.GetMetricWith(
 			prometheus.Labels{"ClusterID": "a", "type": "UpdatedImage", "reason": NotSentSkip},
 		)
 		require.NoError(t, err)
-		reprocessDeploySignalCounter, err := MsgToSensorNotSentCounter.GetMetricWith(
+		reprocessDeploySignalCounter, err := msgToSensorNotSentCounter.GetMetricWith(
 			prometheus.Labels{"ClusterID": "b", "type": "ReprocessDeployments", "reason": NotSentSignal},
 		)
 		require.NoError(t, err)

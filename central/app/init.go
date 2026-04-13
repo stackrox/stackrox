@@ -1,47 +1,11 @@
 package app
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics"
 )
 
 func initMetrics() {
-	prometheus.MustRegister(
-		metrics.PipelinePanicCounter,
-		metrics.GraphQLOperationHistogramVec,
-		metrics.GraphQLQueryHistogramVec,
-		metrics.IndexOperationHistogramVec,
-		metrics.SensorEventQueueCounterVec,
-		metrics.ResourceProcessedCounterVec,
-		metrics.TotalNetworkFlowsReceivedCounter,
-		metrics.TotalNetworkEndpointsReceivedCounter,
-		metrics.TotalExternalPoliciesGauge,
-		metrics.CurrentExternalPolicies,
-		metrics.SensorEventDurationHistogramVec,
-		metrics.RiskProcessingHistogramVec,
-		metrics.DatastoreFunctionDurationHistogramVec,
-		metrics.FunctionSegmentDurationHistogramVec,
-		metrics.K8sObjectProcessingDuration,
-		metrics.PostgresOperationHistogramVec,
-		metrics.AcquireDBConnHistogramVec,
-		metrics.ClusterMetricsNodeCountGaugeVec,
-		metrics.ClusterMetricsCPUCapacityGaugeVec,
-		metrics.TotalOrphanedPLOPCounter,
-		metrics.ProcessQueueLengthGauge,
-		metrics.SensorEventsDeduperCounter,
-		metrics.SensorConnectedCounter,
-		metrics.GrpcMaxMessageSize,
-		metrics.GrpcSentSize,
-		metrics.GrpcLastMessageSizeSent,
-		metrics.GrpcLastMessageSizeReceived,
-		metrics.GrpcError,
-		metrics.DeploymentEnhancementRoundTripDuration,
-		metrics.ReprocessorDurationGauge,
-		metrics.SignatureVerificationReprocessorDurationGauge,
-		metrics.PruningDurationHistogramVec,
-		metrics.StoreCacheOperationHistogramVec,
-		metrics.MsgToSensorNotSentCounter,
-	)
+	metrics.Init()
 }
 
 // initCompliance registers all compliance checks.

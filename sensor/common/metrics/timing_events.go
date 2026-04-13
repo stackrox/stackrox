@@ -13,7 +13,7 @@ type timingMessageStream struct {
 }
 
 func (s timingMessageStream) Send(msg *central.MsgFromSensor) error {
-	metrics.SetResourceProcessingDurationForEvent(K8sObjectIngestionToSendDuration, msg.GetEvent(), s.typ)
+	metrics.SetResourceProcessingDurationForEvent(k8sObjectIngestionToSendDuration, msg.GetEvent(), s.typ)
 	if err := s.stream.Send(msg); err != nil {
 		return errors.Wrap(err, "sending sensor message in timingMessageStream")
 	}

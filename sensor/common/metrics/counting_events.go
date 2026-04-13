@@ -14,7 +14,7 @@ func incrementSensorEvents(event *central.SensorEvent, typ string) {
 		"ResourceType": metrics.GetResourceString(event),
 		"Type":         typ,
 	}
-	SensorEvents.With(labels).Inc()
+	sensorEvents.With(labels).Inc()
 }
 
 type countingMessageStream struct {
