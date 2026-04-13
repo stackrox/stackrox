@@ -199,6 +199,9 @@ def _create_all_pr_rows(
         pr_refs = jira_to_prs.get(jira_key, [])
         if pr_refs:
             pr_elements = []
+            author_elements = []
+            unique_authors = []
+
             for i, pr_obj in enumerate(pr_refs):
                 if i > 0:
                     pr_elements.append({"type": "text", "text": ", "})
@@ -208,12 +211,38 @@ def _create_all_pr_rows(
                     "text": f"#{pr_obj.number}",
                 })
                 processed_prs.add(pr_obj.number)
+
+                # Collect unique authors
+                author_mention = get_slack_mention(pr_obj.author)
+                if author_mention not in unique_authors:
+                    unique_authors.append(author_mention)
+
+            # Build author elements with mentions
+            for i, author_mention in enumerate(unique_authors):
+                if i > 0:
+                    author_elements.append({"type": "text", "text": ", "})
+
+                # Parse author mention to create appropriate element
+                if author_mention.startswith("<@") and author_mention.endswith(">"):
+                    user_id = author_mention[2:-1]
+                    author_elements.append({"type": "user", "user_id": user_id})
+                elif author_mention.startswith(":") and author_mention.endswith(":"):
+                    emoji_name = author_mention[1:-1]
+                    author_elements.append({"type": "emoji", "name": emoji_name})
+                else:
+                    author_elements.append({"type": "text", "text": author_mention})
+
             pr_cell = {
                 "type": "rich_text",
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
+            author_cell = {
+                "type": "rich_text",
+                "elements": [{"type": "rich_text_section", "elements": author_elements}],
+            }
         else:
             pr_cell = _create_table_cell_text("—")
+            author_cell = _create_table_cell_text("—")
 
         urgency_emoji = urgency_icon.strip(":")
         fix_emoji = fix_icon.strip(":")
@@ -231,7 +260,7 @@ def _create_all_pr_rows(
             _create_table_cell_text(severity_display),
             _create_table_cell_text(pr_title),
             pr_cell,
-            _create_table_cell_text("—"),  # Author (N/A for Jira issues)
+            author_cell,  # Author from associated PRs
         ])
 
     # Add PRs without Jira reference at the TOP (prepend)
