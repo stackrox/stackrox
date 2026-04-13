@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,12 +14,6 @@ import (
 )
 
 var imageLoaderType = reflect.TypeOf(storage.Image{})
-
-func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
-		return NewImageLoader(datastore.Singleton(), imagesView.Singleton())
-	})
-}
 
 // NewImageLoader creates a new loader for image data. If postgres is enabled, this loader holds images without scan data—components and vulns.
 func NewImageLoader(ds imageDatastore.DataStore, imageView imagesView.ImageView) ImageLoader {

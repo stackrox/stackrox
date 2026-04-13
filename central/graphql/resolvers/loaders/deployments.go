@@ -15,12 +15,6 @@ import (
 
 var deploymentLoaderType = reflect.TypeOf(storage.Deployment{})
 
-func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
-		return NewDeploymentLoader(datastore.Singleton(), deploymentsView.Singleton())
-	})
-}
-
 // NewDeploymentLoader creates a new loader for deployment data.
 func NewDeploymentLoader(ds datastore.DataStore, deploymentView deploymentsView.DeploymentView) DeploymentLoader {
 	return &deploymentLoaderImpl{
