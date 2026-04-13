@@ -475,7 +475,8 @@ def generate_slack_payload(
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    "<!subteam^S07D1FQCU9M> *Action Required:* If you're mentioned in the table below:\n"
+                    "<!subteam^S07D1FQCU9M>\n"
+                    "*Action Required:* If you're mentioned in the table below:\n"
                     "• *:x: in Issue column*: Add a Jira reference to your PR description\n"
                     "• *:x: in fixVersion column*: Add the target release version to the Jira issue's fixVersion field\n"
                     "• *:x: in affectedVersion column*: Add affected versions to the Jira issue\n"
