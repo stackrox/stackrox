@@ -13,7 +13,7 @@ import sys
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 VERSION = "1.0.0"
 
@@ -179,6 +179,105 @@ class Config:
         )
 
 
+class GitHubClient:
+    """GitHub operations via gh CLI."""
+
+    def fetch_prs(self, label: str = "backport", state: str = "open") -> List[Dict[str, Any]]:
+        """
+        Fetch PRs using gh CLI.
+
+        Args:
+            label: Label to filter by
+            state: PR state (open, closed, all)
+
+        Returns:
+            List of PR dictionaries
+        """
+        cmd = [
+            'gh', 'pr', 'list',
+            '--repo', 'stackrox/stackrox',
+            '--search', f'label:{label} draft:false',
+            '--state', state,
+            '--limit', '1000',
+            '--json', 'number,title,author,baseRefName,body,state'
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=60
+            )
+            return json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            raise GitHubError(f"Failed to fetch PRs: {e.stderr}")
+        except subprocess.TimeoutExpired:
+            raise GitHubError("gh CLI command timed out")
+        except json.JSONDecodeError as e:
+            raise GitHubError(f"Invalid JSON from gh CLI: {e}")
+
+    def get_pr_details(self, pr_number: int) -> Dict[str, Any]:
+        """
+        Get PR details via gh CLI.
+
+        Args:
+            pr_number: PR number
+
+        Returns:
+            PR details dictionary
+        """
+        cmd = ['gh', 'pr', 'view', str(pr_number), '--json', 'author,body']
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=30
+            )
+            return json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            raise GitHubError(f"Failed to fetch PR #{pr_number}: {e.stderr}")
+        except subprocess.TimeoutExpired:
+            raise GitHubError(f"gh CLI command timed out for PR #{pr_number}")
+        except json.JSONDecodeError as e:
+            raise GitHubError(f"Invalid JSON from gh CLI for PR #{pr_number}: {e}")
+
+    def get_issue_events(self, pr_number: int) -> List[Dict[str, Any]]:
+        """
+        Get issue events via gh API.
+
+        Args:
+            pr_number: PR number
+
+        Returns:
+            List of event dictionaries
+        """
+        cmd = [
+            'gh', 'api',
+            f'repos/stackrox/stackrox/issues/{pr_number}/events'
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=30
+            )
+            return json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            raise GitHubError(f"Failed to fetch events for PR #{pr_number}: {e.stderr}")
+        except subprocess.TimeoutExpired:
+            raise GitHubError(f"gh API command timed out for PR #{pr_number}")
+        except json.JSONDecodeError as e:
+            raise GitHubError(f"Invalid JSON from gh API for PR #{pr_number}: {e}")
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
@@ -204,21 +303,17 @@ def parse_args() -> argparse.Namespace:
 def main():
     print(f"Backport Audit Tool v{VERSION}")
 
+    # Test GitHubClient (requires gh CLI and auth)
+    gh = GitHubClient()
+    print("Testing GitHubClient...")
+
     try:
-        args = parse_args()
-        print(f"Args: branches={args.branches}, output_dir={args.output_dir}")
-
-        # Test config (will fail without env vars)
-        try:
-            config = Config.from_env(args)
-            print(f"Config loaded: {config.jira_user}")
-        except BackportAuditError as e:
-            print(f"Expected error (no env vars): {e}")
-
-    except Exception as e:
-        print(f"Error: {e}")
-        traceback.print_exc()
-        sys.exit(1)
+        prs = gh.fetch_prs("backport", "open")
+        print(f"Found {len(prs)} backport PRs")
+        if prs:
+            print(f"First PR: #{prs[0]['number']} - {prs[0]['title']}")
+    except GitHubError as e:
+        print(f"GitHub error (expected if gh not configured): {e}")
 
     sys.exit(0)
 
