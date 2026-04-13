@@ -12,10 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -35,7 +40,8 @@ func TestUpdater(t *testing.T) {
 type UpdaterTestSuite struct {
 	suite.Suite
 
-	client *fake.Clientset
+	k8sClient *fake.Clientset
+	dynClient dynamic.Interface
 }
 
 type expectedHealthInfo struct {
@@ -45,7 +51,11 @@ type expectedHealthInfo struct {
 }
 
 func (s *UpdaterTestSuite) SetupTest() {
-	s.client = fake.NewClientset()
+	s.k8sClient = fake.NewClientset()
+	scheme := runtime.NewScheme()
+	_ = coreV1.AddToScheme(scheme)
+	_ = appsV1.AddToScheme(scheme)
+	s.dynClient = dynamicfake.NewSimpleDynamicClient(scheme)
 	s.T().Setenv(namespaceVar, "stackrox-mock-ns")
 }
 
@@ -291,7 +301,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 }
 
 func (s *UpdaterTestSuite) createNewUpdater(interval time.Duration) *updaterImpl {
-	updaterComponent := NewUpdater(s.client, interval)
+	updaterComponent := NewUpdater(s.dynClient, interval)
 	updater, ok := updaterComponent.(*updaterImpl)
 	s.Require().True(ok, "NewUpdater should return a struct of type *updaterImpl")
 	return updater
@@ -310,7 +320,7 @@ func (s *UpdaterTestSuite) assertOfflineMode(updater *updaterImpl, ticker chan<-
 
 func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo {
 	timer := time.NewTimer(updateTimeout)
-	updater := NewUpdater(s.client, updateInterval)
+	updater := NewUpdater(s.dynClient, updateInterval)
 
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	err := updater.Start()
@@ -354,7 +364,10 @@ func makeDaemonSet() appsV1.DaemonSet {
 }
 
 func (s *UpdaterTestSuite) addDaemonSet(ds appsV1.DaemonSet) {
-	_, err := s.client.AppsV1().DaemonSets(ds.ObjectMeta.Namespace).Create(context.Background(), &ds, metaV1.CreateOptions{})
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&ds)
+	s.Require().NoError(err)
+	unstructuredDS := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = s.dynClient.Resource(client.DaemonSetGVR).Namespace(ds.ObjectMeta.Namespace).Create(context.Background(), unstructuredDS, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 }
 
@@ -381,17 +394,24 @@ func makeAdmissionControlDeployment() appsV1.Deployment {
 }
 
 func (s *UpdaterTestSuite) addDeployment(d appsV1.Deployment) {
-	_, err := s.client.AppsV1().Deployments(d.ObjectMeta.Namespace).Create(context.Background(), &d, metaV1.CreateOptions{})
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
+	s.Require().NoError(err)
+	unstructuredDeploy := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = s.dynClient.Resource(client.DeploymentGVR).Namespace(d.ObjectMeta.Namespace).Create(context.Background(), unstructuredDeploy, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 }
 
 func (s *UpdaterTestSuite) addNodes(count int) {
 	for i := 0; i < count; i++ {
-		_, err := s.client.CoreV1().Nodes().Create(context.Background(), &coreV1.Node{
+		node := &coreV1.Node{
 			ObjectMeta: metaV1.ObjectMeta{
 				Name: "mock-node-" + strconv.Itoa(i),
 			},
-		}, metaV1.CreateOptions{})
+		}
+		unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(node)
+		s.Require().NoError(err)
+		unstructuredNode := &unstructured.Unstructured{Object: unstructuredObj}
+		_, err = s.dynClient.Resource(client.NodeGVR).Create(context.Background(), unstructuredNode, metaV1.CreateOptions{})
 		s.Require().NoError(err)
 	}
 }

@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/fake"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 func TestNodeGatherer(t *testing.T) {
@@ -53,7 +54,10 @@ func (s *NodeGathererTestSuite) TestGatherNodes() {
 			},
 		},
 	}
-	gatherer := newNodeGatherer(fake.NewClientset(noConditions, conditions))
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme, noConditions, conditions)
+	gatherer := newNodeGatherer(dynClient)
 	gathered, err := gatherer.Gather(context.Background())
 	s.NoError(err)
 	s.Len(gathered, 2)

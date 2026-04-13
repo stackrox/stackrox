@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -32,8 +34,13 @@ func (s *ClusterGathererTestSuite) TestGatherCluster() {
 			Name: "NamespaceName",
 		},
 	}
+	k8sClient := fake.NewClientset(node, namespace)
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme, node, namespace)
 	gatherer := NewClusterGatherer(
-		fake.NewClientset(node, namespace),
+		dynClient,
+		k8sClient.Discovery(),
 		resources.InitializeStore(nil).Deployments())
 	cluster := gatherer.Gather(context.Background())
 	s.NotNil(cluster)

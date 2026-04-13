@@ -19,7 +19,7 @@ import (
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
 
@@ -426,10 +426,10 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 		// Mock TokenReview to return authenticated
-		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			return true, &authenticationv1.TokenReview{
 				Status: authenticationv1.TokenReviewStatus{
 					Authenticated: true,
@@ -441,7 +441,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 		})
 
 		// Mock SAR to allow
-		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			return true, &authv1.SubjectAccessReview{
 				Status: authv1.SubjectAccessReviewStatus{
 					Allowed: true,
@@ -449,7 +449,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 			}, nil
 		})
 
-		h := newTestHandler(t, baseURL, mockTransport, newK8sAuthorizer(fakeClient), "test-token")
+		h := newTestHandler(t, baseURL, mockTransport, newK8sAuthorizer(dynClient), "test-token")
 		h.centralReachable.Store(true)
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)

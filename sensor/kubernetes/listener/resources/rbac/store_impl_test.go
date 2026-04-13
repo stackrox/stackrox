@@ -12,13 +12,17 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	v1 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/fake"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 func TestStore_DispatcherEvents(t *testing.T) {
@@ -31,14 +35,14 @@ func TestStore_DispatcherEvents(t *testing.T) {
 	// Cluster bindings:
 	//  - b3 -> r2
 	//  - b4 -> r2
-	roles := []*v1.Role{
+	roles := []*rbacv1.Role{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       types.UID("r1"),
 				Name:      "r1",
 				Namespace: "n1",
 			},
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{""},
 				Verbs:     []string{"get"},
@@ -49,7 +53,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			}},
 		},
 	}
-	clusterRoles := []*v1.ClusterRole{
+	clusterRoles := []*rbacv1.ClusterRole{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  types.UID("r2"),
@@ -57,14 +61,14 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			},
 		},
 	}
-	bindings := []*v1.RoleBinding{
+	bindings := []*rbacv1.RoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       types.UID("b1"),
 				Name:      "b1",
 				Namespace: "n1",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r1",
 				Kind:     "Role",
 				APIGroup: "rbac.authorization.k8s.io",
@@ -76,7 +80,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				Name:      "b2",
 				Namespace: "n1",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r1",
 				Kind:     "Role",
 				APIGroup: "rbac.authorization.k8s.io",
@@ -88,20 +92,20 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				Name:      "b5",
 				Namespace: "n1",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r2",
 				Kind:     "ClusterRole",
 				APIGroup: "rbac.authorization.k8s.io",
 			},
 		},
 	}
-	clusterBindings := []*v1.ClusterRoleBinding{
+	clusterBindings := []*rbacv1.ClusterRoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  types.UID("b3"),
 				Name: "b3",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r2",
 				Kind:     "ClusterRole",
 				APIGroup: "rbac.authorization.k8s.io",
@@ -112,7 +116,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				UID:  types.UID("b4"),
 				Name: "b4",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r2",
 				Kind:     "ClusterRole",
 				APIGroup: "rbac.authorization.k8s.io",
@@ -121,8 +125,10 @@ func TestStore_DispatcherEvents(t *testing.T) {
 	}
 
 	tested := NewStore().(*storeImpl)
-	fakeClient := fake.NewClientset()
-	dispatcher := NewDispatcher(tested, fakeClient)
+	scheme := runtime.NewScheme()
+	_ = rbacv1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme)
+	dispatcher := NewDispatcher(tested, dynClient)
 
 	eventsInOrder := []struct {
 		k8sEvent          any
@@ -134,7 +140,12 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: bindings[0],
 			action:   central.ResourceAction_CREATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().RoleBindings(bindings[0].Namespace).Create(context.TODO(), bindings[0], metav1.CreateOptions{})
+				unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(bindings[0])
+				if err != nil {
+					return err
+				}
+				unstructuredRB := &unstructured.Unstructured{Object: unstructuredObj}
+				_, err = dynClient.Resource(client.RoleBindingGVR).Namespace(bindings[0].Namespace).Create(context.TODO(), unstructuredRB, metav1.CreateOptions{})
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
@@ -157,7 +168,13 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: roles[0],
 			action:   central.ResourceAction_CREATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().Roles(roles[0].Namespace).Create(context.TODO(), roles[0], metav1.CreateOptions{})
+				unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(roles[0])
+				if err != nil {
+					return err
+				}
+				unstructuredRole := &unstructured.Unstructured{Object: unstructuredObj}
+				roleGVR := schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}
+				_, err = dynClient.Resource(roleGVR).Namespace(roles[0].Namespace).Create(context.TODO(), unstructuredRole, metav1.CreateOptions{})
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
@@ -201,7 +218,12 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			k8sEvent: bindings[1],
 			action:   central.ResourceAction_CREATE_RESOURCE,
 			createK8sResource: func() error {
-				_, err := fakeClient.RbacV1().RoleBindings(bindings[1].Namespace).Create(context.TODO(), bindings[1], metav1.CreateOptions{})
+				unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(bindings[1])
+				if err != nil {
+					return err
+				}
+				unstructuredRB := &unstructured.Unstructured{Object: unstructuredObj}
+				_, err = dynClient.Resource(client.RoleBindingGVR).Namespace(bindings[1].Namespace).Create(context.TODO(), unstructuredRB, metav1.CreateOptions{})
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
@@ -424,21 +446,21 @@ func TestStore_DispatcherEvents(t *testing.T) {
 }
 
 func TestStore_DeploymentRelationship(t *testing.T) {
-	roles := []*v1.Role{
+	roles := []*rbacv1.Role{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       types.UID("r1"),
 				Name:      "r1",
 				Namespace: "n1",
 			},
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{""},
 				Verbs:     []string{"get"},
 			}},
 		},
 	}
-	clusterRoles := []*v1.ClusterRole{
+	clusterRoles := []*rbacv1.ClusterRole{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  types.UID("r2"),
@@ -446,37 +468,37 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 			},
 		},
 	}
-	bindings := []*v1.RoleBinding{
+	bindings := []*rbacv1.RoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       types.UID("b1"),
 				Name:      "b1",
 				Namespace: "n1",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r1",
 				Kind:     "Role",
 				APIGroup: "rbac.authorization.k8s.io",
 			},
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Kind:      "ServiceAccount",
 				Name:      "sa1",
 				Namespace: "n1",
 			}},
 		},
 	}
-	clusterBindings := []*v1.ClusterRoleBinding{
+	clusterBindings := []*rbacv1.ClusterRoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  types.UID("b3"),
 				Name: "b3",
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name:     "r2",
 				Kind:     "ClusterRole",
 				APIGroup: "rbac.authorization.k8s.io",
 			},
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Kind:      "ServiceAccount",
 				Name:      "sa2",
 				Namespace: "n1",
@@ -574,13 +596,13 @@ func generateStore(counts storeObjectCounts) Store {
 	store := NewStore()
 
 	for i := 0; i < counts.roles; i++ {
-		store.UpsertRole(&v1.Role{
+		store.UpsertRole(&rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("some-role-%d", i),
 				Namespace: fmt.Sprintf("some-namespace-%d", i%counts.namespaces),
 				UID:       types.UID(uuid.NewV4().String()),
 			},
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get"},
@@ -588,18 +610,18 @@ func generateStore(counts storeObjectCounts) Store {
 		})
 	}
 	for i := 0; i < counts.bindings; i++ {
-		store.UpsertBinding(&v1.RoleBinding{
+		store.UpsertBinding(&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("some-binding-%d", i),
 				Namespace: fmt.Sprintf("some-namespace-%d", i%counts.namespaces),
 				UID:       types.UID(uuid.NewV4().String()),
 			},
-			RoleRef: v1.RoleRef{
+			RoleRef: rbacv1.RoleRef{
 				Name: fmt.Sprintf("some-role-%d", i%counts.roles),
 			},
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name:      "default-subject",
-				Kind:      v1.ServiceAccountKind,
+				Kind:      rbacv1.ServiceAccountKind,
 				Namespace: fmt.Sprintf("some-namespace-%d", i%counts.namespaces),
 			}},
 		})
@@ -624,13 +646,13 @@ func runRBACBenchmarkGetPermissionLevelForDeployment(b *testing.B, store Store, 
 			// https://stackoverflow.com/a/37624250 for more information). This means the UpsertRole
 			// call will be included in the benchmark time.
 			// Create a new role to trigger cache invalidation.
-			store.UpsertRole(&v1.Role{
+			store.UpsertRole(&rbacv1.Role{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("roletoinvalidatecache%s", uuid.NewV4().String()),
 					Namespace: "namespaceforcacheinvalidation",
 					UID:       types.UID(uuid.NewV4().String()),
 				},
-				Rules: []v1.PolicyRule{{
+				Rules: []rbacv1.PolicyRule{{
 					APIGroups: []string{""},
 					Resources: []string{"pods"},
 					Verbs:     []string{"get"},
@@ -662,13 +684,13 @@ func BenchmarkRBACStoreAssignPermissionLevelToDeployment(b *testing.B) {
 func BenchmarkRBACUpsertExistingBinding(b *testing.B) {
 
 	store := NewStore()
-	binding := &v1.RoleBinding{
+	binding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "role",
 			Namespace: "namespace",
 			UID:       types.UID(uuid.NewV4().String()),
 		},
-		RoleRef: v1.RoleRef{
+		RoleRef: rbacv1.RoleRef{
 			Name: "role",
 		},
 	}
@@ -705,7 +727,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	//  6. cluster-elevated-2       -> cluster-elevated-subject-3
 	//  7. cluster-elevated-3       -> cluster-elevated-subject-4
 	//  8. cluster-none             -> cluster-none-subject
-	roles := []*v1.Role{
+	roles := []*rbacv1.Role{
 		{
 			ObjectMeta: meta("role-admin"),
 		},
@@ -714,7 +736,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("role-admin"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"*"},
@@ -722,7 +744,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("role-default"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{""},
 				Verbs:     []string{"get"},
@@ -730,7 +752,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("role-elevated"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{""},
 				Verbs:     []string{"get"},
@@ -742,14 +764,14 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("role-elevated-2"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{""},
 				Verbs:     []string{"get", "list"},
 			}},
 		},
 	}
-	bindings := []*v1.RoleBinding{
+	bindings := []*rbacv1.RoleBinding{
 		{
 			ObjectMeta: meta("b1"),
 			RoleRef:    role("role-admin"),
@@ -761,15 +783,15 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{
 			ObjectMeta: meta("b1"),
 			RoleRef:    role("role-admin"),
-			Subjects: []v1.Subject{
+			Subjects: []rbacv1.Subject{
 				{
 					Name:      "admin-subject",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 				{
 					Name:      "cluster-namespace-subject",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 			},
@@ -777,32 +799,32 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{
 			ObjectMeta: meta("b2"),
 			RoleRef:    role("role-default"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name:      "default-subject",
-				Kind:      v1.ServiceAccountKind,
+				Kind:      rbacv1.ServiceAccountKind,
 				Namespace: "n1",
 			}},
 		},
 		{
 			ObjectMeta: meta("b3"),
 			RoleRef:    role("role-elevated"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name:      "elevated-subject",
-				Kind:      v1.ServiceAccountKind,
+				Kind:      rbacv1.ServiceAccountKind,
 				Namespace: "n1",
 			}},
 		},
 		{
 			ObjectMeta: meta("b4"),
 			RoleRef:    role("role-elevated-2"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name:      "elevated-subject-2",
-				Kind:      v1.ServiceAccountKind,
+				Kind:      rbacv1.ServiceAccountKind,
 				Namespace: "n1",
 			}},
 		},
 	}
-	clusterRoles := []*v1.ClusterRole{
+	clusterRoles := []*rbacv1.ClusterRole{
 		{
 			ObjectMeta: meta("cluster-admin"),
 		},
@@ -811,7 +833,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-admin"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"*"},
@@ -819,7 +841,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-elevated-2"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"deletecollection"},
@@ -827,7 +849,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-elevated-3"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"pod"},
 				Verbs:     []string{"deletecollection"},
@@ -839,7 +861,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-none"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{"*"},
 				Resources: []string{"*"},
 				Verbs:     []string{"invalidverb"},
@@ -847,7 +869,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-elevated-admin"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"get"},
@@ -859,7 +881,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-elevated"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"get"},
@@ -867,14 +889,14 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-elevated"),
-			Rules: []v1.PolicyRule{{
+			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"get"},
 			}},
 		},
 	}
-	clusterBindings := []*v1.ClusterRoleBinding{
+	clusterBindings := []*rbacv1.ClusterRoleBinding{
 		{
 			ObjectMeta: meta("b3"),
 			RoleRef:    clusterRole("cluster-admin"),
@@ -886,28 +908,28 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{
 			ObjectMeta: meta("b3"),
 			RoleRef:    clusterRole("cluster-admin"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name: "cluster-admin-subject",
-				Kind: v1.ServiceAccountKind,
+				Kind: rbacv1.ServiceAccountKind,
 			}},
 		},
 		{
 			ObjectMeta: meta("b4"),
 			RoleRef:    clusterRole("cluster-elevated"),
-			Subjects: []v1.Subject{
+			Subjects: []rbacv1.Subject{
 				{
 					Name:      "cluster-elevated-subject",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 				{
 					Name:      "cluster-elevated-subject-2",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 				{
 					Name:      "cluster-namespace-subject",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 			},
@@ -915,10 +937,10 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{
 			ObjectMeta: meta("b5"),
 			RoleRef:    clusterRole("cluster-elevated-admin"),
-			Subjects: []v1.Subject{
+			Subjects: []rbacv1.Subject{
 				{
 					Name:      "cluster-admin-2",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 			},
@@ -926,44 +948,44 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{
 			ObjectMeta: meta("b6"),
 			RoleRef:    clusterRole("cluster-elevated-2"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name: "cluster-elevated-subject-3",
-				Kind: v1.ServiceAccountKind,
+				Kind: rbacv1.ServiceAccountKind,
 			}},
 		},
 		{
 			ObjectMeta: meta("b7"),
 			RoleRef:    clusterRole("cluster-elevated-3"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name: "cluster-elevated-subject-4",
-				Kind: v1.ServiceAccountKind,
+				Kind: rbacv1.ServiceAccountKind,
 			}},
 		},
 		{
 			ObjectMeta: meta("b8"),
 			RoleRef:    clusterRole("cluster-none"),
-			Subjects: []v1.Subject{{
+			Subjects: []rbacv1.Subject{{
 				Name: "cluster-none-subject",
-				Kind: v1.ServiceAccountKind,
+				Kind: rbacv1.ServiceAccountKind,
 			}},
 		},
 		{
 			ObjectMeta: meta("b4"),
 			RoleRef:    clusterRole("cluster-elevated"),
-			Subjects: []v1.Subject{
+			Subjects: []rbacv1.Subject{
 				{
 					Name:      "cluster-elevated-subject",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 				{
 					Name:      "cluster-elevated-subject-2",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 				{
 					Name:      "cluster-namespace-subject",
-					Kind:      v1.ServiceAccountKind,
+					Kind:      rbacv1.ServiceAccountKind,
 					Namespace: "n1",
 				},
 			},
@@ -1029,16 +1051,16 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	}
 }
 
-func role(name string) v1.RoleRef {
+func role(name string) rbacv1.RoleRef {
 	return roleRef(name, "Role")
 }
 
-func clusterRole(name string) v1.RoleRef {
+func clusterRole(name string) rbacv1.RoleRef {
 	return roleRef(name, "ClusterRole")
 }
 
-func roleRef(name, kind string) v1.RoleRef {
-	return v1.RoleRef{
+func roleRef(name, kind string) rbacv1.RoleRef {
+	return rbacv1.RoleRef{
 		Name: name, Kind: kind, APIGroup: "rbac.authorization.k8s.io",
 	}
 }
@@ -1049,7 +1071,7 @@ func meta(name string) metav1.ObjectMeta {
 	}
 }
 
-func setupStore(roles []*v1.Role, clusterRoles []*v1.ClusterRole, bindings []*v1.RoleBinding, clusterBindings []*v1.ClusterRoleBinding) Store {
+func setupStore(roles []*rbacv1.Role, clusterRoles []*rbacv1.ClusterRole, bindings []*rbacv1.RoleBinding, clusterBindings []*rbacv1.ClusterRoleBinding) Store {
 	tested := NewStore()
 	for _, r := range roles {
 		tested.UpsertRole(r)

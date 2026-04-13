@@ -19,7 +19,7 @@ import (
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
 
@@ -96,10 +96,10 @@ func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer
 // newAllowingAuthorizer creates a k8sAuthorizer with a fake client that allows all authorization requests.
 func newAllowingAuthorizer(t testing.TB) *k8sAuthorizer {
 	t.Helper()
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock TokenReview to return authenticated
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: true,
@@ -111,7 +111,7 @@ func newAllowingAuthorizer(t testing.TB) *k8sAuthorizer {
 	})
 
 	// Mock SubjectAccessReview to allow all
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed: true,
@@ -119,17 +119,17 @@ func newAllowingAuthorizer(t testing.TB) *k8sAuthorizer {
 		}, nil
 	})
 
-	return newK8sAuthorizer(fakeClient)
+	return newK8sAuthorizer(dynClient)
 }
 
 // newDenyingAuthorizer creates a k8sAuthorizer with a fake client that denies all authorization requests.
 // Authentication succeeds but authorization (SAR) fails.
 func newDenyingAuthorizer(t testing.TB) *k8sAuthorizer {
 	t.Helper()
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock TokenReview to return authenticated
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: true,
@@ -141,7 +141,7 @@ func newDenyingAuthorizer(t testing.TB) *k8sAuthorizer {
 	})
 
 	// Mock SubjectAccessReview to deny all
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed: false,
@@ -149,17 +149,17 @@ func newDenyingAuthorizer(t testing.TB) *k8sAuthorizer {
 		}, nil
 	})
 
-	return newK8sAuthorizer(fakeClient)
+	return newK8sAuthorizer(dynClient)
 }
 
 // newUnauthenticatedAuthorizer creates a k8sAuthorizer with a fake client that rejects all tokens.
 // Use this to test authentication failures (token validation fails).
 func newUnauthenticatedAuthorizer(t testing.TB) *k8sAuthorizer {
 	t.Helper()
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock TokenReview to return unauthenticated (invalid token)
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: false,
@@ -167,7 +167,7 @@ func newUnauthenticatedAuthorizer(t testing.TB) *k8sAuthorizer {
 		}, nil
 	})
 
-	return newK8sAuthorizer(fakeClient)
+	return newK8sAuthorizer(dynClient)
 }
 
 // errTransportError is a sentinel error for transport failures in tests.

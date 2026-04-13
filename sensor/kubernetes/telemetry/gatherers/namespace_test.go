@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 func TestNamespaceGatherer(t *testing.T) {
@@ -35,8 +36,11 @@ func (s *NamespaceGathererTestSuite) TestGatherNamespaces() {
 			Name: unknownName,
 		},
 	}
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme, knownNamespace, unknownNamespace)
 	gatherer := newNamespaceGatherer(
-		fake.NewClientset(knownNamespace, unknownNamespace),
+		dynClient,
 		resources.InitializeStore(nil).Deployments())
 	namespaces, err := gatherer.Gather(context.Background())
 	s.Empty(err)

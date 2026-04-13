@@ -10,6 +10,7 @@ import (
 	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/utils"
 	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
@@ -17,9 +18,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/fake"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	fakecorev1 "k8s.io/client-go/kubernetes/typed/core/v1/fake"
+	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
 
@@ -116,9 +116,10 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 				},
 			}
 			secrets := map[storage.ServiceType]*v1.Secret{scannerServiceType: secret1, unknownServiceType: secret2}
-			clientSet := fake.NewClientset(secret1, secret2)
-			secretsClient := clientSet.CoreV1().Secrets(namespace)
-			repo := newTestRepo(secrets, secretsClient)
+			scheme := runtime.NewScheme()
+			_ = v1.AddToScheme(scheme)
+			dynClient := dynamicfake.NewSimpleDynamicClient(scheme, secret1, secret2)
+			repo := newTestRepo(secrets, dynClient)
 
 			_, err := repo.GetServiceCertificates(context.Background())
 
@@ -174,7 +175,10 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestSuccessfulCreate() {
 	protoassert.SlicesEqual(s.T(), certificates.GetServiceCerts(), persistedCertificates)
 	s.ErrorIs(err, nil)
 
-	secret, err := fixture.secretsClient.Get(ctx, fixture.secretName, metav1.GetOptions{})
+	unstructuredSecret, err := fixture.dynClient.Resource(client.SecretGVR).Namespace(namespace).Get(ctx, fixture.secretName, metav1.GetOptions{})
+	s.Require().NoError(err)
+	var secret v1.Secret
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredSecret.Object, &secret)
 	s.Require().NoError(err)
 
 	expectedLabels := utils.GetTLSSecretLabels()
@@ -246,7 +250,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 	s.NoError(err)
 	protoassert.SlicesEqual(s.T(), emptyPersistedCertificates, persistedCertificates)
 
-	_, err = fixture.secretsClient.Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
+	_, err = fixture.dynClient.Resource(client.SecretGVR).Namespace(namespace).Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
 }
 
@@ -278,10 +282,10 @@ func createServiceCertificate(serviceType storage.ServiceType) *storage.TypedSer
 }
 
 type certSecretsRepoFixture struct {
-	repo          *ServiceCertificatesRepoSecrets
-	secretsClient corev1.SecretInterface
-	certificates  *storage.TypedServiceCertificateSet
-	secretName    string
+	repo         *ServiceCertificatesRepoSecrets
+	dynClient    dynamic.Interface
+	certificates *storage.TypedServiceCertificateSet
+	secretName   string
 }
 
 // newFixture creates a certSecretsRepoFixture that contains:
@@ -317,22 +321,26 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsR
 		delete(secret.Data, secretDataKey)
 	}
 	secrets := map[storage.ServiceType]*v1.Secret{scannerServiceType: secret}
-	var clientSet *fake.Clientset
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	_ = appsApiv1.AddToScheme(scheme)
+	var dynClient dynamic.Interface
 	if config.skipSecretCreation {
-		clientSet = fake.NewClientset(sensorDeployment)
+		dynClient = dynamicfake.NewSimpleDynamicClient(scheme, sensorDeployment)
 	} else {
-		clientSet = fake.NewClientset(sensorDeployment, secret)
+		dynClient = dynamicfake.NewSimpleDynamicClient(scheme, sensorDeployment, secret)
 	}
-	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(config.k8sAPIVerbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
-		return true, &v1.Secret{}, errForced
-	})
-	repo := newTestRepo(secrets, secretsClient)
+	if config.k8sAPIVerbToError != "" {
+		dynClient.(*dynamicfake.FakeDynamicClient).PrependReactor(config.k8sAPIVerbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
+			return true, &v1.Secret{}, errForced
+		})
+	}
+	repo := newTestRepo(secrets, dynClient)
 	return &certSecretsRepoFixture{
-		repo:          repo,
-		secretsClient: secretsClient,
-		certificates:  certificates,
-		secretName:    secretName,
+		repo:         repo,
+		dynClient:    dynClient,
+		certificates: certificates,
+		secretName:   secretName,
 	}
 }
 
@@ -368,7 +376,7 @@ func sensorOwnerReference() []metav1.OwnerReference {
 }
 
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
-	secretsClient corev1.SecretInterface) *ServiceCertificatesRepoSecrets {
+	dynClient dynamic.Interface) *ServiceCertificatesRepoSecrets {
 
 	secretsSpecs := make(map[storage.ServiceType]ServiceCertSecretSpec)
 	for serviceType, secret := range secrets {
@@ -384,6 +392,6 @@ func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 		Secrets:        secretsSpecs,
 		OwnerReference: sensorOwnerReference()[0],
 		Namespace:      namespace,
-		SecretsClient:  secretsClient,
+		DynClient:      dynClient,
 	}
 }

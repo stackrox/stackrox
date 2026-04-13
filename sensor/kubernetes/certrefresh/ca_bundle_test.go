@@ -10,10 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/x509utils"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 func TestConvertCertsToPEM(t *testing.T) {
@@ -98,7 +101,6 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("POD_NAMESPACE", "test-namespace")
-			k8sClient := fake.NewClientset()
 
 			var certs []*x509.Certificate
 			switch tc.certCount {
@@ -125,10 +127,14 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 						Controller: &trueVar,
 					}
 
+					scheme := runtime.NewScheme()
+					_ = v1.AddToScheme(scheme)
+					dynClient := dynamicfake.NewSimpleDynamicClient(scheme)
+
 					var err error
 					switch testedFunc {
 					case "from_certs":
-						err = CreateTLSCABundleConfigMapFromCerts(ctx, certs, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
+						err = CreateTLSCABundleConfigMapFromCerts(ctx, certs, dynClient, "test-namespace", ownerRef)
 					case "from_pem":
 						var pemData []byte
 						if tc.certCount == 0 {
@@ -137,7 +143,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 							pemData, err = convertCertsToPEM(certs)
 							require.NoError(t, err)
 						}
-						err = CreateTLSCABundleConfigMapFromPEM(ctx, pemData, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
+						err = CreateTLSCABundleConfigMapFromPEM(ctx, pemData, dynClient, "test-namespace", ownerRef)
 					}
 
 					if tc.shouldFail {
@@ -147,10 +153,13 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 
 					require.NoError(t, err)
 
-					configMap, err := k8sClient.CoreV1().ConfigMaps("test-namespace").Get(ctx,
+					unstructuredCM, err := dynClient.Resource(client.ConfigMapGVR).Namespace("test-namespace").Get(ctx,
 						pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
 					require.NoError(t, err)
-					require.NotNil(t, configMap)
+					require.NotNil(t, unstructuredCM)
+					var configMap v1.ConfigMap
+					err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredCM.Object, &configMap)
+					require.NoError(t, err)
 
 					verifyConfigMapData(t, configMap.Data, certs)
 					assert.Equal(t, pkgKubernetes.TLSCABundleConfigMapName, configMap.Name)
@@ -161,7 +170,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 					assert.Equal(t, "Deployment", configMap.OwnerReferences[0].Kind)
 
 					// Clean up for the next test
-					err = k8sClient.CoreV1().ConfigMaps("test-namespace").Delete(ctx,
+					err = dynClient.Resource(client.ConfigMapGVR).Namespace("test-namespace").Delete(ctx,
 						pkgKubernetes.TLSCABundleConfigMapName, metav1.DeleteOptions{})
 					require.NoError(t, err)
 				})
@@ -173,7 +182,9 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 func TestCreateTLSCABundleConfigMapUpdate(t *testing.T) {
 	t.Setenv("POD_NAMESPACE", "test-namespace")
 
-	k8sClient := fake.NewClientset()
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme)
 
 	ctx := context.Background()
 	cert1 := createTestCertificate(t, "First CA")
@@ -189,18 +200,23 @@ func TestCreateTLSCABundleConfigMapUpdate(t *testing.T) {
 		Controller: &trueVar,
 	}
 
-	err := CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert1}, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
+	err := CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert1}, dynClient, "test-namespace", ownerRef)
 	require.NoError(t, err)
 
-	configMap, err := k8sClient.CoreV1().ConfigMaps("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
+	unstructuredCM, err := dynClient.Resource(client.ConfigMapGVR).Namespace("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
+	require.NoError(t, err)
+	var configMap v1.ConfigMap
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredCM.Object, &configMap)
 	require.NoError(t, err)
 	verifyConfigMapData(t, configMap.Data, []*x509.Certificate{cert1})
 
-	err = CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert2}, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
+	err = CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert2}, dynClient, "test-namespace", ownerRef)
 	require.NoError(t, err)
 
 	// Verify that creating the ConfigMap twice updates it instead of failing
-	configMap, err = k8sClient.CoreV1().ConfigMaps("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
+	unstructuredCM, err = dynClient.Resource(client.ConfigMapGVR).Namespace("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
+	require.NoError(t, err)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredCM.Object, &configMap)
 	require.NoError(t, err)
 	verifyConfigMapData(t, configMap.Data, []*x509.Certificate{cert2})
 }

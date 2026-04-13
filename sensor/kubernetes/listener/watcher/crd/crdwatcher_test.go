@@ -3,6 +3,7 @@ package crd
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	k8sWatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/dynamic/fake"
 	clienttesting "k8s.io/client-go/testing"
 )
@@ -70,7 +70,12 @@ func (s *watcherSuite) setupDynamicClient(watcherStartedC chan struct{}) {
 }
 
 func (s *watcherSuite) createWatcher(stopSig *concurrency.Signal) *crdWatcher {
-	return NewCRDWatcher(stopSig, dynamicinformer.NewDynamicSharedInformerFactory(s.dynamicClient, 0))
+	// Create a minimal HTTP client for testing
+	// In production, this would be a real k8s REST client
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	return NewCRDWatcher(stopSig, httpClient)
 }
 
 func newFakeCRD(name string) *unstructured.Unstructured {
@@ -148,7 +153,7 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			w := s.createWatcher(&stopSig)
 			defer func() {
 				stopSig.Signal()
-				w.sif.Shutdown()
+				// The k8swatch adapter cleanup is handled by the stopSig
 			}()
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
 				s.NoError(w.AddResourceToWatch(rName))
@@ -211,7 +216,7 @@ func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
 	w := s.createWatcher(&stopSig)
 	defer func() {
 		stopSig.Signal()
-		w.sif.Shutdown()
+		// The k8swatch adapter cleanup is handled by the stopSig
 	}()
 	err := w.Watch(nil)
 	s.NoError(err)
@@ -224,7 +229,7 @@ func (s *watcherSuite) Test_WatchAfterWatchFails() {
 	w := s.createWatcher(&stopSig)
 	defer func() {
 		stopSig.Signal()
-		w.sif.Shutdown()
+		// The k8swatch adapter cleanup is handled by the stopSig
 	}()
 	err := w.Watch(nil)
 	s.NoError(err)

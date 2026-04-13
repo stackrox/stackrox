@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
@@ -43,6 +44,10 @@ func (c *fakeClientSet) Kubernetes() kubernetes.Interface {
 
 func (c *fakeClientSet) Dynamic() dynamic.Interface {
 	return c.dynamic
+}
+
+func (c *fakeClientSet) Discovery() discovery.DiscoveryInterface {
+	return c.k8s.Discovery()
 }
 
 func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata,

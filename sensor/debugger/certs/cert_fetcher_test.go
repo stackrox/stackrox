@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -56,6 +57,10 @@ func (t *testClient) OpenshiftRoute() routeVersioned.Interface {
 
 func (t *testClient) OpenshiftOperator() operatorVersioned.Interface {
 	return nil
+}
+
+func (t *testClient) Discovery() discovery.DiscoveryInterface {
+	return t.k8s.Discovery()
 }
 
 func createTestClient(secrets ...*v1.Secret) client.Interface {

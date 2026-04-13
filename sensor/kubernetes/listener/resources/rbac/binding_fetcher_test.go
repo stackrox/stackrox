@@ -5,11 +5,14 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	fakeRBAC "k8s.io/client-go/kubernetes/typed/rbac/v1/fake"
 	k8stesting "k8s.io/client-go/testing"
@@ -65,10 +68,15 @@ var (
 )
 
 func Test_FetchBindingRemovesLastAppliedConfig(t *testing.T) {
-	fakeClient := fake.NewClientset()
-	fetcher := newBindingFetcher(fakeClient)
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme)
+	fetcher := newBindingFetcher(dynClient)
 
-	_, err := fakeClient.RbacV1().ClusterRoleBindings().Create(context.Background(), clusterRoleBinding, metav1.CreateOptions{})
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(clusterRoleBinding)
+	require.NoError(t, err)
+	unstructuredCRB := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = dynClient.Resource(client.ClusterRoleBindingGVR).Create(context.Background(), unstructuredCRB, metav1.CreateOptions{})
 	require.NoError(t, err)
 
 	event, err := fetcher.generateDependentEvent(clusterRoleBindingID, roleUID, true)
@@ -79,7 +87,10 @@ func Test_FetchBindingRemovesLastAppliedConfig(t *testing.T) {
 	require.Len(t, annotations, 1)
 	assert.Equal(t, annotations["SomeKey"], "SomeValue")
 
-	_, err = fakeClient.RbacV1().RoleBindings("test-ns").Create(context.Background(), roleBinding, metav1.CreateOptions{})
+	unstructuredObj, err = runtime.DefaultUnstructuredConverter.ToUnstructured(roleBinding)
+	require.NoError(t, err)
+	unstructuredRB := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = dynClient.Resource(client.RoleBindingGVR).Namespace("test-ns").Create(context.Background(), unstructuredRB, metav1.CreateOptions{})
 	require.NoError(t, err)
 
 	event, err = fetcher.generateDependentEvent(roleBindingID, roleUID, true)
@@ -92,13 +103,15 @@ func Test_FetchBindingRemovesLastAppliedConfig(t *testing.T) {
 }
 
 func Test_FetchBindingErrors(t *testing.T) {
-	fakeClient := fake.NewClientset()
-	fetcher := newBindingFetcher(fakeClient)
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	fakeDynClient := dynamicfake.NewSimpleDynamicClient(scheme)
+	fetcher := newBindingFetcher(fakeDynClient)
 	fetcher.numRetries = 2
 
 	t.Run("ClusterRoleBinding fails once", func(tt *testing.T) {
 		reactor := newPretendReactor(clusterRoleBinding, 1, "get", "clusterrolebindings")
-		fakeClient.RbacV1().(*fakeRBAC.FakeRbacV1).PrependReactor(reactor.verb, reactor.resource, reactor.react)
+		fakeDynClient.PrependReactor(reactor.verb, reactor.resource, reactor.react)
 		event, err := fetcher.generateDependentEvent(clusterRoleBindingID, roleUID, true)
 		require.NoError(tt, err)
 
@@ -110,7 +123,7 @@ func Test_FetchBindingErrors(t *testing.T) {
 
 	t.Run("ClusterRoleBinding fails twice", func(tt *testing.T) {
 		reactor := newPretendReactor(clusterRoleBinding, 2, "get", "clusterrolebindings")
-		fakeClient.RbacV1().(*fakeRBAC.FakeRbacV1).PrependReactor(reactor.verb, reactor.resource, reactor.react)
+		fakeDynClient.PrependReactor(reactor.verb, reactor.resource, reactor.react)
 		event, err := fetcher.generateDependentEvent(clusterRoleBindingID, roleUID, true)
 		require.Error(tt, err)
 
@@ -119,7 +132,7 @@ func Test_FetchBindingErrors(t *testing.T) {
 
 	t.Run("RoleBinding fails once", func(tt *testing.T) {
 		reactor := newPretendReactor(roleBinding, 1, "get", "rolebindings")
-		fakeClient.RbacV1().(*fakeRBAC.FakeRbacV1).PrependReactor(reactor.verb, reactor.resource, reactor.react)
+		fakeDynClient.PrependReactor(reactor.verb, reactor.resource, reactor.react)
 		event, err := fetcher.generateDependentEvent(roleBindingID, roleUID, false)
 		require.NoError(tt, err)
 
@@ -131,7 +144,7 @@ func Test_FetchBindingErrors(t *testing.T) {
 
 	t.Run("RoleBinding fails twice", func(tt *testing.T) {
 		reactor := newPretendReactor(roleBinding, 2, "get", "rolebindings")
-		fakeClient.RbacV1().(*fakeRBAC.FakeRbacV1).PrependReactor(reactor.verb, reactor.resource, reactor.react)
+		fakeDynClient.PrependReactor(reactor.verb, reactor.resource, reactor.react)
 		event, err := fetcher.generateDependentEvent(roleBindingID, roleUID, false)
 		require.Error(tt, err)
 

@@ -14,13 +14,18 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/authorization/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
@@ -39,7 +44,9 @@ func TestUpdater(t *testing.T) {
 type UpdaterTestSuite struct {
 	suite.Suite
 
-	client *fake.Clientset
+	k8sClient       *fake.Clientset
+	dynClient       dynamic.Interface
+	discoveryClient discovery.DiscoveryInterface
 }
 
 type expectedInfo struct {
@@ -61,11 +68,24 @@ func (s *UpdaterTestSuite) SetupSuite() {
 
 func (s *UpdaterTestSuite) SetupTest() {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
-	s.client = fake.NewClientset()
-	_, err := s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(defaultNS), metaV1.CreateOptions{})
+	s.k8sClient = fake.NewClientset()
+	s.discoveryClient = s.k8sClient.Discovery()
+	scheme := runtime.NewScheme()
+	_ = coreV1.AddToScheme(scheme)
+	_ = appsV1.AddToScheme(scheme)
+	_ = v1.AddToScheme(scheme)
+	s.dynClient = dynamicfake.NewSimpleDynamicClient(scheme)
+
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(buildComplianceOperatorNamespace(defaultNS))
+	s.Require().NoError(err)
+	unstructuredNS := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = s.dynClient.Resource(client.NamespaceGVR).Create(context.Background(), unstructuredNS, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 
-	_, err = s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(customNS), metaV1.CreateOptions{})
+	unstructuredObj, err = runtime.DefaultUnstructuredConverter.ToUnstructured(buildComplianceOperatorNamespace(customNS))
+	s.Require().NoError(err)
+	unstructuredNS = &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = s.dynClient.Resource(client.NamespaceGVR).Create(context.Background(), unstructuredNS, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 }
 
@@ -128,7 +148,7 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 
 func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
 	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
-	s.client.PrependReactor("*", "*", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	s.dynClient.(*dynamicfake.FakeDynamicClient).PrependReactor("*", "*", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		if _, ok := action.(k8sTesting.CreateAction); !ok {
 			return false, nil, nil
 		}
@@ -270,7 +290,7 @@ func getKeys(m map[string]bool) []string {
 func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *central.ComplianceOperatorInfo {
 	timer := time.NewTimer(responseTimeout)
 	readySignal := concurrency.NewSignal()
-	updater := NewInfoUpdater(s.client, updateInterval, &readySignal)
+	updater := NewInfoUpdater(s.dynClient, s.discoveryClient, updateInterval, &readySignal)
 
 	updater.Notify(common.SensorComponentEventSyncFinished)
 	err := updater.Start()
@@ -328,12 +348,18 @@ func buildComplianceOperator(namespace string) *appsV1.Deployment {
 }
 
 func (s *UpdaterTestSuite) createCO(ds *appsV1.Deployment) {
-	_, err := s.client.AppsV1().Deployments(ds.ObjectMeta.Namespace).Create(context.Background(), ds, metaV1.CreateOptions{})
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(ds)
+	s.Require().NoError(err)
+	unstructuredDeploy := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = s.dynClient.Resource(client.DeploymentGVR).Namespace(ds.ObjectMeta.Namespace).Create(context.Background(), unstructuredDeploy, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 
-	ds, err = s.client.AppsV1().Deployments(ds.ObjectMeta.Namespace).Get(context.Background(), complianceoperator.Name, metaV1.GetOptions{})
+	unstructuredResult, err := s.dynClient.Resource(client.DeploymentGVR).Namespace(ds.ObjectMeta.Namespace).Get(context.Background(), complianceoperator.Name, metaV1.GetOptions{})
 	s.Require().NoError(err)
-	s.Require().Equal(ds.Name, complianceoperator.Name)
+	var resultDS appsV1.Deployment
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredResult.Object, &resultDS)
+	s.Require().NoError(err)
+	s.Require().Equal(resultDS.Name, complianceoperator.Name)
 }
 
 func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.ComplianceOperatorInfo) {

@@ -7,10 +7,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/securedcluster"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/assert"
 	appsApiv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 var (
@@ -36,11 +39,13 @@ var (
 )
 
 func TestEnsureServiceCertificates(t *testing.T) {
-	clientSet := fake.NewClientset(sensorDeployment)
-	secretsClient := clientSet.CoreV1().Secrets(namespace)
+	scheme := runtime.NewScheme()
+	_ = v1.AddToScheme(scheme)
+	_ = appsApiv1.AddToScheme(scheme)
+	dynClient := dynamicfake.NewSimpleDynamicClient(scheme, sensorDeployment)
 	ctx := context.Background()
 
-	repo := NewServiceCertificatesRepo(sensorOwnerReference(sensorDeployment), namespace, secretsClient)
+	repo := NewServiceCertificatesRepo(sensorOwnerReference(sensorDeployment), namespace, dynClient, "")
 	persistedCertificates, err := repo.EnsureServiceCertificates(ctx, securedClusterCertificateSet)
 
 	assert.NoError(t, err)
@@ -58,7 +63,7 @@ func TestEnsureServiceCertificates(t *testing.T) {
 	assert.Equal(t, len(expectedSecretNames), len(persistedCertificates))
 
 	for _, secretName := range expectedSecretNames {
-		_, err = secretsClient.Get(ctx, secretName, metav1.GetOptions{})
+		_, err = dynClient.Resource(client.SecretGVR).Namespace(namespace).Get(ctx, secretName, metav1.GetOptions{})
 		assert.NoError(t, err)
 	}
 }

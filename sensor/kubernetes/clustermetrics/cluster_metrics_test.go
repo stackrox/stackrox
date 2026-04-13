@@ -8,11 +8,15 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 const (
@@ -28,11 +32,13 @@ func TestClusterMetrics(t *testing.T) {
 type ClusterMetricsTestSuite struct {
 	suite.Suite
 
-	client *fake.Clientset
+	dynClient dynamic.Interface
 }
 
 func (s *ClusterMetricsTestSuite) SetupTest() {
-	s.client = fake.NewClientset()
+	scheme := runtime.NewScheme()
+	_ = coreV1.AddToScheme(scheme)
+	s.dynClient = dynamicfake.NewSimpleDynamicClient(scheme)
 	defaultInterval = 10 * time.Millisecond
 }
 
@@ -96,7 +102,7 @@ func (f *fakeClusterIDPeeker) GetNoWait() string {
 }
 
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
-	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval)
+	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.dynClient, interval)
 	metrics, ok := metricsComponent.(*clusterMetricsImpl)
 	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
 	return metrics
@@ -123,7 +129,7 @@ func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponent
 
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
-	clusterMetricsStream := New(&fakeClusterIDPeeker{}, s.client)
+	clusterMetricsStream := New(&fakeClusterIDPeeker{}, s.dynClient)
 
 	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
@@ -141,13 +147,17 @@ func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 }
 
 func (s *ClusterMetricsTestSuite) addNode(name coreV1.ResourceName, cpu resource.Quantity) {
-	_, err := s.client.CoreV1().Nodes().Create(context.Background(), &coreV1.Node{
+	node := &coreV1.Node{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: name.String(),
 		},
 		Status: coreV1.NodeStatus{
 			Capacity: coreV1.ResourceList{"cpu": cpu},
 		},
-	}, metaV1.CreateOptions{})
+	}
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(node)
+	s.Require().NoError(err)
+	unstructuredNode := &unstructured.Unstructured{Object: unstructuredObj}
+	_, err = s.dynClient.Resource(client.NodeGVR).Create(context.Background(), unstructuredNode, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 }

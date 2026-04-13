@@ -15,13 +15,13 @@ import (
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
 
 func TestK8sAuthorizer_MissingToken(t *testing.T) {
-	fakeClient := fake.NewClientset()
-	authorizer := newK8sAuthorizer(fakeClient)
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	// No Authorization header
@@ -33,8 +33,8 @@ func TestK8sAuthorizer_MissingToken(t *testing.T) {
 }
 
 func TestK8sAuthorizer_InvalidToken(t *testing.T) {
-	fakeClient := fake.NewClientset()
-	authorizer := newK8sAuthorizer(fakeClient)
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Basic dXNlcjpwYXNz") // Not Bearer token
@@ -46,10 +46,10 @@ func TestK8sAuthorizer_InvalidToken(t *testing.T) {
 }
 
 func TestK8sAuthorizer_TokenAuthenticationFailed(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock TokenReview to return unauthenticated
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: false,
@@ -57,7 +57,7 @@ func TestK8sAuthorizer_TokenAuthenticationFailed(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
@@ -69,14 +69,14 @@ func TestK8sAuthorizer_TokenAuthenticationFailed(t *testing.T) {
 }
 
 func TestK8sAuthorizer_TokenReviewAPIError(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock TokenReview to return API error
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("API server unavailable")
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
@@ -89,10 +89,10 @@ func TestK8sAuthorizer_TokenReviewAPIError(t *testing.T) {
 }
 
 func TestK8sAuthorizer_TokenReviewStatusError(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock TokenReview to return status error
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: false,
@@ -101,7 +101,7 @@ func TestK8sAuthorizer_TokenReviewStatusError(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
@@ -114,10 +114,10 @@ func TestK8sAuthorizer_TokenReviewStatusError(t *testing.T) {
 }
 
 func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock SubjectAccessReview - allow all
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed: true,
@@ -125,7 +125,7 @@ func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	userInfo := &authenticationv1.UserInfo{
 		Username: "test-user",
@@ -141,10 +141,10 @@ func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
 }
 
 func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock SubjectAccessReview - allow all
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed: true,
@@ -152,7 +152,7 @@ func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	userInfo := &authenticationv1.UserInfo{
 		Username: "cluster-admin",
@@ -169,10 +169,10 @@ func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
 }
 
 func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock SubjectAccessReview - deny "list"
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		createAction := action.(k8sTesting.CreateAction)
 		sar := createAction.GetObject().(*authv1.SubjectAccessReview)
 
@@ -186,7 +186,7 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	userInfo := &authenticationv1.UserInfo{
 		Username: "limited-user",
@@ -204,10 +204,10 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 }
 
 func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock SubjectAccessReview - allow "get", deny "list"
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		createAction := action.(k8sTesting.CreateAction)
 		sar := createAction.GetObject().(*authv1.SubjectAccessReview)
 
@@ -221,7 +221,7 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	userInfo := &authenticationv1.UserInfo{
 		Username: "namespace-admin",
@@ -240,14 +240,14 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 }
 
 func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock SubjectAccessReview to return error
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("API server unavailable")
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	userInfo := &authenticationv1.UserInfo{
 		Username: "test-user",
@@ -263,11 +263,11 @@ func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 }
 
 func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	// Mock SubjectAccessReview: Allowed = true but with an EvaluationError.
 	// performSubjectAccessReview should return a 500 error instead of treating it as denial.
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed:         true,
@@ -276,7 +276,7 @@ func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	userInfo := &authenticationv1.UserInfo{
 		Username: "test-user",
@@ -299,13 +299,13 @@ func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 }
 
 func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	sarCallCount := 0
 	tokenReviewCallCount := 0
 
 	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		tokenReviewCallCount++
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
@@ -320,7 +320,7 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 	})
 
 	// Mock SubjectAccessReview - allow all and count calls
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		sarCallCount++
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
@@ -329,7 +329,7 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
@@ -359,13 +359,13 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 }
 
 func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
-	fakeClient := fake.NewClientset()
+	dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 
 	sarCallCount := 0
 	tokenReviewCallCount := 0
 
 	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		tokenReviewCallCount++
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
@@ -380,7 +380,7 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 	})
 
 	// Mock SubjectAccessReview - deny all
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+	dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		sarCallCount++
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
@@ -389,7 +389,7 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 		}, nil
 	})
 
-	authorizer := newK8sAuthorizer(fakeClient)
+	authorizer := newK8sAuthorizer(dynClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
@@ -422,11 +422,11 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 
 func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 	t.Run("successful TokenReview is cached", func(t *testing.T) {
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 		tokenReviewCallCount := 0
 
 		// Mock TokenReview to return authenticated
-		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			tokenReviewCallCount++
 			return true, &authenticationv1.TokenReview{
 				Status: authenticationv1.TokenReviewStatus{
@@ -439,7 +439,7 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 			}, nil
 		})
 
-		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer := newK8sAuthorizer(dynClient)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
@@ -456,11 +456,11 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 	})
 
 	t.Run("failed TokenReview is NOT cached", func(t *testing.T) {
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 		tokenReviewCallCount := 0
 
 		// Mock TokenReview to return unauthenticated
-		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			tokenReviewCallCount++
 			return true, &authenticationv1.TokenReview{
 				Status: authenticationv1.TokenReviewStatus{
@@ -469,7 +469,7 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 			}, nil
 		})
 
-		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer := newK8sAuthorizer(dynClient)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req.Header.Set("Authorization", "Bearer invalid-token")
@@ -490,7 +490,7 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 
 func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 	t.Run("concurrent TokenReview requests for same token make only one API call", func(t *testing.T) {
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 		var callCount atomic.Int32
 		var wg sync.WaitGroup
 
@@ -498,7 +498,7 @@ func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 		// This ensures deterministic coalescing behavior without relying on timing.
 		barrier := make(chan struct{})
 
-		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			callCount.Add(1)
 			// Block until test signals all goroutines have started
 			<-barrier
@@ -514,7 +514,7 @@ func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 			}, nil
 		})
 
-		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer := newK8sAuthorizer(dynClient)
 
 		const numGoroutines = 10
 		results := make([]*authenticationv1.UserInfo, numGoroutines)
@@ -555,7 +555,7 @@ func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 
 func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 	t.Run("concurrent authorization requests for same user/namespace make only one set of SAR calls", func(t *testing.T) {
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 		var sarCallCount atomic.Int32
 		var wg sync.WaitGroup
 
@@ -563,7 +563,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		// This ensures deterministic coalescing behavior without relying on timing.
 		barrier := make(chan struct{})
 
-		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			sarCallCount.Add(1)
 			// Block until test signals all goroutines have started
 			<-barrier
@@ -575,7 +575,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		})
 
 		// Create authorizer with only one resource to check for simpler test
-		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer := newK8sAuthorizer(dynClient)
 		authorizer.verbsToCheck = []string{"get"}
 		authorizer.resourcesToCheck = []k8sResource{
 			{Resource: "pods", Group: ""},
@@ -623,14 +623,14 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 	})
 
 	t.Run("forbidden responses are cached and coalesced", func(t *testing.T) {
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 		var sarCallCount atomic.Int32
 		var wg sync.WaitGroup
 
 		// Barrier to keep the SAR in-flight while goroutines start.
 		barrier := make(chan struct{})
 
-		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			sarCallCount.Add(1)
 			<-barrier
 			// Return Forbidden: Allowed=false with no EvaluationError
@@ -644,7 +644,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		})
 
 		// Create authorizer with only one resource to check for simpler test
-		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer := newK8sAuthorizer(dynClient)
 		authorizer.verbsToCheck = []string{"get"}
 		authorizer.resourcesToCheck = []k8sResource{
 			{Resource: "pods", Group: ""},
@@ -696,11 +696,11 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 	})
 
 	t.Run("transient errors are not cached", func(t *testing.T) {
-		fakeClient := fake.NewClientset()
+		dynClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme())
 		var sarCallCount atomic.Int32
 		shouldFail := true
 
-		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		dynClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 			sarCallCount.Add(1)
 			if shouldFail {
 				return true, nil, errors.New("transient authz backend error")
@@ -714,7 +714,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		})
 
 		// Create authorizer with only one resource to check for simpler test
-		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer := newK8sAuthorizer(dynClient)
 		authorizer.verbsToCheck = []string{"get"}
 		authorizer.resourcesToCheck = []k8sResource{
 			{Resource: "pods", Group: ""},
