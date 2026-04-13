@@ -99,7 +99,7 @@ var file_storage_notifier_enc_config_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_storage_notifier_enc_config_proto_init() }
+func init() {}
 func file_storage_notifier_enc_config_proto_init() {
 	if File_storage_notifier_enc_config_proto != nil {
 		return

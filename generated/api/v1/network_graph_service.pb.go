@@ -1137,7 +1137,7 @@ var file_api_v1_network_graph_service_proto_depIdxs = []int32{
 	0,  // [0:20] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_network_graph_service_proto_init() }
+func init() {}
 func file_api_v1_network_graph_service_proto_init() {
 	if File_api_v1_network_graph_service_proto != nil {
 		return

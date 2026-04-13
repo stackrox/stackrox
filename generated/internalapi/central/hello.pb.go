@@ -403,7 +403,7 @@ var file_internalapi_central_hello_proto_depIdxs = []int32{
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_hello_proto_init() }
+func init() {}
 func file_internalapi_central_hello_proto_init() {
 	if File_internalapi_central_hello_proto != nil {
 		return

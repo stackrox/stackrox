@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
-	"google.golang.org/protobuf/encoding/protojson"
 	"k8s.io/client-go/dynamic"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -178,9 +177,8 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	}
 
 	var eventsOutput []string
-	marshaler := protojson.MarshalOptions{}
 	for _, e := range events.ForwardMessages {
-		ev, err := marshaler.Marshal(e)
+		ev, err := json.Marshal(e)
 		if err != nil {
 			log.Warnf("Error marshaling msg: %s\n", err.Error())
 			return events

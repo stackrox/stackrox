@@ -330,7 +330,7 @@ var file_internalapi_sensor_network_connection_iservice_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_network_connection_iservice_proto_init() }
+func init() {}
 func file_internalapi_sensor_network_connection_iservice_proto_init() {
 	if File_internalapi_sensor_network_connection_iservice_proto != nil {
 		return

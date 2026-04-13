@@ -818,7 +818,7 @@ var file_storage_compliance_operator_proto_depIdxs = []int32{
 	0,  // [0:13] is the sub-list for field type_name
 }
 
-func init() { file_storage_compliance_operator_proto_init() }
+func init() {}
 func file_storage_compliance_operator_proto_init() {
 	if File_storage_compliance_operator_proto != nil {
 		return

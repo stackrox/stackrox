@@ -208,7 +208,7 @@ var file_storage_compliance_integration_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_storage_compliance_integration_proto_init() }
+func init() {}
 func file_storage_compliance_integration_proto_init() {
 	if File_storage_compliance_integration_proto != nil {
 		return

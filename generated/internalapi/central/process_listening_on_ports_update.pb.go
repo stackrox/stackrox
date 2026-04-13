@@ -112,7 +112,7 @@ var file_internalapi_central_process_listening_on_ports_update_proto_depIdxs = [
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_process_listening_on_ports_update_proto_init() }
+func init() {}
 func file_internalapi_central_process_listening_on_ports_update_proto_init() {
 	if File_internalapi_central_process_listening_on_ports_update_proto != nil {
 		return
