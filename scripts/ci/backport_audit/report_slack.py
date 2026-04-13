@@ -65,19 +65,15 @@ def _calculate_urgency_stats(
     return total_prs_no_jira, total_jira_issues, urgency_counts
 
 
-def _create_table_cell_text(text: str, align: str | None = None, is_wrapped: bool = True) -> dict[str, Any]:
+def _create_table_cell_text(text: str) -> dict[str, Any]:
     """Create a simple text cell for table."""
-    cell = {"type": "raw_text", "text": text, "is_wrapped": is_wrapped}
-    if align:
-        cell["align"] = align
-    return cell
+    return {"type": "raw_text", "text": text}
 
 
-def _create_table_cell_emoji(emoji_name: str, align: str | None = None, is_wrapped: bool = False) -> dict[str, Any]:
+def _create_table_cell_emoji(emoji_name: str) -> dict[str, Any]:
     """Create a rich text cell with emoji element."""
-    cell = {
+    return {
         "type": "rich_text",
-        "is_wrapped": is_wrapped,
         "elements": [
             {
                 "type": "rich_text_section",
@@ -85,12 +81,9 @@ def _create_table_cell_emoji(emoji_name: str, align: str | None = None, is_wrapp
             }
         ],
     }
-    if align:
-        cell["align"] = align
-    return cell
 
 
-def _create_table_cell_mention(mention: str, align: str | None = None, is_wrapped: bool = True) -> dict[str, Any]:
+def _create_table_cell_mention(mention: str) -> dict[str, Any]:
     """Create a rich text cell for Slack mentions/emojis.
 
     Handles:
@@ -112,21 +105,16 @@ def _create_table_cell_mention(mention: str, align: str | None = None, is_wrappe
     else:
         elements.append({"type": "text", "text": mention})
 
-    cell = {
+    return {
         "type": "rich_text",
-        "is_wrapped": is_wrapped,
         "elements": [{"type": "rich_text_section", "elements": elements}],
     }
-    if align:
-        cell["align"] = align
-    return cell
 
 
-def _create_table_cell_link(url: str, text: str, align: str | None = None, is_wrapped: bool = True) -> dict[str, Any]:
+def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
     """Create a rich text link cell for table."""
-    cell = {
+    return {
         "type": "rich_text",
-        "is_wrapped": is_wrapped,
         "elements": [
             {
                 "type": "rich_text_section",
@@ -134,9 +122,6 @@ def _create_table_cell_link(url: str, text: str, align: str | None = None, is_wr
             }
         ],
     }
-    if align:
-        cell["align"] = align
-    return cell
 
 
 def _create_all_pr_rows(
@@ -227,8 +212,6 @@ def _create_all_pr_rows(
 
             pr_cell = {
                 "type": "rich_text",
-                "align": "right",
-                "is_wrapped": True,
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
 
@@ -270,12 +253,11 @@ def _create_all_pr_rows(
 
                 author_cell = {
                     "type": "rich_text",
-                    "is_wrapped": True,
                     "elements": [{"type": "rich_text_section", "elements": author_elements}],
                 }
         else:
-            pr_cell = _create_table_cell_text("—", align="right", is_wrapped=False)
-            author_cell = _create_table_cell_text("—", is_wrapped=False)
+            pr_cell = _create_table_cell_text("—")
+            author_cell = _create_table_cell_text("—")
 
         urgency_emoji = urgency_icon.strip(":")
         fix_emoji = fix_icon.strip(":")
@@ -285,14 +267,14 @@ def _create_all_pr_rows(
         severity_display = severity if severity else "—"
 
         all_rows.append([
-            _create_table_cell_emoji(urgency_emoji, align="center"),
+            _create_table_cell_emoji(urgency_emoji),
             pr_cell,
             _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
-            _create_table_cell_text(pr_title, align="left"),
+            _create_table_cell_text(pr_title),
             author_cell,  # Author from associated PRs
-            _create_table_cell_emoji(fix_emoji, align="center"),
-            _create_table_cell_emoji(affected_emoji, align="center"),
-            _create_table_cell_emoji(priority_emoji, align="center"),
+            _create_table_cell_emoji(fix_emoji),
+            _create_table_cell_emoji(affected_emoji),
+            _create_table_cell_emoji(priority_emoji),
             _create_table_cell_text(severity_display),
         ])
 
@@ -302,8 +284,6 @@ def _create_all_pr_rows(
     for pr in prs_no_jira:
         pr_cell = {
             "type": "rich_text",
-            "align": "right",
-            "is_wrapped": True,
             "elements": [{
                 "type": "rich_text_section",
                 "elements": [{
@@ -317,15 +297,15 @@ def _create_all_pr_rows(
         author_mention = get_slack_mention(pr.author)
 
         no_jira_rows.append([
-            _create_table_cell_text("—", align="center", is_wrapped=False),  # Urgency
+            _create_table_cell_text("—"),  # Urgency
             pr_cell,  # PRs
-            _create_table_cell_emoji("x", align="center"),  # Issue (missing)
-            _create_table_cell_text(pr.title, align="left"),  # PR Title
+            _create_table_cell_emoji("x"),  # Issue (missing)
+            _create_table_cell_text(pr.title),  # PR Title
             _create_table_cell_mention(author_mention),  # Author
-            _create_table_cell_emoji("x", align="center"),  # fixVersion (missing)
-            _create_table_cell_emoji("x", align="center"),  # affectedVersion (missing)
-            _create_table_cell_emoji("jira-undefined", align="center"),  # Priority
-            _create_table_cell_text("—", is_wrapped=False),  # Severity
+            _create_table_cell_emoji("x"),  # fixVersion (missing)
+            _create_table_cell_emoji("x"),  # affectedVersion (missing)
+            _create_table_cell_emoji("jira-undefined"),  # Priority
+            _create_table_cell_text("—"),  # Severity
         ])
 
     # Prepend No Jira PRs to put them at the top
@@ -371,14 +351,14 @@ def _generate_branch_blocks(
         table_rows = [
             # Header row
             [
-                _create_table_cell_text("Urgency", align="center"),
-                _create_table_cell_text("PRs", align="right"),
+                _create_table_cell_text("Urgency"),
+                _create_table_cell_text("PRs"),
                 _create_table_cell_text("Issue"),
-                _create_table_cell_text("PR Title", align="left"),
+                _create_table_cell_text("PR Title"),
                 _create_table_cell_text("Author"),
-                _create_table_cell_text("fixVersion", align="center"),
-                _create_table_cell_text("affectedVersion", align="center"),
-                _create_table_cell_text("Priority", align="center"),
+                _create_table_cell_text("fixVersion"),
+                _create_table_cell_text("affectedVersion"),
+                _create_table_cell_text("Priority"),
                 _create_table_cell_text("Severity"),
             ]
         ]
@@ -386,7 +366,21 @@ def _generate_branch_blocks(
         # Add all data rows
         table_rows.extend(all_rows)
 
-        blocks.append({"type": "table", "rows": table_rows})
+        blocks.append({
+            "type": "table",
+            "rows": table_rows,
+            "column_settings": [
+                {"align": "center", "is_wrapped": False},  # Urgency
+                {"align": "right", "is_wrapped": True},   # PRs
+                {"align": "left", "is_wrapped": True},    # Issue
+                {"align": "left", "is_wrapped": True},    # PR Title
+                {"align": "left", "is_wrapped": True},    # Author
+                {"align": "center", "is_wrapped": False}, # fixVersion
+                {"align": "center", "is_wrapped": False}, # affectedVersion
+                {"align": "center", "is_wrapped": False}, # Priority
+                {"align": "left", "is_wrapped": True},    # Severity
+            ],
+        })
 
     # Orphaned Jira issues
     if orphaned:
