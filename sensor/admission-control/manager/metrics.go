@@ -76,7 +76,7 @@ var (
 )
 
 // Init registers all admission-control prometheus metrics.
-// Called explicitly from sensor/admission-control/app/init.go instead of package init().
+// Called explicitly from sensor/admission-control/app/app.go instead of package init().
 func Init() {
 	prometheus.MustRegister(
 		imageCacheOperations,

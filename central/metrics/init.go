@@ -5,7 +5,7 @@ import (
 )
 
 // Init registers all Central prometheus metrics.
-// Called explicitly from central/app/init.go instead of package init().
+// Called explicitly from central/app/app.go instead of package init().
 func Init() {
 	// general
 

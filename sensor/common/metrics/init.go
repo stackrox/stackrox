@@ -5,7 +5,7 @@ import (
 )
 
 // Init registers all Sensor prometheus metrics.
-// Called explicitly from sensor/kubernetes/app/init.go instead of package init().
+// Called explicitly from sensor/kubernetes/app/app.go instead of package init().
 func Init() {
 	// general
 	prometheus.MustRegister(
