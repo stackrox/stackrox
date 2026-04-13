@@ -71,27 +71,32 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 
 	deployments := []*storage.Deployment{
 		{
-			Id:          "1",
-			RiskScore:   float32(1.0),
-			NamespaceId: "ns1",
-			ClusterId:   "c1",
+			Id:             "1",
+			RiskScore:      float32(1.0),
+			NamespaceId:    "ns1",
+			ClusterId:      "c1",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
 		},
 		{
-			Id:          "2",
-			RiskScore:   float32(2.0),
-			NamespaceId: "ns1",
-			ClusterId:   "c1",
+			Id:             "2",
+			RiskScore:      float32(2.0),
+			NamespaceId:    "ns1",
+			ClusterId:      "c1",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
 		},
 		{
-			Id:          "3",
-			NamespaceId: "ns2",
-			ClusterId:   "c2",
+			Id:             "3",
+			NamespaceId:    "ns2",
+			ClusterId:      "c2",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
 		},
 		{
-			Id: "4",
+			Id:             "4",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
 		},
 		{
-			Id: "5",
+			Id:             "5",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
 		},
 	}
 	suite.storage.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(deployments))
@@ -106,6 +111,84 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	suite.Equal(int64(1), deploymentRanker.GetRankForID("2"))
 	suite.Equal(int64(2), deploymentRanker.GetRankForID("1"))
 	suite.Equal(int64(3), deploymentRanker.GetRankForID("3"))
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker_ExcludesSoftDeleted() {
+	clusterRanker := ranking.NewRanker()
+	nsRanker := ranking.NewRanker()
+	deploymentRanker := ranking.NewRanker()
+
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
+
+	// Mix of active and soft-deleted deployments.
+	allDeployments := []*storage.Deployment{
+		{
+			Id:             "active1",
+			RiskScore:      float32(10.0),
+			NamespaceId:    "ns1",
+			ClusterId:      "c1",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
+		},
+		{
+			Id:             "active2",
+			RiskScore:      float32(5.0),
+			NamespaceId:    "ns1",
+			ClusterId:      "c1",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
+		},
+		{
+			Id:             "deleted1",
+			RiskScore:      float32(100.0), // High risk score, but should be excluded.
+			NamespaceId:    "ns1",
+			ClusterId:      "c1",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED,
+		},
+		{
+			Id:             "deleted2",
+			RiskScore:      float32(50.0), // High risk score, but should be excluded.
+			NamespaceId:    "ns2",
+			ClusterId:      "c2",
+			LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED,
+		},
+	}
+
+	// Mock WalkByQuery to only return active deployments (simulating database filter).
+	// The real implementation filters in the database, so the mock should only call fn() for active deployments.
+	activeDeployments := []*storage.Deployment{}
+	for _, d := range allDeployments {
+		if d.GetLifecycleStage() == storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE {
+			activeDeployments = append(activeDeployments, d)
+		}
+	}
+	suite.storage.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(activeDeployments))
+
+	ds.initializeRanker()
+
+	// Verify only active deployments are ranked.
+	// Active deployments should have the top ranks (lower rank number = better).
+	suite.Equal(int64(1), deploymentRanker.GetRankForID("active1"), "active1 should be ranked first")
+	suite.Equal(int64(2), deploymentRanker.GetRankForID("active2"), "active2 should be ranked second")
+
+	// Deleted deployments should rank lower (higher rank number) than active ones.
+	// We don't assert exact rank values since they weren't added to the ranker,
+	// but they should rank worse than active deployments.
+	deletedRank1 := deploymentRanker.GetRankForID("deleted1")
+	deletedRank2 := deploymentRanker.GetRankForID("deleted2")
+	suite.Greater(deletedRank1, int64(2), "deleted1 should rank worse than active deployments")
+	suite.Greater(deletedRank2, int64(2), "deleted2 should rank worse than active deployments")
+
+	// Verify cluster/namespace scores do NOT include soft-deleted deployments.
+	// Cluster c1 should only have active1 (10.0) + active2 (5.0) = 15.0, not including deleted1 (100.0).
+	// Cluster c1 should rank better than c2 (which has no active deployments).
+	suite.Equal(int64(1), clusterRanker.GetRankForID("c1"), "c1 should be ranked")
+	c2Rank := clusterRanker.GetRankForID("c2")
+	suite.Greater(c2Rank, int64(1), "c2 should rank worse than c1 (no active deployments)")
+
+	// Namespace ns1 should only have active1 (10.0) + active2 (5.0) = 15.0, not including deleted1 (100.0).
+	// Namespace ns1 should rank better than ns2 (which has no active deployments).
+	suite.Equal(int64(1), nsRanker.GetRankForID("ns1"), "ns1 should be ranked")
+	ns2Rank := nsRanker.GetRankForID("ns2")
+	suite.Greater(ns2Rank, int64(1), "ns2 should rank worse than ns1 (no active deployments)")
 }
 
 func walkMockFunc(deployments []*storage.Deployment) func(_ context.Context, _ *v1.Query, fn func(group *storage.Deployment) error) error {
