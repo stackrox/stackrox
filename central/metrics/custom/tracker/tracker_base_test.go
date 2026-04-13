@@ -630,8 +630,8 @@ func makeScopedGatherFunc(ctx context.Context, _ MetricDescriptors) FindingError
 	}
 }
 
-func makeTestCtxIdentity(t *testing.T, provider authproviders.Provider, accessCtxFunc func(*testing.T, authproviders.Provider) context.Context) (context.Context, authn.Identity) {
-	ctx := accessCtxFunc(t, provider)
+func makeTestCtxIdentity(t *testing.T, provider authproviders.Provider, accessCtxFunc func(authproviders.Provider) context.Context) (context.Context, authn.Identity) {
+	ctx := accessCtxFunc(provider)
 	id, _ := authn.IdentityFromContext(ctx)
 	return ctx, id
 }

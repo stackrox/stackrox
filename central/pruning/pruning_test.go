@@ -550,7 +550,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 		},
 	}
 
-	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(
 		[]permissions.ResourceWithAccess{
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
@@ -1150,7 +1150,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			},
 		},
 	}
-	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(
 		[]permissions.ResourceWithAccess{
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),

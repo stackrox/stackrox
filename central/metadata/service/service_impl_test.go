@@ -156,7 +156,7 @@ func verifySignature(cert *x509.Certificate, resp *v1.TLSChallengeResponse) erro
 func (s *serviceImplTestSuite) TestDatabaseStatus() {
 	// Need to fake being logged in
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), mockID))
+	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), mockID)
 
 	tp := pgtest.ForT(s.T())
 	service := serviceImpl{db: tp.DB}

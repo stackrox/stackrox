@@ -194,7 +194,7 @@ func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissio
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resKeys...)))
 
-	return authn.ContextWithIdentity(ctx, id))
+	return authn.ContextWithIdentity(ctx, id)
 }
 
 func getServiceAcct(name, clusterName, namespace string) *storage.ServiceAccount {

@@ -510,7 +510,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	// - netpol for qux (don't need NS metadata for netpol generation, only for peers in other namespaces)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Deployment.Resource: &sac.TestResourceScope{

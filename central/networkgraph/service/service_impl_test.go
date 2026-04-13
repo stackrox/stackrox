@@ -142,7 +142,7 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntities() {
 
 func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Deployment.Resource: &sac.TestResourceScope{
@@ -254,7 +254,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	//   - flows es1 - depA, es2 - depA
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Deployment.Resource: &sac.TestResourceScope{
@@ -870,7 +870,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	slices.Sort(expectedFlowStrings)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Deployment.Resource: &sac.TestResourceScope{

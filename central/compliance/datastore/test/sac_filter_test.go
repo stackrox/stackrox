@@ -262,7 +262,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 	namespace2 := "n2"
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
 			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Cluster.GetResource(): &sac.TestResourceScope{Included: true},

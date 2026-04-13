@@ -104,10 +104,10 @@ func (s *serviceImplOtherTestSuite) TestGetClustersForPermissions() {
 	}
 
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
+		sac.TestScopeCheckerCoreFromFullScopeMap(testScopeMap))
 
 	extendedAccessTestCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), extendedAccessTestScopeMap))
+		sac.TestScopeCheckerCoreFromFullScopeMap(extendedAccessTestScopeMap))
 
 	testCases := []struct {
 		name              string
@@ -282,7 +282,7 @@ func (s *serviceImplOtherTestSuite) TestGetClustersForPermissionsPagination() {
 	}
 
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
+		sac.TestScopeCheckerCoreFromFullScopeMap(testScopeMap))
 
 	testCases := []struct {
 		name             string
@@ -459,7 +459,7 @@ func (s *serviceImplOtherTestSuite) TestGetNamespacesForClusterAndPermissions() 
 	}
 
 	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), testScopeMap))
+		sac.TestScopeCheckerCoreFromFullScopeMap(testScopeMap))
 
 	for _, c := range testCases {
 		s.Run(c.name, func() {
