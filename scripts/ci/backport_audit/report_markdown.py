@@ -38,8 +38,8 @@ def _collect_issue_problems(
             has_affected = len(issue.affected_versions) > 0
 
             if not has_fix or not has_affected:
-                fix_icon = ":white_check_mark:" if has_fix else ":x:"
-                affected_icon = ":white_check_mark:" if has_affected else ":x:"
+                fix_icon = "✅" if has_fix else "❌"
+                affected_icon = "✅" if has_affected else "❌"
 
                 urgency_level, urgency_icon = calculate_urgency(
                     issue.priority,

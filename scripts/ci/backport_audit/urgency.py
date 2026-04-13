@@ -100,25 +100,25 @@ def calculate_urgency(
     deadline = parse_date(sla_date) or parse_date(due_date)
     if deadline:
         if deadline < current_date:
-            return ("overdue", ":red_circle:")
+            return ("overdue", "🔴")
 
         days_remaining = (deadline - current_date).days
         if days_remaining <= CRITICAL_DEADLINE_DAYS:
-            return ("critical", ":red_circle:")
+            return ("critical", "🔴")
         if days_remaining <= HIGH_DEADLINE_DAYS:
-            return ("high", ":large_yellow_circle:")
+            return ("high", "🟡")
 
     if priority:
         urgency = PRIORITY_URGENCY.get(priority, "normal")
         if urgency == "critical":
-            return ("critical", ":red_circle:")
+            return ("critical", "🔴")
         if urgency == "high":
-            return ("high", ":large_yellow_circle:")
+            return ("high", "🟡")
 
     if severity in {"Critical", "Important"}:
-        return ("high", ":large_yellow_circle:")
+        return ("high", "🟡")
 
-    return ("normal", ":large_green_circle:")
+    return ("normal", "🟢")
 
 
 def format_deadline_info(

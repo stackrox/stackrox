@@ -289,10 +289,10 @@ def generate_slack_payload(
                     f"*Generated:* {timestamp}\n"
                     f"*Total PRs missing Jira:* {total_prs_no_jira}\n"
                     f"*Total Jira issues with missing metadata:* {total_jira_issues}\n"
-                    f"*Urgency breakdown:* :red_circle: {urgency_counts['overdue'] + urgency_counts['critical']} "
+                    f"*Urgency breakdown:* 🔴 {urgency_counts['overdue'] + urgency_counts['critical']} "
                     f"critical/overdue, "
-                    f":large_yellow_circle: {urgency_counts['high']} high, "
-                    f":large_green_circle: {urgency_counts['normal']} normal"
+                    f"🟡 {urgency_counts['high']} high, "
+                    f"🟢 {urgency_counts['normal']} normal"
                 ),
             },
         },
@@ -334,9 +334,9 @@ def generate_slack_payload(
                 {
                     "type": "mrkdwn",
                     "text": (
-                        "*Legend:* :red_circle: overdue/critical | "
-                        ":large_yellow_circle: high | :large_green_circle: normal | "
-                        ":white_check_mark: present | :x: missing"
+                        "*Legend:* 🔴 overdue/critical | "
+                        "🟡 high | 🟢 normal | "
+                        "✅ present | ❌ missing"
                     ),
                 }
             ],
