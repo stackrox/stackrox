@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	nfMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
+	pbMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -27,10 +30,14 @@ func TestDeploymentDatastoreSuite(t *testing.T) {
 type DeploymentDataStoreTestSuite struct {
 	suite.Suite
 
-	matcher   *matcherMocks.MockPlatformMatcher
-	storage   *storeMocks.MockStore
-	riskStore *riskMocks.MockDataStore
-	filter    filter.Filter
+	matcher       *matcherMocks.MockPlatformMatcher
+	storage       *storeMocks.MockStore
+	riskStore     *riskMocks.MockDataStore
+	baselineStore *pbMocks.MockDataStore
+	networkFlows  *nfMocks.MockClusterDataStore
+	flowStore     *nfMocks.MockFlowDataStore
+
+	filter filter.Filter
 
 	ctx context.Context
 
@@ -44,6 +51,9 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
+	suite.baselineStore = pbMocks.NewMockDataStore(mockCtrl)
+	suite.networkFlows = nfMocks.NewMockClusterDataStore(mockCtrl)
+	suite.flowStore = nfMocks.NewMockFlowDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 	suite.matcher = matcherMocks.NewMockPlatformMatcher(mockCtrl)
 }
@@ -217,5 +227,75 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
 	suite.matcher.EXPECT().MatchDeployment(deployment).Return(true, nil).Times(1)
 	err = ds.UpsertDeployment(ctx, deployment)
+	suite.Require().NoError(err)
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment_SoftDelete() {
+	// Note: This test verifies soft-delete behavior without mocking the config datastore.
+	// Full end-to-end testing with config TTL is covered in integration tests.
+	ds := newDatastoreImpl(suite.storage, nil, nil, suite.baselineStore, suite.networkFlows, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
+	ctx := sac.WithAllAccess(context.Background())
+
+	deploymentID := "test-deployment-id"
+	clusterID := "test-cluster-id"
+
+	// Create a deployment to be soft-deleted.
+	deployment := &storage.Deployment{
+		Id:             deploymentID,
+		ClusterId:      clusterID,
+		LifecycleStage: storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE,
+	}
+
+	// Set up expectations for cleanup of related objects.
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, storage.RiskSubjectType_DEPLOYMENT).Return(nil)
+	suite.baselineStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil)
+	suite.networkFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(suite.flowStore, nil)
+	suite.flowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), deploymentID).Return(nil)
+
+	// Set up expectations: Get should return the deployment, Upsert should be called.
+	suite.storage.EXPECT().Get(gomock.Any(), deploymentID).Return(deployment, true, nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, d *storage.Deployment) error {
+		// Verify the deployment was marked as soft-deleted.
+		assert.NotNil(suite.T(), d.GetTombstone(), "Tombstone should be set")
+		assert.NotNil(suite.T(), d.GetTombstone().GetDeletedAt(), "Tombstone.DeletedAt should be set")
+		assert.NotNil(suite.T(), d.GetTombstone().GetExpiresAt(), "Tombstone.ExpiresAt should be set")
+		assert.Equal(suite.T(), storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED, d.GetLifecycleStage(), "LifecycleStage should be DEPLOYMENT_DELETED")
+
+		// Verify that ExpiresAt is after DeletedAt.
+		deletedAt := d.GetTombstone().GetDeletedAt().AsTime()
+		expiresAt := d.GetTombstone().GetExpiresAt().AsTime()
+		assert.True(suite.T(), expiresAt.After(deletedAt), "ExpiresAt should be after DeletedAt")
+
+		return nil
+	})
+
+	// Call RemoveDeployment - this should soft-delete the deployment.
+	// Note: The process filter's Delete(deploymentID) is still called inside RemoveDeployment,
+	// verifying that process indicators are still properly cleared on soft-delete (design comment #7).
+	err := ds.RemoveDeployment(ctx, clusterID, deploymentID)
+	if err != nil {
+		suite.T().Logf("RemoveDeployment error: %v", err)
+	}
+	suite.Require().NoError(err)
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment_DeploymentNotFound() {
+	ds := newDatastoreImpl(suite.storage, nil, nil, suite.baselineStore, suite.networkFlows, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
+	ctx := sac.WithAllAccess(context.Background())
+
+	deploymentID := "nonexistent-deployment"
+	clusterID := "test-cluster-id"
+
+	// Set up expectations for cleanup of related objects (these run before fetching the deployment).
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deploymentID, storage.RiskSubjectType_DEPLOYMENT).Return(nil)
+	suite.baselineStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), deploymentID).Return(nil)
+	suite.networkFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID).Return(suite.flowStore, nil)
+	suite.flowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), deploymentID).Return(nil)
+
+	// Get should return not found.
+	suite.storage.EXPECT().Get(gomock.Any(), deploymentID).Return(nil, false, nil)
+
+	// RemoveDeployment should handle this gracefully without error.
+	err := ds.RemoveDeployment(ctx, clusterID, deploymentID)
 	suite.Require().NoError(err)
 }

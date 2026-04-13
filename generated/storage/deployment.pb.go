@@ -291,10 +291,10 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 type Tombstone struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// deleted_at is the time the resource was soft-deleted.
-	DeletedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty" search:"Tombstone Deleted At,hidden"` // @gotags: search:"Tombstone Deleted At,hidden"
+	DeletedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
 	// expires_at is the time after which the resource will be permanently purged.
 	// This value is pre-computed as deleted_at plus the configured TTL.
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty" search:"Tombstone Expires At,hidden"` // @gotags: search:"Tombstone Expires At,hidden"
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

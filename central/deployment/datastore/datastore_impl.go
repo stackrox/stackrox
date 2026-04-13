@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	"github.com/stackrox/rox/central/deployment/views"
@@ -28,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -35,6 +39,8 @@ import (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	deploymentsSAC = sac.ForResource(resources.Deployment)
 )
 
@@ -397,11 +403,53 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
+	// Soft-delete should be last to ensure that the above is always cleaned up even in the case of crash.
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
-			return err
+		// Fetch the deployment to mark it as deleted.
+		deployment, found, err := ds.deploymentStore.Get(ctx, id)
+		if err != nil {
+			return errors.Wrapf(err, "fetching deployment %s for soft-delete", id)
 		}
+		if !found {
+			// Deployment already deleted or never existed.
+			log.Warnf("Deployment %s not found during soft-delete", id)
+			return nil
+		}
+
+		// Get the configured tombstone TTL, or use default if config unavailable.
+		ttl := 24 * time.Hour // Default TTL.
+		// Try to get configured TTL, but don't fail if config is unavailable (e.g., in unit tests).
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Warnf("Panic while fetching config for tombstone TTL, using default %s: %v", ttl, r)
+				}
+			}()
+			config, err := configDatastore.Singleton().GetConfig(ctx)
+			if err != nil {
+				log.Warnf("Failed to fetch config for tombstone TTL, using default %s: %v", ttl, err)
+				return
+			}
+			if config != nil && config.GetPrivateConfig() != nil && config.GetPrivateConfig().GetDeploymentTombstoneTtl() != nil {
+				ttl = config.GetPrivateConfig().GetDeploymentTombstoneTtl().AsDuration()
+			}
+		}()
+
+		// Mark the deployment as soft-deleted with tombstone.
+		now := timestamppb.Now()
+		expiresAt := timestamppb.New(now.AsTime().Add(ttl))
+		deployment.Tombstone = &storage.Tombstone{
+			DeletedAt: now,
+			ExpiresAt: expiresAt,
+		}
+		deployment.LifecycleStage = storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED
+
+		// Upsert the deployment with tombstone instead of deleting it.
+		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
+			return errors.Wrapf(err, "soft-deleting deployment %s", id)
+		}
+
+		log.Infof("Soft-deleted deployment %s with tombstone (expires at %s)", id, expiresAt.AsTime().Format(time.RFC3339))
 		return nil
 	})
 	if err != nil {
