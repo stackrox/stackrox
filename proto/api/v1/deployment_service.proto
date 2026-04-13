@@ -46,6 +46,9 @@ message GetDeploymentWithRiskResponse {
 message ExportDeploymentRequest {
   int32 timeout = 1;
   string query = 2;
+  // When true, include soft-deleted deployments (lifecycle_stage = DELETED) in the export.
+  // Default: false (only active deployments).
+  bool include_deleted = 3;
 }
 
 message ExportDeploymentResponse {

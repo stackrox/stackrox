@@ -214,6 +214,7 @@ func (m *ExportDeploymentRequest) CloneVT() *ExportDeploymentRequest {
 	r := new(ExportDeploymentRequest)
 	r.Timeout = m.Timeout
 	r.Query = m.Query
+	r.IncludeDeleted = m.IncludeDeleted
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -499,6 +500,9 @@ func (this *ExportDeploymentRequest) EqualVT(that *ExportDeploymentRequest) bool
 		return false
 	}
 	if this.Query != that.Query {
+		return false
+	}
+	if this.IncludeDeleted != that.IncludeDeleted {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -968,6 +972,16 @@ func (m *ExportDeploymentRequest) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.IncludeDeleted {
+		i--
+		if m.IncludeDeleted {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
@@ -1208,6 +1222,9 @@ func (m *ExportDeploymentRequest) SizeVT() (n int) {
 	l = len(m.Query)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.IncludeDeleted {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2132,6 +2149,26 @@ func (m *ExportDeploymentRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Query = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeDeleted", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeDeleted = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3164,6 +3201,26 @@ func (m *ExportDeploymentRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Query = stringValue
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeDeleted", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeDeleted = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -368,6 +368,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "includeDeleted",
+            "description": "When true, include soft-deleted deployments (lifecycle_stage = DELETED) in the export.\nDefault: false (only active deployments).",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

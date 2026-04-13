@@ -260,11 +260,14 @@ func (x *GetDeploymentWithRiskResponse) GetRisk() *storage.Risk {
 }
 
 type ExportDeploymentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Timeout int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	Query   string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// When true, include soft-deleted deployments (lifecycle_stage = DELETED) in the export.
+	// Default: false (only active deployments).
+	IncludeDeleted bool `protobuf:"varint,3,opt,name=include_deleted,json=includeDeleted,proto3" json:"include_deleted,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ExportDeploymentRequest) Reset() {
@@ -309,6 +312,13 @@ func (x *ExportDeploymentRequest) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *ExportDeploymentRequest) GetIncludeDeleted() bool {
+	if x != nil {
+		return x.IncludeDeleted
+	}
+	return false
 }
 
 type ExportDeploymentResponse struct {
@@ -479,10 +489,11 @@ const file_api_v1_deployment_service_proto_rawDesc = "" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
 	"deployment\x12!\n" +
-	"\x04risk\x18\x02 \x01(\v2\r.storage.RiskR\x04risk\"I\n" +
+	"\x04risk\x18\x02 \x01(\v2\r.storage.RiskR\x04risk\"r\n" +
 	"\x17ExportDeploymentRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"O\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\x12'\n" +
+	"\x0finclude_deleted\x18\x03 \x01(\bR\x0eincludeDeleted\"O\n" +
 	"\x18ExportDeploymentResponse\x123\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +

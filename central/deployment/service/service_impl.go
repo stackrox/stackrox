@@ -67,6 +67,17 @@ func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+
+	// By default, exclude soft-deleted deployments (lifecycle_stage = DELETED).
+	// Only include them if include_deleted is explicitly set to true.
+	if !req.GetIncludeDeleted() {
+		// Add filter for lifecycle_stage = ACTIVE.
+		lifecycleFilter := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+			ProtoQuery()
+		parsedQuery = search.ConjunctionQuery(parsedQuery, lifecycleFilter)
+	}
+
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
 		var cancel context.CancelFunc
