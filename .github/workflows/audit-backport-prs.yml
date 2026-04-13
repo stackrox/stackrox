@@ -52,8 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_BRANCHES: ${{ inputs.release_branches || 'all' }}
         run: |
-          chmod +x scripts/ci/backport-audit.py
-          ./scripts/ci/backport-audit.py \
+          python3 scripts/ci/backport-audit.py \
             --branches "$RELEASE_BRANCHES" \
             --output-dir . \
             --github-run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
