@@ -52,8 +52,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_BRANCHES: ${{ inputs.release_branches || 'all' }}
         run: |
-          chmod +x scripts/ci/audit-backport-prs.sh
-          ./scripts/ci/audit-backport-prs.sh --branches "$RELEASE_BRANCHES"
+          chmod +x scripts/ci/backport-audit.py
+          ./scripts/ci/backport-audit.py \
+            --branches "$RELEASE_BRANCHES" \
+            --output-dir . \
+            --github-run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Show report in summary
         if: always()
@@ -69,15 +72,28 @@ jobs:
         if: always()
         with:
           name: backport-audit-report
-          path: backport-audit-report.md
+          path: |
+            backport-audit-report.md
+            slack-payload.json
 
       - name: Post report to Slack
         if: success()
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ needs.properties.outputs.slack-channel }}
         run: |
-          chmod +x scripts/ci/post-backport-audit-to-slack.sh
-          ./scripts/ci/post-backport-audit-to-slack.sh \
-            backport-audit-report.md \
-            "${{ needs.properties.outputs.slack-channel }}" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -f slack-payload.json ]; then
+            # Update channel in payload if needed
+            if [ -n "$SLACK_CHANNEL" ]; then
+              jq --arg channel "$SLACK_CHANNEL" '.channel = $channel' slack-payload.json > slack-payload-updated.json
+              mv slack-payload-updated.json slack-payload.json
+            fi
+
+            # Post to Slack
+            curl -X POST https://slack.com/api/chat.postMessage \
+              -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d @slack-payload.json
+          else
+            echo "⚠️ Slack payload file not found, skipping Slack post"
+          fi
