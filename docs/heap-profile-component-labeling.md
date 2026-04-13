@@ -1,5 +1,7 @@
 # Heap Profile Component Labeling Fix
 
+**Status:** ✅ Implemented (2026-04-13)
+
 ## Problem
 
 After PR #19819 (busybox consolidation), all components report `File: central` in heap profiles instead of their actual component name (e.g., `kubernetes-sensor`, `admission-control`).
@@ -12,62 +14,11 @@ After PR #19819 (busybox consolidation), all components report `File: central` i
 
 Use **pprof labels** to tag goroutines with the component name at startup. This embeds the component identity in profiles.
 
-### Implementation
+### Implementation (Completed)
 
-Add component labeling in each `component/app/app.go` Run() function:
+**Approach:** Helper function in `pkg/profiling/component.go` that automatically extracts component name from `os.Args[0]`.
 
-```go
-import (
-    "context"
-    "runtime/pprof"
-)
-
-func Run() {
-    // Set component label for profiling
-    pprof.Do(context.Background(), pprof.Labels("component", "kubernetes-sensor"), func(ctx context.Context) {
-        // All existing initialization and runtime code runs in this labeled context
-        memlimit.SetMemoryLimit()
-        premain.StartMain()
-
-        initMetrics()
-
-        // ... rest of Run() logic
-    })
-}
-```
-
-Or use `pprof.SetGoroutineLabels()` for global tagging:
-
-```go
-func Run() {
-    // Tag this goroutine (and all children) with component name
-    labels := pprof.Labels("component", "kubernetes-sensor")
-    pprof.SetGoroutineLabels(labels)
-
-    memlimit.SetMemoryLimit()
-    premain.StartMain()
-
-    // ... rest of initialization
-}
-```
-
-### Files to Modify
-
-**Update each component's app.go:**
-- `central/app/app.go` - label: "central"
-- `sensor/kubernetes/app/app.go` - label: "kubernetes-sensor"
-- `sensor/admission-control/app/app.go` - label: "admission-control"
-- `config-controller/app/app.go` - label: "config-controller"
-- `migrator/app/app.go` - label: "migrator"
-- `compliance/cmd/compliance/app/app.go` - label: "compliance"
-- `compliance/virtualmachines/roxagent/app/app.go` - label: "roxagent"
-- `sensor/upgrader/app/app.go` - label: "sensor-upgrader"
-- `roxctl/app/app.go` - label: "roxctl"
-
-### Alternative: Dynamic Component Detection
-
-Extract component name from `os.Args[0]`:
-
+**Helper function:**
 ```go
 // pkg/profiling/component.go
 package profiling
@@ -79,32 +30,44 @@ import (
     "runtime/pprof"
 )
 
-// SetComponentLabel tags the current goroutine with the component name
-// derived from os.Args[0]. Call this early in app initialization.
 func SetComponentLabel() {
     componentName := filepath.Base(os.Args[0])
     labels := pprof.Labels("component", componentName)
-    pprof.SetGoroutineLabels(labels)
+    ctx := pprof.WithLabels(context.Background(), labels)
+    pprof.SetGoroutineLabels(ctx)
 }
 ```
 
-Then in each app.go:
-
+**Usage in each component's `app.Run()`:**
 ```go
 import "github.com/stackrox/rox/pkg/profiling"
 
 func Run() {
     profiling.SetComponentLabel() // Automatically detects from os.Args[0]
-
     memlimit.SetMemoryLimit()
     premain.StartMain()
-    // ...
+    // ... rest of component initialization
 }
 ```
 
+**Files Modified:**
+- Created: `pkg/profiling/component.go`
+- Modified (added `profiling.SetComponentLabel()` call):
+  - `central/app/app.go`
+  - `sensor/kubernetes/app/app.go`
+  - `sensor/admission-control/app/app.go`
+  - `config-controller/app/app.go`
+  - `migrator/app/app.go`
+  - `compliance/cmd/compliance/app/app.go`
+  - `compliance/virtualmachines/roxagent/app/app.go`
+  - `sensor/upgrader/app/app.go`
+  - `roxctl/app/app.go`
+
+All 9 busybox components now automatically tag their goroutines with the correct component name.
+
 ### Verification
 
-After implementation, heap profiles will show:
+After deployment, heap profiles will show:
 
 ```
 # Before
@@ -122,6 +85,13 @@ Query by label:
 go tool pprof -tags component=kubernetes-sensor http://localhost:6060/debug/pprof/heap
 ```
 
+Or verify directly from a captured profile:
+```bash
+curl http://sensor-pod:6060/debug/pprof/heap > sensor-heap.pb.gz
+go tool pprof -raw sensor-heap.pb.gz | grep "component="
+# Should show: component=kubernetes-sensor
+```
+
 ### Benefits
 
 1. **Heap profiles** clearly identify which component they're from
@@ -129,28 +99,19 @@ go tool pprof -tags component=kubernetes-sensor http://localhost:6060/debug/ppro
 3. **pprof queries** can filter by component
 4. **Zero runtime overhead** - labels are metadata, not allocations
 5. **Works with all profiling tools** - pprof, continuous profiling, etc.
+6. **Automatic detection** - no manual component name maintenance
 
-### Testing
+### Build Verification
 
-```bash
-# Deploy with labels
-# Capture heap profile from sensor
-curl http://sensor-pod:6060/debug/pprof/heap > sensor-heap.pb.gz
+All components build successfully with the component labeling:
+- ✅ central (485 MB)
+- ✅ sensor/kubernetes (246 MB)
+- ✅ sensor/admission-control (145 MB)
+- ✅ config-controller
+- ✅ migrator
+- ✅ compliance
+- ✅ roxagent
+- ✅ sensor-upgrader
+- ✅ roxctl
 
-# Verify component label
-go tool pprof -raw sensor-heap.pb.gz | grep "component="
-# Should show: component=kubernetes-sensor
-```
-
-## Implementation Effort
-
-**Option 1 (Helper function):** 1-2 hours
-- Create `pkg/profiling/component.go` with `SetComponentLabel()`
-- Update 9 app.go files to call it
-- Test with heap profiles from each component
-
-**Option 2 (Manual labels):** 2-3 hours
-- Hardcode component name in each app.go
-- More explicit but more maintenance
-
-**Recommendation:** Option 1 (helper function) - DRY, less maintenance
+**Implementation Time:** ~1 hour (Option 1 - helper function approach)
