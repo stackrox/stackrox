@@ -33,9 +33,12 @@ type VulnMgmtExportWorkloadsRequest struct {
 	// > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
 	// queries vulnerability data for all scanner deployments in the stackrox namespace.
 	// See https://docs.openshift.com/acs/operating/search-filter.html for more information.
-	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// When true, include soft-deleted deployments (lifecycle_stage = DELETED) in the export.
+	// Default: false (only active deployments).
+	IncludeDeleted bool `protobuf:"varint,3,opt,name=include_deleted,json=includeDeleted,proto3" json:"include_deleted,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *VulnMgmtExportWorkloadsRequest) Reset() {
@@ -80,6 +83,13 @@ func (x *VulnMgmtExportWorkloadsRequest) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *VulnMgmtExportWorkloadsRequest) GetIncludeDeleted() bool {
+	if x != nil {
+		return x.IncludeDeleted
+	}
+	return false
 }
 
 // The workloads response contains the full image details including the
@@ -148,10 +158,11 @@ var File_api_v1_vuln_mgmt_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"P\n" +
+	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"y\n" +
 	"\x1eVulnMgmtExportWorkloadsRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"\x9b\x01\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\x12'\n" +
+	"\x0finclude_deleted\x18\x03 \x01(\bR\x0eincludeDeleted\"\x9b\x01\n" +
 	"\x1fVulnMgmtExportWorkloadsResponse\x123\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +

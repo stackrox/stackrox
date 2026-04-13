@@ -17,6 +17,7 @@ import type { DefaultFilters } from '../types';
 import {
     attributeForClusterCveFixableInFrontend,
     attributeForFixableInFrontendAndLocalStorage,
+    attributeForLifecycleStage,
     attributeForSeverityInFrontendAndLocalStorage,
     attributeForSnoozed,
 } from '../searchFilterConfig';
@@ -35,6 +36,7 @@ type AdvancedFiltersToolbarProps = {
     defaultFilters?: DefaultFilters;
     includeCveSeverityFilters?: boolean;
     includeCveStatusFilters?: boolean;
+    includeLifecycleStageFilter?: boolean;
     defaultSearchFilterEntity?: string;
     additionalContextFilter?: SearchFilter;
     children?: ReactNode;
@@ -49,6 +51,7 @@ function AdvancedFiltersToolbar({
     defaultFilters = emptyDefaultFilters,
     includeCveSeverityFilters = true,
     includeCveStatusFilters = true,
+    includeLifecycleStageFilter = false,
     defaultSearchFilterEntity,
     additionalContextFilter,
     children,
@@ -62,6 +65,9 @@ function AdvancedFiltersToolbar({
             attributeForFixableInFrontendAndLocalStorage,
             attributeForClusterCveFixableInFrontend
         );
+    }
+    if (includeLifecycleStageFilter) {
+        attributesSeparateFromConfig.push(attributeForLifecycleStage);
     }
 
     function isGlobalPredicate(category: string, value: string) {
@@ -83,7 +89,7 @@ function AdvancedFiltersToolbar({
                     onSearch={onFilterApplied}
                     defaultEntity={defaultSearchFilterEntity}
                 />
-                {(includeCveSeverityFilters || includeCveStatusFilters) && (
+                {(includeCveSeverityFilters || includeCveStatusFilters || includeLifecycleStageFilter) && (
                     <ToolbarGroup variant="filter-group">
                         {includeCveSeverityFilters && (
                             <SearchFilterSelectInclusive
@@ -100,6 +106,14 @@ function AdvancedFiltersToolbar({
                                         ? attributeForFixableInFrontendAndLocalStorage
                                         : attributeForClusterCveFixableInFrontend
                                 }
+                                isSeparate
+                                onSearch={onFilterApplied}
+                                searchFilter={searchFilter}
+                            />
+                        )}
+                        {includeLifecycleStageFilter && (
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForLifecycleStage}
                                 isSeparate
                                 onSearch={onFilterApplied}
                                 searchFilter={searchFilter}

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Truncate } from '@patternfly/react-core';
+import { Label, Truncate } from '@patternfly/react-core';
 
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -54,6 +54,7 @@ export const deploymentListQuery = gql`
             id
             name
             type
+            lifecycleStage
             imageCVECountBySeverity(query: $query) {
                 critical {
                     total
@@ -83,6 +84,7 @@ export type Deployment = {
     id: string;
     name: string;
     type: string;
+    lifecycleStage: string;
     imageCVECountBySeverity: {
         critical: { total: number };
         important: { total: number };
@@ -172,6 +174,7 @@ function DeploymentOverviewTable({
                             id,
                             name,
                             type,
+                            lifecycleStage,
                             imageCVECountBySeverity,
                             clusterName,
                             namespace,
@@ -183,6 +186,7 @@ function DeploymentOverviewTable({
                         const moderateCount = imageCVECountBySeverity.moderate.total;
                         const lowCount = imageCVECountBySeverity.low.total;
                         const unknownCount = imageCVECountBySeverity.unknown.total;
+                        const isDeleted = lifecycleStage === 'DEPLOYMENT_DELETED';
                         return (
                             <Tbody key={id}>
                                 <Tr>
@@ -198,6 +202,11 @@ function DeploymentOverviewTable({
                                         >
                                             <Truncate position="middle" content={name} />
                                         </Link>
+                                        {isDeleted && (
+                                            <Label color="red" style={{ marginLeft: '8px' }}>
+                                                Deleted
+                                            </Label>
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="CVEs by severity"

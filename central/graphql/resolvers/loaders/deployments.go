@@ -77,11 +77,49 @@ func (idl *deploymentLoaderImpl) FromID(ctx context.Context, id string) (*storag
 	return deployments[0], nil
 }
 
-// ensureLifecycleStageFilter adds a default filter for lifecycle_stage = ACTIVE.
+// queryContainsLifecycleStage recursively checks if a query contains a Lifecycle Stage filter.
+func queryContainsLifecycleStage(query *v1.Query) bool {
+	if query == nil {
+		return false
+	}
+
+	// Check base query for Lifecycle Stage field.
+	if baseQuery := query.GetBaseQuery(); baseQuery != nil {
+		if baseQuery.GetMatchFieldQuery() != nil && baseQuery.GetMatchFieldQuery().GetField() == search.LifecycleStage.String() {
+			return true
+		}
+	}
+
+	// Recursively check conjunction queries.
+	if conjunction := query.GetConjunction(); conjunction != nil {
+		for _, q := range conjunction.GetQueries() {
+			if queryContainsLifecycleStage(q) {
+				return true
+			}
+		}
+	}
+
+	// Recursively check disjunction queries.
+	if disjunction := query.GetDisjunction(); disjunction != nil {
+		for _, q := range disjunction.GetQueries() {
+			if queryContainsLifecycleStage(q) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// ensureLifecycleStageFilter adds a default filter for lifecycle_stage = ACTIVE if not already specified.
 // This ensures backward compatibility by excluding soft-deleted deployments from GraphQL queries by default.
-// Note: If the user query already contains a lifecycle_stage filter, both filters will be applied,
-// effectively using the user's more restrictive filter.
+// If the query already contains a lifecycle_stage filter, the default is not added (user's explicit choice takes precedence).
 func ensureLifecycleStageFilter(query *v1.Query) *v1.Query {
+	// If query already has a lifecycle_stage filter, don't add default.
+	if queryContainsLifecycleStage(query) {
+		return query
+	}
+
 	// Add default filter: lifecycle_stage = ACTIVE.
 	lifecycleFilter := search.NewQueryBuilder().
 		AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).

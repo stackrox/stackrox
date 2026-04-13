@@ -50,6 +50,40 @@ var (
 	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
 )
 
+// queryContainsLifecycleStage recursively checks if a query contains a Lifecycle Stage filter.
+func queryContainsLifecycleStage(query *v1.Query) bool {
+	if query == nil {
+		return false
+	}
+
+	// Check base query for Lifecycle Stage field.
+	if baseQuery := query.GetBaseQuery(); baseQuery != nil {
+		if baseQuery.GetMatchFieldQuery() != nil && baseQuery.GetMatchFieldQuery().GetField() == search.LifecycleStage.String() {
+			return true
+		}
+	}
+
+	// Recursively check conjunction queries.
+	if conjunction := query.GetConjunction(); conjunction != nil {
+		for _, q := range conjunction.GetQueries() {
+			if queryContainsLifecycleStage(q) {
+				return true
+			}
+		}
+	}
+
+	// Recursively check disjunction queries.
+	if disjunction := query.GetDisjunction(); disjunction != nil {
+		for _, q := range disjunction.GetQueries() {
+			if queryContainsLifecycleStage(q) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // serviceImpl provides APIs for deployments.
 type serviceImpl struct {
 	v1.UnimplementedDeploymentServiceServer
@@ -186,11 +220,22 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 }
 
 // CountDeployments counts the number of deployments that match the input query.
+// CountDeployments returns the count of deployments matching the query.
+// By default, only active deployments (lifecycle_stage = ACTIVE) are counted for backward compatibility.
 func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery) (*v1.CountDeploymentsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// By default, exclude soft-deleted deployments for backward compatibility.
+	// Only add default filter if user hasn't explicitly specified lifecycle_stage.
+	if !queryContainsLifecycleStage(parsedQuery) {
+		lifecycleFilter := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+			ProtoQuery()
+		parsedQuery = search.ConjunctionQuery(parsedQuery, lifecycleFilter)
 	}
 
 	numDeployments, err := s.datastore.Count(ctx, parsedQuery)
@@ -201,11 +246,21 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 }
 
 // ListDeployments returns ListDeployments according to the request.
+// By default, only active deployments (lifecycle_stage = ACTIVE) are returned for backward compatibility.
 func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// By default, exclude soft-deleted deployments for backward compatibility.
+	// Only add default filter if user hasn't explicitly specified lifecycle_stage.
+	if !queryContainsLifecycleStage(parsedQuery) {
+		lifecycleFilter := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+			ProtoQuery()
+		parsedQuery = search.ConjunctionQuery(parsedQuery, lifecycleFilter)
 	}
 
 	// Fill in pagination.

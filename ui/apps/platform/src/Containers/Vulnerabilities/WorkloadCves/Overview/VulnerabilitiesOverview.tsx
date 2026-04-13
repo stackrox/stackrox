@@ -135,6 +135,7 @@ function VulnerabilitiesOverview({
             }}
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
+            includeLifecycleStageFilter={activeEntityTabKey === 'Deployment'}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
         >
             {additionalToolbarItems}

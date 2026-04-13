@@ -30,7 +30,7 @@ func TestEnsureLifecycleStageFilter(t *testing.T) {
 		assert.NotNil(t, filtered.GetConjunction())
 	})
 
-	t.Run("adds ACTIVE filter to user query", func(t *testing.T) {
+	t.Run("adds ACTIVE filter to user query without lifecycle_stage", func(t *testing.T) {
 		userQuery := search.NewQueryBuilder().
 			AddStrings(search.Namespace, "default").
 			ProtoQuery()
@@ -53,12 +53,58 @@ func TestEnsureLifecycleStageFilter(t *testing.T) {
 		filtered := ensureLifecycleStageFilter(userQuery)
 		require.NotNil(t, filtered)
 
-		// The function always adds ACTIVE filter, but if user specified DELETED,
-		// the conjunction will filter to deployments that are both ACTIVE AND DELETED,
-		// which should return no results (this is expected behavior - user must explicitly
-		// query without the default filter if they want deleted deployments).
-		conjunction := filtered.GetConjunction()
-		require.NotNil(t, conjunction)
+		// The function should NOT add ACTIVE filter when user already specified lifecycle_stage.
+		// The returned query should be the same as the input query.
+		assert.Equal(t, userQuery, filtered, "Should not modify query when lifecycle_stage is already specified")
+	})
+
+	t.Run("does not add filter when user specifies ACTIVE explicitly", func(t *testing.T) {
+		userQuery := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+			ProtoQuery()
+
+		filtered := ensureLifecycleStageFilter(userQuery)
+		require.NotNil(t, filtered)
+
+		// Should return the original query unchanged.
+		assert.Equal(t, userQuery, filtered, "Should not modify query when lifecycle_stage is explicitly ACTIVE")
+	})
+}
+
+func TestQueryContainsLifecycleStage(t *testing.T) {
+	t.Run("returns false for nil query", func(t *testing.T) {
+		assert.False(t, queryContainsLifecycleStage(nil))
+	})
+
+	t.Run("returns false for empty query", func(t *testing.T) {
+		emptyQuery := search.EmptyQuery()
+		assert.False(t, queryContainsLifecycleStage(emptyQuery))
+	})
+
+	t.Run("returns false for query without lifecycle_stage", func(t *testing.T) {
+		query := search.NewQueryBuilder().
+			AddStrings(search.Namespace, "default").
+			ProtoQuery()
+		assert.False(t, queryContainsLifecycleStage(query))
+	})
+
+	t.Run("returns true for query with lifecycle_stage", func(t *testing.T) {
+		query := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+			ProtoQuery()
+		assert.True(t, queryContainsLifecycleStage(query))
+	})
+
+	t.Run("returns true for conjunction query with lifecycle_stage", func(t *testing.T) {
+		userQuery := search.NewQueryBuilder().
+			AddStrings(search.Namespace, "default").
+			ProtoQuery()
+		lifecycleQuery := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED.String()).
+			ProtoQuery()
+		conjunctionQuery := search.ConjunctionQuery(userQuery, lifecycleQuery)
+
+		assert.True(t, queryContainsLifecycleStage(conjunctionQuery))
 	})
 }
 

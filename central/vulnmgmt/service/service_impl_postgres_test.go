@@ -207,3 +207,159 @@ func (s *servicePostgresTestSuite) TestExport() {
 		})
 	}
 }
+
+func (s *servicePostgresTestSuite) TestExportWorkloads_DefaultExcludesSoftDeleted() {
+	upsertCtx := sac.WithAllAccess(context.Background())
+
+	// Create active deployment.
+	activeDeployment := s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1)
+	activeDeployment.LifecycleStage = storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE
+	err := s.helper.Deployments.UpsertDeployment(upsertCtx, activeDeployment)
+	s.Require().NoError(err)
+
+	// Create soft-deleted deployment.
+	deletedDeployment := s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment2)
+	deletedDeployment.LifecycleStage = storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED
+	err = s.helper.Deployments.UpsertDeployment(upsertCtx, deletedDeployment)
+	s.Require().NoError(err)
+
+	// Upsert images for vulnerability data.
+	for _, image := range fixtures.DeploymentImages() {
+		err = s.helper.Images.UpsertImage(upsertCtx, image)
+		s.Require().NoError(err)
+	}
+
+	// Export with default parameters (include_deleted = false).
+	request := &v1.VulnMgmtExportWorkloadsRequest{
+		Timeout:        5,
+		Query:          "",
+		IncludeDeleted: false,
+	}
+
+	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+		s.helper.Ctx,
+		s.T(),
+		func(registrar grpc.ServiceRegistrar) {
+			v1.RegisterVulnMgmtServiceServer(registrar, s.service)
+		},
+	)
+	s.Require().NoError(err)
+	defer closeFunc()
+
+	client := v1.NewVulnMgmtServiceClient(conn)
+	results, err := receiveWorkloads(s.helper.Ctx, s.T(), client, request, false)
+	s.Require().NoError(err)
+
+	// Verify only active deployment is returned.
+	s.Require().Len(results, 1)
+	s.Assert().Equal(activeDeployment.GetId(), results[0].GetDeployment().GetId())
+	s.Assert().Equal(storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE, results[0].GetDeployment().GetLifecycleStage())
+}
+
+func (s *servicePostgresTestSuite) TestExportWorkloads_IncludeDeletedReturnsAll() {
+	upsertCtx := sac.WithAllAccess(context.Background())
+
+	// Create active deployment.
+	activeDeployment := s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1)
+	activeDeployment.LifecycleStage = storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE
+	err := s.helper.Deployments.UpsertDeployment(upsertCtx, activeDeployment)
+	s.Require().NoError(err)
+
+	// Create soft-deleted deployment.
+	deletedDeployment := s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment2)
+	deletedDeployment.LifecycleStage = storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED
+	err = s.helper.Deployments.UpsertDeployment(upsertCtx, deletedDeployment)
+	s.Require().NoError(err)
+
+	// Upsert images for vulnerability data.
+	for _, image := range fixtures.DeploymentImages() {
+		err = s.helper.Images.UpsertImage(upsertCtx, image)
+		s.Require().NoError(err)
+	}
+
+	// Export with include_deleted = true.
+	request := &v1.VulnMgmtExportWorkloadsRequest{
+		Timeout:        5,
+		Query:          "",
+		IncludeDeleted: true,
+	}
+
+	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+		s.helper.Ctx,
+		s.T(),
+		func(registrar grpc.ServiceRegistrar) {
+			v1.RegisterVulnMgmtServiceServer(registrar, s.service)
+		},
+	)
+	s.Require().NoError(err)
+	defer closeFunc()
+
+	client := v1.NewVulnMgmtServiceClient(conn)
+	results, err := receiveWorkloads(s.helper.Ctx, s.T(), client, request, false)
+	s.Require().NoError(err)
+
+	// Verify both deployments are returned.
+	s.Require().Len(results, 2)
+
+	deploymentIDs := make(map[string]bool)
+	for _, result := range results {
+		deploymentIDs[result.GetDeployment().GetId()] = true
+	}
+
+	s.Assert().True(deploymentIDs[activeDeployment.GetId()], "Active deployment should be included")
+	s.Assert().True(deploymentIDs[deletedDeployment.GetId()], "Deleted deployment should be included")
+}
+
+func (s *servicePostgresTestSuite) TestExportWorkloads_VulnerabilityDataRetained() {
+	upsertCtx := sac.WithAllAccess(context.Background())
+
+	// Create soft-deleted deployment.
+	deletedDeployment := s.createDeployment(fixtures.GetDeployment(), fixtureconsts.Deployment1)
+	deletedDeployment.LifecycleStage = storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED
+	err := s.helper.Deployments.UpsertDeployment(upsertCtx, deletedDeployment)
+	s.Require().NoError(err)
+
+	// Upsert images for vulnerability data.
+	expectedImages := fixtures.DeploymentImages()
+	for _, image := range expectedImages {
+		err = s.helper.Images.UpsertImage(upsertCtx, image)
+		s.Require().NoError(err)
+	}
+
+	// Export with include_deleted = true.
+	request := &v1.VulnMgmtExportWorkloadsRequest{
+		Timeout:        5,
+		Query:          "",
+		IncludeDeleted: true,
+	}
+
+	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
+		s.helper.Ctx,
+		s.T(),
+		func(registrar grpc.ServiceRegistrar) {
+			v1.RegisterVulnMgmtServiceServer(registrar, s.service)
+		},
+	)
+	s.Require().NoError(err)
+	defer closeFunc()
+
+	client := v1.NewVulnMgmtServiceClient(conn)
+	results, err := receiveWorkloads(s.helper.Ctx, s.T(), client, request, false)
+	s.Require().NoError(err)
+
+	// Verify deleted deployment returns with vulnerability data.
+	s.Require().Len(results, 1)
+	s.Assert().Equal(deletedDeployment.GetId(), results[0].GetDeployment().GetId())
+	s.Assert().Equal(storage.DeploymentLifecycleStage_DEPLOYMENT_DELETED, results[0].GetDeployment().GetLifecycleStage())
+
+	// Verify images (vulnerability data) are returned.
+	s.Require().Len(results[0].GetImages(), len(expectedImages))
+	var imageIDs []string
+	for _, image := range results[0].GetImages() {
+		imageIDs = append(imageIDs, image.GetId())
+		// Verify scan data is present (not stripped).
+		s.Assert().NotNil(image.GetScan(), "Image scan data should be retained for deleted deployment")
+	}
+	expectedImageIDs := []string{expectedImages[0].GetId(), expectedImages[1].GetId()}
+	s.Assert().ElementsMatch(expectedImageIDs, imageIDs)
+}

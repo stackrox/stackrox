@@ -19,6 +19,9 @@ message VulnMgmtExportWorkloadsRequest {
   // queries vulnerability data for all scanner deployments in the stackrox namespace.
   // See https://docs.openshift.com/acs/operating/search-filter.html for more information.
   string query = 2;
+  // When true, include soft-deleted deployments (lifecycle_stage = DELETED) in the export.
+  // Default: false (only active deployments).
+  bool include_deleted = 3;
 }
 
 // The workloads response contains the full image details including the
