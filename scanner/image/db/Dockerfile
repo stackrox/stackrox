@@ -1,24 +1,14 @@
-ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi9
-ARG RPMS_BASE_TAG=latest
+FROM registry.access.redhat.com/ubi9:latest AS ubi-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi9-micro
-ARG BASE_TAG=latest
-
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
+FROM ubi-base AS postgres_rpms
 
 COPY scripts/download.sh /download.sh
 RUN /download.sh
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS ubi-micro-base
-
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS dependency_builder
+FROM ubi-base AS package_installer
 
 COPY --from=ubi-micro-base / /out/
-
-# If this is updated, be sure to update postgres_major in download.sh and the signature file.
-ENV PG_MAJOR=15
 
 RUN dnf install \
     --installroot=/out/ \
@@ -26,8 +16,6 @@ RUN dnf install \
     --setopt=install_weak_deps=0 \
     --nodocs \
     -y \
-    findutils \
-    util-linux \
     shadow-utils \
     ca-certificates \
     openldap \
@@ -39,6 +27,7 @@ RUN dnf install \
     perl-libs \
     python3 \
     systemd-sysv \
+    uuid \
     zstd && \
     # Reinstall tzdata without --nodocs to populate /usr/share/zoneinfo directory.
     # ubi9-micro ships with tzdata pre-installed but /usr/share/zoneinfo is empty.
@@ -50,44 +39,17 @@ RUN dnf install \
         --setopt=reposdir=/etc/yum.repos.d \
         -y \
         tzdata && \
-    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
-        dnf install --installroot=/out/ --releasever=8 --setopt=install_weak_deps=0 --nodocs -y uuid; \
-    fi && \
-    dnf --installroot=/out/ clean all && \
+    dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
-
 COPY signatures/PGDG-RPM-GPG-KEY-RHEL /tmp/
+
 RUN rpm --root=/out/ --import /tmp/PGDG-RPM-GPG-KEY-RHEL && \
     rpm --root=/out/ -ivh --nodeps /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     rm -rf /tmp/*.rpm /tmp/PGDG-RPM-GPG-KEY-RHEL
 
-RUN chroot /out /bin/sh -c " \
-    if getent group postgres >/dev/null; then \
-        current_gid=\$(getent group postgres | cut -d: -f3); \
-        if [ \$current_gid -ne 70 ]; then \
-            groupmod -g 70 postgres; \
-        fi; \
-    else \
-        groupadd -g 70 postgres; \
-    fi && \
-    if id -u postgres &>/dev/null; then \
-        current_uid=\$(id -u postgres); \
-        if [ \$current_uid -ne 70 ]; then \
-            usermod -u 70 -g 70 postgres; \
-        fi; \
-    else \
-        useradd postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh; \
-    fi && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 \
-    "
-
-RUN mkdir -p /out/docker-entrypoint-initdb.d \
-             /out/var/run/postgresql && \
-    chroot /out /bin/sh -c "chown postgres:postgres /var/run/postgresql && chmod 03775 /var/run/postgresql"
-
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+FROM ubi-micro-base
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -102,14 +64,23 @@ LABEL name="scanner-v4-db" \
       release="${LABEL_RELEASE}" \
       quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
+# If this is updated, be sure to update postgres_major in download.sh and the signature file.
 ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
-COPY --from=dependency_builder /out/ /
+COPY --from=package_installer /out/ /
 
 COPY init-bundles/db-init.dump.zst /db-init.dump.zst
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
+
+RUN \
+    groupadd -g 70 postgres && \
+    useradd postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
+    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+    mkdir -p /docker-entrypoint-initdb.d /var/run/postgresql && \
+    chown postgres:postgres /var/run/postgresql && \
+    chmod 03775 /var/run/postgresql
 
 STOPSIGNAL SIGINT
 
