@@ -31,7 +31,7 @@ import (
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
-	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -83,7 +83,7 @@ func scaleToN(ctx context.Context, t *testing.T, client kubernetes.Interface, de
 	}, defaultTimeout, defaultInterval)
 }
 
-func createDynamicClient(t testutils.T) dynclient.Client {
+func createDynamicClient(t testutils.T) ctrlClient.Client {
 	restCfg := getConfig(t)
 	restCfg.WarningHandler = rest.NoWarnings{}
 	k8sClient := createK8sClient(t)
@@ -100,9 +100,9 @@ func createDynamicClient(t testutils.T) dynclient.Client {
 	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(cachedClientDiscovery)
 	restMapper.Reset()
 
-	client, err := dynclient.New(
+	client, err := ctrlClient.New(
 		restCfg,
-		dynclient.Options{
+		ctrlClient.Options{
 			Scheme: k8sScheme,
 			Mapper: restMapper,
 		},
@@ -116,7 +116,7 @@ func createDynamicClient(t testutils.T) dynclient.Client {
 	return client
 }
 
-func waitForComplianceSuiteToComplete(t *testing.T, client dynclient.Client, suiteName string, interval, timeout time.Duration) {
+func waitForComplianceSuiteToComplete(t *testing.T, client ctrlClient.Client, suiteName string, interval, timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -153,9 +153,9 @@ func waitForComplianceSuiteToComplete(t *testing.T, client dynclient.Client, sui
 }
 
 func deleteResource[T any, PT interface {
-	dynclient.Object
+	ctrlClient.Object
 	*T
-}](ctx context.Context, t *testing.T, client dynclient.Client, name, namespace string) {
+}](ctx context.Context, t *testing.T, client ctrlClient.Client, name, namespace string) {
 	key := types.NamespacedName{Name: name, Namespace: namespace}
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
@@ -172,15 +172,15 @@ func deleteResource[T any, PT interface {
 	}, defaultTimeout, defaultInterval)
 }
 
-func cleanUpResources(ctx context.Context, t *testing.T, client dynclient.Client, resourceName string, namespace string) {
+func cleanUpResources(ctx context.Context, t *testing.T, client ctrlClient.Client, resourceName string, namespace string) {
 	deleteResource[complianceoperatorv1.ScanSettingBinding](ctx, t, client, resourceName, namespace)
 	deleteResource[complianceoperatorv1.ScanSetting](ctx, t, client, resourceName, namespace)
 }
 
 func assertResourceDoesNotExist[T any, PT interface {
-	dynclient.Object
+	ctrlClient.Object
 	*T
-}](ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string) {
+}](ctx context.Context, t testutils.T, client ctrlClient.Client, name, namespace string) {
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		var obj T
 		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, PT(&obj))
@@ -188,7 +188,7 @@ func assertResourceDoesNotExist[T any, PT interface {
 	}, defaultTimeout, defaultInterval)
 }
 
-func assertScanSetting(ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
+func assertScanSetting(ctx context.Context, t testutils.T, client ctrlClient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
 	scanSetting := &complianceoperatorv1.ScanSetting{}
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSetting)
 	require.NoErrorf(t, err, "ScanSetting %s/%s does not exist", namespace, name)
@@ -203,7 +203,7 @@ func assertScanSetting(ctx context.Context, t testutils.T, client dynclient.Clie
 	assert.Equal(t, scanSetting.GetAnnotations()["owner"], "stackrox")
 }
 
-func assertScanSettingBinding(ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
+func assertScanSettingBinding(ctx context.Context, t testutils.T, client ctrlClient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
 	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSettingBinding)
 	require.NoErrorf(t, err, "ScanSettingBinding %s/%s does not exist", namespace, name)
@@ -218,7 +218,7 @@ func assertScanSettingBinding(ctx context.Context, t testutils.T, client dynclie
 	assert.Equal(t, scanSettingBinding.Annotations["owner"], "stackrox")
 }
 
-func waitForDeploymentReady(ctx context.Context, t *testing.T, client dynclient.Client, name string, namespace string, numReplicas int32) {
+func waitForDeploymentReady(ctx context.Context, t *testing.T, client ctrlClient.Client, name string, namespace string, numReplicas int32) {
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		deployment := &appsv1.Deployment{}
 		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment)

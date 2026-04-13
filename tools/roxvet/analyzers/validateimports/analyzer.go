@@ -281,6 +281,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			// Migration code should not depend on features being activated or not.
 			// See the migrator README for more details.
 			"pkg/fileutils",
+			"pkg/fixtures",
 			"pkg/fsutils",
 			"pkg/grpc/routes",
 			"pkg/images/types",
@@ -361,6 +362,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 
 	if validImportRoot == "sensor/tests" {
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
+	}
+
+	if validImportRoot == "pkg" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "tools/generate-helpers/pg-table-bindings", "central/processlisteningonport/store")
 	}
 
 	if validImportRoot == "sensor/common" {
