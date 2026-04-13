@@ -22,6 +22,7 @@ from .utils import (
     detect_release_version,
 )
 from .report_markdown import generate_markdown
+from .report_slack import generate_slack_payload
 
 __all__ = [
     "__version__",
@@ -43,4 +44,5 @@ __all__ = [
     "detect_release_branches",
     "detect_release_version",
     "generate_markdown",
+    "generate_slack_payload",
 ]
