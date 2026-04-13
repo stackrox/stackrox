@@ -1,7 +1,6 @@
 """Data models and exceptions for backport audit tool."""
 
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 # Exception hierarchy
@@ -20,33 +19,36 @@ class JiraError(BackportAuditError):
 @dataclass
 class PR:
     """Pull request data."""
+
     number: int
     title: str
     author: str
     base_ref: str
-    jira_keys: List[str]
+    jira_keys: list[str]
     body: str
 
 
 @dataclass
 class JiraIssue:
     """Jira issue data."""
+
     key: str
     summary: str
-    fix_versions: List[str]
-    affected_versions: List[str]
-    assignee: Optional[str]
-    team: Optional[str]
-    component: Optional[str]
-    priority: Optional[str] = None
-    severity: Optional[str] = None
-    due_date: Optional[str] = None
-    sla_date: Optional[str] = None
+    fix_versions: list[str]
+    affected_versions: list[str]
+    assignee: str | None
+    team: str | None
+    component: str | None
+    priority: str | None = None
+    severity: str | None = None
+    due_date: str | None = None
+    sla_date: str | None = None
 
 
 @dataclass
 class ReleaseBranch:
     """Release branch with version info."""
+
     name: str
     expected_version: str
-    latest_tag: Optional[str]
+    latest_tag: str | None

@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Dict, List
+from typing import Any
 
 from .models import GitHubError
 
@@ -10,9 +10,8 @@ from .models import GitHubError
 class GitHubClient:
     """GitHub operations via gh CLI."""
 
-    def fetch_prs(self, label: str = "backport", state: str = "open") -> List[Dict[str, Any]]:
-        """
-        Fetch PRs using gh CLI.
+    def fetch_prs(self, label: str = "backport", state: str = "open") -> list[dict[str, Any]]:
+        """Fetch PRs using gh CLI.
 
         Args:
             label: Label to filter by
@@ -20,14 +19,15 @@ class GitHubClient:
 
         Returns:
             List of PR dictionaries
+
         """
         cmd = [
-            'gh', 'pr', 'list',
-            '--repo', 'stackrox/stackrox',
-            '--search', f'label:{label} draft:false',
-            '--state', state,
-            '--limit', '1000',
-            '--json', 'number,title,author,baseRefName,body,state'
+            "gh", "pr", "list",
+            "--repo", "stackrox/stackrox",
+            "--search", f"label:{label} draft:false",
+            "--state", state,
+            "--limit", "1000",
+            "--json", "number,title,author,baseRefName,body,state",
         ]
 
         try:
@@ -36,27 +36,30 @@ class GitHubClient:
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=60
+                timeout=60,
             )
             return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
-            raise GitHubError(f"Failed to fetch PRs: {e.stderr}")
+            msg = f"Failed to fetch PRs: {e.stderr}"
+            raise GitHubError(msg)
         except subprocess.TimeoutExpired:
-            raise GitHubError("gh CLI command timed out")
+            msg = "gh CLI command timed out"
+            raise GitHubError(msg)
         except json.JSONDecodeError as e:
-            raise GitHubError(f"Invalid JSON from gh CLI: {e}")
+            msg = f"Invalid JSON from gh CLI: {e}"
+            raise GitHubError(msg)
 
-    def get_pr_details(self, pr_number: int) -> Dict[str, Any]:
-        """
-        Get PR details via gh CLI.
+    def get_pr_details(self, pr_number: int) -> dict[str, Any]:
+        """Get PR details via gh CLI.
 
         Args:
             pr_number: PR number
 
         Returns:
             PR details dictionary
+
         """
-        cmd = ['gh', 'pr', 'view', str(pr_number), '--json', 'author,body']
+        cmd = ["gh", "pr", "view", str(pr_number), "--json", "author,body"]
 
         try:
             result = subprocess.run(
@@ -64,29 +67,32 @@ class GitHubClient:
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=30
+                timeout=30,
             )
             return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
-            raise GitHubError(f"Failed to fetch PR #{pr_number}: {e.stderr}")
+            msg = f"Failed to fetch PR #{pr_number}: {e.stderr}"
+            raise GitHubError(msg)
         except subprocess.TimeoutExpired:
-            raise GitHubError(f"gh CLI command timed out for PR #{pr_number}")
+            msg = f"gh CLI command timed out for PR #{pr_number}"
+            raise GitHubError(msg)
         except json.JSONDecodeError as e:
-            raise GitHubError(f"Invalid JSON from gh CLI for PR #{pr_number}: {e}")
+            msg = f"Invalid JSON from gh CLI for PR #{pr_number}: {e}"
+            raise GitHubError(msg)
 
-    def get_issue_events(self, pr_number: int) -> List[Dict[str, Any]]:
-        """
-        Get issue events via gh API.
+    def get_issue_events(self, pr_number: int) -> list[dict[str, Any]]:
+        """Get issue events via gh API.
 
         Args:
             pr_number: PR number
 
         Returns:
             List of event dictionaries
+
         """
         cmd = [
-            'gh', 'api',
-            f'repos/stackrox/stackrox/issues/{pr_number}/events'
+            "gh", "api",
+            f"repos/stackrox/stackrox/issues/{pr_number}/events",
         ]
 
         try:
@@ -95,12 +101,15 @@ class GitHubClient:
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=30
+                timeout=30,
             )
             return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
-            raise GitHubError(f"Failed to fetch events for PR #{pr_number}: {e.stderr}")
+            msg = f"Failed to fetch events for PR #{pr_number}: {e.stderr}"
+            raise GitHubError(msg)
         except subprocess.TimeoutExpired:
-            raise GitHubError(f"gh API command timed out for PR #{pr_number}")
+            msg = f"gh API command timed out for PR #{pr_number}"
+            raise GitHubError(msg)
         except json.JSONDecodeError as e:
-            raise GitHubError(f"Invalid JSON from gh API for PR #{pr_number}: {e}")
+            msg = f"Invalid JSON from gh API for PR #{pr_number}: {e}"
+            raise GitHubError(msg)

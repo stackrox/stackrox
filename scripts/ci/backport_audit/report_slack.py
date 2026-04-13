@@ -1,23 +1,22 @@
 """Slack Block Kit payload generation for backport audit reports."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
-from .urgency import calculate_urgency, format_deadline_info, URGENCY_ORDER
+from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
 
 
 def generate_slack_payload(
-    branches: List[ReleaseBranch],
-    prs_by_branch: Dict[str, List[PR]],
-    jira_issues: Dict[str, JiraIssue],
-    orphaned_issues: Dict[str, List[str]],
+    branches: list[ReleaseBranch],
+    prs_by_branch: dict[str, list[PR]],
+    jira_issues: dict[str, JiraIssue],
+    orphaned_issues: dict[str, list[str]],
     timestamp: str,
-    github_run_url: Optional[str],
-    slack_channel: str
-) -> Dict[str, Any]:
-    """
-    Generate Slack payload with Block Kit format.
+    github_run_url: str | None,
+    slack_channel: str,
+) -> dict[str, Any]:
+    """Generate Slack payload with Block Kit format.
 
     Args:
         branches: List of release branches
@@ -30,6 +29,7 @@ def generate_slack_payload(
 
     Returns:
         Slack payload dictionary
+
     """
     total_prs_no_jira = sum(
         len([pr for pr in prs_by_branch.get(b.name, []) if not pr.jira_keys])
@@ -37,7 +37,7 @@ def generate_slack_payload(
     )
 
     total_jira_issues = 0
-    urgency_counts = {'overdue': 0, 'critical': 0, 'high': 0, 'normal': 0, 'low': 0}
+    urgency_counts = {"overdue": 0, "critical": 0, "high": 0, "normal": 0, "low": 0}
 
     for branch in branches:
         prs = prs_by_branch.get(branch.name, [])
@@ -53,7 +53,7 @@ def generate_slack_payload(
                             issue.priority,
                             issue.severity,
                             issue.due_date,
-                            issue.sla_date
+                            issue.sla_date,
                         )
                         urgency_counts[urgency_level] = urgency_counts.get(urgency_level, 0) + 1
                         break
@@ -64,8 +64,8 @@ def generate_slack_payload(
         "type": "header",
         "text": {
             "type": "plain_text",
-            "text": "📋 Backport PR Audit Report"
-        }
+            "text": "📋 Backport PR Audit Report",
+        },
     })
 
     summary_text = (
@@ -80,8 +80,8 @@ def generate_slack_payload(
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": summary_text
-        }
+            "text": summary_text,
+        },
     })
 
     if github_run_url:
@@ -89,15 +89,15 @@ def generate_slack_payload(
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<{github_run_url}|View full report in GitHub Actions>"
-            }
+                "text": f"<{github_run_url}|View full report in GitHub Actions>",
+            },
         })
 
     blocks.append({"type": "divider"})
 
     sorted_branches = sorted(
         branches,
-        key=lambda b: [int(x) for x in b.expected_version.split('.')]
+        key=lambda b: [int(x) for x in b.expected_version.split(".")],
     )
 
     for branch in sorted_branches:
@@ -121,7 +121,7 @@ def generate_slack_payload(
                 section_lines.append(f"- {mention} {pr_link}: {pr.title}")
 
         issues_with_problems = []
-        jira_to_prs: Dict[str, List[int]] = {}
+        jira_to_prs: dict[str, list[int]] = {}
 
         for pr in prs:
             for jira_key in pr.jira_keys:
@@ -144,7 +144,7 @@ def generate_slack_payload(
                         issue.priority,
                         issue.severity,
                         issue.due_date,
-                        issue.sla_date
+                        issue.sla_date,
                     )
 
                     deadline_info = format_deadline_info(issue.due_date, issue.sla_date)
@@ -160,7 +160,7 @@ def generate_slack_payload(
                         issue.severity,
                         deadline_info,
                         urgency_level,
-                        urgency_icon
+                        urgency_icon,
                     )
                     if issue_info not in issues_with_problems:
                         issues_with_problems.append(issue_info)
@@ -170,11 +170,11 @@ def generate_slack_payload(
 
             section_lines.append(f"\n*Jira Issues with Missing Metadata ({len(issues_with_problems)})*")
 
-            for (jira_key, fix_icon, affected_icon, assignee, team, component,
-                 priority, severity, deadline_info, urgency_level, urgency_icon) in issues_with_problems:
+            for (jira_key, fix_icon, affected_icon, _assignee, _team, _component,
+                 priority, severity, deadline_info, _urgency_level, urgency_icon) in issues_with_problems:
                 jira_link = f"<https://redhat.atlassian.net/browse/{jira_key}|{jira_key}>"
                 pr_refs = jira_to_prs.get(jira_key, [])
-                pr_links = ', '.join([
+                pr_links = ", ".join([
                     f"<https://github.com/stackrox/stackrox/pull/{pr}|#{pr}>"
                     for pr in pr_refs
                 ])
@@ -186,38 +186,35 @@ def generate_slack_payload(
 
                 section_lines.append(
                     f"• {urgency_icon} {jira_link}: {fix_icon} fixVer, {affected_icon} affectedVer | "
-                    f"{priority_info} | {deadline_info}{pr_suffix}"
+                    f"{priority_info} | {deadline_info}{pr_suffix}",
                 )
 
         if orphaned:
-            section_lines.append(f"\n*Orphaned Jira Issues ({len(orphaned)})*")
-            section_lines.append(f"Issues with fixVersion={branch.expected_version} but no corresponding PR:")
+            section_lines.extend((f"\n*Orphaned Jira Issues ({len(orphaned)})*", f"Issues with fixVersion={branch.expected_version} but no corresponding PR:"))
 
             for jira_key in sorted(orphaned):
                 jira_link = f"<https://redhat.atlassian.net/browse/{jira_key}|{jira_key}>"
                 section_lines.append(f"- {jira_link}")
 
-        section_text = '\n'.join(section_lines)
+        section_text = "\n".join(section_lines)
         sections = _split_slack_sections(section_text, branch.name)
 
-        for section in sections:
-            blocks.append({
+        blocks.extend({
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": section
-                }
-            })
+                    "text": section,
+                },
+            } for section in sections)
 
     return {
         "channel": slack_channel,
-        "blocks": blocks
+        "blocks": blocks,
     }
 
 
-def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) -> List[str]:
-    """
-    Split text into Slack-compatible sections.
+def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) -> list[str]:
+    """Split text into Slack-compatible sections.
 
     Args:
         text: Text to split
@@ -226,8 +223,9 @@ def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) ->
 
     Returns:
         List of section strings
+
     """
-    lines = text.split('\n')
+    lines = text.split("\n")
     sections = []
     current_section = []
     current_length = 0
@@ -236,11 +234,11 @@ def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) ->
     for line in lines:
         line_length = len(line) + 1
 
-        if line.startswith('*') and line.endswith('*') and len(line) > 2:
+        if line.startswith("*") and line.endswith("*") and len(line) > 2:
             current_header = line
 
         if current_length + line_length > max_chars and current_section:
-            sections.append('\n'.join(current_section))
+            sections.append("\n".join(current_section))
 
             if current_header:
                 current_section = [f"*{branch_name} (continued)*\n", current_header]
@@ -253,6 +251,6 @@ def _split_slack_sections(text: str, branch_name: str, max_chars: int = 2800) ->
         current_length += line_length
 
     if current_section:
-        sections.append('\n'.join(current_section))
+        sections.append("\n".join(current_section))
 
     return sections

@@ -2,8 +2,7 @@
 
 import base64
 import json
-import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -14,7 +13,7 @@ from .models import JiraIssue
 class JiraClient:
     """Jira REST API client using urllib."""
 
-    def __init__(self, user: str, token: str, base_url: str = "redhat.atlassian.net"):
+    def __init__(self, user: str, token: str, base_url: str = "redhat.atlassian.net") -> None:
         self.user = user
         self.token = token
         self.base_url = base_url
@@ -26,15 +25,15 @@ class JiraClient:
         encoded = base64.b64encode(credentials.encode()).decode()
         return f"Basic {encoded}"
 
-    def get_issue(self, issue_key: str) -> Optional[JiraIssue]:
-        """
-        Fetch Jira issue via REST API.
+    def get_issue(self, issue_key: str) -> JiraIssue | None:
+        """Fetch Jira issue via REST API.
 
         Args:
             issue_key: Jira issue key (e.g., ROX-12345)
 
         Returns:
             JiraIssue or None if not found
+
         """
         # Standard fields: priority, duedate
         # Custom fields: customfield_10001 (Team), customfield_10840 (Severity for CVE trackers)
@@ -52,49 +51,45 @@ class JiraClient:
                 return self._parse_issue(data)
         except HTTPError as e:
             if e.code == 404:
-                print(f"WARNING: Jira issue {issue_key} not found", file=sys.stderr)
                 return None
-            print(f"WARNING: HTTP error fetching {issue_key}: {e}", file=sys.stderr)
             return None
-        except URLError as e:
-            print(f"WARNING: Network error fetching {issue_key}: {e}", file=sys.stderr)
+        except URLError:
             return None
-        except json.JSONDecodeError as e:
-            print(f"WARNING: Invalid JSON from Jira for {issue_key}: {e}", file=sys.stderr)
+        except json.JSONDecodeError:
             return None
 
-    def _parse_issue(self, data: Dict[str, Any]) -> JiraIssue:
+    def _parse_issue(self, data: dict[str, Any]) -> JiraIssue:
         """Parse Jira API response into JiraIssue."""
-        fields = data.get('fields', {})
+        fields = data.get("fields", {})
 
-        fix_versions = [v['name'] for v in fields.get('fixVersions', [])]
-        affected_versions = [v['name'] for v in fields.get('versions', [])]
+        fix_versions = [v["name"] for v in fields.get("fixVersions", [])]
+        affected_versions = [v["name"] for v in fields.get("versions", [])]
 
         assignee = None
-        if fields.get('assignee'):
-            assignee = fields['assignee'].get('displayName')
+        if fields.get("assignee"):
+            assignee = fields["assignee"].get("displayName")
 
         team = None
-        if fields.get('customfield_10001'):
-            team = fields['customfield_10001'].get('name')
+        if fields.get("customfield_10001"):
+            team = fields["customfield_10001"].get("name")
 
-        components = [c['name'] for c in fields.get('components', [])]
-        component = ', '.join(components) if components else None
+        components = [c["name"] for c in fields.get("components", [])]
+        component = ", ".join(components) if components else None
 
         priority = None
-        if fields.get('priority'):
-            priority = fields['priority'].get('name')
+        if fields.get("priority"):
+            priority = fields["priority"].get("name")
 
-        due_date = fields.get('duedate')
+        due_date = fields.get("duedate")
 
         severity = None
-        severity_field = fields.get('customfield_10840')
+        severity_field = fields.get("customfield_10840")
         if severity_field:
-            severity = severity_field.get('value')
+            severity = severity_field.get("value")
 
         return JiraIssue(
-            key=data['key'],
-            summary=fields.get('summary', ''),
+            key=data["key"],
+            summary=fields.get("summary", ""),
             fix_versions=fix_versions,
             affected_versions=affected_versions,
             assignee=assignee,
@@ -103,12 +98,11 @@ class JiraClient:
             priority=priority,
             severity=severity,
             due_date=due_date,
-            sla_date=None
+            sla_date=None,
         )
 
-    def search_issues(self, jql: str, max_results: int = 1000) -> List[JiraIssue]:
-        """
-        Search Jira issues via JQL.
+    def search_issues(self, jql: str, max_results: int = 1000) -> list[JiraIssue]:
+        """Search Jira issues via JQL.
 
         Args:
             jql: JQL query string
@@ -116,11 +110,12 @@ class JiraClient:
 
         Returns:
             List of JiraIssue objects
+
         """
         params = urlencode({
-            'jql': jql,
-            'fields': 'key,summary',
-            'maxResults': max_results
+            "jql": jql,
+            "fields": "key,summary",
+            "maxResults": max_results,
         })
         url = f"https://{self.base_url}/rest/api/3/search?{params}"
 
@@ -131,18 +126,14 @@ class JiraClient:
         try:
             with urlopen(req, timeout=30) as response:
                 data = json.loads(response.read())
-                issues = []
-                for issue_data in data.get('issues', []):
-                    issues.append(JiraIssue(
-                        key=issue_data['key'],
-                        summary=issue_data['fields'].get('summary', ''),
+                return [JiraIssue(
+                        key=issue_data["key"],
+                        summary=issue_data["fields"].get("summary", ""),
                         fix_versions=[],
                         affected_versions=[],
                         assignee=None,
                         team=None,
-                        component=None
-                    ))
-                return issues
-        except (HTTPError, URLError, json.JSONDecodeError) as e:
-            print(f"WARNING: Error searching Jira: {e}", file=sys.stderr)
+                        component=None,
+                    ) for issue_data in data.get("issues", [])]
+        except (HTTPError, URLError, json.JSONDecodeError):
             return []
