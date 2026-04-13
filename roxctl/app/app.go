@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/maincommand"
@@ -17,6 +18,7 @@ import (
 
 // Run is the main entry point for the roxctl application.
 func Run() {
+	profiling.SetComponentLabel()
 	c := maincommand.Command()
 
 	c.SetHelpFunc(utils.FormatHelp)

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
+	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/retry/handler"
 )
 
@@ -20,6 +21,7 @@ var (
 
 // Run is the main entry point for the compliance application.
 func Run() {
+	profiling.SetComponentLabel()
 	memlimit.SetMemoryLimit()
 
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
