@@ -182,17 +182,13 @@ def _generate_branch_blocks(
         issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[9], 99))
         count = len(issues_with_problems)
 
-        # Section header with legend
+        # Section header
         blocks.append(
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": (
-                        f"*Jira Issues with Missing Metadata ({count})*\n"
-                        "_Legend: :red_circle: overdue/critical | :large_yellow_circle: high | "
-                        ":large_green_circle: normal | :white_check_mark: present | :x: missing_"
-                    ),
+                    "text": f"*Jira Issues with Missing Metadata ({count})*",
                 },
             }
         )
@@ -329,6 +325,23 @@ def generate_slack_payload(
 
         branch_blocks = _generate_branch_blocks(branch, prs, orphaned, jira_issues)
         blocks.extend(branch_blocks)
+
+    # Add legend at the bottom as a context block
+    blocks.append(
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": (
+                        "*Legend:* :red_circle: overdue/critical | "
+                        ":large_yellow_circle: high | :large_green_circle: normal | "
+                        ":white_check_mark: present | :x: missing"
+                    ),
+                }
+            ],
+        }
+    )
 
     return {
         "channel": slack_channel,
