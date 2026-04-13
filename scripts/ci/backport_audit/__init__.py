@@ -21,6 +21,7 @@ from .utils import (
     detect_release_branches,
     detect_release_version,
 )
+from .report_markdown import generate_markdown
 
 __all__ = [
     "__version__",
@@ -41,4 +42,5 @@ __all__ = [
     "resolve_author",
     "detect_release_branches",
     "detect_release_version",
+    "generate_markdown",
 ]
