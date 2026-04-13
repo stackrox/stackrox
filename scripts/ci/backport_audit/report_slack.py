@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
+from .urgency import calculate_urgency, format_deadline_info
 
 
 def generate_slack_payload(
@@ -36,6 +37,8 @@ def generate_slack_payload(
     )
 
     total_jira_issues = 0
+    urgency_counts = {'overdue': 0, 'critical': 0, 'high': 0, 'normal': 0}
+
     for branch in branches:
         prs = prs_by_branch.get(branch.name, [])
         for pr in prs:
@@ -46,6 +49,13 @@ def generate_slack_payload(
                     has_affected = len(issue.affected_versions) > 0
                     if not has_fix or not has_affected:
                         total_jira_issues += 1
+                        urgency_level, _ = calculate_urgency(
+                            issue.priority,
+                            issue.severity,
+                            issue.due_date,
+                            issue.sla_date
+                        )
+                        urgency_counts[urgency_level] = urgency_counts.get(urgency_level, 0) + 1
                         break
 
     blocks = []
@@ -61,7 +71,10 @@ def generate_slack_payload(
     summary_text = (
         f"*Generated:* {timestamp}\n"
         f"*Total PRs missing Jira:* {total_prs_no_jira}\n"
-        f"*Total Jira issues with missing metadata:* {total_jira_issues}"
+        f"*Total Jira issues with missing metadata:* {total_jira_issues}\n"
+        f"*Urgency breakdown:* 🔴 {urgency_counts['overdue'] + urgency_counts['critical']} critical/overdue, "
+        f"🟡 {urgency_counts['high']} high, "
+        f"🟢 {urgency_counts['normal']} normal"
     )
     blocks.append({
         "type": "section",
@@ -127,21 +140,38 @@ def generate_slack_payload(
                     fix_icon = ":white_check_mark:" if has_fix else ":x:"
                     affected_icon = ":white_check_mark:" if has_affected else ":x:"
 
+                    urgency_level, urgency_icon = calculate_urgency(
+                        issue.priority,
+                        issue.severity,
+                        issue.due_date,
+                        issue.sla_date
+                    )
+
+                    deadline_info = format_deadline_info(issue.due_date, issue.sla_date)
+
                     issue_info = (
                         jira_key,
                         fix_icon,
                         affected_icon,
                         issue.assignee or "Unassigned",
                         issue.team or "No team",
-                        issue.component or "No component"
+                        issue.component or "No component",
+                        issue.priority or "No priority",
+                        deadline_info,
+                        urgency_level,
+                        urgency_icon
                     )
                     if issue_info not in issues_with_problems:
                         issues_with_problems.append(issue_info)
 
         if issues_with_problems:
+            urgency_order = {'overdue': 0, 'critical': 1, 'high': 2, 'normal': 3, 'low': 4}
+            issues_with_problems.sort(key=lambda x: urgency_order.get(x[8], 99))
+
             section_lines.append(f"\n*Jira Issues with Missing Metadata ({len(issues_with_problems)})*")
 
-            for jira_key, fix_icon, affected_icon, assignee, team, component in issues_with_problems:
+            for (jira_key, fix_icon, affected_icon, assignee, team, component,
+                 priority, deadline_info, urgency_level, urgency_icon) in issues_with_problems:
                 jira_link = f"<https://redhat.atlassian.net/browse/{jira_key}|{jira_key}>"
                 pr_refs = jira_to_prs.get(jira_key, [])
                 pr_links = ', '.join([
@@ -151,8 +181,8 @@ def generate_slack_payload(
                 pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
 
                 section_lines.append(
-                    f"- {jira_link}: {fix_icon} fixVersion, {affected_icon} affectedVersion "
-                    f"(Assignee: {assignee}, Team: {team}, Component: {component}){pr_suffix}"
+                    f"• {urgency_icon} {jira_link}: {fix_icon} fixVer, {affected_icon} affectedVer | "
+                    f"P: {priority} | {deadline_info}{pr_suffix}"
                 )
 
         if orphaned:

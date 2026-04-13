@@ -21,6 +21,13 @@ from .utils import (
     detect_release_branches,
     detect_release_version,
 )
+from .urgency import (
+    calculate_urgency,
+    format_deadline_info,
+    parse_date,
+    CVE_TIMEFRAMES,
+    PRIORITY_URGENCY,
+)
 from .report_markdown import generate_markdown
 from .report_slack import generate_slack_payload
 
@@ -43,6 +50,9 @@ __all__ = [
     "resolve_author",
     "detect_release_branches",
     "detect_release_version",
+    "calculate_urgency",
+    "format_deadline_info",
+    "parse_date",
     "generate_markdown",
     "generate_slack_payload",
 ]

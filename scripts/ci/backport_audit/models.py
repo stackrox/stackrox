@@ -38,6 +38,10 @@ class JiraIssue:
     assignee: Optional[str]
     team: Optional[str]
     component: Optional[str]
+    priority: Optional[str] = None
+    severity: Optional[str] = None
+    due_date: Optional[str] = None
+    sla_date: Optional[str] = None
 
 
 @dataclass

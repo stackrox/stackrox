@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
+from .urgency import calculate_urgency, format_deadline_info
 
 
 def generate_markdown(
@@ -88,29 +89,47 @@ def generate_markdown(
                     fix_icon = ":white_check_mark:" if has_fix else ":x:"
                     affected_icon = ":white_check_mark:" if has_affected else ":x:"
 
+                    urgency_level, urgency_icon = calculate_urgency(
+                        issue.priority,
+                        issue.severity,
+                        issue.due_date,
+                        issue.sla_date
+                    )
+
+                    deadline_info = format_deadline_info(issue.due_date, issue.sla_date)
+
                     issue_info = (
                         jira_key,
                         fix_icon,
                         affected_icon,
                         issue.assignee or "Unassigned",
                         issue.team or "No team",
-                        issue.component or "No component"
+                        issue.component or "No component",
+                        issue.priority or "No priority",
+                        deadline_info,
+                        urgency_level,
+                        urgency_icon
                     )
                     if issue_info not in issues_with_problems:
                         issues_with_problems.append(issue_info)
 
         if issues_with_problems:
+            urgency_order = {'overdue': 0, 'critical': 1, 'high': 2, 'normal': 3, 'low': 4}
+            issues_with_problems.sort(key=lambda x: urgency_order.get(x[8], 99))
+
             lines.append(f"### Jira Issues with Missing Metadata ({len(issues_with_problems)})")
             lines.append("")
 
-            for jira_key, fix_icon, affected_icon, assignee, team, component in issues_with_problems:
+            for (jira_key, fix_icon, affected_icon, assignee, team, component,
+                 priority, deadline_info, urgency_level, urgency_icon) in issues_with_problems:
                 pr_refs = jira_to_prs.get(jira_key, [])
                 pr_links = ', '.join([f"#{pr}" for pr in pr_refs])
                 pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
 
                 lines.append(
-                    f"- {jira_key}: {fix_icon} fixVersion, {affected_icon} affectedVersion "
-                    f"(Assignee: {assignee}, Team: {team}, Component: {component}){pr_suffix}"
+                    f"- {urgency_icon} {jira_key}: {fix_icon} fixVersion, {affected_icon} affectedVersion | "
+                    f"Priority: {priority} | {deadline_info} | "
+                    f"Assignee: {assignee}, Team: {team}, Component: {component}{pr_suffix}"
                 )
 
             lines.append("")

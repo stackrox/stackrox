@@ -36,7 +36,7 @@ class JiraClient:
         Returns:
             JiraIssue or None if not found
         """
-        fields = "fixVersions,versions,summary,status,assignee,components,customfield_10001"
+        fields = "fixVersions,versions,summary,status,assignee,components,customfield_10001,priority,duedate"
         url = f"https://{self.base_url}/rest/api/3/issue/{issue_key}?fields={fields}"
 
         req = Request(url)
@@ -78,6 +78,12 @@ class JiraClient:
         components = [c['name'] for c in fields.get('components', [])]
         component = ', '.join(components) if components else None
 
+        priority = None
+        if fields.get('priority'):
+            priority = fields['priority'].get('name')
+
+        due_date = fields.get('duedate')
+
         return JiraIssue(
             key=data['key'],
             summary=fields.get('summary', ''),
@@ -85,7 +91,11 @@ class JiraClient:
             affected_versions=affected_versions,
             assignee=assignee,
             team=team,
-            component=component
+            component=component,
+            priority=priority,
+            severity=None,
+            due_date=due_date,
+            sla_date=None
         )
 
     def search_issues(self, jql: str, max_results: int = 1000) -> List[JiraIssue]:
