@@ -32,13 +32,21 @@ class PR:
 class JiraIssue:
     """Jira issue data.
 
-    Urgency-related fields per Patch Release Process:
-    https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
+    Critical fields for ProdSec vulnerability tracking:
 
+    - fix_versions: MUST be set when issue is resolved as Done (marks vulnerability as Fixed)
+    - affected_versions: MUST include all affected RHACS versions currently in Full Support
+      WARNING: DO NOT CREATE SEPARATE JIRA ISSUES - amend this field to add versions
     - priority: Bug priority (Critical→immediate Z-release, Major→next Z-stream)
     - severity: CVE severity rating (Critical: 7 days, Important: 28 days, Moderate: 57 days)
+      Policy (2025): Handle all Important/Critical + Moderate with CVSS >= 7.0
     - due_date: "defines internal deadline for releasing a version with the fix"
     - sla_date: "informs about the legally binding deadline for Red Hat; usually is Due date + some buffer"
+      Note: Issues must be closed before SLA deadline, regardless of severity
+
+    References:
+    - Patch Release Process: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
+    - ProdSec Triage: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309334614/How+to+triage+and+resolve+ProdSec+Jiras
     """
 
     key: str

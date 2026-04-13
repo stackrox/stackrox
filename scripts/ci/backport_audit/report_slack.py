@@ -473,10 +473,15 @@ def generate_slack_payload(
                     "*Action Required:* If you're mentioned in the table below:\n"
                     "• *:x: in Issue column*: Add a Jira reference to your PR description\n"
                     "• *:x: in fixVersion column*: Add the target release version to the Jira issue's fixVersion field\n"
-                    "• *:x: in affectedVersion column*: Add affected versions to the Jira issue\n"
+                    "• *:x: in affectedVersion column*: Add affected versions to the Jira issue "
+                    "(*DO NOT CREATE SEPARATE JIRA* - amend Affected Version/s field instead)\n"
                     "• *(issue unassigned)*: Assign the Jira issue to the appropriate owner\n\n"
-                    "See: <https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process"
-                    "|Patch Release Process Documentation>"
+                    "*Important:* ProdSec Jira issues must be closed before the SLA deadline, regardless of severity.\n\n"
+                    "Documentation:\n"
+                    "• <https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process"
+                    "|Patch Release Process>\n"
+                    "• <https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309334614/How+to+triage+and+resolve+ProdSec+Jiras"
+                    "|ProdSec Jira Triage Guide>"
                 ),
             },
         },

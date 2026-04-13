@@ -125,7 +125,26 @@ def generate_markdown(
 
     """
     lines = []
-    lines.extend(("# Backport PR Audit Report", "", f"Generated: {timestamp}", ""))
+    lines.extend((
+        "# Backport PR Audit Report",
+        "",
+        f"Generated: {timestamp}",
+        "",
+        "## Action Required",
+        "",
+        "If you're mentioned in this report:",
+        "- **Missing Jira reference**: Add Jira key to your PR description",
+        "- **Missing fixVersion**: Add target release version to Jira issue's fixVersion field",
+        "- **Missing affectedVersion**: Add affected versions to Jira issue (**DO NOT CREATE SEPARATE JIRA** - amend Affected Version/s field)",
+        "- **Issue unassigned**: Assign the Jira issue to the appropriate owner",
+        "",
+        "**Important**: ProdSec Jira issues must be closed before the SLA deadline, regardless of severity.",
+        "",
+        "**Documentation**:",
+        "- [Patch Release Process](https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process)",
+        "- [ProdSec Jira Triage Guide](https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309334614/How+to+triage+and+resolve+ProdSec+Jiras)",
+        "",
+    ))
 
     # Sort branches by version
     sorted_branches = sorted(

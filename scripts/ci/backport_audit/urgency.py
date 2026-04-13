@@ -1,6 +1,14 @@
 """Urgency calculation utilities for backport audit.
 
-See: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
+ProdSec Policy (as of 2025):
+- Handle all vulnerabilities with severity Important or Critical
+- Handle Moderate vulnerabilities with CVSS score >= 7.0
+- Low or Moderate with CVSS < 7.0 does not need to be addressed
+- Jira issues should be closed before the deadline, regardless of severity
+
+References:
+- Patch Release Process: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process
+- ProdSec Jira Triage: https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309334614/How+to+triage+and+resolve+ProdSec+Jiras
 """
 
 from datetime import datetime, timezone
