@@ -95,9 +95,17 @@ def _format_slack_issue_line(
     )
     pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
 
-    priority_info = f"P: {priority}"
+    # Format priority/severity as Slack emojis
+    priority_parts = []
+    if priority and priority != "No priority":
+        priority_parts.append(f":jira-{priority.lower()}:")
+    elif priority == "No priority":
+        priority_parts.append("No priority")
+
     if severity:
-        priority_info += f", S: {severity}"
+        priority_parts.append(f":cve-{severity.lower()}:")
+
+    priority_info = " ".join(priority_parts) if priority_parts else "No priority"
 
     return (
         f"• {urgency_icon} {jira_link}: {fix_icon} fixVer, "
