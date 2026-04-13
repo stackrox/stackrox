@@ -215,13 +215,15 @@ def _create_all_pr_rows(
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
 
-            # Use assignee if complete, otherwise notify PR authors
-            if is_complete:
-                issue = jira_issues.get(jira_key)
-                assignee = issue.assignee if issue and issue.assignee else "Unassigned"
-                author_cell = _create_table_cell_text(assignee)
+            # Use assignee if complete and assigned, otherwise notify PR authors
+            issue = jira_issues.get(jira_key)
+            has_assignee = issue and issue.assignee
+
+            if is_complete and has_assignee:
+                # Everything is correct and assigned - just show assignee
+                author_cell = _create_table_cell_text(issue.assignee)
             else:
-                # Collect unique PR authors to notify about missing metadata
+                # Notify PR authors about problems (missing metadata or unassigned)
                 author_elements = []
                 unique_authors = []
 
@@ -244,6 +246,10 @@ def _create_all_pr_rows(
                         author_elements.append({"type": "emoji", "name": emoji_name})
                     else:
                         author_elements.append({"type": "text", "text": author_mention})
+
+                # Add note if issue is unassigned
+                if is_complete and not has_assignee:
+                    author_elements.append({"type": "text", "text": " (issue unassigned)"})
 
                 author_cell = {
                     "type": "rich_text",
