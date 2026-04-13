@@ -8,7 +8,7 @@ import (
 
 const checkID = "HIPAA_164:312_c"
 
-func init() {
+func Register312c() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 checkID,
