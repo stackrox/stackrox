@@ -45,6 +45,11 @@ jobs:
         with:
           fetch-depth: 0  # Need full history for git tag operations
 
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # ratchet:actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
       - name: Run backport audit
         env:
           JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
