@@ -10,8 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgNet "github.com/stackrox/rox/pkg/net"
@@ -42,8 +42,14 @@ type handlerImpl struct {
 	stopSig   concurrency.Signal
 	updateSig concurrency.Signal
 
+	// pendingEntities holds the raw entity list from Central until first lookup.
+	// This lazy-loads the entity index: if no policy evaluation ever queries
+	// external entities, the ~16 MB CIDR index is never allocated.
+	pendingEntities []*storage.NetworkEntityInfo
+	indexed         bool
+
 	// entities stores the IPNetwork to entity object mappings. We allow only unique CIDRs in a cluster, which could
-	// be overlapping or not.
+	// be overlapping or not. Populated lazily on first lookup.
 	entities map[pkgNet.IPNetwork]*storage.NetworkEntityInfo
 	// entitiesById is used for easy lookups during network flow policy evaluation
 	entitiesByID     map[string]*storage.NetworkEntityInfo
@@ -126,10 +132,26 @@ func (h *handlerImpl) run() {
 }
 
 func (h *handlerImpl) saveEntitiesNoLock(entities []*storage.NetworkEntityInfo) {
-	// We assume that the network entity object validation is already performed by Central.
-	h.entities = make(map[pkgNet.IPNetwork]*storage.NetworkEntityInfo)
+	// Store the raw entity list without building the CIDR index.
+	// The index is built lazily on first LookupByNetwork/LookupByID call.
+	// This saves ~16 MB on clusters where no network policy references external entities.
+	h.pendingEntities = entities
+	h.indexed = false
+	h.entities = nil
+	h.entitiesByID = nil
+}
+
+// ensureIndexedNoLock builds the CIDR → entity maps from pendingEntities on first access.
+func (h *handlerImpl) ensureIndexedNoLock() {
+	if h.indexed {
+		return
+	}
+	h.indexed = true
+
+	h.entities = make(map[pkgNet.IPNetwork]*storage.NetworkEntityInfo, len(h.pendingEntities))
+	h.entitiesByID = make(map[string]*storage.NetworkEntityInfo, len(h.pendingEntities))
 	var errList errorhelpers.ErrorList
-	for _, entity := range entities {
+	for _, entity := range h.pendingEntities {
 		ipNet := pkgNet.IPNetworkFromCIDR(entity.GetExternalSource().GetCidr())
 		if !ipNet.IsValid() {
 			errList.AddStringf("%s (cidr=%s) ", entity.GetId(), entity.GetExternalSource().GetCidr())
@@ -138,10 +160,13 @@ func (h *handlerImpl) saveEntitiesNoLock(entities []*storage.NetworkEntityInfo) 
 		h.entities[ipNet] = entity
 		h.entitiesByID[entity.GetId()] = entity
 	}
+	// Release the raw list — the maps now own the data.
+	h.pendingEntities = nil
 
 	if err := errList.ToError(); err != nil {
 		log.Errorf("could not process some external sources received from Central: %v", err)
 	}
+	log.Infof("Lazy-indexed %d external network entities on first lookup", len(h.entities))
 }
 
 func (h *handlerImpl) regenerateAndPushExternalSrcsToValueStream() {
@@ -150,15 +175,24 @@ func (h *handlerImpl) regenerateAndPushExternalSrcsToValueStream() {
 
 	defer h.updateSig.Reset()
 
+	// Build the IP network list for collectors from raw entities.
+	// This does NOT trigger the full CIDR index build — it just extracts
+	// the IP/prefix pairs which is lightweight (~bytes, not ~16 MB maps).
 	ipNetworkList := &sensor.IPNetworkList{}
 
-	for ipNet := range h.entities {
-		if ipV4 := ipNet.IP().AsNetIP().To4(); ipV4 != nil {
-			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, ipV4...)
-			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, ipNet.PrefixLen())
-		} else if ipV6 := ipNet.IP().AsNetIP().To16(); ipV6 != nil {
-			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, ipV6...)
-			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, ipNet.PrefixLen())
+	entities := h.pendingEntities
+	if h.indexed {
+		// If already indexed, iterate the map keys
+		for ipNet := range h.entities {
+			appendIPNet(ipNetworkList, ipNet)
+		}
+	} else {
+		// Not yet indexed — parse CIDRs from raw entities without building maps
+		for _, entity := range entities {
+			ipNet := pkgNet.IPNetworkFromCIDR(entity.GetExternalSource().GetCidr())
+			if ipNet.IsValid() {
+				appendIPNet(ipNetworkList, ipNet)
+			}
 		}
 	}
 
@@ -170,6 +204,16 @@ func (h *handlerImpl) regenerateAndPushExternalSrcsToValueStream() {
 
 	h.ipNetworkListProtoStream.Push(ipNetworkList)
 	h.lastSeenList = ipNetworkList
+}
+
+func appendIPNet(list *sensor.IPNetworkList, ipNet pkgNet.IPNetwork) {
+	if ipV4 := ipNet.IP().AsNetIP().To4(); ipV4 != nil {
+		list.Ipv4Networks = append(list.Ipv4Networks, ipV4...)
+		list.Ipv4Networks = append(list.Ipv4Networks, ipNet.PrefixLen())
+	} else if ipV6 := ipNet.IP().AsNetIP().To16(); ipV6 != nil {
+		list.Ipv6Networks = append(list.Ipv6Networks, ipV6...)
+		list.Ipv6Networks = append(list.Ipv6Networks, ipNet.PrefixLen())
+	}
 }
 
 func normalizeNetworkList(listProto *sensor.IPNetworkList) {
@@ -194,6 +238,7 @@ func (h *handlerImpl) LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEn
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
+	h.ensureIndexedNoLock()
 	return h.entities[ipNet]
 }
 
@@ -201,5 +246,6 @@ func (h *handlerImpl) LookupByID(id string) *storage.NetworkEntityInfo {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
+	h.ensureIndexedNoLock()
 	return h.entitiesByID[id]
 }

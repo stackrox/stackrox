@@ -2,9 +2,7 @@ package externalsrcs
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -17,9 +15,8 @@ func newHandler() *handlerImpl {
 	return &handlerImpl{
 		stopSig:                  concurrency.NewSignal(),
 		updateSig:                concurrency.NewSignal(),
-		entities:                 make(map[net.IPNetwork]*storage.NetworkEntityInfo),
-		entitiesByID:             make(map[string]*storage.NetworkEntityInfo),
 		ipNetworkListProtoStream: concurrency.NewValueStream[*sensor.IPNetworkList](nil),
+		// entities and entitiesByID are nil — built lazily on first lookup.
 	}
 }
 
