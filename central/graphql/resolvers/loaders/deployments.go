@@ -10,6 +10,7 @@ import (
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -76,9 +77,29 @@ func (idl *deploymentLoaderImpl) FromID(ctx context.Context, id string) (*storag
 	return deployments[0], nil
 }
 
+// ensureLifecycleStageFilter adds a default filter for lifecycle_stage = ACTIVE.
+// This ensures backward compatibility by excluding soft-deleted deployments from GraphQL queries by default.
+// Note: If the user query already contains a lifecycle_stage filter, both filters will be applied,
+// effectively using the user's more restrictive filter.
+func ensureLifecycleStageFilter(query *v1.Query) *v1.Query {
+	// Add default filter: lifecycle_stage = ACTIVE.
+	lifecycleFilter := search.NewQueryBuilder().
+		AddStrings(search.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+		ProtoQuery()
+
+	if query == nil {
+		return lifecycleFilter
+	}
+
+	// Combine user query with lifecycle filter.
+	return search.ConjunctionQuery(query, lifecycleFilter)
+}
+
 // FromQuery loads a set of deployments that match a query.
+// By default, only active deployments (lifecycle_stage = ACTIVE) are returned.
 func (idl *deploymentLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error) {
-	responses, err := idl.deploymentView.Get(ctx, query)
+	filteredQuery := ensureLifecycleStageFilter(query)
+	responses, err := idl.deploymentView.Get(ctx, filteredQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -86,18 +107,20 @@ func (idl *deploymentLoaderImpl) FromQuery(ctx context.Context, query *v1.Query)
 }
 
 // CountFromQuery returns the number of deployments that match a given query.
+// By default, only active deployments (lifecycle_stage = ACTIVE) are counted.
 func (idl *deploymentLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	count, err := idl.ds.Count(ctx, query)
+	filteredQuery := ensureLifecycleStageFilter(query)
+	count, err := idl.ds.Count(ctx, filteredQuery)
 	if err != nil {
 		return 0, err
 	}
 	return int32(count), nil
 }
 
-// CountFromQuery returns the total number of deployments.
+// CountAll returns the total number of active deployments (excludes soft-deleted).
 func (idl *deploymentLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.CountDeployments(ctx)
-	return int32(count), err
+	// Use CountFromQuery with nil query to apply default lifecycle_stage filter.
+	return idl.CountFromQuery(ctx, nil)
 }
 
 func (idl *deploymentLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
