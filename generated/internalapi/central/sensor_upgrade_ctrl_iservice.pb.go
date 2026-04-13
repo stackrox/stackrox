@@ -578,7 +578,7 @@ var file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_once sync.O
 func file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_ensure() { file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init_once.Do(file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init() {
-	if File_internalapi_central_sensor_upgrade_ctrl_iservice_proto != nil || skipProtoInit {
+	if File_internalapi_central_sensor_upgrade_ctrl_iservice_proto != nil {
 		return
 	}
 	file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_msgTypes[2].OneofWrappers = []any{

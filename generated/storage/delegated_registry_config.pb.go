@@ -245,7 +245,7 @@ var file_storage_delegated_registry_config_proto_init_once sync.Once
 func file_storage_delegated_registry_config_proto_init_ensure() { file_storage_delegated_registry_config_proto_init_once.Do(file_storage_delegated_registry_config_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_storage_delegated_registry_config_proto_init() {
-	if File_storage_delegated_registry_config_proto != nil || skipProtoInit {
+	if File_storage_delegated_registry_config_proto != nil {
 		return
 	}
 	type x struct{}

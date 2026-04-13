@@ -214,7 +214,7 @@ var file_internalapi_sensor_admission_control_iservice_proto_init_once sync.Once
 func file_internalapi_sensor_admission_control_iservice_proto_init_ensure() { file_internalapi_sensor_admission_control_iservice_proto_init_once.Do(file_internalapi_sensor_admission_control_iservice_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_internalapi_sensor_admission_control_iservice_proto_init() {
-	if File_internalapi_sensor_admission_control_iservice_proto != nil || skipProtoInit {
+	if File_internalapi_sensor_admission_control_iservice_proto != nil {
 		return
 	}
 	file_internalapi_sensor_admission_control_proto_init()

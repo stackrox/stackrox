@@ -644,7 +644,7 @@ var file_api_v1_process_baseline_service_proto_init_once sync.Once
 func file_api_v1_process_baseline_service_proto_init_ensure() { file_api_v1_process_baseline_service_proto_init_once.Do(file_api_v1_process_baseline_service_proto_init) }
 func init() {} // proto registration is lazy — triggered by first ProtoReflect() call
 func file_api_v1_process_baseline_service_proto_init() {
-	if File_api_v1_process_baseline_service_proto != nil || skipProtoInit {
+	if File_api_v1_process_baseline_service_proto != nil {
 		return
 	}
 	type x struct{}
