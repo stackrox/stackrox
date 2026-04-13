@@ -223,6 +223,7 @@ func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
 	if !exists {
 		entry = &bufferedActivityEntry{
 			activities: make([]*sensorAPI.FileActivity, 0, 10),
+			timestamp:  time.Now(),
 		}
 		p.bufferedActivity[key] = entry
 	}
@@ -235,7 +236,6 @@ func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
 	}
 
 	entry.activities = append(entry.activities, fs)
-	entry.timestamp = time.Now()
 	p.totalBufferedActivity++
 	metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
 }
@@ -303,9 +303,13 @@ func (p *Pipeline) processFileActivity(fs *sensorAPI.FileActivity) {
 		p.bufferActivity(fs)
 		event := processsignal.NewUnenrichedProcessIndicatorEvent(p.msgCtx, indicator)
 		if err := p.pubSubDispatcher.Publish(event); err != nil {
-			log.Errorf("Failed to publish unenriched process indicator for file activity: %v", err)
+			log.Errorf("Failed to publish unenriched process indicator for file activity: %v, falling back to legacy enrichment", err)
+			// Remove the buffered activity and fall through to legacy path.
+			key := cacheKey(process.GetContainerId(), process.GetId())
+			_ = p.popBufferedActivity(key)
+		} else {
+			return
 		}
-		return
 	}
 
 	// Legacy path: enrich directly from cluster entities store.
@@ -356,6 +360,7 @@ func (p *Pipeline) pruneExpiredBuffers() {
 	}
 
 	if p.totalBufferedActivity < 0 {
+		log.Warnf("totalBufferedActivity went negative (%d), resetting to 0 (possible accounting bug)", p.totalBufferedActivity)
 		p.totalBufferedActivity = 0
 	}
 
