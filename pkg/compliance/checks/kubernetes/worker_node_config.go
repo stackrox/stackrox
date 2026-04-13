@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func registerWorkerNodeConfig() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("4_1_1"): common.OptionalPermissionCheck("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", 0644),
 		standards.CISKubeCheckName("4_1_2"): common.OptionalOwnershipCheck("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", "root", "root"),

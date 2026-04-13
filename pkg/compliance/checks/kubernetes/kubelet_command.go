@@ -33,7 +33,7 @@ var tlsCipherSet = set.NewStringSet(
 	"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
 )
 
-func init() {
+func registerKubeletCommand() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("4_2_1"):  wrapKubeletCheck(authenticationCheck),
 		standards.CISKubeCheckName("4_2_2"):  wrapKubeletCheck(authorizationCheck),

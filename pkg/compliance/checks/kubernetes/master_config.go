@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/framework"
 )
 
-func init() {
+func registerMasterConfig() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("1_1_1"): common.OptionalPermissionCheck("/etc/kubernetes/manifests/kube-apiserver.yaml", 0644),
 		standards.CISKubeCheckName("1_1_2"): common.OptionalOwnershipCheck("/etc/kubernetes/manifests/kube-apiserver.yaml", "root", "root"),

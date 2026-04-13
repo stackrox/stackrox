@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func registerPoliciesPodSecurity() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("5_2_1"): common.NoteCheck("Minimize the admission of privileged containers"),
 		standards.CISKubeCheckName("5_2_2"): common.NoteCheck("Minimize the admission of containers wishing to share the host process ID namespace"),
