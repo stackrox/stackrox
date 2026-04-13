@@ -1,3 +1,5 @@
+import static util.Helpers.evaluateWithRetry
+
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import io.grpc.StatusRuntimeException
@@ -84,8 +86,17 @@ class UpgradesTest extends BaseSpecification {
         def nodes = NodeService.getNodes()
         assert nodes.size() != 0
         "Image API returns non-zero values on upgrade"
-        def images = ImageService.getImages()
-        assert images.size() != 0
+        if (flattenImageDataEnabled) {
+            // When FlattenImageData is enabled, the reprocessor moves images from the
+            // images table to images_v2 after upgrade, which may take some time.
+            evaluateWithRetry(30, 10) {
+                def images = ImageService.getImages()
+                assert images.size() != 0
+            }
+        } else {
+            def images = ImageService.getImages()
+            assert images.size() != 0
+        }
     }
 
     @Unroll
@@ -101,8 +112,20 @@ class UpgradesTest extends BaseSpecification {
         then:
         "Check that we got the correct number of #resourceType from GraphQL "
         assert resultRet.getValue() != null
-        def items = resultRet.getValue()[resourceType]
-        assert items.size() >= minResults
+        if (flattenImageDataEnabled) {
+            // When FlattenImageData is enabled, the reprocessor moves images from the
+            // images table to images_v2 after upgrade, which may take some time.
+            evaluateWithRetry(30, 10) {
+                def retryResultRet = gqlService.Call(getQuery(resourceType), [ query: searchQuery ])
+                assert retryResultRet.getCode() == 200
+                assert retryResultRet.getValue() != null
+                def retryItems = retryResultRet.getValue()[resourceType]
+                assert retryItems.size() >= minResults
+            }
+        } else {
+            def items = resultRet.getValue()[resourceType]
+            assert items.size() >= minResults
+        }
 
         where:
         "Data Inputs Are:"

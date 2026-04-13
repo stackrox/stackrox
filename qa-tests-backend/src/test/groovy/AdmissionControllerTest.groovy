@@ -83,7 +83,8 @@ class AdmissionControllerTest extends BaseSpecification {
         // Pre-scan the image so Central has cached scan results for CVE-based policy evaluation.
         ImageService.scanImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
 
-        ImageOuterClass.Image image = ImageService.getImage(SCAN_INLINE_IMAGE_SHA, false)
+        def imageId = flattenImageDataEnabled ? TEST_IMAGE_V2_ID : SCAN_INLINE_IMAGE_SHA
+        ImageOuterClass.Image image = ImageService.getImage(imageId, false)
         assert image
         assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
 
