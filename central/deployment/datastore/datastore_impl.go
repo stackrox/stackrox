@@ -101,8 +101,11 @@ func (ds *datastoreImpl) initializeRanker() {
 
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
-	// The store search function does not use select fields, only views do. Hence empty query is used in the walk below
-	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(deployment *storage.Deployment) error {
+	// Only include active deployments in risk ranking (exclude soft-deleted).
+	query := pkgSearch.NewQueryBuilder().
+		AddStrings(pkgSearch.LifecycleStage, storage.DeploymentLifecycleStage_DEPLOYMENT_ACTIVE.String()).
+		ProtoQuery()
+	err := ds.deploymentStore.WalkByQuery(readCtx, query, func(deployment *storage.Deployment) error {
 		riskScore := deployment.GetRiskScore()
 		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
 
