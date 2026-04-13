@@ -21,9 +21,13 @@ type Getter interface {
 
 // Updater fetches and caches the repository-to-CPE mapping from an indexer.
 // It periodically refreshes the cached value using conditional fetches.
+// Initialization is lazy: the first call to Get triggers the initial fetch
+// and starts the background refresh goroutine.
 type Updater struct {
 	getter Getter
+	done   chan struct{}
 
+	initOnce     sync.Once
 	mu           sync.RWMutex
 	value        atomic.Pointer[repositorytocpe.MappingFile]
 	lastModified string
@@ -34,26 +38,32 @@ type Updater struct {
 func NewUpdater(getter Getter) *Updater {
 	return &Updater{
 		getter: getter,
+		done:   make(chan struct{}),
 	}
 }
 
-// Start begins the background refresh loop. It performs an initial fetch
-// and then periodically refreshes the mapping using conditional fetches.
-//
-// Start blocks until the context is cancelled.
-func (u *Updater) Start(ctx context.Context) error {
+// init performs the initial fetch and starts the background refresh loop.
+// It is called once on first access via Get.
+func (u *Updater) init() {
+	ctx := context.Background()
 	// Initial fetch (unconditional).
 	if err := u.fetch(ctx, ""); err != nil {
 		slog.WarnContext(ctx, "failed initial fetch of repo-to-CPE mapping; will retry", "reason", err)
 	}
 
+	// Start background refresh goroutine.
+	go u.refreshLoop(ctx)
+}
+
+// refreshLoop periodically refreshes the mapping using conditional fetches.
+func (u *Updater) refreshLoop(ctx context.Context) {
 	ticker := time.NewTicker(defaultRefreshInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-u.done:
+			return
 		case <-ticker.C:
 			u.mu.RLock()
 			lastMod := u.lastModified
@@ -64,6 +74,11 @@ func (u *Updater) Start(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+// Close stops the background refresh goroutine.
+func (u *Updater) Close() {
+	close(u.done)
 }
 
 // fetch retrieves the mapping from the indexer using a conditional fetch.
@@ -90,22 +105,14 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 }
 
 // Get returns the cached repository-to-CPE mapping.
-// If no mapping has been fetched yet, it attempts to fetch one synchronously.
-// Returns an empty MappingFile if the getter is nil or fetch fails.
-func (u *Updater) Get(ctx context.Context) *repositorytocpe.MappingFile {
-	// Try to return cached value first.
+// On first call, it triggers initialization: fetching the mapping and starting
+// the background refresh goroutine. Returns an empty MappingFile if fetch fails.
+func (u *Updater) Get(_ context.Context) *repositorytocpe.MappingFile {
+	// Lazy initialization on first access.
+	u.initOnce.Do(u.init)
+
 	if v := u.value.Load(); v != nil {
 		return v
-	}
-
-	// No cached value yet - try a synchronous fetch.
-	if u.getter != nil {
-		if err := u.fetch(ctx, ""); err != nil {
-			slog.WarnContext(ctx, "failed to fetch repo-to-CPE mapping on first access", "reason", err)
-		}
-		if v := u.value.Load(); v != nil {
-			return v
-		}
 	}
 
 	// Return empty mapping as fallback.

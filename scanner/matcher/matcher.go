@@ -203,19 +203,15 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	sbomer := sbom.NewSBOMer()
 
 	// Create the repository-to-CPE mapping updater if SBOM scanning is enabled
-	// and a remote indexer is configured.
+	// and a remote indexer is configured. The updater initializes lazily on
+	// first access, so no explicit Start call is needed.
 	var repo2cpeUpdater *repo2cpe.Updater
 	if features.SBOMScanning.Enabled() && cfg.RemoteIndexerEnabled {
 		remoteIndexer, err := indexer.NewRemoteIndexer(ctx, cfg.IndexerAddr)
 		if err != nil {
-			zlog.Warn(ctx).Err(err).Msg("failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete")
+			slog.WarnContext(ctx, "failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete", "reason", err)
 		} else {
 			repo2cpeUpdater = repo2cpe.NewUpdater(remoteIndexer)
-			go func() {
-				if err := repo2cpeUpdater.Start(ctx); err != nil {
-					zlog.Error(ctx).Err(err).Msg("repo-to-CPE mapping updater failed")
-				}
-			}()
 		}
 	}
 
@@ -258,6 +254,9 @@ func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, op
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
+	if m.repo2cpeUpdater != nil {
+		m.repo2cpeUpdater.Close()
+	}
 	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
