@@ -22,7 +22,6 @@ var defaultLocalSSHOpts = []string{
 // Constants for virtctl remote logging: heartbeat interval and max length for inlined command output.
 const (
 	defaultVirtctlHeartbeatInterval = 30 * time.Second
-	remoteCommandLogDetailMaxLen    = 320
 )
 
 // normalizeVirtctlTarget returns vm unchanged if it already includes a resource prefix; otherwise prefixes with "vmi/".
@@ -130,31 +129,6 @@ func formatDeadlineRemaining(ctx context.Context) string {
 		remaining = 0
 	}
 	return remaining.String()
-}
-
-// summarizeRemoteCommandOutputForLog normalizes and truncates remote output for a single-line log field.
-func summarizeRemoteCommandOutputForLog(output string) string {
-	output = strings.TrimSpace(output)
-	if output == "" {
-		return ""
-	}
-	// Keep each log line compact and single-line.
-	output = strings.Join(strings.Fields(output), " ")
-	if len(output) <= remoteCommandLogDetailMaxLen {
-		return output
-	}
-	return output[:remoteCommandLogDetailMaxLen] + fmt.Sprintf(" ... (truncated from %d chars)", len(output))
-}
-
-// remoteCommandFailureDetail picks stderr (else stdout) summary text for error messages when a remote command fails.
-func remoteCommandFailureDetail(stdout, stderr string) string {
-	if detail := summarizeRemoteCommandOutputForLog(stderr); detail != "" {
-		return "stderr: " + detail
-	}
-	if detail := summarizeRemoteCommandOutputForLog(stdout); detail != "" {
-		return "stdout: " + detail
-	}
-	return ""
 }
 
 // formatRemoteCommandStreamsForInlineLog formats stdout and stderr for multi-line completion logs.

@@ -165,6 +165,33 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 	return nil
 }
 
+// GetVMContainerDiskImage reads the container disk image from an existing VirtualMachine.
+func GetVMContainerDiskImage(ctx context.Context, client dynamic.Interface, namespace, name string) (string, error) {
+	vm, err := client.Resource(vmGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("get VirtualMachine %s/%s: %w", namespace, name, err)
+	}
+	volumes, found, err := unstructured.NestedSlice(vm.Object, "spec", "template", "spec", "volumes")
+	if err != nil || !found {
+		return "", fmt.Errorf("VirtualMachine %s/%s has no spec.template.spec.volumes", namespace, name)
+	}
+	for _, raw := range volumes {
+		vol, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		n, _ := vol["name"].(string)
+		if n != "containerdisk" {
+			continue
+		}
+		image, _, _ := unstructured.NestedString(vol, "containerDisk", "image")
+		if image != "" {
+			return image, nil
+		}
+	}
+	return "", fmt.Errorf("VirtualMachine %s/%s has no containerdisk volume", namespace, name)
+}
+
 // DeleteVirtualMachine removes a KubeVirt VirtualMachine by name.
 func DeleteVirtualMachine(ctx context.Context, client dynamic.Interface, namespace, name string) error {
 	err := client.Resource(vmGVR).Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
@@ -231,6 +258,38 @@ func virtualMachineStatusDetail(ctx context.Context, client dynamic.Interface, n
 		return fmt.Sprintf("vm printableStatus=%q", printableStatus), false, nil
 	}
 	return "vm status unavailable", false, nil
+}
+
+// terminalPrintableStatuses contains VM printableStatus values that indicate
+// unrecoverable errors where further polling is pointless.
+var terminalPrintableStatuses = []string{
+	"ImagePullBackOff",
+	"ErrImagePull",
+	"InvalidImageName",
+	"RegistryUnavailable",
+	"ImageInspectError",
+	"ErrImageNeverPull",
+	"CrashLoopBackOff",
+	"ErrorUnschedulable",
+}
+
+// vmPrintableStatusTerminal reads the VM printableStatus and returns it along
+// with whether the status indicates a terminal (unrecoverable) failure.
+func vmPrintableStatusTerminal(ctx context.Context, client dynamic.Interface, namespace, name string) (string, bool) {
+	vm, err := client.Resource(vmGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return "", false
+	}
+	ps, found, _ := unstructured.NestedString(vm.Object, "status", "printableStatus")
+	if !found || strings.TrimSpace(ps) == "" {
+		return "", false
+	}
+	for _, terminal := range terminalPrintableStatuses {
+		if strings.Contains(ps, terminal) {
+			return fmt.Sprintf("vm printableStatus=%q (terminal)", ps), true
+		}
+	}
+	return fmt.Sprintf("vm printableStatus=%q", ps), false
 }
 
 // vmiPhaseDetail summarizes VMI phase and Ready condition fields for poll attempt logs.
@@ -382,8 +441,22 @@ func WaitForVirtualMachineInstanceRunning(t testing.TB, ctx context.Context, cli
 			logVMWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, vmiPhaseDetail(vmi))
 			return false, nil
 		}
-		lastDetail = fmt.Sprintf("attempt=%d %s", attempts, vmiPhaseDetail(vmi))
-		logVMWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, vmiPhaseDetail(vmi))
+		detail := vmiPhaseDetail(vmi)
+		lastDetail = fmt.Sprintf("attempt=%d %s", attempts, detail)
+		if phase != string(kubevirtv1.Running) {
+			vmDetail, terminal := vmPrintableStatusTerminal(ctx, client, namespace, name)
+			if terminal {
+				detail += " " + vmDetail
+				lastDetail = fmt.Sprintf("attempt=%d %s", attempts, detail)
+				logVMWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, detail)
+				return false, fmt.Errorf("attempt %d: unrecoverable VM error: %s", attempts, vmDetail)
+			}
+			if vmDetail != "" {
+				detail += " " + vmDetail
+				lastDetail = fmt.Sprintf("attempt=%d %s", attempts, detail)
+			}
+		}
+		logVMWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, detail)
 		return phase == string(kubevirtv1.Running), nil
 	})
 	if err == nil {

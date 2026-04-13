@@ -476,7 +476,7 @@ func (s *VMScanningSuite) waitForGuestBootWarmup(vm VMHandle) {
 				retriesLeft = 0
 			}
 			detail := truncateGuestBootWarmupDetail(stderr)
-			if detail == "<no stderr>" && sshErr != nil {
+			if detail == "<no stderr>" {
 				detail = truncateGuestBootWarmupDetail(sshErr.Error())
 			}
 			if detail == "<no stderr>" {
@@ -658,6 +658,8 @@ func (s *VMScanningSuite) provisionPersistentVMs() {
 		s.logf("provision persistent VMs: namespace %q already exists; reusing it", s.namespace)
 	}
 
+	s.ensureImagePullSecret(ctx)
+
 	specs := []struct {
 		name      string
 		image     string
@@ -680,8 +682,29 @@ func (s *VMScanningSuite) provisionPersistentVMs() {
 			s.logf("provision persistent VMs: created VM %s/%s", s.namespace, sp.name)
 			createdNow[sp.name] = true
 		} else if apierrors.IsAlreadyExists(createErr) {
-			s.logf("provision persistent VMs: VM %s/%s already exists; reusing it", s.namespace, sp.name)
-			createdNow[sp.name] = false
+			currentImage, imgErr := vmhelpers.GetVMContainerDiskImage(ctx, s.dynamicClient, s.namespace, sp.name)
+			if imgErr != nil {
+				s.logf("provision persistent VMs: could not read image for existing VM %s/%s: %v; recreating", s.namespace, sp.name, imgErr)
+			}
+			if imgErr != nil || currentImage != sp.image {
+				if imgErr == nil {
+					s.logf("provision persistent VMs: VM %s/%s has image %q but want %q; deleting and recreating",
+						s.namespace, sp.name, currentImage, sp.image)
+				}
+				delCtx, delCancel := context.WithTimeout(ctx, s.vmDeleteTimeout())
+				require.NoError(s.T(), vmhelpers.DeleteVirtualMachine(delCtx, s.dynamicClient, s.namespace, sp.name),
+					"DeleteVirtualMachine %s/%s for image mismatch", s.namespace, sp.name)
+				require.NoError(s.T(), vmhelpers.WaitForVirtualMachineDeleted(s.T(), delCtx, s.dynamicClient, s.namespace, sp.name),
+					"WaitForVirtualMachineDeleted %s/%s for image mismatch", s.namespace, sp.name)
+				delCancel()
+				require.NoError(s.T(), vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req),
+					"CreateVirtualMachine %s/%s after image mismatch delete", s.namespace, sp.name)
+				s.logf("provision persistent VMs: recreated VM %s/%s with correct image", s.namespace, sp.name)
+				createdNow[sp.name] = true
+			} else {
+				s.logf("provision persistent VMs: VM %s/%s already exists with correct image; reusing it", s.namespace, sp.name)
+				createdNow[sp.name] = false
+			}
 		} else {
 			require.NoError(s.T(), createErr, "EnsureVirtualMachineExists %s/%s", s.namespace, sp.name)
 		}
@@ -719,6 +742,44 @@ func (s *VMScanningSuite) provisionPersistentVMs() {
 	}
 
 	s.logVMPlacement(ctx)
+}
+
+const vmImagePullSecretName = "vm-image-pull-secret"
+
+func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
+	if s.cfg.ImagePullSecretPath == "" {
+		return
+	}
+	s.logf("provision persistent VMs: creating image pull secret from %q", s.cfg.ImagePullSecretPath)
+	dockerCfg, err := os.ReadFile(s.cfg.ImagePullSecretPath)
+	require.NoError(s.T(), err, "read image pull secret file %q", s.cfg.ImagePullSecretPath)
+
+	secret := &coreV1.Secret{
+		ObjectMeta: metaV1.ObjectMeta{Name: vmImagePullSecretName},
+		Type:       coreV1.SecretTypeDockerConfigJson,
+		Data:       map[string][]byte{coreV1.DockerConfigJsonKey: dockerCfg},
+	}
+	_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Create(ctx, secret, metaV1.CreateOptions{})
+	if apierrors.IsAlreadyExists(err) {
+		_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Update(ctx, secret, metaV1.UpdateOptions{})
+	}
+	require.NoError(s.T(), err, "ensure image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
+
+	sa, err := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
+	require.NoError(s.T(), err, "get default service account in namespace %q", s.namespace)
+	hasRef := false
+	for _, ref := range sa.ImagePullSecrets {
+		if ref.Name == vmImagePullSecretName {
+			hasRef = true
+			break
+		}
+	}
+	if !hasRef {
+		sa.ImagePullSecrets = append(sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
+		_, err = s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
+		require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
+	}
+	s.logf("provision persistent VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
 }
 
 func (s *VMScanningSuite) logVMPlacement(ctx context.Context) {
@@ -930,7 +991,7 @@ func (s *VMScanningSuite) persistRoxagentStdout(vm *VMHandle, stdout string) str
 		s.logf("ensureCanonicalScan: could not persist roxagent stdout for %s/%s: %v", vm.Namespace, vm.Name, err)
 		return ""
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if _, err := f.WriteString(stdout); err != nil {
 		s.logf("ensureCanonicalScan: could not write roxagent stdout file %q: %v", f.Name(), err)
 		return ""
@@ -1022,10 +1083,7 @@ func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.Vi
 	}
 	s.logf("scan wait %s/%s step 5/6 complete", vm.Namespace, vm.Name)
 
-	conds := vmhelpers.ScanReadiness{Components: true}
-	if s.cfg.RequireActivation {
-		conds.AllScanned = true
-	}
+	conds := vmhelpers.ScanReadiness{Components: true, AllScanned: true}
 	s.logf("scan wait %s/%s step 6/6: wait scan ready (components=%v all-scanned=%v)",
 		vm.Namespace, vm.Name, conds.Components, conds.AllScanned)
 	return vmhelpers.WaitForScanReadyWithOptions(waitCtx, s.vmClient, baseOpts, present.GetId(), conds)
@@ -1263,9 +1321,6 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 			return err
 		}
 		activated = true
-	}
-	if s.cfg.RequireActivation && !activated {
-		return fmt.Errorf("prepare guest %s/%s: VM activation required but guest is not activated", vm.Namespace, vm.Name)
 	}
 	if activated {
 		if err := runStep("Verify activation success", "VerifyActivationSucceeded", func(stepCtx context.Context) error {

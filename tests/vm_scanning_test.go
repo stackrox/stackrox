@@ -55,14 +55,12 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NotNil(t, first.GetScan().GetScanTime())
 			})
 
-			if s.cfg.RequireActivation {
-				t.Run("CentralScanComponents", func(t *testing.T) {
-					for _, component := range first.GetScan().GetComponents() {
-						require.NotContains(t, component.GetNotes(), v2.ScanComponent_UNSCANNED)
-					}
-					require.NotEmpty(t, first.GetScan().GetComponents())
-				})
-			}
+			t.Run("CentralScanComponents", func(t *testing.T) {
+				for _, component := range first.GetScan().GetComponents() {
+					require.NotContains(t, component.GetNotes(), v2.ScanComponent_UNSCANNED)
+				}
+				require.NotEmpty(t, first.GetScan().GetComponents())
+			})
 
 			t.Run("CentralScanOperatingSystem", func(t *testing.T) {
 				os := first.GetScan().GetOperatingSystem()

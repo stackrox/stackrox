@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -52,6 +54,7 @@ type vmScanConfig struct {
 	ActivationKey           string
 	ActivationEndpoint      string
 	SkipCleanup             bool
+	ImagePullSecretPath     string // Path to docker config JSON for private registries
 }
 
 func loadVMScanConfig() (*vmScanConfig, error) {
@@ -120,6 +123,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	}
 
 	cfg.SkipCleanup = envTruthy("VM_SCAN_SKIP_CLEANUP")
+	cfg.ImagePullSecretPath = strings.TrimSpace(os.Getenv("VM_IMAGE_PULL_SECRET_PATH"))
 
 	return cfg, nil
 }
@@ -314,6 +318,6 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 func TestGenerateEphemeralSSHKeypair(t *testing.T) {
 	priv, pub, err := generateEphemeralSSHKeypair()
 	require.NoError(t, err)
-	require.Contains(t, priv, "-----BEGIN OPENSSH PRIVATE KEY-----") //notsecret
-	require.Contains(t, pub, "ssh-ed25519 ")                         //notsecret
+	require.Contains(t, priv, "-----BEGIN OPENSSH PRIVATE KEY-----") // notsecret
+	require.Contains(t, pub, "ssh-ed25519 ")                         // notsecret
 }

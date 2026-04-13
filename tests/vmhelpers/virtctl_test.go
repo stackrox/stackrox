@@ -75,19 +75,6 @@ func TestVirtctlRun_RespectsContextDeadline(t *testing.T) {
 	require.Less(t, time.Since(start), 3*time.Second, "virtctl run should terminate promptly on context deadline")
 }
 
-func TestRemoteCommandFailureDetail(t *testing.T) {
-	t.Parallel()
-
-	require.Equal(t, "", remoteCommandFailureDetail("", ""))
-	require.Equal(t, "stderr: permission denied", remoteCommandFailureDetail("", "permission denied"))
-	require.Equal(t, "stdout: command output", remoteCommandFailureDetail("command output", ""))
-
-	long := strings.Repeat("x", remoteCommandLogDetailMaxLen+40)
-	detail := remoteCommandFailureDetail("", long)
-	require.Contains(t, detail, "stderr:")
-	require.Contains(t, detail, "(truncated from")
-}
-
 func TestSummarizeRemoteSSHCommand(t *testing.T) {
 	t.Parallel()
 

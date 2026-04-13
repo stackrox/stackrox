@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Required to start: 
+# Required to start:
 # - Create a new OCP cluster
 # - install virtualization operator
 # - set KUBECONFIG
@@ -22,8 +22,11 @@ export VIRTCTL_PATH="$(command -v virtctl)"
 export ROXAGENT_BINARY_PATH="$PWD/bin/linux_amd64/roxagent"
 
 # From your cluster's virtualization boot sources:
-export VM_IMAGE_RHEL9="$(oc get istag -n openshift-virtualization-os-images rhel9-guest:latest -o jsonpath='{.image.dockerImageReference}')"
-export VM_IMAGE_RHEL10="$(oc get istag -n openshift-virtualization-os-images rhel10-guest:latest -o jsonpath='{.image.dockerImageReference}')"
+# export VM_IMAGE_RHEL9="$(oc get istag -n openshift-virtualization-os-images rhel9-guest:latest -o jsonpath='{.image.dockerImageReference}')"
+export VM_IMAGE_RHEL9="quay.io/prygiels/rhel9-dnf-primed:latest"
+# export VM_IMAGE_RHEL10="$(oc get istag -n openshift-virtualization-os-images rhel10-guest:latest -o jsonpath='{.image.dockerImageReference}')"
+export VM_IMAGE_RHEL10="quay.io/prygiels/rhel10-dnf-primed:latest"
+export VM_IMAGE_PULL_SECRET_PATH="$HOME/.config/containers/auth.json"
 
 # Guest users for RHEL cloud images:
 export VM_GUEST_USER_RHEL9="cloud-user"
@@ -62,7 +65,7 @@ export VM_SCAN_TIMEOUT=20m
 export VM_SCAN_POLL_INTERVAL=10s
 export VM_SCAN_ESCALATION_ATTEMPT=5
 export VM_DELETE_TIMEOUT=5m
-export VM_SCAN_SKIP_CLEANUP=true   # keep VMs and namespace after test run for faster iteration
+export VM_SCAN_SKIP_CLEANUP=false   # keep VMs and namespace after test run for faster iteration
 
 export VM_SCAN_REQUIRE_ACTIVATION=true   # or true + activation creds
 export RHEL_ACTIVATION_ORG="<org>"
@@ -81,8 +84,8 @@ echo "Running vmhelpers tests..."
 go test -race -p 1 -timeout 90m ./tests/vmhelpers -v
 echo
 echo "Running unit tests..."
-go test -race -count=1 -v ./tests/testmetrics
-go test ./tests -run TestLoadVMScanConfig -v
+go test -tags test -race -count=1 -v ./tests/testmetrics
+go test -tags test_e2e ./tests -run TestLoadVMScanConfig -v
 echo
 echo "Running vmscanning tests..."
 go test -tags test_e2e -run TestVMScanning -v -count=1 -p 1 -timeout 120m ./tests
