@@ -83,6 +83,34 @@ def _create_table_cell_emoji(emoji_name: str) -> dict[str, Any]:
     }
 
 
+def _create_table_cell_mention(mention: str) -> dict[str, Any]:
+    """Create a rich text cell for Slack mentions/emojis.
+
+    Handles:
+    - <@U123> user mentions
+    - :konflux: emoji
+    - @username plain text
+    """
+    elements = []
+
+    # Check if it's a Slack user mention
+    if mention.startswith("<@") and mention.endswith(">"):
+        user_id = mention[2:-1]  # Extract U123 from <@U123>
+        elements.append({"type": "user", "user_id": user_id})
+    # Check if it's an emoji
+    elif mention.startswith(":") and mention.endswith(":"):
+        emoji_name = mention[1:-1]  # Extract konflux from :konflux:
+        elements.append({"type": "emoji", "name": emoji_name})
+    # Plain text mention
+    else:
+        elements.append({"type": "text", "text": mention})
+
+    return {
+        "type": "rich_text",
+        "elements": [{"type": "rich_text_section", "elements": elements}],
+    }
+
+
 def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
     """Create a rich text link cell for table."""
     return {
@@ -233,7 +261,7 @@ def _create_all_pr_rows(
             _create_table_cell_text("—"),  # Severity
             _create_table_cell_text(pr.title),  # PR Title
             pr_cell,  # PRs
-            _create_table_cell_text(author_mention),  # Author
+            _create_table_cell_mention(author_mention),  # Author
         ])
 
     # Prepend No Jira PRs to put them at the top
