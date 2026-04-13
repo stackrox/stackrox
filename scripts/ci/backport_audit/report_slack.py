@@ -5,7 +5,7 @@ from typing import Any
 
 from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
-from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
+from .urgency import URGENCY_ORDER, calculate_urgency
 
 
 @dataclass
@@ -103,7 +103,8 @@ def _create_all_pr_rows(
 ) -> list[list[dict[str, Any]]]:
     """Create table rows for all PRs, including those with and without issues."""
     all_rows = []
-    jira_to_prs: dict[str, list[int]] = {}
+    jira_to_prs: dict[str, list[PR]] = {}
+    pr_by_number: dict[int, PR] = {pr.number: pr for pr in prs}
 
     # Track which PRs we've already added
     processed_prs = set()
@@ -113,7 +114,7 @@ def _create_all_pr_rows(
         for jira_key in pr.jira_keys:
             if jira_key not in jira_to_prs:
                 jira_to_prs[jira_key] = []
-            jira_to_prs[jira_key].append(pr.number)
+            jira_to_prs[jira_key].append(pr)
 
     # Collect all issues (both complete and with problems)
     all_issues = []
@@ -132,7 +133,9 @@ def _create_all_pr_rows(
                 issue.due_date,
                 issue.sla_date,
             )
-            deadline_info = format_deadline_info(issue.due_date, issue.sla_date)
+
+            # Get PR title from first associated PR
+            pr_title = jira_to_prs.get(jira_key, [None])[0].title if jira_to_prs.get(jira_key) else "—"
 
             issue_info = (
                 jira_key,
@@ -140,7 +143,7 @@ def _create_all_pr_rows(
                 ":white_check_mark:" if has_affected else ":x:",
                 issue.priority or "No priority",
                 issue.severity,
-                deadline_info,
+                pr_title,
                 urgency_level,
                 urgency_icon,
                 has_fix and has_affected,  # is_complete
@@ -159,7 +162,7 @@ def _create_all_pr_rows(
             affected_icon,
             priority,
             severity,
-            deadline_info,
+            pr_title,
             urgency_level,
             urgency_icon,
             _is_complete,
@@ -168,15 +171,15 @@ def _create_all_pr_rows(
         pr_refs = jira_to_prs.get(jira_key, [])
         if pr_refs:
             pr_elements = []
-            for i, pr_num in enumerate(pr_refs):
+            for i, pr_obj in enumerate(pr_refs):
                 if i > 0:
                     pr_elements.append({"type": "text", "text": ", "})
                 pr_elements.append({
                     "type": "link",
-                    "url": f"https://github.com/stackrox/stackrox/pull/{pr_num}",
-                    "text": f"#{pr_num}",
+                    "url": f"https://github.com/stackrox/stackrox/pull/{pr_obj.number}",
+                    "text": f"#{pr_obj.number}",
                 })
-                processed_prs.add(pr_num)
+                processed_prs.add(pr_obj.number)
             pr_cell = {
                 "type": "rich_text",
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
@@ -198,12 +201,14 @@ def _create_all_pr_rows(
             _create_table_cell_emoji(affected_emoji),
             _create_table_cell_emoji(priority_emoji),
             _create_table_cell_text(severity_display),
-            _create_table_cell_text(deadline_info),
+            _create_table_cell_text(pr_title),
             pr_cell,
+            _create_table_cell_text("—"),  # Author (N/A for Jira issues)
         ])
 
-    # Add PRs without Jira reference
+    # Add PRs without Jira reference at the TOP (prepend)
     prs_no_jira = [pr for pr in prs if not pr.jira_keys and pr.number not in processed_prs]
+    no_jira_rows = []
     for pr in prs_no_jira:
         pr_cell = {
             "type": "rich_text",
@@ -217,18 +222,22 @@ def _create_all_pr_rows(
             }],
         }
 
-        all_rows.append([
-            _create_table_cell_text("—"),
-            _create_table_cell_text("No Jira"),
-            _create_table_cell_text("—"),
-            _create_table_cell_text("—"),
-            _create_table_cell_text("—"),
-            _create_table_cell_text("—"),
-            _create_table_cell_text("—"),
-            pr_cell,
+        author_mention = get_slack_mention(pr.author)
+
+        no_jira_rows.append([
+            _create_table_cell_text("—"),  # Urgency
+            _create_table_cell_text("No Jira"),  # Issue
+            _create_table_cell_emoji("x"),  # fixVersion (missing)
+            _create_table_cell_emoji("x"),  # affectedVersion (missing)
+            _create_table_cell_emoji("jira-undefined"),  # Priority
+            _create_table_cell_text("—"),  # Severity
+            _create_table_cell_text(pr.title),  # PR Title
+            pr_cell,  # PRs
+            _create_table_cell_text(author_mention),  # Author
         ])
 
-    return all_rows
+    # Prepend No Jira PRs to put them at the top
+    return no_jira_rows + all_rows
 
 
 def _generate_branch_blocks(
@@ -276,8 +285,9 @@ def _generate_branch_blocks(
                 _create_table_cell_text("affectedVersion"),
                 _create_table_cell_text("Priority"),
                 _create_table_cell_text("Severity"),
-                _create_table_cell_text("Deadline"),
+                _create_table_cell_text("PR Title"),
                 _create_table_cell_text("PRs"),
+                _create_table_cell_text("Author"),
             ]
         ]
 
