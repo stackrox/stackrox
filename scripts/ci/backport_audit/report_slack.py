@@ -429,5 +429,3 @@ def generate_slack_payload(
         "channel": slack_channel,
         "blocks": blocks,
     }
-
-
