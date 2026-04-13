@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
-from .urgency import calculate_urgency, format_deadline_info
+from .urgency import calculate_urgency, format_deadline_info, URGENCY_ORDER
 
 
 def generate_slack_payload(
@@ -37,7 +37,7 @@ def generate_slack_payload(
     )
 
     total_jira_issues = 0
-    urgency_counts = {'overdue': 0, 'critical': 0, 'high': 0, 'normal': 0}
+    urgency_counts = {'overdue': 0, 'critical': 0, 'high': 0, 'normal': 0, 'low': 0}
 
     for branch in branches:
         prs = prs_by_branch.get(branch.name, [])
@@ -165,8 +165,7 @@ def generate_slack_payload(
                         issues_with_problems.append(issue_info)
 
         if issues_with_problems:
-            urgency_order = {'overdue': 0, 'critical': 1, 'high': 2, 'normal': 3, 'low': 4}
-            issues_with_problems.sort(key=lambda x: urgency_order.get(x[8], 99))
+            issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[8], 99))
 
             section_lines.append(f"\n*Jira Issues with Missing Metadata ({len(issues_with_problems)})*")
 

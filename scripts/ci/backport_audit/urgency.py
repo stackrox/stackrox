@@ -1,6 +1,6 @@
 """Urgency calculation utilities for backport audit."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Tuple
 
 
@@ -18,6 +18,14 @@ CVE_TIMEFRAMES = {
     'Important': 28,
     'Moderate': 57,
     'Low': None
+}
+
+URGENCY_ORDER = {
+    'overdue': 0,
+    'critical': 1,
+    'high': 2,
+    'normal': 3,
+    'low': 4
 }
 
 

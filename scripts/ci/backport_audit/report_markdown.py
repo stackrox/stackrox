@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from .models import PR, JiraIssue, ReleaseBranch
 from .slack import get_slack_mention
-from .urgency import calculate_urgency, format_deadline_info
+from .urgency import calculate_urgency, format_deadline_info, URGENCY_ORDER
 
 
 def generate_markdown(
@@ -114,8 +114,7 @@ def generate_markdown(
                         issues_with_problems.append(issue_info)
 
         if issues_with_problems:
-            urgency_order = {'overdue': 0, 'critical': 1, 'high': 2, 'normal': 3, 'low': 4}
-            issues_with_problems.sort(key=lambda x: urgency_order.get(x[8], 99))
+            issues_with_problems.sort(key=lambda x: URGENCY_ORDER.get(x[8], 99))
 
             lines.append(f"### Jira Issues with Missing Metadata ({len(issues_with_problems)})")
             lines.append("")

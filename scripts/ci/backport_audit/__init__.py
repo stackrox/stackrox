@@ -27,6 +27,7 @@ from .urgency import (
     parse_date,
     CVE_TIMEFRAMES,
     PRIORITY_URGENCY,
+    URGENCY_ORDER,
 )
 from .report_markdown import generate_markdown
 from .report_slack import generate_slack_payload
