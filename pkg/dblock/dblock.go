@@ -2,12 +2,13 @@ package dblock
 
 import (
 	"context"
-	"sync"
+
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
