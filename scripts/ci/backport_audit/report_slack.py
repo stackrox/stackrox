@@ -71,6 +71,19 @@ def _create_table_cell_text(text: str) -> dict[str, Any]:
     return {"type": "raw_text", "text": text}
 
 
+def _create_table_cell_rich_text(text: str) -> dict[str, Any]:
+    """Create a rich text cell (supports emojis, formatting)."""
+    return {
+        "type": "rich_text",
+        "elements": [
+            {
+                "type": "rich_text_section",
+                "elements": [{"type": "text", "text": text}],
+            }
+        ],
+    }
+
+
 def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
     """Create a rich text link cell for table."""
     return {
@@ -118,13 +131,13 @@ def _create_issue_table_row(
     severity_display = severity if severity else "—"
 
     return [
-        _create_table_cell_text(urgency_icon),
+        _create_table_cell_rich_text(urgency_icon),
         _create_table_cell_link(
             f"https://redhat.atlassian.net/browse/{jira_key}", jira_key
         ),
-        _create_table_cell_text(fix_icon),
-        _create_table_cell_text(affected_icon),
-        _create_table_cell_text(priority_display),
+        _create_table_cell_rich_text(fix_icon),
+        _create_table_cell_rich_text(affected_icon),
+        _create_table_cell_rich_text(priority_display),
         _create_table_cell_text(severity_display),
         _create_table_cell_text(deadline_info),
         _create_table_cell_text(pr_links),
