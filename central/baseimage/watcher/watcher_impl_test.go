@@ -1678,6 +1678,93 @@ func TestWatcher_SchedulerCadence_SkipsNotDueRepos(t *testing.T) {
 	assert.Equal(t, 0, claimed, "should not claim repos that are not due")
 }
 
+func TestWatcher_SchedulerFairness_SortsReposByLastPolledAt(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+
+	now := time.Now()
+	oldestPolledAt := now.Add(-6 * time.Hour)
+	recentPolledAt := now.Add(-5 * time.Hour)
+	neverScanned := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-000000000001",
+		RepositoryPath: "docker.io/library/never",
+		TagPattern:     "*",
+		Status:         storage.BaseImageRepository_CREATED,
+	}
+	oldestScanned := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-000000000002",
+		RepositoryPath: "docker.io/library/oldest",
+		TagPattern:     "*",
+		Status:         storage.BaseImageRepository_READY,
+		LastPolledAt:   protocompat.ConvertTimeToTimestampOrNil(&oldestPolledAt),
+	}
+	recentlyScanned := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-000000000003",
+		RepositoryPath: "docker.io/library/recent",
+		TagPattern:     "*",
+		Status:         storage.BaseImageRepository_READY,
+		LastPolledAt:   protocompat.ConvertTimeToTimestampOrNil(&recentPolledAt),
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{recentlyScanned, oldestScanned, neverScanned}, nil).
+		Times(1)
+
+	claimOrder := make([]string, 0, 2)
+	blockScan := make(chan struct{})
+	startedScan := make(chan struct{}, 2)
+
+	mockRepoDS.EXPECT().
+		UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, id string, update repoDS.StatusUpdate) (*storage.BaseImageRepository, error) {
+			switch update.Status {
+			case storage.BaseImageRepository_QUEUED:
+				claimOrder = append(claimOrder, id)
+				switch id {
+				case neverScanned.GetId():
+					return neverScanned, nil
+				case oldestScanned.GetId():
+					return oldestScanned, nil
+				case recentlyScanned.GetId():
+					return recentlyScanned, nil
+				default:
+					return nil, errors.New("unexpected repository claimed")
+				}
+			case storage.BaseImageRepository_IN_PROGRESS:
+				startedScan <- struct{}{}
+				<-blockScan
+				return nil, context.Canceled
+			default:
+				return nil, errors.New("unexpected status transition")
+			}
+		}).
+		AnyTimes()
+
+	w := New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, 4*time.Hour, 10*time.Millisecond, 10, 100, 2, false)
+
+	ctx := sac.WithAllAccess(context.Background())
+	claimed, err := w.(*watcherImpl).doSchedulerPass(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, claimed)
+
+	for range 2 {
+		select {
+		case <-startedScan:
+		case <-time.After(2 * time.Second):
+			t.Fatal("timed out waiting for claimed scans to start")
+		}
+	}
+	close(blockScan)
+	w.(*watcherImpl).wg.Wait()
+
+	assert.Equal(t, []string{neverScanned.GetId(), oldestScanned.GetId()}, claimOrder)
+}
+
 func TestWatcher_RegistryError_SetsFailedStatus(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
