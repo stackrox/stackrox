@@ -75,8 +75,8 @@ COPY init-bundles/db-init.dump.zst /db-init.dump.zst
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 
 RUN \
-    groupadd -g 70 postgres && \
-    useradd postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
+    groupmod -g 70 postgres && \
+    usermod -u 70 -g 70 postgres && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /docker-entrypoint-initdb.d /var/run/postgresql && \
     chown postgres:postgres /var/run/postgresql && \
