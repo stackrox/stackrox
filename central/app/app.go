@@ -18,4 +18,7 @@ func Run() {
 	premain.StartMain()
 
 	// Component-specific initialization will be added in Phase 3
+	initMetrics()
+	initCompliance()
+	initGraphQL()
 }
