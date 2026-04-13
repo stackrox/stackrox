@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func RegisterCheck811() {
 	standards.RegisterChecksForStandard(standards.PCIDSS32, map[string]*standards.CheckAndMetadata{
 		standards.PCIDSS32CheckName("8_1_1"): clusterIsCompliant(),
 	})
