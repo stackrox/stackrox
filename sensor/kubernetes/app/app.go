@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	sensormetrics "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/certinit"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -41,7 +42,7 @@ func Run() {
 
 	premain.StartMain()
 
-	initMetrics()
+	sensormetrics.Init()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 

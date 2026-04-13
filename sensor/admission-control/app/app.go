@@ -44,7 +44,7 @@ var (
 func Run() {
 	profiling.SetComponentLabel()
 	memlimit.SetMemoryLimit()
-	initMetrics()
+	manager.Init()
 
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
 	features.LogFeatureFlags()

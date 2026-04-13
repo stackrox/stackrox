@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/premain"
@@ -19,7 +20,5 @@ func Run() {
 	memlimit.SetMemoryLimit()
 	premain.StartMain()
 
-	initMetrics()
-	initCompliance()
-	initGraphQL()
+	metrics.Init()
 }
