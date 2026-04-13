@@ -3,7 +3,6 @@ package google
 import (
 	"net/http"
 
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,7 +18,7 @@ var log = logging.LoggerForModule()
 // This kind of trickery is required because the docker API does not
 // accept a standard oauth2 transport.
 type googleTransport struct {
-	registry.Transport
+	http.RoundTripper
 	name        string
 	config      *docker.Config
 	token       *oauth2.Token
@@ -45,7 +44,7 @@ func (t *googleTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	return concurrency.WithRLock2(&t.mutex,
-		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
+		func() (*http.Response, error) { return t.RoundTripper.RoundTrip(req) },
 	)
 }
 
@@ -68,6 +67,6 @@ func (t *googleTransport) refreshNoLock() error {
 	}
 	t.token = token
 	t.config.SetCredentials("oauth2accesstoken", token.AccessToken)
-	t.Transport = docker.DefaultTransport(t.config)
+	t.RoundTripper = docker.DefaultTransport(t.config)
 	return nil
 }

@@ -3,12 +3,12 @@ package docker
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
-	"net/http"
-	"time"
-
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
@@ -294,39 +294,82 @@ func (r *Registry) buildTransport() http.RoundTripper {
 // Callers needing an overall timeout should pass a context with deadline.
 // ListTags lists tags for a repository using the Docker Registry V2 API directly.
 // This replaces go-containerregistry/pkg/v1/remote.List (which pulled in 558 deps)
-// with a simple HTTP GET to /v2/<repo>/tags/list.
+// with a simple HTTP GET to /v2/<repo>/tags/list. Supports pagination via Link headers.
 func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	url := fmt.Sprintf("%s/v2/%s/tags/list", r.url, repository)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating tags list request for %q", repository)
+	var allTags []string
+	nextURL := fmt.Sprintf("%s/v2/%s/tags/list", r.url, repository)
+
+	for nextURL != "" {
+		req, err := http.NewRequestWithContext(ctx, "GET", nextURL, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating tags list request for %q", repository)
+		}
+
+		username, password := r.cfg.GetCredentials()
+		if username != "" || password != "" {
+			req.SetBasicAuth(username, password)
+		}
+
+		resp, err := r.buildTransport().RoundTrip(req)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to list tags for %q", repository)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+			resp.Body.Close()
+			return nil, errors.Errorf("failed to list tags for %q: %d %s", repository, resp.StatusCode, body)
+		}
+
+		var tagList struct {
+			Tags []string `json:"tags"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&tagList); err != nil {
+			resp.Body.Close()
+			return nil, errors.Wrapf(err, "decoding tags for %q", repository)
+		}
+		resp.Body.Close()
+
+		allTags = append(allTags, tagList.Tags...)
+
+		// Check for pagination Link header
+		nextURL = parseLinkHeader(resp.Header.Get("Link"), r.url)
 	}
 
-	username, password := r.cfg.GetCredentials()
-	if username != "" || password != "" {
-		req.SetBasicAuth(username, password)
+	return allTags, nil
+}
+
+// parseLinkHeader extracts the next page URL from a Link header.
+// Format: </v2/repo/tags/list?n=100&last=tag>; rel="next"
+func parseLinkHeader(linkHeader, baseURL string) string {
+	if linkHeader == "" {
+		return ""
 	}
 
-	resp, err := r.buildTransport().RoundTrip(req)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list tags for %q", repository)
-	}
-	defer resp.Body.Close()
+	// Split by comma for multiple links
+	for _, link := range strings.Split(linkHeader, ",") {
+		link = strings.TrimSpace(link)
+		// Check if this is a "next" relation
+		if !strings.Contains(link, `rel="next"`) {
+			continue
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("failed to list tags for %q: %d %s", repository, resp.StatusCode, body)
+		// Extract URL between < and >
+		start := strings.Index(link, "<")
+		end := strings.Index(link, ">")
+		if start >= 0 && end > start {
+			path := link[start+1 : end]
+			// If path is relative, prepend base URL
+			if strings.HasPrefix(path, "/") {
+				return baseURL + path
+			}
+			return path
+		}
 	}
 
-	var tagList struct {
-		Tags []string `json:"tags"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&tagList); err != nil {
-		return nil, errors.Wrapf(err, "decoding tags for %q", repository)
-	}
-	return tagList.Tags, nil
+	return ""
 }

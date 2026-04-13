@@ -8,7 +8,6 @@ import (
 	"time"
 
 	awsECR "github.com/aws/aws-sdk-go-v2/service/ecr"
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -18,7 +17,7 @@ import (
 const earlyExpiry = 5 * time.Minute
 
 type awsTransport struct {
-	registry.Transport
+	http.RoundTripper
 	name      string
 	config    *docker.Config
 	client    *awsECR.Client
@@ -45,7 +44,7 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	return concurrency.WithRLock2(&t.mutex,
-		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
+		func() (*http.Response, error) { return t.RoundTripper.RoundTrip(req) },
 	)
 }
 
@@ -83,6 +82,6 @@ func (t *awsTransport) refreshNoLock(ctx context.Context) error {
 	}
 	t.expiresAt = authData.ExpiresAt
 	t.config.SetCredentials(username, password)
-	t.Transport = docker.DefaultTransport(t.config)
+	t.RoundTripper = docker.DefaultTransport(t.config)
 	return nil
 }

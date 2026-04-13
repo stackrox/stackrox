@@ -8,7 +8,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -24,7 +23,7 @@ const (
 )
 
 type azureTransport struct {
-	registry.Transport
+	http.RoundTripper
 	name        string
 	config      *docker.Config
 	serviceName string
@@ -57,7 +56,7 @@ func (t *azureTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	return concurrency.WithRLock2(&t.mutex,
-		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
+		func() (*http.Response, error) { return t.RoundTripper.RoundTrip(req) },
 	)
 }
 
@@ -98,6 +97,6 @@ func (t *azureTransport) refreshNoLock(ctx context.Context) error {
 	rtExpiry := time.Now().Add(3 * time.Hour)
 	t.expiresAt = &rtExpiry
 	t.config.SetCredentials(oauthUsername, *rtResp.RefreshToken)
-	t.Transport = docker.DefaultTransport(t.config)
+	t.RoundTripper = docker.DefaultTransport(t.config)
 	return nil
 }
