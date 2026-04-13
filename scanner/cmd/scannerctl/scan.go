@@ -63,15 +63,19 @@ func scanCmd(ctx context.Context) *cobra.Command {
 		}
 		var report any
 		opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
+		registryAuth, err := authn.ToRegistryAuth(auth)
+		if err != nil {
+			return err
+		}
 		if *indexOnly {
 			var ir *v4.IndexReport
 			// TODO(ROX-23898): add flag for skipping TLS verification.
-			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
+			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, registryAuth, opt)
 			report = ir
 		} else {
 			var vr *v4.VulnerabilityReport
 			// TODO(ROX-23898): add flag for skipping TLS verification.
-			vr, err = scanner.IndexAndScanImage(ctx, ref, auth, opt)
+			vr, err = scanner.IndexAndScanImage(ctx, ref, registryAuth, opt)
 			report = vr
 		}
 

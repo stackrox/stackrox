@@ -83,7 +83,11 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 		var ir *v4.IndexReport
 		// TODO(ROX-23898): add flag for skipping TLS verification.
 		opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
-		ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
+		registryAuth, err := authn.ToRegistryAuth(auth)
+		if err != nil {
+			return err
+		}
+		ir, err = scanner.GetOrCreateImageIndex(ctx, ref, registryAuth, opt)
 		if err != nil {
 			return fmt.Errorf("indexing: %w", err)
 		}

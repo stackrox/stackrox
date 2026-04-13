@@ -2,11 +2,13 @@ package authn
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 )
 
 // BasicAuthSetting is the environment variable which specifies the basic authentication
@@ -33,5 +35,18 @@ func ParseBasic(auth string) (authn.Authenticator, error) {
 	return &authn.Basic{
 		Username: u,
 		Password: p,
+	}, nil
+}
+
+// ToRegistryAuth converts an authn.Authenticator to a client.RegistryAuth
+// by extracting the username and password from the authenticator's config.
+func ToRegistryAuth(auth authn.Authenticator) (client.RegistryAuth, error) {
+	cfg, err := auth.Authorization()
+	if err != nil {
+		return client.RegistryAuth{}, fmt.Errorf("getting auth config: %w", err)
+	}
+	return client.RegistryAuth{
+		Username: cfg.Username,
+		Password: cfg.Password,
 	}, nil
 }

@@ -101,7 +101,11 @@ func TestImage(t *testing.T) {
 			require.NoError(t, err)
 
 			opt := client.ImageRegistryOpt{}
-			vr, err := c.IndexAndScanImage(ctx, d, auth, opt)
+			registryAuth := client.RegistryAuth{
+				Username: os.Getenv(tc.Username),
+				Password: os.Getenv(tc.Password),
+			}
+			vr, err := c.IndexAndScanImage(ctx, d, registryAuth, opt)
 			require.NoError(t, err)
 
 			expected := tc.TestWant

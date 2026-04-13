@@ -222,6 +222,11 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			go profileForever("matcher", matcherAddr, httpClient, *pprofDir, pprofStopC)
 		}
 
+		registryAuth, err := authn.ToRegistryAuth(auth)
+		if err != nil {
+			return err
+		}
+
 		var stats scaleStats
 		var wg sync.WaitGroup
 		for i := 0; i < *workers; i++ {
@@ -253,7 +258,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						// TODO(ROX-23898): add flag for skipping TLS verification.
 						opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
 						indexStart := time.Now()
-						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth, opt)
+						_, err := scanner.GetOrCreateImageIndex(ctx, d, registryAuth, opt)
 						indexDurationMillis.WithLabelValues(
 							fmt.Sprintf("%d", i),
 							fmt.Sprintf("%d", *workers),
@@ -277,7 +282,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						// this verification's potential failures at this time.
 						// TODO(ROX-23898): add flag for skipping TLS verification.
 						matchStart := time.Now()
-						_, err = scanner.IndexAndScanImage(ctx, d, auth, opt)
+						_, err = scanner.IndexAndScanImage(ctx, d, registryAuth, opt)
 						matchDurationMillis.WithLabelValues(
 							fmt.Sprintf("%d", i),
 							fmt.Sprintf("%d", *workers),
