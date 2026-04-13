@@ -20,134 +20,134 @@ const (
 )
 
 var (
-	// Panics encountered
-	panicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// PanicCounter counts panics encountered
+	PanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "panic_counter",
 		Help:      "Number of panic calls within Sensor.",
 	}, []string{"FunctionName"})
 
-	detectorDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
+	DetectorDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "detector_dedupe_cache_hits",
 		Help:      "A counter of the total number of times we've deduped deployments in the detector",
 	})
 
-	detectorDeploymentProcessed = prometheus.NewCounter(prometheus.CounterOpts{
+	DetectorDeploymentProcessed = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "detector_deployment_processed",
 		Help:      "A counter of the total number of times we've processed deployments in the detector",
 	})
 
-	processDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
+	ProcessDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "dedupe_cache_hits",
 		Help:      "A counter of the total number of times we've deduped the process passed in",
 	})
 
-	processDedupeCacheMisses = prometheus.NewCounter(prometheus.CounterOpts{
+	ProcessDedupeCacheMisses = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "dedupe_cache_misses",
 		Help:      "A counter of the total number of times we've passed through the dedupe cache",
 	})
 
-	processEnrichmentDrops = prometheus.NewCounter(prometheus.CounterOpts{
+	ProcessEnrichmentDrops = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_enrichment_drops",
 		Help:      "Count of process indicators dropped because container metadata was not available before LRU eviction",
 	})
 
-	processEnrichmentHits = prometheus.NewCounter(prometheus.CounterOpts{
+	ProcessEnrichmentHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_enrichment_hits",
 		Help:      "Count of process indicators successfully enriched with container metadata",
 	})
 
-	processEnrichmentLRUCacheSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	ProcessEnrichmentLRUCacheSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_enrichment_cache_size",
 		Help:      "Current number of container entries waiting in the process-enrichment LRU cache",
 	})
 
-	sensorIndicatorChannelFullCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	SensorIndicatorChannelFullCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "indicators_channel_indicator_dropped_counter",
 		Help:      "Total process indicator events dropped because the outgoing buffer to Central was full",
 	})
 
-	networkFlowBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	NetworkFlowBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_buffer_size",
 		Help:      "A gauge of the current size of the Network Flow buffer in Sensor (updated every 30s)",
 	})
 
-	entitiesNotFound = prometheus.NewCounterVec(prometheus.CounterOpts{
+	EntitiesNotFound = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "detector_network_flow_entity_not_found",
 		Help:      "Total number of entities not found when processing Network Flows",
 	}, []string{"kind", "orientation"})
 
-	totalNetworkFlowsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	TotalNetworkFlowsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_flows_sensor_received_counter",
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
 	})
 
-	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	ProcessSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_signal_buffer_size",
 		Help:      "A gauge of the current size of the Process Indicator buffer in Sensor",
 	})
 
-	processSignalDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+	ProcessSignalDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_signal_dropper_counter",
 		Help:      "Count of process signals dropped due to shutdown or a full output buffer",
 	})
 
-	processPipelineModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	ProcessPipelineModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_pipeline_mode",
 		Help:      "Indicates the active process pipeline mode (1 for the active mode, 0 for inactive)",
 	}, []string{"mode"})
 
-	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
+	SensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "sensor_events",
 		Help:      "Total number of events sent from Sensor to Central",
 	}, []string{"Action", "ResourceType", "Type"})
 
-	sensorLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	SensorLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "grpc_last_message_size_sent_bytes",
 		Help:      "A gauge for last message size sent per message type",
 	}, []string{"Type"})
 
-	sensorMaxMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	SensorMaxMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "grpc_max_message_size_sent_bytes",
 		Help:      "A gauge for maximum message size sent in the lifetime of this sensor",
 	}, []string{"Type"})
 
-	sensorMessageSizeSent = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	SensorMessageSizeSent = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "grpc_message_size_sent_bytes",
@@ -158,38 +158,38 @@ var (
 			24_000_000,
 			48_000_000,
 			256_000_000,
-		}, // Bucket sizes selected arbitrary based on current default limits for grpc message size
+		},
 	}, []string{"Type"})
 
-	k8sObjectCounts = prometheus.NewCounterVec(prometheus.CounterOpts{
+	K8sObjectCounts = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_events",
 		Help:      "Total number of Kubernetes resource events processed by the Sensor listener",
 	}, []string{"Action", "Resource"})
 
-	resourcesSyncedUnchaged = prometheus.NewCounter(prometheus.CounterOpts{
+	ResourcesSyncedUnchaged = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resources_synced_unchanged",
 		Help:      "A counter to track how many resources were sent in ResourcesSynced message as stub ids",
 	})
 
-	resourcesSyncedMessageSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	ResourcesSyncedMessageSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resources_synced_size",
 		Help:      "Size in bytes of the most recent ResourcesSynced message sent to Central",
 	})
 
-	deploymentEnhancementQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	DeploymentEnhancementQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "deployment_enhancement_queue_size",
 		Help:      "Current number of deployment enhancement requests from Central waiting to be processed",
 	})
 
-	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	K8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_event_ingestion_to_send_duration",
@@ -197,7 +197,7 @@ var (
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
 	}, []string{"Action", "Resource", "Dispatcher", "Type"})
 
-	k8sObjectProcessingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	K8sObjectProcessingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_event_processing_duration",
@@ -205,7 +205,7 @@ var (
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
 	}, []string{"Action", "Resource", "Dispatcher"})
 
-	resolverChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	ResolverChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resolver_channel_size",
@@ -220,7 +220,7 @@ var (
 		Help:      "Current number of pending deployment references in the resolver deduping queue",
 	})
 
-	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	OutputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "output_channel_size",
@@ -233,7 +233,7 @@ var (
 		"sensor_version": version.GetMainVersion(),
 	}
 
-	telemetryInfo = prometheus.NewGaugeVec(
+	TelemetryInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
@@ -244,7 +244,7 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
-	telemetrySecuredNodes = prometheus.NewGaugeVec(
+	TelemetrySecuredNodes = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
@@ -255,7 +255,7 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
-	telemetrySecuredVCPU = prometheus.NewGaugeVec(
+	TelemetrySecuredVCPU = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
@@ -266,7 +266,7 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
-	telemetryComplianceOperatorVersion = prometheus.NewGaugeVec(
+	TelemetryComplianceOperatorVersion = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
@@ -277,21 +277,21 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id", "compliance_operator_version"},
 	)
 
-	// responsesChannelOperationCount a counter to track the operations in the responses channel
-	responsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// ResponsesChannelOperationCount tracks operations in the responses channel
+	ResponsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "Counts enqueue, dequeue, and drop operations on the Sensor-to-Central buffered stream",
 	}, []string{Operation, "MessageType"})
 
-	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
-	componentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	// ComponentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
+	ComponentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_process_message_duration_seconds",
 		Help:      "Time spent handling a message from Central inside a Sensor component in seconds",
-		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 16), // 1ms to ~32s
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 16),
 	}, []string{ComponentName})
 
 	// ComponentQueueOperations keeps track of the operations of the component queue buffer.
@@ -302,8 +302,8 @@ var (
 		Help:      "A counter that tracks the number of ADD and REMOVE operations on the component buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{ComponentName, Operation})
 
-	// componentProcessMessageErrorsCount tracks the number of errors during ProcessMessage calls for each component
-	componentProcessMessageErrorsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// ComponentProcessMessageErrorsCount tracks the number of errors during ProcessMessage calls for each component
+	ComponentProcessMessageErrorsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_process_message_errors_total",
@@ -338,27 +338,16 @@ var (
 			"A value that stays non-zero for an extended period indicates a stuck informer.",
 	})
 
-	// informerSyncDurationMs tracks the time each informer has spent syncing. While the informer
-	// is still pending, this value is updated periodically and keeps increasing. Once the informer
-	// completes its initial sync, the value is set to the final sync duration and stops changing.
-	informerSyncDurationMs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	// InformerSyncDurationMs tracks the time each informer has spent syncing.
+	InformerSyncDurationMs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "informer_sync_duration_ms",
 		Help:      "Time in milliseconds each informer has spent syncing. While the informer is still pending, this value is updated periodically and keeps increasing. Once the informer completes its initial sync, the value is set to the final sync duration and stops changing. Labeled by informer name (e.g., Deployments, Pods). A value that keeps growing indicates a stuck informer.",
 	}, []string{"informer"})
 
-	// informerInitialObjectPopulationDurationSeconds tracks post-sync startup work per informer:
-	// how long Sensor waits for PopulateInitialObjects to finish processing the initial snapshot
-	// loaded from the informer's indexer.
-	//
-	// This is different from informerSyncDurationMs:
-	//   - informerSyncDurationMs measures informer cache sync time (registration -> HasSynced true).
-	//   - informerInitialObjectPopulationDurationSeconds measures the subsequent handoff/processing
-	//     phase (after cache sync -> PopulateInitialObjects completion).
-	//   - Therefore, informerInitialObjectPopulationDurationSeconds does NOT include any time already
-	//     counted in informerSyncDurationMs; the two metrics represent consecutive, non-overlapping phases.
-	informerInitialObjectPopulationDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	// InformerInitialObjectPopulationDurationSeconds tracks post-sync startup work per informer.
+	InformerInitialObjectPopulationDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "informer_initial_object_population_duration_seconds",
@@ -366,16 +355,16 @@ var (
 			"Measured per informer from PopulateInitialObjects start until completion. " +
 			"High values indicate slow initial object processing, which can delay full listener readiness.",
 		Buckets: []float64{
-			0.1, 0.25, 0.5, // sub-second startup
-			1, 2.5, 5, 10, // common expected range
-			30, 60, 120, 300, // slow / pathological cases up to 5 minutes
+			0.1, 0.25, 0.5,
+			1, 2.5, 5, 10,
+			30, 60, 120, 300,
 		},
 	}, []string{"informer"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
 func IncrementEntityNotFound(kind, orientation string) {
-	entitiesNotFound.With(prometheus.Labels{
+	EntitiesNotFound.With(prometheus.Labels{
 		"kind":        kind,
 		"orientation": orientation,
 	}).Inc()
@@ -383,87 +372,87 @@ func IncrementEntityNotFound(kind, orientation string) {
 
 // IncrementDetectorCacheHit increments the number of deployments deduped by the detector
 func IncrementDetectorCacheHit() {
-	detectorDedupeCacheHits.Inc()
+	DetectorDedupeCacheHits.Inc()
 }
 
 // IncrementDetectorDeploymentProcessed increments the number of deployments processed by the detector
 func IncrementDetectorDeploymentProcessed() {
-	detectorDeploymentProcessed.Inc()
+	DetectorDeploymentProcessed.Inc()
 }
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
 func IncrementPanicCounter(functionName string) {
-	panicCounter.With(prometheus.Labels{"FunctionName": functionName}).Inc()
+	PanicCounter.With(prometheus.Labels{"FunctionName": functionName}).Inc()
 }
 
 // IncrementProcessDedupeCacheHits increments the number of times we deduped a process
 func IncrementProcessDedupeCacheHits() {
-	processDedupeCacheHits.Inc()
+	ProcessDedupeCacheHits.Inc()
 }
 
 // IncrementProcessDedupeCacheMisses increments the number of times we failed to dedupe a process
 func IncrementProcessDedupeCacheMisses() {
-	processDedupeCacheMisses.Inc()
+	ProcessDedupeCacheMisses.Inc()
 }
 
 // RegisterSensorIndicatorChannelFullCounter registers the number of indicators dropped
 func RegisterSensorIndicatorChannelFullCounter() {
-	sensorIndicatorChannelFullCounter.Inc()
+	SensorIndicatorChannelFullCounter.Inc()
 }
 
 // IncrementDeploymentEnhancerQueueSize increments the deployment enhancer queue size by one.
 func IncrementDeploymentEnhancerQueueSize() {
-	deploymentEnhancementQueueSize.Inc()
+	DeploymentEnhancementQueueSize.Inc()
 }
 
 // DecrementDeploymentEnhancerQueueSize decrements the deployment enhancer queue size by one.
 func DecrementDeploymentEnhancerQueueSize() {
-	deploymentEnhancementQueueSize.Dec()
+	DeploymentEnhancementQueueSize.Dec()
 }
 
 // IncrementTotalResourcesSyncSent sets the number of resources synced transmitted in the last sync event
 func IncrementTotalResourcesSyncSent(value int) {
-	resourcesSyncedUnchaged.Add(float64(value))
+	ResourcesSyncedUnchaged.Add(float64(value))
 }
 
 // SetResourcesSyncedSize sets the latest resources synced message size transmitted to central.
 func SetResourcesSyncedSize(size int) {
-	resourcesSyncedMessageSize.Set(float64(size))
+	ResourcesSyncedMessageSize.Set(float64(size))
 }
 
 // SetNetworkFlowBufferSizeGauge set network flow buffer size gauge.
 func SetNetworkFlowBufferSizeGauge(v int) {
-	networkFlowBufferGauge.Set(float64(v))
+	NetworkFlowBufferGauge.Set(float64(v))
 }
 
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(numberOfFlows int) {
-	totalNetworkFlowsReceivedCounter.Add(float64(numberOfFlows))
+	TotalNetworkFlowsReceivedCounter.Add(float64(numberOfFlows))
 }
 
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
 func SetProcessSignalBufferSizeGauge(number int) {
-	processSignalBufferGauge.Set(float64(number))
+	ProcessSignalBufferGauge.Set(float64(number))
 }
 
 // IncrementProcessSignalDroppedCount increments the number of times the process signal was dropped.
 func IncrementProcessSignalDroppedCount() {
-	processSignalDroppedCount.Inc()
+	ProcessSignalDroppedCount.Inc()
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
 func IncrementProcessEnrichmentDrops() {
-	processEnrichmentDrops.Inc()
+	ProcessEnrichmentDrops.Inc()
 }
 
 // IncrementProcessEnrichmentHits increments the number of times we could enrich.
 func IncrementProcessEnrichmentHits() {
-	processEnrichmentHits.Inc()
+	ProcessEnrichmentHits.Inc()
 }
 
 // SetProcessEnrichmentCacheSize sets the enrichment cache size.
 func SetProcessEnrichmentCacheSize(size float64) {
-	processEnrichmentLRUCacheSize.Set(size)
+	ProcessEnrichmentLRUCacheSize.Set(size)
 }
 
 const (
@@ -475,13 +464,13 @@ const (
 
 // SetProcessPipelineMode sets which process pipeline mode is active.
 func SetProcessPipelineMode(mode string) {
-	processPipelineModeGauge.Reset()
-	processPipelineModeGauge.WithLabelValues(mode).Set(1)
+	ProcessPipelineModeGauge.Reset()
+	ProcessPipelineModeGauge.WithLabelValues(mode).Set(1)
 }
 
 // IncK8sEventCount increments the number of objects we're receiving from k8s
 func IncK8sEventCount(action string, resource string) {
-	k8sObjectCounts.With(prometheus.Labels{
+	K8sObjectCounts.With(prometheus.Labels{
 		"Action":   action,
 		"Resource": resource,
 	}).Inc()
@@ -489,27 +478,27 @@ func IncK8sEventCount(action string, resource string) {
 
 // SetResourceProcessingDurationForResource sets the duration for how long it takes to process the resource
 func SetResourceProcessingDurationForResource(event *central.SensorEvent) {
-	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
+	metrics.SetResourceProcessingDurationForEvent(K8sObjectProcessingDuration, event, "")
 }
 
 // IncResolverChannelSize increases the resolverChannel by 1
 func IncResolverChannelSize() {
-	resolverChannelSize.Inc()
+	ResolverChannelSize.Inc()
 }
 
 // DecResolverChannelSize decreases the resolverChannel by 1
 func DecResolverChannelSize() {
-	resolverChannelSize.Dec()
+	ResolverChannelSize.Dec()
 }
 
 // IncOutputChannelSize increases the outputChannel by 1
 func IncOutputChannelSize() {
-	outputChannelSize.Inc()
+	OutputChannelSize.Inc()
 }
 
 // DecOutputChannelSize decreases the outputChannel by 1
 func DecOutputChannelSize() {
-	outputChannelSize.Dec()
+	OutputChannelSize.Dec()
 }
 
 func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.Labels {
@@ -523,19 +512,19 @@ func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.
 	}
 }
 
-// ResponsesChannelAdd increases the responsesChannelOperationCount's Add operation by 1
+// ResponsesChannelAdd increases the ResponsesChannelOperationCount's Add operation by 1
 func ResponsesChannelAdd(msg *central.MsgFromSensor) {
-	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Add.String(), msg)).Inc()
+	ResponsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Add.String(), msg)).Inc()
 }
 
-// ResponsesChannelRemove increases the responsesChannelOperationCount's Remove operation by 1
+// ResponsesChannelRemove increases the ResponsesChannelOperationCount's Remove operation by 1
 func ResponsesChannelRemove(msg *central.MsgFromSensor) {
-	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Remove.String(), msg)).Inc()
+	ResponsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Remove.String(), msg)).Inc()
 }
 
 // ResponsesChannelDrop increases the responsesChannelDroppedCount by 1
 func ResponsesChannelDrop(msg *central.MsgFromSensor) {
-	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
+	ResponsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
@@ -547,29 +536,29 @@ func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetri
 		clusterIDPeeker(),
 	}
 
-	telemetryInfo.Reset()
-	telemetryInfo.WithLabelValues(labels...).Set(1)
+	TelemetryInfo.Reset()
+	TelemetryInfo.WithLabelValues(labels...).Set(1)
 
-	telemetrySecuredNodes.Reset()
-	telemetrySecuredNodes.WithLabelValues(labels...).Set(float64(cm.GetNodeCount()))
+	TelemetrySecuredNodes.Reset()
+	TelemetrySecuredNodes.WithLabelValues(labels...).Set(float64(cm.GetNodeCount()))
 
-	telemetrySecuredVCPU.Reset()
-	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
+	TelemetrySecuredVCPU.Reset()
+	TelemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
 
-	telemetryComplianceOperatorVersion.Reset()
-	telemetryComplianceOperatorVersion.WithLabelValues(append(labels, cm.GetComplianceOperatorVersion())...).Set(1)
+	TelemetryComplianceOperatorVersion.Reset()
+	TelemetryComplianceOperatorVersion.WithLabelValues(append(labels, cm.GetComplianceOperatorVersion())...).Set(1)
 }
 
 // ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
 func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
-	componentProcessMessageDurationSeconds.With(prometheus.Labels{
+	ComponentProcessMessageDurationSeconds.With(prometheus.Labels{
 		ComponentName: componentName,
 	}).Observe(duration.Seconds())
 }
 
 // IncrementCentralReceiverProcessMessageErrors increments the error count for a component's ProcessMessage call
 func IncrementCentralReceiverProcessMessageErrors(componentName string) {
-	componentProcessMessageErrorsCount.With(prometheus.Labels{
+	ComponentProcessMessageErrorsCount.With(prometheus.Labels{
 		ComponentName: componentName,
 	}).Inc()
 }
@@ -578,16 +567,16 @@ func IncrementCentralReceiverProcessMessageErrors(componentName string) {
 // Called periodically for pending informers (with the elapsed time so far)
 // and once for completed informers (with the final sync duration).
 func ObserveInformerSyncDuration(informerName string, duration time.Duration) {
-	informerSyncDurationMs.WithLabelValues(informerName).Set(float64(duration.Milliseconds()))
+	InformerSyncDurationMs.WithLabelValues(informerName).Set(float64(duration.Milliseconds()))
 }
 
 // ResetInformerSyncDuration removes all label values from the sync duration gauge,
 // clearing stale per-informer entries from a previous tracker lifecycle.
 func ResetInformerSyncDuration() {
-	informerSyncDurationMs.Reset()
+	InformerSyncDurationMs.Reset()
 }
 
 // ObserveInformerInitialObjectPopulationDuration records how long initial object population took for an informer.
 func ObserveInformerInitialObjectPopulationDuration(informerName string, duration time.Duration) {
-	informerInitialObjectPopulationDurationSeconds.WithLabelValues(informerName).Observe(duration.Seconds())
+	InformerInitialObjectPopulationDurationSeconds.WithLabelValues(informerName).Observe(duration.Seconds())
 }

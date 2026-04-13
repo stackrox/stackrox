@@ -39,6 +39,8 @@ func Run() {
 
 	premain.StartMain()
 
+	initMetrics()
+
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
