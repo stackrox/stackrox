@@ -96,3 +96,35 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	), nil
 }
+
+// GetTestPostgresDataStoreWithProcessFilter provides a datastore with a custom process filter for testing.
+// This is useful for verifying process indicator cleanup during deployment deletion.
+func GetTestPostgresDataStoreWithProcessFilter(t testing.TB, pool postgres.DB, processFilter filter.Filter) (DataStore, error) {
+	dbStore := pgStore.FullStoreWrap(pgStore.New(pool), pool)
+	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
+	imageV2Store := imageV2DS.GetTestPostgresDataStore(t, pool)
+	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)
+	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	riskStore := riskDS.GetTestPostgresDataStore(t, pool)
+	clusterRanker := ranking.ClusterRanker()
+	namespaceRanker := ranking.NamespaceRanker()
+	deploymentRanker := ranking.DeploymentRanker()
+	mockCtrl := gomock.NewController(t)
+	return newDatastoreImpl(
+		dbStore,
+		imageStore,
+		imageV2Store,
+		processBaselineStore,
+		networkFlowClusterStore,
+		riskStore,
+		nil,
+		processFilter,
+		clusterRanker,
+		namespaceRanker,
+		deploymentRanker,
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
+	), nil
+}
