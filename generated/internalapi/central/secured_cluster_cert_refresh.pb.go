@@ -257,7 +257,7 @@ var file_internalapi_central_secured_cluster_cert_refresh_proto_depIdxs = []int3
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_internalapi_central_secured_cluster_cert_refresh_proto_init() }
 func file_internalapi_central_secured_cluster_cert_refresh_proto_init() {
 	if File_internalapi_central_secured_cluster_cert_refresh_proto != nil {
 		return

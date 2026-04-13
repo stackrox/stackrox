@@ -206,7 +206,7 @@ var file_storage_group_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_storage_group_proto_init() }
 func file_storage_group_proto_init() {
 	if File_storage_group_proto != nil {
 		return

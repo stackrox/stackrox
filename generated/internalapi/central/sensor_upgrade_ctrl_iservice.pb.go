@@ -566,7 +566,7 @@ var file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_depIdxs = []int3
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init() }
 func file_internalapi_central_sensor_upgrade_ctrl_iservice_proto_init() {
 	if File_internalapi_central_sensor_upgrade_ctrl_iservice_proto != nil {
 		return

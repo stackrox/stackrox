@@ -667,7 +667,7 @@ var file_internalapi_compliance_compliance_data_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_internalapi_compliance_compliance_data_proto_init() }
 func file_internalapi_compliance_compliance_data_proto_init() {
 	if File_internalapi_compliance_compliance_data_proto != nil {
 		return

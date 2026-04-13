@@ -172,7 +172,7 @@ var file_internalapi_sensor_image_iservice_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_internalapi_sensor_image_iservice_proto_init() }
 func file_internalapi_sensor_image_iservice_proto_init() {
 	if File_internalapi_sensor_image_iservice_proto != nil {
 		return

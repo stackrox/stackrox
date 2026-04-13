@@ -191,7 +191,7 @@ var file_internalapi_central_sensor_upgrade_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_internalapi_central_sensor_upgrade_proto_init() }
 func file_internalapi_central_sensor_upgrade_proto_init() {
 	if File_internalapi_central_sensor_upgrade_proto != nil {
 		return

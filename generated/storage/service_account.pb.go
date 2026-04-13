@@ -207,7 +207,7 @@ var file_storage_service_account_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_storage_service_account_proto_init() }
 func file_storage_service_account_proto_init() {
 	if File_storage_service_account_proto != nil {
 		return

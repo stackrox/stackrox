@@ -247,7 +247,7 @@ var file_internalapi_central_local_scanner_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_internalapi_central_local_scanner_proto_init() }
 func file_internalapi_central_local_scanner_proto_init() {
 	if File_internalapi_central_local_scanner_proto != nil {
 		return

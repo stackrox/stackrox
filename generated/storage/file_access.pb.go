@@ -392,7 +392,7 @@ var file_storage_file_access_proto_depIdxs = []int32{
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_storage_file_access_proto_init() }
 func file_storage_file_access_proto_init() {
 	if File_storage_file_access_proto != nil {
 		return

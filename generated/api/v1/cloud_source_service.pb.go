@@ -1062,7 +1062,7 @@ var file_api_v1_cloud_source_service_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() {}
+func init() { file_api_v1_cloud_source_service_proto_init() }
 func file_api_v1_cloud_source_service_proto_init() {
 	if File_api_v1_cloud_source_service_proto != nil {
 		return
