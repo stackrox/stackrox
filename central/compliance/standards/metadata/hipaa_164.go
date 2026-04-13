@@ -141,6 +141,6 @@ var hipaa164 = Standard{
 	},
 }
 
-func init() {
+func RegisterHIPAA164() {
 	AllStandards = append(AllStandards, hipaa164)
 }

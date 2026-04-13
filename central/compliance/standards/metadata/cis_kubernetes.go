@@ -722,6 +722,6 @@ var cisKubernetes = Standard{
 	},
 }
 
-func init() {
+func RegisterCISKubernetes() {
 	AllStandards = append(AllStandards, cisKubernetes)
 }
