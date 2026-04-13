@@ -2,9 +2,9 @@ package docker
 
 import (
 	"crypto/tls"
+	"net/http"
 	"strings"
 
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -72,7 +72,7 @@ func RegistryHostnameURL(endpoint string) (string, string) {
 }
 
 // DefaultTransport returns the default transport based on the configuration.
-func DefaultTransport(cfg *Config) registry.Transport {
+func DefaultTransport(cfg *Config) http.RoundTripper {
 	transport := proxy.RoundTripper(
 		proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
 		proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
@@ -84,7 +84,5 @@ func DefaultTransport(cfg *Config) registry.Transport {
 			proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
 		)
 	}
-	transport = cfg.MetricsHandler.RoundTripper(transport, cfg.RegistryType)
-	username, password := cfg.GetCredentials()
-	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)
+	return cfg.MetricsHandler.RoundTripper(transport, cfg.RegistryType)
 }

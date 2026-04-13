@@ -1,10 +1,15 @@
 package docker
 
 import (
+	"context"
+	"encoding/json"
 	"runtime"
 
+	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
+	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	godigest "github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -39,19 +44,35 @@ func handleManifestLists(r *Registry, remote, ref string, manifests []manifestli
 
 // HandleV2ManifestList takes in a v2 manifest list ref and returns the image metadata
 func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	manifestList, err := r.Client.ManifestList(remote, ref)
+	body, _, err := r.client.manifest(context.Background(), remote, ref)
 	if err != nil {
 		return nil, err
+	}
+	var manifestList manifestlist.DeserializedManifestList
+	if err := json.Unmarshal(body, &manifestList); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling manifest list")
 	}
 	return handleManifestLists(r, remote, ref, manifestList.Manifests)
 }
 
 // HandleV2Manifest takes in a v2 ref and returns the image metadata
 func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	metadata, dig, err := r.Client.ManifestV2WithDigest(remote, ref)
+	body, _, err := r.client.manifest(context.Background(), remote, ref)
 	if err != nil {
 		return nil, err
 	}
+	var metadata manifestV2.DeserializedManifest
+	if err := json.Unmarshal(body, &metadata); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling v2 manifest")
+	}
+
+	// Get the digest from the payload
+	_, canonical, err := metadata.Payload()
+	var dig godigest.Digest
+	if err == nil {
+		dig = godigest.FromBytes(canonical)
+	}
+
 	layers := make([]string, 0, len(metadata.Layers))
 	for _, layer := range metadata.Layers {
 		layers = append(layers, layer.Digest.String())
@@ -75,19 +96,50 @@ func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 
 // HandleOCIImageIndex handles fetching data if the media type is OCI image index.
 func HandleOCIImageIndex(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	index, err := r.Client.ImageIndex(remote, ref)
+	body, _, err := r.client.manifest(context.Background(), remote, ref)
 	if err != nil {
 		return nil, err
 	}
-	return handleManifestLists(r, remote, ref, index.Manifests)
+	var index v1.Index
+	if err := json.Unmarshal(body, &index); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling OCI image index")
+	}
+
+	// Convert OCI manifests to Docker manifest descriptors
+	manifests := make([]manifestlist.ManifestDescriptor, 0, len(index.Manifests))
+	for _, m := range index.Manifests {
+		manifests = append(manifests, manifestlist.ManifestDescriptor{
+			Descriptor: distribution.Descriptor{ // nolint:staticcheck
+				MediaType: m.MediaType,
+				Size:      m.Size,
+				Digest:    m.Digest,
+			},
+			Platform: manifestlist.PlatformSpec{
+				Architecture: m.Platform.Architecture,
+				OS:           m.Platform.OS,
+				OSVersion:    m.Platform.OSVersion,
+				OSFeatures:   m.Platform.OSFeatures,
+				Variant:      m.Platform.Variant,
+			},
+		})
+	}
+	return handleManifestLists(r, remote, ref, manifests)
 }
 
 // HandleOCIManifest handles fetching data if the media type is OCI
 func HandleOCIManifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	metadata, dig, err := r.Client.ManifestOCIWithDigest(remote, ref)
+	body, _, err := r.client.manifest(context.Background(), remote, ref)
 	if err != nil {
 		return nil, err
 	}
+	var metadata v1.Manifest
+	if err := json.Unmarshal(body, &metadata); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling OCI manifest")
+	}
+
+	// Compute digest from the canonical bytes
+	dig := godigest.FromBytes(body)
+
 	layers := make([]string, 0, len(metadata.Layers))
 	for _, layer := range metadata.Layers {
 		layers = append(layers, layer.Digest.String())

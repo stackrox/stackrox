@@ -13,7 +13,6 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -62,10 +61,11 @@ type Registry struct {
 	cfg                   *Config
 	protoImageIntegration *storage.ImageIntegration
 
-	Client *registry.Registry
+	client *registryClient
 
-	url      string
-	registry string // This is the registry portion of the image
+	url       string
+	registry  string // This is the registry portion of the image
+	transport http.RoundTripper
 
 	repositoryList       set.StringSet
 	repositoryListTicker *time.Ticker
@@ -79,32 +79,31 @@ type Registry struct {
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
 func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration,
-	transports ...registry.Transport,
+	transports ...http.RoundTripper,
 ) (*Registry, error) {
 	hostname, url := RegistryHostnameURL(cfg.Endpoint)
 
-	var transport registry.Transport
+	var transport http.RoundTripper
 	if len(transports) == 0 || transports[0] == nil {
 		transport = DefaultTransport(cfg)
 	} else {
 		transport = transports[0]
 	}
-	client, err := registry.NewFromTransport(url, transport, registry.Quiet)
-	if err != nil {
-		return nil, err
-	}
+
+	username, password := cfg.GetCredentials()
+	client := newRegistryClient(url, username, password, transport)
 
 	repoListState := pkgUtils.IfThenElse(cfg.DisableRepoList, "disabled", "enabled")
 	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
 	r := &Registry{
 		url:                   url,
 		registry:              hostname,
-		Client:                client,
+		client:                client,
+		transport:             transport,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
 		clientTimeout:         env.RegistryClientTimeout.DurationSetting(),
 	}
-	r.Client.Client.Timeout = r.clientTimeout
 	return r, nil
 }
 
@@ -128,8 +127,8 @@ func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bo
 	return NewDockerRegistryWithConfig(cfg, integration)
 }
 
-func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
-	repos, err := client.Repositories()
+func (r *Registry) retrieveRepositoryList() (set.StringSet, error) {
+	repos, err := r.client.repositories(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +157,7 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	// Lazily update if the ticker has elapsed
 	select {
 	case <-r.repositoryListTicker.C:
-		newRepoSet, err := retrieveRepositoryList(r.Client)
+		newRepoSet, err := r.retrieveRepositoryList()
 		if err != nil {
 			log.Debugf("could not update repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
 		} else {
@@ -179,7 +178,7 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 // This is safe to call multiple times.
 func (r *Registry) lazyLoadRepoList() {
 	r.repoListOnce.Do(func() {
-		repoSet, err := retrieveRepositoryList(r.Client)
+		repoSet, err := r.retrieveRepositoryList()
 		if err != nil {
 			// This is not a critical error, matching will instead be performed solely
 			// based on the registry endpoint (instead of endpoint AND repo list).
@@ -203,9 +202,9 @@ func handleManifests(r *Registry, manifestType, remote, digest string) (*storage
 		return HandleV2ManifestList(r, remote, digest)
 	case manifestV2.MediaTypeManifest:
 		return HandleV2Manifest(r, remote, digest)
-	case registry.MediaTypeImageIndex:
+	case MediaTypeImageIndex:
 		return HandleOCIImageIndex(r, remote, digest)
-	case registry.MediaTypeImageManifest:
+	case MediaTypeImageManifest:
 		return HandleOCIManifest(r, remote, digest)
 	default:
 		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
@@ -219,20 +218,20 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	}
 
 	remote := image.GetName().GetRemote()
-	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
+	digest, manifestType, err := r.client.manifestDigest(context.Background(), remote, utils.Reference(image))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the manifest digest")
 	}
-	return handleManifests(r, manifestType, remote, digest.String())
+	return handleManifests(r, manifestType, remote, digest)
 }
 
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
-	err := r.Client.Ping()
+	err := r.client.ping(context.Background())
 	if err != nil {
 		log.Errorf("error testing docker integration: %v", err)
-		if e, _ := err.(*registry.ClientError); e != nil {
-			return errors.Errorf("error testing integration (code: %d). Please check Central logs for full error", e.Code())
+		if e, _ := err.(*registryClientError); e != nil {
+			return errors.Errorf("error testing integration (code: %d). Please check Central logs for full error", e.StatusCode)
 		}
 		return err
 	}
@@ -259,7 +258,10 @@ func (r *Registry) Name() string {
 
 // HTTPClient returns the *http.Client used to contact the registry.
 func (r *Registry) HTTPClient() *http.Client {
-	return r.Client.Client
+	return &http.Client{
+		Transport: r.transport,
+		Timeout:   r.clientTimeout,
+	}
 }
 
 // buildTransport builds an http.RoundTripper with timeouts, TLS settings, and
@@ -298,7 +300,7 @@ func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, e
 		ctx = context.Background()
 	}
 
-	url := fmt.Sprintf("https://%s/v2/%s/tags/list", r.registry, repository)
+	url := fmt.Sprintf("%s/v2/%s/tags/list", r.url, repository)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating tags list request for %q", repository)
@@ -311,13 +313,13 @@ func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, e
 
 	resp, err := r.buildTransport().RoundTrip(req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "listing tags for %q", repository)
+		return nil, errors.Wrapf(err, "failed to list tags for %q", repository)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("listing tags for %q: %d %s", repository, resp.StatusCode, body)
+		return nil, errors.Errorf("failed to list tags for %q: %d %s", repository, resp.StatusCode, body)
 	}
 
 	var tagList struct {

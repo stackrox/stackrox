@@ -140,6 +140,118 @@ func (c *registryClient) fetchBearerToken(ctx context.Context, wwwAuth string) e
 	return nil
 }
 
+// Media type constants matching the OCI and Docker distribution specs.
+// These replace registry.MediaType* constants from heroku/docker-registry-client.
+const (
+	MediaTypeImageIndex    = "application/vnd.oci.image.index.v1+json"
+	MediaTypeImageManifest = "application/vnd.oci.image.manifest.v1+json"
+)
+
+// manifest fetches a manifest by reference (tag or digest).
+// Returns the raw manifest bytes and the Content-Type header.
+func (c *registryClient) manifest(ctx context.Context, repo, ref string) ([]byte, string, error) {
+	accept := strings.Join([]string{
+		"application/vnd.docker.distribution.manifest.v2+json",
+		"application/vnd.docker.distribution.manifest.list.v2+json",
+		"application/vnd.docker.distribution.manifest.v1+prettyjws",
+		"application/vnd.docker.distribution.manifest.v1+json",
+		MediaTypeImageIndex,
+		MediaTypeImageManifest,
+	}, ", ")
+
+	resp, err := c.do(ctx, "GET", fmt.Sprintf("/v2/%s/manifests/%s", repo, ref), accept)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return body, resp.Header.Get("Content-Type"), nil
+}
+
+// manifestDigest returns the digest and content type for a manifest reference.
+func (c *registryClient) manifestDigest(ctx context.Context, repo, ref string) (string, string, error) {
+	accept := strings.Join([]string{
+		"application/vnd.docker.distribution.manifest.v2+json",
+		"application/vnd.docker.distribution.manifest.list.v2+json",
+		MediaTypeImageIndex,
+		MediaTypeImageManifest,
+	}, ", ")
+
+	req, err := http.NewRequestWithContext(ctx, "HEAD", c.url+fmt.Sprintf("/v2/%s/manifests/%s", repo, ref), nil)
+	if err != nil {
+		return "", "", err
+	}
+	req.Header.Set("Accept", accept)
+	c.addAuth(req)
+
+	resp, err := c.transport.RoundTrip(req)
+	if err != nil {
+		return "", "", err
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		if err := c.fetchBearerToken(ctx, resp.Header.Get("Www-Authenticate")); err != nil {
+			return "", "", err
+		}
+		req, _ = http.NewRequestWithContext(ctx, "HEAD", c.url+fmt.Sprintf("/v2/%s/manifests/%s", repo, ref), nil)
+		req.Header.Set("Accept", accept)
+		c.addAuth(req)
+		resp, err = c.transport.RoundTrip(req)
+		if err != nil {
+			return "", "", err
+		}
+		resp.Body.Close()
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", "", &registryClientError{StatusCode: resp.StatusCode, Message: "manifest HEAD failed"}
+	}
+
+	digest := resp.Header.Get("Docker-Content-Digest")
+	contentType := resp.Header.Get("Content-Type")
+	return digest, contentType, nil
+}
+
+// ping checks if the registry is accessible.
+func (c *registryClient) ping(ctx context.Context) error {
+	_, err := c.do(ctx, "GET", "/v2/", "")
+	return err
+}
+
+// repositories lists repositories in the registry.
+func (c *registryClient) repositories(ctx context.Context) ([]string, error) {
+	resp, err := c.do(ctx, "GET", "/v2/_catalog", "")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var catalog struct {
+		Repositories []string `json:"repositories"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&catalog); err != nil {
+		return nil, err
+	}
+	return catalog.Repositories, nil
+}
+
+// blob downloads a blob (layer or config) by digest.
+// Returns an io.ReadCloser that must be closed by the caller.
+func (c *registryClient) blob(ctx context.Context, repo, digest string) (io.ReadCloser, error) {
+	resp, err := c.do(ctx, "GET", fmt.Sprintf("/v2/%s/blobs/%s", repo, digest), "")
+	if err != nil {
+		return nil, err
+	}
+	// Caller must close the body
+	return resp.Body, nil
+}
+
 // parseWWWAuth parses key="value" pairs from a Www-Authenticate header value.
 func parseWWWAuth(s string) map[string]string {
 	result := make(map[string]string)

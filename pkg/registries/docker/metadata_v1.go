@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"strings"
@@ -105,27 +106,36 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 
 // HandleV1SignedManifest takes in a signed v1 ref and returns the image metadata
 func HandleV1SignedManifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	manifest, err := r.Client.SignedManifest(remote, ref)
+	body, _, err := r.client.manifest(context.Background(), remote, ref)
 	if err != nil {
 		return nil, err
 	}
-	return r.populateV1DataFromManifest(manifest, ref)
+	var manifest schema1.SignedManifest
+	if err := json.Unmarshal(body, &manifest); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling signed manifest")
+	}
+	return r.populateV1DataFromManifest(&manifest, ref)
 }
 
 // HandleV1Manifest takes in a v1 ref and returns the image metadata
 func HandleV1Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
-	manifest, err := r.Client.Manifest(remote, ref)
+	body, _, err := r.client.manifest(context.Background(), remote, ref)
 	if err != nil {
 		return nil, err
 	}
-	return r.populateV1DataFromManifest(manifest, ref)
+	var manifest schema1.SignedManifest
+	if err := json.Unmarshal(body, &manifest); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling manifest")
+	}
+	return r.populateV1DataFromManifest(&manifest, ref)
 }
 
 func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*storage.V1Metadata, error) {
-	v1r, err := r.Client.DownloadLayer(remote, ref)
+	v1r, err := r.client.blob(context.Background(), remote, ref.String())
 	if err != nil {
 		return nil, err
 	}
+	defer v1r.Close()
 	val, err := io.ReadAll(v1r)
 	if err != nil {
 		return nil, err
