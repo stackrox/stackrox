@@ -215,13 +215,19 @@ func cleanUpResources(ctx context.Context, t *testing.T, client ctrlClient.Clien
 // to reach Ready phase, and registers cleanup.
 func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
 	// Ensure ConfigMap exists in the CO namespace (shared across tests).
+	cmName := "e2e-cr-config"
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: "e2e-cr-config", Namespace: coNamespaceV2},
+		ObjectMeta: metav1.ObjectMeta{Name: cmName, Namespace: coNamespaceV2},
 		Data:       map[string]string{"e2e-marker": "true"},
 	}
 	if err := client.Create(ctx, cm); err != nil && !errors2.IsAlreadyExists(err) {
 		require.NoError(t, err, "failed to create ConfigMap")
 	}
+	t.Cleanup(func() {
+		_ = client.Delete(ctx, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: cmName, Namespace: coNamespaceV2},
+		})
+	})
 
 	cr := &complianceoperatorv1.CustomRule{
 		ObjectMeta: metav1.ObjectMeta{
