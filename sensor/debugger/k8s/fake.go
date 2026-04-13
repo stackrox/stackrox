@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -69,8 +68,8 @@ type FakeEventsManager struct {
 	AckChannel chan *central.SensorEvent
 	// Mode the creation mode (at the moment there is only one mode implemented)
 	Mode CreateMode
-	// Client the k8s ClientSet
-	Client client.Interface
+	// Client the k8s ClientSet (test version with typed client access)
+	Client *ClientSet
 	// Reader the TraceReader
 	Reader *TraceReader
 	// clientMap map with the k8s clients
@@ -126,6 +125,7 @@ func (f *FakeEventsManager) Init() {
 		cronJobKind:     func(namespace string) interface{} { return f.Client.Kubernetes().BatchV1().CronJobs(namespace) },
 		podKind:         func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Pods(namespace) },
 	}
+	// Note: these fake K8s methods still use Kubernetes() interface for testing infrastructure
 	f.resourceMap = map[string]interface{}{
 		namespaceKind:             &corev1.Namespace{},
 		secretKind:                &corev1.Secret{},

@@ -241,15 +241,26 @@ func (f *CertificateFetcher) setClusterNameEnv() error {
 }
 
 func (f *CertificateFetcher) getSecretAndWrite(secretName string, namespace string, toFetch []string, toWrite []string) error {
-	secret, err := f.k8s.Kubernetes().CoreV1().Secrets(namespace).Get(context.Background(), secretName, v1.GetOptions{})
+	unstructuredSecret, err := f.k8s.Dynamic().Resource(client.SecretGVR).Namespace(namespace).Get(context.Background(), secretName, v1.GetOptions{})
 	if err != nil {
 		return errors.Errorf("could not retrieve secret %s from namespace %s: %v", secretName, namespace, err)
+	}
+	// Extract the data map from the unstructured object
+	secretData, ok := unstructuredSecret.Object["data"].(map[string]interface{})
+	if !ok {
+		return errors.Errorf("secret %s has invalid or missing data field", secretName)
+	}
+	secret := make(map[string][]byte)
+	for k, v := range secretData {
+		if strVal, ok := v.(string); ok {
+			secret[k] = []byte(strVal)
+		}
 	}
 	if len(toFetch) != len(toWrite) {
 		return errors.New("the length of files to fetch should be the same as the files to write")
 	}
 	for i, fetchedFile := range toFetch {
-		data, ok := secret.Data[fetchedFile]
+		data, ok := secret[fetchedFile]
 		if !ok {
 			return errors.Errorf("%s not found in the secret %s", fetchedFile, secretName)
 		}

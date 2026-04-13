@@ -14,7 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/discovery"
+	discoveryfake "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/dynamic"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
@@ -27,8 +31,12 @@ var (
 
 // MakeFakeClient creates a k8s client that is not connected to any cluster
 func MakeFakeClient() *ClientSet {
+	fakeClient := fake.NewClientset()
+	scheme := runtime.NewScheme()
 	return &ClientSet{
-		k8s: fake.NewClientset(),
+		k8s:       fakeClient,
+		dynamic:   dynamicfake.NewSimpleDynamicClient(scheme),
+		discovery: &discoveryfake.FakeDiscovery{Fake: &fakeClient.Fake},
 	}
 }
 
@@ -47,6 +55,7 @@ func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
 // ClientSet is a test version of kubernetes.ClientSet
 type ClientSet struct {
 	dynamic           dynamic.Interface
+	discovery         discovery.DiscoveryInterface
 	k8s               kubernetes.Interface
 	openshiftApps     appVersioned.Interface
 	openshiftConfig   configVersioned.Interface
@@ -70,6 +79,7 @@ func MakeOutOfClusterClient() (*ClientSet, error) {
 	return &ClientSet{
 		k8s:               k8sClient,
 		dynamic:           mustCreateDynamicClient(config),
+		discovery:         mustCreateDiscoveryClient(config),
 		openshiftApps:     mustCreateOpenshiftAppsClient(config),
 		openshiftConfig:   mustCreateOpenshiftConfigClient(config),
 		openshiftRoute:    mustCreateOpenshiftRouteClient(config),
@@ -129,6 +139,14 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 	return client
 }
 
+func mustCreateDiscoveryClient(config *rest.Config) discovery.DiscoveryInterface {
+	client, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		log.Panicf("Creating discovery client: %v", err)
+	}
+	return client
+}
+
 // Kubernetes returns the kubernetes interface
 func (c *ClientSet) Kubernetes() kubernetes.Interface {
 	return c.k8s
@@ -159,9 +177,13 @@ func (c *ClientSet) OpenshiftOperator() operatorVersioned.Interface {
 }
 
 // Dynamic returns the Dynamic interface
-// This is not used in tests!
 func (c *ClientSet) Dynamic() dynamic.Interface {
 	return c.dynamic
+}
+
+// Discovery returns the Discovery interface
+func (c *ClientSet) Discovery() discovery.DiscoveryInterface {
+	return c.discovery
 }
 
 // SetupExampleCluster creates a fake node and default namespace in the fake k8s client.
