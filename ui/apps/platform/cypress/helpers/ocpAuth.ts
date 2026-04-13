@@ -16,7 +16,9 @@ export function withOcpAuth() {
                 if (!OCP_BRIDGE_AUTH_DISABLED) {
                     cy.url().should('contain', '/login?');
                     cy.get('input[name="username"]').type(OPENSHIFT_CONSOLE_USERNAME);
-                    cy.get('input[name="password"]').type(OPENSHIFT_CONSOLE_PASSWORD);
+                    cy.get('input[name="password"]').type(OPENSHIFT_CONSOLE_PASSWORD, {
+                        log: false,
+                    });
                     cy.get('button[type="submit"]').click();
                 }
 
