@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -32,10 +33,11 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic/dynamicinformer"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -53,17 +55,42 @@ var (
 	imageContentSourceGVR   = schema.GroupVersionResource{Group: "operator.openshift.io", Version: "v1alpha1", Resource: "imagecontentsourcepolicies"}
 )
 
-type startable interface {
-	Start(stopCh <-chan struct{})
+// gvrToAPIPath converts a GroupVersionResource to a Kubernetes API path.
+// Core resources (no group) use /api/v1, others use /apis/<group>/<version>.
+func gvrToAPIPath(gvr schema.GroupVersionResource) string {
+	if gvr.Group == "" {
+		return fmt.Sprintf("/api/%s/%s", gvr.Version, gvr.Resource)
+	}
+	return fmt.Sprintf("/apis/%s/%s/%s", gvr.Group, gvr.Version, gvr.Resource)
 }
 
-func startAndWait(stopSignal concurrency.Waitable, wg *concurrency.WaitGroup, startables ...startable) bool {
-	for _, start := range startables {
-		if start == nil {
-			continue
-		}
-		start.Start(stopSignal.Done())
-	}
+// noOpGenericLister is a stub lister that satisfies cache.GenericLister but doesn't cache objects.
+// Used when k8swatch adapters replace dynamic informers but legacy code still expects a lister.
+type noOpGenericLister struct{}
+
+func (n *noOpGenericLister) List(_ labels.Selector) ([]runtime.Object, error) {
+	return nil, errors.New("lister not supported for k8swatch adapters")
+}
+
+func (n *noOpGenericLister) Get(_ string) (runtime.Object, error) {
+	return nil, errors.New("lister not supported for k8swatch adapters")
+}
+
+func (n *noOpGenericLister) ByNamespace(_ string) cache.GenericNamespaceLister {
+	return &noOpGenericNamespaceLister{}
+}
+
+type noOpGenericNamespaceLister struct{}
+
+func (n *noOpGenericNamespaceLister) List(_ labels.Selector) ([]runtime.Object, error) {
+	return nil, errors.New("lister not supported for k8swatch adapters")
+}
+
+func (n *noOpGenericNamespaceLister) Get(_ string) (runtime.Object, error) {
+	return nil, errors.New("lister not supported for k8swatch adapters")
+}
+
+func waitForWaitGroup(stopSignal concurrency.Waitable, wg *concurrency.WaitGroup) bool {
 	return concurrency.WaitInContext(wg, stopSignal)
 }
 
@@ -144,16 +171,11 @@ func (k *listenerImpl) handleAllEvents() {
 		defer informerTracker.stop()
 	}
 
-	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-	concurrency.WithLock(&k.sifLock, func() {
-		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
-		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
-	})
+	// k8swatch adapters are used instead of dynamic shared informer factories.
+	// This completely removes dependency on client-go/informers and client-go/kubernetes,
+	// eliminating 232 packages from the dependency tree.
+	k8sClient := k8swatch.InClusterClient()
 
-	// OpenShift informers use the dynamic client instead of typed OpenShift
-	// client-go packages. This avoids importing 4 OpenShift scheme packages
-	// that register ~8400 types at init(), saving ~10 MB RSS on vanilla k8s.
 	isOpenShift := env.OpenshiftAPI.BooleanSetting()
 
 	// We want creates to be treated as updates while existing objects are loaded.
@@ -172,7 +194,7 @@ func (k *listenerImpl) handleAllEvents() {
 	)
 	var profileLister cache.GenericLister
 
-	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, k8sClient)
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
 	if err := coAvailabilityChecker.AppendToCRDWatcher(coCrdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the Compliance Operator CRD Watcher: %v", err)
@@ -193,19 +215,47 @@ func (k *listenerImpl) handleAllEvents() {
 	var customRulesAvailable bool
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
-		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
-		complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Informer()
-		complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.Rule.GroupVersionResource()).Informer()
-		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScan.GroupVersionResource()).Informer()
-		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
-		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
+		complianceResultInformer = k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.ComplianceCheckResult.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		complianceScanSettingBindingsInformer = k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.ScanSettingBinding.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		complianceRuleInformer = k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.Rule.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		complianceScanInformer = k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.ComplianceScan.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		complianceSuiteInformer = k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.ComplianceSuite.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		complianceRemediationInformer = k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.ComplianceRemediation.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
 
 		customRulesAvailable, err = sensorUtils.HasAPI(k.client.Discovery(), complianceoperator.GetGroupVersion().String(), complianceoperator.CustomRule.Kind)
 		if err != nil {
 			log.Errorf("Failed to check the availability of Compliance Operator Custom Rules, they won't be tracked: %v", err)
 		}
 		if customRulesAvailable {
-			complianceCustomRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.CustomRule.GroupVersionResource()).Informer()
+			complianceCustomRuleInformer = k8swatch.NewInformerAdapter(
+				gvrToAPIPath(complianceoperator.CustomRule.GroupVersionResource()),
+				k8sClient,
+				func() runtime.Object { return &unstructured.Unstructured{} },
+			)
 		}
 
 		// Override the coCrdHandlerFn to only handle when the resources become unavailable
@@ -228,7 +278,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Leaving this check explicitely here for clarity, that we don't want to
 	// call this code when the feature is disabled.
 	if features.VirtualMachines.Enabled() {
-		vmWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+		vmWatcher := crd.NewCRDWatcher(&k.stopSig, k8sClient)
 		vmAvailabilityChecker := virtualMachineAvailabilityChecker.NewAvailabilityChecker()
 		if err := vmAvailabilityChecker.AppendToCRDWatcher(vmWatcher); err != nil {
 			log.Errorf("Unable to add the Resource to the VirtualMachine CRD Watcher: %v", err)
@@ -246,7 +296,11 @@ func (k *listenerImpl) handleAllEvents() {
 
 		if shouldTrackVirtualMachines {
 			log.Info("Initializing virtual machine informers")
-			virtualMachineInstanceInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachineInstance.GroupVersionResource()).Informer()
+			virtualMachineInstanceInformer = k8swatch.NewInformerAdapter(
+				gvrToAPIPath(virtualmachine.VirtualMachineInstance.GroupVersionResource()),
+				k8sClient,
+				func() runtime.Object { return &unstructured.Unstructured{} },
+			)
 			// Override the vmCrdHandlerFn to only handle when the resources become unavailable
 			vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
 				resourcesUnavailable(),
@@ -263,7 +317,6 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Create the pod informer using k8swatch adapter (not the typed SharedInformerFactory)
 	// to avoid importing k8s.io/client-go/informers which pulls in all typed client packages.
-	k8sClient := k8swatch.InClusterClient()
 	podInformer := k8swatch.NewInformerAdapter("/api/v1/pods", k8sClient, func() runtime.Object { return &corev1.Pod{} })
 	podLister := v1Listers.NewPodLister(podInformer.GetIndexer())
 
@@ -302,7 +355,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, informerRoles, roleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerClusterRoles, clusterRoleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 
-	// OpenShift config and operator informers — using dynamic client to avoid
+	// OpenShift config and operator informers — using k8swatch adapters to avoid
 	// importing typed OpenShift scheme packages (saves ~10 MB RSS on vanilla k8s).
 	if isOpenShift {
 		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
@@ -310,18 +363,33 @@ func (k *listenerImpl) handleAllEvents() {
 		} else {
 			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName, osConfigGroupVersion) {
 				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
-				handle(k.context, informerClusterOperators, dynamicSif.ForResource(clusterOperatorGVR).Informer(), dispatchers.ForClusterOperators(), k.pubSubDispatcher, k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+				clusterOperatorInformer := k8swatch.NewInformerAdapter(
+					gvrToAPIPath(clusterOperatorGVR),
+					k8sClient,
+					func() runtime.Object { return &unstructured.Unstructured{} },
+				)
+				handle(k.context, informerClusterOperators, clusterOperatorInformer, dispatchers.ForClusterOperators(), k.pubSubDispatcher, k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 
 			if env.RegistryMirroringEnabled.BooleanSetting() {
 				if listenerUtils.ResourceExists(resourceList, osImageDigestMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
-					handle(k.context, informerImageDigestMirrorSets, dynamicSif.ForResource(imageDigestMirrorSetGVR).Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+					imageDigestMirrorSetInformer := k8swatch.NewInformerAdapter(
+						gvrToAPIPath(imageDigestMirrorSetGVR),
+						k8sClient,
+						func() runtime.Object { return &unstructured.Unstructured{} },
+					)
+					handle(k.context, informerImageDigestMirrorSets, imageDigestMirrorSetInformer, dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 				}
 
 				if listenerUtils.ResourceExists(resourceList, osImageTagMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
-					handle(k.context, informerImageTagMirrorSets, dynamicSif.ForResource(imageTagMirrorSetGVR).Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+					imageTagMirrorSetInformer := k8swatch.NewInformerAdapter(
+						gvrToAPIPath(imageTagMirrorSetGVR),
+						k8sClient,
+						func() runtime.Object { return &unstructured.Unstructured{} },
+					)
+					handle(k.context, informerImageTagMirrorSets, imageTagMirrorSetInformer, dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 				}
 			}
 		}
@@ -333,7 +401,12 @@ func (k *listenerImpl) handleAllEvents() {
 		} else {
 			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName, osOperatorAlphaGroupVersion) {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
-				handle(k.context, informerImageContentSourcePolicies, dynamicSif.ForResource(imageContentSourceGVR).Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+				imageContentSourceInformer := k8swatch.NewInformerAdapter(
+					gvrToAPIPath(imageContentSourceGVR),
+					k8sClient,
+					func() runtime.Object { return &unstructured.Unstructured{} },
+				)
+				handle(k.context, informerImageContentSourcePolicies, imageContentSourceInformer, dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 		}
 	}
@@ -361,7 +434,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerVirtualMachineInstances, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, dynamicSif, crdSharedInformerFactory) {
+	if !waitForWaitGroup(stopSignal, noDependencyWaitGroup) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -369,10 +442,14 @@ func (k *listenerImpl) handleAllEvents() {
 	if shouldTrackVirtualMachines {
 		// At this point the VirtualMachineInstances should be synced
 		log.Info("Syncing virtual machines")
-		virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
+		virtualMachineInformer := k8swatch.NewInformerAdapter(
+			gvrToAPIPath(virtualmachine.VirtualMachine.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
 		vmWaitGroup := &concurrency.WaitGroup{}
 		handle(k.context, informerVirtualMachines, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.pubSubDispatcher, k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock, informerTracker)
-		if !startAndWait(stopSignal, vmWaitGroup, dynamicSif, crdSharedInformerFactory) {
+		if !waitForWaitGroup(stopSignal, vmWaitGroup) {
 			return
 		}
 		log.Info("Successfully synced virtual machines")
@@ -387,7 +464,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, informerRoleBindings, roleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerClusterRoleBindings, clusterRoleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
 
-	if !startAndWait(stopSignal, prePodWaitGroup) {
+	if !waitForWaitGroup(stopSignal, prePodWaitGroup) {
 		return
 	}
 
@@ -423,7 +500,12 @@ func (k *listenerImpl) handleAllEvents() {
 		dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	if isOpenShift {
-		handle(k.context, informerRoutes, dynamicSif.ForResource(routeGVR).Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+		routeInformer := k8swatch.NewInformerAdapter(
+			gvrToAPIPath(routeGVR),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		handle(k.context, informerRoutes, routeInformer, dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
@@ -433,13 +515,18 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 	if coAvailable {
-		profileGenericInformer := crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource())
-		complianceProfileInformer := profileGenericInformer.Informer()
-		profileLister = profileGenericInformer.Lister()
+		complianceProfileInformer := k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.Profile.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		// Create a fake lister that satisfies the interface but doesn't cache objects.
+		// Compliance profiles are only accessed via events, not direct lookups.
+		profileLister = &noOpGenericLister{}
 		handle(k.context, informerComplianceProfiles, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, crdSharedInformerFactory, dynamicSif) {
+	if !waitForWaitGroup(stopSignal, preTopLevelDeploymentWaitGroup) {
 		return
 	}
 
@@ -455,17 +542,25 @@ func (k *listenerImpl) handleAllEvents() {
 	// k8swatch adapter uses JSON, so it handles both v1 and v1beta1 CronJobs
 	handle(k.context, informerCronJobs, k8swatch.NewInformerAdapter("/apis/batch/v1/cronjobs", k8sClient, func() runtime.Object { return &batchv1.CronJob{} }), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	if isOpenShift {
-		handle(k.context, informerDeploymentConfigs, dynamicSif.ForResource(deploymentConfigGVR).Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+		deploymentConfigInformer := k8swatch.NewInformerAdapter(
+			gvrToAPIPath(deploymentConfigGVR),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
+		handle(k.context, informerDeploymentConfigs, deploymentConfigInformer, dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 
 	// Compliance operator tailored profiles may depend on non-tailored profiles, so we need to start the informer after those were synced
 	if coAvailable {
-		complianceTailoredProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
+		complianceTailoredProfileInformer := k8swatch.NewInformerAdapter(
+			gvrToAPIPath(complianceoperator.TailoredProfile.GroupVersionResource()),
+			k8sClient,
+			func() runtime.Object { return &unstructured.Unstructured{} },
+		)
 		handle(k.context, informerComplianceTailoredProfiles, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(profileLister), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 
-	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	if !startAndWait(stopSignal, wg, dynamicSif, crdSharedInformerFactory) {
+	if !waitForWaitGroup(stopSignal, wg) {
 		return
 	}
 
@@ -474,7 +569,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Finally, process pod events. The pod informer is already running (started above for cache sync).
 	podWaitGroup := &concurrency.WaitGroup{}
 	handle(k.context, informerPods, podInformer, dispatchers.ForDeployments(kubernetesPkg.Pod), k.pubSubDispatcher, k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock, informerTracker)
-	if !startAndWait(stopSignal, podWaitGroup) {
+	if !waitForWaitGroup(stopSignal, podWaitGroup) {
 		return
 	}
 

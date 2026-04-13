@@ -1,16 +1,18 @@
 package crd
 
 import (
+	"net/http"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/k8swatch"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -28,16 +30,16 @@ type crdWatcher struct {
 	stopSig   *concurrency.Signal
 	resources set.StringSet
 	resourceC <-chan *resourceEvent
-	sif       dynamicinformer.DynamicSharedInformerFactory
+	k8sClient *http.Client
 	started   atomic.Bool
 }
 
 // NewCRDWatcher creates a new CRDWatcher
-func NewCRDWatcher(stopSig *concurrency.Signal, sif dynamicinformer.DynamicSharedInformerFactory) *crdWatcher {
+func NewCRDWatcher(stopSig *concurrency.Signal, k8sClient *http.Client) *crdWatcher {
 	return &crdWatcher{
 		stopSig:   stopSig,
 		resources: set.NewStringSet(),
-		sif:       sif,
+		k8sClient: k8sClient,
 		started:   atomic.Bool{},
 	}
 }
@@ -68,16 +70,26 @@ func (w *crdWatcher) Watch(callback WatcherCallback) error {
 		eventC:  eventC,
 	}
 	w.resourceC = eventC
-	informer := w.sif.ForResource(v1.SchemeGroupVersion.WithResource(customResourceDefinitionsName)).Informer()
-	h, err := informer.AddEventHandler(handler)
+
+	// Use k8swatch adapter to watch CRDs instead of dynamic informer.
+	// API path for CRDs is /apis/apiextensions.k8s.io/v1/customresourcedefinitions
+	informer := k8swatch.NewInformerAdapter(
+		"/apis/apiextensions.k8s.io/v1/customresourcedefinitions",
+		w.k8sClient,
+		func() runtime.Object { return &v1.CustomResourceDefinition{} },
+	)
+
+	_, err := informer.AddEventHandler(handler)
 	if err != nil {
 		return errors.Wrap(err, "adding CRD event handler")
 	}
-	w.sif.Start(w.stopSig.Done())
+
+	// Start the adapter's watch goroutine
+	go informer.Run(w.stopSig.Done())
 
 	go watch(callback, w.resources.Freeze(), w.stopSig.Done(), w.resourceC)
 
-	if !cache.WaitForCacheSync(w.stopSig.Done(), h.HasSynced) {
+	if !cache.WaitForCacheSync(w.stopSig.Done(), informer.HasSynced) {
 		log.Warn("Failed to wait for handler cache sync")
 	}
 
