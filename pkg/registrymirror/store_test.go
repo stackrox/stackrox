@@ -2,10 +2,6 @@ package registrymirror
 
 import (
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -48,102 +44,76 @@ var (
 	}
 )
 
-func fileContains(path, text string) bool {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return false
-	}
-
-	return strings.Contains(string(b), text)
-}
-
 func TestUpsertDelete(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "registries.conf")
-
-	s := NewFileStore(WithConfigPath(path), WithDelay(0))
+	s := NewFileStore(WithDelay(0))
 	require.Len(t, s.icspRules, 0)
-	require.NoFileExists(t, path)
 
-	t.Run("config should not be updated when no resource deleted", func(t *testing.T) {
+	t.Run("no change when no resource deleted", func(t *testing.T) {
 		uid := types.UID("fake")
 		err := s.DeleteImageContentSourcePolicy(uid)
 		assert.NoError(t, err)
-		require.NoFileExists(t, path)
 
 		err = s.DeleteImageDigestMirrorSet(uid)
 		assert.NoError(t, err)
-		require.NoFileExists(t, path)
 
 		err = s.DeleteImageTagMirrorSet(uid)
 		assert.NoError(t, err)
-		require.NoFileExists(t, path)
 	})
 
 	t.Run("ICSP", func(t *testing.T) {
-		source := icspA.Spec.RepositoryDigestMirrors[0].Source
 		err := s.UpsertImageContentSourcePolicy(icspA)
 		assert.NoError(t, err)
 		assert.Len(t, s.icspRules, 1)
-		assert.True(t, fileContains(path, source), "config missing registry")
 
 		err = s.DeleteImageContentSourcePolicy(icspA.UID)
 		assert.NoError(t, err)
 		assert.Len(t, s.icspRules, 0)
-		assert.False(t, fileContains(path, source), "config has registry but shouldn't")
 	})
 
 	t.Run("IDMS", func(t *testing.T) {
-		source := idmsA.Spec.ImageDigestMirrors[0].Source
 		err := s.UpsertImageDigestMirrorSet(idmsA)
 		assert.NoError(t, err)
 		assert.Len(t, s.idmsRules, 1)
-		assert.True(t, fileContains(path, source), "config missing registry")
 
 		err = s.DeleteImageDigestMirrorSet(idmsA.UID)
 		assert.NoError(t, err)
 		assert.Len(t, s.idmsRules, 0)
-		assert.False(t, fileContains(path, source), "config has registry but shouldn't")
 	})
 
 	t.Run("ITMS", func(t *testing.T) {
-		source := itmsA.Spec.ImageTagMirrors[0].Source
 		err := s.UpsertImageTagMirrorSet(itmsA)
 		assert.NoError(t, err)
 		assert.Len(t, s.itmsRules, 1)
-		assert.True(t, fileContains(path, source), "config missing registry")
 
 		err = s.DeleteImageTagMirrorSet(itmsA.UID)
 		assert.NoError(t, err)
 		assert.Len(t, s.itmsRules, 0)
-		assert.False(t, fileContains(path, source), "config has registry but shouldn't")
 	})
 }
 
 func TestDelayedUpdate(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "registries.conf")
-
-	s := NewFileStore(WithConfigPath(path), WithDelay(200*time.Millisecond))
+	s := NewFileStore(WithDelay(200 * time.Millisecond))
 	assert.Len(t, s.icspRules, 0)
-	assert.NoFileExists(t, path)
 
 	err := s.UpsertImageContentSourcePolicy(icspA)
 	assert.NoError(t, err)
 	assert.Len(t, s.icspRules, 1)
-	assert.NoFileExists(t, path)
+	// Config hasn't been rebuilt yet (delayed).
+	assert.Nil(t, s.compiled)
 
-	waitFor := 1 * time.Second
-	checkEvery := 250 * time.Millisecond
-	conditionFn := func() bool { return fileContains(path, icspA.Spec.RepositoryDigestMirrors[0].Source) }
-	assert.Eventually(t, conditionFn, waitFor, checkEvery, "config missing registry")
+	conditionFn := func() bool {
+		s.compiledMtx.RLock()
+		defer s.compiledMtx.RUnlock()
+		return len(s.compiled) > 0
+	}
+	assert.Eventually(t, conditionFn, 1*time.Second, 50*time.Millisecond, "config should be rebuilt")
 }
 
 func TestDataRaceAtCleanup(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "registries.conf")
-	s := NewFileStore(WithConfigPath(path), WithDelay(30*time.Millisecond))
+	s := NewFileStore(WithDelay(30 * time.Millisecond))
 
 	wg := sync.WaitGroup{}
 	doneSignal := concurrency.NewSignal()
-	// Spawning two goroutines to attempt to trigger data race in updateConfigDelayed
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -179,28 +149,24 @@ func TestDataRaceAtCleanup(t *testing.T) {
 }
 
 func TestCleanup(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "registries.conf")
-
-	s := NewFileStore(WithConfigPath(path), WithDelay(0))
+	s := NewFileStore(WithDelay(0))
 
 	_ = s.UpsertImageDigestMirrorSet(idmsA)
 	_ = s.UpsertImageTagMirrorSet(itmsA)
 
-	require.FileExists(t, path)
 	assert.Len(t, s.icspRules, 0)
 	assert.Len(t, s.idmsRules, 1)
 	assert.Len(t, s.itmsRules, 1)
 
 	s.Cleanup()
 
-	require.NoFileExists(t, path)
 	assert.Len(t, s.icspRules, 0)
 	assert.Len(t, s.idmsRules, 0)
 	assert.Len(t, s.itmsRules, 0)
+	assert.Nil(t, s.compiled)
 }
 
 func TestPullSources(t *testing.T) {
-	fileName := "registries.conf"
 	digest := "@sha256:0000000000000000000000000000000000000000000000000000000000000000"
 	tag := ":latest"
 
@@ -216,23 +182,8 @@ func TestPullSources(t *testing.T) {
 	itmsImageWithDigest := fmt.Sprintf(itmsfmtStr, digest)
 	itmsImageWithTag := fmt.Sprintf(itmsfmtStr, tag)
 
-	t.Run("return error when config does not exist", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
-
-		s := NewFileStore(WithConfigPath(path))
-
-		srcs, err := s.PullSources(icspImageWithDigest)
-		require.ErrorIs(t, err, fs.ErrNotExist)
-		assert.Zero(t, srcs)
-	})
-
-	t.Run("return nil when config is empty", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
-
-		_, err := os.Create(path)
-		require.NoError(t, err)
-
-		s := NewFileStore(WithConfigPath(path))
+	t.Run("return nil when no rules configured", func(t *testing.T) {
+		s := NewFileStore(WithDelay(0))
 
 		srcs, err := s.PullSources(icspImageWithDigest)
 		require.NoError(t, err)
@@ -240,9 +191,7 @@ func TestPullSources(t *testing.T) {
 	})
 
 	t.Run("return mirrors from ICSP", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
-
-		s := NewFileStore(WithConfigPath(path), WithDelay(0))
+		s := NewFileStore(WithDelay(0))
 
 		err := s.UpsertImageContentSourcePolicy(icspA)
 		require.NoError(t, err)
@@ -261,9 +210,7 @@ func TestPullSources(t *testing.T) {
 	})
 
 	t.Run("return mirrors from IDMS", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
-
-		s := NewFileStore(WithConfigPath(path), WithDelay(0))
+		s := NewFileStore(WithDelay(0))
 
 		err := s.UpsertImageDigestMirrorSet(idmsA)
 		require.NoError(t, err)
@@ -295,9 +242,7 @@ func TestPullSources(t *testing.T) {
 	})
 
 	t.Run("return mirrors from ITMS", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
-
-		s := NewFileStore(WithConfigPath(path), WithDelay(0))
+		s := NewFileStore(WithDelay(0))
 
 		err := s.UpsertImageTagMirrorSet(itmsA)
 		require.NoError(t, err)
@@ -328,30 +273,8 @@ func TestPullSources(t *testing.T) {
 		assert.Contains(t, srcs[1], itmsA.Spec.ImageTagMirrors[0].Mirrors[1])
 	})
 
-	t.Run("error when CRs updated to bad state (sync)", func(t *testing.T) {
-		badPath := ""
-
-		s := NewFileStore(WithConfigPath(badPath), WithDelay(0))
-
-		err := s.UpsertImageContentSourcePolicy(icspA)
-		assert.Error(t, err)
-	})
-
-	t.Run("no error when CRs are updated to bad state (async)", func(t *testing.T) {
-		// the config update will fail and the failure logged, however because the write
-		// is async no error is returned.
-		badPath := ""
-
-		s := NewFileStore(WithConfigPath(badPath), WithDelay(30*time.Millisecond))
-
-		err := s.UpsertImageContentSourcePolicy(icspA)
-		assert.NoError(t, err)
-	})
-
 	t.Run("unqualified hostname returns nil", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
-
-		s := NewFileStore(WithConfigPath(path), WithDelay(0))
+		s := NewFileStore(WithDelay(0))
 
 		err := s.UpsertImageContentSourcePolicy(icspA)
 		assert.NoError(t, err)
