@@ -298,7 +298,7 @@ def _create_all_pr_rows(
 
         no_jira_rows.append([
             _create_table_cell_text("—"),  # Urgency
-            _create_table_cell_text("No Jira"),  # Issue
+            _create_table_cell_emoji("x"),  # Issue (missing)
             pr_cell,  # PRs
             _create_table_cell_text(pr.title),  # PR Title
             _create_table_cell_mention(author_mention),  # Author
@@ -447,6 +447,21 @@ def generate_slack_payload(
                     f"critical/overdue, "
                     f":large_yellow_circle: {urgency_counts['high']} high, "
                     f":large_green_circle: {urgency_counts['normal']} normal"
+                ),
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    "*Action Required:* If you're mentioned in the table below:\n"
+                    "• *:x: in Issue column*: Add a Jira reference to your PR description\n"
+                    "• *:x: in fixVersion column*: Add the target release version to the Jira issue's fixVersion field\n"
+                    "• *:x: in affectedVersion column*: Add affected versions to the Jira issue\n"
+                    "• *(issue unassigned)*: Assign the Jira issue to the appropriate owner\n\n"
+                    "See: <https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338452/Patch+Release+Process"
+                    "|Patch Release Process Documentation>"
                 ),
             },
         },
