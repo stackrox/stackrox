@@ -6,7 +6,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -282,7 +281,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, nil
 	}
 
-	auth := authn.Basic{
+	auth := client.RegistryAuth{
 		Username: rc.Username,
 		Password: rc.Password,
 	}
@@ -304,7 +303,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 	var scannerVersion pkgscanner.Version
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt, client.Version(&scannerVersion))
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, auth, opt, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}

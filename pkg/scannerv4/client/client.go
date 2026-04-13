@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -65,6 +64,14 @@ func IncludeExternalIndexReports() CallOption {
 	}
 }
 
+// RegistryAuth provides registry credentials for image indexing.
+// Replaces go-containerregistry/pkg/RegistryAuth to avoid importing
+// docker/cli (12 packages) for a 2-field struct.
+type RegistryAuth struct {
+	Username string
+	Password string
+}
+
 // Scanner is the interface that contains the StackRox Scanner
 // application-oriented methods. It's offered to simplify application code to
 // call StackRox Scanner.
@@ -77,12 +84,12 @@ type Scanner interface {
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
 	// image and return the generated index report if successful, or error.
-	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.IndexReport, error)
+	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth RegistryAuth, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.IndexReport, error)
 
 	// IndexAndScanImage scans an image for vulnerabilities. If the index report
 	// for that image does not exist, it is created. It returns the vulnerability
 	// report.
-	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator, ImageRegistryOpt, ...CallOption) (*v4.VulnerabilityReport, error)
+	IndexAndScanImage(context.Context, name.Digest, RegistryAuth, ImageRegistryOpt, ...CallOption) (*v4.VulnerabilityReport, error)
 
 	// GetVulnerabilities will match vulnerabilities to the contents provided.
 	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents, callOpts ...CallOption) (*v4.VulnerabilityReport, error)
@@ -268,7 +275,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
-func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.IndexReport, error) {
+func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth RegistryAuth, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.IndexReport, error) {
 	if c.indexer == nil {
 		return nil, errIndexerNotConfigured
 	}
@@ -286,7 +293,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 
 // IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
-func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
+func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth RegistryAuth, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
 	if c.indexer == nil {
 		return nil, errIndexerNotConfigured
 	}
@@ -335,31 +342,27 @@ func (c *gRPCScanner) getImageIndex(ctx context.Context, hashID string, options 
 	return ir, true, nil
 }
 
-func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, options callOptions) (*v4.IndexReport, error) {
+func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth RegistryAuth, opt ImageRegistryOpt, options callOptions) (*v4.IndexReport, error) {
 	id := getImageManifestID(ref)
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
 		Host:   ref.RegistryStr(),
 		Path:   fmt.Sprintf("%s@%s", ref.RepositoryStr(), ref.DigestStr()),
 	}
-	authCfg, err := auth.Authorization()
-	if err != nil {
-		return nil, fmt.Errorf("get auth: %w", err)
-	}
 	req := v4.GetOrCreateIndexReportRequest{
 		HashId: id,
 		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
 				Url:                   imgURL.String(),
-				Username:              authCfg.Username,
-				Password:              authCfg.Password,
+				Username:              auth.Username,
+				Password:              auth.Password,
 				InsecureSkipTlsVerify: opt.InsecureSkipTLSVerify,
 			},
 		},
 	}
 	var ir *v4.IndexReport
 	var responseMetadata metadata.MD
-	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
 		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req, grpc.Header(&responseMetadata))
 		return err
 	})

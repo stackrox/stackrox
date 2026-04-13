@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -236,12 +235,12 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	}
 
 	var scannerVersion pkgscanner.Version
-	auth := authn.Basic{
+	auth := client.RegistryAuth{
 		Username: cfg.Username,
 		Password: cfg.Password,
 	}
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: cfg.GetInsecure()}
-	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth, opt, client.Version(&scannerVersion))
+	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, auth, opt, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
