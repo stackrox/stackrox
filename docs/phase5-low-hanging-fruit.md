@@ -1,5 +1,7 @@
 # Phase 5: Low-Hanging Fruit Migration Plan
 
+> **⚠️ IMPORTANT:** This document includes scanner/* analysis. Scanner is NOT part of the busybox binary (separate service). For busybox-scoped recommendations, see `phase5-busybox-scope.md`.
+
 ## Executive Summary
 
 **Total init() functions surveyed:** ~326 (535 total - 85 already migrated - 124 stubbed)
@@ -286,3 +288,20 @@ See individual agent reports for detailed analysis:
 **Total time investment for Phase 5:** ~8-11 hours
 **Total init() functions eliminated:** 27-32
 **Impact:** Improved isolation, cleaner architecture, modest memory savings
+
+---
+
+## ⚠️ Scanner Out of Scope
+
+**Scanner is a separate binary**, not part of the busybox consolidation (not in central/main.go dispatcher).
+
+**Scanner init() functions (5 total, 4/5 trivial):**
+- scanner/cmd/scanner/main.go
+- scanner/enricher/nvd/nvd.go
+- scanner/enricher/csaf/internal/zreader/zreader.go
+- scanner/indexer/indexer.go
+- scanner/matcher/matcher.go
+
+**Recommendation:** Address in separate PR for scanner-specific optimization (2-4 hours effort).
+
+**For busybox-scoped Phase 5 recommendations, see:** `docs/phase5-busybox-scope.md`
