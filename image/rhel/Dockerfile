@@ -15,7 +15,7 @@ RUN dnf install -y zip
 
 WORKDIR /
 COPY fetch-stackrox-data.sh .
-RUN mkdir /stackrox-data && /fetch-stackrox-data.sh /stackrox-data
+RUN /fetch-stackrox-data.sh /stackrox-data
 
 FROM ubi-base AS package_installer
 
