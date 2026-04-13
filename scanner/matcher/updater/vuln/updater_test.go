@@ -21,6 +21,7 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/assert"
@@ -300,6 +301,62 @@ func TestUpdater_Initialized(t *testing.T) {
 		assert.Contains(t, `"error":"last update failed (fake error)"`, b.String())
 		assert.Contains(t, `"level":"error"`, b.String())
 	})
+}
+
+func TestNormalizeAllowlist(t *testing.T) {
+	// Simulates an allowlist with only whitespace.
+	input := []string{" ", "  ", "  \t   ", ""}
+	u := &Updater{vulnBundleAllowlist: set.NewFrozenSet(normalizeAllowlist(input)...)}
+	assert.True(t, u.isBundleAllowed("bundles/epss.json.zst"), "everything allowed when list empty")
+	assert.True(t, u.isBundleAllowed("hello-world"), "everything allowed when list empty")
+
+	// Simulates an allowlist with surrounding whitespace.
+	input = []string{" epss", " nvd ", "rhel-vex", "", "  "}
+	u = &Updater{vulnBundleAllowlist: set.NewFrozenSet(normalizeAllowlist(input)...)}
+	assert.True(t, u.isBundleAllowed("bundles/epss.json.zst"), "leading-space entry should match")
+	assert.True(t, u.isBundleAllowed("bundles/nvd.json.zst"), "surrounding-space entry should match")
+	assert.True(t, u.isBundleAllowed("bundles/rhel-vex.json.zst"), "clean entry should match")
+	assert.False(t, u.isBundleAllowed("bundles/alpine.json.zst"), "non-listed bundle should not match")
+	assert.Equal(t, 3, u.vulnBundleAllowlist.Cardinality(), "empty/whitespace-only entries should be dropped")
+}
+
+func TestIsBundleAllowed(t *testing.T) {
+	tests := map[string]struct {
+		allowlist set.FrozenSet[string]
+		filename  string
+		want      bool
+	}{
+		"empty allowlist permits all": {
+			filename: "alpine.json.zst",
+			want:     true,
+		},
+		"allowed bundle is permitted": {
+			allowlist: set.NewFrozenSet("alpine", "nvd"),
+			filename:  "alpine.json.zst",
+			want:      true,
+		},
+		"non-allowed bundle is denied": {
+			allowlist: set.NewFrozenSet("alpine", "nvd"),
+			filename:  "ubuntu.json.zst",
+			want:      false,
+		},
+		"directory prefix is ignored": {
+			allowlist: set.NewFrozenSet("alpine", "nvd"),
+			filename:  "bundles/alpine.json.zst",
+			want:      true,
+		},
+		"directory prefix with non-allowed bundle is denied": {
+			allowlist: set.NewFrozenSet("alpine", "nvd"),
+			filename:  "bundles/ubuntu.json.zst",
+			want:      false,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			u := &Updater{vulnBundleAllowlist: tc.allowlist}
+			assert.Equal(t, tc.want, u.isBundleAllowed(tc.filename))
+		})
+	}
 }
 
 func TestUpdater_Import(t *testing.T) {
