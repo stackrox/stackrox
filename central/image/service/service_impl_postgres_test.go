@@ -172,7 +172,6 @@ func (s *imageServicePostgresTestSuite) TestExportImagesEnrichesVerifierName() {
 	// Set up a gRPC streaming server.
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 		s.ctx,
-		s.T(),
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterImageServiceServer(registrar, s.service)
 		},

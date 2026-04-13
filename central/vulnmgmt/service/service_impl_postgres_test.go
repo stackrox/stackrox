@@ -173,7 +173,6 @@ func (s *servicePostgresTestSuite) TestExport() {
 			request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 5, Query: c.query}
 			conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 				s.helper.Ctx,
-				s.T(),
 				func(registrar grpc.ServiceRegistrar) {
 					v1.RegisterVulnMgmtServiceServer(registrar, s.service)
 				},

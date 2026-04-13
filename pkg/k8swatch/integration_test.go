@@ -15,7 +15,6 @@ package k8swatch
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -28,6 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	goruntime "runtime"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -294,9 +295,9 @@ func TestIntegration_WatchMultipleResourceTypes(t *testing.T) {
 func TestIntegration_MemoryFootprint(t *testing.T) {
 	_, httpClient, baseURL := setupCluster(t)
 
-	var memBefore, memAfter runtime.MemStats
-	runtime.GC()
-	runtime.ReadMemStats(&memBefore)
+	var memBefore, memAfter goruntime.MemStats
+	goruntime.GC()
+	goruntime.ReadMemStats(&memBefore)
 
 	// Start 5 watchers (simulating a subset of sensor's informers)
 	paths := []string{
@@ -321,13 +322,12 @@ func TestIntegration_MemoryFootprint(t *testing.T) {
 
 	// Let them sync and stabilize
 	time.Sleep(3 * time.Second)
-	runtime.GC()
-	runtime.ReadMemStats(&memAfter)
+	goruntime.GC()
+	goruntime.ReadMemStats(&memAfter)
 
 	close(stopCh)
 
 	heapDelta := int64(memAfter.HeapAlloc) - int64(memBefore.HeapAlloc)
-	goroutineDelta := int(memAfter.NumGC) // approximate — goroutine count isn't in MemStats
 
 	t.Logf("Memory for 5 k8squatch watchers:")
 	t.Logf("  HeapAlloc before: %d KB", memBefore.HeapAlloc/1024)

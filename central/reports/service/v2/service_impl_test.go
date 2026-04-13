@@ -105,7 +105,7 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
 			mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-			ctx := authn.ContextWithIdentity(s.ctx, mockID))
+			ctx := authn.ContextWithIdentity(s.ctx, mockID)
 
 			if !tc.isValidationError {
 				mockID.EXPECT().UID().Return(creator.GetId()).AnyTimes()
@@ -895,7 +895,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
-	userContext := authn.ContextWithIdentity(s.ctx, mockID))
+	userContext := authn.ContextWithIdentity(s.ctx, mockID)
 
 	testCases := []struct {
 		desc    string
@@ -1693,5 +1693,5 @@ func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) conte
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
 
-	return authn.ContextWithIdentity(s.ctx, mockID))
+	return authn.ContextWithIdentity(s.ctx, mockID)
 }
