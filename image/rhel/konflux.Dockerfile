@@ -59,15 +59,35 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:69f5c9886ecb19b23e88275a5cd904c47dd982dfa370fbbd0c356d7b1047ef68
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
+
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installer
 
 ARG PG_VERSION
 
-RUN microdnf -y module enable postgresql:${PG_VERSION} && \
-    microdnf -y install postgresql && \
-    microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+COPY --from=ubi-micro-base / /out/
+
+RUN dnf module enable -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=9 \
+        postgresql:${PG_VERSION} && \
+    dnf install -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=9 \
+        --setopt=install_weak_deps=0 \
+        --nodocs \
+        ca-certificates \
+        findutils \
+        openssl \
+        postgresql && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+FROM ubi-micro-base
+
+COPY --from=package_installer /out/ /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
