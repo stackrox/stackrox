@@ -22,6 +22,9 @@ from .utils import (
     resolve_author,
 )
 
+# Default Slack channel for backport audit notifications
+DEFAULT_SLACK_CHANNEL = "C05AZF8T7GW"
+
 
 def _fetch_and_group_prs(
     gh_client: GitHubClient,
@@ -120,7 +123,7 @@ def _write_outputs(
     markdown_path = pathlib.Path(config.output_dir) / config.report_file
     markdown_path.write_text(markdown, encoding="utf-8")
 
-    slack_channel = os.getenv("SLACK_CHANNEL", "C05AZF8T7GW")
+    slack_channel = os.getenv("SLACK_CHANNEL", DEFAULT_SLACK_CHANNEL)
     slack_payload = generate_slack_payload(
         branches,
         prs_by_branch,

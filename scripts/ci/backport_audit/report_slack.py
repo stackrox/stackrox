@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .models import PR, JiraIssue, ReleaseBranch
+from .report_markdown import _collect_issue_problems
 from .slack import get_slack_mention
 from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
 
@@ -112,8 +113,6 @@ def _generate_branch_section(
     jira_issues: dict[str, JiraIssue],
 ) -> list[str]:
     """Generate section lines for a single branch."""
-    from .report_markdown import _collect_issue_problems
-
     section_lines = []
     section_lines.append(f"*{branch.name} (Expected: {branch.expected_version})*\n")
 
