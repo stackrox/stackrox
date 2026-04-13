@@ -22,7 +22,6 @@ FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c06
 
 COPY --from=ubi-micro-base / /out/
 
-# openssl required for FIPS support in Konflux builds
 RUN dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
