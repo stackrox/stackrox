@@ -878,6 +878,19 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n rhacs-operator-system wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
+    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+        # After upgrading from the old operator, patch the CRs with increased
+        # memory limits for race-detector builds. The old operator doesn't
+        # support all resource fields, so we must patch after the upgrade.
+        info "Race build detected: patching CRs with increased memory limits after operator upgrade"
+        "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" patch central stackrox-central-services --type=merge \
+            -p '{"spec":{"configAsCode":{"resources":{"limits":{"memory":"512Mi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"matcher":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"4Gi"}}}}}}'
+        "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" patch securedcluster stackrox-secured-cluster-services --type=merge \
+            -p '{"spec":{"admissionControl":{"resources":{"limits":{"memory":"2Gi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"4Gi"}}}}}}'
+        # Give the operator time to reconcile the new resource limits.
+        sleep 30
+    fi
+
     _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
