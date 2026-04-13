@@ -85,13 +85,6 @@ RUN dnf module enable -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-RUN \
-    mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
-    chown -R 4000:4000 /out/etc/pki/ca-trust /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
-
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
-RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust/source /etc/ssl
-
 FROM ubi-micro-base
 
 COPY --from=package_installer /out/ /
@@ -152,5 +145,12 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 
 COPY LICENSE /licenses/LICENSE
+
+# The following paths are written to in Central.
+RUN chown -R 4000:4000 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source && \
+    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
+    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
+    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
+    chown -R 4000:4000 /tmp
 
 USER 4000:4000
