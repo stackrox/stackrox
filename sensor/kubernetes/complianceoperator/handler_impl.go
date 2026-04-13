@@ -3,12 +3,10 @@ package complianceoperator
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strconv"
 	"sync/atomic"
 	"time"
 
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -26,7 +24,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
 )
@@ -401,34 +398,37 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	var complianceSuite v1alpha1.ComplianceSuite
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceSuite); err != nil {
-		err = errors.Wrap(err, "Could not convert unstructured to compliance suite")
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
+	scanSpecs, _, _ := unstructured.NestedSlice(obj.Object, "spec", "scans")
 
 	// Apply annotation to indicate compliance scan be rerun.
-	for _, scan := range complianceSuite.Spec.Scans {
-		if err := m.reRunScan(scan, ns); err != nil {
+	for _, scanSpec := range scanSpecs {
+		scanMap, ok := scanSpec.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		scanName, _ := scanMap["name"].(string)
+		if scanName == "" {
+			continue
+		}
+		if err := m.reRunScan(scanName, ns); err != nil {
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
-
 	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
 
-func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns string) error {
+func (m *handlerImpl) reRunScan(scanName string, ns string) error {
 	var obj *unstructured.Unstructured
 	resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
 	// Get the scan and apply annotation to indicate compliance scan be rerun.
 	complianceScan, scanObj, err := m.getScanForReRun(func() (*unstructured.Unstructured, error) {
 		err := m.callWithRetry(func(ctx context.Context) error {
 			var err error
-			obj, err = resI.Get(ctx, scan.Name, v1.GetOptions{})
-			return errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
+			obj, err = resI.Get(ctx, scanName, v1.GetOptions{})
+			return errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scanName)
 		})
 		return obj, err
-	}, scan.Name)
+	}, scanName)
 	if err != nil {
 		return err
 	}
@@ -444,7 +444,7 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 		func(ctx context.Context) error {
 			complianceScan, scanObj, err = m.getScanForReRun(func() (*unstructured.Unstructured, error) {
 				return resI.Get(ctx, complianceScan, v1.GetOptions{})
-			}, scan.Name)
+			}, scanName)
 			if err != nil {
 				return err
 			}
@@ -453,27 +453,19 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 }
 
 func (m *handlerImpl) getScanForReRun(getFunc func() (*unstructured.Unstructured, error), scanName string) (string, *unstructured.Unstructured, error) {
-	var obj *unstructured.Unstructured
 	obj, err := getFunc()
 	if err != nil || obj == nil {
 		return scanName, nil, err
 	}
-	var complianceScan v1alpha1.ComplianceScan
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
-		err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
-		return scanName, nil, err
-	}
 
-	if complianceScan.GetAnnotations() == nil {
-		complianceScan.Annotations = make(map[string]string)
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
 	}
-	complianceScan.Annotations[rescanAnnotation] = ""
+	annotations[rescanAnnotation] = ""
+	obj.SetAnnotations(annotations)
 
-	obj, err = runtimeObjToUnstructured(&complianceScan)
-	if err != nil {
-		return complianceScan.Name, nil, err
-	}
-	return complianceScan.Name, obj, nil
+	return obj.GetName(), obj, nil
 }
 
 func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, config scanScheduleConfiguration) bool {
@@ -522,30 +514,16 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 }
 
 func (m *handlerImpl) getScanSettingForUpdate(getFunc func() (*unstructured.Unstructured, error), config scanScheduleConfiguration) (*unstructured.Unstructured, error) {
-	var obj *unstructured.Unstructured
 	obj, err := getFunc()
 	if err != nil || obj == nil {
 		return nil, err
 	}
 
-	var scanSetting v1alpha1.ScanSetting
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
-		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
-		return nil, err
+	// Set the suspend field directly on the unstructured object.
+	if err := unstructured.SetNestedField(obj.Object, *config.Suspend, "suspend"); err != nil {
+		return nil, errors.Wrap(err, "Could not set suspend field on scan setting")
 	}
 
-	// Check if scanSetting has the "Suspend" field
-	if _, ok := reflect.TypeOf(scanSetting).FieldByName("Suspend"); ok {
-		scanSetting.Suspend = *config.Suspend
-	} else {
-		// Handle the case where the field doesn't exist (older CRD)
-		return nil, errors.New("suspending a scan is not supported on this version of the compliance operator")
-	}
-
-	obj, err = runtimeObjToUnstructured(&scanSetting)
-	if err != nil {
-		return nil, err
-	}
 	return obj, nil
 }
 

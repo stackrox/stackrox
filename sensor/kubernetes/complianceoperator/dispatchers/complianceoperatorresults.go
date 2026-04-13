@@ -1,7 +1,6 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -9,7 +8,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ResultDispatcher handles compliance check result objects
@@ -20,42 +18,42 @@ func NewResultDispatcher() *ResultDispatcher {
 	return &ResultDispatcher{}
 }
 
-func statusToProtoStatus(status v1alpha1.ComplianceCheckStatus) storage.ComplianceOperatorCheckResult_CheckStatus {
+func statusToProtoStatus(status string) storage.ComplianceOperatorCheckResult_CheckStatus {
 	switch status {
-	case v1alpha1.CheckResultPass:
+	case checkResultPass:
 		return storage.ComplianceOperatorCheckResult_PASS
-	case v1alpha1.CheckResultFail:
+	case checkResultFail:
 		return storage.ComplianceOperatorCheckResult_FAIL
-	case v1alpha1.CheckResultInfo:
+	case checkResultInfo:
 		return storage.ComplianceOperatorCheckResult_INFO
-	case v1alpha1.CheckResultManual:
+	case checkResultManual:
 		return storage.ComplianceOperatorCheckResult_MANUAL
-	case v1alpha1.CheckResultError:
+	case checkResultError:
 		return storage.ComplianceOperatorCheckResult_ERROR
-	case v1alpha1.CheckResultNotApplicable:
+	case checkResultNotApplicable:
 		return storage.ComplianceOperatorCheckResult_NOT_APPLICABLE
-	case v1alpha1.CheckResultInconsistent:
+	case checkResultInconsistent:
 		return storage.ComplianceOperatorCheckResult_INCONSISTENT
 	default:
 		return storage.ComplianceOperatorCheckResult_UNSET
 	}
 }
 
-func statusToV2Status(status v1alpha1.ComplianceCheckStatus) central.ComplianceOperatorCheckResultV2_CheckStatus {
+func statusToV2Status(status string) central.ComplianceOperatorCheckResultV2_CheckStatus {
 	switch status {
-	case v1alpha1.CheckResultPass:
+	case checkResultPass:
 		return central.ComplianceOperatorCheckResultV2_PASS
-	case v1alpha1.CheckResultFail:
+	case checkResultFail:
 		return central.ComplianceOperatorCheckResultV2_FAIL
-	case v1alpha1.CheckResultInfo:
+	case checkResultInfo:
 		return central.ComplianceOperatorCheckResultV2_INFO
-	case v1alpha1.CheckResultManual:
+	case checkResultManual:
 		return central.ComplianceOperatorCheckResultV2_MANUAL
-	case v1alpha1.CheckResultError:
+	case checkResultError:
 		return central.ComplianceOperatorCheckResultV2_ERROR
-	case v1alpha1.CheckResultNotApplicable:
+	case checkResultNotApplicable:
 		return central.ComplianceOperatorCheckResultV2_NOT_APPLICABLE
-	case v1alpha1.CheckResultInconsistent:
+	case checkResultInconsistent:
 		return central.ComplianceOperatorCheckResultV2_INCONSISTENT
 	default:
 		return central.ComplianceOperatorCheckResultV2_UNSET
@@ -63,7 +61,7 @@ func statusToV2Status(status v1alpha1.ComplianceCheckStatus) central.ComplianceO
 }
 
 func getScanName(labels map[string]string) string {
-	if value, ok := labels[v1alpha1.ComplianceScanLabel]; ok {
+	if value, ok := labels[complianceScanLabel]; ok {
 		return value
 	}
 
@@ -71,7 +69,7 @@ func getScanName(labels map[string]string) string {
 }
 
 func getSuiteName(labels map[string]string) string {
-	if value, ok := labels[v1alpha1.SuiteLabel]; ok {
+	if value, ok := labels[suiteLabel]; ok {
 		return value
 	}
 
@@ -80,20 +78,23 @@ func getSuiteName(labels map[string]string) string {
 
 // ProcessEvent processes a compliance operator check result
 func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	var complianceCheckResult v1alpha1.ComplianceCheckResult
-
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		log.Errorf("Not of type 'unstructured': %T", obj)
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &complianceCheckResult); err != nil {
-		log.Errorf("error converting unstructured to compliance check result: %v", err)
-		return nil
-	}
+	id := string(unstructuredObject.GetUID())
+	checkID, _, _ := unstructured.NestedString(unstructuredObject.Object, "id")
+	status, _, _ := unstructured.NestedString(unstructuredObject.Object, "status")
+	severity, _, _ := unstructured.NestedString(unstructuredObject.Object, "severity")
+	description, _, _ := unstructured.NestedString(unstructuredObject.Object, "description")
+	instructions, _, _ := unstructured.NestedString(unstructuredObject.Object, "instructions")
+	rationale, _, _ := unstructured.NestedString(unstructuredObject.Object, "rationale")
 
-	id := string(complianceCheckResult.UID)
+	labels := unstructuredObject.GetLabels()
+	annotations := unstructuredObject.GetAnnotations()
+
 	events := []*central.SensorEvent{
 		{
 			Id:     id,
@@ -101,39 +102,44 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 			Resource: &central.SensorEvent_ComplianceOperatorResult{
 				ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
 					Id:           id,
-					CheckId:      complianceCheckResult.ID,
-					CheckName:    complianceCheckResult.Name,
-					Status:       statusToProtoStatus(complianceCheckResult.Status),
-					Description:  complianceCheckResult.Description,
-					Instructions: complianceCheckResult.Instructions,
-					Labels:       complianceCheckResult.Labels,
-					Annotations:  complianceCheckResult.Annotations,
+					CheckId:      checkID,
+					CheckName:    unstructuredObject.GetName(),
+					Status:       statusToProtoStatus(status),
+					Description:  description,
+					Instructions: instructions,
+					Labels:       labels,
+					Annotations:  annotations,
 				},
 			},
 		},
 	}
 
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		warnings, _, _ := unstructured.NestedStringSlice(unstructuredObject.Object, "warnings")
+		valuesUsed, _, _ := unstructured.NestedStringSlice(unstructuredObject.Object, "valuesUsed")
+
+		creationTimestamp := unstructuredObject.GetCreationTimestamp()
+
 		events = append(events, &central.SensorEvent{
 			Id:     id,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorResultV2{
 				ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
 					Id:           id,
-					CheckId:      complianceCheckResult.ID,
-					CheckName:    complianceCheckResult.GetName(),
-					Status:       statusToV2Status(complianceCheckResult.Status),
-					Severity:     severityToV2Severity(complianceCheckResult.Severity),
-					Description:  complianceCheckResult.Description,
-					Instructions: complianceCheckResult.Instructions,
-					Labels:       complianceCheckResult.GetLabels(),
-					Annotations:  complianceCheckResult.GetAnnotations(),
-					CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
-					ScanName:     getScanName(complianceCheckResult.GetLabels()),
-					SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
-					Rationale:    complianceCheckResult.Rationale,
-					ValuesUsed:   complianceCheckResult.ValuesUsed,
-					Warnings:     complianceCheckResult.Warnings,
+					CheckId:      checkID,
+					CheckName:    unstructuredObject.GetName(),
+					Status:       statusToV2Status(status),
+					Severity:     severityToV2Severity(severity),
+					Description:  description,
+					Instructions: instructions,
+					Labels:       labels,
+					Annotations:  annotations,
+					CreatedTime:  protoconv.ConvertTimeToTimestamp(creationTimestamp.Time),
+					ScanName:     getScanName(labels),
+					SuiteName:    getSuiteName(labels),
+					Rationale:    rationale,
+					ValuesUsed:   valuesUsed,
+					Warnings:     warnings,
 				},
 			},
 		})

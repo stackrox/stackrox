@@ -1,7 +1,6 @@
 package complianceoperator
 
 import (
-	compv1alpha1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/pkg/k8sapi"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -9,7 +8,9 @@ import (
 
 var (
 	// Compliance operator API set.
-	groupVersion = compv1alpha1.SchemeGroupVersion
+	// Inlined from compv1alpha1.SchemeGroupVersion to avoid importing the v1alpha1 package
+	// which transitively pulls in cel-go (21+ packages).
+	groupVersion = schema.GroupVersion{Group: "compliance.openshift.io", Version: "v1alpha1"}
 
 	// List of required compliance operator CRDs.
 	requiredAPIResources []k8sapi.APIResource

@@ -1,7 +1,8 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ScanDispatcher handles compliance operator scan objects
@@ -23,21 +23,16 @@ func NewScanDispatcher() *ScanDispatcher {
 
 // ProcessEvent processes a compliance operator scan
 func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	var complianceScan v1alpha1.ComplianceScan
-
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		log.Errorf("Not of type 'unstructured': %T", obj)
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &complianceScan); err != nil {
-		log.Errorf("error converting unstructured to compliance scan: %v", err)
-		return nil
-	}
-
 	// useful for the deduping from sensor.
-	uid := string(complianceScan.UID)
+	uid := string(unstructuredObject.GetUID())
+
+	specProfile, _, _ := unstructured.NestedString(unstructuredObject.Object, "spec", "profile")
 
 	// We probably could have gotten away with re-using the storage proto here for the time being.
 	// But we have a new field coming on for profiles and using the storage object even in an internal api
@@ -47,10 +42,10 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 
 	protoScan := &storage.ComplianceOperatorScan{
 		Id:          uid,
-		Name:        complianceScan.Name,
-		ProfileId:   complianceScan.Spec.Profile,
-		Labels:      complianceScan.Labels,
-		Annotations: complianceScan.Annotations,
+		Name:        unstructuredObject.GetName(),
+		ProfileId:   specProfile,
+		Labels:      unstructuredObject.GetLabels(),
+		Annotations: unstructuredObject.GetAnnotations(),
 	}
 	events := []*central.SensorEvent{
 		{
@@ -64,53 +59,65 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 
 	// Build a V2 event if central is capable of receiving it
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		creationTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.CreationTimestamp.Time)
+		creationTime, err := protocompat.ConvertTimeToTimestampOrError(unstructuredObject.GetCreationTimestamp().Time)
 		if err != nil {
 			log.Warnf("unable to convert creation time %v", err)
 		}
 
+		status, _ := unstructuredObject.Object["status"].(map[string]interface{})
+		statusPhase, _ := status["phase"].(string)
+		statusResult, _ := status["result"].(string)
+		statusErrorMsg, _ := status["errormsg"].(string)
+		statusCurrentIndex, _, _ := unstructured.NestedInt64(status, "currentIndex")
+		statusWarnings, _ := status["warnings"].(string)
+		statusRemainingRetries, _, _ := unstructured.NestedInt64(status, "remainingRetries")
+
 		protoStatus := &central.ComplianceOperatorScanStatusV2{
-			Phase:            string(complianceScan.Status.Phase),
-			Result:           string(complianceScan.Status.Result),
-			ErrorMessage:     complianceScan.Status.ErrorMessage,
-			CurrentIndex:     complianceScan.Status.CurrentIndex,
-			Warnings:         complianceScan.Status.Warnings,
-			RemainingRetries: int64(complianceScan.Status.RemainingRetries),
+			Phase:            statusPhase,
+			Result:           statusResult,
+			ErrorMessage:     statusErrorMsg,
+			CurrentIndex:     statusCurrentIndex,
+			Warnings:         statusWarnings,
+			RemainingRetries: statusRemainingRetries,
 			StartTime:        creationTime,
 		}
 
-		if complianceScan.Status.EndTimestamp != nil {
-			endTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.EndTimestamp.Time)
-			if err != nil {
-				log.Warnf("unable to convert end time %v", err)
-			} else {
-				protoStatus.EndTime = endTime
+		if endTimestampStr, ok, _ := unstructured.NestedString(status, "endTimestamp"); ok && endTimestampStr != "" {
+			if endTime, err := time.Parse(time.RFC3339, endTimestampStr); err == nil {
+				if ts, err := protocompat.ConvertTimeToTimestampOrError(endTime); err == nil {
+					protoStatus.EndTime = ts
+				} else {
+					log.Warnf("unable to convert end time %v", err)
+				}
 			}
 		}
 
-		if complianceScan.Status.StartTimestamp != nil {
-			startTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.StartTimestamp.Time)
-			if err != nil {
-				log.Warnf("unable to convert start time %v", err)
-			} else {
-				protoStatus.LastStartTime = startTime
+		if startTimestampStr, ok, _ := unstructured.NestedString(status, "startTimestamp"); ok && startTimestampStr != "" {
+			if startTime, err := time.Parse(time.RFC3339, startTimestampStr); err == nil {
+				if ts, err := protocompat.ConvertTimeToTimestampOrError(startTime); err == nil {
+					protoStatus.LastStartTime = ts
+				} else {
+					log.Warnf("unable to convert start time %v", err)
+				}
 			}
 		}
 
-		protoScan := &central.ComplianceOperatorScanV2{
+		scanType, _, _ := unstructured.NestedString(unstructuredObject.Object, "spec", "scanType")
+
+		protoScanV2 := &central.ComplianceOperatorScanV2{
 			Id:          uid,
-			Name:        complianceScan.Name,
-			ProfileId:   complianceScan.Spec.Profile,
-			Labels:      complianceScan.Labels,
-			Annotations: complianceScan.Annotations,
-			ScanType:    string(complianceScan.Spec.ScanType),
+			Name:        unstructuredObject.GetName(),
+			ProfileId:   specProfile,
+			Labels:      unstructuredObject.GetLabels(),
+			Annotations: unstructuredObject.GetAnnotations(),
+			ScanType:    scanType,
 			Status:      protoStatus,
 		}
 		events = append(events, &central.SensorEvent{
-			Id:     protoScan.GetId(),
+			Id:     protoScanV2.GetId(),
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorScanV2{
-				ComplianceOperatorScanV2: protoScan,
+				ComplianceOperatorScanV2: protoScanV2,
 			},
 		})
 	}

@@ -1,7 +1,8 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ScanSettingBindings handles compliance operator scan setting bindings
@@ -21,28 +21,52 @@ func NewScanSettingBindingsDispatcher() *ScanSettingBindings {
 	return &ScanSettingBindings{}
 }
 
-func getProfileNames(profiles []v1alpha1.NamedObjectReference) []string {
+func getProfileNames(profiles []interface{}) []string {
 	profileNames := make([]string, 0, len(profiles))
 	for _, p := range profiles {
-		profileNames = append(profileNames, p.Name)
+		if profileMap, ok := p.(map[string]interface{}); ok {
+			if name, ok := profileMap["name"].(string); ok {
+				profileNames = append(profileNames, name)
+			}
+		}
 	}
 	return profileNames
 }
 
-func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOperatorCondition {
-	statusConditions := make([]*central.ComplianceOperatorCondition, 0, len(conditions))
-	for _, c := range conditions {
-		lastTransitionTime, err := protocompat.ConvertTimeToTimestampOrError(c.LastTransitionTime.Time)
+func getStatusConditions(conditionsList []interface{}) []*central.ComplianceOperatorCondition {
+	statusConditions := make([]*central.ComplianceOperatorCondition, 0, len(conditionsList))
+	for _, c := range conditionsList {
+		condMap, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		condType, _ := condMap["type"].(string)
+		condStatus, _ := condMap["status"].(string)
+		condReason, _ := condMap["reason"].(string)
+		condMessage, _ := condMap["message"].(string)
+		lastTransitionTimeStr, _ := condMap["lastTransitionTime"].(string)
+
+		if lastTransitionTimeStr == "" {
+			log.Warnf("unable to convert last transition time (empty), skipping condition")
+			continue
+		}
+		lastTransitionTime, err := time.Parse(time.RFC3339, lastTransitionTimeStr)
+		if err != nil {
+			log.Warnf("unable to parse last transition time %q, skipping condition: %v", lastTransitionTimeStr, err)
+			continue
+		}
+		lastTransitionTimestamp, err := protocompat.ConvertTimeToTimestampOrError(lastTransitionTime)
 		if err != nil {
 			log.Warnf("unable to convert last transition time %v, skipping condition", err)
 			continue
 		}
+
 		statusConditions = append(statusConditions, &central.ComplianceOperatorCondition{
-			Type:               string(c.Type),
-			Status:             string(c.Status),
-			Reason:             string(c.Reason),
-			Message:            c.Message,
-			LastTransitionTime: lastTransitionTime,
+			Type:               condType,
+			Status:             condStatus,
+			Reason:             condReason,
+			Message:            condMessage,
+			LastTransitionTime: lastTransitionTimestamp,
 		})
 	}
 	return statusConditions
@@ -50,25 +74,24 @@ func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOp
 
 // ProcessEvent processes a scan setting binding event
 func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	var scanSettingBindings v1alpha1.ScanSettingBinding
-
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		log.Errorf("Not of type 'unstructured': %T", obj)
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &scanSettingBindings); err != nil {
-		log.Errorf("error converting unstructured to compliance scan setting binding result: %v", err)
-		return nil
-	}
-	id := string(scanSettingBindings.UID)
+	id := string(unstructuredObject.GetUID())
 
-	profiles := make([]*storage.ComplianceOperatorScanSettingBinding_Profile, 0, len(scanSettingBindings.Profiles))
-	for _, p := range scanSettingBindings.Profiles {
-		profiles = append(profiles, &storage.ComplianceOperatorScanSettingBinding_Profile{
-			Name: p.Name,
-		})
+	profilesList, _, _ := unstructured.NestedSlice(unstructuredObject.Object, "profiles")
+	profiles := make([]*storage.ComplianceOperatorScanSettingBinding_Profile, 0, len(profilesList))
+	for _, p := range profilesList {
+		if profileMap, ok := p.(map[string]interface{}); ok {
+			if name, ok := profileMap["name"].(string); ok {
+				profiles = append(profiles, &storage.ComplianceOperatorScanSettingBinding_Profile{
+					Name: name,
+				})
+			}
+		}
 	}
 
 	events := []*central.SensorEvent{
@@ -78,9 +101,9 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 			Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{
 				ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{
 					Id:          id,
-					Name:        scanSettingBindings.Name,
-					Labels:      scanSettingBindings.Labels,
-					Annotations: scanSettingBindings.Annotations,
+					Name:        unstructuredObject.GetName(),
+					Labels:      unstructuredObject.GetLabels(),
+					Annotations: unstructuredObject.GetAnnotations(),
 					Profiles:    profiles,
 				},
 			},
@@ -88,20 +111,23 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 	}
 
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		conditionsList, _, _ := unstructured.NestedSlice(unstructuredObject.Object, "status", "conditions")
+		settingsRefName, _, _ := unstructured.NestedString(unstructuredObject.Object, "settingsRef", "name")
+
 		events = append(events, &central.SensorEvent{
 			Id:     id,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorScanSettingBindingV2{
 				ComplianceOperatorScanSettingBindingV2: &central.ComplianceOperatorScanSettingBindingV2{
 					Id:           id,
-					Name:         scanSettingBindings.Name,
-					ProfileNames: getProfileNames(scanSettingBindings.Profiles),
+					Name:         unstructuredObject.GetName(),
+					ProfileNames: getProfileNames(profilesList),
 					Status: &central.ComplianceOperatorStatus{
-						Conditions: getStatusConditions(scanSettingBindings.Status.Conditions),
+						Conditions: getStatusConditions(conditionsList),
 					},
-					ScanSettingName: scanSettingBindings.SettingsRef.Name,
-					Labels:          scanSettingBindings.Labels,
-					Annotations:     scanSettingBindings.Annotations,
+					ScanSettingName: settingsRefName,
+					Labels:          unstructuredObject.GetLabels(),
+					Annotations:     unstructuredObject.GetAnnotations(),
 				},
 			},
 		})

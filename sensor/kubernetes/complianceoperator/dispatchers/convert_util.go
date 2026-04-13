@@ -1,21 +1,20 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
-func severityToV2Severity(severity v1alpha1.ComplianceCheckResultSeverity) central.ComplianceOperatorRuleSeverity {
+func severityToV2Severity(severity string) central.ComplianceOperatorRuleSeverity {
 	switch severity {
-	case v1alpha1.CheckResultSeverityHigh:
+	case checkResultSeverityHigh:
 		return central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityMedium:
+	case checkResultSeverityMedium:
 		return central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityLow:
+	case checkResultSeverityLow:
 		return central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityInfo:
+	case checkResultSeverityInfo:
 		return central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityUnknown:
+	case checkResultSeverityUnknown:
 		return central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY
 	default:
 		return central.ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY

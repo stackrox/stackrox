@@ -1,7 +1,6 @@
 package complianceoperator
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/sensor/common"
 )
@@ -9,7 +8,7 @@ import (
 const (
 	masterRole       = "master"
 	workerRole       = "worker"
-	rescanAnnotation = v1alpha1.ComplianceScanRescanAnnotation
+	rescanAnnotation = "compliance.openshift.io/rescan"
 )
 
 var (

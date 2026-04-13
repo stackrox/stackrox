@@ -1,13 +1,11 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // CustomRuleDispatcher handles compliance operator custom rule objects.
@@ -33,21 +31,33 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 		return nil
 	}
 
-	customRule := &v1alpha1.CustomRule{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, customRule); err != nil {
-		log.Errorf("error converting unstructured to compliance custom rule: %v", err)
-		return nil
-	}
-
 	// This ID is used to tell us which clusters have which custom rules. It is also useful for the deduping from sensor.
-	id := string(customRule.UID)
+	id := string(unstructuredObject.GetUID())
 
-	fixes := make([]*central.ComplianceOperatorRuleV2_Fix, 0, len(customRule.Spec.AvailableFixes))
-	for _, r := range customRule.Spec.AvailableFixes {
-		fixes = append(fixes, &central.ComplianceOperatorRuleV2_Fix{
-			Platform:   r.Platform,
-			Disruption: r.Disruption,
-		})
+	spec, _ := unstructuredObject.Object["spec"].(map[string]interface{})
+
+	ruleID, _ := spec["id"].(string)
+	checkType, _ := spec["checkType"].(string)
+	severity, _ := spec["severity"].(string)
+	title, _ := spec["title"].(string)
+	description, _ := spec["description"].(string)
+	rationale, _ := spec["rationale"].(string)
+	warning, _ := spec["warning"].(string)
+	instructions, _ := spec["instructions"].(string)
+
+	var fixes []*central.ComplianceOperatorRuleV2_Fix
+	if availableFixes, ok := spec["availableFixes"].([]interface{}); ok {
+		fixes = make([]*central.ComplianceOperatorRuleV2_Fix, 0, len(availableFixes))
+		for _, f := range availableFixes {
+			if fixMap, ok := f.(map[string]interface{}); ok {
+				platform, _ := fixMap["platform"].(string)
+				disruption, _ := fixMap["disruption"].(string)
+				fixes = append(fixes, &central.ComplianceOperatorRuleV2_Fix{
+					Platform:   platform,
+					Disruption: disruption,
+				})
+			}
+		}
 	}
 
 	events := []*central.SensorEvent{
@@ -56,19 +66,19 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
 				ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
-					RuleId:       customRule.Spec.ID,
+					RuleId:       ruleID,
 					Id:           id,
-					Name:         customRule.Name,
-					RuleType:     customRule.Spec.CheckType,
-					Severity:     ruleSeverityToV2Severity(customRule.Spec.Severity),
-					Labels:       customRule.Labels,
-					Annotations:  customRule.Annotations,
-					Title:        customRule.Spec.Title,
-					Description:  customRule.Spec.Description,
-					Rationale:    customRule.Spec.Rationale,
+					Name:         unstructuredObject.GetName(),
+					RuleType:     checkType,
+					Severity:     ruleSeverityToV2Severity(severity),
+					Labels:       unstructuredObject.GetLabels(),
+					Annotations:  unstructuredObject.GetAnnotations(),
+					Title:        title,
+					Description:  description,
+					Rationale:    rationale,
 					Fixes:        fixes,
-					Warning:      customRule.Spec.Warning,
-					Instructions: customRule.Spec.Instructions,
+					Warning:      warning,
+					Instructions: instructions,
 					OperatorKind: central.ComplianceOperatorRuleV2_CUSTOM_RULE,
 				},
 			},

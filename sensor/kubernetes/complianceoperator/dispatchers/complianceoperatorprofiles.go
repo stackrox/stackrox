@@ -1,7 +1,6 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -9,7 +8,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -27,34 +25,32 @@ func NewProfileDispatcher() *ProfileDispatcher {
 
 // ProcessEvent processes a compliance operator profile
 func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	var complianceProfile v1alpha1.Profile
-
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		log.Errorf("Not of type 'unstructured': %T", obj)
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &complianceProfile); err != nil {
-		log.Errorf("error converting unstructured to compliance profile: %v", err)
-		return nil
-	}
-
 	// For nextgen compliance this ID is used to tell us which clusters have which profiles.  It is also
 	// useful for the deduping from sensor.
-	uid := string(complianceProfile.UID)
+	uid := string(unstructuredObject.GetUID())
+
+	profileID, _, _ := unstructured.NestedString(unstructuredObject.Object, "id")
+	description, _, _ := unstructured.NestedString(unstructuredObject.Object, "description")
 
 	protoProfile := &storage.ComplianceOperatorProfile{
 		Id:          uid,
-		ProfileId:   complianceProfile.ID,
-		Name:        complianceProfile.Name,
-		Labels:      complianceProfile.Labels,
-		Annotations: complianceProfile.Annotations,
-		Description: complianceProfile.Description,
+		ProfileId:   profileID,
+		Name:        unstructuredObject.GetName(),
+		Labels:      unstructuredObject.GetLabels(),
+		Annotations: unstructuredObject.GetAnnotations(),
+		Description: description,
 	}
-	for _, r := range complianceProfile.Rules {
+
+	rulesSlice, _, _ := unstructured.NestedStringSlice(unstructuredObject.Object, "rules")
+	for _, r := range rulesSlice {
 		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: string(r),
+			Name: r,
 		})
 	}
 
@@ -69,33 +65,37 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	}
 
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		protoProfile := &central.ComplianceOperatorProfileV2{
+		title, _, _ := unstructured.NestedString(unstructuredObject.Object, "title")
+		version, _, _ := unstructured.NestedString(unstructuredObject.Object, "version")
+
+		protoProfileV2 := &central.ComplianceOperatorProfileV2{
 			Id:             uid,
-			ProfileId:      complianceProfile.ID,
-			Name:           complianceProfile.Name,
-			ProfileVersion: complianceProfile.Version,
-			Labels:         complianceProfile.Labels,
-			Annotations:    complianceProfile.Annotations,
-			Description:    complianceProfile.Description,
-			Title:          complianceProfile.Title,
+			ProfileId:      profileID,
+			Name:           unstructuredObject.GetName(),
+			ProfileVersion: version,
+			Labels:         unstructuredObject.GetLabels(),
+			Annotations:    unstructuredObject.GetAnnotations(),
+			Description:    description,
+			Title:          title,
 			OperatorKind:   central.ComplianceOperatorProfileV2_PROFILE,
 		}
 
-		for _, r := range complianceProfile.Rules {
-			protoProfile.Rules = append(protoProfile.Rules, &central.ComplianceOperatorProfileV2_Rule{
-				RuleName: string(r),
+		for _, r := range rulesSlice {
+			protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{
+				RuleName: r,
 			})
 		}
 
-		for _, v := range complianceProfile.Values {
-			protoProfile.Values = append(protoProfile.Values, string(v))
+		valuesSlice, _, _ := unstructured.NestedStringSlice(unstructuredObject.Object, "values")
+		for _, v := range valuesSlice {
+			protoProfileV2.Values = append(protoProfileV2.Values, v)
 		}
 
 		events = append(events, &central.SensorEvent{
 			Id:     uid,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-				ComplianceOperatorProfileV2: protoProfile,
+				ComplianceOperatorProfileV2: protoProfileV2,
 			},
 		})
 	}

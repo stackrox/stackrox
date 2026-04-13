@@ -1,13 +1,11 @@
 package dispatchers
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // SuitesDispatcher handles compliance operator suites
@@ -24,7 +22,6 @@ func (c *SuitesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		return nil
 	}
-	var complianceSuite v1alpha1.ComplianceSuite
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -32,24 +29,27 @@ func (c *SuitesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &complianceSuite); err != nil {
-		log.Errorf("error converting unstructured to compliance suite: %v", err)
-		return nil
-	}
+	uid := string(unstructuredObject.GetUID())
+
+	status, _ := unstructuredObject.Object["status"].(map[string]interface{})
+	statusPhase, _ := status["phase"].(string)
+	statusResult, _ := status["result"].(string)
+	statusErrorMsg, _ := status["errorMessage"].(string)
+	conditionsList, _, _ := unstructured.NestedSlice(unstructuredObject.Object, "status", "conditions")
 
 	events := []*central.SensorEvent{
 		{
-			Id:     string(complianceSuite.GetUID()),
+			Id:     uid,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
 				ComplianceOperatorSuiteV2: &central.ComplianceOperatorSuiteV2{
-					Id:   string(complianceSuite.GetUID()),
-					Name: complianceSuite.Name,
+					Id:   uid,
+					Name: unstructuredObject.GetName(),
 					Status: &central.ComplianceOperatorStatus{
-						Phase:        string(complianceSuite.Status.Phase),
-						Result:       string(complianceSuite.Status.Result),
-						ErrorMessage: complianceSuite.Status.ErrorMessage,
-						Conditions:   getStatusConditions(complianceSuite.Status.Conditions),
+						Phase:        statusPhase,
+						Result:       statusResult,
+						ErrorMessage: statusErrorMsg,
+						Conditions:   getStatusConditions(conditionsList),
 					},
 				},
 			},

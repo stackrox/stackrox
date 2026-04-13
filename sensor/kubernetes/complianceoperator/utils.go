@@ -1,16 +1,13 @@
 package complianceoperator
 
 import (
-	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/sensor/utils"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -23,6 +20,13 @@ var (
 
 // convertFunction signature of the convert functions
 type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
+
+// namedObjectReference mirrors v1alpha1.NamedObjectReference without importing that package.
+type namedObjectReference struct {
+	Name     string `json:"name,omitempty"`
+	Kind     string `json:"kind,omitempty"`
+	APIGroup string `json:"apiGroup,omitempty"`
+}
 
 // profileKindToString maps an OperatorKind proto enum to the compliance operator Kind string.
 func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) string {
@@ -55,13 +59,13 @@ func validateScanSettingBindingProfiles(scanSettings *central.ApplyComplianceSca
 	return nil
 }
 
-func buildScanSettingBindingProfileRefs(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []v1alpha1.NamedObjectReference {
+func buildScanSettingBindingProfileRefs(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []namedObjectReference {
 	// Profiles may be provided via request.ProfileRefs, where each reference contains a profile name and its kind, or
 	// via the legacy request.Profiles, which only contains a slice of profile names. When both are present, ProfileRefs
 	// take precedence.
-	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfileRefs()))
+	profileRefs := make([]namedObjectReference, 0, len(request.GetProfileRefs()))
 	for _, ref := range request.GetProfileRefs() {
-		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+		profileRefs = append(profileRefs, namedObjectReference{
 			Name:     ref.GetName(),
 			Kind:     profileKindToString(ref.GetKind()),
 			APIGroup: complianceoperator.GetGroupVersion().String(),
@@ -73,9 +77,9 @@ func buildScanSettingBindingProfileRefs(namespace string, request *central.Apply
 	}
 
 	// Legacy: old Central without profile_refs — default to Profile kind.
-	profileRefs = make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
+	profileRefs = make([]namedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
-		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+		profileRefs = append(profileRefs, namedObjectReference{
 			Name:     profile,
 			Kind:     complianceoperator.Profile.Kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
@@ -103,82 +107,90 @@ func validateScanName(req scanNameGetter) error {
 }
 
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
-	return &v1alpha1.ScanSetting{
-		TypeMeta: v1.TypeMeta{
-			Kind:       complianceoperator.ScanSetting.Kind,
-			APIVersion: complianceoperator.GetGroupVersion().String(),
-		},
-		ObjectMeta: v1.ObjectMeta{
-			Name:        request.GetScanName(),
-			Namespace:   namespace,
-			Labels:      utils.GetSensorKubernetesLabels(),
-			Annotations: utils.GetSensorKubernetesAnnotations(),
-		},
-		Roles: []string{masterRole, workerRole},
-		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
-			AutoApplyRemediations:  false,
-			AutoUpdateRemediations: false,
-			Schedule:               cron,
-		},
-		ComplianceScanSettings: v1alpha1.ComplianceScanSettings{
-			StrictNodeScan:    pointers.Bool(false),
-			ShowNotApplicable: false,
-			Timeout:           env.ComplianceScanTimeout.Setting(),
-			MaxRetryOnTimeout: env.ComplianceScanRetries.IntegerSetting(),
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": complianceoperator.GetGroupVersion().String(),
+			"kind":       complianceoperator.ScanSetting.Kind,
+			"metadata": map[string]interface{}{
+				"name":        request.GetScanName(),
+				"namespace":   namespace,
+				"labels":      toStringInterfaceMap(utils.GetSensorKubernetesLabels()),
+				"annotations": toStringInterfaceMap(utils.GetSensorKubernetesAnnotations()),
+			},
+			"roles":                  []interface{}{masterRole, workerRole},
+			"autoApplyRemediations":  false,
+			"autoUpdateRemediations": false,
+			"schedule":               cron,
+			"strictNodeScan":         false,
+			"showNotApplicable":      false,
+			"timeout":                env.ComplianceScanTimeout.Setting(),
+			"maxRetryOnTimeout":      int64(env.ComplianceScanRetries.IntegerSetting()),
 		},
 	}
+	return obj
 }
 
 func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object {
 	profileRefs := buildScanSettingBindingProfileRefs(namespace, request)
 
-	return &v1alpha1.ScanSettingBinding{
-		TypeMeta: v1.TypeMeta{
-			Kind:       complianceoperator.ScanSettingBinding.Kind,
-			APIVersion: complianceoperator.GetGroupVersion().String(),
-		},
-		ObjectMeta: v1.ObjectMeta{
-			Name:        request.GetScanName(),
-			Namespace:   namespace,
-			Labels:      utils.GetSensorKubernetesLabels(),
-			Annotations: utils.GetSensorKubernetesAnnotations(),
-		},
-		Profiles: profileRefs,
-		SettingsRef: &v1alpha1.NamedObjectReference{
-			Name:     request.GetScanName(),
-			Kind:     complianceoperator.ScanSetting.Kind,
-			APIGroup: complianceoperator.GetGroupVersion().String(),
+	profiles := make([]interface{}, 0, len(profileRefs))
+	for _, ref := range profileRefs {
+		profiles = append(profiles, map[string]interface{}{
+			"name":     ref.Name,
+			"kind":     ref.Kind,
+			"apiGroup": ref.APIGroup,
+		})
+	}
+
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": complianceoperator.GetGroupVersion().String(),
+			"kind":       complianceoperator.ScanSettingBinding.Kind,
+			"metadata": map[string]interface{}{
+				"name":        request.GetScanName(),
+				"namespace":   namespace,
+				"labels":      toStringInterfaceMap(utils.GetSensorKubernetesLabels()),
+				"annotations": toStringInterfaceMap(utils.GetSensorKubernetesAnnotations()),
+			},
+			"profiles": profiles,
+			"settingsRef": map[string]interface{}{
+				"name":     request.GetScanName(),
+				"kind":     complianceoperator.ScanSetting.Kind,
+				"apiGroup": complianceoperator.GetGroupVersion().String(),
+			},
 		},
 	}
+	return obj
 }
 
-func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) *v1alpha1.ScanSetting {
-	// TODO:  Update additional fields as ACS capability expands
-	scanSetting.Roles = []string{masterRole, workerRole}
-	scanSetting.ComplianceSuiteSettings = v1alpha1.ComplianceSuiteSettings{
-		AutoApplyRemediations:  false,
-		AutoUpdateRemediations: false,
-		Schedule:               request.GetCron(),
-	}
-	scanSetting.ComplianceScanSettings = v1alpha1.ComplianceScanSettings{
-		StrictNodeScan:    pointers.Bool(false),
-		ShowNotApplicable: false,
-		Timeout:           env.ComplianceScanTimeout.Setting(),
-		MaxRetryOnTimeout: env.ComplianceScanRetries.IntegerSetting(),
-	}
+func updateScanSettingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+	// Update fields in-place on the unstructured object.
+	obj.Object["roles"] = []interface{}{masterRole, workerRole}
+	obj.Object["autoApplyRemediations"] = false
+	obj.Object["autoUpdateRemediations"] = false
+	obj.Object["schedule"] = req.GetCron()
+	obj.Object["strictNodeScan"] = false
+	obj.Object["showNotApplicable"] = false
+	obj.Object["timeout"] = env.ComplianceScanTimeout.Setting()
+	obj.Object["maxRetryOnTimeout"] = int64(env.ComplianceScanRetries.IntegerSetting())
 
-	return scanSetting
+	return obj, nil
 }
 
-func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
-	// Validation is performed upstream in validateUpdateScheduledScanConfigRequest before
-	// this function is reached.
-	profileRefs := buildScanSettingBindingProfileRefs(scanSettingBinding.GetNamespace(), request)
+func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+	profileRefs := buildScanSettingBindingProfileRefs(obj.GetNamespace(), req.GetScanSettings())
 
-	// TODO:  Update additional fields as ACS capability expands
-	scanSettingBinding.Profiles = profileRefs
+	profiles := make([]interface{}, 0, len(profileRefs))
+	for _, ref := range profileRefs {
+		profiles = append(profiles, map[string]interface{}{
+			"name":     ref.Name,
+			"kind":     ref.Kind,
+			"apiGroup": ref.APIGroup,
+		})
+	}
+	obj.Object["profiles"] = profiles
 
-	return scanSettingBinding
+	return obj, nil
 }
 
 func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_ScheduledScan) error {
@@ -240,6 +252,10 @@ func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConf
 }
 
 func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
+	// If the object is already unstructured, return it directly.
+	if u, ok := obj.(*unstructured.Unstructured); ok {
+		return u, nil
+	}
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting to unstructured object")
@@ -250,20 +266,11 @@ func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, e
 	}, nil
 }
 
-func updateScanSettingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
-	var scanSetting v1alpha1.ScanSetting
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
-		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
+// toStringInterfaceMap converts map[string]string to map[string]interface{} for unstructured objects.
+func toStringInterfaceMap(m map[string]string) map[string]interface{} {
+	result := make(map[string]interface{}, len(m))
+	for k, v := range m {
+		result[k] = v
 	}
-
-	return runtimeObjToUnstructured(updateScanSettingFromCentralRequest(&scanSetting, req))
-}
-
-func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
-	var scanSettingBinding v1alpha1.ScanSettingBinding
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSettingBinding); err != nil {
-		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
-	}
-
-	return runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings()))
+	return result
 }
