@@ -244,6 +244,25 @@ export function verifySelectedCvesInModal(cveNames) {
 }
 
 /**
+ * Transform a v1 image CVE response to a v2 response format.
+ * The v2 response uses `imageV2` as the root key, `ImageV2` as the typename,
+ * a UUID-style `id`, and an additional `digest` field.
+ */
+function toImageV2Response(v1Response) {
+    const { image } = v1Response.data;
+    return {
+        data: {
+            imageV2: {
+                ...image,
+                id: '4c657931-d333-5cb8-8f0d-7e3836525ec7',
+                digest: image.id,
+                __typename: 'ImageV2',
+            },
+        },
+    };
+}
+
+/**
  * Visits an image single page via the workload CVE overview page and mocks the responses for the image
  * details and CVE list. We need to mock the CVE list to ensure that multiple CVEs are present for the image. We
  * also need to mock the image details to ensure Apollo does not duplicate CVE requests due to mismatched
@@ -259,18 +278,23 @@ export function visitImageSinglePageWithMockedResponses() {
         cveListOpname,
     ]);
 
-    // When FlattenImageData is enabled, the getCVEsForImage query uses imageV2(...)
-    // which returns data under the `imageV2` key instead of `image`.
-    const cveListFixture = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA')
-        ? 'vulnerabilities/workloadCves/multipleCvesForImageV2.json'
-        : 'vulnerabilities/workloadCves/multipleCvesForImage.json';
-
     const staticResponseMapForImageCves = {
         [imageDetailsOpname]: {
             fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
         },
-        [cveListOpname]: { fixture: cveListFixture },
     };
+
+    // When FlattenImageData is enabled, the getCVEsForImage query uses imageV2(...)
+    // which returns data under the `imageV2` key instead of `image`.
+    if (hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA')) {
+        cy.fixture('vulnerabilities/workloadCves/multipleCvesForImage.json').then((v1Response) => {
+            staticResponseMapForImageCves[cveListOpname] = { body: toImageV2Response(v1Response) };
+        });
+    } else {
+        staticResponseMapForImageCves[cveListOpname] = {
+            fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json',
+        };
+    }
 
     visitWorkloadCveOverview();
 
