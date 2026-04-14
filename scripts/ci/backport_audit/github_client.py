@@ -59,7 +59,7 @@ class GitHubClient:
             PR details dictionary
 
         """
-        cmd = ["gh", "pr", "view", str(pr_number), "--json", "author,body"]
+        cmd = ["gh", "pr", "view", str(pr_number), "--json", "author,body,title"]
 
         try:
             result = subprocess.run(
