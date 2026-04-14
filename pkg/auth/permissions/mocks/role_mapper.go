@@ -135,15 +135,15 @@ func (m *MockRoleMapperFactory) EXPECT() *MockRoleMapperFactoryMockRecorder {
 }
 
 // GetRoleMapper mocks base method.
-func (m *MockRoleMapperFactory) GetRoleMapper(authProviderID string) permissions.RoleMapper {
+func (m *MockRoleMapperFactory) GetRoleMapper(ctx context.Context, authProviderID string) permissions.RoleMapper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRoleMapper", authProviderID)
+	ret := m.ctrl.Call(m, "GetRoleMapper", ctx, authProviderID)
 	ret0, _ := ret[0].(permissions.RoleMapper)
 	return ret0
 }
 
 // GetRoleMapper indicates an expected call of GetRoleMapper.
-func (mr *MockRoleMapperFactoryMockRecorder) GetRoleMapper(authProviderID any) *gomock.Call {
+func (mr *MockRoleMapperFactoryMockRecorder) GetRoleMapper(ctx, authProviderID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleMapper", reflect.TypeOf((*MockRoleMapperFactory)(nil).GetRoleMapper), authProviderID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleMapper", reflect.TypeOf((*MockRoleMapperFactory)(nil).GetRoleMapper), ctx, authProviderID)
 }
