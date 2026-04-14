@@ -2,12 +2,13 @@ package repo2cpe
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/indexer"
 )
 
@@ -66,9 +67,9 @@ func (u *Updater) refreshLoop(ctx context.Context) {
 		case <-u.done:
 			return
 		case <-ticker.C:
-			u.mu.RLock()
-			lastMod := u.lastModified
-			u.mu.RUnlock()
+			lastMod := concurrency.WithRLock1(&u.mu, func() string {
+				return u.lastModified
+			})
 
 			if err := u.fetch(ctx, lastMod); err != nil {
 				zlog.Warn(ctx).Err(err).Msg("failed to refresh repo-to-CPE mapping")
@@ -92,9 +93,9 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 		return err
 	}
 
-	u.mu.Lock()
-	u.lastModified = result.LastModified
-	u.mu.Unlock()
+	concurrency.WithLock(&u.mu, func() {
+		u.lastModified = result.LastModified
+	})
 
 	if !result.Modified {
 		zlog.Debug(ctx).Msg("repo-to-CPE mapping not modified")
