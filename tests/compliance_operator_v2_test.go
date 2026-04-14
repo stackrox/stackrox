@@ -268,9 +268,40 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 	}, 10*time.Second, 1*time.Second)
 }
 
+// getProfileRules returns the rule names of a compliance profile by querying
+// ACS. This avoids hardcoding rule names in tests.
+func getProfileRules(ctx context.Context, t *testing.T,
+	client v2.ComplianceProfileServiceClient, clusterID, profileName string,
+) []string {
+	req := &v2.ProfilesForClusterRequest{
+		ClusterId: clusterID,
+		Query:     &v2.RawQuery{Query: "Compliance Profile Name:" + profileName},
+	}
+	resp, err := client.ListComplianceProfiles(ctx, req)
+	require.NoError(t, err, "failed to list profiles")
+	for _, p := range resp.GetProfiles() {
+		if p.GetName() == profileName {
+			rules := make([]string, 0, len(p.GetRules()))
+			for _, r := range p.GetRules() {
+				rules = append(rules, r.GetName())
+			}
+			require.NotEmpty(t, rules, "profile %s has no rules", profileName)
+			return rules
+		}
+	}
+	require.Failf(t, "profile not found", "profile %q not found for cluster %s", profileName, clusterID)
+	return nil
+}
+
 // createTailoredProfile creates an extends-based TailoredProfile (extending
 // ocp4-e8), waits for it to be READY in k8s, and registers cleanup.
 func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
+	// Query ACS for the base profile's rules to avoid hardcoding rule names.
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	profileClient := v2.NewComplianceProfileServiceClient(conn)
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
+	e8Rules := getProfileRules(ctx, t, profileClient, clusterID, "ocp4-e8")
+
 	tp := &complianceoperatorv1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -281,7 +312,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 			Title:       fmt.Sprintf("E2E TailoredProfile %s", name),
 			Description: "Extends ocp4-e8 for e2e testing",
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+				{Name: e8Rules[0], Rationale: "e2e test"},
 			},
 		},
 	}
@@ -1043,16 +1074,35 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	crName := testID
 	createCustomRule(ctx, t, dynClient, crName)
 
+	// Query ACS for profile rules to avoid hardcoding rule names.
+	cisRules := getProfileRules(ctx, t, profileClient, clusterID, "ocp4-cis")
+	e8Rules := getProfileRules(ctx, t, profileClient, clusterID, "ocp4-e8")
+
+	// Find a rule in ocp4-e8 that's not in ocp4-cis (for EnableRules in the
+	// extends variant — the enabled rule must not already be in the base profile).
+	cisRuleSet := make(map[string]struct{}, len(cisRules))
+	for _, r := range cisRules {
+		cisRuleSet[r] = struct{}{}
+	}
+	var enableRule string
+	for _, r := range e8Rules {
+		if _, ok := cisRuleSet[r]; !ok {
+			enableRule = r
+			break
+		}
+	}
+	require.NotEmpty(t, enableRule, "could not find a rule in ocp4-e8 that is not in ocp4-cis")
+
 	variants := map[string]complianceoperatorv1.TailoredProfileSpec{
 		"extends": {
 			Extends:     "ocp4-cis",
 			Title:       "E2E Extends Base",
 			Description: "TP extending ocp4-cis for e2e testing",
 			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-admission-control-plugin-alwaysadmit", Rationale: "e2e test"},
+				{Name: enableRule, Rationale: "e2e test"},
 			},
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+				{Name: cisRules[0], Rationale: "e2e test"},
 			},
 		},
 		"custom-rules": {
@@ -1066,7 +1116,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 			Title:       "E2E From-Scratch",
 			Description: "From-scratch TP with regular rules",
 			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-audit-log-maxbackup", Kind: complianceoperatorv1.RuleKind, Rationale: "e2e test"},
+				{Name: cisRules[1], Kind: complianceoperatorv1.RuleKind, Rationale: "e2e test"},
 			},
 		},
 	}
