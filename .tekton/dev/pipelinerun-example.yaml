@@ -1,0 +1,123 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: stackrox-dev-
+  namespace: stackrox-dev
+spec:
+  pipelineRef:
+    name: stackrox-dev
+  params:
+    # Source repository
+    - name: git-url
+      value: "https://github.com/stackrox/stackrox.git"
+    - name: git-revision
+      value: "master"
+
+    # VM configuration
+    - name: k8s-version
+      value: "v1.29.2"
+    - name: vm-size
+      value: "medium"
+
+    # Image configuration
+    - name: image-tag
+      value: "dev"
+    # Leave empty to auto-detect from origin/master
+    - name: base-image-tag
+      value: ""
+
+    # Feature flags (space-separated)
+    # Uncomment to enable plugin-based risk scoring
+    # - name: feature-flags
+    #   value: "ROX_PLUGIN_RISK_SCORING=true"
+
+  taskRunTemplate:
+    serviceAccountName: stackrox-dev-sa
+
+  timeouts:
+    tasks: 45m
+    finally: 5m
+    pipeline: 50m
+
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+---
+# Example: Build from local Forgejo mirror
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: stackrox-dev-forgejo
+  namespace: stackrox-dev
+spec:
+  pipelineRef:
+    name: stackrox-dev
+  params:
+    - name: git-url
+      value: "http://forgejo.forgejo.svc:3000/devadmin/stackrox.git"
+    - name: git-revision
+      value: "risk-plugins"
+    - name: image-tag
+      value: "risk-plugins"
+    - name: feature-flags
+      value: "ROX_PLUGIN_RISK_SCORING=true"
+
+  taskRunTemplate:
+    serviceAccountName: stackrox-dev-sa
+
+  timeouts:
+    tasks: 45m
+    finally: 5m
+    pipeline: 50m
+
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+---
+# Example: Build only (no deploy)
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: stackrox-build-only-
+  namespace: stackrox-dev
+spec:
+  pipelineRef:
+    name: stackrox-dev
+  params:
+    - name: git-url
+      value: "https://github.com/stackrox/stackrox.git"
+    - name: git-revision
+      value: "master"
+    - name: skip-deploy
+      value: "true"
+    - name: image-tag
+      value: "latest"
+
+  taskRunTemplate:
+    serviceAccountName: stackrox-dev-sa
+
+  timeouts:
+    tasks: 30m
+    pipeline: 35m
+
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi

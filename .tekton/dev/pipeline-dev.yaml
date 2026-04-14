@@ -1,0 +1,682 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: stackrox-dev
+  namespace: stackrox-dev
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  description: |
+    Development pipeline for StackRox: builds custom main image with code changes,
+    deploys to KinD cluster in KubeVirt VM, and enables interactive validation.
+
+    Optimized for iteration speed:
+    - Uses released base image, overlays rebuilt central binary
+    - Parallel VM creation and image build
+    - Helm-based deployment with configurable values
+
+  params:
+    - name: git-url
+      type: string
+      default: "https://github.com/stackrox/stackrox.git"
+      description: Git repository URL (GitHub or Forgejo mirror)
+    - name: git-revision
+      type: string
+      default: "master"
+      description: Git branch, tag, or commit SHA
+    - name: k8s-version
+      type: string
+      default: "v1.29.2"
+    - name: vm-size
+      type: string
+      default: "medium"
+      description: "VM size: small (4 CPU, 8GB), medium (8 CPU, 16GB), large (16 CPU, 32GB)"
+    - name: vm-image
+      type: string
+      default: "registry-dev-registry.apps.rosa.kl-01-29-additi.uxca.p3.openshiftapps.com/acs-next/kind-vm:latest"
+    - name: image-tag
+      type: string
+      default: "dev"
+    - name: base-image-tag
+      type: string
+      default: ""
+      description: "Base image tag from quay.io/rhacs-eng/main (empty = auto-detect from origin/master)"
+    - name: registry-namespace
+      type: string
+      default: "dev-registry"
+    - name: registry-service
+      type: string
+      default: "registry"
+    - name: feature-flags
+      type: string
+      default: ""
+      description: "Space-separated ROX_* env vars to enable (e.g., ROX_PLUGIN_RISK_SCORING=true)"
+    - name: skip-deploy
+      type: string
+      default: "false"
+      description: "Skip deployment (build image only)"
+
+  workspaces:
+    - name: source
+
+  tasks:
+    # ──────────────────────────────────────────────────────────────────
+    # Clone source
+    # ──────────────────────────────────────────────────────────────────
+    - name: fetch-source
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: URL
+          value: $(params.git-url)
+        - name: REVISION
+          value: $(params.git-revision)
+        - name: DELETE_EXISTING
+          value: "true"
+        - name: SUBMODULES
+          value: "false"
+      workspaces:
+        - name: output
+          workspace: source
+
+    # ──────────────────────────────────────────────────────────────────
+    # Create KubeVirt VM with KinD cluster (parallel with build)
+    # ──────────────────────────────────────────────────────────────────
+    - name: create-kind-vm
+      taskSpec:
+        params:
+          - name: k8s-version
+            type: string
+          - name: vm-size
+            type: string
+          - name: vm-image
+            type: string
+          - name: registry-namespace
+            type: string
+          - name: registry-service
+            type: string
+          - name: skip-deploy
+            type: string
+        results:
+          - name: vm-name
+            description: Name of the created VM
+          - name: registry-clusterip
+            description: ClusterIP of the registry Service
+        steps:
+          - name: create-vm
+            image: bitnami/kubectl:latest
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              if [ "$(params.skip-deploy)" = "true" ]; then
+                echo "Skipping VM creation (skip-deploy=true)"
+                echo -n "" > $(results.vm-name.path)
+                echo -n "" > $(results.registry-clusterip.path)
+                exit 0
+              fi
+
+              NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+              RUN_SUFFIX=$(echo "$(context.pipelineRun.name)" | rev | cut -c1-5 | rev)
+              VM_NAME="stackrox-dev-${RUN_SUFFIX}"
+
+              # Look up registry ClusterIP
+              REGISTRY_IP=$(kubectl get svc "$(params.registry-service)" \
+                -n "$(params.registry-namespace)" \
+                -o jsonpath='{.spec.clusterIP}')
+              echo "Registry ClusterIP: ${REGISTRY_IP}"
+              echo -n "${REGISTRY_IP}" > $(results.registry-clusterip.path)
+
+              # Map size to resources
+              case "$(params.vm-size)" in
+                small)  CPU_CORES=4;  MEMORY="8Gi" ;;
+                medium) CPU_CORES=8;  MEMORY="16Gi" ;;
+                large)  CPU_CORES=16; MEMORY="32Gi" ;;
+                *) echo "Invalid size: $(params.vm-size)"; exit 1 ;;
+              esac
+
+              # Generate cloud-init
+              CLOUD_INIT=$(cat <<'CINIT'
+              #cloud-config
+              hostname: stackrox-dev
+              manage_etc_hosts: true
+
+              users:
+                - name: stackrox
+                  sudo: ALL=(ALL) NOPASSWD:ALL
+                  shell: /bin/bash
+
+              runcmd:
+                - curl -sLo /usr/local/bin/kind-setup.sh "http://forgejo.forgejo.svc:3000/devadmin/acs-next/raw/branch/main/kind-vm-image/kind-setup.sh" && chmod +x /usr/local/bin/kind-setup.sh
+                - REGISTRY_IP=__REGISTRY_IP__ K8S_VERSION=__K8S_VERSION__ /usr/local/bin/kind-setup.sh > /var/log/kind-setup.log 2>&1
+              CINIT
+              )
+
+              CLOUD_INIT=$(echo "${CLOUD_INIT}" | sed "s|__REGISTRY_IP__|${REGISTRY_IP}|g")
+              CLOUD_INIT=$(echo "${CLOUD_INIT}" | sed "s|__K8S_VERSION__|$(params.k8s-version)|g")
+              CLOUD_INIT_B64=$(echo "${CLOUD_INIT}" | base64 -w0)
+
+              cat <<EOF | kubectl apply -f -
+              apiVersion: kubevirt.io/v1
+              kind: VirtualMachine
+              metadata:
+                name: ${VM_NAME}
+                namespace: ${NAMESPACE}
+                labels:
+                  app: stackrox-dev
+                  tekton.dev/pipelineRun: $(context.pipelineRun.name)
+              spec:
+                runStrategy: Always
+                template:
+                  metadata:
+                    labels:
+                      kubevirt.io/domain: ${VM_NAME}
+                  spec:
+                    architecture: amd64
+                    domain:
+                      cpu:
+                        cores: ${CPU_CORES}
+                      devices:
+                        disks:
+                          - name: rootdisk
+                            disk:
+                              bus: virtio
+                          - name: cloudinitdisk
+                            disk:
+                              bus: virtio
+                        interfaces:
+                          - name: default
+                            masquerade: {}
+                      resources:
+                        requests:
+                          memory: ${MEMORY}
+                    networks:
+                      - name: default
+                        pod: {}
+                    tolerations:
+                      - key: workload-type
+                        operator: Equal
+                        value: kubevirt-vm
+                        effect: NoSchedule
+                    volumes:
+                      - name: rootdisk
+                        containerDisk:
+                          image: $(params.vm-image)
+                      - name: cloudinitdisk
+                        cloudInitNoCloud:
+                          userDataBase64: ${CLOUD_INIT_B64}
+              EOF
+
+              echo -n "${VM_NAME}" > $(results.vm-name.path)
+              echo "VM created: ${VM_NAME}"
+      params:
+        - name: k8s-version
+          value: $(params.k8s-version)
+        - name: vm-size
+          value: $(params.vm-size)
+        - name: vm-image
+          value: $(params.vm-image)
+        - name: registry-namespace
+          value: $(params.registry-namespace)
+        - name: registry-service
+          value: $(params.registry-service)
+        - name: skip-deploy
+          value: $(params.skip-deploy)
+
+    # ──────────────────────────────────────────────────────────────────
+    # Wait for KinD to be ready, fetch kubeconfig
+    # ──────────────────────────────────────────────────────────────────
+    - name: wait-kind-ready
+      runAfter: [create-kind-vm]
+      when:
+        - input: $(params.skip-deploy)
+          operator: notin
+          values: ["true"]
+      taskSpec:
+        params:
+          - name: vm-name
+            type: string
+        workspaces:
+          - name: shared-data
+        steps:
+          - name: wait-and-fetch
+            image: bitnami/kubectl:latest
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+              VM_NAME="$(params.vm-name)"
+
+              if [ -z "${VM_NAME}" ]; then
+                echo "No VM name provided, skipping"
+                exit 0
+              fi
+
+              # Wait for VMI to be running
+              echo "Waiting for VMI ${VM_NAME}..."
+              VMI_IP=""
+              for i in $(seq 1 90); do
+                PHASE=$(kubectl get vmi "${VM_NAME}" -n "${NAMESPACE}" \
+                  -o jsonpath='{.status.phase}' 2>/dev/null || echo "NotFound")
+                if [ "${PHASE}" = "Running" ]; then
+                  VMI_IP=$(kubectl get vmi "${VM_NAME}" -n "${NAMESPACE}" \
+                    -o jsonpath='{.status.interfaces[0].ipAddress}' 2>/dev/null || echo "")
+                  if [ -n "${VMI_IP}" ]; then
+                    echo "VMI running at ${VMI_IP}"
+                    break
+                  fi
+                fi
+                if [ "${i}" -eq 90 ]; then
+                  echo "Timeout waiting for VMI (phase: ${PHASE})"
+                  exit 1
+                fi
+                echo "  phase: ${PHASE} (${i}/90)"
+                sleep 5
+              done
+
+              # Poll for KinD readiness
+              echo "Waiting for KinD cluster (polling http://${VMI_IP}:8080/ready)..."
+              for i in $(seq 1 120); do
+                if curl -sf "http://${VMI_IP}:8080/ready" >/dev/null 2>&1; then
+                  echo "KinD cluster is ready!"
+                  break
+                fi
+                if [ "${i}" -eq 120 ]; then
+                  echo "Timeout waiting for KinD cluster"
+                  exit 1
+                fi
+                echo "  waiting... (${i}/120)"
+                sleep 5
+              done
+
+              # Fetch kubeconfig
+              echo "Fetching kubeconfig..."
+              curl -sf "http://${VMI_IP}:8080/kubeconfig" > \
+                "$(workspaces.shared-data.path)/kind-kubeconfig"
+
+              # Rewrite server URL
+              sed -i "s|server: https://0.0.0.0:6443|server: https://${VMI_IP}:6443|g" \
+                "$(workspaces.shared-data.path)/kind-kubeconfig"
+              sed -i "s|server: https://127.0.0.1:[0-9]*|server: https://${VMI_IP}:6443|g" \
+                "$(workspaces.shared-data.path)/kind-kubeconfig"
+
+              # Set insecure-skip-tls-verify
+              export KUBECONFIG="$(workspaces.shared-data.path)/kind-kubeconfig"
+              CLUSTER=$(kubectl config view -o jsonpath='{.clusters[0].name}')
+              kubectl config set-cluster "${CLUSTER}" --insecure-skip-tls-verify=true
+
+              # Verify connectivity
+              echo "Verifying KinD cluster connectivity..."
+              kubectl get nodes
+
+              echo "Kubeconfig saved to workspace"
+      params:
+        - name: vm-name
+          value: $(tasks.create-kind-vm.results.vm-name)
+      workspaces:
+        - name: shared-data
+          workspace: source
+
+    # ──────────────────────────────────────────────────────────────────
+    # Build central binary (parallel with VM creation)
+    # ──────────────────────────────────────────────────────────────────
+    - name: build-central
+      runAfter: [fetch-source]
+      taskSpec:
+        workspaces:
+          - name: source
+        params:
+          - name: base-image-tag
+            type: string
+        results:
+          - name: base-tag
+            description: Base image tag to use
+        steps:
+          - name: build
+            image: golang:1.24
+            workingDir: $(workspaces.source.path)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              echo "=== Building central binary ==="
+
+              # Determine base image tag
+              BASE_TAG="$(params.base-image-tag)"
+              if [ -z "${BASE_TAG}" ]; then
+                # Auto-detect from git
+                git fetch origin master --depth=1 2>/dev/null || true
+                BASE_TAG=$(git describe --tags --abbrev=0 origin/master 2>/dev/null || echo "4.7.x-nightly-20241201")
+                echo "Auto-detected base tag: ${BASE_TAG}"
+              fi
+              echo -n "${BASE_TAG}" > $(results.base-tag.path)
+
+              # Install make
+              apt-get update -qq && apt-get install -y -qq make > /dev/null
+
+              # Build central binary
+              echo "Building central..."
+              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+                -ldflags="-s -w" \
+                -o bin/central \
+                ./central/main.go
+
+              echo "Built: $(ls -lh bin/central)"
+
+              # Build roxctl for amd64
+              echo "Building roxctl..."
+              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+                -ldflags="-s -w" \
+                -o bin/roxctl-linux-amd64 \
+                ./roxctl/main.go
+
+              echo "Built: $(ls -lh bin/roxctl-linux-amd64)"
+              echo "=== Build complete ==="
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: base-image-tag
+          value: $(params.base-image-tag)
+
+    # ──────────────────────────────────────────────────────────────────
+    # Build dev main image (overlay rebuilt binaries on base)
+    # ──────────────────────────────────────────────────────────────────
+    - name: build-main-image
+      runAfter: [build-central]
+      taskSpec:
+        workspaces:
+          - name: source
+        params:
+          - name: base-tag
+            type: string
+          - name: image-tag
+            type: string
+          - name: registry-namespace
+            type: string
+          - name: registry-service
+            type: string
+        steps:
+          - name: build-image
+            image: quay.io/buildah/stable:latest
+            workingDir: $(workspaces.source.path)
+            securityContext:
+              privileged: true
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              BASE_TAG="$(params.base-tag)"
+              IMAGE_TAG="$(params.image-tag)"
+              REGISTRY_NS="$(params.registry-namespace)"
+              REGISTRY_SVC="$(params.registry-service)"
+
+              echo "=== Building dev main image ==="
+              echo "Base image: quay.io/rhacs-eng/main:${BASE_TAG}"
+              echo "Output tag: ${IMAGE_TAG}"
+
+              # Create dev Dockerfile that overlays binaries on base
+              cat > /tmp/Dockerfile.dev <<'EOF'
+              ARG BASE_TAG
+              FROM quay.io/rhacs-eng/main:${BASE_TAG}
+
+              # Overlay rebuilt central binary
+              COPY bin/central /stackrox/central
+
+              # Overlay rebuilt roxctl
+              COPY bin/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux-amd64
+              EOF
+
+              # Build image
+              buildah bud \
+                --build-arg BASE_TAG="${BASE_TAG}" \
+                -f /tmp/Dockerfile.dev \
+                -t "registry.${REGISTRY_NS}.svc:5000/stackrox/main:${IMAGE_TAG}" \
+                .
+
+              # Push to dev registry
+              buildah push --tls-verify=false \
+                "registry.${REGISTRY_NS}.svc:5000/stackrox/main:${IMAGE_TAG}"
+
+              echo "=== Image pushed: registry.${REGISTRY_NS}.svc:5000/stackrox/main:${IMAGE_TAG} ==="
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: base-tag
+          value: $(tasks.build-central.results.base-tag)
+        - name: image-tag
+          value: $(params.image-tag)
+        - name: registry-namespace
+          value: $(params.registry-namespace)
+        - name: registry-service
+          value: $(params.registry-service)
+
+    # ──────────────────────────────────────────────────────────────────
+    # Deploy StackRox to KinD cluster
+    # ──────────────────────────────────────────────────────────────────
+    - name: deploy-stackrox
+      runAfter:
+        - wait-kind-ready
+        - build-main-image
+      when:
+        - input: $(params.skip-deploy)
+          operator: notin
+          values: ["true"]
+      taskSpec:
+        params:
+          - name: base-tag
+            type: string
+          - name: image-tag
+            type: string
+          - name: registry-clusterip
+            type: string
+          - name: feature-flags
+            type: string
+        workspaces:
+          - name: shared-data
+        steps:
+          - name: deploy
+            image: quay.io/rhacs-eng/main:4.7.x-nightly-20241201
+            env:
+              - name: KUBECONFIG
+                value: $(workspaces.shared-data.path)/kind-kubeconfig
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              WORKSPACE="$(workspaces.shared-data.path)"
+              REGISTRY_IP="$(params.registry-clusterip)"
+              BASE_TAG="$(params.base-tag)"
+              IMAGE_TAG="$(params.image-tag)"
+              FEATURE_FLAGS="$(params.feature-flags)"
+
+              echo "=== Deploying StackRox to KinD cluster ==="
+              kubectl get nodes
+
+              # Create namespace
+              kubectl create namespace stackrox --dry-run=client -o yaml | kubectl apply -f -
+
+              # Generate roxctl init bundle
+              echo "Generating deployment bundle..."
+              cd /tmp
+
+              # Use roxctl from the image
+              /stackrox/roxctl central generate k8s pvc \
+                --output-dir central-bundle \
+                --main-image "${REGISTRY_IP}:5000/stackrox/main:${IMAGE_TAG}" \
+                --central-db-image "quay.io/rhacs-eng/central-db:${BASE_TAG}" \
+                --scanner-image "quay.io/rhacs-eng/scanner:${BASE_TAG}" \
+                --scanner-db-image "quay.io/rhacs-eng/scanner-db:${BASE_TAG}" \
+                --scanner-v4-indexer-image "quay.io/rhacs-eng/scanner-v4:${BASE_TAG}" \
+                --scanner-v4-matcher-image "quay.io/rhacs-eng/scanner-v4:${BASE_TAG}" \
+                --scanner-v4-db-image "quay.io/rhacs-eng/scanner-v4-db:${BASE_TAG}" \
+                --enable-telemetry=false
+
+              # Apply feature flags to central deployment
+              if [ -n "${FEATURE_FLAGS}" ]; then
+                echo "Applying feature flags: ${FEATURE_FLAGS}"
+                for FLAG in ${FEATURE_FLAGS}; do
+                  NAME=$(echo "${FLAG}" | cut -d= -f1)
+                  VALUE=$(echo "${FLAG}" | cut -d= -f2)
+                  # Patch central deployment with env var
+                  kubectl set env deploy/central -n stackrox "${NAME}=${VALUE}" --dry-run=client || true
+                done
+              fi
+
+              # Deploy central
+              echo "Deploying Central..."
+              kubectl apply -R -f central-bundle/central/
+
+              # Wait for central
+              echo "Waiting for Central to be ready..."
+              kubectl wait --for=condition=Available --timeout=300s \
+                deploy/central -n stackrox
+
+              # Get admin password
+              ADMIN_PASS=$(kubectl get secret central-htpasswd -n stackrox \
+                -o jsonpath='{.data.password}' | base64 -d)
+              echo ""
+              echo "=== Central deployed ==="
+              echo "Admin password: ${ADMIN_PASS}"
+              echo ""
+
+              # Apply feature flags if specified
+              if [ -n "${FEATURE_FLAGS}" ]; then
+                echo "Patching Central with feature flags..."
+                for FLAG in ${FEATURE_FLAGS}; do
+                  NAME=$(echo "${FLAG}" | cut -d= -f1)
+                  VALUE=$(echo "${FLAG}" | cut -d= -f2)
+                  kubectl set env deploy/central -n stackrox "${NAME}=${VALUE}"
+                done
+                kubectl rollout status deploy/central -n stackrox --timeout=120s
+              fi
+
+              # Generate sensor bundle
+              echo "Generating Sensor bundle..."
+              /stackrox/roxctl sensor generate k8s \
+                --central central.stackrox.svc:443 \
+                --main-image-repository "${REGISTRY_IP}:5000/stackrox/main" \
+                --collector-image-repository "quay.io/rhacs-eng/collector" \
+                --output-dir sensor-bundle \
+                --name local-cluster \
+                --admission-controller-enabled \
+                --admission-controller-listen-on-creates \
+                --admission-controller-listen-on-updates
+
+              # Deploy sensor
+              echo "Deploying Sensor..."
+              kubectl apply -R -f sensor-bundle/
+
+              # Wait for sensor
+              kubectl wait --for=condition=Available --timeout=180s \
+                deploy/sensor -n stackrox
+
+              echo ""
+              echo "=== StackRox deployment complete ==="
+              kubectl get pods -n stackrox
+              echo ""
+              echo "Access Central:"
+              echo "  kubectl port-forward -n stackrox svc/central 8443:443"
+              echo "  https://localhost:8443 (admin / ${ADMIN_PASS})"
+      params:
+        - name: base-tag
+          value: $(tasks.build-central.results.base-tag)
+        - name: image-tag
+          value: $(params.image-tag)
+        - name: registry-clusterip
+          value: $(tasks.create-kind-vm.results.registry-clusterip)
+        - name: feature-flags
+          value: $(params.feature-flags)
+      workspaces:
+        - name: shared-data
+          workspace: source
+
+    # ──────────────────────────────────────────────────────────────────
+    # Validation (optional smoke test)
+    # ──────────────────────────────────────────────────────────────────
+    - name: validate
+      runAfter: [deploy-stackrox]
+      when:
+        - input: $(params.skip-deploy)
+          operator: notin
+          values: ["true"]
+      taskSpec:
+        workspaces:
+          - name: shared-data
+        steps:
+          - name: smoke-test
+            image: bitnami/kubectl:latest
+            env:
+              - name: KUBECONFIG
+                value: $(workspaces.shared-data.path)/kind-kubeconfig
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              echo "=== Running smoke tests ==="
+
+              # Check all pods are running
+              echo "Checking pod status..."
+              kubectl get pods -n stackrox
+              NOT_READY=$(kubectl get pods -n stackrox -o jsonpath='{.items[?(@.status.phase!="Running")].metadata.name}')
+              if [ -n "${NOT_READY}" ]; then
+                echo "Warning: Some pods not running: ${NOT_READY}"
+              fi
+
+              # Check Central API
+              echo "Checking Central API..."
+              ADMIN_PASS=$(kubectl get secret central-htpasswd -n stackrox \
+                -o jsonpath='{.data.password}' | base64 -d)
+
+              kubectl run curl-test --rm -i --restart=Never \
+                --image=curlimages/curl:latest \
+                -- -sk -u "admin:${ADMIN_PASS}" \
+                   https://central.stackrox.svc:443/v1/ping
+
+              echo ""
+              echo "=== Smoke tests passed ==="
+      workspaces:
+        - name: shared-data
+          workspace: source
+
+  # ──────────────────────────────────────────────────────────────────
+  # Cleanup: delete VM regardless of outcome
+  # ──────────────────────────────────────────────────────────────────
+  finally:
+    - name: cleanup-vm
+      when:
+        - input: $(params.skip-deploy)
+          operator: notin
+          values: ["true"]
+      taskSpec:
+        params:
+          - name: vm-name
+            type: string
+        steps:
+          - name: cleanup
+            image: bitnami/kubectl:latest
+            script: |
+              #!/usr/bin/env bash
+              set -x
+              NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+              VM_NAME="$(params.vm-name)"
+
+              if [ -n "${VM_NAME}" ]; then
+                kubectl delete vm "${VM_NAME}" -n "${NAMESPACE}" \
+                  --ignore-not-found=true --wait=false
+                echo "VM ${VM_NAME} deletion initiated"
+              else
+                echo "No VM name provided, skipping cleanup"
+              fi
+      params:
+        - name: vm-name
+          value: $(tasks.create-kind-vm.results.vm-name)
