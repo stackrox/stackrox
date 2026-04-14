@@ -214,9 +214,7 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 		require.NoError(t, err, "failed to create ConfigMap")
 	}
 	t.Cleanup(func() {
-		_ = client.Delete(ctx, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: cmName, Namespace: coNamespaceV2},
-		})
+		deleteResource[corev1.ConfigMap](ctx, t, client, cmName, coNamespaceV2)
 	})
 
 	cr := &complianceoperatorv1.CustomRule{
