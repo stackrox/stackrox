@@ -521,6 +521,7 @@ var (
 	TestNestedInt64       = newFieldLabel("Test Nested Int64")
 	TestNested2Int64      = newFieldLabel("Test Nested Int64 2")
 	TestOneofNestedString = newFieldLabel("Test Oneof Nested String")
+	TestUUID              = newFieldLabel("Test UUID")
 
 	TestGrandparentID        = newFieldLabel("Test Grandparent ID")
 	TestGrandparentVal       = newFieldLabel("Test Grandparent Val")

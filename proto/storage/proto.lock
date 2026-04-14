@@ -18203,6 +18203,11 @@
                 "name": "oneof_two_int",
                 "type": "int64",
                 "oneof_parent": "oneof_two"
+              },
+              {
+                "id": 19,
+                "name": "optional_uuid",
+                "type": "string"
               }
             ],
             "maps": [

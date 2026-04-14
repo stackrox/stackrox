@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -916,7 +917,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
 			}
-			return fmt.Errorf("empty list of pods does not satisfy the condition")
+			return errors.New("empty list of pods does not satisfy the condition")
 		}
 		for _, pod := range podList.Items {
 			resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(pod.GetName(), &coreV1.PodLogOptions{Container: container}).Do(ctx)
@@ -956,10 +957,10 @@ func (ks *KubernetesSuite) getSensorPod(ctx context.Context, namespace string) (
 		return nil, fmt.Errorf("could not list pods matching %q in namespace %q: %w", sensorPodLabels, namespace, err)
 	}
 	if len(podList.Items) == 0 {
-		return nil, fmt.Errorf("empty list of pods does not satisfy the condition")
+		return nil, errors.New("empty list of pods does not satisfy the condition")
 	}
 	if len(podList.Items) > 1 {
-		return nil, fmt.Errorf("more than one sensor pod running")
+		return nil, errors.New("more than one sensor pod running")
 	}
 
 	return &podList.Items[0], nil
