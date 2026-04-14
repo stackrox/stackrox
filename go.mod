@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.23.0
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.16.0
-	cloud.google.com/go/securitycenter v1.41.0
+	cloud.google.com/go/securitycenter v1.42.0
 	cloud.google.com/go/storage v1.62.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.6.0
