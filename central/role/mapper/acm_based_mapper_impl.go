@@ -50,10 +50,12 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 		groups:     ud.Attributes["groups"],
 	}
 	ctxForACM := request.WithUser(ctx, userForCtx)
+	log.Info("Querying ACM for user", userForCtx)
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctxForACM, rm.acmClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get resolved roles from ACM")
 	}
+	log.Info(len(roles), "Resolved roles", roles)
 	return roles, nil
 }
 
