@@ -25,7 +25,9 @@ var (
 	skipMigrationMap = set.NewIntSet()
 )
 
-func init() {
+// Init initializes the runner by parsing the ROX_SKIP_MIGRATIONS environment variable.
+// This must be called before running migrations.
+func Init() {
 	env := os.Getenv("ROX_SKIP_MIGRATIONS")
 	if env == "" {
 		return

@@ -218,7 +218,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/memlimit"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
@@ -263,14 +262,6 @@ const (
 	proxyConfigPath = "/run/secrets/stackrox.io/proxy-config"
 	proxyConfigFile = "config.yaml"
 )
-
-func init() {
-	if !proxy.UseWithDefaultTransport() {
-		log.Warn("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
-	}
-
-	memlimit.SetMemoryLimit()
-}
 
 func runSafeMode() {
 	log.Info("Started Central up in safe mode. Sleeping forever...")

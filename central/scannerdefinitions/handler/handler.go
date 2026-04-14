@@ -92,8 +92,31 @@ var (
 	// main version is `4.6.x-nightly-20241004`, and the offline bundle accepts
 	// `4.6.x`, the variants would eventually allow us to accept the bundle when
 	// comparing `4.6.x-nightly-20241004`, `4.6.x-nightly` and finally `4.6.x`.
-	mainVersionVariants map[string]bool
+	mainVersionVariants = make(map[string]bool)
 )
+
+// InitScannerConfig initializes scanner definitions handler configuration.
+func InitScannerConfig() {
+	var err error
+	scannerUpdateBaseURL, err = url.Parse("https://definitions.stackrox.io")
+	utils.CrashOnError(err)
+
+	// Parse the main version number variants
+	mainVersion := version.GetMainVersion()
+	if mainVersion == "" {
+		log.Error("v4 offline uploads are blocked: main version is empty")
+		return
+	}
+	variants, err := version.Variants(mainVersion)
+	if utils.ShouldErr(err) != nil {
+		log.Errorf("v4 offline uploads are blocked: invalid main version format %q: %v",
+			mainVersion, err)
+		return
+	}
+	for _, v := range variants {
+		mainVersionVariants[v] = true
+	}
+}
 
 type requestedUpdater struct {
 	*updater
@@ -134,30 +157,6 @@ type httpHandler struct {
 
 	// offlineFiles coordinates reads and updates to offline files.
 	offlineFiles *offlineFileManager
-}
-
-func init() {
-	var err error
-	scannerUpdateBaseURL, err = url.Parse("https://definitions.stackrox.io")
-	utils.CrashOnError(err) // This is very unexpected.
-
-	// Parse the main version number variants, continue in a broken state if version
-	// is not parseable.
-	mainVersionVariants = make(map[string]bool)
-	mainVersion := version.GetMainVersion()
-	if mainVersion == "" {
-		log.Error("v4 offline uploads are blocked: main version is empty")
-		return
-	}
-	variants, err := version.Variants(mainVersion)
-	if utils.ShouldErr(err) != nil {
-		log.Errorf("v4 offline uploads are blocked: invalid main version format %q: %v",
-			mainVersion, err)
-		return
-	}
-	for _, v := range variants {
-		mainVersionVariants[v] = true
-	}
 }
 
 // New creates a new http.Handler to handle vulnerability data.

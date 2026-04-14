@@ -6,6 +6,7 @@ import (
 
 	consolev1 "github.com/openshift/api/console/v1"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorinit "github.com/stackrox/rox/operator/init"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -31,6 +32,7 @@ func NewFakeClientBuilder(t *testing.T, objects ...ctrlClient.Object) *fake.Clie
 // Pass other errors to simulate API failures (e.g., RBAC errors).
 func NewFakeClientBuilderWithConsolePluginListError(t *testing.T, consolePluginListError error, objects ...ctrlClient.Object) *fake.ClientBuilder {
 	testutils.MustBeInTest(t)
+	operatorinit.RegisterCRDTypes()
 	scheme := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(scheme))
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))

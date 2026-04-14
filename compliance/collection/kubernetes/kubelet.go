@@ -19,7 +19,9 @@ var (
 	decoder      = serializer.NewCodecFactory(clientSchema).UniversalDeserializer()
 )
 
-func init() {
+// InitScheme initializes the Kubernetes scheme with kubelet configuration types.
+// Called explicitly from compliance/cmd/compliance/app instead of package init().
+func InitScheme() {
 	if err := v1beta1.SchemeBuilder.AddToScheme(clientSchema); err != nil {
 		panic(err)
 	}

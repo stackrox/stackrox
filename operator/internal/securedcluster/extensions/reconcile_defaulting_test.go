@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorinit "github.com/stackrox/rox/operator/init"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -252,6 +253,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				baseSecuredCluster.Annotations[key] = val
 			}
 
+			operatorinit.RegisterCRDTypes()
 			ctx := context.Background()
 			sch := runtime.NewScheme()
 			require.NoError(t, platform.AddToScheme(sch))
@@ -389,6 +391,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				baseSecuredCluster.Annotations[key] = val
 			}
 
+			operatorinit.RegisterCRDTypes()
 			ctx := context.Background()
 			sch := runtime.NewScheme()
 			require.NoError(t, platform.AddToScheme(sch))

@@ -12,7 +12,8 @@ var (
 	optionsToRemove = [...]search.FieldLabel{"SORT_Lifecycle Stage", "SORT_Enforcement"}
 )
 
-func init() {
+// InitOptionsMap initializes the alert options map.
+func InitOptionsMap() {
 	OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil))
 	for _, opt := range optionsToRemove {
 		OptionsMap.Remove(opt)

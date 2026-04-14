@@ -26,4 +26,5 @@ func Run() {
 	notifiers.Init()
 	metadata.Init()
 	backupPlugins.Init()
+	initComponentLogic()
 }

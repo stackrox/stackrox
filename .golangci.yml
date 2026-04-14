@@ -190,9 +190,16 @@ linters:
     rules:
       - linters:
           - gochecknoinits
-        # Allow init() in scanner (separate binary), generated code, and legacy code not yet migrated
-        # The exclusion pattern matches directories where init() functions haven't been migrated yet
-        path: ^(scanner/|generated/|central/|compliance/|config-controller/|image/|migrator/|operator/|pkg/[a-z](.*)|roxctl/|sensor/|tools/)
+        # Allow init() only in:
+        # - scanner/ (separate binary, not affected by busybox consolidation)
+        # - generated/ (auto-generated code)
+        # - migrator/migrations/ (intentional auto-registration pattern for migration discovery)
+        # - pkg/, roxctl/, sensor/, tools/ (not yet migrated, will be done in follow-up)
+        path: ^(scanner/|generated/|migrator/migrations/|pkg/[a-z](.*)|roxctl/|sensor/|tools/)
+      - linters:
+          - gochecknoinits
+        # Test files can use init() for setup
+        path: _test\.go
       - linters:
           - wrapcheck
         # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines

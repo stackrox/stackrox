@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorinit "github.com/stackrox/rox/operator/init"
 	"github.com/stackrox/rox/operator/internal/common/confighash"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
@@ -201,6 +202,7 @@ func buildFakeClient(t *testing.T, c secretReconciliationTestCase, central *plat
 		otherExisting = append(otherExisting, existingObj.DeepCopyObject())
 	}
 
+	operatorinit.RegisterCRDTypes()
 	sch := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(sch))
 	require.NoError(t, scheme.AddToScheme(sch))

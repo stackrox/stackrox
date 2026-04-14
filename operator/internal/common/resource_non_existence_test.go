@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorinit "github.com/stackrox/rox/operator/init"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -107,6 +108,7 @@ func gvkToResource(t *testing.T, gvk schema.GroupVersionKind) string {
 }
 
 func buildClientWithObjects(t *testing.T, objects []ctrlClient.Object) ctrlClient.Client {
+	operatorinit.RegisterCRDTypes()
 	sch := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(sch))
 	require.NoError(t, scheme.AddToScheme(sch))

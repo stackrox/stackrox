@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -19,8 +20,13 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
+func runnerInit() {
+	runner.Init()
+}
+
 // Run is the main entry point for the migrator application.
 func Run() {
+	runnerInit()
 	startProfilingServer()
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %+v", err)

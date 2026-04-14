@@ -393,7 +393,9 @@ func ObserveNodePackageReportTransmissions(nodeName string, sendingType Inventor
 	}).Inc()
 }
 
-func init() {
+// Init registers all compliance collection prometheus metrics.
+// Called explicitly from compliance/cmd/compliance/app instead of package init().
+func Init() {
 	prometheus.MustRegister(
 		callToNodeInventoryDuration,
 		inventoryTransmissions,

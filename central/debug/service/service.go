@@ -108,7 +108,8 @@ var (
 	mainClusterConfig = k8sintrospect.DefaultConfig()
 )
 
-func init() {
+// InitMainClusterConfig initializes the main cluster configuration for debug service.
+func InitMainClusterConfig() {
 	mainClusterConfig.PathPrefix = centralClusterPrefix
 	// For the main cluster (i.e. the collection for the Central cluster) we explicitly ignore the log file limits.
 	// The limitation is not required since the GRPC message isn't affected by it, and has proven to be unhelpful

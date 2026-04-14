@@ -77,7 +77,9 @@ var SemaphoreQueueSize = prometheus.NewGauge(
 		Help:      "Number of connections waiting to be handled",
 	})
 
-func init() {
+// Init registers all virtual machine relay prometheus metrics.
+// Called explicitly from compliance/cmd/compliance/app instead of package init().
+func Init() {
 	prometheus.MustRegister(
 		IndexReportsMismatchingVsockCID,
 		IndexReportsReceived,

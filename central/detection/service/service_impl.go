@@ -84,15 +84,16 @@ var (
 	delegateScanPermissions = []string{"Image"}
 )
 
-// EnhancementRequestWatcher is the interface to send deployments for enhancement to Sensor
-type EnhancementRequestWatcher interface {
-	SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
-}
-
-func init() {
+// InitWorkloadScheme initializes the workload scheme for detection service.
+func InitWorkloadScheme() {
 	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
 	pkgUtils.Must(errors.Wrap(scheme.AddToScheme(workloadScheme), "failed to load scheme"))
 	pkgUtils.Must(errors.Wrap(k8sutil.AddOpenShiftSchemes(workloadScheme), "failed to load openshift schemes"))
+}
+
+// EnhancementRequestWatcher is the interface to send deployments for enhancement to Sensor
+type EnhancementRequestWatcher interface {
+	SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
 }
 
 // serviceImpl provides APIs for alerts.

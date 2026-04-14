@@ -25,7 +25,8 @@ var (
 	NamespaceOnlyOptionsMap search.OptionsMap
 )
 
-func init() {
+// InitOptionsMap initializes all CSV export handler options maps.
+func InitOptionsMap() {
 	NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
 	var imageOptionsMap search.OptionsMap
 	if features.FlattenImageData.Enabled() {
