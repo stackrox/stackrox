@@ -336,7 +336,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeploymentIDs() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.ScopeKey]
-			fetchedIDs, getErr := s.datastore.GetDeploymentIDs(ctx)
+			fetchedIDs, getErr := s.datastore.GetDeploymentIDs(ctx, searchPkg.EmptyQuery())
 			s.Require().NoError(getErr)
 			// Note: the behaviour change may impact policy dry runs if the requester does not have full namespace scope.
 			s.ElementsMatch(fetchedIDs, c.ExpectedDeploymentIDs)
@@ -493,32 +493,6 @@ func (s *deploymentDatastoreSACSuite) TestUnrestrictedCount() {
 	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runTestCount(c)
-		})
-	}
-}
-
-func (s *deploymentDatastoreSACSuite) runTestCountDeployments(testCase testutils.SACSearchTestCase) {
-	ctx := s.testContexts[testCase.ScopeKey]
-	resultCount, err := s.datastore.CountDeployments(ctx)
-	s.NoError(err)
-	expectedResultCount := testutils.AggregateCounts(s.T(), testCase.Results)
-	s.Equal(expectedResultCount, resultCount)
-}
-
-func (s *deploymentDatastoreSACSuite) TestScopedCountDeployments() {
-	s.setupSearchTest()
-	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runTestCountDeployments(c)
-		})
-	}
-}
-
-func (s *deploymentDatastoreSACSuite) TestUnrestrictedCountDeployments() {
-	s.setupSearchTest()
-	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runTestCountDeployments(c)
 		})
 	}
 }

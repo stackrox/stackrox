@@ -360,7 +360,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
-	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
+	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx, deploymentDatastore.ActiveDeploymentsQuery())
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
 		return
@@ -1034,7 +1034,7 @@ func (g *garbageCollectorImpl) removeOrphanedRisks() {
 func (g *garbageCollectorImpl) removeOrphanedDeploymentRisks() {
 	defer metrics.SetPruningDuration(time.Now(), "DeploymentRisks")
 	deploymentsWithRisk := g.getRisks(storage.RiskSubjectType_DEPLOYMENT)
-	results, err := g.deployments.Search(pruningCtx, search.EmptyQuery())
+	results, err := g.deployments.Search(pruningCtx, deploymentDatastore.ActiveDeploymentsQuery())
 	if err != nil {
 		log.Errorf("[Risk pruning] Searching deployments: %v", err)
 		return

@@ -123,7 +123,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	}
 
 	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	deploymentsQuery := clusterIDQuery
+	deploymentsQuery := search.ConjunctionQuery(clusterIDQuery, dDS.ActiveDeploymentsQuery())
 	if query.GetQuery() != nil {
 		deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, query)
 	}

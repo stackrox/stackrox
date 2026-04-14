@@ -454,7 +454,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 		return nil, errors.Wrapf(errox.InvalidArgs, "invalid policy: %v", err)
 	}
 
-	deploymentIds, err := s.deployments.GetDeploymentIDs(ctx)
+	deploymentIds, err := s.deployments.GetDeploymentIDs(ctx, deploymentDataStore.ActiveDeploymentsQuery())
 	if err != nil {
 		return nil, err
 	}
