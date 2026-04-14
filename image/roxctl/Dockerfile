@@ -11,7 +11,10 @@ RUN dnf install -y \
     --releasever=9 \
     --setopt=install_weak_deps=False \
     --nodocs \
-    ca-certificates gzip less tar && \
+    ca-certificates \
+    gzip \
+    less \
+    tar && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
