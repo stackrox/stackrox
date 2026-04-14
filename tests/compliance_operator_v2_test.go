@@ -328,7 +328,7 @@ func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 				return
 			}
 		}
-		require.Failf(c, "TP not yet in Central DB", "profile %q not found", name)
+		require.Failf(c, "TailoredProfile not yet in Central DB", "profile %q not found", name)
 	}, 10*time.Second, 1*time.Second)
 	return profile
 }
