@@ -56,6 +56,7 @@ $centralAdditionalCAIndented
         requests:
           cpu: "400m"
     db:
+$scannerV4DbPersistenceYaml
       resources:
         requests:
           cpu: "500m"
