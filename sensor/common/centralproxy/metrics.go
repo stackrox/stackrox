@@ -84,7 +84,9 @@ var (
 	}, []string{"result"})
 )
 
-func init() {
+// Init registers prometheus metrics for central proxy.
+// Called from sensor/common/metrics/init.go instead of package init().
+func Init() {
 	metrics.EmplaceCollector(
 		proxyRequestsTotal,
 		proxyRequestDuration,

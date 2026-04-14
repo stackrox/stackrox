@@ -12,7 +12,8 @@ const (
 	OutcomeRejected = "rejected"
 )
 
-func init() {
+// Init registers Prometheus metrics for rate limiter monitoring.
+func Init() {
 	prometheus.MustRegister(
 		RequestsTotal,
 		ActiveClients,

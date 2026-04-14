@@ -348,7 +348,8 @@ func RemoveScanAndSetCall(reason string) {
 	}).Inc()
 }
 
-func init() {
+// Init registers detector metrics.
+func Init() {
 	prometheus.MustRegister(timeSpentInExponentialBackoff,
 		networkPoliciesStored,
 		networkPoliciesStoreEvents,
