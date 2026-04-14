@@ -930,8 +930,15 @@ EOT
 
     _begin "verify"
 
-    verify_deployment_deletion_with_timeout 4m "${CUSTOM_CENTRAL_NAMESPACE}" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
-    verify_deployment_deletion_with_timeout 4m "${CUSTOM_SENSOR_NAMESPACE}" scanner-v4-indexer scanner-v4-db
+    # Race-detector builds OOMKill the config-controller (operator), slowing
+    # reconciliation. The operator reconciles config-controller back to 128Mi
+    # so we can't increase its limit — just give it more time.
+    local deletion_timeout="4m"
+    if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+        deletion_timeout="10m"
+    fi
+    verify_deployment_deletion_with_timeout "$deletion_timeout" "${CUSTOM_CENTRAL_NAMESPACE}" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
+    verify_deployment_deletion_with_timeout "$deletion_timeout" "${CUSTOM_SENSOR_NAMESPACE}" scanner-v4-indexer scanner-v4-db
     ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
