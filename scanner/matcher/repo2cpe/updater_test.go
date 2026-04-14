@@ -3,11 +3,12 @@ package repo2cpe
 import (
 	"context"
 	"errors"
-	"sync"
 	"sync/atomic"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -110,9 +111,9 @@ func TestUpdater_fetch(t *testing.T) {
 		require.NotNil(t, v)
 		assert.Len(t, v.Data, 1)
 
-		u.mu.RLock()
-		assert.Equal(t, "Tue, 01 Jan 2025 00:00:00 GMT", u.lastModified)
-		u.mu.RUnlock()
+		concurrency.WithRLock(&u.mu, func() {
+			assert.Equal(t, "Tue, 01 Jan 2025 00:00:00 GMT", u.lastModified)
+		})
 	})
 
 	t.Run("not modified result preserves existing data", func(t *testing.T) {
