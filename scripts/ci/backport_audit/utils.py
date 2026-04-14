@@ -8,18 +8,18 @@ from .github_client import GitHubClient
 from .models import BackportAuditError, GitHubError, ReleaseBranch
 
 
-def extract_jira_keys(title: str) -> list[str]:
-    """Extract ROX-XXXXX Jira keys from PR title.
+def extract_jira_keys(text: str) -> list[str]:
+    """Extract ROX-XXXXX Jira keys from text.
 
     Args:
-        title: PR title
+        text: Text to search (PR title, body, etc.)
 
     Returns:
         Sorted list of unique Jira keys
 
     """
     pattern = r"ROX-\d+"
-    matches = re.findall(pattern, title)
+    matches = re.findall(pattern, text)
     return sorted(set(matches))
 
 

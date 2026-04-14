@@ -43,7 +43,10 @@ def _fetch_and_group_prs(
             continue
 
         author = resolve_author(pr_data, gh_client)
-        jira_keys = extract_jira_keys(pr_data["title"])
+        # Extract Jira keys from both title and body
+        title_keys = extract_jira_keys(pr_data["title"])
+        body_keys = extract_jira_keys(pr_data.get("body", ""))
+        jira_keys = sorted(set(title_keys + body_keys))
         all_jira_keys.update(jira_keys)
 
         pr = PR(
@@ -126,7 +129,10 @@ def _fetch_merged_prs_from_commits(
                     author = author_name
                     body = ""
 
-                jira_keys = extract_jira_keys(title)
+                # Extract Jira keys from both title and body
+                title_keys = extract_jira_keys(title)
+                body_keys = extract_jira_keys(body)
+                jira_keys = sorted(set(title_keys + body_keys))
                 all_jira_keys.update(jira_keys)
 
                 pr = PR(
