@@ -274,7 +274,7 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 		require.Equalf(c, complianceoperatorv1.CustomRulePhaseReady, current.Status.Phase,
 			"CustomRule %s not Ready (phase: %s, error: %s)",
 			name, current.Status.Phase, current.Status.ErrorMessage)
-	}, 2*time.Minute, 5*time.Second)
+	}, 10*time.Second, 1*time.Second)
 }
 
 // createTailoredProfile creates an extends-based TailoredProfile (extending
@@ -329,7 +329,7 @@ func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 			}
 		}
 		require.Failf(c, "TP not yet in Central DB", "profile %q not found", name)
-	}, 1*time.Minute, 2*time.Second)
+	}, 10*time.Second, 1*time.Second)
 	return profile
 }
 
