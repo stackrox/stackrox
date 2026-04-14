@@ -371,17 +371,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "central" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
-		// BusyBox-style consolidation: central imports app packages from other components
-		allowedPackages = appendPackageWithoutChildren(allowedPackages,
-			"compliance/cmd/compliance/app",
-			"compliance/virtualmachines/roxagent/app",
-			"config-controller/app",
-			"migrator/app",
-			"roxctl/app",
-			"sensor/admission-control/app",
-			"sensor/kubernetes/app",
-			"sensor/upgrader/app",
-		)
 	}
 
 	if validImportRoot == "pkg" {

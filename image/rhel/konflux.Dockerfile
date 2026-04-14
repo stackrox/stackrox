@@ -91,22 +91,19 @@ COPY --from=package_installer /out/ /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
-
-# Create BusyBox-style symlinks to central binary
 RUN GOARCH=$(uname -m) ; \
     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
-    mkdir -p /stackrox/bin && \
-    ln -s /stackrox/central /stackrox/bin/migrator && \
-    ln -s /stackrox/central /stackrox/bin/compliance && \
-    ln -s /stackrox/central /stackrox/bin/kubernetes-sensor && \
-    ln -s /stackrox/central /stackrox/bin/sensor-upgrader && \
-    ln -s /stackrox/central /stackrox/bin/admission-control && \
-    ln -s /stackrox/central /stackrox/bin/config-controller && \
-    ln -s /stackrox/central /stackrox/bin/roxagent && \
-    ln -s /stackrox/central /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
 ARG BUILD_TAG

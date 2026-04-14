@@ -83,18 +83,16 @@ COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 COPY ui /ui
 
 COPY bin/central            /stackrox/central
+COPY bin/migrator           /stackrox/bin/migrator
+COPY bin/compliance         /stackrox/bin/compliance
+COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY bin/admission-control  /stackrox/bin/admission-control
+COPY bin/config-controller  /stackrox/bin/config-controller
+COPY bin/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
 
-# Create BusyBox-style symlinks to central binary
-RUN mkdir -p /stackrox/bin && \
-    ln -s /stackrox/central /stackrox/bin/migrator && \
-    ln -s /stackrox/central /stackrox/bin/compliance && \
-    ln -s /stackrox/central /stackrox/bin/kubernetes-sensor && \
-    ln -s /stackrox/central /stackrox/bin/sensor-upgrader && \
-    ln -s /stackrox/central /stackrox/bin/admission-control && \
-    ln -s /stackrox/central /stackrox/bin/config-controller && \
-    ln -s /stackrox/central /stackrox/bin/roxagent && \
-    ln -s /stackrox/central /stackrox/roxctl && \
+RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
 
 EXPOSE 8443
