@@ -1,0 +1,41 @@
+{
+    "newCheckpoint": "2024-06-26T22:00:00Z",
+    "violations": [
+        {
+            "alertInfo": {
+                "alertId": "aeaaaaaa-bbbb-4011-0000-111111111111"
+            },
+            "deploymentInfo": {},
+            "violationInfo": {
+                "containerName": "nginx",
+                "podId": "nginx",
+                "violationId": "f073c9f5-c766-5dc4-b7cb-aa8ac8f2d445",
+                "violationMessage": "This is a kube event violation",
+                "violationMessageAttributes": [
+                    {
+                        "key": "pod",
+                        "value": "nginx"
+                    },
+                    {
+                        "key": "container",
+                        "value": "nginx"
+                    }
+                ],
+                "violationTime": "2024-06-14T20:00:00Z",
+                "violationType": "GENERIC"
+            }
+        },
+        {
+            "alertInfo": {
+                "alertId": "aeaaaaaa-bbbb-4011-0000-111111111111"
+            },
+            "deploymentInfo": {},
+            "violationInfo": {
+                "violationId": "aeaaaaaa-bbbb-4011-0000-111111111111",
+                "violationMessage": "Deployment is affected by 'CVE-2017-15670'",
+                "violationTime": "2024-06-14T20:00:00Z",
+                "violationType": "GENERIC"
+            }
+        }
+    ]
+}
