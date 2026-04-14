@@ -394,3 +394,28 @@ func TestSecurityContext(t *testing.T) {
 		})
 	}
 }
+
+func TestNewDeploymentFromStaticResource_SetsStateActive(t *testing.T) {
+	deployment := &appsV1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-deployment",
+			Namespace: "default",
+			UID:       "test-uid",
+		},
+		Spec: appsV1.DeploymentSpec{
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{Name: "test-container", Image: "test:latest"},
+					},
+				},
+			},
+		},
+	}
+
+	result, err := NewDeploymentFromStaticResource(deployment, kubernetes.Deployment, "cluster-1", "")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, storage.DeploymentState_STATE_ACTIVE, result.GetState(), "New deployments should be created with STATE_ACTIVE")
+	assert.Nil(t, result.GetDeleted(), "New deployments should not have a deleted timestamp set")
+}

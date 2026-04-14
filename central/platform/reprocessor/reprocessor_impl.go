@@ -158,9 +158,9 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
 	var q *v1.Query
 	if pr.customized {
-		q = search.EmptyQuery()
+		q = deploymentDS.ActiveDeploymentsQuery()
 	} else {
-		q = unsetPlatformComponentQuery
+		q = search.ConjunctionQuery(unsetPlatformComponentQuery, deploymentDS.ActiveDeploymentsQuery())
 	}
 	q.Pagination = &v1.QueryPagination{
 		Limit: batchSize,

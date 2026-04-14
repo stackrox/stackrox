@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -51,11 +52,12 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 	}
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return(expectedSecret, true, nil)
 
-	psr := search.NewQueryBuilder().
+	baseQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
+	psr := search.ConjunctionQuery(baseQuery, deploymentDatastore.ActiveDeploymentsQuery())
 
 	results := []*v1.SearchResult{
 		{
@@ -114,11 +116,12 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 	}
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return(expectedSecret, true, nil)
 
-	psr := search.NewQueryBuilder().
+	baseQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
+	psr := search.ConjunctionQuery(baseQuery, deploymentDatastore.ActiveDeploymentsQuery())
 
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return([]*v1.SearchResult{}, nil)
 
@@ -138,11 +141,12 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 	}
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return(expectedSecret, true, nil)
 
-	psr := search.NewQueryBuilder().
+	baseQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
+	psr := search.ConjunctionQuery(baseQuery, deploymentDatastore.ActiveDeploymentsQuery())
 
 	expectedErr := errors.New("failure")
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return(([]*v1.SearchResult)(nil), expectedErr)

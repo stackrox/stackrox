@@ -59,21 +59,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// CountDeployments mocks base method.
-func (m *MockDataStore) CountDeployments(ctx context.Context) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountDeployments", ctx)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountDeployments indicates an expected call of CountDeployments.
-func (mr *MockDataStoreMockRecorder) CountDeployments(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockDataStore)(nil).CountDeployments), ctx)
-}
-
 // GetContainerImageViews mocks base method.
 func (m *MockDataStore) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
 	m.ctrl.T.Helper()
@@ -106,18 +91,18 @@ func (mr *MockDataStoreMockRecorder) GetDeployment(ctx, id any) *gomock.Call {
 }
 
 // GetDeploymentIDs mocks base method.
-func (m *MockDataStore) GetDeploymentIDs(ctx context.Context) ([]string, error) {
+func (m *MockDataStore) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDeploymentIDs", ctx)
+	ret := m.ctrl.Call(m, "GetDeploymentIDs", ctx, q)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDeploymentIDs indicates an expected call of GetDeploymentIDs.
-func (mr *MockDataStoreMockRecorder) GetDeploymentIDs(ctx any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetDeploymentIDs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentIDs), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentIDs), ctx, q)
 }
 
 // GetDeployments mocks base method.

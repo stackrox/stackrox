@@ -816,6 +816,7 @@ func TestConvert(t *testing.T) {
 				ServiceAccount:               "sensor",
 				ImagePullSecrets:             []string{"pull-secret1", "pull-secret2"},
 				AutomountServiceAccountToken: true,
+				State:                        storage.DeploymentState_STATE_ACTIVE,
 				Labels: map[string]string{
 					"key":      "value",
 					"question": "answer",
@@ -1180,6 +1181,7 @@ func TestConvert(t *testing.T) {
 				ServiceAccount:               "sensor",
 				ImagePullSecrets:             []string{"pull-secret1", "pull-secret2"},
 				AutomountServiceAccountToken: true,
+				State:                        storage.DeploymentState_STATE_ACTIVE,
 				Labels: map[string]string{
 					"key":      "value",
 					"question": "answer",

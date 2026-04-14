@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -116,6 +117,11 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	deployment, exists, err := s.deployments.GetDeployment(ctx, reprocessMsg.GetDeploymentId())
 	if err != nil || !exists {
 		return err
+	}
+
+	// Skip risk reprocessing for soft-deleted deployments.
+	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() == storage.DeploymentState_STATE_DELETED {
+		return nil
 	}
 
 	if features.FlattenImageData.Enabled() {
