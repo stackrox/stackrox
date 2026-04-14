@@ -1050,6 +1050,7 @@ func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProvide
 		},
 	}
 	mockedAP, err := authproviders.NewProvider(
+		s.T().Context(),
 		authproviders.WithStorageView(&storage.AuthProvider{
 			Id:   authProviderID,
 			Name: "auth-provider",

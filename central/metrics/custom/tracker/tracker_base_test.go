@@ -530,6 +530,7 @@ func TestTrackerBase_cleanup(t *testing.T) {
 
 func makeAdminContext(t *testing.T) context.Context {
 	authProvider, _ := authproviders.NewProvider(
+		t.Context(),
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
 		authproviders.WithName("Test Auth Provider"),
@@ -650,6 +651,7 @@ func Test_scope(t *testing.T) {
 		})
 
 		provider, _ := authproviders.NewProvider(
+			t.Context(),
 			authproviders.WithEnabled(true),
 			authproviders.WithID(uuid.NewV4().String()),
 			authproviders.WithName("test"),
@@ -725,6 +727,7 @@ rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 1
 		})
 
 		provider, _ := authproviders.NewProvider(
+			t.Context(),
 			authproviders.WithEnabled(true),
 			authproviders.WithID(uuid.NewV4().String()),
 			authproviders.WithName("test"),

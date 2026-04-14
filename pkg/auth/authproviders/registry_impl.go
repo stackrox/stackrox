@@ -69,7 +69,7 @@ func (r *registryImpl) Init() error {
 		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
 		// Use the options to build the provider.
-		provider, err := NewProvider(options...)
+		provider, err := NewProvider(context.Background(), options...)
 		if err != nil {
 			panic(err)
 		}
@@ -147,7 +147,7 @@ func (r *registryImpl) RegisterBackendFactory(ctx context.Context, typ string, f
 			continue
 		}
 		go func(p Provider) {
-			if err := p.ApplyOptions(WithBackendFromFactory(ctx, factory)); err != nil {
+			if err := p.ApplyOptions(ctx, WithBackendFromFactory(ctx, factory)); err != nil {
 				log.Errorf("Failed to apply options: %v", err)
 			}
 		}(provider)
@@ -161,7 +161,7 @@ func (r *registryImpl) ValidateProvider(ctx context.Context, options ...Provider
 	options = append(options, DefaultBackend(ctx, r.backendFactories))
 
 	// Create provider to validate backend creation
-	_, err := NewProvider(options...)
+	_, err := NewProvider(ctx, options...)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 	options = append(options, DefaultOptionsForNewProvider(ctx, r.store, r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
 	// Create provider and add to pool.
-	newProvider, err := NewProvider(options...)
+	newProvider, err := NewProvider(ctx, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 
 	// Run the updates with an update to the store added.
 	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
+	if err := provider.ApplyOptions(ctx, append(options, UpdateStore(ctx, r.store))...); err != nil {
 		return nil, err
 	}
 	r.updatedNoLock(provider)
@@ -215,7 +215,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, providerID string, fo
 		return errors.New("cannot update an auth provider once it has been used. Please delete and then re-add to modify")
 	}
 
-	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store, providerID, force), UnregisterSource(r.issuerFactory)); err != nil {
+	if err := provider.ApplyOptions(ctx, DeleteFromStore(ctx, r.store, providerID, force), UnregisterSource(r.issuerFactory)); err != nil {
 		return err
 	}
 	delete(r.providers, providerID)

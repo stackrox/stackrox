@@ -15,7 +15,7 @@ import (
 
 // DefaultNewID sets the id of the provider to a new value if not already set.
 func DefaultNewID() ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo.GetId() != "" {
 			return nil
 		}
@@ -29,7 +29,7 @@ func DefaultNewID() ProviderOption {
 
 // DefaultLoginURL fills in the login url if not set using a function that creates a url for the provider id.
 func DefaultLoginURL(fn func(authProviderID string) string) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo.GetLoginUrl() != "" {
 			return nil
 		}
@@ -45,7 +45,7 @@ const tokenTTL = 12 * time.Hour
 
 // DefaultTokenIssuerFromFactory sets the token issuer of the provider from the factory if not already set.
 func DefaultTokenIssuerFromFactory(tf tokens.IssuerFactory) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.issuer != nil {
 			return nil
 		}
@@ -59,22 +59,22 @@ func DefaultTokenIssuerFromFactory(tf tokens.IssuerFactory) ProviderOption {
 }
 
 // DefaultRoleMapperOption loads a role mapper from the factory if one is not set on the provider.
-func DefaultRoleMapperOption(fn func(id string) permissions.RoleMapper) ProviderOption {
-	return func(pr *providerImpl) error {
+func DefaultRoleMapperOption(fn func(ctx context.Context, id string) permissions.RoleMapper) ProviderOption {
+	return func(ctx context.Context, pr *providerImpl) error {
 		if pr.roleMapper != nil {
 			return nil
 		}
 		if pr.storedInfo.GetId() == "" {
 			return nil
 		}
-		pr.roleMapper = fn(pr.storedInfo.GetId())
+		pr.roleMapper = fn(ctx, pr.storedInfo.GetId())
 		return nil
 	}
 }
 
 // DefaultBackend sets a backend from the pool of backend factories if one is not set.
 func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFactory) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.backend != nil {
 			return nil
 		}
@@ -130,8 +130,8 @@ func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFacto
 
 // LogOptionError eats any error from the input option and logs it.
 func LogOptionError(po ProviderOption) ProviderOption {
-	return func(pr *providerImpl) error {
-		err := po(pr)
+	return func(ctx context.Context, pr *providerImpl) error {
+		err := po(ctx, pr)
 		if err != nil {
 			log.Errorf("error adding option to provider: %s", err)
 		}

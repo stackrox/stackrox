@@ -32,9 +32,9 @@ func smokeTestUnimplementedFunctions(t *testing.T, source authproviders.Provider
 	assert.NoError(t, err)
 	assert.Nil(t, source.Issuer())
 	assert.Nil(t, source.AttributeVerifier())
-	assert.Nil(t, source.ApplyOptions())
+	assert.Nil(t, source.ApplyOptions(t.Context()))
 	// Ensure ApplyOption is a noop
-	assert.Nil(t, source.ApplyOptions(authproviders.WithID("fakeID")))
+	assert.Nil(t, source.ApplyOptions(t.Context(), authproviders.WithID("fakeID")))
 	assert.Equal(t, sourceInitialID, source.ID())
 	// Ensure MarkAsActive is a noop
 	assert.Equal(t, expectedActive, source.Active())

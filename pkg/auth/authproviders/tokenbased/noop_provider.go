@@ -30,7 +30,9 @@ func (*noopProvider) Backend() authproviders.Backend                            
 func (*noopProvider) GetOrCreateBackend(_ context.Context) (authproviders.Backend, error) {
 	return nil, nil
 }
-func (*noopProvider) Issuer() tokens.Issuer                                { return nil }
-func (*noopProvider) AttributeVerifier() user.AttributeVerifier            { return nil }
-func (*noopProvider) ApplyOptions(_ ...authproviders.ProviderOption) error { return nil }
-func (*noopProvider) MarkAsActive() error                                  { return nil }
+func (*noopProvider) Issuer() tokens.Issuer                     { return nil }
+func (*noopProvider) AttributeVerifier() user.AttributeVerifier { return nil }
+func (*noopProvider) ApplyOptions(_ context.Context, _ ...authproviders.ProviderOption) error {
+	return nil
+}
+func (*noopProvider) MarkAsActive() error { return nil }
