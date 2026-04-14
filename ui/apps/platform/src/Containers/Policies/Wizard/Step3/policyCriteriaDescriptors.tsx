@@ -49,7 +49,7 @@ export function warnBroadFilePath(value: string): string | undefined {
 
     // Root-level catch-all without additional path segments: /**, /*
     if (trimmed === '/**' || trimmed === '/*') {
-        return 'This pattern matches every file on the system and will generate extreme alert volume. Consider narrowing to a specific directory like /etc/**.';
+        return 'This pattern matches every file event on the system, creating significant evaluation overhead. Consider narrowing to a specific directory like /etc/**.';
     }
 
     // Root-level single-level glob with trailing path: /*/bar
@@ -57,12 +57,19 @@ export function warnBroadFilePath(value: string): string | undefined {
         return 'This pattern matches all immediate subdirectories of root. Consider scoping to a specific directory.';
     }
 
-    // High-churn directories with glob wildcards
+    // High-churn directories with unscoped glob wildcards
     const matchedPrefix = Object.keys(highChurnPrefixes).find(
-        (prefix) => trimmed.startsWith(`${prefix}/`) && trimmed.includes('*')
+        (prefix) =>
+            trimmed.startsWith(`${prefix}/`) &&
+            (trimmed.endsWith('/**') || trimmed.endsWith('/*'))
     );
     if (matchedPrefix) {
-        return `Patterns under ${matchedPrefix} typically generate very high alert volume due to frequent ${highChurnPrefixes[matchedPrefix]} activity.`;
+        return `Patterns under ${matchedPrefix} match a high volume of file events due to frequent ${highChurnPrefixes[matchedPrefix]} activity, which increases policy evaluation overhead.`;
+    }
+
+    // Unscoped recursive glob (ends with **) under any other prefix
+    if (trimmed.endsWith('/**')) {
+        return 'Recursive glob patterns that match everything under a directory can generate a high volume of alerts and evaluation overhead. Consider scoping the pattern more narrowly.';
     }
 
     return undefined;

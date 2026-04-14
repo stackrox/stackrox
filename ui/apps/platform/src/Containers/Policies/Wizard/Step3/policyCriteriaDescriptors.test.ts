@@ -108,7 +108,7 @@ describe('warnBroadFilePath', () => {
     });
 
     it('should warn for /** (root catch-all)', () => {
-        expect(warnBroadFilePath('/**')).toContain('every file on the system');
+        expect(warnBroadFilePath('/**')).toContain('every file event on the system');
     });
 
     it('should warn for /* (root catch-all)', () => {
@@ -139,6 +139,10 @@ describe('warnBroadFilePath', () => {
         expect(warnBroadFilePath('/var/log/**')).toBeDefined();
     });
 
+    it('should not warn for /var/log/nginx/access.log.* (scoped glob under high-churn)', () => {
+        expect(warnBroadFilePath('/var/log/nginx/access.log.*')).toBeUndefined();
+    });
+
     it('should not warn for /etc/passwd (specific safe path)', () => {
         expect(warnBroadFilePath('/etc/passwd')).toBeUndefined();
     });
@@ -161,6 +165,18 @@ describe('warnBroadFilePath', () => {
 
     it('should not warn for /home/**/.ssh/id_* (scoped pattern)', () => {
         expect(warnBroadFilePath('/home/**/.ssh/id_*')).toBeUndefined();
+    });
+
+    it('should warn for /opt/app/** (unscoped recursive glob under unknown prefix)', () => {
+        expect(warnBroadFilePath('/opt/app/**')).toContain('Recursive glob patterns');
+    });
+
+    it('should not warn for /srv/data/**/config.yaml (scoped recursive pattern with suffix)', () => {
+        expect(warnBroadFilePath('/srv/data/**/config.yaml')).toBeUndefined();
+    });
+
+    it('should prefer specific prefix warning over generic recursive warning', () => {
+        expect(warnBroadFilePath('/tmp/**')).toContain('temporary file');
     });
 
     it('should handle leading/trailing whitespace', () => {
