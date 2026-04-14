@@ -1,7 +1,7 @@
 package filesystem
 
 import (
-	"sort"
+	"slices"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -58,7 +58,7 @@ func (f *factSettingsManager) UpdateFactSettings(policies []*storage.Policy) {
 	newSettings := &sensor.FactSettings{
 		Paths: paths.AsSlice(),
 	}
-	sort.Strings(newSettings.Paths)
+	slices.Sort(newSettings.GetPaths())
 
 	if settings := f.settingsToConfigMap(newSettings); settings != nil {
 		f.settingsUpdate.Push(settings)
