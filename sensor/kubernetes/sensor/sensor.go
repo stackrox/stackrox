@@ -141,82 +141,118 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
+	liteMode := env.SensorLite.BooleanSetting()
+	if liteMode {
+		log.Info("Sensor Lite mode enabled: skipping heavy components (process pipeline, network flow, image scanning, compliance, admission control forwarding, telemetry, cluster metrics)")
+	}
+
 	imageCacheTTL := env.ReprocessInterval.DurationSetting()
-	if env.SensorLite.BooleanSetting() {
+	if liteMode {
 		imageCacheTTL = time.Second // Effectively disable caching in lite mode
 	}
 	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](imageCacheTTL)
 
+	// Declare variables for heavy components that may be referenced later
+	var imageService image.ServiceComponent
+	var processPipeline *processsignal.Pipeline
+	var processSignals signalService.Service
+	var networkFlowManager manager.Manager
+	var admCtrlMsgForwarder admissioncontroller.AdmCtrlMsgForwarder
+	var delegatedRegistryHandler delegatedregistry.Handler
+	var reprocessorHandler reprocessor.Handler
+	var enhancer common.SensorComponent
+	var complianceCommandHandler compliance.CommandHandler
+	var nodeInventoryHandler common.ComplianceComponent
+
 	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
-	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.Registries(), localScan)
+
+	if !liteMode {
+		delegatedRegistryHandler = delegatedregistry.NewHandler(clusterID, storeProvider.Registries(), localScan)
+	}
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
 	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels())
-	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
+
+	if !liteMode {
+		reprocessorHandler = reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
+	}
+
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create the k8s event pipeline")
 	}
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
-	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
-	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
+	if !liteMode {
+		admCtrlMsgForwarder = admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
+		imageService = image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
+		complianceCommandHandler = compliance.NewCommandHandler(complianceService)
 
-	// Create Process Pipeline
-	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline, err := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating process pipeline")
-	}
-	if cfg.processPipelineObserver != nil {
-		cfg.processPipelineObserver(processPipeline)
-	}
-	var processSignals signalService.Service
-	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
-		processSignals = signalService.New(processPipeline, indicators,
-			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride),
-			signalService.WithTraceWriter(cfg.processIndicatorWriter))
-	} else {
-		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
+		// Create Process Pipeline
+		indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
+		processPipeline, err = processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating process pipeline")
+		}
+		if cfg.processPipelineObserver != nil {
+			cfg.processPipelineObserver(processPipeline)
+		}
+
+		if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+			processSignals = signalService.New(processPipeline, indicators,
+				signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride),
+				signalService.WithTraceWriter(cfg.processIndicatorWriter))
+		} else {
+			processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
+		}
+
+		networkFlowManager = manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
+		enhancer = deploymentenhancer.CreateEnhancer(storeProvider)
 	}
 
-	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
-	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
+	// Build components list starting with core components that are always needed
 	components := []common.SensorComponent{
-		admCtrlMsgForwarder,
 		enforcer,
-		networkFlowManager,
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Dynamic()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Dynamic(), 0),
-		clustermetrics.New(clusterID, cfg.k8sClient.Dynamic()),
-		complianceCommandHandler,
-		processSignals,
-		telemetry.NewCommandHandler(cfg.k8sClient.Dynamic(), cfg.k8sClient.Discovery(), storeProvider),
-		externalsrcs.Singleton(),
-		admissioncontroller.AlertHandlerSingleton(),
-		auditLogCollectionManager,
-		reprocessorHandler,
-		delegatedRegistryHandler,
-		imageService,
-		enhancer,
-		complianceService,
+		configHandler,
+	}
+
+	// Add heavy components only in non-lite mode
+	if !liteMode {
+		components = append(components,
+			admCtrlMsgForwarder,
+			networkFlowManager,
+			clustermetrics.New(clusterID, cfg.k8sClient.Dynamic()),
+			complianceCommandHandler,
+			processSignals,
+			telemetry.NewCommandHandler(cfg.k8sClient.Dynamic(), cfg.k8sClient.Discovery(), storeProvider),
+			externalsrcs.Singleton(),
+			admissioncontroller.AlertHandlerSingleton(),
+			auditLogCollectionManager,
+			reprocessorHandler,
+			delegatedRegistryHandler,
+			imageService,
+			enhancer,
+			complianceService,
+		)
 	}
 
 	var virtualMachineHandler vmIndex.Handler
-	if features.VirtualMachines.Enabled() {
+	if !liteMode && features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
 	}
 
-	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
-	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
-	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
-	// i.e., after nodeInventoryHandler
-	components = append(components, nodeInventoryHandler, complianceMultiplexer)
+	if !liteMode {
+		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
+		nodeInventoryHandler = compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
+		complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+		// complianceMultiplexer must start after all components that implement common.ComplianceComponent
+		// i.e., after nodeInventoryHandler
+		components = append(components, nodeInventoryHandler, complianceMultiplexer)
+	}
 
 	// Compliance operator components only run on OpenShift clusters.
 	// On vanilla k8s, the compliance operator is not available and the
@@ -270,7 +306,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "unable to create sensor")
 	}
 
-	if cfg.workloadManager != nil {
+	if !liteMode && cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
 			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
@@ -280,30 +316,37 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		}
 	}
 
-	var networkFlowService service.Service
-	if cfg.networkFlowServiceAuthFuncOverride != nil && cfg.localSensor {
-		networkFlowService = service.NewService(networkFlowManager,
-			service.WithAuthFuncOverride(cfg.networkFlowServiceAuthFuncOverride),
-			service.WithTraceWriter(cfg.networkFlowWriter))
-	} else {
-		networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
-	}
+	// Build API services list starting with core services
 	apiServices := []grpc.APIService{
-		networkFlowService,
-		processSignals,
-		complianceService,
-		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
 	}
 
-	if features.SensitiveFileActivity.Enabled() {
+	// Add heavy API services only in non-lite mode
+	if !liteMode {
+		var networkFlowService service.Service
+		if cfg.networkFlowServiceAuthFuncOverride != nil && cfg.localSensor {
+			networkFlowService = service.NewService(networkFlowManager,
+				service.WithAuthFuncOverride(cfg.networkFlowServiceAuthFuncOverride),
+				service.WithTraceWriter(cfg.networkFlowWriter))
+		} else {
+			networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
+		}
+		apiServices = append(apiServices,
+			networkFlowService,
+			processSignals,
+			complianceService,
+			imageService,
+		)
+	}
+
+	if !liteMode && features.SensitiveFileActivity.Enabled() {
 		activityChan := make(chan *sensorInternal.FileActivity)
 		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
 	}
 
-	if features.VirtualMachines.Enabled() {
+	if !liteMode && features.VirtualMachines.Enabled() {
 		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
 	}
 
