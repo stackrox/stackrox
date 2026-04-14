@@ -1000,10 +1000,12 @@ func (s *VMScanningSuite) persistRoxagentStdout(vm *VMHandle, stdout string) str
 }
 
 // ensureCanonicalScan runs a single guest-side roxagent invocation and validates failure signals.
+// It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
 func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) (*vmhelpers.RoxagentRunResult, error) {
 	if vm == nil {
 		return nil, errors.New("ensureCanonicalScan: nil VM handle")
 	}
+	s.mustVerifyVirtualMachinesFeatureEnabled()
 	virt := s.virtctlForVM(*vm)
 	cfg := vmhelpers.RoxagentRunConfig{
 		Repo2CPEPrimaryURL:      s.cfg.Repo2CPEPrimaryURL,
@@ -1304,16 +1306,21 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 		return err
 	}
 	var (
-		activated bool
+		activated   bool
+		activStatus string
 	)
 	if err := runStep("Check activation status", "GetActivationStatus", func(stepCtx context.Context) error {
 		var innerErr error
-		activated, _, innerErr = vmhelpers.GetActivationStatus(stepCtx, virt, vm.Namespace, vm.Name)
+		activated, activStatus, innerErr = vmhelpers.GetActivationStatus(stepCtx, virt, vm.Namespace, vm.Name)
 		return innerErr
 	}); err != nil {
 		return err
 	}
-	if !activated && s.cfg.ActivationOrg != "" && s.cfg.ActivationKey != "" {
+	s.logf("[guest prep] activation status for %s/%s: activated=%v detail=%q", vm.Namespace, vm.Name, activated, activStatus)
+	if !activated && s.cfg.RequireActivation {
+		if s.cfg.ActivationOrg == "" || s.cfg.ActivationKey == "" {
+			return fmt.Errorf("activation required but credentials not provided")
+		}
 		if err := runStep("Activate system via rhc connect", "ActivateWithRHC", func(stepCtx context.Context) error {
 			return vmhelpers.ActivateWithRHC(stepCtx, virt, vm.Namespace, vm.Name,
 				s.cfg.ActivationOrg, s.cfg.ActivationKey, s.cfg.ActivationEndpoint)
@@ -1321,8 +1328,6 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 			return err
 		}
 		activated = true
-	}
-	if activated {
 		if err := runStep("Verify activation success", "VerifyActivationSucceeded", func(stepCtx context.Context) error {
 			return vmhelpers.VerifyActivationSucceeded(stepCtx, virt, vm.Namespace, vm.Name)
 		}); err != nil {

@@ -131,7 +131,10 @@ func formatDeadlineRemaining(ctx context.Context) string {
 	return remaining.String()
 }
 
+const inlineLogMaxHeadTailLines = 100
+
 // formatRemoteCommandStreamsForInlineLog formats stdout and stderr for multi-line completion logs.
+// Large outputs are truncated to the first and last inlineLogMaxHeadTailLines lines.
 func formatRemoteCommandStreamsForInlineLog(stdout, stderr string) string {
 	var b strings.Builder
 	stderr = strings.TrimSpace(stderr)
@@ -145,12 +148,26 @@ func formatRemoteCommandStreamsForInlineLog(stdout, stderr string) string {
 			b.WriteString("\n")
 		}
 		b.WriteString("stdout:\n")
-		b.WriteString(stdout)
+		b.WriteString(truncateMiddleLines(stdout, inlineLogMaxHeadTailLines))
 	}
 	if b.Len() == 0 {
 		return "output: <empty stdout/stderr>"
 	}
 	return b.String()
+}
+
+// truncateMiddleLines keeps the first and last n lines, replacing the middle with a marker.
+func truncateMiddleLines(s string, n int) string {
+	lines := strings.Split(s, "\n")
+	if len(lines) <= 2*n {
+		return s
+	}
+	head := lines[:n]
+	tail := lines[len(lines)-n:]
+	omitted := len(lines) - 2*n
+	return strings.Join(head, "\n") +
+		fmt.Sprintf("\n\n... (%d lines truncated) ...\n\n", omitted) +
+		strings.Join(tail, "\n")
 }
 
 // Virtctl runs virtctl subcommands with optional per-call timeout.

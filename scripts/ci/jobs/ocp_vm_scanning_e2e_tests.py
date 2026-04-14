@@ -3,8 +3,8 @@
 """
 Run VM scanning E2E tests on an OpenShift cluster with CNV / KubeVirt and VSOCK enabled.
 
-Cluster contract: a KubeVirt custom resource must exist in a standard CNV namespace with the
-VSOCK feature gate set, and virt-handler pods must mount host paths that expose vsock plumbing.
+The CNV operator is installed automatically when INSTALL_CNV_OPERATOR=true (set below).
+If already present on the cluster, the existing installation is reused.
 VSOCK prerequisites are verified at Go test startup (mustVerifyClusterVSOCKReady) and the
 suite fails fast with actionable diagnostics if they are not met.
 """
@@ -22,6 +22,7 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["VM_SCAN_REQUIRE_ACTIVATION"] = "true"
+os.environ["INSTALL_CNV_OPERATOR"] = "true"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
