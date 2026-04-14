@@ -67,6 +67,11 @@ func (s *centralReceiverSuite) TearDownTest() {
 	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
+func TestMain(m *testing.M) {
+	metrics.Init()
+	os.Exit(m.Run())
+}
+
 func Test_CentralReceiverSuite(t *testing.T) {
 	suite.Run(t, new(centralReceiverSuite))
 }
