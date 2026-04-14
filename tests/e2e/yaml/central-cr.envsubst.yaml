@@ -48,10 +48,6 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
-          memory: "1Gi"
-        limits:
-          cpu: "1000m"
-          memory: "2Gi"
     matcher:
       scaling:
         autoScaling: Disabled
@@ -59,18 +55,10 @@ $centralAdditionalCAIndented
       resources:
         requests:
           cpu: "400m"
-          memory: "2000Mi"
-        limits:
-          cpu: "6000m"
-          memory: "2000Mi"
     db:
       resources:
         requests:
-          cpu: "300m"
-          memory: "500Mi"
-        limits:
-          cpu: "1000m"
-          memory: "1000Mi"
+          cpu: "500m"
 ---
 apiVersion: v1
 kind: Secret
