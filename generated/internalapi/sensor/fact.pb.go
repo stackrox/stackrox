@@ -21,134 +21,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type FactGRPCConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Certs         string                 `protobuf:"bytes,2,opt,name=certs,proto3" json:"certs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FactGRPCConfig) Reset() {
-	*x = FactGRPCConfig{}
-	mi := &file_internalapi_sensor_fact_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FactGRPCConfig) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FactGRPCConfig) ProtoMessage() {}
-
-func (x *FactGRPCConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_fact_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FactGRPCConfig.ProtoReflect.Descriptor instead.
-func (*FactGRPCConfig) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_fact_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *FactGRPCConfig) GetUrl() string {
-	if x != nil {
-		return x.Url
-	}
-	return ""
-}
-
-func (x *FactGRPCConfig) GetCerts() string {
-	if x != nil {
-		return x.Certs
-	}
-	return ""
-}
-
-type FactEndpointConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Address       string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	ExposeMetrics bool                   `protobuf:"varint,2,opt,name=expose_metrics,json=exposeMetrics,proto3" json:"expose_metrics,omitempty" yaml:"expose_metrics"` // @gotags: yaml:"expose_metrics"
-	HealthCheck   bool                   `protobuf:"varint,3,opt,name=health_check,json=healthCheck,proto3" json:"health_check,omitempty" yaml:"health_check"`       // @gotags: yaml:"health_check"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FactEndpointConfig) Reset() {
-	*x = FactEndpointConfig{}
-	mi := &file_internalapi_sensor_fact_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FactEndpointConfig) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FactEndpointConfig) ProtoMessage() {}
-
-func (x *FactEndpointConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_fact_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FactEndpointConfig.ProtoReflect.Descriptor instead.
-func (*FactEndpointConfig) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_fact_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *FactEndpointConfig) GetAddress() string {
-	if x != nil {
-		return x.Address
-	}
-	return ""
-}
-
-func (x *FactEndpointConfig) GetExposeMetrics() bool {
-	if x != nil {
-		return x.ExposeMetrics
-	}
-	return false
-}
-
-func (x *FactEndpointConfig) GetHealthCheck() bool {
-	if x != nil {
-		return x.HealthCheck
-	}
-	return false
-}
-
+// FactSettings mirrors a subset of Fact's configuration
+// (see stackrox/fact/fact/src/config/mod.rs). Only the fields
+// that Sensor needs to control are included here; additional
+// fields can be added as needed.
 type FactSettings struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Paths         []string               `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
-	Grpc          *FactGRPCConfig        `protobuf:"bytes,2,opt,name=grpc,proto3" json:"grpc,omitempty" yaml:",omitempty"`                                           // @gotags: yaml:",omitempty"
-	Endpoint      *FactEndpointConfig    `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty" yaml:",omitempty"`                                   // @gotags: yaml:",omitempty"
-	SkipPreFlight bool                   `protobuf:"varint,4,opt,name=skip_pre_flight,json=skipPreFlight,proto3" json:"skip_pre_flight,omitempty" yaml:"skip_pre_flight,omitempty"` // @gotags: yaml:"skip_pre_flight,omitempty"
-	Json          bool                   `protobuf:"varint,5,opt,name=json,proto3" json:"json,omitempty" yaml:",omitempty"`                                          // @gotags: yaml:",omitempty"
-	RingbufSize   uint32                 `protobuf:"varint,6,opt,name=ringbuf_size,json=ringbufSize,proto3" json:"ringbuf_size,omitempty" yaml:"ringbuf_size,omitempty"`         // @gotags: yaml:"ringbuf_size,omitempty"
-	Hotreload     bool                   `protobuf:"varint,7,opt,name=hotreload,proto3" json:"hotreload,omitempty" yaml:",omitempty"`                                // @gotags: yaml:",omitempty"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FactSettings) Reset() {
 	*x = FactSettings{}
-	mi := &file_internalapi_sensor_fact_proto_msgTypes[2]
+	mi := &file_internalapi_sensor_fact_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -160,7 +46,7 @@ func (x *FactSettings) String() string {
 func (*FactSettings) ProtoMessage() {}
 
 func (x *FactSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_fact_proto_msgTypes[2]
+	mi := &file_internalapi_sensor_fact_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -173,7 +59,7 @@ func (x *FactSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FactSettings.ProtoReflect.Descriptor instead.
 func (*FactSettings) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_fact_proto_rawDescGZIP(), []int{2}
+	return file_internalapi_sensor_fact_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *FactSettings) GetPaths() []string {
@@ -183,68 +69,13 @@ func (x *FactSettings) GetPaths() []string {
 	return nil
 }
 
-func (x *FactSettings) GetGrpc() *FactGRPCConfig {
-	if x != nil {
-		return x.Grpc
-	}
-	return nil
-}
-
-func (x *FactSettings) GetEndpoint() *FactEndpointConfig {
-	if x != nil {
-		return x.Endpoint
-	}
-	return nil
-}
-
-func (x *FactSettings) GetSkipPreFlight() bool {
-	if x != nil {
-		return x.SkipPreFlight
-	}
-	return false
-}
-
-func (x *FactSettings) GetJson() bool {
-	if x != nil {
-		return x.Json
-	}
-	return false
-}
-
-func (x *FactSettings) GetRingbufSize() uint32 {
-	if x != nil {
-		return x.RingbufSize
-	}
-	return 0
-}
-
-func (x *FactSettings) GetHotreload() bool {
-	if x != nil {
-		return x.Hotreload
-	}
-	return false
-}
-
 var File_internalapi_sensor_fact_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_fact_proto_rawDesc = "" +
 	"\n" +
-	"\x1dinternalapi/sensor/fact.proto\x12\x06sensor\"8\n" +
-	"\x0eFactGRPCConfig\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url\x12\x14\n" +
-	"\x05certs\x18\x02 \x01(\tR\x05certs\"x\n" +
-	"\x12FactEndpointConfig\x12\x18\n" +
-	"\aaddress\x18\x01 \x01(\tR\aaddress\x12%\n" +
-	"\x0eexpose_metrics\x18\x02 \x01(\bR\rexposeMetrics\x12!\n" +
-	"\fhealth_check\x18\x03 \x01(\bR\vhealthCheck\"\x85\x02\n" +
+	"\x1dinternalapi/sensor/fact.proto\x12\x06sensor\"$\n" +
 	"\fFactSettings\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\x12*\n" +
-	"\x04grpc\x18\x02 \x01(\v2\x16.sensor.FactGRPCConfigR\x04grpc\x126\n" +
-	"\bendpoint\x18\x03 \x01(\v2\x1a.sensor.FactEndpointConfigR\bendpoint\x12&\n" +
-	"\x0fskip_pre_flight\x18\x04 \x01(\bR\rskipPreFlight\x12\x12\n" +
-	"\x04json\x18\x05 \x01(\bR\x04json\x12!\n" +
-	"\fringbuf_size\x18\x06 \x01(\rR\vringbufSize\x12\x1c\n" +
-	"\thotreload\x18\a \x01(\bR\thotreloadB Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
+	"\x05paths\x18\x01 \x03(\tR\x05pathsB Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
 
 var (
 	file_internalapi_sensor_fact_proto_rawDescOnce sync.Once
@@ -258,20 +89,16 @@ func file_internalapi_sensor_fact_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_fact_proto_rawDescData
 }
 
-var file_internalapi_sensor_fact_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_internalapi_sensor_fact_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_sensor_fact_proto_goTypes = []any{
-	(*FactGRPCConfig)(nil),     // 0: sensor.FactGRPCConfig
-	(*FactEndpointConfig)(nil), // 1: sensor.FactEndpointConfig
-	(*FactSettings)(nil),       // 2: sensor.FactSettings
+	(*FactSettings)(nil), // 0: sensor.FactSettings
 }
 var file_internalapi_sensor_fact_proto_depIdxs = []int32{
-	0, // 0: sensor.FactSettings.grpc:type_name -> sensor.FactGRPCConfig
-	1, // 1: sensor.FactSettings.endpoint:type_name -> sensor.FactEndpointConfig
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_fact_proto_init() }
@@ -285,7 +112,7 @@ func file_internalapi_sensor_fact_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_fact_proto_rawDesc), len(file_internalapi_sensor_fact_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
