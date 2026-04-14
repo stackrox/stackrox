@@ -10,14 +10,14 @@ def _collect_issue_problems(
     prs: list[PR],
     jira_issues: dict[str, JiraIssue],
     expected_version: str,
-) -> tuple[list[tuple], dict[str, list[int]]]:
+) -> tuple[list[tuple], dict[str, list[PR]]]:
     """Collect issues with missing metadata and track associated PRs.
 
     Returns:
         Tuple of (issues_with_problems list, jira_to_prs mapping)
     """
     issues_with_problems = []
-    jira_to_prs: dict[str, list[int]] = {}
+    jira_to_prs: dict[str, list[PR]] = {}
 
     for pr in prs:
         for jira_key in pr.jira_keys:
@@ -28,7 +28,7 @@ def _collect_issue_problems(
 
             if jira_key not in jira_to_prs:
                 jira_to_prs[jira_key] = []
-            jira_to_prs[jira_key].append(pr.number)
+            jira_to_prs[jira_key].append(pr)
 
             has_fix = (
                 expected_version in issue.fix_versions
@@ -71,7 +71,7 @@ def _collect_issue_problems(
 
 def _format_issue_line(
     issue_info: tuple,
-    jira_to_prs: dict[str, list[int]],
+    jira_to_prs: dict[str, list[PR]],
 ) -> str:
     """Format a single issue line for markdown report."""
     (
@@ -89,7 +89,10 @@ def _format_issue_line(
     ) = issue_info
 
     pr_refs = jira_to_prs.get(jira_key, [])
-    pr_links = ", ".join([f"#{pr}" for pr in pr_refs])
+    pr_links = ", ".join([
+        f":pr-merged: #{pr.number}" if pr.merged else f"#{pr.number}"
+        for pr in pr_refs
+    ])
     pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
 
     priority_info = f"Priority: {priority}"
@@ -153,7 +156,9 @@ def generate_markdown(
 
             for pr in prs_no_jira:
                 mention = get_slack_mention(pr.author)
-                lines.append(f"- {mention} #{pr.number}: {pr.title}")
+                title = f"~~{pr.title}~~" if pr.merged else pr.title
+                pr_icon = ":pr-merged: " if pr.merged else ""
+                lines.append(f"- {pr_icon}{mention} #{pr.number}: {title}")
 
             lines.append("")
 

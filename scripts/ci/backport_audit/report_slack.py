@@ -124,6 +124,31 @@ def _create_table_cell_link(url: str, text: str) -> dict[str, Any]:
     }
 
 
+def _create_table_cell_text_with_style(text: str, strikethrough: bool = False) -> dict[str, Any]:
+    """Create a rich text cell with optional strikethrough styling.
+
+    Args:
+        text: Text content
+        strikethrough: Apply strikethrough style if True
+
+    Returns:
+        Slack Block Kit rich text cell
+    """
+    element: dict[str, Any] = {"type": "text", "text": text}
+    if strikethrough:
+        element["style"] = {"strike": True}
+
+    return {
+        "type": "rich_text",
+        "elements": [
+            {
+                "type": "rich_text_section",
+                "elements": [element],
+            }
+        ],
+    }
+
+
 def _create_all_pr_rows(
     prs: list[PR],
     jira_issues: dict[str, JiraIssue],
@@ -272,11 +297,15 @@ def _create_all_pr_rows(
         priority_emoji = priority_display.strip(":")
         severity_display = severity if severity else "—"
 
+        # Check if any associated PRs are merged (use strikethrough for title)
+        has_merged_pr = any(pr_obj.merged for pr_obj in pr_refs) if pr_refs else False
+        title_cell = _create_table_cell_text_with_style(pr_title, strikethrough=has_merged_pr)
+
         all_rows.append([
             _create_table_cell_emoji(urgency_emoji),
             pr_cell,
             _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
-            _create_table_cell_text(pr_title),
+            title_cell,
             author_cell,  # Author from associated PRs
             _create_table_cell_emoji(fix_emoji),
             _create_table_cell_emoji(affected_emoji),
@@ -314,7 +343,7 @@ def _create_all_pr_rows(
             _create_table_cell_text("—"),  # Urgency
             pr_cell,  # PRs
             _create_table_cell_emoji("x"),  # Issue (missing)
-            _create_table_cell_text(pr.title),  # PR Title
+            _create_table_cell_text_with_style(pr.title, strikethrough=pr.merged),  # PR Title
             _create_table_cell_mention(author_mention),  # Author
             _create_table_cell_emoji("x"),  # fixVersion (missing)
             _create_table_cell_emoji("x"),  # affectedVersion (missing)
