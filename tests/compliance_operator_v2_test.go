@@ -302,23 +302,32 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 	client v2.ComplianceProfileServiceClient, clusterID, name string,
 ) *v2.ComplianceProfile {
-	var profile *v2.ComplianceProfile
+	req := &v2.ProfilesForClusterRequest{
+		ClusterId: clusterID,
+		Query:     &v2.RawQuery{Query: "Compliance Profile Name:" + name},
+	}
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		profileList, err := client.ListComplianceProfiles(ctx,
-			&v2.ProfilesForClusterRequest{
-				ClusterId: clusterID,
-				Query:     &v2.RawQuery{Query: "Compliance Profile Name:" + name},
-			})
+		profileList, err := client.ListComplianceProfiles(ctx, req)
 		require.NoErrorf(c, err, "failed to list profiles")
 		for _, p := range profileList.GetProfiles() {
 			if p.GetName() == name {
-				profile = p
 				return
 			}
 		}
 		require.Failf(c, "TailoredProfile not yet in Central DB", "profile %q not found", name)
 	}, 10*time.Second, 1*time.Second)
-	return profile
+
+	// Fetch once more outside the poll to avoid writing to a shared
+	// variable from the EventuallyWithT goroutine.
+	profileList, err := client.ListComplianceProfiles(ctx, req)
+	require.NoErrorf(t, err, "failed to list profiles")
+	for _, p := range profileList.GetProfiles() {
+		if p.GetName() == name {
+			return p
+		}
+	}
+	require.Failf(t, "TailoredProfile disappeared", "profile %q not found after poll succeeded", name)
+	return nil // unreachable
 }
 
 func assertResourceDoesNotExist[T any, PT interface {
