@@ -28,4 +28,3 @@ func createAzureFile(i interface{}) VolumeSource {
 		AzureFileVolumeSource: azureVolume,
 	}
 }
-

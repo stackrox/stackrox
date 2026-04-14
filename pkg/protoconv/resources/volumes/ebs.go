@@ -25,4 +25,3 @@ func createEBS(i interface{}) VolumeSource {
 		AWSElasticBlockStoreVolumeSource: ebsVolume,
 	}
 }
-

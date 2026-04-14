@@ -27,4 +27,3 @@ func createRBD(i interface{}) VolumeSource {
 		RBDVolumeSource: rbdVolume,
 	}
 }
-

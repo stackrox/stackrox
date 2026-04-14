@@ -27,4 +27,3 @@ func createGitRepo(i interface{}) VolumeSource {
 		GitRepoVolumeSource: gitVolume,
 	}
 }
-

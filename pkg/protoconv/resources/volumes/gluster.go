@@ -27,4 +27,3 @@ func createGlusterfs(i interface{}) VolumeSource {
 		GlusterfsVolumeSource: glusterVolume,
 	}
 }
-

@@ -27,4 +27,3 @@ func createSecret(i interface{}) VolumeSource {
 		SecretVolumeSource: secretVolume,
 	}
 }
-

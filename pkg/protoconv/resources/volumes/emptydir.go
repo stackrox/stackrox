@@ -25,4 +25,3 @@ func createEmptyDir(i interface{}) VolumeSource {
 		EmptyDirVolumeSource: emptyDirVolume,
 	}
 }
-

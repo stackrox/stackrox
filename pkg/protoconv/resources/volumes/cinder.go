@@ -28,4 +28,3 @@ func createCinder(i interface{}) VolumeSource {
 		CinderVolumeSource: cinderVolume,
 	}
 }
-

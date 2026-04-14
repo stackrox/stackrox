@@ -28,4 +28,3 @@ func createCephfs(i interface{}) VolumeSource {
 		CephFSVolumeSource: cephVolume,
 	}
 }
-
