@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
+	listenerresourcesmetrics "github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )
@@ -46,6 +47,7 @@ func Run() {
 	sensormetrics.Init()
 	centralproxy.Init()
 	complianceoperator.InitMetrics()
+	listenerresourcesmetrics.Init()
 	pkgnet.Init()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")

@@ -9,7 +9,6 @@ import (
 	pubsubmetrics "github.com/stackrox/rox/sensor/common/pubsub/metrics"
 	registrymetrics "github.com/stackrox/rox/sensor/common/registry/metrics"
 	virtualmachinemetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
-	listenerresourcesmetrics "github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 )
 
 // Init registers all Sensor prometheus metrics.
@@ -67,5 +66,4 @@ func Init() {
 	pubsubmetrics.Init()
 	registrymetrics.Init()
 	virtualmachinemetrics.Init()
-	listenerresourcesmetrics.Init()
 }
