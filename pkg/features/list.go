@@ -133,6 +133,9 @@ var (
 
 	// TailoredProfiles enables support for compliance tailored profiles
 	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
+
+	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
+	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
 )
 
 // The following feature flags are related to Scanner V4.
