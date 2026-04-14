@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func registerPoliciesGeneral() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("5_6_1"): common.NoteCheck("Create administrative boundaries between resources using namespaces"),
 		standards.CISKubeCheckName("5_6_2"): common.NoteCheck("Ensure that the seccomp profile is set to docker/default in your pod definitions"),

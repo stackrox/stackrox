@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func registerPoliciesNetworkCNI() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("5_3_1"): common.NoteCheck("Ensure that the CNI in use supports Network Policies"),
 		// TODO: @boo - implement the check below

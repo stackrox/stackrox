@@ -16,7 +16,7 @@ For this control, ` + common.CheckNoViolationsForDeployPhasePoliciesInterpretati
 To approve a deviation, resolve the policy violation or adjust the scope or exclusions for the policy.`
 )
 
-func init() {
+func RegisterCM6() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

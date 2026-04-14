@@ -2,11 +2,14 @@ package remote
 
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
-	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
+	"github.com/stackrox/rox/pkg/compliance/checks"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+// Init registers remote compliance checks.
+// Called explicitly from central/compliance/checks/all.go instead of package init().
+func Init() {
+	checks.Init() // Ensure pkg compliance checks are registered first
 	framework.MustRegisterChecks(makeChecksFromRemoteFuncs()...)
 }
 

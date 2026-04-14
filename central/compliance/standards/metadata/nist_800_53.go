@@ -173,6 +173,6 @@ var nist800_53 = Standard{
 	},
 }
 
-func init() {
+func RegisterNIST80053() {
 	AllStandards = append(AllStandards, nist800_53)
 }

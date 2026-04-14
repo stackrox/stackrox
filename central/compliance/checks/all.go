@@ -1,10 +1,19 @@
 package checks
 
 import (
-	// Make sure all checks from all standards are registered.
-	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164"
-	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190"
-	_ "github.com/stackrox/rox/central/compliance/checks/nist80053"
-	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32"
-	_ "github.com/stackrox/rox/central/compliance/checks/remote"
+	hipaa164 "github.com/stackrox/rox/central/compliance/checks/hipaa_164"
+	nist800190 "github.com/stackrox/rox/central/compliance/checks/nist800-190"
+	"github.com/stackrox/rox/central/compliance/checks/nist80053"
+	"github.com/stackrox/rox/central/compliance/checks/pcidss32"
+	"github.com/stackrox/rox/central/compliance/checks/remote"
 )
+
+// Init registers all central compliance checks.
+// Called explicitly from central/compliance/manager/checks.go instead of package init().
+func Init() {
+	hipaa164.Init()
+	nist800190.Init()
+	nist80053.Init()
+	pcidss32.Init()
+	remote.Init()
+}

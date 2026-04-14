@@ -16,7 +16,7 @@ const (
 For this control, StackRox checks that at least one policy requiring CPU limits and memory limits is enabled and enforced.`
 )
 
-func init() {
+func RegisterSC6() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

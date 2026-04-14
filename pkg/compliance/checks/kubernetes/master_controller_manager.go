@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func registerMasterControllerManager() {
 	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("1_3_1"): masterControllerManagerCommandLine("terminated-pod-gc-threshold", "", "12500", common.Set),
 		standards.CISKubeCheckName("1_3_2"): masterControllerManagerCommandLine("profiling", "false", "true", common.Matches),

@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
-func init() {
+func RegisterCheck312e1() {
 	standards.RegisterChecksForStandard(standards.Hipaa164, map[string]*standards.CheckAndMetadata{
 		standards.HIPAA164CheckName("312_e_1"): clusterIsCompliant(),
 	})

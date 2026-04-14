@@ -70,7 +70,7 @@ func checkAllDefaultRuntimePackageManagementPoliciesEnabled(ctx framework.Compli
 	}
 }
 
-func init() {
+func RegisterCM11() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

@@ -16,7 +16,7 @@ For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpreta
 Also, ` + common.CheckAtLeastOnePolicyEnabledReferringToVulnsInterpretation
 )
 
-func init() {
+func RegisterSI22() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

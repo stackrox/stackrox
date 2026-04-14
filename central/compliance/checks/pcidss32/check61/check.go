@@ -8,7 +8,7 @@ import (
 
 const checkID = "PCI_DSS_3_2:6_1"
 
-func init() {
+func Register61() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 checkID,
