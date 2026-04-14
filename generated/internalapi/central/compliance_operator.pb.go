@@ -1118,7 +1118,7 @@ func (x *ComplianceOperatorCheckResultV2) GetWarnings() []string {
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
-// Next tag: 12.
+// Next tag: 14.
 type ComplianceOperatorProfileV2 struct {
 	state          protoimpl.MessageState                   `protogen:"open.v1"`
 	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1132,8 +1132,14 @@ type ComplianceOperatorProfileV2 struct {
 	Title          string                                   `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
 	Values         []string                                 `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
 	OperatorKind   ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,11,opt,name=operator_kind,json=operatorKind,proto3,enum=central.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Kubernetes namespace of the profile resource. Used by Central to compute
+	// the equivalence hash for tailored profiles.
+	Namespace string `protobuf:"bytes,12,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// set_values carries variable value overrides from tailored profiles.
+	// Used by Central to include them in the equivalence hash computation.
+	SetValues     []*ComplianceOperatorProfileV2_SetValue `protobuf:"bytes,13,rep,name=set_values,json=setValues,proto3" json:"set_values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2) Reset() {
@@ -1241,6 +1247,20 @@ func (x *ComplianceOperatorProfileV2) GetOperatorKind() ComplianceOperatorProfil
 		return x.OperatorKind
 	}
 	return ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+}
+
+func (x *ComplianceOperatorProfileV2) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorProfileV2) GetSetValues() []*ComplianceOperatorProfileV2_SetValue {
+	if x != nil {
+		return x.SetValues
+	}
+	return nil
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
@@ -2770,6 +2790,67 @@ func (x *ComplianceOperatorProfileV2_Rule) GetRuleName() string {
 	return ""
 }
 
+// SetValue represents a variable value override in a tailored profile.
+type ComplianceOperatorProfileV2_SetValue struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Rationale     string                 `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Value         string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorProfileV2_SetValue) Reset() {
+	*x = ComplianceOperatorProfileV2_SetValue{}
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorProfileV2_SetValue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorProfileV2_SetValue) ProtoMessage() {}
+
+func (x *ComplianceOperatorProfileV2_SetValue) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorProfileV2_SetValue.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorProfileV2_SetValue) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{9, 3}
+}
+
+func (x *ComplianceOperatorProfileV2_SetValue) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorProfileV2_SetValue) GetRationale() string {
+	if x != nil {
+		return x.Rationale
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorProfileV2_SetValue) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
 type ComplianceOperatorRuleV2_Fix struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Platform      string                 `protobuf:"bytes,1,opt,name=platform,proto3" json:"platform,omitempty"`
@@ -2780,7 +2861,7 @@ type ComplianceOperatorRuleV2_Fix struct {
 
 func (x *ComplianceOperatorRuleV2_Fix) Reset() {
 	*x = ComplianceOperatorRuleV2_Fix{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[37]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2792,7 +2873,7 @@ func (x *ComplianceOperatorRuleV2_Fix) String() string {
 func (*ComplianceOperatorRuleV2_Fix) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2_Fix) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[37]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2951,7 +3032,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\x87\x06\n" +
+	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\xc7\a\n" +
 	"\x1bComplianceOperatorProfileV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -2965,7 +3046,10 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
 	" \x03(\tR\x06values\x12V\n" +
-	"\roperator_kind\x18\v \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\foperatorKind\x1a9\n" +
+	"\roperator_kind\x18\v \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\foperatorKind\x12\x1c\n" +
+	"\tnamespace\x18\f \x01(\tR\tnamespace\x12L\n" +
+	"\n" +
+	"set_values\x18\r \x03(\v2-.central.ComplianceOperatorProfileV2.SetValueR\tsetValues\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -2973,7 +3057,11 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"P\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\x1aR\n" +
+	"\bSetValue\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
+	"\trationale\x18\x02 \x01(\tR\trationale\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"P\n" +
 	"\fOperatorKind\x12\x1d\n" +
 	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\v\n" +
 	"\aPROFILE\x10\x01\x12\x14\n" +
@@ -3095,7 +3183,7 @@ func file_internalapi_central_compliance_operator_proto_rawDescGZIP() []byte {
 }
 
 var file_internalapi_central_compliance_operator_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 	(ComplianceOperatorRuleSeverity)(0),                                        // 0: central.ComplianceOperatorRuleSeverity
 	(ComplianceOperatorCheckResultV2_CheckStatus)(0),                           // 1: central.ComplianceOperatorCheckResultV2.CheckStatus
@@ -3136,14 +3224,15 @@ var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 	nil,                                      // 36: central.ComplianceOperatorProfileV2.LabelsEntry
 	nil,                                      // 37: central.ComplianceOperatorProfileV2.AnnotationsEntry
 	(*ComplianceOperatorProfileV2_Rule)(nil), // 38: central.ComplianceOperatorProfileV2.Rule
-	nil,                                      // 39: central.ComplianceOperatorRuleV2.LabelsEntry
-	nil,                                      // 40: central.ComplianceOperatorRuleV2.AnnotationsEntry
-	(*ComplianceOperatorRuleV2_Fix)(nil),     // 41: central.ComplianceOperatorRuleV2.Fix
-	nil,                                      // 42: central.ComplianceOperatorScanV2.LabelsEntry
-	nil,                                      // 43: central.ComplianceOperatorScanV2.AnnotationsEntry
-	nil,                                      // 44: central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	nil,                                      // 45: central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	(*timestamppb.Timestamp)(nil),            // 46: google.protobuf.Timestamp
+	(*ComplianceOperatorProfileV2_SetValue)(nil), // 39: central.ComplianceOperatorProfileV2.SetValue
+	nil,                                  // 40: central.ComplianceOperatorRuleV2.LabelsEntry
+	nil,                                  // 41: central.ComplianceOperatorRuleV2.AnnotationsEntry
+	(*ComplianceOperatorRuleV2_Fix)(nil), // 42: central.ComplianceOperatorRuleV2.Fix
+	nil,                                  // 43: central.ComplianceOperatorScanV2.LabelsEntry
+	nil,                                  // 44: central.ComplianceOperatorScanV2.AnnotationsEntry
+	nil,                                  // 45: central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	nil,                                  // 46: central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	(*timestamppb.Timestamp)(nil),        // 47: google.protobuf.Timestamp
 }
 var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	8,  // 0: central.SyncComplianceScanConfigRequest.scan_configs:type_name -> central.ApplyComplianceScanConfigRequest
@@ -3165,38 +3254,39 @@ var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	0,  // 16: central.ComplianceOperatorCheckResultV2.severity:type_name -> central.ComplianceOperatorRuleSeverity
 	34, // 17: central.ComplianceOperatorCheckResultV2.labels:type_name -> central.ComplianceOperatorCheckResultV2.LabelsEntry
 	35, // 18: central.ComplianceOperatorCheckResultV2.annotations:type_name -> central.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	46, // 19: central.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
+	47, // 19: central.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
 	36, // 20: central.ComplianceOperatorProfileV2.labels:type_name -> central.ComplianceOperatorProfileV2.LabelsEntry
 	37, // 21: central.ComplianceOperatorProfileV2.annotations:type_name -> central.ComplianceOperatorProfileV2.AnnotationsEntry
 	38, // 22: central.ComplianceOperatorProfileV2.rules:type_name -> central.ComplianceOperatorProfileV2.Rule
 	2,  // 23: central.ComplianceOperatorProfileV2.operator_kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
-	0,  // 24: central.ComplianceOperatorRuleV2.severity:type_name -> central.ComplianceOperatorRuleSeverity
-	39, // 25: central.ComplianceOperatorRuleV2.labels:type_name -> central.ComplianceOperatorRuleV2.LabelsEntry
-	40, // 26: central.ComplianceOperatorRuleV2.annotations:type_name -> central.ComplianceOperatorRuleV2.AnnotationsEntry
-	41, // 27: central.ComplianceOperatorRuleV2.fixes:type_name -> central.ComplianceOperatorRuleV2.Fix
-	3,  // 28: central.ComplianceOperatorRuleV2.operator_kind:type_name -> central.ComplianceOperatorRuleV2.OperatorKind
-	42, // 29: central.ComplianceOperatorScanV2.labels:type_name -> central.ComplianceOperatorScanV2.LabelsEntry
-	43, // 30: central.ComplianceOperatorScanV2.annotations:type_name -> central.ComplianceOperatorScanV2.AnnotationsEntry
-	16, // 31: central.ComplianceOperatorScanV2.status:type_name -> central.ComplianceOperatorScanStatusV2
-	46, // 32: central.ComplianceOperatorScanStatusV2.start_time:type_name -> google.protobuf.Timestamp
-	46, // 33: central.ComplianceOperatorScanStatusV2.end_time:type_name -> google.protobuf.Timestamp
-	46, // 34: central.ComplianceOperatorScanStatusV2.last_start_time:type_name -> google.protobuf.Timestamp
-	44, // 35: central.ComplianceOperatorScanSettingBindingV2.labels:type_name -> central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	45, // 36: central.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	19, // 37: central.ComplianceOperatorScanSettingBindingV2.status:type_name -> central.ComplianceOperatorStatus
-	46, // 38: central.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
-	18, // 39: central.ComplianceOperatorStatus.conditions:type_name -> central.ComplianceOperatorCondition
-	19, // 40: central.ComplianceOperatorSuiteV2.status:type_name -> central.ComplianceOperatorStatus
-	29, // 41: central.ApplyComplianceScanConfigRequest.BaseScanSettings.profile_refs:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
-	22, // 42: central.ApplyComplianceScanConfigRequest.OneTimeScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	22, // 43: central.ApplyComplianceScanConfigRequest.ScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	22, // 44: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	2,  // 45: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference.kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
-	46, // [46:46] is the sub-list for method output_type
-	46, // [46:46] is the sub-list for method input_type
-	46, // [46:46] is the sub-list for extension type_name
-	46, // [46:46] is the sub-list for extension extendee
-	0,  // [0:46] is the sub-list for field type_name
+	39, // 24: central.ComplianceOperatorProfileV2.set_values:type_name -> central.ComplianceOperatorProfileV2.SetValue
+	0,  // 25: central.ComplianceOperatorRuleV2.severity:type_name -> central.ComplianceOperatorRuleSeverity
+	40, // 26: central.ComplianceOperatorRuleV2.labels:type_name -> central.ComplianceOperatorRuleV2.LabelsEntry
+	41, // 27: central.ComplianceOperatorRuleV2.annotations:type_name -> central.ComplianceOperatorRuleV2.AnnotationsEntry
+	42, // 28: central.ComplianceOperatorRuleV2.fixes:type_name -> central.ComplianceOperatorRuleV2.Fix
+	3,  // 29: central.ComplianceOperatorRuleV2.operator_kind:type_name -> central.ComplianceOperatorRuleV2.OperatorKind
+	43, // 30: central.ComplianceOperatorScanV2.labels:type_name -> central.ComplianceOperatorScanV2.LabelsEntry
+	44, // 31: central.ComplianceOperatorScanV2.annotations:type_name -> central.ComplianceOperatorScanV2.AnnotationsEntry
+	16, // 32: central.ComplianceOperatorScanV2.status:type_name -> central.ComplianceOperatorScanStatusV2
+	47, // 33: central.ComplianceOperatorScanStatusV2.start_time:type_name -> google.protobuf.Timestamp
+	47, // 34: central.ComplianceOperatorScanStatusV2.end_time:type_name -> google.protobuf.Timestamp
+	47, // 35: central.ComplianceOperatorScanStatusV2.last_start_time:type_name -> google.protobuf.Timestamp
+	45, // 36: central.ComplianceOperatorScanSettingBindingV2.labels:type_name -> central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	46, // 37: central.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	19, // 38: central.ComplianceOperatorScanSettingBindingV2.status:type_name -> central.ComplianceOperatorStatus
+	47, // 39: central.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	18, // 40: central.ComplianceOperatorStatus.conditions:type_name -> central.ComplianceOperatorCondition
+	19, // 41: central.ComplianceOperatorSuiteV2.status:type_name -> central.ComplianceOperatorStatus
+	29, // 42: central.ApplyComplianceScanConfigRequest.BaseScanSettings.profile_refs:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
+	22, // 43: central.ApplyComplianceScanConfigRequest.OneTimeScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	22, // 44: central.ApplyComplianceScanConfigRequest.ScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	22, // 45: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	2,  // 46: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference.kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
+	47, // [47:47] is the sub-list for method output_type
+	47, // [47:47] is the sub-list for method input_type
+	47, // [47:47] is the sub-list for extension type_name
+	47, // [47:47] is the sub-list for extension extendee
+	0,  // [0:47] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_compliance_operator_proto_init() }
@@ -3246,7 +3336,7 @@ func file_internalapi_central_compliance_operator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_compliance_operator_proto_rawDesc), len(file_internalapi_central_compliance_operator_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   42,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

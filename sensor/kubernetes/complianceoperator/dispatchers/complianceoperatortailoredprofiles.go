@@ -123,10 +123,19 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			Description:  protoProfile.GetDescription(),
 			Title:        tailoredProfile.Spec.Title,
 			OperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
+			Namespace:    tailoredProfile.GetNamespace(),
 		}
 
 		for _, rule := range protoProfile.GetRules() {
 			protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{RuleName: rule.GetName()})
+		}
+
+		for _, sv := range tailoredProfile.Spec.SetValues {
+			protoProfileV2.SetValues = append(protoProfileV2.SetValues, &central.ComplianceOperatorProfileV2_SetValue{
+				Name:      sv.Name,
+				Rationale: sv.Rationale,
+				Value:     sv.Value,
+			})
 		}
 
 		events = append(events, &central.SensorEvent{

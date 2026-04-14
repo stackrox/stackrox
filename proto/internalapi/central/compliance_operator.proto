@@ -190,7 +190,7 @@ message ComplianceOperatorCheckResultV2 {
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
-// Next tag: 12.
+// Next tag: 14.
 message ComplianceOperatorProfileV2 {
   string id = 1;
   string profile_id = 2;
@@ -212,6 +212,20 @@ message ComplianceOperatorProfileV2 {
     TAILORED_PROFILE = 2;
   }
   OperatorKind operator_kind = 11;
+
+  // Kubernetes namespace of the profile resource. Used by Central to compute
+  // the equivalence hash for tailored profiles.
+  string namespace = 12;
+
+  // SetValue represents a variable value override in a tailored profile.
+  message SetValue {
+    string name = 1;
+    string rationale = 2;
+    string value = 3;
+  }
+  // set_values carries variable value overrides from tailored profiles.
+  // Used by Central to include them in the equivalence hash computation.
+  repeated SetValue set_values = 13;
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
