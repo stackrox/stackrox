@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
-	"github.com/stackrox/rox/pkg/telemetry/gatherers"
+	pkggatherers "github.com/stackrox/rox/pkg/telemetry/gatherers"
 	"github.com/stackrox/rox/sensor/common/store"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -19,7 +19,7 @@ import (
 
 // ClusterGatherer gathers cluster-related metrics
 type ClusterGatherer struct {
-	componentGatherer *gatherers.ComponentInfoGatherer
+	componentGatherer *pkggatherers.ComponentInfoGatherer
 	nodeGatherer      *nodeGatherer
 	namespaceGatherer *namespaceGatherer
 	k8sClient         kubernetes.Interface
@@ -29,7 +29,7 @@ type ClusterGatherer struct {
 // sensor
 func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore store.DeploymentStore) *ClusterGatherer {
 	return &ClusterGatherer{
-		componentGatherer: gatherers.NewComponentInfoGatherer(),
+		componentGatherer: pkggatherers.NewComponentInfoGatherer(),
 		nodeGatherer:      newNodeGatherer(k8sClient),
 		namespaceGatherer: newNamespaceGatherer(k8sClient, deploymentStore),
 		k8sClient:         k8sClient,

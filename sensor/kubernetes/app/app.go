@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/certinit"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
@@ -41,6 +42,7 @@ func Run() {
 	premain.StartMain()
 
 	sensormetrics.Init()
+	complianceoperator.InitMetrics()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 

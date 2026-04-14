@@ -9,7 +9,6 @@ import (
 	pubsubmetrics "github.com/stackrox/rox/sensor/common/pubsub/metrics"
 	registrymetrics "github.com/stackrox/rox/sensor/common/registry/metrics"
 	virtualmachinemetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
-	complianceoperator "github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	listenerresourcesmetrics "github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 )
 
@@ -68,6 +67,5 @@ func Init() {
 	pubsubmetrics.Init()
 	registrymetrics.Init()
 	virtualmachinemetrics.Init()
-	complianceoperator.InitMetrics()
 	listenerresourcesmetrics.Init()
 }
