@@ -41,17 +41,25 @@ config_part_1() {
 
     setup_gcp
     setup_deployment_env false false
-    setup_podsecuritypolicies_config
-    remove_existing_stackrox_resources
+    if [[ "${USE_ROXIE_DEPLOY:-false}" == "false" ]]; then
+        remove_existing_stackrox_resources
+    fi
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
     image_prefetcher_system_await
 
-    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    if [[ "${USE_ROXIE_DEPLOY:-false}" == "true" ]]; then
+        info "Using roxie-based config_part_1 for qa-tests-backend"
+        deploy_stackrox_with_roxie
+        setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    else
+        info "Using traditional config_part_1 for qa-tests-backend"
+        setup_podsecuritypolicies_config
+        deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+        deploy_default_psp
+    fi
     deploy_optional_e2e_components
     setup_workload_identities
-
-    deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
