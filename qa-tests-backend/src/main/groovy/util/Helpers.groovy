@@ -1,10 +1,11 @@
 package util
 
-import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
+
+import com.github.f4b6a3.uuid.UuidCreator
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -200,27 +201,8 @@ class Helpers {
     // a UUID namespace, then produce a standard UUIDv5 (SHA-1) from that namespace and name.
     static String newV5FromNonUUIDs(String ns, String name) {
         byte[] sha256 = MessageDigest.getInstance("SHA-256").digest(ns.getBytes("UTF-8"))
-        long msb = ByteBuffer.wrap(sha256, 0, 8).getLong()
-        long lsb = ByteBuffer.wrap(sha256, 8, 8).getLong()
-        UUID nsUUID = new UUID(msb, lsb)
-
-        MessageDigest sha1 = MessageDigest.getInstance("SHA-1")
-        sha1.update(uuidToBytes(nsUUID))
-        sha1.update(name.getBytes("UTF-8"))
-        byte[] hash = sha1.digest()
-
-        hash[6] = (byte) ((hash[6] & 0x0F) | 0x50) // version 5
-        hash[8] = (byte) ((hash[8] & 0x3F) | 0x80) // variant RFC 4122
-        long msbResult = ByteBuffer.wrap(hash, 0, 8).getLong()
-        long lsbResult = ByteBuffer.wrap(hash, 8, 8).getLong()
-        return new UUID(msbResult, lsbResult).toString()
-    }
-
-    private static byte[] uuidToBytes(UUID uuid) {
-        ByteBuffer bb = ByteBuffer.allocate(16)
-        bb.putLong(uuid.getMostSignificantBits())
-        bb.putLong(uuid.getLeastSignificantBits())
-        return bb.array()
+        UUID nsUUID = UuidCreator.fromBytes(Arrays.copyOf(sha256, 16))
+        return UuidCreator.getNameBasedSha1(nsUUID, name).toString()
     }
 
     // Mirrors Go's pkg/images/utils.NewImageV2ID: generates a deterministic UUIDv5
