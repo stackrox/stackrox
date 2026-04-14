@@ -6,14 +6,13 @@ import (
 	"context"
 	"testing"
 
-	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
-	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
+	testStore "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testuuidkey/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,7 +22,7 @@ func TestUUID(t *testing.T) {
 
 type UUIDTestSuite struct {
 	suite.Suite
-	store plopStore.Store
+	store testStore.Store
 
 	postgres *pgtest.TestPostgres
 	ctx      context.Context
@@ -31,51 +30,52 @@ type UUIDTestSuite struct {
 
 func (s *UUIDTestSuite) SetupTest() {
 	s.postgres = pgtest.ForT(s.T())
-	s.store = postgresStore.NewFullStore(s.postgres.DB)
+	s.store = testStore.New(s.postgres.DB)
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *UUIDTestSuite) TestRemovePLOPsWithoutPodUID() {
-	plops := []*storage.ProcessListeningOnPortStorage{
-		fixtures.GetPlopStorage1(),
-		fixtures.GetPlopStorage2(),
-		fixtures.GetPlopStorage3(),
-		fixtures.GetPlopStorage4(),
-		fixtures.GetPlopStorage5(),
-		fixtures.GetPlopStorage6(),
+func (s *UUIDTestSuite) TestNullableUUIDQueries() {
+	// 3 objects without OptionalUuid, 3 with it set
+	objs := []*storage.TestSingleUUIDKeyStruct{
+		{Key: uuid.NewV4().String(), Name: "no-uuid-1"},
+		{Key: uuid.NewV4().String(), Name: "no-uuid-2"},
+		{Key: uuid.NewV4().String(), Name: "no-uuid-3"},
+		{Key: uuid.NewV4().String(), Name: "with-uuid-1", OptionalUuid: uuid.NewV4().String()},
+		{Key: uuid.NewV4().String(), Name: "with-uuid-2", OptionalUuid: uuid.NewV4().String()},
+		{Key: uuid.NewV4().String(), Name: "with-uuid-3", OptionalUuid: uuid.NewV4().String()},
 	}
 
-	err := s.store.UpsertMany(s.ctx, plops)
+	err := s.store.UpsertMany(s.ctx, objs)
 	s.NoError(err)
-	plopCount, err := s.store.Count(s.ctx, search.EmptyQuery())
+	count, err := s.store.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(len(plops), plopCount)
+	s.Equal(len(objs), count)
 
 	for _, testCase := range []struct {
 		desc            string
 		q               *v1.Query
-		expectedResults []*storage.ProcessListeningOnPortStorage
+		expectedResults []*storage.TestSingleUUIDKeyStruct
 		expectErr       bool
 	}{
 		{
 			desc:            "null",
-			q:               search.NewQueryBuilder().AddNullField(search.PodUID).ProtoQuery(),
-			expectedResults: []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage1(), fixtures.GetPlopStorage2(), fixtures.GetPlopStorage3()},
+			q:               search.NewQueryBuilder().AddNullField(search.TestUUID).ProtoQuery(),
+			expectedResults: objs[:3],
 		},
 		{
 			desc:            "wildcard",
-			q:               search.NewQueryBuilder().AddStrings(search.PodUID, "*").ProtoQuery(),
-			expectedResults: []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage4(), fixtures.GetPlopStorage5(), fixtures.GetPlopStorage6()},
+			q:               search.NewQueryBuilder().AddStrings(search.TestUUID, "*").ProtoQuery(),
+			expectedResults: objs[3:],
 		},
 		{
 			desc:            "empty",
-			q:               search.NewQueryBuilder().AddExactMatches(search.PodUID, "").ProtoQuery(),
-			expectedResults: []*storage.ProcessListeningOnPortStorage{},
+			q:               search.NewQueryBuilder().AddExactMatches(search.TestUUID, "").ProtoQuery(),
+			expectedResults: []*storage.TestSingleUUIDKeyStruct{},
 			expectErr:       true,
 		},
 	} {
 		s.Run(testCase.desc, func() {
-			results, err := s.store.Search(ctx, testCase.q)
+			results, err := s.store.Search(s.ctx, testCase.q)
 			if testCase.expectErr {
 				s.Error(err)
 				return
@@ -88,8 +88,8 @@ func (s *UUIDTestSuite) TestRemovePLOPsWithoutPodUID() {
 			}
 
 			expectedIDs := make([]string, 0, len(testCase.expectedResults))
-			for _, s := range testCase.expectedResults {
-				expectedIDs = append(expectedIDs, s.GetId())
+			for _, obj := range testCase.expectedResults {
+				expectedIDs = append(expectedIDs, obj.GetKey())
 			}
 			s.ElementsMatch(actualIDs, expectedIDs)
 		})

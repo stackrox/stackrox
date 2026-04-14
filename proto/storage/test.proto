@@ -141,6 +141,8 @@ message TestSingleUUIDKeyStruct {
     string oneof_two_string = 17;
     int64 oneof_two_int = 18;
   }
+
+  string optional_uuid = 19; // @gotags: search:"Test UUID" sql:"type(uuid)"
 }
 
 message TestStruct {

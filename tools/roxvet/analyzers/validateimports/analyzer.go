@@ -364,10 +364,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
 	}
 
-	if validImportRoot == "pkg" {
-		allowedPackages = appendPackageWithChildren(allowedPackages, "tools/generate-helpers/pg-table-bindings", "central/processlisteningonport/store")
-	}
-
 	if validImportRoot == "sensor/common" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
@@ -390,7 +386,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	if validImportRoot == "pkg" {
-		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api", "tools/generate-helpers/pg-table-bindings")
 	}
 
 	for _, imp := range imports {
