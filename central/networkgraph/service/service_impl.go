@@ -349,6 +349,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if err != nil {
 		return nil, err
 	}
+	deploymentQuery = search.ConjunctionQuery(deploymentQuery, deploymentDS.ActiveDeploymentsQuery())
 
 	count, err := s.deployments.Count(ctx, deploymentQuery)
 	if err != nil {
@@ -763,6 +764,7 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to construct filter and scope queries")
 	}
+	deploymentQuery = search.ConjunctionQuery(deploymentQuery, deploymentDS.ActiveDeploymentsQuery())
 
 	count, err := s.deployments.Count(ctx, deploymentQuery)
 	if err != nil {

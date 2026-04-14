@@ -244,12 +244,13 @@ func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
+	queryBuilder := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
 	if len(deploymentIDs) > 0 {
-		query = query.AddDocIDs(deploymentIDs...)
+		queryBuilder = queryBuilder.AddDocIDs(deploymentIDs...)
 	}
+	query := search.ConjunctionQuery(queryBuilder.ProtoQuery(), deploymentDatastore.ActiveDeploymentsQuery())
 
-	results, err := l.deployments.SearchDeployments(allAccessCtx, query.ProtoQuery())
+	results, err := l.deployments.SearchDeployments(allAccessCtx, query)
 	if err != nil {
 		log.Errorw("Error getting results for deployment reprocessing", logging.Err(err))
 		return
@@ -537,7 +538,8 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 	if l.stopSig.IsDone() {
 		return
 	}
-	results, err := l.deployments.GetContainerImageViews(allAccessCtx, imageQuery)
+	activeImageQuery := search.ConjunctionQuery(imageQuery, deploymentDatastore.ActiveDeploymentsQuery())
+	results, err := l.deployments.GetContainerImageViews(allAccessCtx, activeImageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return

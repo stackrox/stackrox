@@ -115,7 +115,8 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
-	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
+	activeDeploymentQuery := search.ConjunctionQuery(clusterQuery, datastore.ActiveDeploymentsQuery())
+	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, activeDeploymentQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
