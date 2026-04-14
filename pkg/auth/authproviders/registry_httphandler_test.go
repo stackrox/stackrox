@@ -602,11 +602,15 @@ func (m *tstRoleMapper) FromUserDescriptor(_ context.Context, u *perm.UserDescri
 
 var testRoleMapper = &tstRoleMapper{}
 
+var _ perm.RoleMapper = (*tstRoleMapper)(nil)
+
 type tstRoleMapperFactory struct{}
 
-func (*tstRoleMapperFactory) GetRoleMapper(_ string) perm.RoleMapper {
+func (*tstRoleMapperFactory) GetRoleMapper(_ context.Context, _ string) perm.RoleMapper {
 	return testRoleMapper
 }
+
+var _ perm.RoleMapperFactory = (*tstRoleMapperFactory)(nil)
 
 // Authentication backend factory (needed by registry.RegisterBackendFactory)
 type tstAuthProviderBackend struct {
