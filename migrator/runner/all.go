@@ -2,18 +2,37 @@
 package runner
 
 import (
-	_ "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
-	_ "github.com/stackrox/rox/migrator/migrations/m_210_to_m_211_post_upgrade"
-	_ "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config"
-	_ "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators"
-	_ "github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_populate_deployment_containers_imageidv2"
-	_ "github.com/stackrox/rox/migrator/migrations/m_214_to_m_215_process_indicator_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_215_to_m_216_process_baseline_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_216_to_m_217_remove_compliance_benchmark_table"
-	_ "github.com/stackrox/rox/migrator/migrations/m_217_to_m_218_alert_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_218_to_m_219_plop_index_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_add_deployment_hash_column"
-	_ "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs"
-	_ "github.com/stackrox/rox/migrator/migrations/m_222_to_m_223_remove_component_risk_records"
+	m209tom210 "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
+	m210tom211 "github.com/stackrox/rox/migrator/migrations/m_210_to_m_211_post_upgrade"
+	m211tom212 "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config"
+	m212tom213 "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators"
+	m213tom214 "github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_populate_deployment_containers_imageidv2"
+	m214tom215 "github.com/stackrox/rox/migrator/migrations/m_214_to_m_215_process_indicator_to_btree"
+	m215tom216 "github.com/stackrox/rox/migrator/migrations/m_215_to_m_216_process_baseline_to_btree"
+	m216tom217 "github.com/stackrox/rox/migrator/migrations/m_216_to_m_217_remove_compliance_benchmark_table"
+	m217tom218 "github.com/stackrox/rox/migrator/migrations/m_217_to_m_218_alert_to_btree"
+	m218tom219 "github.com/stackrox/rox/migrator/migrations/m_218_to_m_219_plop_index_to_btree"
+	m219tom220 "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
+	m220tom221 "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_add_deployment_hash_column"
+	m221tom222 "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs"
+	m222tom223 "github.com/stackrox/rox/migrator/migrations/m_222_to_m_223_remove_component_risk_records"
 )
+
+// registerAllMigrations registers all migrations with the migrations registry.
+// Called explicitly from runner.Init() instead of package init().
+func registerAllMigrations() {
+	m209tom210.Register()
+	m210tom211.Register()
+	m211tom212.Register()
+	m212tom213.Register()
+	m213tom214.Register()
+	m214tom215.Register()
+	m215tom216.Register()
+	m216tom217.Register()
+	m217tom218.Register()
+	m218tom219.Register()
+	m219tom220.Register()
+	m220tom221.Register()
+	m221tom222.Register()
+	m222tom223.Register()
+}

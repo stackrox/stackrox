@@ -39,7 +39,7 @@ var (
 	_ notifiers.AuditNotifier = (*sentinel)(nil)
 )
 
-func init() {
+func Register() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

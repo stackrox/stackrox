@@ -626,7 +626,7 @@ func (j *jira) Test(ctx context.Context) *notifiers.NotifierError {
 	return nil
 }
 
-func init() {
+func Register() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

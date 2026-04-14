@@ -14,7 +14,8 @@ import (
 
 var typeRegistry = make(map[string]string)
 
-func init() {
+// RegisterTypeRegistry populates the typeRegistry map with mappings from storage types to SAC resources.
+func RegisterTypeRegistry() {
 	// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 	for s, r := range map[protocompat.Message]permissions.ResourceHandle{
 		&storage.AdministrationEvent{}:                          resources.Administration,

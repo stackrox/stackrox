@@ -413,7 +413,7 @@ func backOff(previousAttempt int) {
 	time.Sleep(time.Duration(previousAttempt*previousAttempt*100) * time.Millisecond)
 }
 
-func init() {
+func Register() {
 	notifiers.Add(notifiers.TeamsType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := NewTeams(notifier, metadatagetter.Singleton())
 		return s, err

@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func init() {
+func Register() {
 	notifiers.Add(notifiers.AWSSecurityHubType, func(descriptor *storage.Notifier) (notifiers.Notifier, error) {
 		ctx, cancel := context.WithCancel(context.Background())
 		configuration := defaultConfiguration

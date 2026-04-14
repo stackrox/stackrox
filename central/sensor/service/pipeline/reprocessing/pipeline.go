@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -28,6 +29,8 @@ var (
 	log = logging.LoggerForModule()
 
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
+
+	metricsInitOnce sync.Once
 
 	riskSemaphoreQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -49,12 +52,14 @@ var (
 	})
 )
 
-func init() {
+// InitMetrics registers metrics for this package.
+func InitMetrics() {
 	prometheus.MustRegister(riskSemaphoreQueueSize, riskSemaphoreHoldingSize, riskSemaphoreTimeouts)
 }
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
+	metricsInitOnce.Do(InitMetrics)
 	return NewPipeline(datastore.Singleton(), lifecycle.SingletonManager(), riskManager.Singleton(), reprocessor.Singleton())
 }
 

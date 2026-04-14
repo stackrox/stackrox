@@ -50,7 +50,8 @@ type domainWrapper struct {
 	Domain mitre.Domain
 }
 
-func init() {
+// Init populates the MitreDomainsCmdArgs and MitrePlatformsCmdArgs slices from their respective maps.
+func Init() {
 	for k := range CmdArgMitreDomainMap {
 		MitreDomainsCmdArgs = append(MitreDomainsCmdArgs, k)
 	}

@@ -69,7 +69,7 @@ func (p *eventPipeline) ProcessMessage(_ context.Context, msg *central.MsgToSens
 	case msg.GetUpdatedImage() != nil:
 		return p.processUpdatedImage(msg.GetUpdatedImage())
 	case msg.GetReprocessDeployments() != nil:
-		return p.processReprocessDeployments(msg.GetReprocessDeployments())
+		return p.processReprocessDeployments()
 	case msg.GetReprocessDeployment() != nil:
 		return p.processReprocessDeployment(msg.GetReprocessDeployment())
 	case msg.GetInvalidateImageCache() != nil:
@@ -190,9 +190,9 @@ func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 	return nil
 }
 
-func (p *eventPipeline) processReprocessDeployments(reprocessMsg *central.ReprocessDeployments) error {
+func (p *eventPipeline) processReprocessDeployments() error {
 	log.Debug("ReprocessDeployments message received from central")
-	if err := p.detector.ProcessReprocessDeployments(reprocessMsg); err != nil {
+	if err := p.detector.ProcessReprocessDeployments(); err != nil {
 		return errors.Wrap(err, "reprocessing deployments")
 	}
 	msg := component.NewEventWithTopicAndLane(pubsubDispatcher.FromCentralResolverEventTopic, pubsubDispatcher.FromCentralResolverEventLane)

@@ -326,7 +326,7 @@ func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstru
 	return nil
 }
 
-func init() {
+func Register() {
 	notifiers.Add(notifiers.SyslogType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return NewSyslog(notifier, metadatagetter.Singleton())
 	})

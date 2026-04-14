@@ -17,6 +17,8 @@ import (
 
 // Run is the main entry point for the roxctl application.
 func Run() {
+	initComponentLogic()
+
 	c := maincommand.Command()
 
 	c.SetHelpFunc(utils.FormatHelp)

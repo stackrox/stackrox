@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -28,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
@@ -67,7 +65,7 @@ type Detector interface {
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
-	ProcessReprocessDeployments(msg *central.ReprocessDeployments) error
+	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
 	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
 }
@@ -183,7 +181,7 @@ type detectorImpl struct {
 	serializerStopper concurrency.Stopper
 	alertStopSig      concurrency.Signal
 
-	updatedImageKeys []*central.ImageKey
+	admissionCacheNeedsFlush bool
 
 	networkPolicyStore store.NetworkPolicyStore
 
@@ -349,8 +347,7 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 	return nil
 }
 
-// ProcessUpdatedImage updates the imageCache with a new value and accumulates
-// the image key for batched AC invalidation in ProcessReprocessDeployments.
+// ProcessUpdatedImage updates the imageCache with a new value
 func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 	key := cache.GetKey(image)
 	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
@@ -360,30 +357,18 @@ func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 		regStore:  d.enricher.regStore,
 	}
 	d.enricher.imageCache.Add(key, newValue)
-	imageKey := &central.ImageKey{
-		ImageId:       image.GetId(),
-		ImageFullName: image.GetName().GetFullName(),
-	}
-	if centralcaps.Has(centralsensor.FlattenImageData) {
-		imageKey.ImageIdV2 = imgUtils.NewImageV2ID(image.GetName(), image.GetId())
-	}
-	d.updatedImageKeys = append(d.updatedImageKeys, imageKey)
+	d.admissionCacheNeedsFlush = true
 	return nil
 }
 
-// ProcessReprocessDeployments marks all deployments for reprocessing.
-// When skip_cache_flush=true, sends batched targeted AC invalidation
-// instead of a full purge.
-func (d *detectorImpl) ProcessReprocessDeployments(msg *central.ReprocessDeployments) error {
+// ProcessReprocessDeployments marks all deployments to be reprocessed
+func (d *detectorImpl) ProcessReprocessDeployments() error {
 	log.Debug("Reprocess deployments triggered. Clearing cache and deduper")
-	if d.admCtrlSettingsMgr != nil {
-		if !msg.GetSkipCacheFlush() {
-			d.admCtrlSettingsMgr.FlushCache()
-		} else if len(d.updatedImageKeys) > 0 {
-			d.admCtrlSettingsMgr.InvalidateImageCache(d.updatedImageKeys)
-		}
+	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
+		// Would prefer to do a targeted flush
+		d.admCtrlSettingsMgr.FlushCache()
 	}
-	d.updatedImageKeys = nil
+	d.admissionCacheNeedsFlush = false
 	d.deduper.reset()
 	return nil
 }

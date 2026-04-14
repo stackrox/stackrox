@@ -9,18 +9,16 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
-func init() {
-
-	// s3Compatible plugin for the S3 compatible backup integration.
-	// As the official AWS S3 is deprecating the path-style bucket addressing, but
-	// this style is still used in non-AWS S3 compatible providers, we decided to
-	// implement a new plugin for the latter.
-	// Having the two plugins allows for a clear separation between official AWS
-	// and non-AWS features.
-	// Having the S3 compatible plugin separate will also give us more freedom to
-	// change to a different package if the aws-sdk decides to drop the path-style
-	// option in the future.
-
+// RegisterS3Compatible registers the S3 compatible backup integration.
+// As the official AWS S3 is deprecating the path-style bucket addressing, but
+// this style is still used in non-AWS S3 compatible providers, we decided to
+// implement a new plugin for the latter.
+// Having the two plugins allows for a clear separation between official AWS
+// and non-AWS features.
+// Having the S3 compatible plugin separate will also give us more freedom to
+// change to a different package if the aws-sdk decides to drop the path-style
+// option in the future.
+func Register() {
 	plugins.Add(types.S3CompatibleType, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
 		return s3common.NewS3Client(&s3compatibleConfigWrapper{integration: backup})
 	})

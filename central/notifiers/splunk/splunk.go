@@ -219,7 +219,7 @@ func (s *splunk) getHTTPToken() (string, error) {
 	return s.creds, nil
 }
 
-func init() {
+func Register() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

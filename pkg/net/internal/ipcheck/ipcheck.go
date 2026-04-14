@@ -13,7 +13,9 @@ var (
 	ipv4Prefixes []uint32
 )
 
-func init() {
+// Init pre-computes IPv4 network masks and prefixes for private network checking.
+// Called explicitly from sensor/kubernetes/app/app.go instead of package init().
+func Init() {
 	// Generate masks and prefixes from the canonical definitions in netutil
 	ipv4Masks = make([]uint32, 0, len(netutil.IPv4PrivateNetworks))
 	ipv4Prefixes = make([]uint32, 0, len(netutil.IPv4PrivateNetworks))

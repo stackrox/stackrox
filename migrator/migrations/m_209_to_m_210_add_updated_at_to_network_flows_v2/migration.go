@@ -19,6 +19,8 @@ var (
 	}
 )
 
-func init() {
+// Register registers this migration with the migrations registry.
+// Called explicitly from migrator/runner/all.go instead of package init().
+func Register() {
 	migrations.MustRegisterMigration(migration)
 }

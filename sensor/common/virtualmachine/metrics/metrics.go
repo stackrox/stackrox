@@ -126,7 +126,8 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
-func init() {
+// Init registers virtual machine metrics.
+func Init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
 		IndexReportsSent,

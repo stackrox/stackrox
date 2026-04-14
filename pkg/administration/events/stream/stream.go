@@ -26,7 +26,9 @@ var (
 	}, []string{"Operation"})
 )
 
-func init() {
+// Init registers prometheus metrics for administration events stream.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	prometheus.MustRegister(administrationEventsQueueCounter)
 }
 

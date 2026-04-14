@@ -89,13 +89,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func init() {
-	// This needs to be increased in order to prevent the fake watcher from panicking.
-	// Note that as this is a global variable, it _must_ be set in an init() in order to
-	// ensure race-freeness. While it may look weird that we are setting this unconditionally
-	// whenever the fake package is imported (including in prod), this doesn't hurt and is
-	// actually WAI since `DefaultChanSize` is only applied to *fake* watchers in the first
-	// place, even if that is not at all apparent from the name.
+// InitFakeWatcherChannelSize configures the default channel size for fake Kubernetes watchers.
+// Must be called before creating any fake watchers to prevent panics.
+// Called explicitly from NewWorkloadManager instead of package init().
+func InitFakeWatcherChannelSize() {
 	watch.DefaultChanSize = 100000
 }
 
@@ -253,6 +250,8 @@ func (w *WorkloadManager) Client() client.Interface {
 
 // NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
 func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
+	InitFakeWatcherChannelSize()
+
 	data, err := os.ReadFile(config.workloadFile)
 	if err != nil {
 		if os.IsNotExist(err) {

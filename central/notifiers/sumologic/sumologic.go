@@ -1,4 +1,4 @@
-package generic
+package sumologic
 
 import (
 	"bytes"
@@ -139,7 +139,7 @@ func (s *sumologic) Test(ctx context.Context) *notifiers.NotifierError {
 	return nil
 }
 
-func init() {
+func Register() {
 	notifiers.Add(notifiers.SumoLogicType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return newSumoLogic(notifier)
 	})

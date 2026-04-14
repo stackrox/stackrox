@@ -31,8 +31,9 @@ func MakePrettyChartNameList(chartNames ...string) string {
 	return strings.Join(chartNames, " | ")
 }
 
-// Initialize `prettyChartNameList` for usage information.
-func init() {
+// InitPrettyChartNameList initializes PrettyChartNameList for usage information.
+// This is called during application initialization.
+func InitPrettyChartNameList() {
 	chartTemplateNames := make([]string, 0, len(ChartTemplates))
 	for name := range ChartTemplates {
 		chartTemplateNames = append(chartTemplateNames, name)

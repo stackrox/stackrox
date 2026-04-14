@@ -50,10 +50,7 @@ message MsgFromSensor {
   }
 }
 
-message ReprocessDeployments {
-  // When true, Sensor uses targeted AC invalidation instead of a full flush.
-  bool skip_cache_flush = 1;
-}
+message ReprocessDeployments {}
 
 // next available tag: 31
 message MsgToSensor {

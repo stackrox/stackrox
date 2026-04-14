@@ -541,11 +541,9 @@ func (*MsgFromSensor_DeploymentEnhancementResponse) isMsgFromSensor_Msg() {}
 func (*MsgFromSensor_IssueSecuredClusterCertsRequest) isMsgFromSensor_Msg() {}
 
 type ReprocessDeployments struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// When true, Sensor uses targeted AC invalidation instead of a full flush.
-	SkipCacheFlush bool `protobuf:"varint,1,opt,name=skip_cache_flush,json=skipCacheFlush,proto3" json:"skip_cache_flush,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReprocessDeployments) Reset() {
@@ -576,13 +574,6 @@ func (x *ReprocessDeployments) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReprocessDeployments.ProtoReflect.Descriptor instead.
 func (*ReprocessDeployments) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *ReprocessDeployments) GetSkipCacheFlush() bool {
-	if x != nil {
-		return x.SkipCacheFlush
-	}
-	return false
 }
 
 // next available tag: 31
@@ -1617,9 +1608,8 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x13compliance_response\x18\x11 \x01(\v2\x1b.central.ComplianceResponseH\x00R\x12complianceResponse\x12p\n" +
 	"\x1fdeployment_enhancement_response\x18\x12 \x01(\v2&.central.DeploymentEnhancementResponseH\x00R\x1ddeploymentEnhancementResponse\x12x\n" +
 	"#issue_secured_cluster_certs_request\x18\x13 \x01(\v2(.central.IssueSecuredClusterCertsRequestH\x00R\x1fissueSecuredClusterCertsRequestB\x05\n" +
-	"\x03msg\"@\n" +
-	"\x14ReprocessDeployments\x12(\n" +
-	"\x10skip_cache_flush\x18\x01 \x01(\bR\x0eskipCacheFlush\"\xb7\x12\n" +
+	"\x03msg\"\x16\n" +
+	"\x14ReprocessDeployments\"\xb7\x12\n" +
 	"\vMsgToSensor\x12>\n" +
 	"\venforcement\x18\x01 \x01(\v2\x1a.central.SensorEnforcementH\x00R\venforcement\x12?\n" +
 	"\x0escrape_command\x18\x02 \x01(\v2\x16.central.ScrapeCommandH\x00R\rscrapeCommand\x12[\n" +

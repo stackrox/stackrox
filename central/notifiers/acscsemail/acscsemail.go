@@ -127,7 +127,7 @@ func (e *acscsEmail) logError(msg string, err error) {
 	log.Errorw(msg, logging.Err(err), logging.ErrCode(codes.ACSCSEmailGeneric), logging.NotifierName(e.notifier.GetName()))
 }
 
-func init() {
+func Register() {
 	if !env.ManagedCentral.BooleanSetting() {
 		return
 	}
