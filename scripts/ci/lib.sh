@@ -694,12 +694,15 @@ image_prefetcher_start_set() {
     local manifest
     manifest=$(mktemp)
 
+    local kubelet_image_creds
     case "${ORCHESTRATOR_FLAVOR}" in
     k8s)
         flavor=vanilla
+        kubelet_image_creds=GKE
         ;;
     openshift)
         flavor=ocp
+        kubelet_image_creds="" # i.e. disabled
         ;;
     *)
         die "unsupported ORCHESTRATOR: ${ORCHESTRATOR_FLAVOR}"
@@ -708,6 +711,7 @@ image_prefetcher_start_set() {
 
     # daemonset, etc
     ${image_prefetcher_deploy_bin} \
+        --use-kubelet-image-credential-integration="${kubelet_image_creds}" \
         --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
