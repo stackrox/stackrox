@@ -31,6 +31,9 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
         --nodocs \
         findutils \
         ca-certificates \
+        gzip \
+        less \
+        tar \
         /tmp/postgres-libs.rpm \
         /tmp/postgres.rpm && \
     dnf clean all --installroot=/out/ && \
