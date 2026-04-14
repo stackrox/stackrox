@@ -67,6 +67,11 @@ message ContainerImage {
   string id_v2 = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
 }
 
+enum ContainerType {
+  REGULAR = 0;
+  INIT = 1;
+}
+
 message Container {
   string id = 1;
   ContainerConfig config = 2;
@@ -83,6 +88,8 @@ message Container {
 
   LivenessProbe liveness_probe = 11;
   ReadinessProbe readiness_probe = 12;
+
+  ContainerType type = 13; // @gotags: search:"Container Type" hash:"ignore" sensorhash:"ignore"
 }
 
 message Resources {
