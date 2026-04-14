@@ -15,6 +15,20 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// fakeTryLockFunc returns a tryAcquireLockFunc that always succeeds immediately.
+func fakeTryLockFunc() func(ctx context.Context, db postgres.DB, lockID int64) (bool, func(), error) {
+	return func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
+		return true, func() {}, nil
+	}
+}
+
+// neverAcquireLockFunc returns a tryAcquireLockFunc that never acquires until context is cancelled.
+func neverAcquireLockFunc() func(ctx context.Context, db postgres.DB, lockID int64) (bool, func(), error) {
+	return func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
+		return false, nil, nil
+	}
+}
+
 const testTimeout = 1 * time.Second
 
 // fakeRow implements pgx.Row for returning a seqnum from QueryRow.
@@ -60,6 +74,8 @@ func resetRegistry() {
 func newTestRunner(db postgres.DB, rolloutChecker RolloutChecker, currentSeqNum int) *Runner {
 	r := NewRunner(db, rolloutChecker)
 	r.currentBgSeqNumFunc = func() int { return currentSeqNum }
+	r.tryAcquireLockFunc = fakeTryLockFunc()
+	r.lockRetryInterval = 10 * time.Millisecond
 	return r
 }
 
@@ -189,6 +205,65 @@ func TestRunnerStopCancelsRolloutCheck(t *testing.T) {
 	case <-time.After(testTimeout):
 		t.Fatal("runner did not stop after Stop() within timeout")
 	}
+}
+
+func TestRunnerLockBlocksUntilStopped(t *testing.T) {
+	resetRegistry()
+	ctrl := gomock.NewController(t)
+	db := pgMocks.NewMockDB(ctrl)
+
+	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner.tryAcquireLockFunc = neverAcquireLockFunc()
+	runner.Start()
+
+	runner.Stop()
+
+	done := make(chan struct{})
+	go func() {
+		_ = runner.stopper.Client().Stopped().Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(testTimeout):
+		t.Fatal("runner did not stop after Stop() within timeout")
+	}
+}
+
+func TestRunnerLockRetriesOnConnectionDrop(t *testing.T) {
+	resetRegistry()
+	ctrl := gomock.NewController(t)
+	db := pgMocks.NewMockDB(ctrl)
+	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
+
+	callCount := 0
+	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner.tryAcquireLockFunc = func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
+		callCount++
+		if callCount < 3 {
+			return false, nil, errors.New("connection dropped")
+		}
+		return true, func() {}, nil
+	}
+
+	requireStoppedWithin(t, runner, testTimeout)
+	assert.Equal(t, 3, callCount)
+}
+
+func TestRunnerLockReleasedAfterMigrations(t *testing.T) {
+	resetRegistry()
+	ctrl := gomock.NewController(t)
+	db := pgMocks.NewMockDB(ctrl)
+	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
+
+	released := false
+	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner.tryAcquireLockFunc = func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
+		return true, func() { released = true }, nil
+	}
+
+	requireStoppedWithin(t, runner, testTimeout)
+	assert.True(t, released, "advisory lock should be released after runner completes")
 }
 
 func TestRunnerStopCancelsRunningMigration(t *testing.T) {

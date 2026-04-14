@@ -2,9 +2,11 @@ package backgroundmigrations
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -24,6 +26,15 @@ func Singleton() *Runner {
 	return instance
 }
 
+const (
+	// bgMigrationAdvisoryLockID is a unique identifier for the background migration advisory lock.
+	// This value is arbitrary but must be consistent across all Central instances and must
+	// differ from the migrator advisory lock ID.
+	bgMigrationAdvisoryLockID int64 = 2_846_193_750_482_637_519
+
+	lockRetryInterval = 60 * time.Second
+)
+
 // Runner executes background migrations after Central is ready.
 type Runner struct {
 	db                  postgres.DB
@@ -31,6 +42,8 @@ type Runner struct {
 	stopper             concurrency.Stopper
 	started             bool
 	currentBgSeqNumFunc func() int
+	lockRetryInterval   time.Duration
+	tryAcquireLockFunc  func(ctx context.Context, db postgres.DB, lockID int64) (bool, func(), error)
 }
 
 // NewRunner creates a new Runner.
@@ -40,6 +53,8 @@ func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 		rolloutChecker:      rolloutChecker,
 		stopper:             concurrency.NewStopper(),
 		currentBgSeqNumFunc: func() int { return CurrentBgMigrationSeqNum },
+		lockRetryInterval:   lockRetryInterval,
+		tryAcquireLockFunc:  dblock.TryAcquireAdvisoryLock,
 	}
 }
 
@@ -62,15 +77,58 @@ func (r *Runner) run() {
 	log := logging.LoggerForModule()
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	go func() {
-		<-r.stopper.Flow().StopRequested()
-		cancel()
+		select {
+		case <-r.stopper.Flow().StopRequested():
+			cancel()
+		case <-ctx.Done():
+		}
 	}()
 
 	if err := r.rolloutChecker.WaitForRolloutComplete(ctx); err != nil {
 		log.Infof("Background migrations: rollout check cancelled: %v", err)
 		return
 	}
+
+	release, err := r.acquireLock(ctx)
+	if err != nil {
+		return
+	}
+	defer release()
+
+	r.runMigrations(ctx)
+}
+
+// acquireLock polls for the advisory lock using non-blocking try-acquire calls.
+// Retries every lockRetryInterval until the lock is acquired or the context is cancelled.
+func (r *Runner) acquireLock(ctx context.Context) (func(), error) {
+	log := logging.LoggerForModule()
+
+	for {
+		log.Infof("Background migrations: acquiring advisory lock...")
+		acquired, release, err := r.tryAcquireLockFunc(ctx, r.db, bgMigrationAdvisoryLockID)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Infof("Background migrations: lock acquisition cancelled: %v", ctx.Err())
+				return nil, ctx.Err()
+			}
+			log.Warnf("Background migrations: failed to acquire advisory lock, retrying in %v: %v", r.lockRetryInterval, err)
+		} else if acquired {
+			return release, nil
+		} else {
+			log.Infof("Background migrations: advisory lock held by another instance, retrying in %v", r.lockRetryInterval)
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(r.lockRetryInterval):
+		}
+	}
+}
+
+func (r *Runner) runMigrations(ctx context.Context) {
+	log := logging.LoggerForModule()
 
 	dbBgSeqNum, err := r.readSeqNum(ctx)
 	if err != nil {
