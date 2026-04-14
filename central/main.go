@@ -274,9 +274,8 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
-// CentralRun is the main central application logic.
-// Exported temporarily to allow central/app package to call it.
-func CentralRun() {
+// centralRun is the main central application logic.
+func centralRun() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()
@@ -1085,7 +1084,7 @@ func main() {
 	switch binaryName {
 	case "central":
 		app.Run()
-		CentralRun()
+		centralRun()
 	case "migrator":
 		migratorapp.Run()
 	case "compliance":
@@ -1105,6 +1104,6 @@ func main() {
 	default:
 		// Default to central if called with unknown name
 		log.Warnf("Unknown binary name %q, defaulting to central mode", binaryName)
-		CentralRun()
+		centralRun()
 	}
 }
