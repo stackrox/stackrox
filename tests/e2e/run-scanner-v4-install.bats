@@ -887,6 +887,11 @@ EOT
             -p '{"spec":{"configAsCode":{"resources":{"limits":{"memory":"512Mi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"matcher":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"4Gi"}}}}}}'
         "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" patch securedcluster stackrox-secured-cluster-services --type=merge \
             -p '{"spec":{"admissionControl":{"resources":{"limits":{"memory":"2Gi"}}},"scannerV4":{"indexer":{"resources":{"limits":{"memory":"6Gi"}}},"db":{"resources":{"limits":{"memory":"4Gi"}}}}}}'
+        # config-controller is created by the new operator with default 128Mi.
+        # The configAsCode CR field may not control its deployment resources,
+        # so patch the deployment directly as a fallback.
+        info "Race build detected: patching config-controller deployment directly"
+        retrying_kubectl </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" set resources deploy/config-controller -c manager --limits 'memory=512Mi' 2>/dev/null || true
         # Give the operator time to reconcile the new resource limits.
         sleep 30
     fi
