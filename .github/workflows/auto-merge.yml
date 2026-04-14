@@ -8,7 +8,7 @@ on:
       dry-run:
         description: Dry-run
         required: false
-        default: false
+        default: true
         type: boolean
 
 concurrency:
@@ -17,7 +17,7 @@ concurrency:
 
 run-name: >-
   ${{
-    format('auto-merge {0}',
+    format('auto-merge{0}',
       fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != 'true']
     )
   }}
