@@ -723,6 +723,14 @@ image_prefetcher_start_set() {
     local image_list
     image_list=$(mktemp)
     populate_prefetcher_image_list "$name" "${image_list}"
+
+    # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
+    if [[ "${ORCHESTRATOR_FLAVOR}" != "k8s" ]]; then
+        info "Filtering out *.gcr.io images for non-GKE cluster"
+        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${image_list}.tmp" || true
+        mv "${image_list}.tmp" "${image_list}"
+    fi
+
     echo "---" >> "$manifest"
     kubectl create --dry-run=client -o yaml configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
 
