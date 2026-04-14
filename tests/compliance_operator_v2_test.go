@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -309,32 +310,30 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 	client v2.ComplianceProfileServiceClient, clusterID, name string,
 ) *v2.ComplianceProfile {
-	req := &v2.ProfilesForClusterRequest{
-		ClusterId: clusterID,
-		Query:     &v2.RawQuery{Query: "Compliance Profile Name:" + name},
-	}
+	var (
+		mu      sync.Mutex
+		profile *v2.ComplianceProfile
+	)
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		profileList, err := client.ListComplianceProfiles(ctx, req)
+		profileList, err := client.ListComplianceProfiles(ctx,
+			&v2.ProfilesForClusterRequest{
+				ClusterId: clusterID,
+				Query:     &v2.RawQuery{Query: "Compliance Profile Name:" + name},
+			})
 		require.NoErrorf(c, err, "failed to list profiles")
 		for _, p := range profileList.GetProfiles() {
 			if p.GetName() == name {
+				mu.Lock()
+				profile = p
+				mu.Unlock()
 				return
 			}
 		}
 		require.Failf(c, "TailoredProfile not yet in Central DB", "profile %q not found", name)
 	}, 10*time.Second, 1*time.Second)
-
-	// Fetch once more outside the poll to avoid writing to a shared
-	// variable from the EventuallyWithT goroutine.
-	profileList, err := client.ListComplianceProfiles(ctx, req)
-	require.NoErrorf(t, err, "failed to list profiles")
-	for _, p := range profileList.GetProfiles() {
-		if p.GetName() == name {
-			return p
-		}
-	}
-	require.Failf(t, "TailoredProfile disappeared", "profile %q not found after poll succeeded", name)
-	return nil // unreachable
+	mu.Lock()
+	defer mu.Unlock()
+	return profile
 }
 
 func assertResourceDoesNotExist[T any, PT interface {
