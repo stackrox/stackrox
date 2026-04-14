@@ -69,7 +69,7 @@ func (r *registryImpl) Init() error {
 		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
 		// Use the options to build the provider.
-		provider, err := NewProvider(context.Background(), options...)
+		provider, err := NewProvider(sac.WithAllAccess(context.Background()), options...)
 		if err != nil {
 			panic(err)
 		}
