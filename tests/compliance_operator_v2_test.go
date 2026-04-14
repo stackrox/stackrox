@@ -204,17 +204,18 @@ func cleanUpResources(ctx context.Context, t *testing.T, client ctrlClient.Clien
 // createCustomRule creates a CEL CustomRule with the given name, waits for it
 // to reach Ready phase, and registers cleanup.
 func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
-	// Ensure ConfigMap exists in the CO namespace (shared across tests).
-	cmName := "e2e-cr-config"
+	// Create a ConfigMap with a test-specific marker key so the CEL
+	// expression matches only this test's ConfigMap, not other tests'.
+	markerKey := "e2e-marker-" + name
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: cmName, Namespace: coNamespaceV2},
-		Data:       map[string]string{"e2e-marker": "true"},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: coNamespaceV2},
+		Data:       map[string]string{markerKey: "true"},
 	}
 	if err := client.Create(ctx, cm); err != nil && !errors2.IsAlreadyExists(err) {
 		require.NoError(t, err, "failed to create ConfigMap")
 	}
 	t.Cleanup(func() {
-		deleteResource[corev1.ConfigMap](ctx, t, client, cmName, coNamespaceV2)
+		deleteResource[corev1.ConfigMap](ctx, t, client, name, coNamespaceV2)
 	})
 
 	cr := &complianceoperatorv1.CustomRule{
@@ -235,8 +236,8 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 			},
 			CustomRulePayload: complianceoperatorv1.CustomRulePayload{
 				ScannerType:   complianceoperatorv1.ScannerTypeCEL,
-				Expression:    `configmaps.items.exists(cm, has(cm.data) && "e2e-marker" in cm.data)`,
-				FailureReason: "No ConfigMap with 'e2e-marker' data key found",
+				Expression:    fmt.Sprintf(`configmaps.items.exists(cm, has(cm.data) && "%s" in cm.data)`, markerKey),
+				FailureReason: fmt.Sprintf("No ConfigMap with '%s' data key found", markerKey),
 				Inputs: []complianceoperatorv1.InputPayload{
 					{
 						Name: "configmaps",
@@ -250,7 +251,9 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 			},
 		},
 	}
-	require.NoErrorf(t, client.Create(ctx, cr), "failed to create CustomRule %s", name)
+	if err := client.Create(ctx, cr); err != nil && !errors2.IsAlreadyExists(err) {
+		require.NoError(t, err, "failed to create CustomRule")
+	}
 	t.Cleanup(func() {
 		deleteResource[complianceoperatorv1.CustomRule](ctx, t, client, name, coNamespaceV2)
 	})
@@ -282,7 +285,11 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.C
 			},
 		},
 	}
-	require.NoErrorf(t, client.Create(ctx, tp), "failed to create TailoredProfile %s", name)
+
+	if err := client.Create(ctx, tp); err != nil && !errors2.IsAlreadyExists(err) {
+		require.NoError(t, err, "failed to create TailoredProfile")
+	}
+
 	t.Cleanup(func() {
 		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, client, name, coNamespaceV2)
 	})
@@ -1033,7 +1040,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 	testID := fmt.Sprintf("variants-%s", uuid.NewV4().String())
 
 	// Create custom rule needed by the "custom-rules" variant.
-	crName := testID + "-cr"
+	crName := testID
 	createCustomRule(ctx, t, dynClient, crName)
 
 	variants := map[string]complianceoperatorv1.TailoredProfileSpec{
