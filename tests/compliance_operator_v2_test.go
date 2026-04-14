@@ -65,16 +65,6 @@ var (
 			},
 		},
 	}
-	testSchedule = &v2.Schedule{
-		IntervalType: 1,
-		Hour:         15,
-		Minute:       0,
-		Interval: &v2.Schedule_DaysOfWeek_{
-			DaysOfWeek: &v2.Schedule_DaysOfWeek{
-				Days: []int32{1, 2, 3, 4, 5, 6},
-			},
-		},
-	}
 )
 
 // profileRef pairs a profile name with its compliance operator kind (Profile/TailoredProfile),
@@ -637,7 +627,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     profileNames(initialProfiles),
 			Description:  "test config",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 
@@ -682,7 +672,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     []string{"rhcos4-e8"},
 			Description:  "test config with duplicate profile",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 
@@ -700,7 +690,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     []string{tpName},
 			Description:  "test config with duplicate tailored profile",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 	_, err = scanConfigService.CreateComplianceScanConfiguration(ctx, duplicateTPReq)
@@ -725,7 +715,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     []string{"rhcos4-stig", "ocp4-cis-node"},
 			Description:  "test config with invalid profiles",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 
@@ -770,7 +760,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     profileNames(initialProfiles),
 			Description:  "test config",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 
@@ -862,7 +852,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     []string{"rhcos4-high", tpName},
 			Description:  "test config",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 
@@ -912,7 +902,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 			OneTimeScan:  false,
 			Profiles:     []string{"rhcos4-nerc-cip"},
 			Description:  "test config",
-			ScanSchedule: testSchedule,
+			ScanSchedule: initialSchedule,
 		},
 	}
 
