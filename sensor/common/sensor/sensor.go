@@ -197,7 +197,9 @@ func (s *Sensor) Start() {
 			v.SetCentralGRPCClient(s.centralConnection)
 		}
 	}
-	s.imageService.SetClient(s.centralConnection)
+	if s.imageService != nil {
+		s.imageService.SetClient(s.centralConnection)
+	}
 	if !env.ContinuousProfiling.BooleanSetting() {
 		s.profilingServer = s.startProfilingServer()
 	}
