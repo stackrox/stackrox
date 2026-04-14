@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerImageSignatureVerificationSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolver("ImageSignatureVerificationResult", "verifierName: String!"),

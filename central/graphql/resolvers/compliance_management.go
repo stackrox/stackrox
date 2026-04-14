@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerComplianceManagementSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!"),

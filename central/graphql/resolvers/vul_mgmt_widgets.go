@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerVulMgmtWidgetsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("DeploymentsWithMostSevereViolations", []string{

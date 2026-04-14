@@ -14,6 +14,7 @@ func getBuilder() generator.SchemaBuilder {
 	builderOnce.Do(func() {
 		builderInstance = generator.NewSchemaBuilder()
 		registerGeneratedTypes(builderInstance)
+		Init()
 	})
 	return builderInstance
 }

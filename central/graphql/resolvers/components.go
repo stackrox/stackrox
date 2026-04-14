@@ -10,7 +10,7 @@ var (
 	componentPredicateFactory = predicate.NewFactory("component", &storage.EmbeddedImageScanComponent{})
 )
 
-func init() {
+func registerComponentsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered

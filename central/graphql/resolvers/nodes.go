@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerNodesSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("node(id:ID!): Node"),

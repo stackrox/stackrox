@@ -17,12 +17,6 @@ var (
 	componentV2LoaderType = reflect.TypeOf(storage.ImageComponentV2{})
 )
 
-func init() {
-	RegisterTypeFactory(componentV2LoaderType, func() interface{} {
-		return NewComponentV2Loader(datastore.Singleton())
-	})
-}
-
 // NewComponentV2Loader creates a new loader for component data.
 func NewComponentV2Loader(ds datastore.DataStore) ComponentV2Loader {
 	return &componentV2LoaderImpl{

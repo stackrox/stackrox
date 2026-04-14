@@ -218,13 +218,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/memlimit"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
+	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -233,6 +233,7 @@ import (
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 
 	// BusyBox-style consolidation - import app packages
+	app "github.com/stackrox/rox/central/app"
 	complianceapp "github.com/stackrox/rox/compliance/cmd/compliance/app"
 	roxagentapp "github.com/stackrox/rox/compliance/virtualmachines/roxagent/app"
 	configcontrollerapp "github.com/stackrox/rox/config-controller/app"
@@ -262,14 +263,6 @@ const (
 	proxyConfigFile = "config.yaml"
 )
 
-func init() {
-	if !proxy.UseWithDefaultTransport() {
-		log.Warn("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
-	}
-
-	memlimit.SetMemoryLimit()
-}
-
 func runSafeMode() {
 	log.Info("Started Central up in safe mode. Sleeping forever...")
 
@@ -281,6 +274,7 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
+// centralRun is the main central application logic.
 func centralRun() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
@@ -1084,8 +1078,12 @@ func main() {
 	// BusyBox-style dispatcher: check how we were called
 	binaryName := filepath.Base(os.Args[0])
 
+	// Set component label for profiling
+	profiling.SetComponentLabel(binaryName)
+
 	switch binaryName {
 	case "central":
+		app.Run()
 		centralRun()
 	case "migrator":
 		migratorapp.Run()

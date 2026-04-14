@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerImageScanSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolvers("ImageScan", []string{

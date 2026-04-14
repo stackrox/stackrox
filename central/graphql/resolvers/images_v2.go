@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerImagesV2Schema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolvers("ImageV2", []string{

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerAccessScopesSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("simpleAccessScopes: [SimpleAccessScope!]!"),

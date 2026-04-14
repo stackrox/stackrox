@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func init() {
+func registerPermissionSetsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("permissionSets: [PermissionSet!]!"),

@@ -86,7 +86,7 @@ func registerImageWatchStatus(s string) string {
 	return s
 }
 
-func init() {
+func registerImagesSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("BaseImage", []string{

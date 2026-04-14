@@ -20,7 +20,7 @@ const (
 	maxClusters = 1000
 )
 
-func init() {
+func registerPlatformCVECoreSchema() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered

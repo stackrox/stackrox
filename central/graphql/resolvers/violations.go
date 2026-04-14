@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerViolationsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("violations(query: String, pagination: Pagination): [Alert!]!"),

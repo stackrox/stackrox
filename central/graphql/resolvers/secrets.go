@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerSecretsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("secret(id:ID!): Secret"),
