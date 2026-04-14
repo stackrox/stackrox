@@ -1453,6 +1453,8 @@ github.com/stackrox/zap v1.18.2-0.20240314134248-5f932edd0404/go.mod h1:xg/QME4n
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
 github.com/stoewer/go-strcase v1.3.1 h1:iS0MdW+kVTxgMoE1LAZyMiYJFKlOzLooE4MxjirtkAs=
 github.com/stoewer/go-strcase v1.3.1/go.mod h1:fAH5hQ5pehh+j3nZfvwdk2RgEgQjAoM8wodgtPmh1xo=
+github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09 h1:vM6k7Atzuhygf/rTytmRdTEs3HdnIuhkpdKyVrgHX7Q=
+github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09/go.mod h1:6V51MeHkiYrmQVSFAhc4rfgZk2/AxtZMNSgNN8DjvRQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=

@@ -50,6 +50,7 @@ func (s *developmentServiceAccessControlTestSuite) SetupSuite() {
 	}
 
 	authProvider, err := authproviders.NewProvider(
+		s.T().Context(),
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
 		authproviders.WithName("Test Auth Provider"),
