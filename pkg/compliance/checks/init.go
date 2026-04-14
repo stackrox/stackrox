@@ -1,9 +1,9 @@
 package checks
 
 import (
-	"github.com/stackrox/rox/pkg/compliance/checks/hipaa_164"
+	hipaa164 "github.com/stackrox/rox/pkg/compliance/checks/hipaa_164"
 	"github.com/stackrox/rox/pkg/compliance/checks/kubernetes"
-	"github.com/stackrox/rox/pkg/compliance/checks/nist800-190"
+	nist800190 "github.com/stackrox/rox/pkg/compliance/checks/nist800-190"
 	"github.com/stackrox/rox/pkg/compliance/checks/nist80053"
 	"github.com/stackrox/rox/pkg/compliance/checks/pcidss32"
 )

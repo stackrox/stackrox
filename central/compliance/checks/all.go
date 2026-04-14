@@ -1,8 +1,8 @@
 package checks
 
 import (
-	"github.com/stackrox/rox/central/compliance/checks/hipaa_164"
-	"github.com/stackrox/rox/central/compliance/checks/nist800-190"
+	hipaa164 "github.com/stackrox/rox/central/compliance/checks/hipaa_164"
+	nist800190 "github.com/stackrox/rox/central/compliance/checks/nist800-190"
 	"github.com/stackrox/rox/central/compliance/checks/nist80053"
 	"github.com/stackrox/rox/central/compliance/checks/pcidss32"
 	"github.com/stackrox/rox/central/compliance/checks/remote"

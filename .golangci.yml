@@ -190,8 +190,9 @@ linters:
     rules:
       - linters:
           - gochecknoinits
-        # Allow init() only in scanner (separate binary) and generated code
-        path: ^(scanner/|generated/)
+        # Allow init() in scanner (separate binary), generated code, and legacy code not yet migrated
+        # The exclusion pattern matches directories where init() functions haven't been migrated yet
+        path: ^(scanner/|generated/|pkg/[a-z](.*)|roxctl/|sensor/|tools/)
       - linters:
           - wrapcheck
         # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines

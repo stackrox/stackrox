@@ -8,13 +8,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/pkg/compliance/checks"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/premain"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Run is the main entry point for the central application.
