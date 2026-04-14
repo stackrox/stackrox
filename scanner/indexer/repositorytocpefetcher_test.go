@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,8 +67,9 @@ func TestRepositoryToCPEFetcher_Fetch(t *testing.T) {
 			srv := httptest.NewServer(tt.handler)
 			defer srv.Close()
 
+			ctx := zlog.Test(context.Background(), t)
 			fetcher := NewRepositoryToCPEFetcher(srv.Client(), srv.URL)
-			result, err := fetcher.Fetch(context.Background(), tt.ifModifiedSince)
+			result, err := fetcher.Fetch(ctx, tt.ifModifiedSince)
 
 			if tt.wantErr != "" {
 				require.Error(t, err)
@@ -93,8 +95,9 @@ func TestRepositoryToCPEFetcher_Fetch(t *testing.T) {
 		}))
 		defer srv.Close()
 
+		ctx := zlog.Test(context.Background(), t)
 		fetcher := NewRepositoryToCPEFetcher(srv.Client(), srv.URL)
-		_, err := fetcher.Fetch(context.Background(), "Tue, 01 Jan 2025 00:00:00 GMT")
+		_, err := fetcher.Fetch(ctx, "Tue, 01 Jan 2025 00:00:00 GMT")
 		require.NoError(t, err)
 		assert.Equal(t, "Tue, 01 Jan 2025 00:00:00 GMT", receivedHeader)
 	})
@@ -108,8 +111,9 @@ func TestRepositoryToCPEFetcher_Fetch(t *testing.T) {
 		}))
 		defer srv.Close()
 
+		ctx := zlog.Test(context.Background(), t)
 		fetcher := NewRepositoryToCPEFetcher(srv.Client(), srv.URL)
-		_, err := fetcher.Fetch(context.Background(), "")
+		_, err := fetcher.Fetch(ctx, "")
 		require.NoError(t, err)
 		assert.False(t, hasHeader)
 	})
