@@ -131,7 +131,7 @@ func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
 			wantMsg: "may be revoked or expired",
 		},
 		"Other gRPC error includes networking suggestion": {
-			recvErr: status.Error(codes.Internal, "could not fetch cluster for sensor: cluster does not exist"),
+			recvErr: status.Error(codes.Internal, "unexpected HTTP status code received from server"),
 			wantMsg: "likely due to a networking or TLS configuration issue",
 		},
 		"No error from Recv falls back to networking suggestion": {
