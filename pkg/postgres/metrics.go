@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-func init() {
+// Init registers Prometheus metrics for PostgreSQL query monitoring.
+func Init() {
 	prometheus.MustRegister(
 		queryErrors,
 	)

@@ -28,6 +28,3 @@ func createGitRepo(i interface{}) VolumeSource {
 	}
 }
 
-func init() {
-	VolumeRegistry[gitRepoType] = createGitRepo
-}

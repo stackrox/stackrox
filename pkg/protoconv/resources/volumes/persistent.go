@@ -28,6 +28,3 @@ func createPersistentVolumeClaim(i interface{}) VolumeSource {
 	}
 }
 
-func init() {
-	VolumeRegistry[persistentVolumeClaimType] = createPersistentVolumeClaim
-}

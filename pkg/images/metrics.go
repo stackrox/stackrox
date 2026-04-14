@@ -35,7 +35,8 @@ func SetCentralScanSemaphoreLimit(limit float64) {
 	scanSemaphoreLimit.WithLabelValues("central", "central-image-scan-service", "n/a").Set(limit)
 }
 
-func init() {
+// Init registers Prometheus metrics for image scan semaphore monitoring.
+func Init() {
 	prometheus.MustRegister(ScanSemaphoreQueueSize,
 		ScanSemaphoreHoldingSize,
 		scanSemaphoreLimit)

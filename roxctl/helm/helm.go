@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/helm/derivelocalvalues"
+	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stackrox/rox/roxctl/helm/output"
 )
 
@@ -21,4 +22,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(derivelocalvalues.Command(cliEnvironment))
 
 	return c
+}
+
+// Init initializes helm-related components.
+// This should be called during application initialization.
+func Init() {
+	common.InitPrettyChartNameList()
 }

@@ -29,6 +29,3 @@ func createAzureFile(i interface{}) VolumeSource {
 	}
 }
 
-func init() {
-	VolumeRegistry[azureFileType] = createAzureFile
-}

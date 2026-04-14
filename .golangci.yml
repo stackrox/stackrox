@@ -194,8 +194,12 @@ linters:
         # - scanner/ (separate binary, not affected by busybox consolidation)
         # - generated/ (auto-generated code)
         # - migrator/migrations/ (intentional auto-registration pattern for migration discovery)
-        # - pkg/, roxctl/, sensor/, tools/ (not yet migrated, will be done in follow-up)
-        path: ^(scanner/|generated/|migrator/migrations/|pkg/[a-z](.*)|roxctl/|sensor/|tools/)
+        path: ^(scanner/|generated/|migrator/migrations/)
+      - linters:
+          - gochecknoinits
+        # Specific pkg/ files that legitimately need init() for global setup
+        # See pkg/PKG_INIT_MIGRATION.md for rationale
+        path: ^pkg/(logging/logging|grpc/(codec|server)|clientconn/useragent|httputil/proxy/proxy|cloudproviders/aws/certs|sync/(deadlock_detect_dev|mutex_dev)|devbuild/init)\.go$
       - linters:
           - gochecknoinits
         # Test files can use init() for setup

@@ -26,6 +26,3 @@ func createGCEPersistentDisk(i interface{}) VolumeSource {
 	}
 }
 
-func init() {
-	VolumeRegistry[gcePersistentDiskType] = createGCEPersistentDisk
-}

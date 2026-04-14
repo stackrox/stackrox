@@ -26,6 +26,3 @@ func createEBS(i interface{}) VolumeSource {
 	}
 }
 
-func init() {
-	VolumeRegistry[ebsType] = createEBS
-}

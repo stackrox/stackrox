@@ -33,10 +33,10 @@ var (
 // ImageDefaultsFlagName is a shared constant for --image-defaults command line flag.
 const ImageDefaultsFlagName = "image-defaults"
 
-func init() {
-	if !buildinfo.ReleaseBuild {
-		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
-	}
+// SetImageFlavorDefault sets the default image flavor.
+// This is called during initialization based on the build type.
+func SetImageFlavorDefault(flavor string) {
+	imageFlavorDefault = flavor
 }
 
 // AddImageDefaults adds the image-defaults flag to the command.

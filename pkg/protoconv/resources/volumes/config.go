@@ -28,6 +28,3 @@ func createConfigMap(i interface{}) VolumeSource {
 	}
 }
 
-func init() {
-	VolumeRegistry[configMapType] = createConfigMap
-}

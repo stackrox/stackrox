@@ -125,6 +125,8 @@ type parsedReference struct {
 }
 
 func main() {
+	RegisterTypeRegistry()
+
 	c := &cobra.Command{
 		Use: "generate store implementations",
 	}
