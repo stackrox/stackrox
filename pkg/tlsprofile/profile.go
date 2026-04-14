@@ -98,7 +98,9 @@ var supportedVersionNames string
 // Only cipher suites that Go considers secure are accepted.
 var supportedCipherSuites map[string]uint16
 
-func init() {
+// Init builds the supported TLS version names and cipher suite maps.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	names := make([]string, 0, len(supportedVersions))
 	for name := range supportedVersions {
 		names = append(names, name)

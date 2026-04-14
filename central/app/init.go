@@ -9,8 +9,15 @@ import (
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats/postgresv1"
 	scannerhandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/central/search/options"
+	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgsearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/signatures"
+	"github.com/stackrox/rox/pkg/tlsprofile"
 )
 
 var log = logging.LoggerForModule()
@@ -20,10 +27,13 @@ var log = logging.LoggerForModule()
 func initComponentLogic() {
 	// Initialize metrics
 	service.RegisterMetrics()
+	stream.Init()
 
 	// Initialize search and alert options
 	options.InitCategoryToOptionsSet()
 	mappings.InitOptionsMap()
+	enumregistry.Init()
+	pkgsearch.Init()
 
 	// Initialize CSV handlers
 	csvhandler.InitOptionsMap()
@@ -32,6 +42,18 @@ func initComponentLogic() {
 	debugservice.InitMainClusterConfig()
 	detectionservice.InitWorkloadScheme()
 	scannerhandler.InitScannerConfig()
+
+	// Initialize policy violation printers
+	printer.Init()
+
+	// Initialize GJSON custom modifiers
+	gjson.Init()
+
+	// Initialize signature fetcher
+	signatures.Init()
+
+	// Initialize TLS profile
+	tlsprofile.Init()
 
 	// Register backup formats
 	postgresv1.RegisterFormat()

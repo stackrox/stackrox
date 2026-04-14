@@ -30,29 +30,51 @@ All Kubernetes volume type converters were consolidated into one registration fu
 
 These files retain their `init()` functions - they are truly global or dev-only:
 
-### Critical Global Setup (6 files)
+### Critical Global Setup (7 files)
 1. `pkg/logging/logging.go` - Logger initialization (must run first)
 2. `pkg/grpc/codec.go` - gRPC codec registration (must run before any gRPC use)
 3. `pkg/grpc/server.go` - Enables gRPC handling time histogram
 4. `pkg/clientconn/useragent.go` - Sets default user agent
 5. `pkg/httputil/proxy/proxy.go` - Initializes proxy transport
 6. `pkg/cloudproviders/aws/certs.go` - Parses embedded AWS certificates
+7. `pkg/mtls/crypto.go` - Sets cfssl log level (global side effect)
 
 ### Dev-Only (Build Tag Gated) (3 files)
-7. `pkg/sync/deadlock_detect_dev.go` - Deadlock detection (only in dev builds)
-8. `pkg/sync/mutex_dev.go` - Dev mutex instrumentation (only in dev builds)
-9. `pkg/devbuild/init.go` - Dev build flag (only in dev builds)
+8. `pkg/sync/deadlock_detect_dev.go` - Deadlock detection (only in dev builds)
+9. `pkg/sync/mutex_dev.go` - Dev mutex instrumentation (only in dev builds)
+10. `pkg/devbuild/init.go` - Dev build flag (only in dev builds)
 
 These are safe to keep as `init()` since they either:
 - Are fundamental (like logging) and needed by everything
 - Register global settings that must happen before use (like gRPC codec)
+- Set global library defaults that must apply everywhere (like cfssl log level)
 - Are build-tag gated and only run in dev builds
+
+## What Else Was Migrated (Additional 9 files)
+
+### Static Data/Registry Initialization → Individual Init() functions
+
+All static data initialization and registry setup were converted from `init()` to `Init()`:
+- `pkg/administration/events/stream/stream.go` → `stream.Init()`
+- `pkg/booleanpolicy/violationmessages/printer/gen-registrations.go` → `printer.Init()` (45 printer registrations)
+- `pkg/gjson/modifiers.go` → `gjson.Init()` (GJSON custom modifiers)
+- `pkg/net/internal/ipcheck/ipcheck.go` → `pkgnet.Init()` (via public wrapper in pkg/net/init.go)
+- `pkg/search/enumregistry/enum_registry.go` → `enumregistry.Init()`
+- `pkg/search/options.go` → `pkgsearch.Init()` (derived field maps)
+- `pkg/renderer/kubernetes.go` → `renderer.Init()`
+- `pkg/signatures/cosign_sig_fetcher.go` → `signatures.Init()`
+- `pkg/tlsprofile/profile.go` → `tlsprofile.Init()`
+
+**How to use:** Call each package's `Init()` function early in your component's `main()` function:
+- **Central**: Calls all of the above from `central/app/init.go:initComponentLogic()`
+- **Roxctl**: Calls `renderer.Init()` from `roxctl/app/init.go:initComponentLogic()`
+- **Sensor**: Calls `pkgnet.Init()` from `sensor/kubernetes/app/app.go:Run()`
 
 ## Migration Status
 
-- **Migrated:** 20 init() functions (5 metrics + 15 volume converters)
-- **Kept:** 9 init() functions (justified above)
-- **Remaining:** ~12 init() functions (lower priority, case-by-case evaluation needed)
+- **Migrated:** 29 init() functions (5 metrics + 15 volume converters + 9 static data/registry)
+- **Kept:** 10 init() functions (justified below)
+- **Remaining:** 0 non-justified init() functions ✅
 
 ## Example Usage
 

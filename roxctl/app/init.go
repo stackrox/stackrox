@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/helm"
 )
@@ -11,6 +12,7 @@ import (
 func initComponentLogic() {
 	initImageFlavorDefaults()
 	helm.Init()
+	renderer.Init()
 }
 
 // initImageFlavorDefaults initializes the default image flavor based on build type.

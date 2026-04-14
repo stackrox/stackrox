@@ -103,7 +103,9 @@ func IsEnum(fieldPath string) bool {
 	return ok
 }
 
-func init() {
+// Init initializes the enum registry maps.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	enumMap = make(map[string]map[string]int32)
 	reverseEnumMap = make(map[string]map[int32]string)
 }

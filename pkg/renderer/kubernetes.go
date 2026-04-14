@@ -19,7 +19,9 @@ var (
 	assetFileNameMap = FileNameMap{}
 )
 
-func init() {
+// Init registers asset files for the renderer.
+// Called explicitly from roxctl/app/init.go instead of package init().
+func Init() {
 	assetFileNameMap.AddWithName("assets/docker-auth.sh", "docker-auth.sh")
 }
 

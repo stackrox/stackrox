@@ -568,7 +568,9 @@ var (
 	TestInvalidEnumCustom       = newDerivedFieldLabelWithType("Invalid Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
 )
 
-func init() {
+// Init builds the derived field maps from field label metadata.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	derivedFields = set.NewStringSet()
 	derivationsByField = make(map[string]map[string]DerivedTypeData)
 	for k, metadata := range allFieldLabels {

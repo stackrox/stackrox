@@ -48,7 +48,9 @@ const (
 	VolumeKey                       = "volume"
 )
 
-func init() {
+// Init registers all violation message printers.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	registerFunc(AddCapabilityKey, addCapabilityPrinter)
 	registerFunc(AllowPrivilegeEscalationKey, allowPrivilegeEscalationPrinter)
 	registerFunc(AppArmorProfileKey, appArmorProfilePrinter)

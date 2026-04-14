@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
+	pkgnet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -45,6 +46,7 @@ func Run() {
 	sensormetrics.Init()
 	centralproxy.Init()
 	complianceoperator.InitMetrics()
+	pkgnet.Init()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
