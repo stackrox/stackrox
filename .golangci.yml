@@ -193,8 +193,7 @@ linters:
         # Allow init() only in:
         # - scanner/ (separate binary, not affected by busybox consolidation)
         # - generated/ (auto-generated code)
-        # - migrator/migrations/ (intentional auto-registration pattern for migration discovery)
-        path: ^(scanner/|generated/|migrator/migrations/)
+        path: ^(scanner/|generated/)
       - linters:
           - gochecknoinits
         # Specific pkg/ files that legitimately need init() for global setup
