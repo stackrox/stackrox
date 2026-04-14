@@ -5,10 +5,8 @@ import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather
 import type { SearchFilter } from 'types/search';
 
 import type { CompoundSearchFilterAttribute, CompoundSearchFilterConfig } from '../types';
-import { getCompoundSearchFilterLabelDescriptionOrNull, updateSearchFilter } from '../utils/utils';
-import type { CompoundSearchFilterLabelDescription, IsGlobalPredicate } from '../utils/utils';
-
-const isGlobalPredicateFalse: IsGlobalPredicate = () => false;
+import { getCompoundSearchFilterLabelDescriptions, updateSearchFilter } from '../utils/utils';
+import type { IsGlobalPredicate } from '../utils/utils';
 
 const iconGlobe = <Globe height="15px" />;
 
@@ -23,7 +21,7 @@ export type CompoundSearchFilterLabelsProps = {
 function CompoundSearchFilterLabels({
     attributesSeparateFromConfig,
     config,
-    isGlobalPredicate = isGlobalPredicateFalse,
+    isGlobalPredicate,
     onFilterChange,
     searchFilter,
 }: CompoundSearchFilterLabelsProps): ReactElement {
@@ -31,18 +29,11 @@ function CompoundSearchFilterLabels({
     const attributesFromConfig = config.flatMap(({ attributes }) => attributes);
     const attributes = [...attributesSeparateFromConfig, ...attributesFromConfig];
 
-    const labelGroupDescriptions: CompoundSearchFilterLabelDescription[] = [];
-    attributes.forEach((attribute) => {
-        const labelDescriptionOrNull = getCompoundSearchFilterLabelDescriptionOrNull(
-            attribute,
-            searchFilter,
-            isGlobalPredicate
-        );
-        if (labelDescriptionOrNull !== null) {
-            // Attribute has one or more values in the search filter.
-            labelGroupDescriptions.push(labelDescriptionOrNull);
-        }
-    });
+    const labelGroupDescriptions = getCompoundSearchFilterLabelDescriptions(
+        attributes,
+        searchFilter,
+        isGlobalPredicate
+    );
 
     return (
         <Flex className="search-filter-labels" spaceItems={{ default: 'spaceItemsXs' }}>
