@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerPlatformCVECountByTypeSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PlatformCVECountByType", []string{

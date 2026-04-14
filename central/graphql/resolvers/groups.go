@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerGroupsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("groups: [Group!]!"),

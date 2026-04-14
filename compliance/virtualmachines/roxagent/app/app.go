@@ -8,14 +8,12 @@ import (
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/cmd"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/profiling"
 )
 
 var log = logging.LoggerForModule()
 
 // Run is the main entry point for the roxagent application.
 func Run() {
-	profiling.SetComponentLabel()
 	// Create a context that is cancellable on the usual command line signals. Double
 	// signal forcefully exits.
 	ctx, cancel := context.WithCancel(context.Background())

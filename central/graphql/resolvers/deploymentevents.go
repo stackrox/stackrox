@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerDeploymentEventsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddInterfaceType("DeploymentEvent", []string{

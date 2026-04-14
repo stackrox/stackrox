@@ -1,4 +1,4 @@
-package generic
+package sumologic
 
 import (
 	"context"

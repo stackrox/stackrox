@@ -22,6 +22,7 @@ func UpdateNumberPodsInStored(ns string, num int) {
 	podsStored.With(prometheus.Labels{"k8sNamespace": ns}).Set(float64(num))
 }
 
-func init() {
+// Init registers listener resource metrics.
+func Init() {
 	prometheus.MustRegister(podsStored)
 }

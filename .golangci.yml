@@ -23,6 +23,7 @@ linters:
     - copyloopvar
     - errcheck
     - forbidigo
+    - gochecknoinits
     - gocritic
     - exptostd
     - gosec
@@ -187,6 +188,10 @@ linters:
   exclusions:
     generated: lax
     rules:
+      - linters:
+          - gochecknoinits
+        # Allow init() only in scanner (separate binary) and generated code
+        path: ^(scanner/|generated/)
       - linters:
           - wrapcheck
         # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines

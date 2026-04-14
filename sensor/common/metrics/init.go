@@ -2,6 +2,15 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	clusterentitiesmetrics "github.com/stackrox/rox/sensor/common/clusterentities/metrics"
+	detectormetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
+	networkflowmetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
+	updatecomputermetrics "github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
+	pubsubmetrics "github.com/stackrox/rox/sensor/common/pubsub/metrics"
+	registrymetrics "github.com/stackrox/rox/sensor/common/registry/metrics"
+	virtualmachinemetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+	complianceoperator "github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
+	listenerresourcesmetrics "github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 )
 
 // Init registers all Sensor prometheus metrics.
@@ -50,4 +59,15 @@ func Init() {
 		informerSyncDurationMs,
 		informerInitialObjectPopulationDurationSeconds,
 	)
+
+	// component-specific metrics
+	clusterentitiesmetrics.Init()
+	detectormetrics.Init()
+	networkflowmetrics.Init()
+	updatecomputermetrics.Init()
+	pubsubmetrics.Init()
+	registrymetrics.Init()
+	virtualmachinemetrics.Init()
+	complianceoperator.InitMetrics()
+	listenerresourcesmetrics.Init()
 }

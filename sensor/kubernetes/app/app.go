@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
-	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -37,7 +36,6 @@ var log = logging.LoggerForModule()
 
 // Run is the main entry point for the kubernetes-sensor application.
 func Run() {
-	profiling.SetComponentLabel()
 	memlimit.SetMemoryLimit()
 
 	premain.StartMain()

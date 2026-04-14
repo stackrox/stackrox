@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerRolesSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("roles: [Role!]!"),

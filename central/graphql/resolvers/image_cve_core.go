@@ -26,7 +26,7 @@ const (
 	maxImages      = 1000
 )
 
-func init() {
+func registerImageCVECoreSchema() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered

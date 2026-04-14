@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/tlsprofile"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -63,7 +62,6 @@ func init() {
 
 // Run is the main entry point for the config-controller application.
 func Run() {
-	profiling.SetComponentLabel()
 	var metricsAddr string
 	var probeAddr string
 	var secureMetrics bool

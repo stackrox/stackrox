@@ -15,14 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
-	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 // Run is the main entry point for the migrator application.
 func Run() {
-	profiling.SetComponentLabel()
 	startProfilingServer()
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %+v", err)

@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerImageComponentsSchema() {
 	schema := getBuilder()
 	utils.Must(schema.AddType("ImageComponentV2", []string{
 		"architecture: String!",

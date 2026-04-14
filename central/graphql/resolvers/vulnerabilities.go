@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerVulnerabilitiesSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("EmbeddedVulnerability", []string{

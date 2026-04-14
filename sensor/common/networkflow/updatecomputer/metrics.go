@@ -5,7 +5,8 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-func init() {
+// Init registers update computer metrics.
+func Init() {
 	prometheus.MustRegister(
 		UpdateEvents,
 		periodicCleanupDurationSeconds,

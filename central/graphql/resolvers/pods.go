@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerPodsSchema() {
 	const resolverName = "Pod"
 	schema := getBuilder()
 	utils.Must(

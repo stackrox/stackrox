@@ -225,6 +225,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
+	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -1086,6 +1087,9 @@ func waitForTerminationSignal() {
 func main() {
 	// BusyBox-style dispatcher: check how we were called
 	binaryName := filepath.Base(os.Args[0])
+
+	// Set component label for profiling
+	profiling.SetComponentLabel(binaryName)
 
 	switch binaryName {
 	case "central":

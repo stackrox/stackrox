@@ -73,7 +73,8 @@ func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
 	consumersCurrent.WithLabelValues(laneID.String(), topic.String()).Set(float64(count))
 }
 
-func init() {
+// Init registers pubsub metrics.
+func Init() {
 	prometheus.MustRegister(
 		lanePublishOperations,
 		LaneConsumerOperations,

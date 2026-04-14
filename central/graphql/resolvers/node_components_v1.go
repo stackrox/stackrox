@@ -17,7 +17,7 @@ import (
 // Resolvers on Embedded Scan Object.
 /////////////////////////////////////
 
-func init() {
+func registerNodeComponentsV1Schema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("EmbeddedNodeScanComponent", []string{

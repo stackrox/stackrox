@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerSearchSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!"),

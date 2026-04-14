@@ -5,7 +5,8 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-func init() {
+// Init registers metrics for this package.
+func Init() {
 	prometheus.MustRegister(
 		scansRunningInParallel,
 		scanWatcherActiveTimeMinutes,

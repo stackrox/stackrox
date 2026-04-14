@@ -26,6 +26,8 @@ var (
 // Singleton returns the global base image watcher instance.
 func Singleton() Watcher {
 	once.Do(func() {
+		Init()
+
 		scanDelegator := delegator.New(
 			delegatedRegistryConfigDS.Singleton(),
 			connection.ManagerSingleton(),

@@ -16,6 +16,7 @@ var (
 // Singleton returns the hash flush manager
 func Singleton() Manager {
 	once.Do(func() {
+		Init()
 		manager = NewManager(datastore.Singleton())
 
 		go manager.Start(sac.WithAllAccess(context.Background()))

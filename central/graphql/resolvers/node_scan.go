@@ -20,7 +20,7 @@ var (
 	nodeComponentPredicateFactory = predicate.NewFactory("component", &storage.EmbeddedNodeScanComponent{})
 )
 
-func init() {
+func registerNodeScanSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolvers("NodeScan", []string{

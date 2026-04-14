@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerPlatformCVECountByFixabilitySchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PlatformCVECountByFixability", []string{

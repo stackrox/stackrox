@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/upgrader/config"
@@ -26,7 +25,6 @@ var (
 
 // Run is the main entry point for the sensor-upgrader application.
 func Run() {
-	profiling.SetComponentLabel()
 	log.Infof("StackRox Sensor Upgrader, version %s", version.GetMainVersion())
 	features.LogFeatureFlags()
 

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/pods"
-	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -42,7 +41,6 @@ var (
 
 // Run is the main entry point for the admission-control application.
 func Run() {
-	profiling.SetComponentLabel()
 	memlimit.SetMemoryLimit()
 	manager.Init()
 
