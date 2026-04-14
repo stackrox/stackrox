@@ -10,7 +10,6 @@ import services.ImageService
 import services.PolicyService
 import util.Timer
 
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -234,7 +233,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Ignore("Temporarily skipped while investigating ROX-34110, ROX-34111, ROX-34112")
     def "Verify AC enforcement with label scoping: #desc"() {
         given:
         "Set up namespace with labels"
@@ -294,7 +292,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Ignore("Temporarily skipped while investigating ROX-34110, ROX-34111, ROX-34112")
     def "Verify AC respects label hot-reload: #desc"() {
         given:
         "Set up namespace with initial label"
