@@ -137,7 +137,9 @@ spec:
             echo "target_branch is {{ target_branch }}"
             echo "CEL target_branch is {{ cel: target_branch }}"
             echo "CEL pac.target_branch is {{ cel: pac.target_branch }}"
-            echo '{{ cel: (event == "push") || (event == "pull_request") }}' | tee "$(results.SHOULD_PROCEED.path)"
+            echo "event_type is {{ event_type }}"
+            echo "CEL event_type is {{ event_type }}"
+            echo '{{ cel: (event_type == "push") || (event_type == "pull_request") }}' | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
       params:
