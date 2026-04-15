@@ -124,6 +124,7 @@ spec:
     #                  source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
     #                  (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
     #                ))
+    # TODO: event_type=on-comment and the rest
     - name: should-do-the-rest
       taskSpec:
         results:
@@ -134,7 +135,8 @@ spec:
           script: |
             echo "event_type: {{ event_type }}"
             echo "target_branch: {{ target_branch }}"
-            echo '{{ cel: (event_type == "push") || (event_type == "pull_request" && target_branch.startsWith("release-")) }}' | tee "$(results.SHOULD_PROCEED.path)"
+            echo "source_branch: {{ source_branch }}"
+            echo '{{ cel: (event_type == "push") || (event_type == "pull_request" && (target_branch.startsWith("release-")) || source_branch.matches("(konflux|renovate|appstudio|rhtap)")) }}' | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
       params:
