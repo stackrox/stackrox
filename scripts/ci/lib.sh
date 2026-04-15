@@ -333,7 +333,7 @@ push_operator_multiarch_image() {
     registry_rw_login "$registry"
 
     local platforms="linux/amd64,linux/arm64"
-    local build_args="--platform ${platforms} --build-arg ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR:-development}"
+    local build_args="--platform ${platforms} --build-arg ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR:-development_build}"
 
     info "Building and pushing ${registry}/stackrox-operator:${tag}"
     retry 5 true docker buildx build \
