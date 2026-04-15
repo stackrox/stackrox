@@ -132,8 +132,11 @@ spec:
         - name: blah
           image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
           script: |
-            echo "Event is {{ event }}"
             echo "CEL event is {{ cel: event }}"
+            echo "CEL pac.event is {{ cel: pac.event }}"
+            echo "target_branch is {{ target_branch }}"
+            echo "CEL target_branch is {{ cel: target_branch }}"
+            echo "CEL pac.target_branch is {{ cel: pac.target_branch }}"
             echo '{{ cel: (event == "push") || (event == "pull_request") }}' | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
