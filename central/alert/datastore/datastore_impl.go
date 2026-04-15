@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -41,6 +41,41 @@ var (
 	log = logging.LoggerForModule()
 
 	alertSAC = sac.ForResource(resources.Alert)
+
+	// listAlertSelectProtos defines the 22 column projections for SearchListAlerts.
+	// Order must match the scan destinations in scanListAlertRow.
+	listAlertSelectProtos = []*v1.QuerySelect{
+		search.NewQuerySelect(search.AlertID).Proto(),
+		search.NewQuerySelect(search.LifecycleStage).Proto(),
+		search.NewQuerySelect(search.ViolationTime).Proto(),
+		search.NewQuerySelect(search.ViolationState).Proto(),
+		search.NewQuerySelect(search.PolicyID).Proto(),
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+		search.NewQuerySelect(search.Description).Proto(),
+		search.NewQuerySelect(search.Category).Proto(),
+		search.NewQuerySelect(search.EnforcementAction).Proto(),
+		search.NewQuerySelect(search.EnforcementCount).Proto(),
+		search.NewQuerySelect(search.EntityType).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.NamespaceID).Proto(),
+		search.NewQuerySelect(search.DeploymentID).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.DeploymentType).Proto(),
+		search.NewQuerySelect(search.Inactive).Proto(),
+		search.NewQuerySelect(search.NodeID).Proto(),
+		search.NewQuerySelect(search.Node).Proto(),
+		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ResourceType).Proto(),
+	}
+
+	// listAlertArrayFields tells the query builder that "category" is a
+	// parent-table array column, not a child table requiring a JOIN.
+	listAlertArrayFields = map[string]bool{
+		"category": true,
+	}
 )
 
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
@@ -80,11 +115,122 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 	if excludeResolved {
 		q = applyDefaultState(q)
 	}
-	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
-	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-		return nil
-	})
+
+	cloned := q.CloneVT()
+	cloned.Selects = listAlertSelectProtos
+
+	// Scan destinations — pgtype value types avoid per-field heap allocations.
+	var (
+		id                 pgtype.Text
+		lifecycleStage     pgtype.Int4
+		violationTime      pgtype.Timestamp
+		state              pgtype.Int4
+		policyID           pgtype.Text
+		policyName         pgtype.Text
+		severity           pgtype.Int4
+		description        pgtype.Text
+		categories         pgtype.FlatArray[string]
+		enforcementAction  pgtype.Int4
+		enforcementCount   pgtype.Int4
+		entityType         pgtype.Int4
+		clusterID          pgtype.Text
+		clusterName        pgtype.Text
+		namespace          pgtype.Text
+		namespaceID        pgtype.Text
+		deploymentID       pgtype.Text
+		deploymentName     pgtype.Text
+		deploymentType     pgtype.Text
+		deploymentInactive pgtype.Bool
+		nodeID             pgtype.Text
+		nodeName           pgtype.Text
+		resourceName       pgtype.Text
+		resourceType       pgtype.Int4
+	)
+
+	dests := []any{
+		&id, &lifecycleStage, &violationTime, &state,
+		&policyID, &policyName, &severity, &description, &categories,
+		&enforcementAction, &enforcementCount, &entityType,
+		&clusterID, &clusterName, &namespace, &namespaceID,
+		&deploymentID, &deploymentName, &deploymentType, &deploymentInactive,
+		&nodeID, &nodeName, &resourceName, &resourceType,
+	}
+
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(cloned.GetPagination().GetLimit(), whenUnlimited))
+	err := pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema, cloned, listAlertArrayFields,
+		&pgSearch.DirectScanConfig{
+			ScanDests: func() []any { return dests },
+			OnRow: func() error {
+				la := &storage.ListAlert{
+					Id:             id.String,
+					LifecycleStage: storage.LifecycleStage(lifecycleStage.Int32),
+					State:          storage.ViolationState(state.Int32),
+					Policy: &storage.ListAlertPolicy{
+						Id:          policyID.String,
+						Name:        policyName.String,
+						Severity:    storage.Severity(severity.Int32),
+						Description: description.String,
+						Categories:  []string(categories),
+					},
+					EnforcementAction: storage.EnforcementAction(enforcementAction.Int32),
+					EnforcementCount:  enforcementCount.Int32,
+				}
+
+				if violationTime.Valid {
+					la.Time = protocompat.ConvertTimeToTimestampOrNil(&violationTime.Time)
+				}
+
+				et := storage.Alert_EntityType(entityType.Int32)
+				switch et {
+				case storage.Alert_DEPLOYMENT:
+					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+						ClusterName:  clusterName.String,
+						ClusterId:    clusterID.String,
+						Namespace:    namespace.String,
+						NamespaceId:  namespaceID.String,
+						ResourceType: storage.ListAlert_DEPLOYMENT,
+					}
+					la.Entity = &storage.ListAlert_Deployment{
+						Deployment: &storage.ListAlertDeployment{
+							Id:             deploymentID.String,
+							Name:           deploymentName.String,
+							ClusterName:    clusterName.String,
+							ClusterId:      clusterID.String,
+							Namespace:      namespace.String,
+							NamespaceId:    namespaceID.String,
+							DeploymentType: deploymentType.String,
+							Inactive:       deploymentInactive.Bool,
+						},
+					}
+				case storage.Alert_RESOURCE:
+					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+						ClusterName:  clusterName.String,
+						ClusterId:    clusterID.String,
+						Namespace:    namespace.String,
+						NamespaceId:  namespaceID.String,
+						ResourceType: storage.ListAlert_ResourceType(resourceType.Int32),
+					}
+					la.Entity = &storage.ListAlert_Resource{
+						Resource: &storage.ListAlert_ResourceEntity{
+							Name: resourceName.String,
+						},
+					}
+				case storage.Alert_NODE:
+					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+						ClusterName: clusterName.String,
+						ClusterId:   clusterID.String,
+					}
+					la.Entity = &storage.ListAlert_Node{
+						Node: &storage.ListAlert_NodeEntity{
+							Name: nodeName.String,
+						},
+					}
+				}
+
+				listAlerts = append(listAlerts, la)
+				return nil
+			},
+		})
 	if err != nil {
 		return nil, err
 	}
@@ -506,13 +652,118 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	walkFn := func() error {
-		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
-			listAlert := convert.AlertToListAlert(alert)
-			return fn(listAlert)
-		})
+	q := searchCommon.EmptyQuery()
+	q.Selects = listAlertSelectProtos
+
+	var (
+		id                 pgtype.Text
+		lifecycleStage     pgtype.Int4
+		violationTime      pgtype.Timestamp
+		state              pgtype.Int4
+		policyID           pgtype.Text
+		policyName         pgtype.Text
+		severity           pgtype.Int4
+		description        pgtype.Text
+		categories         pgtype.FlatArray[string]
+		enforcementAction  pgtype.Int4
+		enforcementCount   pgtype.Int4
+		entityType         pgtype.Int4
+		clusterID          pgtype.Text
+		clusterName        pgtype.Text
+		namespace          pgtype.Text
+		namespaceID        pgtype.Text
+		deploymentID       pgtype.Text
+		deploymentName     pgtype.Text
+		deploymentType     pgtype.Text
+		deploymentInactive pgtype.Bool
+		nodeID             pgtype.Text
+		nodeName           pgtype.Text
+		resourceName       pgtype.Text
+		resourceType       pgtype.Int4
+	)
+
+	dests := []any{
+		&id, &lifecycleStage, &violationTime, &state,
+		&policyID, &policyName, &severity, &description, &categories,
+		&enforcementAction, &enforcementCount, &entityType,
+		&clusterID, &clusterName, &namespace, &namespaceID,
+		&deploymentID, &deploymentName, &deploymentType, &deploymentInactive,
+		&nodeID, &nodeName, &resourceName, &resourceType,
 	}
-	return pgutils.RetryIfPostgres(ctx, walkFn)
+
+	return pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema, q, listAlertArrayFields,
+		&pgSearch.DirectScanConfig{
+			ScanDests: func() []any { return dests },
+			OnRow: func() error {
+				la := &storage.ListAlert{
+					Id:             id.String,
+					LifecycleStage: storage.LifecycleStage(lifecycleStage.Int32),
+					State:          storage.ViolationState(state.Int32),
+					Policy: &storage.ListAlertPolicy{
+						Id:          policyID.String,
+						Name:        policyName.String,
+						Severity:    storage.Severity(severity.Int32),
+						Description: description.String,
+						Categories:  []string(categories),
+					},
+					EnforcementAction: storage.EnforcementAction(enforcementAction.Int32),
+					EnforcementCount:  enforcementCount.Int32,
+				}
+
+				if violationTime.Valid {
+					la.Time = protocompat.ConvertTimeToTimestampOrNil(&violationTime.Time)
+				}
+
+				et := storage.Alert_EntityType(entityType.Int32)
+				switch et {
+				case storage.Alert_DEPLOYMENT:
+					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+						ClusterName:  clusterName.String,
+						ClusterId:    clusterID.String,
+						Namespace:    namespace.String,
+						NamespaceId:  namespaceID.String,
+						ResourceType: storage.ListAlert_DEPLOYMENT,
+					}
+					la.Entity = &storage.ListAlert_Deployment{
+						Deployment: &storage.ListAlertDeployment{
+							Id:             deploymentID.String,
+							Name:           deploymentName.String,
+							ClusterName:    clusterName.String,
+							ClusterId:      clusterID.String,
+							Namespace:      namespace.String,
+							NamespaceId:    namespaceID.String,
+							DeploymentType: deploymentType.String,
+							Inactive:       deploymentInactive.Bool,
+						},
+					}
+				case storage.Alert_RESOURCE:
+					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+						ClusterName:  clusterName.String,
+						ClusterId:    clusterID.String,
+						Namespace:    namespace.String,
+						NamespaceId:  namespaceID.String,
+						ResourceType: storage.ListAlert_ResourceType(resourceType.Int32),
+					}
+					la.Entity = &storage.ListAlert_Resource{
+						Resource: &storage.ListAlert_ResourceEntity{
+							Name: resourceName.String,
+						},
+					}
+				case storage.Alert_NODE:
+					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+						ClusterName: clusterName.String,
+						ClusterId:   clusterID.String,
+					}
+					la.Entity = &storage.ListAlert_Node{
+						Node: &storage.ListAlert_NodeEntity{
+							Name: nodeName.String,
+						},
+					}
+				}
+
+				return fn(la)
+			},
+		})
 }
 
 // DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
