@@ -489,6 +489,7 @@ main-build-dockerized: build-volumes
 .PHONY: main-build-nodeps
 main-build-nodeps:
 	$(GOBUILD) \
+<<<<<<< Updated upstream
 		central \
 		compliance/cmd/compliance \
 		config-controller \
@@ -499,6 +500,10 @@ main-build-nodeps:
 		sensor/upgrader \
 		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
+=======
+		compliance/virtualmachines/roxagent \
+		-o stackrox-operator operator/cmd
+>>>>>>> Stashed changes
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
