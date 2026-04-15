@@ -25,7 +25,15 @@ test_vm_scanning_e2e() {
     ensure_vm_scanning_cluster_prereqs
     remove_existing_stackrox_resources
     setup_default_TLS_certs
+
+    deploy_optional_e2e_components
+
+    verify_kvm_available
+    ensure_virtctl
+
     deploy_stackrox
+
+    ensure_roxagent
 
     cd "$ROOT"
     rm -f FAIL

@@ -347,6 +347,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_TAILORED_PROFILES'
     customize_envVars+=$'\n        value: "true"'
+    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
+        customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
+        customize_envVars+=$'\n        value: "true"'
+    fi
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in

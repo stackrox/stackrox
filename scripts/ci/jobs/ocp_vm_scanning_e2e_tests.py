@@ -21,8 +21,11 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
-os.environ["VM_SCAN_REQUIRE_ACTIVATION"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
+os.environ["ROX_VIRTUAL_MACHINES"] = "true"
+os.environ["VM_SCAN_REQUIRE_ACTIVATION"] = "false"
+os.environ["VM_IMAGE_RHEL9"] = "quay.io/rhacs-eng/vm-rhel9-dnf-primed:latest"
+os.environ["VM_IMAGE_RHEL10"] = "quay.io/rhacs-eng/vm-rhel10-dnf-primed:latest"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
