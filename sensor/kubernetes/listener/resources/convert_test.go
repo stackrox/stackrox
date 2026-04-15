@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -390,23 +391,27 @@ func TestPopulateImageMetadata(t *testing.T) {
 			wrap := deploymentWrap{
 				Deployment: &storage.Deployment{},
 			}
-			for _, container := range c.wrap {
+			for i, container := range c.wrap {
+				name := fmt.Sprintf("container-%d", i)
 				img, err := imageUtils.GenerateImageFromString(container.image)
 				require.NoError(t, err)
 				wrap.Containers = append(wrap.Containers, &storage.Container{
+					Name:  name,
 					Image: img,
 				})
-
 			}
 
 			pods := make([]*v1.Pod, 0, len(c.pods))
 			for _, pod := range c.pods {
 				k8sPod := &v1.Pod{}
-				for _, img := range pod.images {
-					k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Image: img})
+				for i, img := range pod.images {
+					name := fmt.Sprintf("container-%d", i)
+					k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Name: name, Image: img})
 				}
-				for _, imageID := range pod.imageIDsInStatus {
+				for i, imageID := range pod.imageIDsInStatus {
+					name := fmt.Sprintf("container-%d", i)
 					k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
+						Name:    name,
 						ImageID: imageID,
 					})
 				}
@@ -545,23 +550,27 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			wrap := deploymentWrap{
 				Deployment: &storage.Deployment{},
 			}
-			for _, container := range c.wrap {
+			for i, container := range c.wrap {
+				name := fmt.Sprintf("container-%d", i)
 				img, err := imageUtils.GenerateImageFromString(container.image)
 				require.NoError(t, err)
 				wrap.Containers = append(wrap.Containers, &storage.Container{
+					Name:  name,
 					Image: img,
 				})
-
 			}
 
 			pods := make([]*v1.Pod, 0, len(c.pods))
 			for _, pod := range c.pods {
 				k8sPod := &v1.Pod{}
-				for _, img := range pod.images {
-					k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Image: img})
+				for i, img := range pod.images {
+					name := fmt.Sprintf("container-%d", i)
+					k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Name: name, Image: img})
 				}
-				for _, imageID := range pod.imageIDsInStatus {
+				for i, imageID := range pod.imageIDsInStatus {
+					name := fmt.Sprintf("container-%d", i)
 					k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
+						Name:    name,
 						ImageID: imageID,
 					})
 				}
