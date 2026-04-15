@@ -46,20 +46,20 @@ arches:
     name: postgresql-private-libs
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
     sourcerpm: postgresql-15.17-1.module+el9.7.0+24029+ef6a2953.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.1.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.2.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 32556
-    checksum: sha256:0d360b72d46221e6c67bf4911523c7f63ce394e1d10d33d0ed1fe1f584989781
+    size: 32669
+    checksum: sha256:e4b898a306c9199feb6d72ec8f3c6fb6736e339a9a9e787a19732decb9c2c4c6
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.1.aarch64.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.2.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 10139241
-    checksum: sha256:79f41e3b0dc48884c4d7de8339ba9462862e645d5a53a2f61f970469c1a70395
+    size: 10140707
+    checksum: sha256:6cc853fb09b9b81fe4da67619cd8b879e2ccfd9d16f617e597cb0759e62fbb0c
     name: python3.12-libs
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-5.el9.noarch.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 1527128
@@ -561,12 +561,12 @@ arches:
     checksum: sha256:b89dc91bc68b60b6d439aec4846b36a129ab806506272724a6d1022bd0f14263
     name: postgresql
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.2.src.rpm
     repoid: rhel-9-for-aarch64-appstream-source-rpms
-    size: 20878981
-    checksum: sha256:5fa971ae08c44c59bee11855de099a683c81b02bc3c6f94be7b7efae0508a83f
+    size: 20880557
+    checksum: sha256:0d4494e18c3a6b5c62c96ef5786561fc6fab96cd50f2380c1471d2eaeabd06fd
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
+    evr: 3.12.12-4.el9_7.2
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-5.el9.src.rpm
     repoid: rhel-9-for-aarch64-appstream-source-rpms
     size: 9384965
@@ -916,10 +916,10 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/b01fb0a5f6041de7fd2965f2830f9d97044a12df93f9c3c4c63d48451d65b0ad-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/24d935d25ab5a8da6b1b9e90b9909fc52a708592da5dc6e3a9c44b80f63e83b3-modules.yaml.gz
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 43533
-    checksum: sha256:b01fb0a5f6041de7fd2965f2830f9d97044a12df93f9c3c4c63d48451d65b0ad
+    size: 45439
+    checksum: sha256:24d935d25ab5a8da6b1b9e90b9909fc52a708592da5dc6e3a9c44b80f63e83b3
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9.ppc64le.rpm
@@ -964,20 +964,20 @@ arches:
     name: postgresql-private-libs
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
     sourcerpm: postgresql-15.17-1.module+el9.7.0+24029+ef6a2953.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.1.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.2.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 32611
-    checksum: sha256:bbdb5fd1db7376531291fccbdbc6054e215e7c27c7c1c7be4811a4890ff49b51
+    size: 32721
+    checksum: sha256:df48b88f619974806aa26e56218b32e86b1996718c9e1dfd9ca1d9a77d039ec3
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.1.ppc64le.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.2.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 10078807
-    checksum: sha256:818cae0b74e9d7c65f599e42d39241588d50332103be6a1995722b32ad3dce37
+    size: 10083489
+    checksum: sha256:b9b9d3119c30def6fb374bc43594af52bd0ab6cb54465d83f10b8f73fc9563d0
     name: python3.12-libs
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-5.el9.noarch.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 1527128
@@ -1479,12 +1479,12 @@ arches:
     checksum: sha256:b89dc91bc68b60b6d439aec4846b36a129ab806506272724a6d1022bd0f14263
     name: postgresql
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.2.src.rpm
     repoid: rhel-9-for-ppc64le-appstream-source-rpms
-    size: 20878981
-    checksum: sha256:5fa971ae08c44c59bee11855de099a683c81b02bc3c6f94be7b7efae0508a83f
+    size: 20880557
+    checksum: sha256:0d4494e18c3a6b5c62c96ef5786561fc6fab96cd50f2380c1471d2eaeabd06fd
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
+    evr: 3.12.12-4.el9_7.2
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-5.el9.src.rpm
     repoid: rhel-9-for-ppc64le-appstream-source-rpms
     size: 9384965
@@ -1834,10 +1834,10 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/04032c239e78ae852bb334abe7224258db37dadddbb137afdac682c1fb99d76e-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/dad6dd18b4429a5e37a9c26eaa6d9eed8cad1bbd387fdcbf4cc1e2d5ed2dd22e-modules.yaml.gz
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 40714
-    checksum: sha256:04032c239e78ae852bb334abe7224258db37dadddbb137afdac682c1fb99d76e
+    size: 42369
+    checksum: sha256:dad6dd18b4429a5e37a9c26eaa6d9eed8cad1bbd387fdcbf4cc1e2d5ed2dd22e
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9.s390x.rpm
@@ -1882,20 +1882,20 @@ arches:
     name: postgresql-private-libs
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
     sourcerpm: postgresql-15.17-1.module+el9.7.0+24029+ef6a2953.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.1.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.2.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 32416
-    checksum: sha256:0571271237e964c415a1e250b2231a661593ab624634df7bda88b437798015a0
+    size: 32522
+    checksum: sha256:119db15b5df8df92bed4dd15c26d5d04cdf8e1d36dfebf732165818c6742751b
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.1.s390x.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.2.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 9973559
-    checksum: sha256:9ff71df093ae61b010222e30821e0044c42e92c7e8f69c0d6574ac0e30ca21e1
+    size: 9960665
+    checksum: sha256:01d5e75e5d85f769c03d24e9a80456b0330f3f8c9353115cd8364a482043d041
     name: python3.12-libs
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-5.el9.noarch.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 1527128
@@ -2397,12 +2397,12 @@ arches:
     checksum: sha256:b89dc91bc68b60b6d439aec4846b36a129ab806506272724a6d1022bd0f14263
     name: postgresql
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.2.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
-    size: 20878981
-    checksum: sha256:5fa971ae08c44c59bee11855de099a683c81b02bc3c6f94be7b7efae0508a83f
+    size: 20880557
+    checksum: sha256:0d4494e18c3a6b5c62c96ef5786561fc6fab96cd50f2380c1471d2eaeabd06fd
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
+    evr: 3.12.12-4.el9_7.2
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-5.el9.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
     size: 9384965
@@ -2752,10 +2752,10 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/dc519ec2ac397f4549c8c225211e9b169393d18cb567bd4e84c365ceb380256f-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/50b1b97c5f8d16c558793726236a64a6fa1d415887587a865e4c26b913ae7ae0-modules.yaml.gz
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 42385
-    checksum: sha256:dc519ec2ac397f4549c8c225211e9b169393d18cb567bd4e84c365ceb380256f
+    size: 44076
+    checksum: sha256:50b1b97c5f8d16c558793726236a64a6fa1d415887587a865e4c26b913ae7ae0
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9.x86_64.rpm
@@ -2800,20 +2800,20 @@ arches:
     name: postgresql-private-libs
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
     sourcerpm: postgresql-15.17-1.module+el9.7.0+24029+ef6a2953.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.1.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python3.12-3.12.12-4.el9_7.2.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 32599
-    checksum: sha256:320e0811e1a64e9ac607c666b41d69fbd9917cf83befd52d88cf55396a2f0f6b
+    size: 32706
+    checksum: sha256:37b577f725f5ccc863f6d651585954153754e7e6bcbe9058d80f9d6e70f7c439
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.1.x86_64.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el9_7.2.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 10214024
-    checksum: sha256:3c63141ada03d7512b5e068309d0a067503601d9dfae060dd06dd69478943b82
+    size: 10208752
+    checksum: sha256:b585cdcc008fb29fbccec4f0bc7cf1478930bd7c3103b380ea04ab66a7dac414
     name: python3.12-libs
-    evr: 3.12.12-4.el9_7.1
-    sourcerpm: python3.12-3.12.12-4.el9_7.1.src.rpm
+    evr: 3.12.12-4.el9_7.2
+    sourcerpm: python3.12-3.12.12-4.el9_7.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-5.el9.noarch.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 1527128
@@ -3315,12 +3315,12 @@ arches:
     checksum: sha256:b89dc91bc68b60b6d439aec4846b36a129ab806506272724a6d1022bd0f14263
     name: postgresql
     evr: 15.17-1.module+el9.7.0+24029+ef6a2953
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el9_7.2.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
-    size: 20878981
-    checksum: sha256:5fa971ae08c44c59bee11855de099a683c81b02bc3c6f94be7b7efae0508a83f
+    size: 20880557
+    checksum: sha256:0d4494e18c3a6b5c62c96ef5786561fc6fab96cd50f2380c1471d2eaeabd06fd
     name: python3.12
-    evr: 3.12.12-4.el9_7.1
+    evr: 3.12.12-4.el9_7.2
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-5.el9.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
     size: 9384965
@@ -3670,7 +3670,7 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/fc1d52c8a75a935b79826891bdcd04795740c527e0715d99982c043c56071592-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/91adeb1503d123c79893ee7ce8f919d2a124a581c6398abf02ae4774eabae05c-modules.yaml.gz
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 44284
-    checksum: sha256:fc1d52c8a75a935b79826891bdcd04795740c527e0715d99982c043c56071592
+    size: 45535
+    checksum: sha256:91adeb1503d123c79893ee7ce8f919d2a124a581c6398abf02ae4774eabae05c
