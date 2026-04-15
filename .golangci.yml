@@ -198,7 +198,7 @@ linters:
           - gochecknoinits
         # Specific pkg/ files that legitimately need init() for global setup
         # See pkg/PKG_INIT_MIGRATION.md for rationale
-        path: ^pkg/(logging/logging|grpc/(codec|server)|clientconn/useragent|httputil/proxy/proxy|cloudproviders/aws/certs|sync/(deadlock_detect_dev|mutex_dev)|devbuild/init|images/enricher/metadata|mtls/crypto)\.go$
+        path: ^pkg/(logging/logging|grpc/(codec|server)|clientconn/useragent|httputil/proxy/proxy|cloudproviders/aws/certs|sync/(deadlock_detect_dev|mutex_dev)|devbuild/init|images/enricher/metadata|mtls/crypto|search/enumregistry/enum_registry|search/options)\.go$
       - linters:
           - gochecknoinits
         # Test files can use init() for setup
