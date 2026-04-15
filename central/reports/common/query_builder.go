@@ -76,8 +76,8 @@ func (q *queryBuilder) BuildQuery(
 	}, nil
 }
 
-// addSeverityFixabilityFiltersCollectionScopedReports adds severity, fixability filters for collection scoped reports
-func (q *queryBuilder) addSeverityFixabilityFiltersCollectionScopedReports() []string {
+// buildLegacyFilterQuery() adds severity, fixability filters for collection scoped reports
+func (q *queryBuilder) buildLegacyFilterQuery() []string {
 
 	vulnReportFilters := q.vulnFilters
 	var conjuncts []string
@@ -108,7 +108,7 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 
 	if q.collection != nil {
 		// for collections only add fixability, severity filters for CVE
-		conjuncts = q.addSeverityFixabilityFiltersCollectionScopedReports()
+		conjuncts = q.buildLegacyFilterQuery()
 	} else if q.entityScope != nil {
 		// for entity scoped reports add all the search filters from query string
 		conjuncts = append(conjuncts, q.vulnFilters.GetQuery())
