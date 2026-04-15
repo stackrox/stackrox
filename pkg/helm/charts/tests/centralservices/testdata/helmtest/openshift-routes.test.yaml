@@ -47,3 +47,43 @@ tests:
       .routes["central"] | assertThat(. == null)
       .routes["central-mtls"] | assertThat(. == null)
       .routes["central-reencrypt"] | assertThat(. == null)
+  - name: "reencrypt route with custom certificate and key"
+    set:
+      central.exposure.route.enabled: true
+      central.exposure.route.reencrypt.enabled: true
+      central.exposure.route.reencrypt.tls.certificate: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+      central.exposure.route.reencrypt.tls.key: "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----"
+    expect: |
+      .routes["central-reencrypt"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.certificate | contains("BEGIN CERTIFICATE")),
+          assertThat(.spec.tls.certificate | contains("test")),
+          assertThat(.spec.tls.key | contains("BEGIN PRIVATE KEY")),
+          assertThat(.spec.tls.key | contains("test"))
+        ]
+  - name: "reencrypt route with only certificate fails"
+    set:
+      central.exposure.route.enabled: true
+      central.exposure.route.reencrypt.enabled: true
+      central.exposure.route.reencrypt.tls.certificate: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+    expectError: true
+    expect: |
+      .error | assertThat(contains("certificate and key"))
+  - name: "reencrypt route with only key fails"
+    set:
+      central.exposure.route.enabled: true
+      central.exposure.route.reencrypt.enabled: true
+      central.exposure.route.reencrypt.tls.key: "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----"
+    expectError: true
+    expect: |
+      .error | assertThat(contains("certificate and key"))
+  - name: "reencrypt route without custom cert has empty cert fields"
+    set:
+      central.exposure.route.enabled: true
+      central.exposure.route.reencrypt.enabled: true
+    expect: |
+      .routes["central-reencrypt"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.certificate == null or .spec.tls.certificate == ""),
+          assertThat(.spec.tls.key == null or .spec.tls.key == "")
+        ]
