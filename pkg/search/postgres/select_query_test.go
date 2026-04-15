@@ -1186,3 +1186,130 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		assert.ElementsMatch(t, tc.expectedResult, results)
 	}
 }
+
+// TestRunSelectDirectFn verifies that RunSelectDirectFn produces the same
+// results as RunSelectRequestForSchemaFn for parent-table selects. This tests
+// the direct pgx scanning path (no scany reflection).
+func TestRunSelectDirectFn(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	store := postgres.New(testDB.DB)
+	for _, s := range getTestStructs() {
+		require.NoError(t, store.Upsert(ctx, s))
+	}
+
+	t.Run("select single field", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(search.NewQuerySelect(search.TestString)).
+			ProtoQuery()
+
+		// Get expected results via scany path.
+		var expected []string
+		err := pgSearch.RunSelectRequestForSchemaFn[Struct1](ctx, testDB.DB, schema.TestStructsSchema, q, func(r *Struct1) error {
+			expected = append(expected, r.TestString)
+			return nil
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, expected)
+
+		// Get results via direct scan path.
+		var testString string
+		dests := []any{&testString}
+
+		var actual []string
+		err = pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return dests },
+				OnRow: func() error {
+					actual = append(actual, testString)
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.ElementsMatch(t, expected, actual)
+	})
+
+	t.Run("select with where clause", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(search.NewQuerySelect(search.TestString)).
+			AddExactMatches(search.TestString, "acs").
+			ProtoQuery()
+
+		var testString string
+		dests := []any{&testString}
+
+		var actual []string
+		err := pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return dests },
+				OnRow: func() error {
+					actual = append(actual, testString)
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"acs", "acs"}, actual)
+	})
+
+	t.Run("select multiple fields with pagination", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(
+				search.NewQuerySelect(search.TestString),
+				search.NewQuerySelect(search.TestBool),
+			).
+			WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestString)),
+			).
+			ProtoQuery()
+
+		// Get expected via scany.
+		type stringBool struct {
+			S string
+			B bool
+		}
+		type scanyResult struct {
+			TestString string `db:"test_string"`
+			TestBool   bool   `db:"test_bool"`
+		}
+		var expected []stringBool
+		err := pgSearch.RunSelectRequestForSchemaFn[scanyResult](ctx, testDB.DB, schema.TestStructsSchema, q, func(r *scanyResult) error {
+			expected = append(expected, stringBool{r.TestString, r.TestBool})
+			return nil
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, expected)
+
+		// Get results via direct scan.
+		var s string
+		var b bool
+		dests := []any{&s, &b}
+
+		var actual []stringBool
+		err = pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return dests },
+				OnRow: func() error {
+					actual = append(actual, stringBool{s, b})
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("nil query returns no results", func(t *testing.T) {
+		called := false
+		err := pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, nil, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return nil },
+				OnRow: func() error {
+					called = true
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.False(t, called)
+	})
+}
