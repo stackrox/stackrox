@@ -139,7 +139,7 @@ spec:
             EOF
             echo 'has body.pull_request: {{ cel: has(body.pull_request) }}'
             echo 'has pull_request konflux-build label: {{ cel: has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") }}'
-            echo 'has issue konflux-build label: {{ cel: has(body.pull_request) && has(body.issue.labels) && body.issue.labels.exists(l, l.name == "konflux-build") }}'
+            echo 'has issue konflux-build label: {{ cel: has(body.issue) && has(body.issue.labels) && body.issue.labels.exists(l, l.name == "konflux-build") }}'
             echo "event_type: {{ event_type }}"
             echo "target_branch: {{ target_branch }}"
             echo "source_branch: {{ source_branch }}"
