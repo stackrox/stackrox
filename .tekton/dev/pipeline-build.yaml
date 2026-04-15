@@ -63,6 +63,9 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
 
+              # Fix git ownership check (Tekton runs as different user)
+              git config --global --add safe.directory "$(pwd)"
+
               # Get version info from status.sh
               echo "=== Getting version info ==="
               eval "$(./status.sh | sed 's/ /=/')"
@@ -89,6 +92,13 @@ spec:
                 -o bin/roxctl-linux-amd64 \
                 ./roxctl/main.go
               echo "Built: $(ls -lh bin/roxctl-linux-amd64)"
+
+              echo "Building config-controller..."
+              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+                -ldflags="${LDFLAGS}" \
+                -o bin/config-controller \
+                ./config-controller/main.go
+              echo "Built: $(ls -lh bin/config-controller)"
       workspaces:
         - name: source
           workspace: source
