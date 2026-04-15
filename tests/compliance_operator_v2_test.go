@@ -205,7 +205,7 @@ func cleanUpResources(ctx context.Context, t *testing.T, client ctrlClient.Clien
 
 // createCustomRule creates a CEL CustomRule with the given name, waits for it
 // to reach Ready phase, and registers cleanup.
-func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
+func createCustomRule(ctx context.Context, t *testing.T, client ctrlClient.Client, name string) {
 	// Create a ConfigMap with a test-specific marker key so the CEL
 	// expression matches only this test's ConfigMap, not other tests'.
 	markerKey := "e2e-marker-" + name
@@ -272,7 +272,7 @@ func createCustomRule(ctx context.Context, t *testing.T, client dynclient.Client
 
 // createTailoredProfile creates an extends-based TailoredProfile (extending
 // ocp4-e8), waits for it to be READY in k8s, and registers cleanup.
-func createTailoredProfile(ctx context.Context, t *testing.T, client dynclient.Client, name string) {
+func createTailoredProfile(ctx context.Context, t *testing.T, client ctrlClient.Client, name string) {
 	tp := &complianceoperatorv1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
