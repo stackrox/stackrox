@@ -80,8 +80,11 @@ RUN dnf module enable -y \
         --nodocs \
         ca-certificates \
         findutils \
+        gzip \
+        less \
         openssl \
-        postgresql && \
+        postgresql \
+        tar && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
