@@ -153,7 +153,11 @@ spec:
             assert_boolean has_konflux_build_label_as_issue
 
             echo "pull_request_number: {{ pull_request_number }}"
-            is_pull_request='{{ cel: pull_request_number != null && pull_request_number != "" }}'
+            if [[ "{{ pull_request_number }}" != "" ]]; then
+              is_pull_request="true"
+            else
+              is_pull_request="false"
+            fi
             assert_boolean is_pull_request
 
             echo "target_branch: {{ target_branch }}"
