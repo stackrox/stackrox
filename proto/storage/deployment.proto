@@ -12,7 +12,15 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 36
+enum DeploymentState {
+  STATE_UNSPECIFIED = 0;
+  // The deployment workload is currently active.
+  STATE_ACTIVE = 1;
+  // The deployment workload was deleted.
+  STATE_DELETED = 2;
+}
+
+// Next available tag: 38
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -33,7 +41,8 @@ message Deployment {
   reserved 12;
   map<string, string> annotations = 14; // @gotags: search:"Deployment Annotation"
   int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
-  bool inactive = 16;
+  // Deprecated: Use `state` field instead.
+  bool inactive = 16 [deprecated = true];
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"
   string service_account = 18; // @gotags: search:"Service Account"
   PermissionLevel service_account_permission_level = 28; // @gotags: search:"Service Account Permission Level"
@@ -51,6 +60,12 @@ message Deployment {
   reserved 30; // was tags
 
   bool platform_component = 35; // @gotags: search:"Platform Component"
+  // `deleted` is the time at which the underlying deployment workload was
+  // deleted. `nil` if the workload exists.
+  google.protobuf.Timestamp deleted = 36; // @gotags: search:"Deleted,hidden" hash:"ignore"
+
+  // `state` indicates the current status of the deployment workload.
+  DeploymentState state = 37; // @gotags: search:"Deployment State";
 }
 
 // Next tag: 13
@@ -276,7 +291,7 @@ message SecurityContext {
   bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
 }
 
-// Next available tag: 9
+// Next available tag: 11
 message ListDeployment {
   string id = 1;
   uint64 hash = 8;
@@ -286,4 +301,9 @@ message ListDeployment {
   string namespace = 5;
   google.protobuf.Timestamp created = 6;
   int64 priority = 7;
+  // `deleted` is the time at which the underlying deployment workload was
+  // deleted. `nil` if the workload exists.
+  google.protobuf.Timestamp deleted = 9;
+  // `state` indicates the current status of the deployment workload.
+  DeploymentState state = 10; // @gotags: search:"Deployment State"
 }
