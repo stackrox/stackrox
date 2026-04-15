@@ -138,6 +138,8 @@ spec:
             echo "event_type: {{ event_type }}"
             echo "target_branch: {{ target_branch }}"
             echo "source_branch: {{ source_branch }}"
+            echo "pull_request_number: {{ pull_request_number }}"
+            echo "CEL pull_request_number: {{ cel: pull_request_number }}"
             echo '{{ cel: (event_type == "push") || (event_type == "pull_request" && (target_branch.startsWith("release-")) || source_branch.matches("(konflux|renovate|appstudio|rhtap)") || ( has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") )) }}' | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
