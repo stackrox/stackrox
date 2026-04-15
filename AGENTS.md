@@ -169,7 +169,7 @@ When working on specific areas, refer to these detailed guides:
 
 ### Style and Conventions
 - Go code follows golangci-lint standards
-- Additional project specific style guide in `.github/go-coding-style.md`
+- When writing or reviewing Go code, read and follow the project-specific style guide in `.github/go-coding-style.md`
 - Protocol buffers have enforced style guidelines
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
