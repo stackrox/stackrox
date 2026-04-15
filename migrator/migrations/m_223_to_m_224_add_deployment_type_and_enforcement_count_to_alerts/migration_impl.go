@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_add_deployment_type_and_enforcement_count_to_alerts/schema"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -330,5 +329,5 @@ func computeEnforcementCount(alert *storage.Alert) int32 {
 	return 0
 }
 
-// Ensure computeEnforcementCount stays in sync with the canonical implementation.
-var _ = convert.EnforcementCount
+// NOTE: computeEnforcementCount must stay in sync with convert.EnforcementCount
+// in pkg/alert/convert/convert.go. Migrations cannot import that package.
