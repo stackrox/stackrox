@@ -130,21 +130,30 @@ spec:
         results:
         - name: SHOULD_PROCEED
         steps:
-        - name: blah
+        - name: figure-out
           image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
           script: |
             set -euo pipefail
             function assert_boolean() {
+              if [[ "${2:-}" != "" ]]; then
+                echo "${2}"
+              fi
               echo "${1}: ${!1}"
               if [[ "${!1}" != "true" && "${!1}" != "false" ]]; then
                 >&2 echo "Error: not a boolean value: $1"
                 exit 2
               fi
             }
-            echo 'body:'
-            cat <<EOF
-              {{ cel: body }}
-            EOF
+
+            is_pull_request="false"
+            [[ "{{ pull_request_number }}" == "" ]] || is_pull_request="true"
+            assert_boolean is_pull_request "pull_request_number: {{ pull_request_number }}"
+
+            is_matching_target_branch='{{ cel: target_branch.startsWith("release-") }}'
+            assert_boolean is_matching_target_branch "target_branch: {{ target_branch }}"
+
+            is_matching_source_branch='{{ cel: source_branch.matches("(konflux|renovate|appstudio|rhtap)") }}'
+            assert_boolean is_matching_source_branch "source_branch: {{ source_branch }}"
 
             has_konflux_build_label_as_pr='{{ cel: has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") }}'
             assert_boolean has_konflux_build_label_as_pr
@@ -152,29 +161,18 @@ spec:
             has_konflux_build_label_as_issue='{{ cel: has(body.issue) && has(body.issue.labels) && body.issue.labels.exists(l, l.name == "konflux-build") }}'
             assert_boolean has_konflux_build_label_as_issue
 
-            echo "pull_request_number: {{ pull_request_number }}"
-            if [[ "{{ pull_request_number }}" != "" ]]; then
-              is_pull_request="true"
-            else
-              is_pull_request="false"
-            fi
-            assert_boolean is_pull_request
-
-            echo "target_branch: {{ target_branch }}"
-            is_matching_target_branch='{{ cel: target_branch.startsWith("release-") }}'
-            assert_boolean is_matching_target_branch
-
-            echo "source_branch: {{ source_branch }}"
-            is_matching_source_branch='{{ cel: source_branch.matches("(konflux|renovate|appstudio|rhtap)") }}'
-            assert_boolean is_matching_source_branch
-
             echo -n "The result is: "
             if [[ "${is_pull_request}" == "false" || "${is_matching_target_branch}" == "true" || "${is_matching_source_branch}" == "true" || "${has_konflux_build_label_as_pr}" == "true" || "${has_konflux_build_label_as_issue}" == "true" ]]; then
               echo "true" | tee "$(results.SHOULD_PROCEED.path)"
             else
               echo "false" | tee "$(results.SHOULD_PROCEED.path)"
             fi
-            echo '{{ cel: (event_type == "push") || (event_type == "pull_request" && (target_branch.startsWith("release-")) || source_branch.matches("(konflux|renovate|appstudio|rhtap)") || ( has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") )) }}'
+
+            echo '-----------'
+            echo 'full body for diagnostics:'
+            cat <<EOF
+              {{ cel: body }}
+            EOF
 
     - name: clone-repository
       params:
