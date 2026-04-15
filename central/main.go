@@ -148,6 +148,7 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	riskPluginConfigService "github.com/stackrox/rox/central/risk/pluginconfig/service"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
@@ -497,6 +498,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.BaseImageDetection.Enabled() {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
+	}
+
+	if features.PluginRiskScoring.Enabled() {
+		servicesToRegister = append(servicesToRegister, riskPluginConfigService.Singleton())
 	}
 
 	if features.OCPConsoleIntegration.Enabled() {

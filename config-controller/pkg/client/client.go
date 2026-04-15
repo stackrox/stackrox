@@ -87,6 +87,11 @@ type CachedCentralClient interface {
 	GetClusters() map[string]string
 	FlushCache(ctx context.Context) error
 	EnsureFresh(ctx context.Context) error
+
+	// Risk scoring plugin methods
+	UpsertRiskScoringPluginConfig(ctx context.Context, config *storage.RiskScoringPluginConfig) (*storage.RiskScoringPluginConfig, error)
+	DeleteRiskScoringPluginConfig(ctx context.Context, id string) error
+	GetRiskScoringPluginConfig(ctx context.Context, id string) (*storage.RiskScoringPluginConfig, error)
 }
 
 type CentralClient interface {
@@ -98,13 +103,19 @@ type CentralClient interface {
 	ListNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	ListClusters(ctx context.Context) ([]*storage.Cluster, error)
 	TokenExchange(ctx context.Context) error
+
+	// Risk scoring plugin methods
+	UpsertRiskScoringPlugin(ctx context.Context, config *storage.RiskScoringPluginConfig) (*storage.RiskScoringPluginConfig, error)
+	DeleteRiskScoringPlugin(ctx context.Context, id string) error
+	GetRiskScoringPlugin(ctx context.Context, id string) (*storage.RiskScoringPluginConfig, error)
 }
 
 type grpcClient struct {
-	policySvc   v1.PolicyServiceClient
-	notifierSvc v1.NotifierServiceClient
-	clusterSvc  v1.ClustersServiceClient
-	perRPCCreds *perRPCCreds
+	policySvc     v1.PolicyServiceClient
+	notifierSvc   v1.NotifierServiceClient
+	clusterSvc    v1.ClustersServiceClient
+	riskPluginSvc v1.RiskScoringPluginServiceClient
+	perRPCCreds   *perRPCCreds
 }
 
 func newGrpcClient(ctx context.Context) (CentralClient, error) {
@@ -149,10 +160,11 @@ func newGrpcClient(ctx context.Context) (CentralClient, error) {
 	perRPCCreds.svc = v1.NewAuthServiceClient(conn)
 
 	return &grpcClient{
-		perRPCCreds: perRPCCreds,
-		policySvc:   v1.NewPolicyServiceClient(conn),
-		notifierSvc: v1.NewNotifierServiceClient(conn),
-		clusterSvc:  v1.NewClustersServiceClient(conn),
+		perRPCCreds:   perRPCCreds,
+		policySvc:     v1.NewPolicyServiceClient(conn),
+		notifierSvc:   v1.NewNotifierServiceClient(conn),
+		clusterSvc:    v1.NewClustersServiceClient(conn),
+		riskPluginSvc: v1.NewRiskScoringPluginServiceClient(conn),
 	}, nil
 }
 
@@ -232,6 +244,30 @@ func (gc *grpcClient) TokenExchange(ctx context.Context) error {
 		return gc.perRPCCreds.refreshToken(ctx)
 	}
 	return nil
+}
+
+func (gc *grpcClient) UpsertRiskScoringPlugin(ctx context.Context, config *storage.RiskScoringPluginConfig) (*storage.RiskScoringPluginConfig, error) {
+	resp, err := gc.riskPluginSvc.UpsertRiskScoringPluginConfig(ctx, &v1.UpsertRiskScoringPluginConfigRequest{Config: config})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upsert risk scoring plugin config")
+	}
+	return resp.GetConfig(), nil
+}
+
+func (gc *grpcClient) DeleteRiskScoringPlugin(ctx context.Context, id string) error {
+	_, err := gc.riskPluginSvc.DeleteRiskScoringPluginConfig(ctx, &v1.DeleteRiskScoringPluginConfigRequest{Id: id})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete risk scoring plugin config %s", id)
+	}
+	return nil
+}
+
+func (gc *grpcClient) GetRiskScoringPlugin(ctx context.Context, id string) (*storage.RiskScoringPluginConfig, error) {
+	config, err := gc.riskPluginSvc.GetRiskScoringPluginConfig(ctx, &v1.GetRiskScoringPluginConfigRequest{Id: id})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get risk scoring plugin config %s", id)
+	}
+	return config, nil
 }
 
 type client struct {
@@ -422,4 +458,17 @@ func (c *client) EnsureFresh(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Risk scoring plugin methods - these pass through directly to Central without caching
+func (c *client) UpsertRiskScoringPluginConfig(ctx context.Context, config *storage.RiskScoringPluginConfig) (*storage.RiskScoringPluginConfig, error) {
+	return c.centralSvc.UpsertRiskScoringPlugin(ctx, config)
+}
+
+func (c *client) DeleteRiskScoringPluginConfig(ctx context.Context, id string) error {
+	return c.centralSvc.DeleteRiskScoringPlugin(ctx, id)
+}
+
+func (c *client) GetRiskScoringPluginConfig(ctx context.Context, id string) (*storage.RiskScoringPluginConfig, error) {
+	return c.centralSvc.GetRiskScoringPlugin(ctx, id)
 }

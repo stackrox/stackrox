@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/risk_scoring_plugin.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message UpsertRiskScoringPluginConfigRequest {
+  storage.RiskScoringPluginConfig config = 1;
+}
+
+message UpsertRiskScoringPluginConfigResponse {
+  storage.RiskScoringPluginConfig config = 1;
+}
+
+message DeleteRiskScoringPluginConfigRequest {
+  string id = 1;
+}
+
+message GetRiskScoringPluginConfigRequest {
+  string id = 1;
+}
+
+message ListRiskScoringPluginConfigsResponse {
+  repeated storage.RiskScoringPluginConfig configs = 1;
+}
+
+// RiskScoringPluginService provides APIs for managing risk scoring plugin configurations.
+// These APIs are primarily used by config-controller to sync RiskScoringPlugin CRs to Central.
+service RiskScoringPluginService {
+  // ListRiskScoringPluginConfigs returns all registered plugin configurations.
+  rpc ListRiskScoringPluginConfigs(Empty) returns (ListRiskScoringPluginConfigsResponse) {
+    option (google.api.http) = {get: "/v1/risk/plugins"};
+  }
+
+  // GetRiskScoringPluginConfig returns a specific plugin configuration by ID.
+  rpc GetRiskScoringPluginConfig(GetRiskScoringPluginConfigRequest) returns (storage.RiskScoringPluginConfig) {
+    option (google.api.http) = {get: "/v1/risk/plugins/{id}"};
+  }
+
+  // UpsertRiskScoringPluginConfig creates or updates a plugin configuration.
+  rpc UpsertRiskScoringPluginConfig(UpsertRiskScoringPluginConfigRequest) returns (UpsertRiskScoringPluginConfigResponse) {
+    option (google.api.http) = {
+      put: "/v1/risk/plugins"
+      body: "*"
+    };
+  }
+
+  // DeleteRiskScoringPluginConfig removes a plugin configuration.
+  rpc DeleteRiskScoringPluginConfig(DeleteRiskScoringPluginConfigRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/risk/plugins/{id}"};
+  }
+}

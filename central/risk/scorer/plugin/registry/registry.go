@@ -30,6 +30,9 @@ type Registry interface {
 
 	// GetConfig returns the configuration for a specific plugin.
 	GetConfig(id string) (*plugin.Config, bool)
+
+	// GetAllConfigs returns all plugin configurations.
+	GetAllConfigs() []*plugin.Config
 }
 
 // New creates a new plugin registry.
@@ -115,6 +118,17 @@ func (r *registryImpl) GetConfig(id string) (*plugin.Config, bool) {
 
 	config, ok := r.configs[id]
 	return config, ok
+}
+
+func (r *registryImpl) GetAllConfigs() []*plugin.Config {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]*plugin.Config, 0, len(r.configs))
+	for _, config := range r.configs {
+		result = append(result, config)
+	}
+	return result
 }
 
 // Singleton returns the global plugin registry.
