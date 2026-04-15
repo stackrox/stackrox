@@ -3,8 +3,8 @@ import {
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    Label,
-    LabelGroup,
+    Flex,
+    FlexItem,
 } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
@@ -33,13 +33,11 @@ function CompoundSearchFilterDescriptionListGroups({
                     <DescriptionListGroup key={group.label}>
                         <DescriptionListTerm>{group.label}</DescriptionListTerm>
                         <DescriptionListDescription>
-                            <LabelGroup categoryName={group.label}>
+                            <Flex direction={{ default: 'column' }}>
                                 {items.map((item) => (
-                                    <Label key={item.label} variant="outline">
-                                        {item.label}
-                                    </Label>
+                                    <FlexItem key={item.label}>{item.label}</FlexItem>
                                 ))}
-                            </LabelGroup>
+                            </Flex>
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                 );
