@@ -117,6 +117,13 @@ spec:
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
 
+
+    #      (event == "push") ||
+    #              (event == "pull_request" && (
+    #                  target_branch.startsWith("release-") ||
+    #                  source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+    #                  (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+    #                ))
     - name: should-do-the-rest
       taskSpec:
         results:
@@ -124,13 +131,8 @@ spec:
         steps:
         - name: blah
           image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
-          #      (event == "push") ||
-          #              (event == "pull_request" && (
-          #                  target_branch.startsWith("release-") ||
-          #                  source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          #                  (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
-          #                ))
-          script: echo '{{ (event == "push") || (event == "pull_request") }}' | tee "$(results.SHOULD_PROCEED.path)"
+          script: |
+            echo '{{ cel: (event == "push") || (event == "pull_request") }}' | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
       params:
