@@ -9,6 +9,8 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-comment: "/konflux-retest create-custom-snapshot"
+    # Unlike other pipelines, this one is enabled for all PRs. See the description of determine-actual-build task.
+    # The condition for a label is to make sure the konflux-build label addition activates this pipeline, same as others.
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
       (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
@@ -119,28 +121,32 @@ spec:
       taskRef: *post-bigquery-metrics-ref
 
     # TODO: event_type=on-comment and the rest
-    - name: should-do-the-rest
+    - name: determine-actual-build
       taskSpec:
         description: |
-          Determines whether the actual tasks in the pipeline should be skipped or actually be executed.
+          Determines whether the actual tasks in the pipeline should be skipped or executed.
           Tasks will be skipped on PRs where Konflux builds aren't enabled (TODO: ROX-21073), see
           `pipelinesascode.tekton.dev/on-cel-expression` annotation in `*-build.yaml` files.
           This all is needed because we want to always run this `create-custom-snapshot` pipeline and make it part of
           required GitHub checks in branch protection rules.
         results:
-        - name: SHOULD_PROCEED
+        - name: SHOULD_REALLY_WORK
         steps:
-        - name: figure-out
+        - name: determine
           image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
+          # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
+          # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
+          # different.
           script: |
             set -euo pipefail
+
             function assert_boolean() {
               if [[ "${2:-}" != "" ]]; then
                 echo "${2}"
               fi
               echo "${1}: ${!1}"
               if [[ "${!1}" != "true" && "${!1}" != "false" ]]; then
-                >&2 echo "Error: not a boolean value: $1"
+                >&2 echo "Error: not a boolean value: ${!1}"
                 exit 2
               fi
             }
@@ -166,7 +172,7 @@ spec:
               result="true"
             fi
             echo -n "The result is: "
-            echo -n "${result}" | tee "$(results.SHOULD_PROCEED.path)"
+            echo -n "${result}" | tee "$(results.SHOULD_REALLY_WORK.path)"
             echo
 
             echo '-----------'
@@ -202,7 +208,7 @@ spec:
       - name: basic-auth
         workspace: git-auth
       when:
-      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+      - input: $(tasks.determine-actual-build.results.SHOULD_REALLY_WORK)
         operator: in
         values: [ "true" ]
 
@@ -222,7 +228,7 @@ spec:
           value: task
         resolver: bundles
       when:
-      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+      - input: $(tasks.determine-actual-build.results.SHOULD_REALLY_WORK)
         operator: in
         values: [ "true" ]
 
@@ -242,7 +248,7 @@ spec:
       # The timemout should be kept in sync with the pipeline timeout in the operator-bundle-build.yaml
       timeout: 3h25m
       when:
-      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+      - input: $(tasks.determine-actual-build.results.SHOULD_REALLY_WORK)
         operator: in
         values: [ "true" ]
 
@@ -333,6 +339,6 @@ spec:
           value: task
         resolver: bundles
       when:
-      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+      - input: $(tasks.determine-actual-build.results.SHOULD_REALLY_WORK)
         operator: in
         values: [ "true" ]
