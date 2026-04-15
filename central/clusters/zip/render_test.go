@@ -135,7 +135,7 @@ func TestRenderWithNoCollection(t *testing.T) {
 	cluster := &storage.Cluster{
 		Name:             "cluster",
 		MainImage:        "stackrox/main:abc",
-		Type:             storage.ClusterType_OPENSHIFT_CLUSTER,
+		Type:             storage.ClusterType_OPENSHIFT4_CLUSTER,
 		CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
 	}
 

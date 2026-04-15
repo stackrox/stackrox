@@ -3,11 +3,11 @@ module github.com/stackrox/rox
 go 1.25.0
 
 require (
-	cloud.google.com/go/artifactregistry v1.21.0
+	cloud.google.com/go/artifactregistry v1.23.0
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.16.0
-	cloud.google.com/go/securitycenter v1.41.0
-	cloud.google.com/go/storage v1.62.0
+	cloud.google.com/go/securitycenter v1.42.0
+	cloud.google.com/go/storage v1.62.1
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.6.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.0
@@ -30,9 +30,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.14
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.21
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.13
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.56.2
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.57.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.0
-	github.com/aws/aws-sdk-go-v2/service/securityhub v1.68.3
+	github.com/aws/aws-sdk-go-v2/service/securityhub v1.69.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10
 	github.com/aws/smithy-go v1.24.3
 	github.com/bmatcuk/doublestar/v4 v4.10.0
@@ -80,7 +80,7 @@ require (
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.18.5
-	github.com/lib/pq v1.12.1
+	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.9.2
 	github.com/mdlayher/vsock v1.2.1
@@ -110,7 +110,7 @@ require (
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.67.5
 	github.com/quay/claircore v1.5.53-0.20260402203018-c2f0b781a39b
-	github.com/quay/claircore/toolkit v1.5.0
+	github.com/quay/claircore/toolkit v1.6.0
 	github.com/quay/zlog v1.1.9
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.35.0
@@ -164,7 +164,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
-	helm.sh/helm/v3 v3.20.1
+	helm.sh/helm/v3 v3.20.2
 	k8s.io/api v0.35.3
 	k8s.io/apiextensions-apiserver v0.35.3
 	k8s.io/apimachinery v0.35.3

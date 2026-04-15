@@ -175,7 +175,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 					ReprocessDeployments: &central.ReprocessDeployments{},
 				},
 			}
-			s.detector.EXPECT().ProcessReprocessDeployments().Times(1).Do(func() {
+			s.detector.EXPECT().ProcessReprocessDeployments(gomock.Any()).Times(1).Do(func(_ *central.ReprocessDeployments) {
 				defer messageReceived.Done()
 			})
 

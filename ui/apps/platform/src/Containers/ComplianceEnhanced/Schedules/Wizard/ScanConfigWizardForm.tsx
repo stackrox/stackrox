@@ -222,7 +222,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     <WizardStep
                         name={PARAMETERS}
                         id={PARAMETERS_ID}
-                        key={PARAMETERS_ID}
                         body={{ hasNoPadding: true }}
                         footer={
                             <CustomWizardFooter
@@ -238,7 +237,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     <WizardStep
                         name={SELECT_CLUSTERS}
                         id={SELECT_CLUSTERS_ID}
-                        key={SELECT_CLUSTERS_ID}
                         body={{ hasNoPadding: true }}
                         isDisabled={!canJumpToSelectClusters()}
                         footer={
@@ -260,7 +258,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     <WizardStep
                         name={SELECT_PROFILES}
                         id={SELECT_PROFILES_ID}
-                        key={SELECT_PROFILES_ID}
                         body={{ hasNoPadding: true }}
                         isDisabled={!canJumpToSelectProfiles()}
                         footer={
@@ -281,7 +278,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     <WizardStep
                         name={CONFIGURE_REPORT}
                         id={CONFIGURE_REPORT_ID}
-                        key={CONFIGURE_REPORT_ID}
                         body={{ hasNoPadding: true }}
                         isDisabled={!canJumpToConfigureReport()}
                         footer={
@@ -298,7 +294,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     <WizardStep
                         name={REVIEW_CONFIG}
                         id={REVIEW_CONFIG_ID}
-                        key={REVIEW_CONFIG_ID}
                         body={{ hasNoPadding: true }}
                         isDisabled={!canJumpToReviewConfig()}
                         footer={{

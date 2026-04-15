@@ -32,7 +32,7 @@ runs:
 
     # setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
-      uses: 'google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f' # ratchet:google-github-actions/setup-gcloud@v2
+      uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3.0.1
       with:
         skip_install: ${{ steps.gcloud-check.outcome != 'failure' }}
 
@@ -140,7 +140,7 @@ runs:
       shell: bash
 
     - name: Record job info
-      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}

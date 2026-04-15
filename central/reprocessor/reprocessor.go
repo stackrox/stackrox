@@ -164,6 +164,13 @@ type imageReprocessingFunc func(ctx context.Context, enrichCtx imageEnricher.Enr
 type imageReprocessingFuncV2 func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.ImageV2) (imageEnricher.EnrichmentResult, error)
 
+// imageRef identifies an image for reprocessing.
+type imageRef struct {
+	id     string             // V2 image ID (UUID)
+	digest string             // SHA256 digest
+	name   *storage.ImageName // registry/remote:tag
+}
+
 type loopImpl struct {
 	enrichAndDetectTickerDuration time.Duration
 	enrichAndDetectTicker         *time.Ticker
@@ -326,45 +333,45 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 
 // TODO(ROX-30117): Remove this function after ImageV2 model is fully rolled out
 func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
-	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
-	image, exists, err := l.images.GetImage(allAccessCtx, id)
+	reprocessingFunc imageReprocessingFunc) (image *storage.Image, successfullyProcessed bool, imageUpdated bool) {
+	img, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
-		return nil, false
+		return nil, false, false
 	}
-	if !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
-		return nil, false
+	if !exists || img.GetNotPullable() || img.GetIsClusterLocal() {
+		return nil, false, false
 	}
 
 	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
-	}, image)
+	}, img)
 
 	if err != nil {
-		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-		return nil, false
+		log.Errorw("Error enriching image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
+		return nil, false, false
 	}
 	if result.ImageUpdated {
-		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
+		if err := l.risk.CalculateRiskAndUpsertImage(img); err != nil {
 			log.Errorw("Error upserting image into datastore",
-				logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-			return nil, false
+				logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
+			return nil, false, false
 		}
 		// We need to fetch the image again to make sure all fields are populated.
 		// GetImage will internally call a Merge function which will use the CVEEdges table to enrich fields like
 		// FirstImageOccurrence and FirstSystemOccurrence.
 		newImage, exists, err := l.images.GetImage(allAccessCtx, id)
 		if err != nil {
-			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-			return nil, false
+			log.Errorw("Error fetching image from database", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
+			return nil, false, false
 		}
 		if !exists {
-			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()))
-			return nil, false
+			log.Errorw("The image was not found after enrichment", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()))
+			return nil, false, false
 		}
-		return newImage, true
+		return newImage, true, true
 	}
-	return image, true
+	return img, true, false
 }
 
 // TODO(ROX-30117): Remove this function after ImageV2 model is fully rolled out
@@ -387,7 +394,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
 	nReprocessed := atomic.NewInt32(0)
-	skipClusterIDs := maputil.NewSyncMap[string, struct{}]()
+	state := newReprocessingState(fetchOpt == imageEnricher.UseCachesIfPossible)
 	for _, result := range results {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
@@ -400,7 +407,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, imgReprocessingFunc)
+			image, successfullyProcessed, imageUpdated := l.reprocessImage(id, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -409,21 +416,21 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			utils.FilterSuppressedCVEsNoClone(image)
 			utils.StripCVEDescriptionsNoClone(image)
 
-			// Send the updated image to relevant clusters.
+			imageKey := &central.ImageKey{
+				ImageId:       image.GetId(),
+				ImageFullName: image.GetName().GetFullName(),
+			}
+
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
 					continue
 				}
 
-				msg := &central.MsgToSensor{
-					Msg: &central.MsgToSensor_UpdatedImage{
-						UpdatedImage: image,
-					},
-				}
-
-				// If were prior errors, do not attempt to send a message to this cluster.
-				if skipClusterIDs.Contains(clusterID) {
+				if state.skipClusterIDs.Contains(clusterID) {
+					msg := &central.MsgToSensor{
+						Msg: &central.MsgToSensor_UpdatedImage{UpdatedImage: image},
+					}
 					metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
 					log.Debugw("Not sending updated image to cluster due to prior errors",
 						logging.ImageID(image.GetId()),
@@ -433,14 +440,12 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					continue
 				}
 
-				err := l.injectMessage(concurrency.AsContext(&l.stopSig), conn, msg)
-				if err != nil {
-					skipClusterIDs.Store(clusterID, struct{}{})
-					log.Errorw("Error sending updated image to cluster, skipping cluster until next reprocessing cycle",
+				if err := l.sendReprocessingMessages(conn, image, imageKey, imageUpdated, state); err != nil {
+					log.Errorw("Error sending reprocessing messages to cluster, skipping cluster until next reprocessing cycle",
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.ImageID(image.GetId()), logging.Err(err),
-						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic
-						logging.String("dst_cluster", clusterID),
+						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic.
+						logging.String("dst_cluster", conn.ClusterID()),
 					)
 				}
 			}
@@ -454,46 +459,46 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
 
+	l.sendRefreshImageCacheTTL(state)
+
 	log.Info("Resyncing deployments now that images have been reprocessed...")
-	l.sendReprocessDeployments(skipClusterIDs)
+	l.sendReprocessDeployments(state)
 }
 
-func (l *loopImpl) reprocessImageV2(id string, digest string, imageName *storage.ImageName, fetchOpt imageEnricher.FetchOption,
-	reprocessingFunc imageReprocessingFuncV2) (*storage.ImageV2, bool) {
-	image, exists, err := l.imagesV2.GetImage(allAccessCtx, id)
+func (l *loopImpl) reprocessImageV2(ref imageRef, fetchOpt imageEnricher.FetchOption,
+	reprocessingFunc imageReprocessingFuncV2) (img *storage.ImageV2, successfullyProcessed bool, imageUpdated bool) {
+	image, exists, err := l.imagesV2.GetImage(allAccessCtx, ref.id)
 	if err != nil {
-		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
-		return nil, false
+		log.Errorw("Error fetching image from database", logging.ImageID(ref.id), logging.Err(err))
+		return nil, false, false
 	}
 	migrateToV2 := false
 	if !exists {
-		// The image was not found in ImageV2 store, but it might be in the legacy ImageV1 store
 		var legacyImage *storage.Image
-		legacyImage, exists, err = l.images.GetImageMetadata(allAccessCtx, digest)
+		legacyImage, exists, err = l.images.GetImageMetadata(allAccessCtx, ref.digest)
 		if err != nil {
-			log.Errorw("Error fetching legacy image from database", logging.ImageID(id), logging.Err(err))
-			return nil, false
+			log.Errorw("Error fetching legacy image from database", logging.ImageID(ref.id), logging.Err(err))
+			return nil, false, false
 		}
 		if !exists {
-			return nil, false
+			return nil, false, false
 		}
-		image = utils.ConvertToV2WithNameOverride(legacyImage, imageName)
+		image = utils.ConvertToV2WithNameOverride(legacyImage, ref.name)
 		migrateToV2 = true
 	}
 
 	if image == nil {
-		return nil, false
+		return nil, false, false
 	}
 
 	if image.GetNotPullable() || image.GetIsClusterLocal() {
-		// Skip reprocessing. Sensor will handle cluster-local images. But we still need to migrate the image to V2.
 		if migrateToV2 {
 			if err := l.imagesV2.UpsertImage(allAccessCtx, image); err != nil {
 				log.Errorw("Error migrating image to imageV2 store", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-				return nil, false
+				return nil, false, false
 			}
 		}
-		return nil, false
+		return nil, false, false
 	}
 
 	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
@@ -502,29 +507,29 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, imageName *storage
 
 	if err != nil {
 		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-		return nil, false
+		return nil, false, false
 	}
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImageV2(image); err != nil {
 			log.Errorw("Error upserting image into datastore",
 				logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-			return nil, false
+			return nil, false, false
 		}
 		// We need to fetch the image again to make sure all fields are populated.
 		// GetImage will internally call a Merge function which will use the CVEEdges table to enrich fields like
 		// FirstImageOccurrence and FirstSystemOccurrence.
-		newImage, exists, err := l.imagesV2.GetImage(allAccessCtx, id)
+		newImage, exists, err := l.imagesV2.GetImage(allAccessCtx, ref.id)
 		if err != nil {
 			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
-			return nil, false
+			return nil, false, false
 		}
 		if !exists {
-			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()))
-			return nil, false
+			log.Errorw("The image was not found after enrichment", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()))
+			return nil, false, false
 		}
-		return newImage, true
+		return newImage, true, true
 	}
-	return image, true
+	return image, true, false
 }
 
 func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.FetchOption,
@@ -546,7 +551,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
 	nReprocessed := atomic.NewInt32(0)
-	skipClusterIDs := maputil.NewSyncMap[string, struct{}]()
+	state := newReprocessingState(fetchOpt == imageEnricher.UseCachesIfPossible)
 	for _, result := range results {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
@@ -554,11 +559,11 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			return
 		}
 		clusterIDSet := set.NewStringSet(result.GetClusterIDs()...)
-		go func(id string, digest string, imageName *storage.ImageName, clusterIDs set.StringSet) {
+		go func(ref imageRef, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImageV2(id, digest, imageName, fetchOpt, imgReprocessingFunc)
+			image, successfullyProcessed, imageUpdated := l.reprocessImageV2(ref, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -584,21 +589,23 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 				}
 			}
 			convertedImage := utils.ConvertToV1(image, allNames...)
-			// Send the updated image to relevant clusters.
+
+			imageKey := &central.ImageKey{
+				ImageId:       image.GetDigest(),
+				ImageIdV2:     image.GetId(),
+				ImageFullName: image.GetName().GetFullName(),
+			}
+
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
 					continue
 				}
 
-				msg := &central.MsgToSensor{
-					Msg: &central.MsgToSensor_UpdatedImage{
-						UpdatedImage: convertedImage,
-					},
-				}
-
-				// If were prior errors, do not attempt to send a message to this cluster.
-				if skipClusterIDs.Contains(clusterID) {
+				if state.skipClusterIDs.Contains(clusterID) {
+					msg := &central.MsgToSensor{
+						Msg: &central.MsgToSensor_UpdatedImage{UpdatedImage: convertedImage},
+					}
 					metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
 					log.Debugw("Not sending updated image to cluster due to prior errors",
 						logging.ImageID(image.GetId()),
@@ -608,18 +615,16 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					continue
 				}
 
-				err := l.injectMessage(concurrency.AsContext(&l.stopSig), conn, msg)
-				if err != nil {
-					skipClusterIDs.Store(clusterID, struct{}{})
-					log.Errorw("Error sending updated image to cluster, skipping cluster until next reprocessing cycle",
+				if err := l.sendReprocessingMessages(conn, convertedImage, imageKey, imageUpdated, state); err != nil {
+					log.Errorw("Error sending reprocessing messages to cluster, skipping cluster until next reprocessing cycle",
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.ImageID(image.GetId()), logging.Err(err),
-						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic
-						logging.String("dst_cluster", clusterID),
+						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic.
+						logging.String("dst_cluster", conn.ClusterID()),
 					)
 				}
 			}
-		}(result.GetImageID(), result.GetImageDigest(), result.GetImageName(), clusterIDSet)
+		}(imageRef{id: result.GetImageID(), digest: result.GetImageDigest(), name: result.GetImageName()}, clusterIDSet)
 	}
 	select {
 	case <-wg.Done():
@@ -629,19 +634,113 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
 
+	l.sendRefreshImageCacheTTL(state)
+
 	log.Info("Resyncing deployments now that images have been reprocessed...")
-	l.sendReprocessDeployments(skipClusterIDs)
+	l.sendReprocessDeployments(state)
 }
 
-// sendReprocessDeployments sends a reprocess deployments message to every connected
-// secured cluster.
-func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[string, struct{}]) {
+// reprocessingState holds per-cycle concurrent state shared across image goroutines.
+type reprocessingState struct {
+	skipClusterIDs maputil.SyncMap[string, struct{}]
+	refreshTTLKeys maputil.SyncMap[string, []*central.ImageKey]
+	// When true, Sensor uses targeted invalidation instead of full AC cache flush.
+	skipCacheFlush bool
+}
+
+func newReprocessingState(skipCacheFlush bool) *reprocessingState {
+	return &reprocessingState{
+		skipClusterIDs: maputil.NewSyncMap[string, struct{}](),
+		refreshTTLKeys: maputil.NewSyncMap[string, []*central.ImageKey](),
+		skipCacheFlush: skipCacheFlush,
+	}
+}
+
+// sendReprocessingMessages handles per-image messaging to a single cluster.
+//
+// Short-circuit path (skipCacheFlush=true) with capable sensors:
+//   - imageUpdated=true  → sends UpdatedImage (Sensor handles AC invalidation)
+//   - imageUpdated=false → accumulates the key for batched RefreshImageCacheTTL
+//
+// Periodic path (skipCacheFlush=false) or sensors without the capability:
+//   - always sends UpdatedImage (FlushCache handles AC invalidation)
+func (l *loopImpl) sendReprocessingMessages(
+	conn connection.SensorConnection,
+	image *storage.Image,
+	imageKey *central.ImageKey,
+	imageUpdated bool,
+	state *reprocessingState,
+) error {
+	ctx := concurrency.AsContext(&l.stopSig)
+	clusterID := conn.ClusterID()
+
+	if state.skipCacheFlush && conn.HasCapability(centralsensor.TargetedImageCacheInvalidation) && !imageUpdated {
+		state.refreshTTLKeys.Access(func(m *map[string][]*central.ImageKey) {
+			(*m)[clusterID] = append((*m)[clusterID], imageKey)
+		})
+		return nil
+	}
+
+	updateMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_UpdatedImage{UpdatedImage: image},
+	}
+	if err := l.injectMessage(ctx, conn, updateMsg); err != nil {
+		state.skipClusterIDs.Store(clusterID, struct{}{})
+		return err
+	}
+	return nil
+}
+
+// sendRefreshImageCacheTTL sends a single batched RefreshImageCacheTTL message
+// per cluster for all unchanged images accumulated during reprocessing.
+func (l *loopImpl) sendRefreshImageCacheTTL(state *reprocessingState) {
+	if l.stopSig.IsDone() {
+		return
+	}
+	ctx := concurrency.AsContext(&l.stopSig)
+	state.refreshTTLKeys.RAccess(func(m map[string][]*central.ImageKey) {
+		for clusterID, keys := range m {
+			if state.skipClusterIDs.Contains(clusterID) {
+				log.Debugw("Not sending refresh image cache TTL to cluster due to prior errors",
+					logging.String("dst_cluster", clusterID),
+					logging.Int("key_count", len(keys)),
+				)
+				continue
+			}
+			conn := l.connManager.GetConnection(clusterID)
+			if conn == nil {
+				continue
+			}
+			msg := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_RefreshImageCacheTtl{
+					RefreshImageCacheTtl: &central.RefreshImageCacheTTL{
+						ImageKeys: keys,
+					},
+				},
+			}
+			if err := l.injectMessage(ctx, conn, msg); err != nil {
+				state.skipClusterIDs.Store(clusterID, struct{}{})
+				log.Errorw("Error sending refresh image cache TTL to cluster",
+					logging.String("dst_cluster", clusterID),
+					logging.Err(err),
+				)
+				continue
+			}
+			log.Infof("Sent refresh image cache TTL to cluster %s with %d keys", clusterID, len(keys))
+		}
+	})
+}
+
+// sendReprocessDeployments sends a ReprocessDeployments message to every connected cluster.
+func (l *loopImpl) sendReprocessDeployments(state *reprocessingState) {
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
 		msg := &central.MsgToSensor{
 			Msg: &central.MsgToSensor_ReprocessDeployments{
-				ReprocessDeployments: &central.ReprocessDeployments{},
+				ReprocessDeployments: &central.ReprocessDeployments{
+					SkipCacheFlush: state.skipCacheFlush,
+				},
 			},
 		}
 		ctx := concurrency.AsContext(&l.stopSig)
@@ -656,7 +755,7 @@ func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[strin
 		firstMessage := true
 		for i, conn := range conns {
 			clusterID := conn.ClusterID()
-			if skipClusterIDs.Contains(clusterID) {
+			if state.skipClusterIDs.Contains(clusterID) {
 				metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
 				log.Errorw("Not sending reprocess deployments to cluster due to prior errors",
 					logging.ClusterID(clusterID),

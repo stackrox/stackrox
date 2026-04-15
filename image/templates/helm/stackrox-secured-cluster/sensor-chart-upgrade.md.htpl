@@ -106,7 +106,7 @@ Here is the list of old and new configuration options:
 |Old configuration option |New configuration option |
 |-------------------------|-------------------------|
 | `cluster.name` | `clusterName` |
-| `cluster.type` | Set `env.openshift` to `true` for `cluster.type=OPENSHIFT_CLUSTER` and `false` for `cluster.type=KUBERNETES_CLUSTER`. Leave unset to automatically detect (recommended). |
+| `cluster.type` | Set `env.openshift` to `true` for `cluster.type=OPENSHIFT4_CLUSTER` and `false` for `cluster.type=KUBERNETES_CLUSTER`. Leave unset to automatically detect (recommended). |
 | `endpoint.central` | `centralEndpoint` |
 | `endpoint.advertised` | `sensor.endpoint` |
 | `image.repository.main` | `image.main.name` |

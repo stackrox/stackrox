@@ -12,6 +12,7 @@ from post_tests import PostClusterTest, FinalPost
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
 
 # delegated scanning support in the secured cluster
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
