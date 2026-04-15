@@ -30,7 +30,9 @@ var customGJSONModifiers = map[string]CustomModifier{
 	"text":        TextModifier(),
 }
 
-func init() {
+// Init registers custom GJSON modifiers.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	addCustomModifiersToGJSON(customGJSONModifiers)
 }
 

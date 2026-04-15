@@ -27,7 +27,3 @@ func createSecret(i interface{}) VolumeSource {
 		SecretVolumeSource: secretVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[secretType] = createSecret
-}

@@ -27,7 +27,3 @@ func createAzureDisk(i interface{}) VolumeSource {
 		AzureDiskVolumeSource: azureVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[azureDiskType] = createAzureDisk
-}

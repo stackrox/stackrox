@@ -560,10 +560,6 @@ type SecuredClusterList struct {
 	Items           []SecuredCluster `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&SecuredCluster{}, &SecuredClusterList{})
-}
-
 var (
 	// SecuredClusterGVK is the GVK for the SecuredCluster type.
 	SecuredClusterGVK = GroupVersion.WithKind("SecuredCluster")

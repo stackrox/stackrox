@@ -27,7 +27,3 @@ func createHostPath(i interface{}) VolumeSource {
 		HostPathVolumeSource: hostPathVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[hostPathType] = createHostPath
-}

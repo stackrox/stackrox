@@ -125,6 +125,8 @@ func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
 // InitializePostgres creates and returns returns a global database instance.
 func InitializePostgres(ctx context.Context) postgres.DB {
 	pgSync.Do(func() {
+		metrics.Init()
+
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)

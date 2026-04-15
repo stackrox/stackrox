@@ -28,7 +28,3 @@ func createCinder(i interface{}) VolumeSource {
 		CinderVolumeSource: cinderVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[cinderType] = createCinder
-}

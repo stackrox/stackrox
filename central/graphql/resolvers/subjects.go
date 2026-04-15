@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerSubjectsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("subject(id: ID): Subject"),

@@ -81,7 +81,8 @@ func ObserveStoreLockHeldDurationWithOperation(store, operation string, duration
 	storeLockHeldDurationSeconds.WithLabelValues(store, operation).Observe(duration.Seconds())
 }
 
-func init() {
+// Init registers cluster entities metrics.
+func Init() {
 	prometheus.MustRegister(containersStored)
 	prometheus.MustRegister(ipsStored)
 	prometheus.MustRegister(endpointsStored)

@@ -10,7 +10,7 @@ const (
 	standardID = "NIST_800_190:4_1_4"
 )
 
-func init() {
+func Register414() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,

@@ -8,7 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/backup"
 )
 
-func init() {
+// RegisterFormat registers the postgresv1 backup format.
+func RegisterFormat() {
 	formats.MustRegisterNewFormat(
 		"postgresv1",
 		common.NewFileHandler(backup.MigrationVersion, false, checkMigrationVersion),

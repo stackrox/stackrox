@@ -25,7 +25,3 @@ func createEBS(i interface{}) VolumeSource {
 		AWSElasticBlockStoreVolumeSource: ebsVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[ebsType] = createEBS
-}

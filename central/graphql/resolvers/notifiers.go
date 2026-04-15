@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerNotifiersSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("notifiers: [Notifier!]!"),

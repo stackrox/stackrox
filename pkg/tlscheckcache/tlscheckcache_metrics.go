@@ -33,7 +33,8 @@ func observeTLSCheckDuration(subsystem metrics.Subsystem, t time.Duration) {
 	tlsCheckDuration.WithLabelValues(subsystem.String()).Observe(t.Seconds())
 }
 
-func init() {
+// Init registers Prometheus metrics for TLS check cache monitoring.
+func Init() {
 	prometheus.MustRegister(
 		tlsCheckCount,
 		tlsCheckDuration,

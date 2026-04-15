@@ -14,6 +14,7 @@ var (
 	}, []string{"status"})
 )
 
-func init() {
+// Init registers metrics for this package.
+func Init() {
 	prometheus.MustRegister(SensorEventsDeduperCounter)
 }

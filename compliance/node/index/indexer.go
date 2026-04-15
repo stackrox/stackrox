@@ -68,7 +68,9 @@ var (
 	defaultClientErr error
 )
 
-func init() {
+// InitZerolog initializes zerolog for claircore.
+// Called explicitly from compliance/cmd/compliance/app instead of package init().
+func InitZerolog() {
 	// Default to info level.
 	logLevel := zerolog.InfoLevel
 	if level, ok := zerologLevel[logging.GetGlobalLogLevel()]; ok {

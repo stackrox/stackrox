@@ -25,7 +25,3 @@ func createEmptyDir(i interface{}) VolumeSource {
 		EmptyDirVolumeSource: emptyDirVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[emptyDirType] = createEmptyDir
-}

@@ -2,14 +2,13 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
 	alpnEndpointMetric = prometheus.NewCounterVec(
 		// Leaving subsystem empty to skip duplicating this metric for each component
 		prometheus.CounterOpts{
-			Namespace: pkgMetrics.PrometheusNamespace,
+			Namespace: "rox",
 			Subsystem: "", // empty, so fqName = rox_endpoint_tls_handshakes_with_negotiated_alp_total
 			Name:      "endpoint_tls_handshakes_with_negotiated_alp_total",
 			Help:      "Number of finished TLS handshakes ...",
@@ -18,7 +17,8 @@ var (
 	)
 )
 
-func init() {
+// Init registers Prometheus metrics for gRPC ALPN monitoring.
+func Init() {
 	prometheus.MustRegister(alpnEndpointMetric)
 }
 

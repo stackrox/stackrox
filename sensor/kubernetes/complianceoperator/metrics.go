@@ -5,7 +5,8 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-func init() {
+// InitMetrics registers compliance operator metrics.
+func InitMetrics() {
 	prometheus.MustRegister(
 		commandsFromCentral,
 		applyScanConfigCommands,

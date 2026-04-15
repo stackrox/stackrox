@@ -28,7 +28,3 @@ func createCephfs(i interface{}) VolumeSource {
 		CephFSVolumeSource: cephVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[cephFSType] = createCephfs
-}

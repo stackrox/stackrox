@@ -35,7 +35,7 @@ var (
 		))
 )
 
-func init() {
+func RegisterCSCC() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

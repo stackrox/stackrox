@@ -40,7 +40,8 @@ func incrementProcessPruningCacheMissesMetric() {
 	processPruningCacheMisses.Inc()
 }
 
-func init() {
+// Init registers metrics for this package.
+func Init() {
 	prometheus.MustRegister(
 		prunedProcesses,
 		processPruningCacheHits,

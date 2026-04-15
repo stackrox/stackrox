@@ -30,7 +30,9 @@ func parseSystemUserMap(file string, userMap map[uint32]string) {
 	}
 }
 
-func init() {
+// InitUserMaps initializes user and group maps from /etc/passwd and /etc/group.
+// Called explicitly from compliance/cmd/compliance/app instead of package init().
+func InitUserMaps() {
 	parseSystemUserMap("/etc/passwd", userMap)
 	parseSystemUserMap("/etc/group", groupMap)
 }

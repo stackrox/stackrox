@@ -27,7 +27,3 @@ func createRBD(i interface{}) VolumeSource {
 		RBDVolumeSource: rbdVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[rbdType] = createRBD
-}

@@ -19,7 +19,7 @@ For this control, StackRox validates that at least one policy is enabled and enf
   2) runtime behavior.`
 )
 
-func init() {
+func RegisterCM7() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

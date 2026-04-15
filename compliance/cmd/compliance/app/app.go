@@ -22,6 +22,9 @@ var (
 func Run() {
 	memlimit.SetMemoryLimit()
 
+	initMetrics()
+	initCollectors()
+
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
 		log.Errorf("unable to start continuous profiling: %v", err)
 	}

@@ -22,7 +22,7 @@ const (
 	maxNodes = 1000
 )
 
-func init() {
+func registerNodeCVECoreSchema() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered

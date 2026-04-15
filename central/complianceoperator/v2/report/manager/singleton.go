@@ -6,6 +6,7 @@ import (
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
@@ -25,6 +26,8 @@ func Singleton() Manager {
 }
 
 func initialize() {
+	Init()
+	watcher.Init()
 	instance = New(scanConfigurationDS.Singleton(),
 		scanDS.Singleton(),
 		profileDatastore.Singleton(),

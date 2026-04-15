@@ -47,7 +47,9 @@ func newCosignSignatureFetcher() *cosignSignatureFetcher {
 
 var insecureDefaultTransport *http.Transport
 
-func init() {
+// Init initializes the insecure HTTP transport for cosign signature fetching.
+// Called explicitly from central/app/init.go instead of package init().
+func Init() {
 	insecureDefaultTransport = gcrRemote.DefaultTransport.(*http.Transport).Clone()
 	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }

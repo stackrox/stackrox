@@ -27,7 +27,3 @@ func createNFS(i interface{}) VolumeSource {
 		NFSVolumeSource: nfsVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[nfsType] = createNFS
-}

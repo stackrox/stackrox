@@ -33,7 +33,7 @@ func checkNoUnresolvedAlertsForPolicies(ctx framework.ComplianceContext, policyI
 	}
 }
 
-func init() {
+func RegisterRA5() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

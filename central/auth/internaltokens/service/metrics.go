@@ -34,7 +34,8 @@ var (
 	}, []string{"result"})
 )
 
-func init() {
+// RegisterMetrics registers Prometheus metrics for internal token service.
+func RegisterMetrics() {
 	metrics.EmplaceCollector(
 		tokenGenerationTotal,
 		tokenGenerationDuration,

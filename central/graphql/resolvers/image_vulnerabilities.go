@@ -25,7 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerImageVulnerabilitiesSchema() {
 	schema := getBuilder()
 	generator.RegisterProtoEnum(schema, reflect.TypeOf(storage.CvssScoreVersion(0)))
 

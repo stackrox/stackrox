@@ -66,7 +66,8 @@ func recordAlertOutcomes(newCount, updatedCount, resolvedCount int) {
 	alertOutcomeTotal.WithLabelValues("resolved").Add(float64(resolvedCount))
 }
 
-func init() {
+// Init registers metrics for this package.
+func Init() {
 	metrics.EmplaceCollector(
 		alertAndNotifyDuration,
 		alertAndNotifyIncomingCount,

@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerK8sRolesSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("k8sRole(id: ID!): K8SRole"),

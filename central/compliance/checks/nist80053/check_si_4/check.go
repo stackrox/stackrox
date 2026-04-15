@@ -38,7 +38,7 @@ func checkClusterCheckedInInThePastHour(ctx framework.ComplianceContext) {
 	}
 }
 
-func init() {
+func RegisterSI4() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

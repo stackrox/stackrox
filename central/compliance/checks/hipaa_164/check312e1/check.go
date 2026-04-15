@@ -10,7 +10,7 @@ const (
 	standardID = "HIPAA_164:312_e_1"
 )
 
-func init() {
+func Register312e1() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,

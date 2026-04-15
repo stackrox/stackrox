@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -54,15 +55,20 @@ const (
 )
 
 var (
-	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
-		result := make(map[v1.SearchCategory]search.OptionsMultiMap)
-		for cat, optMap := range mapping.GetEntityOptionsMap() {
-			result[cat] = search.MultiMapFromMaps(optMap)
-		}
-		result[v1.SearchCategory_COMPLIANCE] = complianceSearch.SearchOptionsMultiMap
-		return result
-	}()
+	categoryToOptionsMultimap     map[v1.SearchCategory]search.OptionsMultiMap
+	categoryToOptionsMultimapOnce sync.Once
 )
+
+func getCategoryToOptionsMultimap() map[v1.SearchCategory]search.OptionsMultiMap {
+	categoryToOptionsMultimapOnce.Do(func() {
+		categoryToOptionsMultimap = make(map[v1.SearchCategory]search.OptionsMultiMap)
+		for cat, optMap := range mapping.GetEntityOptionsMap() {
+			categoryToOptionsMultimap[cat] = search.MultiMapFromMaps(optMap)
+		}
+		categoryToOptionsMultimap[v1.SearchCategory_COMPLIANCE] = complianceSearch.SearchOptionsMultiMap
+	})
+	return categoryToOptionsMultimap
+}
 
 type autocompleteResult struct {
 	value string
@@ -234,7 +240,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
 		}
 
-		optMultiMap := categoryToOptionsMultimap[category]
+		optMultiMap := getCategoryToOptionsMultimap()[category]
 		if optMultiMap == nil {
 			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
 		}

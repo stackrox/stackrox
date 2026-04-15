@@ -31,7 +31,7 @@ var (
 	complianceOnce sync.Once
 )
 
-func init() {
+func registerComplianceSchema() {
 	InitCompliance()
 }
 

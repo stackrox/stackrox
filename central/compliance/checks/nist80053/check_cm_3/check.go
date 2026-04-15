@@ -19,7 +19,7 @@ var (
 For this control, ` + common.AnyPolicyInLifecycleStageEnforcedInterpretation(phase)
 )
 
-func init() {
+func RegisterCM3() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

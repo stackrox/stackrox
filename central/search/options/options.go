@@ -29,7 +29,8 @@ func GetOptions(categories []v1.SearchCategory) []string {
 	})
 }
 
-func init() {
+// InitCategoryToOptionsSet initializes the category to options set mapping.
+func InitCategoryToOptionsSet() {
 	CategoryToOptionsSet = make(map[v1.SearchCategory]set.StringSet)
 	for category, optionsSlice := range globalindex.SearchOptionsMap() {
 		CategoryToOptionsSet[category] = generateSetFromOptionsMap(optionsSlice)

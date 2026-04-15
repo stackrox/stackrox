@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorinit "github.com/stackrox/rox/operator/init"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
@@ -130,6 +131,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				central.Annotations[key] = val
 			}
 
+			operatorinit.RegisterCRDTypes()
 			ctx := context.Background()
 			sch := runtime.NewScheme()
 			require.NoError(t, platform.AddToScheme(sch))

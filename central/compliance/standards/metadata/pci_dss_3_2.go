@@ -1410,6 +1410,6 @@ var pciDss3_2 = Standard{
 	},
 }
 
-func init() {
+func RegisterPCIDSS32() {
 	AllStandards = append(AllStandards, pciDss3_2)
 }

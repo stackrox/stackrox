@@ -6,9 +6,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/tools/mitre/command"
+	"github.com/stackrox/rox/tools/mitre/common"
 )
 
 func main() {
+	common.Init()
+
 	c := &cobra.Command{
 		Use:          fmt.Sprintf("%s <command> ...", os.Args[0]),
 		Short:        "StackRox MITRE ATT&CK utility tool",

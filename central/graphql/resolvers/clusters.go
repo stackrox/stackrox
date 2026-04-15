@@ -26,7 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerClustersSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),

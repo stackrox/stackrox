@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func init() {
+func registerServiceAccountsSchema() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("serviceAccount(id: ID!): ServiceAccount"),

@@ -9,7 +9,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	metricsInitOnce sync.Once
 )
 
 // SensorConn is the subset of the SensorConnection interface required by the upgrade controller.
@@ -53,6 +58,8 @@ func validateTimeouts(t timeoutProvider) error {
 }
 
 func newWithTimeoutProvider(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag, timeouts timeoutProvider) (UpgradeController, error) {
+	metricsInitOnce.Do(Init)
+
 	if err := validateTimeouts(timeouts); err != nil {
 		return nil, utils.ShouldErr(err)
 	}

@@ -14,6 +14,7 @@ var (
 )
 
 func initialize() {
+	Init()
 	alertManager = New(notifierProcessor.Singleton(), alertDataStore.Singleton(), runtime.SingletonDetector())
 }
 

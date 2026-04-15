@@ -22,15 +22,12 @@ import (
 	"os"
 	"time"
 
-	configv1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/internal/controller"
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/tlsprofile"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -53,15 +50,9 @@ var (
 	resyncPeriod = 4 * time.Hour
 )
 
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(configv1alpha1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
-}
-
 // Run is the main entry point for the config-controller application.
 func Run() {
+	Init()
 	var metricsAddr string
 	var probeAddr string
 	var secureMetrics bool

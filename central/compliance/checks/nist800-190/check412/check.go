@@ -19,7 +19,7 @@ var (
 	log = logging.ModuleForName("NIST_800_190:4_1_2").Logger()
 )
 
-func init() {
+func Register412() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,

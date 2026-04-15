@@ -27,7 +27,3 @@ func createGlusterfs(i interface{}) VolumeSource {
 		GlusterfsVolumeSource: glusterVolume,
 	}
 }
-
-func init() {
-	VolumeRegistry[glusterfsType] = createGlusterfs
-}

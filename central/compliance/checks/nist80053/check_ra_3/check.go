@@ -13,7 +13,7 @@ const (
 For this control, StackRox checks that StackRox components are installed in each cluster, providing continuous multi-factor risk assessment.`
 )
 
-func init() {
+func RegisterRA3() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,

@@ -559,7 +559,7 @@ func createError(msg string, err error, notifierName string) error {
 	return errors.New(msg)
 }
 
-func init() {
+func RegisterEmail() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {

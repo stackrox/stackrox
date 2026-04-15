@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imagev2/datastore/keyfence"
+	imagev2Common "github.com/stackrox/rox/central/imagev2/datastore/store/common"
 	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -17,6 +18,7 @@ var (
 )
 
 func initialize() {
+	imagev2Common.Init()
 	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
 	ad = NewWithPostgres(storage, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
 }

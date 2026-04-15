@@ -25,11 +25,10 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
-	configv1 "github.com/openshift/api/config/v1"
-	consolev1 "github.com/openshift/api/console/v1"
 	openshiftTLS "github.com/openshift/controller-runtime-common/pkg/tls"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorinit "github.com/stackrox/rox/operator/init"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	status "github.com/stackrox/rox/operator/internal/common/status"
@@ -46,8 +45,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -103,14 +100,6 @@ var (
 	forceOpenShiftTLSProfile = env.RegisterBooleanSetting(envForceOpenShiftTLSProfile, false)
 )
 
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(platform.AddToScheme(scheme))
-	utilruntime.Must(consolev1.Install(scheme))
-	utilruntime.Must(configv1.Install(scheme))
-	//+kubebuilder:scaffold:scheme
-}
-
 func main() {
 	if err := run(); err != nil {
 		setupLog.Error(err, "fatal error")
@@ -146,6 +135,8 @@ func run() error {
 		return errors.Wrap(err, "unable to redirect std log")
 	}
 	defer restore()
+
+	operatorinit.InitSchemes(scheme)
 
 	clusterTLSProfile, tlsOpts, err := buildMetricsServerTLSOpts(enableHTTP2)
 	if err != nil {

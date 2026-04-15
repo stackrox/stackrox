@@ -731,10 +731,6 @@ type CentralList struct {
 	Items           []Central `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Central{}, &CentralList{})
-}
-
 var (
 	// CentralGVK is the GVK for the Central type.
 	CentralGVK = GroupVersion.WithKind("Central")

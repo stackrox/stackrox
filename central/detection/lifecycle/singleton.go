@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
+	lifecycleMetrics "github.com/stackrox/rox/central/detection/lifecycle/metrics"
 	"github.com/stackrox/rox/central/detection/runtime"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -25,6 +26,8 @@ var (
 )
 
 func initialize() {
+	lifecycleMetrics.Init()
+
 	manager = newManager(
 		buildtime.SingletonDetector(),
 		deploytime.SingletonDetector(),

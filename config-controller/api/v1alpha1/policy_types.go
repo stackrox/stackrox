@@ -222,7 +222,9 @@ const (
 	Cluster
 )
 
-func init() {
+// RegisterSecurityPolicy registers SecurityPolicy and SecurityPolicyList types with SchemeBuilder.
+// Called explicitly from config-controller/app.Init() instead of package init().
+func RegisterSecurityPolicy() {
 	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }
 
