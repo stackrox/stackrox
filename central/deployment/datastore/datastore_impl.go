@@ -291,11 +291,11 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 	if !exists {
 		return nil
 	}
-	// Major changes to spec, just upsert
-	if len(oldDeployment.GetContainers()) != len(deployment.GetContainers()) {
-		return nil
+	oldContainersByName := make(map[string]*storage.Container, len(oldDeployment.GetContainers()))
+	for _, c := range oldDeployment.GetContainers() {
+		oldContainersByName[c.GetName()] = c
 	}
-	for i, container := range deployment.GetContainers() {
+	for _, container := range deployment.GetContainers() {
 		if features.FlattenImageData.Enabled() {
 			if container.GetImage().GetId() != "" && container.GetImage().GetIdV2() != "" {
 				continue
@@ -305,7 +305,10 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 				continue
 			}
 		}
-		oldContainer := oldDeployment.GetContainers()[i]
+		oldContainer, found := oldContainersByName[container.GetName()]
+		if !found {
+			continue
+		}
 		if oldContainer.GetImage().GetId() == "" {
 			continue
 		}
