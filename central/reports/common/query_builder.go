@@ -163,6 +163,10 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 
 	var conjuncts []*v1.Query
 	for _, rule := range rules {
+		if len(rule.GetValues()) == 0 {
+			continue
+		}
+
 		fieldLabel, err := entityScopeRuleToFieldLabel(rule)
 		if err != nil {
 			return nil, err
@@ -172,10 +176,6 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 			fieldLabel == search.ClusterLabel ||
 			fieldLabel == search.DeploymentAnnotation ||
 			fieldLabel == search.NamespaceAnnotation
-
-		if len(rule.GetValues()) == 0 {
-			continue
-		}
 
 		if isMapField {
 			mapQueries := make([]*v1.Query, 0, len(rule.GetValues()))
