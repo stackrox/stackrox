@@ -87,7 +87,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.GetAction())
 		s.Assert().NotNil(sensorEvent.GetVirtualMachineIndexReport())
 		s.Assert().Equal("test-vm", sensorEvent.GetVirtualMachineIndexReport().GetId())
-	case <-time.After(time.Second):
+	case <-time.After(100 * time.Millisecond):
 		s.Fail("Expected message to be sent to central")
 	}
 }
@@ -143,7 +143,7 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 		select {
 		case <-s.handler.toCentral:
 			totalResponses++
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
 			return // Don't fail, just exit
 		}
@@ -177,7 +177,7 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	select {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 	}
 }
 
@@ -206,7 +206,7 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	select {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 	}
 }
 
@@ -221,7 +221,7 @@ func (s *virtualMachineHandlerSuite) TestStop() {
 	select {
 	case <-s.handler.stopper.Client().Stopped().Done():
 		// Expected.
-	case <-time.After(time.Second):
+	case <-time.After(100 * time.Millisecond):
 		s.Fail("handler should have stopped")
 	}
 }
@@ -340,133 +340,115 @@ func (s *virtualMachineHandlerSuite) TestComplianceC_AfterStart() {
 	defer s.handler.Stop()
 
 	ch := s.handler.ComplianceC()
-	s.Require().NotNil(ch)
+	s.Require().NotNil(ch, "ComplianceC channel should be not nil after start")
 }
 
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_ACK() {
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	defer s.handler.Stop()
 
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-123")).Return(
-		&virtualmachine.Info{ID: "vm-123", NodeName: "node-a"})
-
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-123",
-			Reason:      "all good",
-		}},
+	cases := map[string]struct {
+		centralAction  central.SensorACK_Action
+		resourceID     string
+		nodeName       string
+		reason         string
+		expectedAction sensor.MsgToCompliance_ComplianceACK_Action
+	}{
+		"should forward ACK to compliance": {
+			centralAction:  central.SensorACK_ACK,
+			resourceID:     "vm-123",
+			nodeName:       "node-a",
+			reason:         "all good",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
+		},
+		"should forward NACK to compliance": {
+			centralAction:  central.SensorACK_NACK,
+			resourceID:     "vm-456",
+			nodeName:       "node-b",
+			reason:         "validation failed",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_NACK,
+		},
 	}
 
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.store.EXPECT().Get(virtualmachine.VMID(tc.resourceID)).Return(
+				&virtualmachine.Info{ID: virtualmachine.VMID(tc.resourceID), NodeName: tc.nodeName})
 
-	select {
-	case got := <-s.handler.ComplianceC():
-		ack := got.Msg.GetComplianceAck()
-		s.Require().NotNil(ack)
-		s.Equal(sensor.MsgToCompliance_ComplianceACK_ACK, ack.GetAction())
-		s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
-		s.Equal("vm-123", ack.GetResourceId())
-		s.Equal("all good", ack.GetReason())
-		s.Equal("node-a", got.Hostname)
-		s.False(got.Broadcast)
-	case <-time.After(time.Second):
-		s.Fail("timed out waiting for compliance ACK")
+			ctx := context.Background()
+			msg := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      tc.centralAction,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  tc.resourceID,
+					Reason:      tc.reason,
+				}},
+			}
+
+			err := s.handler.ProcessMessage(ctx, msg)
+			s.Require().NoError(err)
+
+			select {
+			case got := <-s.handler.ComplianceC():
+				ack := got.Msg.GetComplianceAck()
+				s.Require().NotNil(ack)
+				s.Equal(tc.expectedAction, ack.GetAction())
+				s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
+				s.Equal(tc.resourceID, ack.GetResourceId())
+				s.Equal(tc.reason, ack.GetReason())
+				s.Equal(tc.nodeName, got.Hostname)
+				s.False(got.Broadcast)
+			case <-time.After(100 * time.Millisecond):
+				s.Fail("timed out waiting for compliance message")
+			}
+		})
 	}
 }
 
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_NACK() {
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	defer s.handler.Stop()
 
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-456")).Return(
-		&virtualmachine.Info{ID: "vm-456", NodeName: "node-b"})
-
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_NACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-456",
-			Reason:      "validation failed",
-		}},
+	cases := map[string]struct {
+		resourceID string
+	}{
+		"should broadcast when resource ID is empty": {
+			resourceID: "",
+		},
+		"should broadcast when VM not in store": {
+			resourceID: "vm-deleted",
+		},
 	}
 
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
+	for name, tc := range cases {
+		s.Run(name, func() {
+			if tc.resourceID != "" {
+				s.store.EXPECT().Get(virtualmachine.VMID(tc.resourceID)).Return(nil)
+			}
 
-	select {
-	case got := <-s.handler.ComplianceC():
-		ack := got.Msg.GetComplianceAck()
-		s.Require().NotNil(ack)
-		s.Equal(sensor.MsgToCompliance_ComplianceACK_NACK, ack.GetAction())
-		s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
-		s.Equal("vm-456", ack.GetResourceId())
-		s.Equal("validation failed", ack.GetReason())
-		s.Equal("node-b", got.Hostname)
-		s.False(got.Broadcast)
-	case <-time.After(time.Second):
-		s.Fail("timed out waiting for compliance NACK")
-	}
-}
+			ctx := context.Background()
+			msg := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  tc.resourceID,
+				}},
+			}
 
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_BroadcastWhenResourceIDEmpty() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
+			err := s.handler.ProcessMessage(ctx, msg)
+			s.Require().NoError(err)
 
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "",
-		}},
-	}
-
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
-
-	select {
-	case got := <-s.handler.ComplianceC():
-		s.Empty(got.Hostname)
-		s.True(got.Broadcast)
-	case <-time.After(time.Second):
-		s.Fail("timed out waiting for broadcast compliance ACK")
-	}
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_BroadcastWhenVMNotInStore() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-deleted")).Return(nil)
-
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-deleted",
-		}},
-	}
-
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
-
-	select {
-	case got := <-s.handler.ComplianceC():
-		s.Equal("vm-deleted", got.Msg.GetComplianceAck().GetResourceId())
-		s.Empty(got.Hostname)
-		s.True(got.Broadcast)
-	case <-time.After(time.Second):
-		s.Fail("timed out waiting for broadcast compliance ACK")
+			select {
+			case got := <-s.handler.ComplianceC():
+				s.Equal(tc.resourceID, got.Msg.GetComplianceAck().GetResourceId())
+				s.Empty(got.Hostname)
+				s.True(got.Broadcast)
+			case <-time.After(100 * time.Millisecond):
+				s.Fail("timed out waiting for broadcast compliance ACK")
+			}
+		})
 	}
 }
 
@@ -488,7 +470,7 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_NoStartDoesNotPanic
 
 	select {
 	case <-done:
-	case <-time.After(time.Second):
+	case <-time.After(100 * time.Millisecond):
 		s.Fail("ProcessMessage should not block when Start() has not been called")
 	}
 
@@ -594,7 +576,7 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenQueueFull(
 	select {
 	case got := <-s.handler.ComplianceC():
 		s.Equal("vm-first", got.Msg.GetComplianceAck().GetResourceId())
-	case <-time.After(time.Second):
+	case <-time.After(100 * time.Millisecond):
 		s.Fail("first message should be available in the buffer")
 	}
 
