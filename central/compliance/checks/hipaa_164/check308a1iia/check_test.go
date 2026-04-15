@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	hipaa164.Init()
+	Register308a1iia()
 }
 
 func TestCheck(t *testing.T) {
