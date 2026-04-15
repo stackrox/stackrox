@@ -323,13 +323,16 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 		return nil, status.Error(codes.InvalidArgument, "id must be specified")
 	}
 
-	if _, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetId()); err != nil {
+	vmQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
+	count, err := s.vmDS.CountVirtualMachines(ctx, vmQuery)
+	if err != nil {
 		return nil, err
-	} else if !exists {
+	}
+	if count == 0 {
 		return nil, status.Errorf(codes.NotFound, "virtual machine %q not found", request.GetId())
 	}
 
-	vmFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
+	vmFilter := vmQuery.CloneVT()
 	if request.GetQuery().GetQuery() != "" {
 		additionalQuery, err := search.ParseQuery(request.GetQuery().GetQuery())
 		if err != nil {
@@ -344,9 +347,14 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 	}
 
 	proto := storagetov2.SeverityCountsToProto(severityCounts)
-	fixable := int32(0)
-	notFixable := int32(0)
-	for _, sev := range []*v2.VulnFixableCount{proto.GetCritical(), proto.GetImportant(), proto.GetModerate(), proto.GetLow(), proto.GetUnknown()} {
+	var fixable, notFixable int32
+	for _, sev := range []*v2.VulnFixableCount{
+		proto.GetCritical(),
+		proto.GetImportant(),
+		proto.GetModerate(),
+		proto.GetLow(),
+		proto.GetUnknown(),
+	} {
 		fixable += sev.GetFixable()
 		notFixable += sev.GetTotal() - sev.GetFixable()
 	}
@@ -414,11 +422,11 @@ func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMC
 		return nil, err
 	}
 
-	componentIDs := make([]string, 0, len(cves))
+	componentIDSet := make(map[string]struct{}, len(cves))
 	cveByComponent := make(map[string]*v2.Advisory, len(cves))
 	fixedByComponent := make(map[string]string, len(cves))
 	for _, cve := range cves {
-		componentIDs = append(componentIDs, cve.GetVmComponentId())
+		componentIDSet[cve.GetVmComponentId()] = struct{}{}
 		if cve.GetAdvisory() != nil {
 			cveByComponent[cve.GetVmComponentId()] = &v2.Advisory{
 				Name: cve.GetAdvisory().GetName(),
@@ -428,6 +436,10 @@ func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMC
 		fixedByComponent[cve.GetVmComponentId()] = cve.GetFixedBy()
 	}
 
+	componentIDs := make([]string, 0, len(componentIDSet))
+	for id := range componentIDSet {
+		componentIDs = append(componentIDs, id)
+	}
 	components, err := s.componentDS.GetBatch(ctx, componentIDs)
 	if err != nil {
 		return nil, err

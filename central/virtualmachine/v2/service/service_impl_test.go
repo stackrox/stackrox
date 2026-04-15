@@ -114,7 +114,7 @@ func TestGetVMVulnSummary(t *testing.T) {
 				Id: "vm-1",
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(nil, false, nil)
+				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(0, nil)
 			},
 			expectedError: "not found",
 		},
@@ -123,10 +123,7 @@ func TestGetVMVulnSummary(t *testing.T) {
 				Id: "vm-1",
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(&storage.VirtualMachineV2{
-					Id:   "vm-1",
-					Name: "test-vm",
-				}, true, nil)
+				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(1, nil)
 				mockView.EXPECT().CountBySeverity(ctx, gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
 					CriticalSeverityCount:         2,
 					FixableCriticalSeverityCount:  1,
@@ -166,8 +163,14 @@ func TestGetVMVulnSummary(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
-				assert.NotNil(t, result)
-				assert.NotNil(t, result.GetSeverityCounts())
+				assert.Equal(t, int32(2), result.GetSeverityCounts().GetCritical().GetTotal())
+				assert.Equal(t, int32(1), result.GetSeverityCounts().GetCritical().GetFixable())
+				assert.Equal(t, int32(3), result.GetSeverityCounts().GetImportant().GetTotal())
+				assert.Equal(t, int32(2), result.GetSeverityCounts().GetImportant().GetFixable())
+				// fixable: 1 (critical) + 2 (important) = 3
+				assert.Equal(t, int32(3), result.GetFixableCount())
+				// not fixable: (2-1) + (3-2) = 2
+				assert.Equal(t, int32(2), result.GetNotFixableCount())
 			}
 		})
 	}
@@ -247,6 +250,13 @@ func TestListVMCVEsByVM(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, result.GetTotalCount())
+				if len(result.GetCves()) > 0 {
+					row := result.GetCves()[0]
+					assert.Equal(t, "CVE-2024-1234", row.GetCve())
+					assert.Equal(t, v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, row.GetSeverity())
+					assert.True(t, row.GetIsFixable())
+					assert.Equal(t, float32(7.5), row.GetCvss())
+				}
 			}
 		})
 	}
@@ -340,7 +350,13 @@ func TestGetVMCVEComponents(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
-				assert.NotNil(t, result)
+				require.Len(t, result.GetComponents(), 1)
+				row := result.GetComponents()[0]
+				assert.Equal(t, "openssl", row.GetComponentName())
+				assert.Equal(t, "1.1.1", row.GetComponentVersion())
+				assert.Equal(t, v2.SourceType_OS, row.GetSource())
+				assert.Equal(t, "1.2.3", row.GetFixedBy())
+				assert.Equal(t, "RHSA-2024:1234", row.GetAdvisory().GetName())
 			}
 		})
 	}
@@ -413,6 +429,13 @@ func TestListVMComponents(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, result.GetTotalCount())
+				if len(result.GetComponents()) > 0 {
+					row := result.GetComponents()[0]
+					assert.Equal(t, "openssl", row.GetName())
+					assert.Equal(t, "1.1.1", row.GetVersion())
+					assert.Equal(t, v2.SourceType_OS, row.GetSource())
+					assert.Equal(t, int32(2), row.GetCveCount())
+				}
 			}
 		})
 	}
