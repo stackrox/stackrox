@@ -128,6 +128,53 @@ tkn pipelinerun logs -f <run-name> -n stackrox-dev
 tkn pipelinerun list -n stackrox-dev
 ```
 
+## Manual Deployment (Simplified)
+
+Use `pipeline-build.yaml` for build-only, then deploy manually:
+
+```bash
+# 1. Run build pipeline
+kubectl create -f - <<EOF
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: stackrox-build-
+  namespace: stackrox-dev
+spec:
+  pipelineRef:
+    name: stackrox-build
+  params:
+    - name: image-tag
+      value: "dev"
+  taskRunTemplate:
+    serviceAccountName: stackrox-dev-sa
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 10Gi
+EOF
+
+# 2. Create KinD VM
+kubectl apply -f kind-vm.yaml
+
+# 3. Wait for VM and get kubeconfig
+VMI_IP=$(kubectl get vmi stackrox-kind -n stackrox-dev -o jsonpath='{.status.interfaces[0].ipAddress}')
+curl -s "http://${VMI_IP}:8080/kubeconfig" > /tmp/kind-kubeconfig
+
+# 4. Build roxctl locally (needs version info)
+cd /path/to/stackrox
+eval "$(./status.sh | sed 's/ /=/')"
+go build -ldflags="-X 'github.com/stackrox/rox/pkg/version/internal.MainVersion=${STABLE_MAIN_VERSION}'" \
+  -o /tmp/roxctl ./roxctl/main.go
+
+# 5. Deploy with dev-friendly resources
+./deploy.sh /tmp/kind-kubeconfig
+```
+
 ## Accessing the deployed cluster
 
 After deployment completes, port-forward to Central:
