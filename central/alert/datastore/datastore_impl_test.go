@@ -515,6 +515,71 @@ func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
 	protoassert.Equal(s.T(), expectedListAlert, returnedAlert)
 }
 
+// TestSearchListAlertsEntityTypes verifies that the projection-based SearchListAlerts
+// correctly handles deployment, resource, and node entity types, including
+// deployment_type, enforcement_count, and categories.
+func (s *AlertDatastoreImplSuite) TestSearchListAlertsEntityTypes() {
+	// 1. Deployment alert with deployment_type and enforcement.
+	deployAlert := fixtures.GetAlert()
+	deployAlert.Id = fixtureconsts.Deployment1
+	deployAlert.GetDeployment().Type = "DaemonSet"
+	deployAlert.EntityType = storage.Alert_DEPLOYMENT
+	deployAlert.PlatformComponent = false
+	deployAlert.Enforcement = &storage.Alert_Enforcement{
+		Action: storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+	}
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(deployAlert)
+
+	// 2. Resource alert.
+	resourceAlert := fixtures.GetResourceAlert()
+	resourceAlert.Id = fixtureconsts.Deployment2
+	resourceAlert.EntityType = storage.Alert_RESOURCE
+	resourceAlert.PlatformComponent = false
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(resourceAlert)
+
+	// 3. Node alert.
+	nodeAlert := fixtures.GetScopedNodeAlert(fixtureconsts.Deployment3, fixtureconsts.Cluster1, fixtureconsts.Node1, "test-node")
+	nodeAlert.EntityType = storage.Alert_NODE
+	nodeAlert.PlatformComponent = false
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(nodeAlert)
+
+	// Search all.
+	listAlerts, err := s.datastore.SearchListAlerts(ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Len(listAlerts, 3)
+
+	// Verify each entity type by comparing with convert.AlertToListAlert.
+	for _, la := range listAlerts {
+		switch la.GetId() {
+		case deployAlert.GetId():
+			expected := convert.AlertToListAlert(deployAlert)
+			s.Equal("DaemonSet", la.GetDeployment().GetDeploymentType())
+			s.Equal(expected.GetEnforcementCount(), la.GetEnforcementCount())
+			s.Equal(expected.GetPolicy().GetCategories(), la.GetPolicy().GetCategories())
+			s.NotNil(la.GetCommonEntityInfo())
+			s.Equal(storage.ListAlert_DEPLOYMENT, la.GetCommonEntityInfo().GetResourceType())
+
+		case resourceAlert.GetId():
+			s.NotNil(la.GetResource())
+			s.Equal(resourceAlert.GetResource().GetName(), la.GetResource().GetName())
+			s.NotNil(la.GetCommonEntityInfo())
+			s.Equal(storage.ListAlert_ResourceType(storage.Alert_Resource_SECRETS), la.GetCommonEntityInfo().GetResourceType())
+
+		case nodeAlert.GetId():
+			s.NotNil(la.GetNode())
+			s.Equal("test-node", la.GetNode().GetName())
+			s.NotNil(la.GetCommonEntityInfo())
+			s.Equal(nodeAlert.GetClusterName(), la.GetCommonEntityInfo().GetClusterName())
+
+		default:
+			s.Failf("unexpected alert ID", "got %s", la.GetId())
+		}
+	}
+}
+
 // TestCountAlerts tests the CountAlerts functionality
 func (s *AlertDatastoreImplSuite) TestCountAlerts() {
 	// Create some active alerts using Alert constants
