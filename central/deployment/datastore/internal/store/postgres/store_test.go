@@ -49,67 +49,67 @@ func (s *DeploymentsStoreSuite) TestStore() {
 
 	store := s.store
 
-	deployment := &storage.Deployment{}
-	s.NoError(testutils.FullInit(deployment, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	storedDeployment := &storage.StoredDeployment{}
+	s.NoError(testutils.FullInit(storedDeployment, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundDeployment, exists, err := store.Get(ctx, deployment.GetId())
+	foundStoredDeployment, exists, err := store.Get(ctx, storedDeployment.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundDeployment)
+	s.Nil(foundStoredDeployment)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, deployment))
-	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
+	s.NoError(store.Upsert(ctx, storedDeployment))
+	foundStoredDeployment, exists, err = store.Get(ctx, storedDeployment.GetId())
 	s.NoError(err)
 	s.True(exists)
-	protoassert.Equal(s.T(), deployment, foundDeployment)
+	protoassert.Equal(s.T(), storedDeployment, foundStoredDeployment)
 
-	deploymentCount, err := store.Count(ctx, search.EmptyQuery())
+	storedDeploymentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(1, deploymentCount)
-	deploymentCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
+	s.Equal(1, storedDeploymentCount)
+	storedDeploymentCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
-	s.Zero(deploymentCount)
+	s.Zero(storedDeploymentCount)
 
-	deploymentExists, err := store.Exists(ctx, deployment.GetId())
+	storedDeploymentExists, err := store.Exists(ctx, storedDeployment.GetId())
 	s.NoError(err)
-	s.True(deploymentExists)
-	s.NoError(store.Upsert(ctx, deployment))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, deployment), sac.ErrResourceAccessDenied)
+	s.True(storedDeploymentExists)
+	s.NoError(store.Upsert(ctx, storedDeployment))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, storedDeployment), sac.ErrResourceAccessDenied)
 
-	s.NoError(store.Delete(ctx, deployment.GetId()))
-	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
+	s.NoError(store.Delete(ctx, storedDeployment.GetId()))
+	foundStoredDeployment, exists, err = store.Get(ctx, storedDeployment.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundDeployment)
-	s.NoError(store.Delete(withNoAccessCtx, deployment.GetId()))
+	s.Nil(foundStoredDeployment)
+	s.NoError(store.Delete(withNoAccessCtx, storedDeployment.GetId()))
 
-	var deployments []*storage.Deployment
-	var deploymentIDs []string
+	var storedDeployments []*storage.StoredDeployment
+	var storedDeploymentIDs []string
 	for i := 0; i < 200; i++ {
-		deployment := &storage.Deployment{}
-		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		deployments = append(deployments, deployment)
-		deploymentIDs = append(deploymentIDs, deployment.GetId())
+		storedDeployment := &storage.StoredDeployment{}
+		s.NoError(testutils.FullInit(storedDeployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		storedDeployments = append(storedDeployments, storedDeployment)
+		storedDeploymentIDs = append(storedDeploymentIDs, storedDeployment.GetId())
 	}
 
-	s.NoError(store.UpsertMany(ctx, deployments))
+	s.NoError(store.UpsertMany(ctx, storedDeployments))
 
-	foundDeployments, missing, err := store.GetMany(ctx, deploymentIDs)
+	foundStoredDeployments, missing, err := store.GetMany(ctx, storedDeploymentIDs)
 	s.NoError(err)
 	s.Empty(missing)
-	protoassert.ElementsMatch(s.T(), deployments, foundDeployments)
+	protoassert.ElementsMatch(s.T(), storedDeployments, foundStoredDeployments)
 
-	deploymentCount, err = store.Count(ctx, search.EmptyQuery())
+	storedDeploymentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(200, deploymentCount)
+	s.Equal(200, storedDeploymentCount)
 
-	s.NoError(store.DeleteMany(ctx, deploymentIDs))
+	s.NoError(store.DeleteMany(ctx, storedDeploymentIDs))
 
-	deploymentCount, err = store.Count(ctx, search.EmptyQuery())
+	storedDeploymentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(0, deploymentCount)
+	s.Equal(0, storedDeploymentCount)
 }
 
 const (
@@ -131,15 +131,15 @@ type testCase struct {
 	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
-	expectedObjects        []*storage.Deployment
+	expectedObjects        []*storage.StoredDeployment
 	expectedWriteError     error
 }
 
-func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.Deployment, *storage.Deployment, map[string]testCase) {
-	objA := &storage.Deployment{}
+func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.StoredDeployment, *storage.StoredDeployment, map[string]testCase) {
+	objA := &storage.StoredDeployment{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
-	objB := &storage.Deployment{}
+	objB := &storage.StoredDeployment{}
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	testCases := map[string]testCase{
@@ -148,7 +148,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{objA.GetId(), objB.GetId()},
 			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
-			expectedObjects:        []*storage.Deployment{objA, objB},
+			expectedObjects:        []*storage.StoredDeployment{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
@@ -156,7 +156,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.Deployment{},
+			expectedObjects:        []*storage.StoredDeployment{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withNoAccessToCluster: {
@@ -169,7 +169,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.Deployment{},
+			expectedObjects:        []*storage.StoredDeployment{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccess: {
@@ -183,7 +183,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.Deployment{objA},
+			expectedObjects:        []*storage.StoredDeployment{objA},
 			expectedWriteError:     nil,
 		},
 		withAccessToCluster: {
@@ -196,7 +196,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.Deployment{objA},
+			expectedObjects:        []*storage.StoredDeployment{objA},
 			expectedWriteError:     nil,
 		},
 		withAccessToDifferentCluster: {
@@ -209,7 +209,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.Deployment{},
+			expectedObjects:        []*storage.StoredDeployment{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccessToDifferentNs: {
@@ -223,7 +223,7 @@ func (s *DeploymentsStoreSuite) getTestData(access ...storage.Access) (*storage.
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.Deployment{},
+			expectedObjects:        []*storage.StoredDeployment{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 	}
@@ -244,7 +244,7 @@ func (s *DeploymentsStoreSuite) TestSACUpsertMany() {
 	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.Deployment{obj}), testCase.expectedWriteError)
+			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.StoredDeployment{obj}), testCase.expectedWriteError)
 		})
 	}
 }
@@ -272,7 +272,7 @@ func (s *DeploymentsStoreSuite) TestSACWalk() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
-			getIDs := func(obj *storage.Deployment) error {
+			getIDs := func(obj *storage.StoredDeployment) error {
 				identifiers = append(identifiers, obj.GetId())
 				return nil
 			}
@@ -291,7 +291,7 @@ func (s *DeploymentsStoreSuite) TestSACGetByQueryFn() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
-			getIDs := func(obj *storage.Deployment) error {
+			getIDs := func(obj *storage.StoredDeployment) error {
 				identifiers = append(identifiers, obj.GetId())
 				return nil
 			}

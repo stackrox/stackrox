@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	storeTypes "github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	"github.com/stackrox/rox/central/deployment/views"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -96,16 +97,16 @@ func (ds *datastoreImpl) initializeRanker() {
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
 	// The store search function does not use select fields, only views do. Hence empty query is used in the walk below
-	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(deployment *storage.Deployment) error {
-		riskScore := deployment.GetRiskScore()
-		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
+	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(storedDeployment *storage.StoredDeployment) error {
+		riskScore := storedDeployment.GetRiskScore()
+		ds.deploymentRanker.Add(storedDeployment.GetId(), riskScore)
 
 		// TODO: ROX-6235: account for nodes in cluster risk
 		// aggregate deployment risk scores to get cluster risk score
-		clusterScores[deployment.GetClusterId()] += riskScore
+		clusterScores[storedDeployment.GetClusterId()] += riskScore
 
 		// aggregate deployment risk scores to obtain namespace risk score
-		nsScores[deployment.GetNamespaceId()] += riskScore
+		nsScores[storedDeployment.GetNamespaceId()] += riskScore
 
 		return nil
 	})
@@ -201,8 +202,8 @@ func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) 
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchRawDeployments")
 
 	var deployments []*storage.Deployment
-	err := ds.deploymentStore.WalkByQuery(ctx, q, func(deployment *storage.Deployment) error {
-		deployments = append(deployments, deployment)
+	err := ds.deploymentStore.WalkByQuery(ctx, q, func(storedDeployment *storage.StoredDeployment) error {
+		deployments = append(deployments, storeTypes.FromStoredDeployment(storedDeployment))
 		return nil
 	})
 	if err != nil {
@@ -215,10 +216,11 @@ func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) 
 
 // GetDeployment
 func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error) {
-	deployment, found, err := ds.deploymentStore.Get(ctx, id)
+	storedDeployment, found, err := ds.deploymentStore.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
+	deployment := storeTypes.FromStoredDeployment(storedDeployment)
 
 	if ok, err := deploymentsSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !ok {
 		return nil, false, err
@@ -229,17 +231,19 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 
 // GetDeployments
 func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
-	var deployments []*storage.Deployment
-	var err error
 	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return ds.SearchRawDeployments(ctx, pkgSearch.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
 	}
 
-	deployments, _, err = ds.deploymentStore.GetMany(ctx, ids)
+	storedDeployments, _, err := ds.deploymentStore.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
+	}
+	deployments := make([]*storage.Deployment, 0, len(storedDeployments))
+	for _, sd := range storedDeployments {
+		deployments = append(deployments, storeTypes.FromStoredDeployment(sd))
 	}
 	ds.updateDeploymentPriority(deployments...)
 	return deployments, nil
@@ -254,7 +258,8 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error {
-	wrappedFn := func(deployment *storage.Deployment) error {
+	wrappedFn := func(storedDeployment *storage.StoredDeployment) error {
+		deployment := storeTypes.FromStoredDeployment(storedDeployment)
 		ds.updateDeploymentPriority(deployment)
 		return fn(deployment)
 	}
@@ -284,13 +289,14 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 	if allImagesAreSpecifiedByDigest(deployment) {
 		return nil
 	}
-	oldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
+	storedOldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
 	if err != nil {
 		return err
 	}
 	if !exists {
 		return nil
 	}
+	oldDeployment := storeTypes.FromStoredDeployment(storedOldDeployment)
 	// Major changes to spec, just upsert
 	if len(oldDeployment.GetContainers()) != len(deployment.GetContainers()) {
 		return nil
@@ -345,7 +351,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		deployment.PlatformComponent = match
 	}
 
-	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
+	if err := ds.deploymentStore.Upsert(ctx, storeTypes.ToStoredDeployment(deployment)); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
 	return nil

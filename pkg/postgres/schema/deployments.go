@@ -57,7 +57,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+		schema = walker.Walk(reflect.TypeOf((*storage.StoredDeployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
@@ -67,7 +67,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "storeddeployment", (*storage.StoredDeployment)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
@@ -129,23 +129,24 @@ type Deployments struct {
 
 // DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.
 type DeploymentsContainers struct {
-	DeploymentsID                         string          `gorm:"column:deployments_id;type:uuid;primaryKey"`
-	Idx                                   int             `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainers_idx,type:btree"`
-	ImageID                               string          `gorm:"column:image_id;type:varchar;index:deploymentscontainers_image_id,type:hash"`
-	ImageNameRegistry                     string          `gorm:"column:image_name_registry;type:varchar"`
-	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
-	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
-	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
-	ImageIDV2                             string          `gorm:"column:image_idv2;type:varchar;index:deploymentscontainers_image_idv2,type:btree"`
-	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
-	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
-	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`
-	SecurityContextReadOnlyRootFilesystem bool            `gorm:"column:securitycontext_readonlyrootfilesystem;type:bool"`
-	ResourcesCPUCoresRequest              float32         `gorm:"column:resources_cpucoresrequest;type:numeric"`
-	ResourcesCPUCoresLimit                float32         `gorm:"column:resources_cpucoreslimit;type:numeric"`
-	ResourcesMemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
-	ResourcesMemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
-	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	DeploymentsID                         string                `gorm:"column:deployments_id;type:uuid;primaryKey"`
+	Idx                                   int                   `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainers_idx,type:btree"`
+	ImageID                               string                `gorm:"column:image_id;type:varchar;index:deploymentscontainers_image_id,type:hash"`
+	ImageNameRegistry                     string                `gorm:"column:image_name_registry;type:varchar"`
+	ImageNameRemote                       string                `gorm:"column:image_name_remote;type:varchar"`
+	ImageNameTag                          string                `gorm:"column:image_name_tag;type:varchar"`
+	ImageNameFullName                     string                `gorm:"column:image_name_fullname;type:varchar"`
+	ImageIDV2                             string                `gorm:"column:image_idv2;type:varchar;index:deploymentscontainers_image_idv2,type:btree"`
+	SecurityContextPrivileged             bool                  `gorm:"column:securitycontext_privileged;type:bool"`
+	SecurityContextDropCapabilities       *pq.StringArray       `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
+	SecurityContextAddCapabilities        *pq.StringArray       `gorm:"column:securitycontext_addcapabilities;type:text[]"`
+	SecurityContextReadOnlyRootFilesystem bool                  `gorm:"column:securitycontext_readonlyrootfilesystem;type:bool"`
+	ResourcesCPUCoresRequest              float32               `gorm:"column:resources_cpucoresrequest;type:numeric"`
+	ResourcesCPUCoresLimit                float32               `gorm:"column:resources_cpucoreslimit;type:numeric"`
+	ResourcesMemoryMbRequest              float32               `gorm:"column:resources_memorymbrequest;type:numeric"`
+	ResourcesMemoryMbLimit                float32               `gorm:"column:resources_memorymblimit;type:numeric"`
+	ContainerType                         storage.ContainerType `gorm:"column:containertype;type:integer"`
+	DeploymentsRef                        Deployments           `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // DeploymentsContainersEnvs holds the Gorm model for Postgres table `deployments_containers_envs`.

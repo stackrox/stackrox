@@ -802,9 +802,23 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "initContainers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageContainer"
+          }
+        },
+        "ephemeralContainers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageContainer"
+          }
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 38"
     },
     "storageEPSS": {
       "type": "object",

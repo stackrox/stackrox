@@ -26,7 +26,7 @@ import (
 
 const (
 	baseTable = "deployments"
-	storeName = "Deployment"
+	storeName = "StoredDeployment"
 )
 
 var (
@@ -36,11 +36,11 @@ var (
 )
 
 type (
-	storeType = storage.Deployment
+	storeType = storage.StoredDeployment
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.Deployment
+// Store is the interface to interact with the storage for storage.StoredDeployment
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -117,12 +117,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 		}
 	}
 	if len(deniedIDs) != 0 {
-		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying deployments with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying storedDeployments with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
 	}
 	return nil
 }
 
-func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
+func insertIntoDeployments(batch *pgx.Batch, obj *storage.StoredDeployment) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -177,7 +177,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 	return nil
 }
 
-func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
+func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.StoredContainer, deploymentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -197,9 +197,10 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetResources().GetCpuCoresLimit(),
 		obj.GetResources().GetMemoryMbRequest(),
 		obj.GetResources().GetMemoryMbLimit(),
+		obj.GetContainerType(),
 	}
 
-	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit, ContainerType) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit, ContainerType = EXCLUDED.ContainerType"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -357,7 +358,7 @@ var copyColsDeployments = []string{
 	"serialized",
 }
 
-func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Deployment) error {
+func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.StoredDeployment) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -444,9 +445,10 @@ var copyColsDeploymentsContainers = []string{
 	"resources_cpucoreslimit",
 	"resources_memorymbrequest",
 	"resources_memorymblimit",
+	"containertype",
 }
 
-func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
+func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.StoredContainer) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -476,6 +478,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetResources().GetCpuCoresLimit(),
 			obj.GetResources().GetMemoryMbRequest(),
 			obj.GetResources().GetMemoryMbLimit(),
+			obj.GetContainerType(),
 		}, nil
 	})
 

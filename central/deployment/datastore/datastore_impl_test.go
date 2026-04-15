@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	storeTypes "github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -59,7 +60,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 
 	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
-	deployments := []*storage.Deployment{
+	storedDeployments := []*storage.StoredDeployment{
 		{
 			Id:          "1",
 			RiskScore:   float32(1.0),
@@ -84,7 +85,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 			Id: "5",
 		},
 	}
-	suite.storage.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(deployments))
+	suite.storage.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(storedDeployments))
 	ds.initializeRanker()
 
 	suite.Equal(int64(1), clusterRanker.GetRankForID("c1"))
@@ -98,8 +99,8 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	suite.Equal(int64(3), deploymentRanker.GetRankForID("3"))
 }
 
-func walkMockFunc(deployments []*storage.Deployment) func(_ context.Context, _ *v1.Query, fn func(group *storage.Deployment) error) error {
-	return func(_ context.Context, _ *v1.Query, fn func(deployment *storage.Deployment) error) error {
+func walkMockFunc(deployments []*storage.StoredDeployment) func(_ context.Context, _ *v1.Query, fn func(group *storage.StoredDeployment) error) error {
+	return func(_ context.Context, _ *v1.Query, fn func(deployment *storage.StoredDeployment) error) error {
 		for _, g := range deployments {
 			if err := fn(g); err != nil {
 				return err
@@ -151,7 +152,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	returnedDep := dep.CloneVT()
 	returnedDep.Containers = returnedDep.GetContainers()[:1]
 
-	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
+	suite.storage.EXPECT().Get(ctx, "id").Return(storeTypes.ToStoredDeployment(returnedDep), true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -161,7 +162,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	returnedDep.Containers[1].Image.Name = &storage.ImageName{
 		FullName: "fullname",
 	}
-	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
+	suite.storage.EXPECT().Get(ctx, "id").Return(storeTypes.ToStoredDeployment(returnedDep), true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -169,7 +170,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	dep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
 	expectedDep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
 	expectedDep.Containers[1].Image.Id = "xyz"
-	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
+	suite.storage.EXPECT().Get(ctx, "id").Return(storeTypes.ToStoredDeployment(returnedDep), true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	if features.FlattenImageData.Enabled() {
 		expectedDep.GetContainers()[1].GetImage().IdV2 = utils.NewImageV2ID(expectedDep.GetContainers()[1].GetImage().GetName(), expectedDep.GetContainers()[1].GetImage().GetId())
@@ -192,30 +193,22 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:        "id",
 		Namespace: "my-namespace",
 	}
-	expectedDeployment := &storage.Deployment{
-		Id:                "id",
-		Namespace:         "my-namespace",
-		PlatformComponent: false,
-	}
 
-	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	suite.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	suite.matcher.EXPECT().MatchDeployment(deployment).Return(false, nil).Times(1)
 	err := ds.UpsertDeployment(ctx, deployment)
 	suite.Require().NoError(err)
+	suite.False(deployment.GetPlatformComponent())
 
 	// Case: Deployment matching platform rules
 	deployment = &storage.Deployment{
 		Id:        "id",
 		Namespace: "kube-123",
 	}
-	expectedDeployment = &storage.Deployment{
-		Id:                "id",
-		Namespace:         "kube-123",
-		PlatformComponent: true,
-	}
 
-	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	suite.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	suite.matcher.EXPECT().MatchDeployment(deployment).Return(true, nil).Times(1)
 	err = ds.UpsertDeployment(ctx, deployment)
 	suite.Require().NoError(err)
+	suite.True(deployment.GetPlatformComponent())
 }

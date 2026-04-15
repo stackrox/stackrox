@@ -74,10 +74,10 @@ func (mr *MockStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.Deployment, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.StoredDeployment, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.Deployment)
+	ret0, _ := ret[0].(*storage.StoredDeployment)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -136,10 +136,10 @@ func (mr *MockStoreMockRecorder) GetListDeployment(ctx, id any) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.StoredDeployment, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
-	ret0, _ := ret[0].([]*storage.Deployment)
+	ret0, _ := ret[0].([]*storage.StoredDeployment)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -203,7 +203,7 @@ func (mr *MockStoreMockRecorder) SearchListDeployments(ctx, q any) *gomock.Call 
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, deployment *storage.Deployment) error {
+func (m *MockStore) Upsert(ctx context.Context, deployment *storage.StoredDeployment) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, deployment)
 	ret0, _ := ret[0].(error)
@@ -217,7 +217,7 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, deployment any) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockStore) Walk(ctx context.Context, fn func(*storage.Deployment) error) error {
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.StoredDeployment) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)
@@ -231,7 +231,7 @@ func (mr *MockStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
 }
 
 // WalkByQuery mocks base method.
-func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.Deployment) error) error {
+func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.StoredDeployment) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
 	ret0, _ := ret[0].(error)

@@ -17,14 +17,14 @@ type Store interface {
 	GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error)
 	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
 
-	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
-	Walk(ctx context.Context, fn func(deployment *storage.Deployment) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
+	Get(ctx context.Context, id string) (*storage.StoredDeployment, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.StoredDeployment, []int, error)
+	Walk(ctx context.Context, fn func(deployment *storage.StoredDeployment) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.StoredDeployment) error) error
 
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	Upsert(ctx context.Context, deployment *storage.Deployment) error
+	Upsert(ctx context.Context, deployment *storage.StoredDeployment) error
 	Delete(ctx context.Context, id string) error
 
 	GetIDs(ctx context.Context) ([]string, error)
