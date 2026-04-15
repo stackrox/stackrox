@@ -120,13 +120,13 @@ spec:
 
     # TODO: event_type=on-comment and the rest
     - name: should-do-the-rest
-      description: |
-        Determines whether the rest of actual tasks in the pipeline should be skipped or be actually executed.
-        Tasks will be skipped on PRs where konflux-builds aren't enabled (TODO: ROX-21073), see
-        `pipelinesascode.tekton.dev/on-cel-expression` in `*-build.yaml` files.
-        This all is needed because we want to always run this `create-custom-snapshot` pipeline and make it part of
-        required GitHub checks in branch protection rules.
       taskSpec:
+        description: |
+          Determines whether the actual tasks in the pipeline should be skipped or actually be executed.
+          Tasks will be skipped on PRs where Konflux builds aren't enabled (TODO: ROX-21073), see
+          `pipelinesascode.tekton.dev/on-cel-expression` annotation in `*-build.yaml` files.
+          This all is needed because we want to always run this `create-custom-snapshot` pipeline and make it part of
+          required GitHub checks in branch protection rules.
         results:
         - name: SHOULD_PROCEED
         steps:
