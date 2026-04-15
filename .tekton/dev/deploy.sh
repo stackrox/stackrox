@@ -16,13 +16,17 @@ export KUBECONFIG
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROXCTL="${ROXCTL:-/tmp/roxctl}"
 
-# Image tags - use latest stackrox-io images
-MAIN_IMAGE="quay.io/stackrox-io/main:latest"
-CENTRAL_DB_IMAGE="quay.io/stackrox-io/central-db:latest"
-SCANNER_IMAGE="quay.io/stackrox-io/scanner:latest"
-SCANNER_DB_IMAGE="quay.io/stackrox-io/scanner-db:latest"
-SCANNER_V4_IMAGE="quay.io/stackrox-io/scanner-v4:latest"
-SCANNER_V4_DB_IMAGE="quay.io/stackrox-io/scanner-v4-db:latest"
+# Image tags - use 4.10.0 images (DB seq 220)
+# NOTE: stackrox-io "latest" is stuck at 4.5.x (seq 205), so we use explicit version
+# To use nightly builds: IMAGE_TAG=4.11.x-nightly-YYYYMMDD REGISTRY=quay.io/rhacs-eng ./deploy.sh
+IMAGE_TAG="${IMAGE_TAG:-4.10.0}"
+REGISTRY="${REGISTRY:-quay.io/stackrox-io}"
+MAIN_IMAGE="${REGISTRY}/main:${IMAGE_TAG}"
+CENTRAL_DB_IMAGE="${REGISTRY}/central-db:${IMAGE_TAG}"
+SCANNER_IMAGE="${REGISTRY}/scanner:${IMAGE_TAG}"
+SCANNER_DB_IMAGE="${REGISTRY}/scanner-db:${IMAGE_TAG}"
+SCANNER_V4_IMAGE="${REGISTRY}/scanner-v4:${IMAGE_TAG}"
+SCANNER_V4_DB_IMAGE="${REGISTRY}/scanner-v4-db:${IMAGE_TAG}"
 
 echo "=== StackRox Dev Deploy ==="
 echo "KUBECONFIG: ${KUBECONFIG}"
