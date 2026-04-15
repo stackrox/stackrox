@@ -54,4 +54,4 @@ spec:
                   shell: /bin/bash
               runcmd:
                 - curl -sLo /usr/local/bin/kind-setup.sh "http://forgejo.forgejo.svc:3000/devadmin/acs-next/raw/branch/main/kind-vm-image/kind-setup.sh" && chmod +x /usr/local/bin/kind-setup.sh
-                - /usr/local/bin/kind-setup.sh > /var/log/kind-setup.log 2>&1
+                - REGISTRY_IP=172.30.113.65 /usr/local/bin/kind-setup.sh > /var/log/kind-setup.log 2>&1
