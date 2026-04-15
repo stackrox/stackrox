@@ -33,7 +33,7 @@ def _fetch_and_group_prs(
     branch_names: list[str],
 ) -> tuple[dict[str, list[PR]], set[str]]:
     """Fetch PRs and group by branch, collecting Jira keys."""
-    all_prs_data = gh_client.fetch_prs("backport", "all")
+    all_prs_data = gh_client.fetch_prs("backport", "open")
     prs_by_branch: dict[str, list[PR]] = {}
     all_jira_keys = set()
 
