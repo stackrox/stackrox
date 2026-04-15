@@ -519,6 +519,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resources: Resources",
 		"secrets: [EmbeddedSecret]!",
 		"securityContext: SecurityContext",
+		"type: ContainerType!",
 		"volumes: [Volume]!",
 	}))
 	utils.Must(builder.AddType("ContainerConfig", []string{
@@ -564,6 +565,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerType(0)))
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
@@ -6494,6 +6496,11 @@ func (resolver *containerResolver) SecurityContext(ctx context.Context) (*securi
 	return resolver.root.wrapSecurityContext(value, true, nil)
 }
 
+func (resolver *containerResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 func (resolver *containerResolver) Volumes(ctx context.Context) ([]*volumeResolver, error) {
 	value := resolver.data.GetVolumes()
 	return resolver.root.wrapVolumes(value, nil)
@@ -6930,6 +6937,24 @@ func (resolver *containerRuntimeInfoResolver) Type(ctx context.Context) string {
 func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
+}
+
+func toContainerType(value *string) storage.ContainerType {
+	if value != nil {
+		return storage.ContainerType(storage.ContainerType_value[*value])
+	}
+	return storage.ContainerType(0)
+}
+
+func toContainerTypes(values *[]string) []storage.ContainerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ContainerType, len(*values))
+	for i, v := range *values {
+		output[i] = toContainerType(&v)
+	}
+	return output
 }
 
 type cosignSignatureResolver struct {

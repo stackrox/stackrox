@@ -399,6 +399,271 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestConcurrency_OperationsSerial
 	<-deleteDone
 }
 
+// UpdateStatus conditional update tests (OnlyIfStatus)
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_MatchesCreated() {
+	ctx := s.imgAdminCtx
+
+	repo := newRepository("registry.example.com/test-repo", "v*")
+	created, err := s.datastore.UpsertRepository(ctx, repo)
+	s.Require().NoError(err)
+	s.Equal(storage.BaseImageRepository_CREATED, created.GetStatus())
+
+	// Update should succeed because status matches.
+	updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_QUEUED,
+		OnlyIfStatus: []storage.BaseImageRepository_Status{
+			storage.BaseImageRepository_CREATED,
+			storage.BaseImageRepository_READY,
+			storage.BaseImageRepository_FAILED,
+		},
+	})
+	s.NoError(err)
+	s.NotNil(updated)
+	s.Equal(storage.BaseImageRepository_QUEUED, updated.GetStatus())
+
+	retrieved, found := s.mustGetRepository(ctx, created.GetId())
+	s.True(found)
+	s.Equal(storage.BaseImageRepository_QUEUED, retrieved.GetStatus())
+}
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_MatchesReady() {
+	ctx := s.imgAdminCtx
+
+	repo := newRepository("registry.example.com/test-repo", "v*")
+	created, err := s.datastore.UpsertRepository(ctx, repo)
+	s.Require().NoError(err)
+
+	// Set status to READY.
+	_, err = s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_READY,
+	})
+	s.Require().NoError(err)
+
+	// Conditional update should succeed.
+	updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_QUEUED,
+		OnlyIfStatus: []storage.BaseImageRepository_Status{
+			storage.BaseImageRepository_CREATED,
+			storage.BaseImageRepository_READY,
+			storage.BaseImageRepository_FAILED,
+		},
+	})
+	s.NoError(err)
+	s.NotNil(updated)
+	s.Equal(storage.BaseImageRepository_QUEUED, updated.GetStatus())
+}
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_MatchesFailed() {
+	ctx := s.imgAdminCtx
+
+	repo := newRepository("registry.example.com/test-repo", "v*")
+	created, err := s.datastore.UpsertRepository(ctx, repo)
+	s.Require().NoError(err)
+
+	// Set status to FAILED.
+	_, err = s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_FAILED,
+	})
+	s.Require().NoError(err)
+
+	// Conditional update should succeed.
+	updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_QUEUED,
+		OnlyIfStatus: []storage.BaseImageRepository_Status{
+			storage.BaseImageRepository_CREATED,
+			storage.BaseImageRepository_READY,
+			storage.BaseImageRepository_FAILED,
+		},
+	})
+	s.NoError(err)
+	s.NotNil(updated)
+	s.Equal(storage.BaseImageRepository_QUEUED, updated.GetStatus())
+}
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_DoesNotMatchQueued() {
+	ctx := s.imgAdminCtx
+
+	repo := newRepository("registry.example.com/test-repo", "v*")
+	created, err := s.datastore.UpsertRepository(ctx, repo)
+	s.Require().NoError(err)
+
+	// First update to QUEUED succeeds.
+	updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_QUEUED,
+		OnlyIfStatus: []storage.BaseImageRepository_Status{
+			storage.BaseImageRepository_CREATED,
+			storage.BaseImageRepository_READY,
+			storage.BaseImageRepository_FAILED,
+		},
+	})
+	s.Require().NoError(err)
+	s.Require().NotNil(updated)
+	s.Equal(storage.BaseImageRepository_QUEUED, updated.GetStatus())
+
+	// Second update should return nil because status is QUEUED.
+	updated2, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_QUEUED,
+		OnlyIfStatus: []storage.BaseImageRepository_Status{
+			storage.BaseImageRepository_CREATED,
+			storage.BaseImageRepository_READY,
+			storage.BaseImageRepository_FAILED,
+		},
+	})
+	s.NoError(err)
+	s.Nil(updated2, "should not update already queued repository")
+}
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_DoesNotMatchInProgress() {
+	ctx := s.imgAdminCtx
+
+	repo := newRepository("registry.example.com/test-repo", "v*")
+	created, err := s.datastore.UpsertRepository(ctx, repo)
+	s.Require().NoError(err)
+
+	// Set status to IN_PROGRESS.
+	_, err = s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_IN_PROGRESS,
+	})
+	s.Require().NoError(err)
+
+	// Conditional update should return nil because status doesn't match.
+	updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+		Status: storage.BaseImageRepository_QUEUED,
+		OnlyIfStatus: []storage.BaseImageRepository_Status{
+			storage.BaseImageRepository_CREATED,
+			storage.BaseImageRepository_READY,
+			storage.BaseImageRepository_FAILED,
+		},
+	})
+	s.NoError(err)
+	s.Nil(updated, "should not update in-progress repository")
+
+	retrieved, found := s.mustGetRepository(ctx, created.GetId())
+	s.True(found)
+	s.Equal(storage.BaseImageRepository_IN_PROGRESS, retrieved.GetStatus())
+}
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_ConcurrentUpdates() {
+	ctx := s.imgAdminCtx
+
+	repo := newRepository("registry.example.com/test-repo", "v*")
+	created, err := s.datastore.UpsertRepository(ctx, repo)
+	s.Require().NoError(err)
+
+	// Launch multiple concurrent conditional update attempts.
+	const numGoroutines = 10
+	results := make(chan *storage.BaseImageRepository, numGoroutines)
+	errs := make(chan error, numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+				Status: storage.BaseImageRepository_QUEUED,
+				OnlyIfStatus: []storage.BaseImageRepository_Status{
+					storage.BaseImageRepository_CREATED,
+					storage.BaseImageRepository_READY,
+					storage.BaseImageRepository_FAILED,
+				},
+			})
+			results <- updated
+			errs <- err
+		}()
+	}
+
+	// Collect results.
+	var updatedCount int
+	for i := 0; i < numGoroutines; i++ {
+		updated := <-results
+		err := <-errs
+		s.NoError(err)
+		if updated != nil {
+			updatedCount++
+		}
+	}
+
+	s.Equal(1, updatedCount, "exactly one goroutine should succeed in updating")
+
+	retrieved, found := s.mustGetRepository(ctx, created.GetId())
+	s.True(found)
+	s.Equal(storage.BaseImageRepository_QUEUED, retrieved.GetStatus())
+}
+
+// UpdateConfiguration blocked during scan tests
+
+func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateConfiguration_ScanInProgressBlocking() {
+	cases := []struct {
+		name              string
+		statusTransitions []storage.BaseImageRepository_Status
+		expectBlocked     bool
+	}{
+		{
+			name:              "blocked while QUEUED",
+			statusTransitions: []storage.BaseImageRepository_Status{storage.BaseImageRepository_QUEUED},
+			expectBlocked:     true,
+		},
+		{
+			name:              "blocked while IN_PROGRESS",
+			statusTransitions: []storage.BaseImageRepository_Status{storage.BaseImageRepository_IN_PROGRESS},
+			expectBlocked:     true,
+		},
+		{
+			name: "allowed after scan completes READY",
+			statusTransitions: []storage.BaseImageRepository_Status{
+				storage.BaseImageRepository_QUEUED,
+				storage.BaseImageRepository_IN_PROGRESS,
+				storage.BaseImageRepository_READY,
+			},
+			expectBlocked: false,
+		},
+		{
+			name: "allowed after scan completes FAILED",
+			statusTransitions: []storage.BaseImageRepository_Status{
+				storage.BaseImageRepository_QUEUED,
+				storage.BaseImageRepository_IN_PROGRESS,
+				storage.BaseImageRepository_FAILED,
+			},
+			expectBlocked: false,
+		},
+		{
+			name:              "allowed when CREATED",
+			statusTransitions: []storage.BaseImageRepository_Status{},
+			expectBlocked:     false,
+		},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			ctx := s.imgAdminCtx
+
+			repo := newRepository("registry.example.com/test-repo-"+tc.name, "v*")
+			created, err := s.datastore.UpsertRepository(ctx, repo)
+			s.Require().NoError(err)
+
+			for _, status := range tc.statusTransitions {
+				_, err = s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
+					Status: status,
+				})
+				s.Require().NoError(err)
+			}
+
+			newPattern := "2.*"
+			updated, err := s.datastore.UpdateConfiguration(ctx, created.GetId(), ConfigUpdate{
+				TagPattern: &newPattern,
+			})
+
+			if tc.expectBlocked {
+				s.ErrorIs(err, ErrScanInProgress)
+				s.Nil(updated)
+			} else {
+				s.NoError(err)
+				s.NotNil(updated)
+				s.Equal("2.*", updated.GetTagPattern())
+			}
+		})
+	}
+}
+
 type blockingRepositoryStore struct {
 	repo *storage.BaseImageRepository
 

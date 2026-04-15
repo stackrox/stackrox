@@ -70,13 +70,28 @@ func ConvertToV1List(imagesV2 []*storage.ImageV2) []*storage.Image {
 
 // ConvertToV2 converts a storage.Image to a storage.ImageV2.
 func ConvertToV2(image *storage.Image) *storage.ImageV2 {
+	return convertToV2(image, nil)
+}
+
+// ConvertToV2WithNameOverride converts a storage.Image to a storage.ImageV2, using the provided
+// name instead of the legacy image's name. This is useful when migrating legacy images whose name
+// may differ from the deployed image's name.
+func ConvertToV2WithNameOverride(image *storage.Image, nameOverride *storage.ImageName) *storage.ImageV2 {
+	return convertToV2(image, nameOverride)
+}
+
+func convertToV2(image *storage.Image, nameOverride *storage.ImageName) *storage.ImageV2 {
 	if image == nil {
 		return nil
 	}
+	name := image.GetName()
+	if nameOverride.GetFullName() != "" {
+		name = nameOverride
+	}
 	ret := &storage.ImageV2{
-		Id:                        NewImageV2ID(image.GetName(), image.GetId()),
+		Id:                        NewImageV2ID(name, image.GetId()),
 		Digest:                    image.GetId(),
-		Name:                      image.GetName(),
+		Name:                      name,
 		IsClusterLocal:            image.GetIsClusterLocal(),
 		LastUpdated:               image.GetLastUpdated(),
 		Metadata:                  image.GetMetadata(),

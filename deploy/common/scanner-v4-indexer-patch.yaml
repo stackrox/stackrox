@@ -1,0 +1,8 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: indexer
+        resources:
+          requests:
+            cpu: "400m"

@@ -6,7 +6,7 @@ values:
       enabled: false
 server:
   availableSchemas:
-  - openshift-4.1.0
+  - openshift-4.12
 tests:
 - name: "Collection should be disabled"
   expect: |
@@ -20,39 +20,19 @@ tests:
     - name: "on an explicit non-OpenShift environment"
       set:
         env.openshift: false
-    - name: "on an explicit OpenShift 3 environment"
-      set:
-        env.openshift: 3
     - name: "on an explicit OpenShift 4 environment"
       set:
         env.openshift: 4
-    - name: "on an auto-detected OpenShift 3 environment"
-      server:
-        visibleSchemas:
-        - openshift-3.11.0
-      capabilities:
-        kubeVersion:
-          version: "v1.11.0"
     - name: "on an auto-detected OpenShift 4 environment"
       server:
         visibleSchemas:
-        - openshift-4.1.0
+        - openshift-4.12
   - name: "by default"
     tests:
     - name: "on the default environment"
     - name: "on an explicit non-OpenShift environment"
       set:
         env.openshift: false
-    - name: "on an explicit OpenShift 3 environment"
-      set:
-        env.openshift: 3
-    - name: "on an auto-detected OpenShift 3 environment"
-      server:
-        visibleSchemas:
-        - openshift-3.11.0
-      capabilities:
-        kubeVersion:
-          version: "v1.11.0"
 - name: "Collection should be enabled"
   expect: |
     helmClusterConfig | .clusterConfig.dynamicConfig.disableAuditLogs | assertThat(. == false)
@@ -67,7 +47,7 @@ tests:
     - name: "on an auto-detected OpenShift 4 environment"
       server:
         visibleSchemas:
-        - openshift-4.1.0
+        - openshift-4.12
   - name: "by default"
     tests:
     - name: "on an explicit OpenShift 4 environment"
@@ -76,7 +56,7 @@ tests:
     - name: "on an auto-detected OpenShift 4 environment"
       server:
         visibleSchemas:
-        - openshift-4.1.0
+        - openshift-4.12
 - name: "An error should be raised with an explicit false setting"
   set:
     auditLogs.disableCollection: false
@@ -88,13 +68,3 @@ tests:
   - name: "on an explicit non-OpenShift environment"
     set:
       env.openshift: false
-  - name: "on an explicit OpenShift 3 environment"
-    set:
-      env.openshift: 3
-  - name: "on an auto-detected OpenShift 3 environment"
-    server:
-      visibleSchemas:
-      - openshift-3.11.0
-    capabilities:
-      kubeVersion:
-        version: "v1.11.0"

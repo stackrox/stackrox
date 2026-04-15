@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -24,11 +23,6 @@ func executeCommand(root *cobra.Command, args ...string) (output string, err err
 
 func mockRun(_ *cobra.Command, _ []string)        {}
 func mockRunE(_ *cobra.Command, _ []string) error { return nil }
-
-func getCommandPath(cmd *cobra.Command) string {
-	binaryName := cmd.Root().CommandPath() + " "
-	return strings.TrimPrefix(cmd.CommandPath(), binaryName)
-}
 
 func TestCommandReconstruction(t *testing.T) {
 	root := maincommand.Command()

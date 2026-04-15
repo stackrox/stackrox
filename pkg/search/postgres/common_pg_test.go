@@ -4,7 +4,7 @@ package postgres_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +32,7 @@ func TestContexCancellationInWalk(t *testing.T) {
 
 	count := 0
 	err := store.Walk(ctxWithCancel, func(obj *storage.TestStruct) error {
-		cancel(fmt.Errorf("cancelling context on the first read"))
+		cancel(errors.New("cancelling context on the first read"))
 		count++
 		return nil
 	})

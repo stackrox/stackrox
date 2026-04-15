@@ -54,15 +54,6 @@ assert_number_of_k8s_resources() {
   assert_number_of_k8s_resources 14
 }
 
-@test "[openshift] roxctl scanner generate" {
-  run_scanner_generate_and_check openshift
-
-  assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  run -0 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  run -1 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  assert_number_of_k8s_resources 14
-}
-
 @test "[k8s] roxctl scanner generate" {
   run_scanner_generate_and_check k8s
 

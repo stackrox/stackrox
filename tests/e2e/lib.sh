@@ -195,6 +195,7 @@ export_test_environment() {
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
     ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
     ci_export ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING "${ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING:-true}"
+    ci_export ROX_NODE_VULNERABILITY_REPORTS "${ROX_NODE_VULNERABILITY_REPORTS:-true}"
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_TAILORED_PROFILES "${ROX_TAILORED_PROFILES:-true}"
@@ -264,6 +265,18 @@ deploy_central() {
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
         CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
     fi
+}
+
+# _scanner_v4_db_persistence_yaml prints the YAML snippet for the scannerV4.db
+# persistence block, indented for use inside an operator CR template. Prints
+# nothing when SCANNER_V4_DB_STORAGE_CLASS is unset.
+_scanner_v4_db_persistence_yaml() {
+    [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]] || return 0
+    cat <<EOF
+      persistence:
+        persistentVolumeClaim:
+          storageClassName: "${SCANNER_V4_DB_STORAGE_CLASS}"
+EOF
 }
 
 # shellcheck disable=SC2120
@@ -349,8 +362,12 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_NODE_VULNERABILITY_REPORTS'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
     customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n      - name: ROX_LABEL_BASED_POLICY_SCOPING'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_TAILORED_PROFILES'
     customize_envVars+=$'\n        value: "true"'
 
@@ -359,6 +376,9 @@ deploy_central_via_operator() {
         true)  scannerV4ScannerComponent="Enabled"  ;;
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
+
+    local scannerV4DbPersistenceYaml
+    scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -375,6 +395,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
+      scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | retrying_kubectl apply -n "${central_namespace}" -f -
 
@@ -470,11 +491,15 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
 
+    local scannerV4DbPersistenceYaml
+    scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
+
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
+      scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | retrying_kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 

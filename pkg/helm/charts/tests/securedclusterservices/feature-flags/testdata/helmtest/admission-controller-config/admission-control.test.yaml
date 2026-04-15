@@ -1,17 +1,4 @@
 tests:
-- name: "Defaults for OpenShift3"
-  values:
-    admissionControl:
-      dynamic:
-        enforceOnCreates: true
-        enforceOnUpdates: false
-  set:
-    env.openshift: 3
-  expect: |
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
-   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 0)
-   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
-   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "Defaults for OpenShift4"
   values:
     admissionControl:

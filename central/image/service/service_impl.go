@@ -47,6 +47,7 @@ import (
 	"github.com/stackrox/rox/pkg/signatureintegration"
 	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/waiter"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -151,7 +152,13 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
 	}
 
-	id := types.NewDigest(request.GetId()).Digest()
+	id := request.GetId()
+	// When FlattenImageData is enabled, the ID may be a UUID (ImageV2 ID).
+	// Only normalize as a digest if it's not a UUID, to avoid mangling it
+	// with an incorrect "sha256:" prefix.
+	if _, err := uuid.FromString(id); err != nil {
+		id = types.NewDigest(id).Digest()
+	}
 
 	image, exists, err := s.mappingDatastore.GetImage(ctx, id)
 	if err != nil {

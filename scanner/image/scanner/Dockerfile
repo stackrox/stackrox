@@ -1,24 +1,35 @@
-ARG MAPPINGS_REGISTRY=registry.access.redhat.com
-ARG MAPPINGS_BASE_IMAGE=ubi9
-ARG MAPPINGS_BASE_TAG=latest
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi9-minimal
-ARG BASE_TAG=latest
-
-FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS mappings
+FROM registry.access.redhat.com/ubi9/ubi:latest AS mappings
 
 COPY download-mappings.sh /download-mappings.sh
 RUN /download-mappings.sh /mappings
 
 # Build Delve debugger when DEBUG_BUILD=yes.
-FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS debugger
+FROM registry.access.redhat.com/ubi9/ubi:latest AS debugger
 
 ARG DEBUG_BUILD=no
 
 COPY download-dlv.sh /download-dlv.sh
 RUN DEBUG_BUILD=${DEBUG_BUILD} /download-dlv.sh
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
+
+FROM registry.access.redhat.com/ubi9/ubi:latest AS package_installer
+
+COPY --from=ubi-micro-base / /out/
+
+RUN dnf install -y \
+    --installroot=/out/ \
+    --releasever=9 \
+    --setopt=install_weak_deps=0 \
+    --nodocs \
+    ca-certificates \
+    gzip \
+    less \
+    tar && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+FROM ubi-micro-base
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -35,6 +46,7 @@ LABEL name="scanner-v4" \
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
+COPY --from=package_installer /out/ /
 COPY scripts/entrypoint.sh \
      scripts/import-additional-cas \
      scripts/restore-all-dir-contents \
@@ -45,11 +57,7 @@ COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-r
 # Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).
 COPY --from=debugger /output/go/ /go/
 
-RUN microdnf upgrade -y --nobest && \
-    microdnf clean all && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum && \
+RUN \
     chown -R 65534:65534 /tmp && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
     # by the script `save-dir-contents` during the image build. The directory

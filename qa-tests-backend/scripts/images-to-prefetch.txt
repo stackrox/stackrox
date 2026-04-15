@@ -59,8 +59,7 @@ quay.io/rhacs-eng/qa:nginx-1-9
 quay.io/rhacs-eng/qa:nginx-unprivileged
 quay.io/rhacs-eng/qa:oci-manifest
 quay.io/rhacs-eng/qa:registry-image-0-3
-quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2
-quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5
+quay.io/rhacs-eng/qa:splunk-ta-test-latest
 quay.io/rhacs-eng/qa:ssl-terminator
 quay.io/rhacs-eng/qa:struts-app
 quay.io/rhacs-eng/qa:syslog_server_1_0

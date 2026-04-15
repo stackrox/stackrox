@@ -41,8 +41,10 @@ func Singleton() Watcher {
 			imageintegration.Set().RegistrySet(),
 			scanDelegator,
 			env.BaseImageWatcherPollInterval.DurationSetting(),
+			env.BaseImageWatcherSchedulerCadence.DurationSetting(),
 			env.BaseImageWatcherTagBatchSize.IntegerSetting(),
 			env.BaseImageWatcherPerRepoTagLimit.IntegerSetting(),
+			env.BaseImageWatcherMaxConcurrentRepositories.IntegerSetting(),
 			features.DelegatedBaseImageScanning.Enabled(),
 		)
 	})
