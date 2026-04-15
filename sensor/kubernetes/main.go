@@ -21,12 +21,15 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	sensormetrics "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/certinit"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
+	listenerresourcesmetrics "github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )
@@ -39,6 +42,10 @@ func init() {
 
 func main() {
 	premain.StartMain()
+
+	sensormetrics.Init()
+	listenerresourcesmetrics.Init()
+	complianceoperator.InitMetrics()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
