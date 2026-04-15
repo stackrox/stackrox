@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,12 +22,12 @@ var (
 	}
 
 	// TestChild1Schema is the go schema for table `test_child1`.
-	TestChild1Schema = func() *walker.Schema {
+	TestChild1Schema = sync.OnceValue(func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.TestChild1)(nil)), "test_child1")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(63), "testchild1", (*storage.TestChild1)(nil)))
 		schema.ScopingResource = resources.Namespace
 		return schema
-	}()
+	})
 )
 
 const (

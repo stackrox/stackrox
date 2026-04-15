@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,14 +24,14 @@ var (
 	}
 
 	// TestParent2Schema is the go schema for table `test_parent2`.
-	TestParent2Schema = func() *walker.Schema {
+	TestParent2Schema = sync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_parent2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestParent2)(nil)), "test_parent2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.TestGrandparent": TestGrandparentsSchema,
+			"storage.TestGrandparent": TestGrandparentsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -41,7 +42,7 @@ var (
 		RegisterTable(schema, CreateTableTestParent2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(111), schema)
 		return schema
-	}()
+	})
 )
 
 const (

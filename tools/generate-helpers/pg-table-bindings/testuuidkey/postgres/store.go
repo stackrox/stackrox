@@ -29,7 +29,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.TestSingleUUIDKeyStructsSchema
+	schema         = pkgSchema.TestSingleUUIDKeyStructsSchema()
 	targetResource = resources.Namespace
 )
 

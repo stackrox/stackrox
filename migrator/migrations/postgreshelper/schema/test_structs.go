@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -28,12 +29,12 @@ var (
 	}
 
 	// TestStructsSchema is the go schema for table `test_structs`.
-	TestStructsSchema = func() *walker.Schema {
+	TestStructsSchema = sync.OnceValue(func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.TestStruct)(nil)), "test_structs")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "teststruct", (*storage.TestStruct)(nil)))
 		schema.ScopingResource = resources.Namespace
 		return schema
-	}()
+	})
 )
 
 const (
