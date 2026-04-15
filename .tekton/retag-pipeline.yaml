@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7654c4cc231293c5e4a8370c5debb56f60d43fd7e054d996e5e3cdfc670236e5
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:bf233c7c6251cb89fcef901a2d6857484e7513c3b6dc3b7cf347e34a24d2d12c
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7654c4cc231293c5e4a8370c5debb56f60d43fd7e054d996e5e3cdfc670236e5
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:bf233c7c6251cb89fcef901a2d6857484e7513c3b6dc3b7cf347e34a24d2d12c
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7654c4cc231293c5e4a8370c5debb56f60d43fd7e054d996e5e3cdfc670236e5
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:bf233c7c6251cb89fcef901a2d6857484e7513c3b6dc3b7cf347e34a24d2d12c
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7654c4cc231293c5e4a8370c5debb56f60d43fd7e054d996e5e3cdfc670236e5
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:bf233c7c6251cb89fcef901a2d6857484e7513c3b6dc3b7cf347e34a24d2d12c
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7654c4cc231293c5e4a8370c5debb56f60d43fd7e054d996e5e3cdfc670236e5
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:bf233c7c6251cb89fcef901a2d6857484e7513c3b6dc3b7cf347e34a24d2d12c
       - name: kind
         value: task
       resolver: bundles
