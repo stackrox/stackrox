@@ -63,16 +63,29 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
 
+              # Get version info from status.sh
+              echo "=== Getting version info ==="
+              eval "$(./status.sh | sed 's/ /=/')"
+              echo "MainVersion: ${STABLE_MAIN_VERSION}"
+
+              # Build ldflags with version info
+              VERSION_PKG="github.com/stackrox/rox/pkg/version/internal"
+              LDFLAGS="-s -w"
+              LDFLAGS="${LDFLAGS} -X '${VERSION_PKG}.MainVersion=${STABLE_MAIN_VERSION}'"
+              LDFLAGS="${LDFLAGS} -X '${VERSION_PKG}.CollectorVersion=${STABLE_COLLECTOR_VERSION}'"
+              LDFLAGS="${LDFLAGS} -X '${VERSION_PKG}.ScannerVersion=${STABLE_SCANNER_VERSION}'"
+              LDFLAGS="${LDFLAGS} -X '${VERSION_PKG}.GitShortSha=${STABLE_GIT_SHORT_SHA}'"
+
               echo "=== Building central binary ==="
               CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-                -ldflags="-s -w" \
+                -ldflags="${LDFLAGS}" \
                 -o bin/central \
                 ./central/main.go
               echo "Built: $(ls -lh bin/central)"
 
               echo "Building roxctl..."
               CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-                -ldflags="-s -w" \
+                -ldflags="${LDFLAGS}" \
                 -o bin/roxctl-linux-amd64 \
                 ./roxctl/main.go
               echo "Built: $(ls -lh bin/roxctl-linux-amd64)"
