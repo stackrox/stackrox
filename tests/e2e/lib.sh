@@ -490,10 +490,6 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
-    if [[ -n "${ROX_LABEL_BASED_POLICY_SCOPING:-}" ]]; then
-        customize_envVars+=$'\n    - name: ROX_LABEL_BASED_POLICY_SCOPING'
-        customize_envVars+=$'\n      value: "'"${ROX_LABEL_BASED_POLICY_SCOPING}"'"'
-    fi
 
     local scannerV4DbPersistenceYaml
     scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
