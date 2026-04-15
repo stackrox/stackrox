@@ -59,6 +59,7 @@ class JiraIssue:
     assignee: str | None
     team: str | None
     component: str | None
+    status: str | None = None
     priority: str | None = None
     severity: str | None = None
     due_date: str | None = None

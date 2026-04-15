@@ -82,6 +82,10 @@ class JiraClient:
         components = [c["name"] for c in fields.get("components", [])]
         component = ", ".join(components) if components else None
 
+        status = None
+        if fields.get("status"):
+            status = fields["status"].get("name")
+
         priority = None
         if fields.get("priority"):
             priority = fields["priority"].get("name")
@@ -101,6 +105,7 @@ class JiraClient:
             assignee=assignee,
             team=team,
             component=component,
+            status=status,
             priority=priority,
             severity=severity,
             due_date=due_date,

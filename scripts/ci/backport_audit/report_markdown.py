@@ -62,6 +62,7 @@ def _collect_issue_problems(
                     deadline_info,
                     urgency_level,
                     urgency_icon,
+                    issue.status,
                 )
                 if issue_info not in issues_with_problems:
                     issues_with_problems.append(issue_info)
@@ -86,7 +87,11 @@ def _format_issue_line(
         deadline_info,
         _urgency_level,
         urgency_icon,
+        status,
     ) = issue_info
+
+    # Apply strikethrough to closed Jira issues
+    jira_display = f"~~{jira_key}~~" if status == "Closed" else jira_key
 
     pr_refs = jira_to_prs.get(jira_key, [])
     pr_link_parts = []
@@ -102,7 +107,7 @@ def _format_issue_line(
         priority_info += f", Severity: {severity}"
 
     return (
-        f"- {urgency_icon} {jira_key}: {fix_icon} fixVersion, "
+        f"- {urgency_icon} {jira_display}: {fix_icon} fixVersion, "
         f"{affected_icon} affectedVersion | "
         f"{priority_info} | {deadline_info} | "
         f"Assignee: {assignee}, Team: {team}, Component: {component}{pr_suffix}"

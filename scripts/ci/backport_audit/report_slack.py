@@ -277,10 +277,24 @@ def _create_all_pr_rows(
         priority_emoji = priority_display.strip(":")
         severity_display = severity if severity else "—"
 
+        # Create Jira link with strikethrough if issue is closed
+        jira_link_element: dict[str, Any] = {
+            "type": "link",
+            "url": f"https://redhat.atlassian.net/browse/{jira_key}",
+            "text": jira_key,
+        }
+        if issue and issue.status == "Closed":
+            jira_link_element["style"] = {"strike": True}
+
+        jira_cell = {
+            "type": "rich_text",
+            "elements": [{"type": "rich_text_section", "elements": [jira_link_element]}],
+        }
+
         all_rows.append([
             _create_table_cell_emoji(urgency_emoji),
             pr_cell,
-            _create_table_cell_link(f"https://redhat.atlassian.net/browse/{jira_key}", jira_key),
+            jira_cell,
             _create_table_cell_text(pr_title),
             author_cell,  # Author from associated PRs
             _create_table_cell_emoji(fix_emoji),
