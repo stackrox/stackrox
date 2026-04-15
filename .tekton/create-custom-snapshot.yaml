@@ -161,15 +161,15 @@ spec:
             has_konflux_build_label_as_issue='{{ cel: has(body.issue) && has(body.issue.labels) && body.issue.labels.exists(l, l.name == "konflux-build") }}'
             assert_boolean has_konflux_build_label_as_issue
 
-            echo -n "The result is: "
-            if [[ "${is_pull_request}" == "false" || "${is_matching_target_branch}" == "true" || "${is_matching_source_branch}" == "true" || "${has_konflux_build_label_as_pr}" == "true" || "${has_konflux_build_label_as_issue}" == "true" ]]; then
-              echo "true" | tee "$(results.SHOULD_PROCEED.path)"
-            else
-              echo "false" | tee "$(results.SHOULD_PROCEED.path)"
+            result="false"
+            if [[ "${is_pull_request}" != "true" || "${is_matching_target_branch}" == "true" || "${is_matching_source_branch}" == "true" || "${has_konflux_build_label_as_pr}" == "true" || "${has_konflux_build_label_as_issue}" == "true" ]]; then
+              result="true"
             fi
+            echo -n "The result is: "
+            echo "${result}" | tee "$(results.SHOULD_PROCEED.path)"
 
             echo '-----------'
-            echo 'full body for diagnostics:'
+            echo 'full body, for diagnostics:'
             cat <<EOF
               {{ cel: body }}
             EOF
@@ -200,6 +200,10 @@ spec:
       workspaces:
       - name: basic-auth
         workspace: git-auth
+      when:
+      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+        operator: in
+        values: ["true"]
 
     - name: determine-image-tag
       params:
@@ -216,6 +220,10 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      when:
+      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+        operator: in
+        values: ["true"]
 
     - name: wait-for-bundle-image
       params:
@@ -232,6 +240,10 @@ spec:
         resolver: bundles
       # The timemout should be kept in sync with the pipeline timeout in the operator-bundle-build.yaml
       timeout: 3h25m
+      when:
+      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+        operator: in
+        values: ["true"]
 
     - name: create-acs-style-snapshot
       params:
@@ -319,3 +331,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      when:
+      - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
+        operator: in
+        values: ["true"]
