@@ -124,7 +124,7 @@ spec:
         steps:
         - name: blah
           image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
-          env:
+          params:
           #      (event == "push") ||
           #              (event == "pull_request" && (
           #                  target_branch.startsWith("release-") ||
@@ -133,7 +133,7 @@ spec:
           #                ))
           - name: SHOULD_PROCEED
             value: {{ pac.event == "push" || (pac.event == "pull_request") }}
-          script: echo "${SHOULD_PROCEED}" | tee "$(results.SHOULD_PROCEED.path)"
+          script: echo "$(params.SHOULD_PROCEED)" | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
       params:
