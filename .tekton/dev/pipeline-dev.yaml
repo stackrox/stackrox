@@ -40,7 +40,7 @@ spec:
     - name: base-image-tag
       type: string
       default: ""
-      description: "Base image tag from quay.io/rhacs-eng/main (empty = auto-detect from origin/master)"
+      description: "Base image tag from quay.io/stackrox-io/main (e.g., 4.5.0)"
     - name: registry-namespace
       type: string
       default: "dev-registry"
@@ -341,7 +341,7 @@ spec:
             description: Base image tag to use
         steps:
           - name: build
-            image: golang:1.24
+            image: golang:1.25
             workingDir: $(workspaces.source.path)
             script: |
               #!/usr/bin/env bash
@@ -352,10 +352,9 @@ spec:
               # Determine base image tag
               BASE_TAG="$(params.base-image-tag)"
               if [ -z "${BASE_TAG}" ]; then
-                # Auto-detect from git
-                git fetch origin master --depth=1 2>/dev/null || true
-                BASE_TAG=$(git describe --tags --abbrev=0 origin/master 2>/dev/null || echo "4.7.x-nightly-20241201")
-                echo "Auto-detected base tag: ${BASE_TAG}"
+                # Default to latest stable release on stackrox-io
+                BASE_TAG="4.5.0"
+                echo "Using default base tag: ${BASE_TAG}"
               fi
               echo -n "${BASE_TAG}" > $(results.base-tag.path)
 
@@ -420,27 +419,27 @@ spec:
               REGISTRY_SVC="$(params.registry-service)"
 
               echo "=== Building dev main image ==="
-              echo "Base image: quay.io/rhacs-eng/main:${BASE_TAG}"
+              echo "Base image: quay.io/stackrox-io/main:${BASE_TAG}"
               echo "Output tag: ${IMAGE_TAG}"
 
+              # Copy binaries to temp dir (workspace has .containerignore that excludes /bin/)
+              BUILD_DIR="/tmp/build-context"
+              mkdir -p "${BUILD_DIR}"
+              cp bin/central "${BUILD_DIR}/"
+              cp bin/roxctl-linux-amd64 "${BUILD_DIR}/"
+
               # Create dev Dockerfile that overlays binaries on base
-              cat > /tmp/Dockerfile.dev <<'EOF'
-              ARG BASE_TAG
-              FROM quay.io/rhacs-eng/main:${BASE_TAG}
-
-              # Overlay rebuilt central binary
-              COPY bin/central /stackrox/central
-
-              # Overlay rebuilt roxctl
-              COPY bin/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux-amd64
+              cat > "${BUILD_DIR}/Dockerfile" <<EOF
+              FROM quay.io/stackrox-io/main:${BASE_TAG}
+              COPY central /stackrox/central
+              COPY roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux-amd64
               EOF
 
-              # Build image
+              # Build image from temp context (no .containerignore)
               buildah bud \
-                --build-arg BASE_TAG="${BASE_TAG}" \
-                -f /tmp/Dockerfile.dev \
+                -f "${BUILD_DIR}/Dockerfile" \
                 -t "registry.${REGISTRY_NS}.svc:5000/stackrox/main:${IMAGE_TAG}" \
-                .
+                "${BUILD_DIR}"
 
               # Push to dev registry
               buildah push --tls-verify=false \
@@ -485,7 +484,7 @@ spec:
           - name: shared-data
         steps:
           - name: deploy
-            image: quay.io/rhacs-eng/main:4.7.x-nightly-20241201
+            image: bitnami/kubectl:latest
             env:
               - name: KUBECONFIG
                 value: $(workspaces.shared-data.path)/kind-kubeconfig
@@ -502,6 +501,11 @@ spec:
               echo "=== Deploying StackRox to KinD cluster ==="
               kubectl get nodes
 
+              # Download roxctl
+              echo "Downloading roxctl..."
+              curl -sLo /tmp/roxctl "https://mirror.openshift.com/pub/rhacs/assets/${BASE_TAG}/bin/linux-amd64/roxctl"
+              chmod +x /tmp/roxctl
+
               # Create namespace
               kubectl create namespace stackrox --dry-run=client -o yaml | kubectl apply -f -
 
@@ -509,16 +513,16 @@ spec:
               echo "Generating deployment bundle..."
               cd /tmp
 
-              # Use roxctl from the image
-              /stackrox/roxctl central generate k8s pvc \
+              # Use downloaded roxctl
+              /tmp/roxctl central generate k8s pvc \
                 --output-dir central-bundle \
                 --main-image "${REGISTRY_IP}:5000/stackrox/main:${IMAGE_TAG}" \
-                --central-db-image "quay.io/rhacs-eng/central-db:${BASE_TAG}" \
-                --scanner-image "quay.io/rhacs-eng/scanner:${BASE_TAG}" \
-                --scanner-db-image "quay.io/rhacs-eng/scanner-db:${BASE_TAG}" \
-                --scanner-v4-indexer-image "quay.io/rhacs-eng/scanner-v4:${BASE_TAG}" \
-                --scanner-v4-matcher-image "quay.io/rhacs-eng/scanner-v4:${BASE_TAG}" \
-                --scanner-v4-db-image "quay.io/rhacs-eng/scanner-v4-db:${BASE_TAG}" \
+                --central-db-image "quay.io/stackrox-io/central-db:${BASE_TAG}" \
+                --scanner-image "quay.io/stackrox-io/scanner:${BASE_TAG}" \
+                --scanner-db-image "quay.io/stackrox-io/scanner-db:${BASE_TAG}" \
+                --scanner-v4-indexer-image "quay.io/stackrox-io/scanner-v4:${BASE_TAG}" \
+                --scanner-v4-matcher-image "quay.io/stackrox-io/scanner-v4:${BASE_TAG}" \
+                --scanner-v4-db-image "quay.io/stackrox-io/scanner-v4-db:${BASE_TAG}" \
                 --enable-telemetry=false
 
               # Apply feature flags to central deployment
@@ -562,10 +566,10 @@ spec:
 
               # Generate sensor bundle
               echo "Generating Sensor bundle..."
-              /stackrox/roxctl sensor generate k8s \
+              /tmp/roxctl sensor generate k8s \
                 --central central.stackrox.svc:443 \
                 --main-image-repository "${REGISTRY_IP}:5000/stackrox/main" \
-                --collector-image-repository "quay.io/rhacs-eng/collector" \
+                --collector-image-repository "quay.io/stackrox-io/collector" \
                 --output-dir sensor-bundle \
                 --name local-cluster \
                 --admission-controller-enabled \

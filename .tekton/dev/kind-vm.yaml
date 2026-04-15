@@ -1,0 +1,57 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: stackrox-kind
+  namespace: stackrox-dev
+  labels:
+    app: stackrox-dev
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: stackrox-kind
+    spec:
+      architecture: amd64
+      domain:
+        cpu:
+          cores: 8
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+        resources:
+          requests:
+            memory: 16Gi
+      networks:
+        - name: default
+          pod: {}
+      tolerations:
+        - key: workload-type
+          operator: Equal
+          value: kubevirt-vm
+          effect: NoSchedule
+      volumes:
+        - name: rootdisk
+          containerDisk:
+            image: registry-dev-registry.apps.rosa.kl-01-29-additi.uxca.p3.openshiftapps.com/acs-next/kind-vm:latest
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              hostname: stackrox-kind
+              manage_etc_hosts: true
+              users:
+                - name: stackrox
+                  sudo: ALL=(ALL) NOPASSWD:ALL
+                  shell: /bin/bash
+              runcmd:
+                - curl -sLo /usr/local/bin/kind-setup.sh "http://forgejo.forgejo.svc:3000/devadmin/acs-next/raw/branch/main/kind-vm-image/kind-setup.sh" && chmod +x /usr/local/bin/kind-setup.sh
+                - /usr/local/bin/kind-setup.sh > /var/log/kind-setup.log 2>&1
