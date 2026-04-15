@@ -11,15 +11,8 @@ metadata:
     pipelinesascode.tekton.dev/on-comment: "/konflux-retest create-custom-snapshot"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (
-        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
-      ) || (
-        event == "pull_request" && (
-          target_branch.startsWith("release-") ||
-          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
-        ) && body.action != "ready_for_review"
-      )
+      (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
+      (event == "pull_request" && body.action != "ready_for_review")
     # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
@@ -123,6 +116,22 @@ spec:
 
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
+
+    - name: should-do-the-rest
+      taskSpec:
+        results:
+        - name: SHOULD_PROCEED
+        steps:
+        - name: blah
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
+          script: echo "{{
+              (event == "push") ||
+              (event == "pull_request" && (
+                  target_branch.startsWith("release-") ||
+                  source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+                  (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+                ))
+            }}" | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
       params:
