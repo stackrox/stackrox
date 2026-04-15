@@ -34,7 +34,7 @@ func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal {
 	return s.Client().Stopped()
 }
 
-func TestHandleNodeScanningComplianceAck(t *testing.T) {
+func TestHandleComplianceACK(t *testing.T) {
 	inv := &fakeUMH{}
 	idx := &fakeUMH{}
 	c := &Compliance{

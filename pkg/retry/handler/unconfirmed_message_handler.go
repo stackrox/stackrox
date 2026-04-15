@@ -18,9 +18,9 @@ var (
 // resourceState tracks the retry state for a single resource.
 type resourceState struct {
 	// retry counts the number of retries for this resource
-	retry int32
+	retry int
 	// numUnackedSendings counts how many send attempts occurred since the last ack
-	numUnackedSendings int32
+	numUnackedSendings int
 	// timer fires when a retry should be attempted
 	timer *time.Timer
 }
@@ -299,7 +299,7 @@ func (h *UnconfirmedMessageHandlerImpl) takePendingRetries() []string {
 }
 
 // calculateNextInterval returns the next retry interval with linear backoff.
-func (h *UnconfirmedMessageHandlerImpl) calculateNextInterval(retry int32) time.Duration {
+func (h *UnconfirmedMessageHandlerImpl) calculateNextInterval(retry int) time.Duration {
 	if h.baseInterval <= 0 {
 		return defaultBaseInterval
 	}
