@@ -53,6 +53,8 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.StateTimestamp = m.StateTimestamp
 	r.RiskScore = m.RiskScore
 	r.PlatformComponent = m.PlatformComponent
+	r.Deleted = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Deleted).CloneVT())
+	r.State = m.State
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -577,6 +579,8 @@ func (m *ListDeployment) CloneVT() *ListDeployment {
 	r.Namespace = m.Namespace
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.Priority = m.Priority
+	r.Deleted = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Deleted).CloneVT())
+	r.State = m.State
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -760,6 +764,12 @@ func (this *Deployment) EqualVT(that *Deployment) bool {
 		return false
 	}
 	if this.PlatformComponent != that.PlatformComponent {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.Deleted).EqualVT((*timestamppb1.Timestamp)(that.Deleted)) {
+		return false
+	}
+	if this.State != that.State {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1511,6 +1521,12 @@ func (this *ListDeployment) EqualVT(that *ListDeployment) bool {
 	if this.Hash != that.Hash {
 		return false
 	}
+	if !(*timestamppb1.Timestamp)(this.Deleted).EqualVT((*timestamppb1.Timestamp)(that.Deleted)) {
+		return false
+	}
+	if this.State != that.State {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1550,6 +1566,25 @@ func (m *Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.State != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.State))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa8
+	}
+	if m.Deleted != nil {
+		size, err := (*timestamppb1.Timestamp)(m.Deleted).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa2
 	}
 	if m.PlatformComponent {
 		i--
@@ -3212,6 +3247,21 @@ func (m *ListDeployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.State != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.State))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.Deleted != nil {
+		size, err := (*timestamppb1.Timestamp)(m.Deleted).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x4a
+	}
 	if m.Hash != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Hash))
 		i--
@@ -3406,6 +3456,13 @@ func (m *Deployment) SizeVT() (n int) {
 	}
 	if m.PlatformComponent {
 		n += 3
+	}
+	if m.Deleted != nil {
+		l = (*timestamppb1.Timestamp)(m.Deleted).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.State != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.State))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3987,6 +4044,13 @@ func (m *ListDeployment) SizeVT() (n int) {
 	}
 	if m.Hash != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Hash))
+	}
+	if m.Deleted != nil {
+		l = (*timestamppb1.Timestamp)(m.Deleted).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.State != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.State))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5142,6 +5206,61 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.PlatformComponent = bool(v != 0)
+		case 36:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deleted", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Deleted == nil {
+				m.Deleted = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Deleted).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= DeploymentState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -8912,6 +9031,61 @@ func (m *ListDeployment) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deleted", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Deleted == nil {
+				m.Deleted = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Deleted).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= DeploymentState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10148,6 +10322,61 @@ func (m *Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.PlatformComponent = bool(v != 0)
+		case 36:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deleted", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Deleted == nil {
+				m.Deleted = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Deleted).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= DeploymentState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14106,6 +14335,61 @@ func (m *ListDeployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Hash |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deleted", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Deleted == nil {
+				m.Deleted = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Deleted).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= DeploymentState(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

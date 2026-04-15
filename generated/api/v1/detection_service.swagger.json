@@ -919,7 +919,8 @@
           "format": "int64"
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Deprecated: Use `state` field instead."
         },
         "imagePullSecrets": {
           "type": "array",
@@ -973,9 +974,28 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "deleted": {
+          "type": "string",
+          "format": "date-time",
+          "description": "`deleted` is the time at which the underlying deployment workload was\ndeleted. `nil` if the workload exists."
+        },
+        "state": {
+          "$ref": "#/definitions/storageDeploymentState",
+          "description": "`state` indicates the current status of the deployment workload."
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 38"
+    },
+    "storageDeploymentState": {
+      "type": "string",
+      "enum": [
+        "STATE_UNSPECIFIED",
+        "STATE_ACTIVE",
+        "STATE_DELETED"
+      ],
+      "default": "STATE_UNSPECIFIED",
+      "description": " - STATE_ACTIVE: The deployment workload is currently active.\n - STATE_DELETED: The deployment workload was deleted."
     },
     "storageEmbeddedSecret": {
       "type": "object",
