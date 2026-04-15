@@ -3,6 +3,7 @@ package branding
 import (
 	"embed"
 	"encoding/base64"
+
 	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/pkg/utils"

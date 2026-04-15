@@ -34,6 +34,13 @@ var (
 	})
 )
 
+func init() {
+	// Register the create statement at init time so ApplyAllSchemas can create
+	// the table without triggering the full lazy schema construction.
+	// The full walker.Schema is built lazily on first access to the schema var.
+	RegisterTableStmt("hashes", CreateTableHashesStmt, HashesSchema, features.StoreEventHashes.Enabled)
+}
+
 const (
 	// HashesTableName specifies the name of the table in postgres.
 	HashesTableName = "hashes"

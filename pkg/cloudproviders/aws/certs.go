@@ -2,6 +2,7 @@ package aws
 
 import (
 	"crypto/x509"
+
 	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/cloudflare/cfssl/helpers"

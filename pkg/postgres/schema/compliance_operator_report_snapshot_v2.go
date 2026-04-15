@@ -54,6 +54,13 @@ var (
 	})
 )
 
+func init() {
+	// Register the create statement at init time so ApplyAllSchemas can create
+	// the table without triggering the full lazy schema construction.
+	// The full walker.Schema is built lazily on first access to the schema var.
+	RegisterTableStmt("compliance_operator_report_snapshot_v2", CreateTableComplianceOperatorReportSnapshotV2Stmt, ComplianceOperatorReportSnapshotV2Schema, features.ComplianceEnhancements.Enabled)
+}
+
 const (
 	// ComplianceOperatorReportSnapshotV2TableName specifies the name of the table in postgres.
 	ComplianceOperatorReportSnapshotV2TableName = "compliance_operator_report_snapshot_v2"

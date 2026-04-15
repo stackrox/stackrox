@@ -50,6 +50,13 @@ var (
 	})
 )
 
+func init() {
+	// Register the create statement at init time so ApplyAllSchemas can create
+	// the table without triggering the full lazy schema construction.
+	// The full walker.Schema is built lazily on first access to the schema var.
+	RegisterTableStmt("test_parent4", CreateTableTestParent4Stmt, TestParent4Schema)
+}
+
 const (
 	// TestParent4TableName specifies the name of the table in postgres.
 	TestParent4TableName = "test_parent4"

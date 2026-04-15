@@ -36,6 +36,13 @@ var (
 	})
 )
 
+func init() {
+	// Register the create statement at init time so ApplyAllSchemas can create
+	// the table without triggering the full lazy schema construction.
+	// The full walker.Schema is built lazily on first access to the schema var.
+	RegisterTableStmt("delegated_registry_configs", CreateTableDelegatedRegistryConfigsStmt, DelegatedRegistryConfigsSchema)
+}
+
 const (
 	// DelegatedRegistryConfigsTableName specifies the name of the table in postgres.
 	DelegatedRegistryConfigsTableName = "delegated_registry_configs"

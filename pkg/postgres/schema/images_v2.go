@@ -54,6 +54,13 @@ var (
 	})
 )
 
+func init() {
+	// Register the create statement at init time so ApplyAllSchemas can create
+	// the table without triggering the full lazy schema construction.
+	// The full walker.Schema is built lazily on first access to the schema var.
+	RegisterTableStmt("images_v2", CreateTableImagesV2Stmt, ImagesV2Schema, features.FlattenImageData.Enabled)
+}
+
 const (
 	// ImagesV2TableName specifies the name of the table in postgres.
 	ImagesV2TableName = "images_v2"

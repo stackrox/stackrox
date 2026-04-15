@@ -91,6 +91,15 @@ var (
     })
 )
 
+{{- if .RegisterSchema }}
+func init() {
+    // Register the create statement at init time so ApplyAllSchemas can create
+    // the table without triggering the full lazy schema construction.
+    // The full walker.Schema is built lazily on first access to the schema var.
+    RegisterTableStmt("{{.Schema.Table}}", {{template "createTableStmtVar" .Schema }}, {{template "schemaVar" .Schema.Table}}{{ if .FeatureFlag }}, features.{{.FeatureFlag}}.Enabled {{ end }})
+}
+{{- end }}
+
 {{- define "createGormModel" }}
 {{- $obj := .Obj }}
 {{- $schema := .Schema }}
