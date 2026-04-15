@@ -134,10 +134,11 @@ spec:
           image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
           script: |
             echo 'has body.pull_request: {{ cel: has(body.pull_request) }}'
+            echo 'has konflux-build label: {{ cel: has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") }}'
             echo "event_type: {{ event_type }}"
             echo "target_branch: {{ target_branch }}"
             echo "source_branch: {{ source_branch }}"
-            echo '{{ cel: (event_type == "push") || (event_type == "pull_request" && (target_branch.startsWith("release-")) || source_branch.matches("(konflux|renovate|appstudio|rhtap)") || ( has(body.pull_request) )) }}' | tee "$(results.SHOULD_PROCEED.path)"
+            echo '{{ cel: (event_type == "push") || (event_type == "pull_request" && (target_branch.startsWith("release-")) || source_branch.matches("(konflux|renovate|appstudio|rhtap)") || ( has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") )) }}' | tee "$(results.SHOULD_PROCEED.path)"
 
     - name: clone-repository
       params:
