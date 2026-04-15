@@ -166,7 +166,8 @@ spec:
               result="true"
             fi
             echo -n "The result is: "
-            echo "${result}" | tee "$(results.SHOULD_PROCEED.path)"
+            echo -n "${result}" | tee "$(results.SHOULD_PROCEED.path)"
+            echo
 
             echo '-----------'
             echo 'full body, for diagnostics:'
@@ -203,7 +204,7 @@ spec:
       when:
       - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
         operator: in
-        values: ["true"]
+        values: [ "true" ]
 
     - name: determine-image-tag
       params:
@@ -223,7 +224,7 @@ spec:
       when:
       - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
         operator: in
-        values: ["true"]
+        values: [ "true" ]
 
     - name: wait-for-bundle-image
       params:
@@ -243,7 +244,7 @@ spec:
       when:
       - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
         operator: in
-        values: ["true"]
+        values: [ "true" ]
 
     - name: create-acs-style-snapshot
       params:
@@ -334,4 +335,4 @@ spec:
       when:
       - input: $(tasks.should-do-the-rest.results.SHOULD_PROCEED)
         operator: in
-        values: ["true"]
+        values: [ "true" ]
