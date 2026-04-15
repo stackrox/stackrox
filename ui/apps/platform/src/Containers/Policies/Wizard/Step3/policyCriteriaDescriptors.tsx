@@ -43,18 +43,15 @@ const highChurnPrefixes: Record<string, string> = {
  */
 export function warnBroadFilePath(value: string): string | undefined {
     const trimmed = value.trim();
-    if (trimmed.length === 0) {
-        return undefined;
-    }
 
     // Root-level catch-all without additional path segments: /**, /*
     if (trimmed === '/**' || trimmed === '/*') {
         return 'This pattern matches every file event on the system, creating significant evaluation overhead. Consider narrowing to a specific directory like /etc/**.';
     }
 
-    // Root-level single-level glob with trailing path: /*/bar
-    if (trimmed.startsWith('/*/')) {
-        return 'This pattern matches all immediate subdirectories of root. Consider scoping to a specific directory.';
+    // Root-level glob with trailing path: /*/bar, /**/bar
+    if (trimmed.startsWith('/*/') || trimmed.startsWith('/**/')) {
+        return 'This pattern matches across all subdirectories of root. Consider scoping to a specific directory.';
     }
 
     // High-churn directories with unscoped glob wildcards
@@ -63,12 +60,17 @@ export function warnBroadFilePath(value: string): string | undefined {
             trimmed.startsWith(`${prefix}/`) && (trimmed.endsWith('/**') || trimmed.endsWith('/*'))
     );
     if (matchedPrefix) {
-        return `Patterns under ${matchedPrefix} match a high volume of file events due to frequent ${highChurnPrefixes[matchedPrefix]} activity, which increases policy evaluation overhead.`;
+        return `This directory is known for frequent ${highChurnPrefixes[matchedPrefix]} activity and may generate a high volume of file events, which increases policy evaluation overhead.`;
     }
 
     // Unscoped recursive glob (ends with **) under any other prefix
     if (trimmed.endsWith('/**')) {
         return 'Recursive glob patterns that match everything under a directory can generate a high volume of alerts and evaluation overhead. Consider scoping the pattern more narrowly.';
+    }
+
+    // Unscoped single-level glob (ends with /*) under any other prefix
+    if (trimmed.endsWith('/*')) {
+        return 'Single-level glob patterns under a directory can still match a high volume of file events. Consider narrowing to a specific file name or extension.';
     }
 
     return undefined;

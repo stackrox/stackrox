@@ -112,31 +112,36 @@ describe('warnBroadFilePath', () => {
     });
 
     it('should warn for /* (root catch-all)', () => {
-        expect(warnBroadFilePath('/*')).toBeDefined();
+        expect(warnBroadFilePath('/*')).toContain('every file event on the system');
     });
 
-    it('should not warn for /**/foo (scoped recursive search)', () => {
-        expect(warnBroadFilePath('/**/foo')).toBeUndefined();
+    it('should warn for /**/foo (root-level recursive search)', () => {
+        expect(warnBroadFilePath('/**/foo')).toContain('subdirectories of root');
+    });
+
+    it('should warn for /**/* (root-level recursive catch-all)', () => {
+        expect(warnBroadFilePath('/**/*')).toContain('subdirectories of root');
     });
 
     it('should warn for /*/bar (root-level single-level search)', () => {
-        expect(warnBroadFilePath('/*/bar')).toContain('immediate subdirectories');
+        expect(warnBroadFilePath('/*/bar')).toContain('subdirectories of root');
     });
 
     it('should warn for /tmp/**', () => {
         expect(warnBroadFilePath('/tmp/**')).toContain('temporary file');
     });
 
-    it('should warn for /proc/*', () => {
-        expect(warnBroadFilePath('/proc/*')).toBeDefined();
+    it('should warn for /proc/* and /proc/**', () => {
+        expect(warnBroadFilePath('/proc/*')).toContain('system');
+        expect(warnBroadFilePath('/proc/**')).toContain('system');
     });
 
     it('should warn for /sys/**', () => {
-        expect(warnBroadFilePath('/sys/**')).toBeDefined();
+        expect(warnBroadFilePath('/sys/**')).toContain('system');
     });
 
     it('should warn for /var/log/**', () => {
-        expect(warnBroadFilePath('/var/log/**')).toBeDefined();
+        expect(warnBroadFilePath('/var/log/**')).toContain('log file');
     });
 
     it('should not warn for /var/log/nginx/access.log.* (scoped glob under high-churn)', () => {
@@ -171,12 +176,20 @@ describe('warnBroadFilePath', () => {
         expect(warnBroadFilePath('/opt/app/**')).toContain('Recursive glob patterns');
     });
 
+    it('should warn for /opt/app/* (unscoped single-level glob under unknown prefix)', () => {
+        expect(warnBroadFilePath('/opt/app/*')).toContain('Single-level glob patterns');
+    });
+
     it('should not warn for /srv/data/**/config.yaml (scoped recursive pattern with suffix)', () => {
         expect(warnBroadFilePath('/srv/data/**/config.yaml')).toBeUndefined();
     });
 
     it('should prefer specific prefix warning over generic recursive warning', () => {
         expect(warnBroadFilePath('/tmp/**')).toContain('temporary file');
+    });
+
+    it('should prefer specific prefix warning over generic single-level warning', () => {
+        expect(warnBroadFilePath('/tmp/*')).toContain('temporary file');
     });
 
     it('should handle leading/trailing whitespace', () => {
