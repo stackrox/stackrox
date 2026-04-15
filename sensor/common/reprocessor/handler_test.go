@@ -44,12 +44,13 @@ func newTestCache(entries map[cache.Key]string) expiringcache.Cache[cache.Key, c
 
 func TestProcessInvalidateImageCache(t *testing.T) {
 	cases := []struct {
-		name        string
-		flatten     bool
-		cache       map[cache.Key]string
-		imageKeys   []*central.ImageKey
-		wantRemoved []cache.Key
-		wantKept    []cache.Key
+		name                    string
+		flatten                 bool
+		admissionControllerOnly bool
+		cache                   map[cache.Key]string
+		imageKeys               []*central.ImageKey
+		wantRemoved             []cache.Key
+		wantKept                []cache.Key
 	}{
 		{
 			name:    "without flatten uses ImageId",
@@ -85,6 +86,30 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 			wantRemoved: []cache.Key{"uuid-v5-id-1", "uuid-v5-id-2", "redis:alpine"},
 			wantKept:    []cache.Key{"nginx:latest"},
 		},
+		{
+			name:                    "AC-only preserves image cache",
+			admissionControllerOnly: true,
+			cache: map[cache.Key]string{
+				"sha256:abc123": "docker.io/library/nginx:latest",
+				"sha256:def456": "quay.io/stackrox/main:4.0.0",
+			},
+			imageKeys: []*central.ImageKey{
+				{ImageId: "sha256:abc123", ImageFullName: "docker.io/library/nginx:latest"},
+			},
+			wantKept: []cache.Key{"sha256:abc123", "sha256:def456"},
+		},
+		{
+			name: "non-AC-only removes from image cache",
+			cache: map[cache.Key]string{
+				"sha256:abc123": "docker.io/library/nginx:latest",
+				"sha256:def456": "quay.io/stackrox/main:4.0.0",
+			},
+			imageKeys: []*central.ImageKey{
+				{ImageId: "sha256:abc123", ImageFullName: "docker.io/library/nginx:latest"},
+			},
+			wantRemoved: []cache.Key{"sha256:abc123"},
+			wantKept:    []cache.Key{"sha256:def456"},
+		},
 	}
 
 	for _, tc := range cases {
@@ -107,7 +132,10 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 				stopSig:            concurrency.NewErrorSignal(),
 			}
 
-			err := handler.ProcessInvalidateImageCache(&central.InvalidateImageCache{ImageKeys: tc.imageKeys})
+			err := handler.ProcessInvalidateImageCache(&central.InvalidateImageCache{
+				ImageKeys:               tc.imageKeys,
+				AdmissionControllerOnly: tc.admissionControllerOnly,
+			})
 			require.NoError(t, err)
 
 			for _, key := range tc.wantRemoved {

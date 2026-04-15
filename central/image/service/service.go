@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/administration/events"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -44,6 +45,7 @@ func New(
 	watchedImages watchedImageDataStore.DataStore,
 	riskManager manager.Manager,
 	connManager connection.Manager,
+	deploymentDS deploymentDatastore.DataStore,
 	enricher enricher.ImageEnricher,
 	enricherV2 enricher.ImageEnricherV2,
 	metadataCache cache.ImageMetadata,
@@ -63,6 +65,7 @@ func New(
 		enricherV2:                    enricherV2,
 		metadataCache:                 metadataCache,
 		connManager:                   connManager,
+		deploymentDS:                  deploymentDS,
 		scanWaiterManager:             scanWaiterManager,
 		scanWaiterManagerV2:           scanWaiterManagerV2,
 		internalScanSemaphore:         semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),

@@ -11,7 +11,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
+	imageUtils "github.com/stackrox/rox/central/image/utils"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -113,7 +115,8 @@ type serviceImpl struct {
 
 	metadataCache cache.ImageMetadata
 
-	connManager connection.Manager
+	connManager  connection.Manager
+	deploymentDS deploymentDatastore.DataStore
 
 	enricher   enricher.ImageEnricher
 	enricherV2 enricher.ImageEnricherV2
@@ -643,9 +646,27 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 				return nil, err
 			}
 		}
+
+		// Filter snoozed CVEs (deferred / false-positive).
 		if !request.GetIncludeSnoozed() {
 			utils.FilterSuppressedCVEsNoCloneV2(imgV2)
 		}
+
+		// Clone after CVE filtering but before StripDatasource so Sensor
+		// receives the same filtered image it would get via ScanImageInternal.
+		if request.GetForce() && imgV2.GetDigest() != "" {
+			imgForCache := utils.ConvertToV1(imgV2)
+			go imageUtils.UpdateImageCaches(
+				s.connManager, s.deploymentDS, s.datastoreV2,
+				imgForCache, &central.ImageKey{
+					ImageId:       imgV2.GetDigest(),
+					ImageIdV2:     imgV2.GetId(),
+					ImageFullName: imgV2.GetName().GetFullName(),
+				},
+			)
+		}
+
+		// Strip datasource only for the roxctl response.
 		utils.StripDatasourceNoClone(imgV2.GetScan())
 
 		img := utils.ConvertToV1(imgV2)
@@ -673,10 +694,27 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		if err := s.saveImage(img); err != nil {
 			return nil, err
 		}
+
 	}
+	// Filter snoozed CVEs (deferred / false-positive).
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
+
+	// Clone after CVE filtering but before StripDatasource so Sensor
+	// receives the same filtered image it would get via ScanImageInternal.
+	if request.GetForce() && img.GetId() != "" {
+		imgForCache := img.CloneVT()
+		go imageUtils.UpdateImageCaches(
+			s.connManager, s.deploymentDS, s.datastoreV2,
+			imgForCache, &central.ImageKey{
+				ImageId:       img.GetId(),
+				ImageFullName: img.GetName().GetFullName(),
+			},
+		)
+	}
+
+	// Strip datasource only for the roxctl response.
 	utils.StripDatasourceNoClone(img.GetScan())
 	signatureintegration.EnrichVerificationResults(ctx,
 		s.signatureIntegrationDataStore, img.GetSignatureVerificationData().GetResults(),

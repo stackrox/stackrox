@@ -2,10 +2,12 @@ package service
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	networkpolicyDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
@@ -31,8 +33,10 @@ func initialize() {
 		enrichment.ImageEnricherSingleton(),
 		enrichment.ImageEnricherV2Singleton(),
 		imageDatastore.Singleton(),
+		imageV2Datastore.Singleton(),
 		manager.Singleton(),
 		enrichment.Singleton(),
+		deploymentDatastore.Singleton(),
 		buildTimeDetection.SingletonDetector(),
 		processor.Singleton(),
 		deploytime.SingletonDetector(),

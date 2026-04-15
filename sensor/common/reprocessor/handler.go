@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -83,17 +82,23 @@ func (h *handlerImpl) ProcessReprocessDeployments(req *central.ReprocessDeployme
 }
 
 func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCache) error {
-	log.Debug("Received request to invalidate image caches")
+	if req.GetAdmissionControllerOnly() {
+		log.Debug("Received request to invalidate admission controller image cache")
+	} else {
+		log.Debug("Received request to invalidate image caches")
+	}
 
 	select {
 	case <-h.stopSig.Done():
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
 	default:
 		h.admCtrlSettingsMgr.InvalidateImageCache(req.GetImageKeys())
-
+		if req.GetAdmissionControllerOnly() {
+			return nil
+		}
 		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
-			keysToDelete = append(keysToDelete, cacheKeyFromImageKey(image))
+			keysToDelete = append(keysToDelete, cache.KeyFromImageKey(image))
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}
@@ -108,27 +113,12 @@ func (h *handlerImpl) ProcessRefreshImageCacheTTL(req *central.RefreshImageCache
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill refresh image cache TTL request")
 	default:
 		for _, image := range req.GetImageKeys() {
-			if key := cacheKeyFromImageKey(image); key != "" {
+			if key := cache.KeyFromImageKey(image); key != "" {
 				h.imageCache.Touch(key)
 			}
 		}
 	}
 	return nil
-}
-
-// cacheKeyFromImageKey resolves the cache key from an ImageKey
-// proto, applying the V2/V1/fullName precedence based on the FlattenImageData capability.
-func cacheKeyFromImageKey(imageKey *central.ImageKey) cache.Key {
-	var key string
-	if centralcaps.Has(centralsensor.FlattenImageData) {
-		key = imageKey.GetImageIdV2()
-	} else {
-		key = imageKey.GetImageId()
-	}
-	if key == "" {
-		key = imageKey.GetImageFullName()
-	}
-	return cache.Key(key)
 }
 
 func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
