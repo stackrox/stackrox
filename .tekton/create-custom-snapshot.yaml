@@ -12,7 +12,8 @@ metadata:
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
       (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
-      (event == "pull_request" && body.action != "ready_for_review")
+      (event == "pull_request" && body.action != "ready_for_review") ||
+      (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
     # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
@@ -117,15 +118,14 @@ spec:
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
 
-
-    #      (event == "push") ||
-    #              (event == "pull_request" && (
-    #                  target_branch.startsWith("release-") ||
-    #                  source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-    #                  (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
-    #                ))
     # TODO: event_type=on-comment and the rest
     - name: should-do-the-rest
+      description: |
+        Determines whether the rest of actual tasks in the pipeline should be skipped or be actually executed.
+        Tasks will be skipped on PRs where konflux-builds aren't enabled (TODO: ROX-21073), see
+        `pipelinesascode.tekton.dev/on-cel-expression` in `*-build.yaml` files.
+        This all is needed because we want to always run this `create-custom-snapshot` pipeline and make it part of
+        required GitHub checks in branch protection rules.
       taskSpec:
         results:
         - name: SHOULD_PROCEED
@@ -170,7 +170,7 @@ spec:
             echo
 
             echo '-----------'
-            echo 'full body, for diagnostics:'
+            echo 'full body, for diagnostics if anything fails:'
             cat <<EOF
               {{ cel: body }}
             EOF
