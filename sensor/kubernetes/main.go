@@ -47,7 +47,7 @@ func main() {
 
 	sensormetrics.Init()
 	listenerresourcesmetrics.Init()
-	complianceoperator.InitMetrics()
+	complianceoperator.Init()
 	images.Init()
 	grpcmetrics.Init()
 
