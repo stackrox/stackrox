@@ -27,6 +27,7 @@ class PR:
     jira_keys: list[str]
     body: str
     merged: bool = False  # True if PR is merged (from git commits)
+    state: str = "open"  # PR state: "open", "closed", "merged"
     commit_sha: str | None = None  # Git commit SHA (for merged PRs)
 
 

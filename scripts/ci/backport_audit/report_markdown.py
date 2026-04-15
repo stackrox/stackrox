@@ -89,10 +89,12 @@ def _format_issue_line(
     ) = issue_info
 
     pr_refs = jira_to_prs.get(jira_key, [])
-    pr_links = ", ".join([
-        f":pr-merged: #{pr.number}" if pr.merged else f"#{pr.number}"
-        for pr in pr_refs
-    ])
+    pr_link_parts = []
+    for pr in pr_refs:
+        prefix = ":pr-merged: " if pr.merged else ""
+        pr_num = f"~~#{pr.number}~~" if pr.state == "closed" and not pr.merged else f"#{pr.number}"
+        pr_link_parts.append(f"{prefix}{pr_num}")
+    pr_links = ", ".join(pr_link_parts)
     pr_suffix = f" (PRs: {pr_links})" if pr_refs else ""
 
     priority_info = f"Priority: {priority}"
@@ -156,9 +158,9 @@ def generate_markdown(
 
             for pr in prs_no_jira:
                 mention = get_slack_mention(pr.author)
-                title = f"~~{pr.title}~~" if pr.merged else pr.title
                 pr_icon = ":pr-merged: " if pr.merged else ""
-                lines.append(f"- {pr_icon}{mention} #{pr.number}: {title}")
+                pr_num = f"~~#{pr.number}~~" if pr.state == "closed" and not pr.merged else f"#{pr.number}"
+                lines.append(f"- {pr_icon}{mention} {pr_num}: {pr.title}")
 
             lines.append("")
 

@@ -33,7 +33,7 @@ def _fetch_and_group_prs(
     branch_names: list[str],
 ) -> tuple[dict[str, list[PR]], set[str]]:
     """Fetch PRs and group by branch, collecting Jira keys."""
-    all_prs_data = gh_client.fetch_prs("backport", "open")
+    all_prs_data = gh_client.fetch_prs("backport", "all")
     prs_by_branch: dict[str, list[PR]] = {}
     all_jira_keys = set()
 
@@ -56,6 +56,7 @@ def _fetch_and_group_prs(
             base_ref=base_ref,
             jira_keys=jira_keys,
             body=pr_data.get("body", ""),
+            state=pr_data.get("state", "open"),
         )
 
         if base_ref not in prs_by_branch:
@@ -143,6 +144,7 @@ def _fetch_merged_prs_from_commits(
                     jira_keys=jira_keys,
                     body=body,
                     merged=True,
+                    state="merged",
                     commit_sha=commit_sha,
                 )
 
