@@ -7270,6 +7270,22 @@
       "def": {
         "enums": [
           {
+            "name": "DeploymentState",
+            "enum_fields": [
+              {
+                "name": "STATE_UNSPECIFIED"
+              },
+              {
+                "name": "STATE_ACTIVE",
+                "integer": 1
+              },
+              {
+                "name": "STATE_DELETED",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "ContainerType",
             "enum_fields": [
               {
@@ -7452,7 +7468,13 @@
               {
                 "id": 16,
                 "name": "inactive",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 17,
@@ -7521,6 +7543,16 @@
                 "id": 35,
                 "name": "platform_component",
                 "type": "bool"
+              },
+              {
+                "id": 36,
+                "name": "deleted",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 37,
+                "name": "state",
+                "type": "DeploymentState"
               }
             ],
             "maps": [
@@ -8179,6 +8211,16 @@
                 "id": 7,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 9,
+                "name": "deleted",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "state",
+                "type": "DeploymentState"
               }
             ]
           }
