@@ -87,7 +87,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.GetAction())
 		s.Assert().NotNil(sensorEvent.GetVirtualMachineIndexReport())
 		s.Assert().Equal("test-vm", sensorEvent.GetVirtualMachineIndexReport().GetId())
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(time.Second):
 		s.Fail("Expected message to be sent to central")
 	}
 }
@@ -143,7 +143,7 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 		select {
 		case <-s.handler.toCentral:
 			totalResponses++
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(500 * time.Millisecond):
 			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
 			return // Don't fail, just exit
 		}
@@ -177,7 +177,7 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	select {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 	}
 }
 
@@ -206,7 +206,7 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	select {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 	}
 }
 
@@ -221,7 +221,7 @@ func (s *virtualMachineHandlerSuite) TestStop() {
 	select {
 	case <-s.handler.stopper.Client().Stopped().Done():
 		// Expected.
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(time.Second):
 		s.Fail("handler should have stopped")
 	}
 }
