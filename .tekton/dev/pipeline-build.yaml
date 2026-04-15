@@ -20,7 +20,7 @@ spec:
       default: "dev"
     - name: base-image-tag
       type: string
-      default: "4.5.0"
+      default: "latest"
       description: "Base image tag from quay.io/stackrox-io/main"
 
   workspaces:
