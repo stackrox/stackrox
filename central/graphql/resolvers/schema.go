@@ -10,18 +10,21 @@ var (
 	builderInstance generator.SchemaBuilder
 )
 
+func init() {
+	Init()
+}
+
 func getBuilder() generator.SchemaBuilder {
 	builderOnce.Do(func() {
 		builderInstance = generator.NewSchemaBuilder()
 		registerGeneratedTypes(builderInstance)
-		Init()
 	})
 	return builderInstance
 }
 
 // Schema outputs the generated schema from the package level state
 func Schema() string {
-	s, err := builderInstance.Render()
+	s, err := getBuilder().Render()
 	if err == nil {
 		return s
 	}
