@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// RiskScoringPluginConfig defines the configuration for a risk scoring plugin.
+// Plugins contribute to the overall risk score calculation for deployments.
+message RiskScoringPluginConfig {
+  // Unique identifier for the plugin configuration
+  string id = 1;
+
+  // Human-readable name for the plugin
+  string name = 2;
+
+  // Type of plugin (builtin, http, grpc, etc.)
+  PluginType type = 3;
+
+  // Whether this plugin is currently enabled
+  bool enabled = 4;
+
+  // Weight multiplier applied to the plugin's score (default: 1.0)
+  float weight = 5;
+
+  // Priority determines execution order (lower = earlier)
+  int32 priority = 6;
+
+  // Configuration for built-in plugins
+  BuiltinPluginConfig builtin = 10;
+
+  // Future: ExternalPluginConfig external = 11;
+}
+
+// PluginType specifies the execution model for a risk scoring plugin.
+enum PluginType {
+  PLUGIN_TYPE_UNSPECIFIED = 0;
+  PLUGIN_TYPE_BUILTIN = 1;
+  // Future plugin types:
+  // PLUGIN_TYPE_HTTP = 2;
+  // PLUGIN_TYPE_GRPC = 3;
+  // PLUGIN_TYPE_WASM = 4;
+  // PLUGIN_TYPE_CEL = 5;
+}
+
+// BuiltinPluginConfig specifies configuration for a built-in plugin.
+message BuiltinPluginConfig {
+  // Name of the built-in plugin (e.g., "policy-violations", "vulnerabilities")
+  string plugin_name = 1;
+
+  // Plugin-specific parameters
+  map<string, string> parameters = 2;
+}

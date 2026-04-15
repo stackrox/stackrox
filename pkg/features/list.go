@@ -122,7 +122,7 @@ var (
 	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
 	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
 
-	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
+// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
 	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING")
 
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
@@ -133,6 +133,9 @@ var (
 
 	// TailoredProfiles enables support for compliance tailored profiles
 	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
+
+	// PluginRiskScoring enables plugin-based risk scoring architecture
+	PluginRiskScoring = registerFeature("Enable plugin-based risk scoring", "ROX_PLUGIN_RISK_SCORING")
 )
 
 // The following feature flags are related to Scanner V4.
