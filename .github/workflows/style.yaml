@@ -171,6 +171,9 @@ jobs:
       - name: Fetch UI deps
         run: make -C ui deps
 
+      - name: Cache ESLint results
+        uses: ./.github/actions/cache-eslint
+
       - name: make style-slim
         run: make style-slim
 
