@@ -13,6 +13,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func init() {
+	Register443()
+}
+
 var (
 	testCluster = &storage.Cluster{
 		Id: uuid.NewV4().String(),

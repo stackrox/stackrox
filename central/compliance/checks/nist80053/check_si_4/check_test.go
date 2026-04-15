@@ -10,6 +10,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func init() {
+	RegisterSI4()
+}
+
 func getClusterWithLastContactTime(timestamp *time.Time) *storage.Cluster {
 	if timestamp == nil {
 		return &storage.Cluster{

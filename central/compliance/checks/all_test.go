@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	Init()
+}
+
 func TestAllCheckIDsAreValid(t *testing.T) {
 	allChecks := framework.RegistrySingleton().GetAll()
 	var allControls []string

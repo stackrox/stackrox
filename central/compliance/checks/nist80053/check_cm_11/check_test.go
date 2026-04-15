@@ -12,6 +12,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func init() {
+	RegisterCM11()
+}
+
 func TestDefaultPoliciesListUpToDate(t *testing.T) {
 	defaultPolicies, err := policies.DefaultPolicies()
 	require.NoError(t, err)

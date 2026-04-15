@@ -9,6 +9,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func init() {
+	RegisterRA5()
+}
+
 type alert struct {
 	policyID string
 }

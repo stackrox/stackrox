@@ -10,6 +10,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func init() {
+	RegisterAC14()
+}
+
 func setupMockCtx(ctrl *gomock.Controller, k8sRoles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) (framework.ComplianceContext, *testutils.EvidenceRecords) {
 	mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)
 

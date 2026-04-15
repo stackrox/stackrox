@@ -12,6 +12,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func init() {
+	Register225()
+}
+
 func TestCheck(t *testing.T) {
 	suite.Run(t, new(suiteImpl))
 }
