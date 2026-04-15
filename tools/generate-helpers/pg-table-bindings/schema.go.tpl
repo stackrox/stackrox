@@ -7,7 +7,7 @@ import (
     "context"
     "fmt"
     "reflect"
-    "sync"
+    "github.com/stackrox/rox/pkg/sync"
     "time"
 
     "github.com/lib/pq"

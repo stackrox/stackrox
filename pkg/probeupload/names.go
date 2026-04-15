@@ -2,7 +2,8 @@ package probeupload
 
 import (
 	"regexp"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

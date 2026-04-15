@@ -4,8 +4,9 @@ package schema
 
 import (
 	"reflect"
-	"sync"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"

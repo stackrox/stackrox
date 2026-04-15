@@ -5,7 +5,8 @@ package schema
 import (
 	"fmt"
 	"reflect"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

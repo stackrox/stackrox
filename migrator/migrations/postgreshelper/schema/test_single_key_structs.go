@@ -4,8 +4,9 @@ package schema
 
 import (
 	"reflect"
-	"sync"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"

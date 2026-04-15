@@ -1,10 +1,13 @@
 package main
+
 import (
 	"fmt"
 	"runtime"
+
 	_ "github.com/stackrox/rox/pkg/registries/artifactregistry"
 	_ "github.com/stackrox/rox/pkg/registries/google"
 )
+
 func main() {
 	var m runtime.MemStats
 	runtime.GC()

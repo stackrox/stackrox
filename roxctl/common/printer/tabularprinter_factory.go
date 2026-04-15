@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	tabprinters "github.com/stackrox/rox/pkg/printers/table"
 	"github.com/stackrox/rox/pkg/printers"
+	tabprinters "github.com/stackrox/rox/pkg/printers/table"
 	"github.com/stackrox/rox/pkg/utils"
 )
 

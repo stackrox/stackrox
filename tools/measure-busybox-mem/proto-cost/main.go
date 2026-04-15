@@ -1,12 +1,15 @@
 package main
+
 import (
 	"fmt"
 	"runtime"
-	_ "github.com/stackrox/rox/generated/storage"
+
 	_ "github.com/stackrox/rox/generated/api/v1"
 	_ "github.com/stackrox/rox/generated/internalapi/central"
 	_ "github.com/stackrox/rox/generated/internalapi/sensor"
+	_ "github.com/stackrox/rox/generated/storage"
 )
+
 func main() {
 	var m runtime.MemStats
 	runtime.GC()

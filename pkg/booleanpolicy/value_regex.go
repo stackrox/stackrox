@@ -3,7 +3,8 @@ package booleanpolicy
 import (
 	"fmt"
 	"regexp"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

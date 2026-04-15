@@ -1,9 +1,12 @@
 package main
+
 import (
 	"fmt"
 	"runtime"
+
 	_ "k8s.io/client-go/kubernetes"
 )
+
 func main() {
 	var m runtime.MemStats
 	runtime.GC()

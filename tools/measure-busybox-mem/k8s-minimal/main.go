@@ -1,7 +1,9 @@
 package main
+
 import (
 	"fmt"
 	"runtime"
+
 	// Only the API groups sensor directly uses:
 	_ "k8s.io/api/admission/v1"
 	_ "k8s.io/api/apps/v1"
@@ -12,6 +14,7 @@ import (
 	_ "k8s.io/api/networking/v1"
 	_ "k8s.io/api/rbac/v1"
 )
+
 func main() {
 	var m runtime.MemStats
 	runtime.GC()
