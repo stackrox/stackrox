@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/sensor/common/centralproxy"
 	clusterentitiesmetrics "github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 	detectormetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	networkflowmetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
@@ -59,6 +60,7 @@ func Init() {
 	)
 
 	// component-specific metrics
+	centralproxy.Init()
 	clusterentitiesmetrics.Init()
 	detectormetrics.Init()
 	networkflowmetrics.Init()

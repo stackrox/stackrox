@@ -1,8 +1,11 @@
 package app
 
 import (
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/memlimit"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/premain"
+	"github.com/stackrox/rox/pkg/rate"
 )
 
 // Run is the main entry point for the central application.
@@ -12,5 +15,7 @@ func Run() {
 	memlimit.SetMemoryLimit()
 	premain.StartMain()
 
-	initMetrics()
+	metrics.Init()
+	postgres.Init()
+	rate.Init()
 }
