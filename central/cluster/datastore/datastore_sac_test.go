@@ -49,7 +49,7 @@ func (s *clusterDatastoreSACSuite) SetupSuite() {
 	s.NotNil(s.pgTestBase)
 	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgTestBase.DB)
 	s.Require().NoError(err)
-	s.optionsMap = schema.ClustersSchema.OptionsMap
+	s.optionsMap = schema.ClustersSchema().OptionsMap
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Cluster)
 }
 

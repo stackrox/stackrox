@@ -44,7 +44,7 @@ func (s *nodeDatastoreSACSuite) SetupSuite() {
 	s.pgtestbase = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgtestbase)
 	s.datastore = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-	s.optionsMap = schema.NodesSchema.OptionsMap
+	s.optionsMap = schema.NodesSchema().OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
