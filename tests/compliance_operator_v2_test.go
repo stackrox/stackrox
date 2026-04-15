@@ -323,9 +323,9 @@ func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 		require.NoErrorf(c, err, "failed to list profiles")
 		for _, p := range profileList.GetProfiles() {
 			if p.GetName() == name {
-				mu.Lock()
-				profile = p
-				mu.Unlock()
+				concurrency.WithLock(&mu, func() {
+				    profile = p
+				})
 				return
 			}
 		}
