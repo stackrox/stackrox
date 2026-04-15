@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -46,6 +48,8 @@ func main() {
 	sensormetrics.Init()
 	listenerresourcesmetrics.Init()
 	complianceoperator.InitMetrics()
+	images.Init()
+	grpcmetrics.Init()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 

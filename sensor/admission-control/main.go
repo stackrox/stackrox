@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -73,6 +74,9 @@ func mainCmd() error {
 	}); err != nil {
 		log.Errorf("Failed to configure certificates: %v. Connection to sensor might fail.", err)
 	}
+
+	manager.Init()
+	grpcmetrics.Init()
 
 	clientconn.SetUserAgent(clientconn.AdmissionController)
 
