@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -324,7 +325,7 @@ func waitUntilTPInCentralDB(ctx context.Context, t *testing.T,
 		for _, p := range profileList.GetProfiles() {
 			if p.GetName() == name {
 				concurrency.WithLock(&mu, func() {
-				    profile = p
+					profile = p
 				})
 				return
 			}
