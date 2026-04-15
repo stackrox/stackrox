@@ -1,7 +1,9 @@
 package phonehome
 
 import (
+	"maps"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -103,7 +105,12 @@ func TestMatchHeaders(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			h := rp.MatchHeaders(test.headers)
-			assert.Equal(t, test.expected, h)
+			// The order of the values joined from different matching keys may differ due to the map access order.
+			if assert.ElementsMatch(t, slices.Collect(maps.Keys(test.expected)), slices.Collect(maps.Keys(h))) {
+				for k, values := range test.expected {
+					assert.ElementsMatch(t, values, h[k])
+				}
+			}
 		})
 	}
 }
