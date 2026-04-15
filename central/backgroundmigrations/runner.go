@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dblock"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -32,7 +34,7 @@ const (
 	// differ from the migrator advisory lock ID.
 	bgMigrationAdvisoryLockID int64 = 2_846_193_750_482_637_519
 
-	lockRetryInterval = 60 * time.Second
+	retryInterval = 60 * time.Second
 )
 
 // Runner executes background migrations after Central is ready.
@@ -53,7 +55,7 @@ func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 		rolloutChecker:      rolloutChecker,
 		stopper:             concurrency.NewStopper(),
 		currentBgSeqNumFunc: func() int { return CurrentBgMigrationSeqNum },
-		lockRetryInterval:   lockRetryInterval,
+		lockRetryInterval:   retryInterval,
 		tryAcquireLockFunc:  dblock.TryAcquireAdvisoryLock,
 	}
 }
@@ -86,120 +88,148 @@ func (r *Runner) run() {
 		}
 	}()
 
-	if err := r.rolloutChecker.WaitForRolloutComplete(ctx); err != nil {
-		log.Infof("Background migrations: rollout check cancelled: %v", err)
-		return
-	}
-
-	release, err := r.acquireLock(ctx)
-	if err != nil {
-		return
-	}
-	defer release()
-
-	r.runMigrations(ctx)
-}
-
-// acquireLock polls for the advisory lock using non-blocking try-acquire calls.
-// Retries every lockRetryInterval until the lock is acquired or the context is cancelled.
-func (r *Runner) acquireLock(ctx context.Context) (func(), error) {
-	log := logging.LoggerForModule()
-
 	for {
-		log.Infof("Background migrations: acquiring advisory lock...")
-		acquired, release, err := r.tryAcquireLockFunc(ctx, r.db, bgMigrationAdvisoryLockID)
-		if err != nil {
-			if ctx.Err() != nil {
-				log.Infof("Background migrations: lock acquisition cancelled: %v", ctx.Err())
-				return nil, ctx.Err()
-			}
-			log.Warnf("Background migrations: failed to acquire advisory lock, retrying in %v: %v", r.lockRetryInterval, err)
-		} else if acquired {
-			return release, nil
-		} else {
-			log.Infof("Background migrations: advisory lock held by another instance, retrying in %v", r.lockRetryInterval)
+		err := r.runOnce(ctx)
+		if err == nil {
+			return
 		}
+
+		log.Errorf("background migrations failed, retrying in %v: %v", r.lockRetryInterval, err)
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			log.Infof("background migrations stopped")
+			return
 		case <-time.After(r.lockRetryInterval):
 		}
 	}
 }
 
-func (r *Runner) runMigrations(ctx context.Context) {
+func (r *Runner) runOnce(ctx context.Context) error {
+	if err := r.rolloutChecker.WaitForRolloutComplete(ctx); err != nil {
+		return errors.Wrap(err, "rollout check")
+	}
+
+	release, err := r.acquireLock(ctx)
+	if err != nil {
+		return errors.Wrap(err, "acquiring lock")
+	}
+	defer release()
+
+	if err := r.runMigrations(ctx); err != nil {
+		return errors.Wrap(err, "running background migrations")
+	}
+
+	return nil
+}
+
+// acquireLock attempts to acquire the advisory lock once.
+// Returns (release, nil) on success, or an error if the lock could not be acquired.
+func (r *Runner) acquireLock(ctx context.Context) (func(), error) {
+	acquired, release, err := r.tryAcquireLockFunc(ctx, r.db, bgMigrationAdvisoryLockID)
+	if err != nil {
+		return nil, errors.Wrap(err, "acquiring advisory lock")
+	}
+	if !acquired {
+		return nil, errors.New("advisory lock held by another instance")
+	}
+	return release, nil
+}
+
+func (r *Runner) runMigrations(ctx context.Context) error {
 	log := logging.LoggerForModule()
 
-	dbBgSeqNum, err := r.readSeqNum(ctx)
+	dbSeqNum, dbOverrideTag, err := r.readState(ctx)
 	if err != nil {
-		log.Errorf("Background migrations: failed to read current seq num: %v", err)
-		return
+		return errors.Wrap(err, "reading current state")
 	}
 
 	currentSeqNum := r.currentBgSeqNumFunc()
 
-	if dbBgSeqNum > currentSeqNum {
-		log.Warnf("Background migrations: rollback detected (db=%d, current=%d). Resetting to current seq num.", dbBgSeqNum, currentSeqNum)
-		if err := r.writeSeqNum(ctx, currentSeqNum); err != nil {
-			log.Errorf("Background migrations: failed to reset seq num: %v", err)
-			return
+	overrideSeqNum, overrideTag, shouldOverride := r.checkSeqNumOverrideConfig(currentSeqNum, dbOverrideTag)
+	if shouldOverride {
+		log.Infof("applying override tag %q, resetting seq num from %d to %d", overrideTag, dbSeqNum, overrideSeqNum)
+		if err := r.writeState(ctx, overrideSeqNum, overrideTag); err != nil {
+			return errors.Wrap(err, "writing override state")
 		}
-		dbBgSeqNum = currentSeqNum
+		dbSeqNum = overrideSeqNum
 	}
 
-	if dbBgSeqNum == currentSeqNum {
-		log.Infof("Background migrations: up to date at seq num %d", dbBgSeqNum)
-		return
+	if dbSeqNum > currentSeqNum {
+		log.Warnf("rollback detected (db=%d, current=%d). Resetting to current seq num.", dbSeqNum, currentSeqNum)
+		if err := r.writeSeqNum(ctx, currentSeqNum); err != nil {
+			return errors.Wrap(err, "resetting seq num after rollback")
+		}
+		dbSeqNum = currentSeqNum
 	}
 
-	log.Infof("Background migrations: running migrations from %d to %d", dbBgSeqNum, currentSeqNum)
+	if dbSeqNum == currentSeqNum {
+		log.Infof("up to date at seq num %d", dbSeqNum)
+		return nil
+	}
 
-	for seqNum := dbBgSeqNum; seqNum < currentSeqNum; seqNum++ {
-		select {
-		case <-r.stopper.Flow().StopRequested():
-			log.Infof("Background migrations: shutdown requested, stopping at seq num %d", seqNum)
-			return
-		default:
+	log.Infof("running migrations from %d to %d", dbSeqNum, currentSeqNum)
+
+	for seqNum := dbSeqNum; seqNum < currentSeqNum; seqNum++ {
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
 
 		migration, ok := Get(seqNum)
 		if !ok {
-			log.Errorf("Background migrations: no migration found starting at %d", seqNum)
-			return
+			return errors.Errorf("no migration found starting at %d", seqNum)
 		}
 
-		log.Infof("Background migrations: running migration %d: %s", seqNum, migration.Description)
+		log.Infof("running migration %d: %s", seqNum, migration.Description)
 
 		if err := migration.Run(ctx, r.db); err != nil {
-			if ctx.Err() != nil {
-				log.Infof("Background migrations: migration %d cancelled during shutdown", seqNum)
-				return
-			}
-			log.Errorf("Background migrations: migration %d failed: %v. Will retry on next restart.", seqNum, err)
-			return
+			return errors.Wrapf(err, "migration %d failed", seqNum)
 		}
 
 		if err := r.writeSeqNum(ctx, migration.VersionAfterSeqNum); err != nil {
-			log.Errorf("Background migrations: failed to update seq num to %d: %v", migration.VersionAfterSeqNum, err)
-			return
+			return errors.Wrapf(err, "updating seq num to %d", migration.VersionAfterSeqNum)
 		}
 
-		log.Infof("Background migrations: completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
+		log.Infof("completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
 	}
 
-	log.Infof("Background migrations: all migrations complete, at seq num %d", currentSeqNum)
+	log.Infof("all migrations complete, at seq num %d", currentSeqNum)
+	return nil
 }
 
-func (r *Runner) readSeqNum(ctx context.Context) (int, error) {
-	row := r.db.QueryRow(ctx, "SELECT seqnum FROM "+schema.BackgroundMigrationVersionsTableName+" LIMIT 1")
+func (r *Runner) readState(ctx context.Context) (int, string, error) {
+	row := r.db.QueryRow(ctx, "SELECT seqnum, override_tag FROM "+schema.BackgroundMigrationVersionsTableName+" LIMIT 1")
 	var seqNum int32
-	if err := row.Scan(&seqNum); err != nil {
-		return 0, err
+	var overrideTag string
+	if err := row.Scan(&seqNum, &overrideTag); err != nil {
+		return 0, "", err
 	}
-	return int(seqNum), nil
+	return int(seqNum), overrideTag, nil
 }
 
 func (r *Runner) writeSeqNum(ctx context.Context, seqNum int) error {
 	_, err := r.db.Exec(ctx, "UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = $1", int32(seqNum))
 	return err
+}
+
+func (r *Runner) writeState(ctx context.Context, seqNum int, overrideTag string) error {
+	_, err := r.db.Exec(ctx, "UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = $1, override_tag = $2", int32(seqNum), overrideTag)
+	return err
+}
+
+// checkSeqNumOverrideConfig checks env configuration for sequence number overrides and applies them.
+// returns the configuration and whether it needs to be applied
+func (r *Runner) checkSeqNumOverrideConfig(currSeqNum int, dbOverrideTag string) (seqNum int, tag string, apply bool) {
+	seqNum = env.BackgroundMigrationOverrideSeqNum.IntegerSetting()
+	tag = env.BackgroundMigrationOverrideTag.Setting()
+
+	if seqNum < 0 || tag == "" || tag == dbOverrideTag {
+		return
+	}
+
+	if seqNum >= currSeqNum {
+		log.Errorf("override background seq num %d is greater or equal current seq num %d, ignoring override", seqNum, currSeqNum)
+		return
+	}
+
+	return seqNum, tag, true
 }

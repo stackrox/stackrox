@@ -19,5 +19,6 @@ const (
 
 // BackgroundMigrationVersion holds the Gorm model for Postgres table `background_migration_version`.
 type BackgroundMigrationVersion struct {
-	SeqNum int32 `gorm:"column:seqnum;type:integer;primaryKey;not null"`
+	SeqNum      int32  `gorm:"column:seqnum;type:integer;primaryKey;not null"`
+	OverrideTag string `gorm:"column:override_tag;type:text;default:''"`
 }
