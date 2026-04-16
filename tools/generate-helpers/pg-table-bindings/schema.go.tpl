@@ -7,10 +7,10 @@ import (
     "context"
     "fmt"
     "reflect"
-    "github.com/stackrox/rox/pkg/sync"
     "time"
 
     "github.com/lib/pq"
+    "github.com/stackrox/rox/pkg/sync"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     {{- if .FeatureFlag }}

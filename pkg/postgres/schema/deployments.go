@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
