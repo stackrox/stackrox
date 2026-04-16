@@ -12,12 +12,15 @@ Usage:
   build-index-image.sh MANDATORY [OPTION]
 
 MANDATORY:
-  --base-index-tag     The base index image tag. Example: quay.io/stackrox-io/stackrox-operator-index:v1.0.0
   --index-tag          The new index image tag. Example: quay.io/stackrox-io/stackrox-operator-index:v1.1.0
   --bundle-tag         The bundle image tag that should be appended to base index. Example: quay.io/stackrox-io/stackrox-operator-bundle:v1.1.0
+
+OPTION (for upgrade chain mode):
+  --base-index-tag     The base index image tag. Example: quay.io/stackrox-io/stackrox-operator-index:v1.0.0
   --replaced-version   Version that the bundle replaces. Example: v1.0.0
 
-OPTION:
+OPTION (general):
+  --single-bundle      Build a single-bundle index without upgrade chain (faster, for development).
   --base-dir           Working directory for the script. Default: '.'
   --clean-output-dir   Delete '{base-dir}/build/index' directory.
   --use-http           Use plain HTTP for container image registries.
@@ -38,6 +41,7 @@ BUNDLE_TAG=""
 REPLACED_VERSION=""
 BASE_DIR="."
 RUN_BUILD=1
+SINGLE_BUNDLE=""
 
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
@@ -57,6 +61,8 @@ function read_arguments() {
                 REPLACED_VERSION="${2}";shift;;
             "--base-dir")
                 BASE_DIR="${2}";shift;;
+            "--single-bundle")
+                SINGLE_BUNDLE="true";;
             "--clean-output-dir")
                 CLEAN_OUTPUT_DIR="true";;
             "--use-http")
@@ -78,10 +84,13 @@ function read_arguments() {
 }
 
 function validate_arguments() {
-  [[ "${BASE_INDEX_TAG}" = "" ]] && echo "Error: Base index tag is required." >&2 && usage_exit
   [[ "${INDEX_TAG}" = "" ]] && echo "Error: Index tag is required." >&2 && usage_exit
   [[ "${BUNDLE_TAG}" = "" ]] && echo "Error: Bundle tag is required." >&2 && usage_exit
-  [[ "${REPLACED_VERSION}" = "" ]] && echo "Error: Replaced version is required." >&2 && usage_exit
+
+  if [[ "${SINGLE_BUNDLE}" != "true" ]]; then
+    [[ "${BASE_INDEX_TAG}" = "" ]] && echo "Error: Base index tag is required (unless --single-bundle is specified)." >&2 && usage_exit
+    [[ "${REPLACED_VERSION}" = "" ]] && echo "Error: Replaced version is required (unless --single-bundle is specified)." >&2 && usage_exit
+  fi
 
   return 0
 }
@@ -116,12 +125,6 @@ if [[ "${CLEAN_OUTPUT_DIR}" = "true" ]]; then
   rm -rf "${BASE_DIR}/build/index"
 fi
 
-if [[ "${REPLACED_VERSION}" = v* ]]; then
-  REPLACED_VERSION="${REPLACED_VERSION:1}"
-fi
-
-echo "Detected that bundle ${BUNDLE_TAG} updates (replaces) version ${REPLACED_VERSION}. Will use index image ${BASE_INDEX_TAG} as the base for the current one." >&2
-
 # Exports for docker build and opm in case it builds the image
 export DOCKER_BUILDKIT=1
 export BUILDKIT_PROGRESS="plain"
@@ -131,11 +134,40 @@ mkdir -p "${BUILD_INDEX_DIR}"
 
 # With "--binary-image", we are setting the exact base image version. By default, "latest" would be used.
 "${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_VERSION}" "${BUILD_INDEX_DIR}"
-"${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} > "${BUILD_INDEX_DIR}/index.yaml"
 
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
-YQ_FILTER_CHANNEL_DOCUMENT='.schema=="olm.channel" and .name=="latest"'
-YQ_NEW_BUNDLE_ENTRY=$(cat <<EOF
+
+if [[ "${SINGLE_BUNDLE}" = "true" ]]; then
+  # Single-bundle mode: create a fresh index with only the current bundle (no upgrade chain)
+  echo "Building single-bundle index for ${BUNDLE_TAG} (no upgrade chain)." >&2
+
+  # Render the bundle
+  "${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} > "${BUILD_INDEX_DIR}/index.yaml"
+
+  # Create a channel with a single entry (no replaces field)
+  cat >> "${BUILD_INDEX_DIR}/index.yaml" <<EOF
+---
+schema: olm.channel
+package: rhacs-operator
+name: latest
+entries:
+  - name: rhacs-operator.v${BUNDLE_VERSION}
+EOF
+
+else
+  # Upgrade chain mode: build on top of existing index
+  if [[ "${REPLACED_VERSION}" = v* ]]; then
+    REPLACED_VERSION="${REPLACED_VERSION:1}"
+  fi
+
+  echo "Detected that bundle ${BUNDLE_TAG} updates (replaces) version ${REPLACED_VERSION}. Will use index image ${BASE_INDEX_TAG} as the base for the current one." >&2
+
+  # Render the base index
+  "${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} > "${BUILD_INDEX_DIR}/index.yaml"
+
+  # Add new bundle entry to the channel
+  YQ_FILTER_CHANNEL_DOCUMENT='.schema=="olm.channel" and .name=="latest"'
+  YQ_NEW_BUNDLE_ENTRY=$(cat <<EOF
 {
     "name": "rhacs-operator.v${BUNDLE_VERSION}",
     "replaces": "rhacs-operator.v${REPLACED_VERSION}",
@@ -144,8 +176,10 @@ YQ_NEW_BUNDLE_ENTRY=$(cat <<EOF
 EOF
 )
 
-"${YQ}" --inplace --prettyPrint "with(select(${YQ_FILTER_CHANNEL_DOCUMENT}); .entries += ${YQ_NEW_BUNDLE_ENTRY})" "${BUILD_INDEX_DIR}/index.yaml"
-"${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} >> "${BUILD_INDEX_DIR}/index.yaml"
+  "${YQ}" --inplace --prettyPrint "with(select(${YQ_FILTER_CHANNEL_DOCUMENT}); .entries += ${YQ_NEW_BUNDLE_ENTRY})" "${BUILD_INDEX_DIR}/index.yaml"
+  "${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} >> "${BUILD_INDEX_DIR}/index.yaml"
+fi
+
 "${OPM}" validate "${BUILD_INDEX_DIR}"
 
 if (( RUN_BUILD )); then
