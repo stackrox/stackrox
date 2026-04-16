@@ -217,7 +217,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		return ProbeStreamForConnectionError(stream, "the credentials may be revoked or expired")
+		return DiagnoseConnectionFailure(stream, "the credentials may be revoked or expired")
 	}
 
 	var centralHello *central.CentralHello

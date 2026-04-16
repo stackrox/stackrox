@@ -11,11 +11,11 @@ const networkingOrTLSMsg = "Connection to Central failed," +
 	" likely due to a networking or TLS configuration issue" +
 	" (e.g., re-encrypt routes or TLS termination)."
 
-// ProbeStreamForConnectionError probes a stream via Recv() to retrieve the
-// actual server-side error when central did not echo the SensorHello metadata
-// key. It logs a user-actionable message (credential issue for PermissionDenied,
-// networking/TLS suggestion otherwise) and returns the underlying error.
-func ProbeStreamForConnectionError(stream central.SensorService_CommunicateClient, deniedMsg string) error {
+// DiagnoseConnectionFailure probes the stream to retrieve the actual server-side error
+// when central did not acknowledge the SensorHello message. It logs a user-actionable
+// message (credential issue for PermissionDenied, networking/TLS suggestion otherwise)
+// and returns an error.
+func DiagnoseConnectionFailure(stream central.SensorService_CommunicateClient, deniedMsg string) error {
 	_, err := stream.Recv()
 
 	if err != nil {
