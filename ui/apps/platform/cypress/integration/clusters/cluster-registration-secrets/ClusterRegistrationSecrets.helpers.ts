@@ -2,7 +2,7 @@ import type { ClusterRegistrationSecret } from 'services/ClustersService';
 
 export function cleanupClusterRegistrationSecretsWithName(nameToDelete: string) {
     // Clean up existing CRSs, if they exist
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
 
         cy.request({ url: '/v1/cluster-init/crs', auth }).as('listCrs');

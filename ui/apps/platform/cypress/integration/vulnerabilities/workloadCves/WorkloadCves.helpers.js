@@ -161,7 +161,7 @@ export function extractNonZeroSeverityFromCount(severityCountText) {
 }
 
 export function cancelAllCveExceptions() {
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
 
         cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
