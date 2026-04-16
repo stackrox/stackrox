@@ -15,7 +15,11 @@
 {{ $forPod := index . 5 }}
 {{ $_ := set $labels "app.kubernetes.io/name" "stackrox" }}
 {{ $_ = set $labels "app.kubernetes.io/managed-by" $.Release.Service }}
-{{ $_ = set $labels "helm.sh/chart" (printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_")) }}
+{{ $chartLabel := printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_") }}
+{{ if gt (len $chartLabel) 63 }}
+  {{ $chartLabel = trunc 63 $chartLabel }}
+{{ end }}
+{{ $_ = set $labels "helm.sh/chart" $chartLabel }}
 {{ $_ = set $labels "app.kubernetes.io/instance" $.Release.Name }}
 {{ $_ = set $labels "app.kubernetes.io/version" $.Chart.AppVersion }}
 {{ $_ = set $labels "app.kubernetes.io/part-of" "stackrox-central-services" }}
