@@ -112,6 +112,41 @@ jobs:
           podman --version
           skopeo --version
 
+      - name: Check required secrets
+        if: steps.filter.outputs.skip != 'true'
+        # Unset repo secrets expand to empty strings, which makes the first
+        # `podman login` fail with a cryptic `Error: Must provide --username
+        # with --password-stdin` (exit 125). Fail early with a clear list
+        # instead so the cause is obvious when running on a fork without
+        # the full secret set configured.
+        env:
+          REDHAT_REGISTRY_USER: ${{ secrets.REDHAT_REGISTRY_USER }}
+          REDHAT_REGISTRY_TOKEN: ${{ secrets.REDHAT_REGISTRY_TOKEN }}
+          QUAY_RHACS_ENG_ROBOT_USER: ${{ secrets.QUAY_RHACS_ENG_ROBOT_USER }}
+          QUAY_RHACS_ENG_ROBOT_TOKEN: ${{ secrets.QUAY_RHACS_ENG_ROBOT_TOKEN }}
+          RHEL_ACTIVATION_ORG: ${{ secrets.RHEL_ACTIVATION_ORG }}
+          RHEL_ACTIVATION_KEY: ${{ secrets.RHEL_ACTIVATION_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in \
+              REDHAT_REGISTRY_USER REDHAT_REGISTRY_TOKEN \
+              QUAY_RHACS_ENG_ROBOT_USER QUAY_RHACS_ENG_ROBOT_TOKEN \
+              RHEL_ACTIVATION_ORG RHEL_ACTIVATION_KEY; do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if ((${#missing[@]})); then
+            echo "::error::Missing required repository secrets: ${missing[*]}"
+            echo "Configure them with:"
+            for name in "${missing[@]}"; do
+              echo "  gh secret set $name --repo \$REPO --body '…'"
+            done
+            exit 1
+          fi
+          echo "All required secrets are present."
+
       - name: Log in to registry.redhat.io
         if: steps.filter.outputs.skip != 'true'
         env:
