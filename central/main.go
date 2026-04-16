@@ -376,12 +376,31 @@ func ensureDB(ctx context.Context) {
 	}
 }
 
+// reprocessDeploymentRisks iterates over all deployments and recalculates their risk scores.
+// This is called when plugin configurations change (e.g., weights are updated).
+func reprocessDeploymentRisks() {
+	ctx := sac.WithAllAccess(context.Background())
+	log.Info("Reprocessing deployment risks due to plugin config change")
+
+	deployments, err := deploymentDatastore.Singleton().SearchRawDeployments(ctx, nil)
+	if err != nil {
+		log.Errorf("Failed to get deployments for risk reprocessing: %v", err)
+		return
+	}
+
+	log.Infof("Reprocessing risk for %d deployments", len(deployments))
+	for _, dep := range deployments {
+		riskManager.Singleton().ReprocessDeploymentRisk(dep)
+	}
+	log.Info("Finished reprocessing deployment risks")
+}
+
 func startServices() {
 	go cloudSourcesManager.Singleton().Start()
 
 	// Wire up risk reprocessing to trigger when plugin configs change
 	pluginRegistry.Singleton().SetConfigChangeCallback(func() {
-		reprocessor.Singleton().ShortCircuit()
+		go reprocessDeploymentRisks()
 	})
 
 	reprocessor.Singleton().Start()
