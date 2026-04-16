@@ -3,10 +3,8 @@ package backgroundmigrations
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,17 +12,15 @@ import (
 )
 
 const (
-	testNamespace    = "stackrox"
-	testPollInterval = 10 * time.Millisecond
+	testNamespace = "stackrox"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
 
 func newTestRolloutChecker(client *fake.Clientset) *k8sRolloutChecker {
 	return &k8sRolloutChecker{
-		client:       client,
-		inCluster:    true,
-		pollInterval: testPollInterval,
+		client:    client,
+		inCluster: true,
 	}
 }
 
@@ -49,31 +45,26 @@ func readyDeployment() *appsv1.Deployment {
 	}
 }
 
-func TestRolloutCompleteImmediately(t *testing.T) {
+func TestRolloutDone(t *testing.T) {
 	client := fake.NewSimpleClientset(readyDeployment())
 	checker := newTestRolloutChecker(client)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	err := checker.WaitForRolloutComplete(ctx)
+	done, err := checker.IsRolloutDone(context.Background())
 	assert.NoError(t, err)
+	assert.True(t, done)
 }
 
 func TestRolloutNotInCluster(t *testing.T) {
 	checker := &k8sRolloutChecker{
-		inCluster:    false,
-		pollInterval: testPollInterval,
+		inCluster: false,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	err := checker.WaitForRolloutComplete(ctx)
+	done, err := checker.IsRolloutDone(context.Background())
 	assert.NoError(t, err)
+	assert.True(t, done)
 }
 
-func TestRolloutWaitsUntilReplicasReady(t *testing.T) {
+func TestRolloutNotDoneWhenReplicasNotReady(t *testing.T) {
 	dep := readyDeployment()
 	dep.Status.UpdatedReplicas = 0
 	dep.Status.AvailableReplicas = 0
@@ -81,30 +72,12 @@ func TestRolloutWaitsUntilReplicasReady(t *testing.T) {
 	client := fake.NewSimpleClientset(dep)
 	checker := newTestRolloutChecker(client)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	done := make(chan error, 1)
-	go func() {
-		done <- checker.WaitForRolloutComplete(ctx)
-	}()
-
-	// Update the deployment to be ready after a short delay.
-	time.Sleep(50 * time.Millisecond)
-	dep.Status.UpdatedReplicas = 1
-	dep.Status.AvailableReplicas = 1
-	_, err := client.AppsV1().Deployments(testNamespace).UpdateStatus(ctx, dep, metav1.UpdateOptions{})
-	require.NoError(t, err)
-
-	select {
-	case err := <-done:
-		assert.NoError(t, err)
-	case <-time.After(testTimeout):
-		t.Fatal("WaitForRolloutComplete did not return within timeout")
-	}
+	done, err := checker.IsRolloutDone(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, done)
 }
 
-func TestRolloutWaitsForObservedGeneration(t *testing.T) {
+func TestRolloutNotDoneWhenObservedGenerationBehind(t *testing.T) {
 	dep := readyDeployment()
 	dep.Generation = 2
 	dep.Status.ObservedGeneration = 1
@@ -112,28 +85,12 @@ func TestRolloutWaitsForObservedGeneration(t *testing.T) {
 	client := fake.NewSimpleClientset(dep)
 	checker := newTestRolloutChecker(client)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	done := make(chan error, 1)
-	go func() {
-		done <- checker.WaitForRolloutComplete(ctx)
-	}()
-
-	time.Sleep(50 * time.Millisecond)
-	dep.Status.ObservedGeneration = 2
-	_, err := client.AppsV1().Deployments(testNamespace).UpdateStatus(ctx, dep, metav1.UpdateOptions{})
-	require.NoError(t, err)
-
-	select {
-	case err := <-done:
-		assert.NoError(t, err)
-	case <-time.After(testTimeout):
-		t.Fatal("WaitForRolloutComplete did not return within timeout")
-	}
+	done, err := checker.IsRolloutDone(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, done)
 }
 
-func TestRolloutWaitsForTerminatingPods(t *testing.T) {
+func TestRolloutNotDoneWithTerminatingPods(t *testing.T) {
 	dep := readyDeployment()
 	now := metav1.Now()
 	terminatingPod := &corev1.Pod{
@@ -148,42 +105,12 @@ func TestRolloutWaitsForTerminatingPods(t *testing.T) {
 	client := fake.NewSimpleClientset(dep, terminatingPod)
 	checker := newTestRolloutChecker(client)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	done := make(chan error, 1)
-	go func() {
-		done <- checker.WaitForRolloutComplete(ctx)
-	}()
-
-	// Remove the terminating pod after a short delay.
-	time.Sleep(50 * time.Millisecond)
-	err := client.CoreV1().Pods(testNamespace).Delete(ctx, "central-old", metav1.DeleteOptions{})
-	require.NoError(t, err)
-
-	select {
-	case err := <-done:
-		assert.NoError(t, err)
-	case <-time.After(testTimeout):
-		t.Fatal("WaitForRolloutComplete did not return within timeout")
-	}
+	done, err := checker.IsRolloutDone(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, done)
 }
 
-func TestRolloutCancelledByContext(t *testing.T) {
-	dep := readyDeployment()
-	dep.Status.UpdatedReplicas = 0
-
-	client := fake.NewSimpleClientset(dep)
-	checker := newTestRolloutChecker(client)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancel()
-
-	err := checker.WaitForRolloutComplete(ctx)
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
-}
-
-func TestRolloutDefaultsToOneReplica(t *testing.T) {
+func TestRolloutCheckDefaultsToOneReplica(t *testing.T) {
 	dep := readyDeployment()
 	dep.Spec.Replicas = nil
 	dep.Status.UpdatedReplicas = 1
@@ -192,9 +119,7 @@ func TestRolloutDefaultsToOneReplica(t *testing.T) {
 	client := fake.NewSimpleClientset(dep)
 	checker := newTestRolloutChecker(client)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	err := checker.WaitForRolloutComplete(ctx)
+	done, err := checker.IsRolloutDone(context.Background())
 	assert.NoError(t, err)
+	assert.True(t, done)
 }

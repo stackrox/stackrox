@@ -57,21 +57,32 @@ func (r *fakeRow) Scan(dest ...any) error {
 
 var _ pgx.Row = &fakeRow{}
 
-type noopRolloutChecker struct{}
+type doneRolloutChecker struct{}
 
-func (n *noopRolloutChecker) WaitForRolloutComplete(_ context.Context) error { return nil }
+func (n *doneRolloutChecker) IsRolloutDone(_ context.Context) (bool, error) { return true, nil }
 
-// blockingRolloutChecker blocks until context is cancelled — used to test stop signal propagation.
-type blockingRolloutChecker struct{}
+type notDoneRolloutChecker struct{}
 
-func (c *blockingRolloutChecker) WaitForRolloutComplete(ctx context.Context) error {
-	<-ctx.Done()
-	return ctx.Err()
+func (c *notDoneRolloutChecker) IsRolloutDone(_ context.Context) (bool, error) { return false, nil }
+
+// countingRolloutChecker returns not-done for the first N calls, then done.
+type countingRolloutChecker struct {
+	notDoneCount int
+	callCount    int
 }
 
-var _ RolloutChecker = &noopRolloutChecker{}
+func (c *countingRolloutChecker) IsRolloutDone(_ context.Context) (bool, error) {
+	c.callCount++
+	if c.callCount <= c.notDoneCount {
+		return false, errors.New("transient rollout check error")
+	}
+	return true, nil
+}
+
+var _ RolloutChecker = &doneRolloutChecker{}
 var _ RolloutChecker = &k8sRolloutChecker{}
-var _ RolloutChecker = &blockingRolloutChecker{}
+var _ RolloutChecker = &notDoneRolloutChecker{}
+var _ RolloutChecker = &countingRolloutChecker{}
 
 func resetRegistry() {
 	migrations = make(map[int]BackgroundMigration)
@@ -107,7 +118,7 @@ func TestRunnerUpToDate(t *testing.T) {
 	db := pgMocks.NewMockDB(ctrl)
 	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
 	requireStoppedWithin(t, runner, testTimeout)
 }
 
@@ -119,7 +130,7 @@ func TestRunnerDetectsRollback(t *testing.T) {
 	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 5})
 	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(2)).Return(pgconn.CommandTag{}, nil)
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 2)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 2)
 	requireStoppedWithin(t, runner, testTimeout)
 }
 
@@ -147,7 +158,7 @@ func TestRunnerRunsOnlyNewMigrations(t *testing.T) {
 	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(2)).Return(pgconn.CommandTag{}, nil)
 	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(3)).Return(pgconn.CommandTag{}, nil)
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 
 	assert.Equal(t, []int{1, 2}, ran)
@@ -176,7 +187,7 @@ func TestRunnerRetriesOnMigrationError(t *testing.T) {
 
 	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(1)).Return(pgconn.CommandTag{}, nil)
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 1)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 1)
 	requireStoppedWithin(t, runner, testTimeout)
 
 	assert.Equal(t, 2, callCount)
@@ -194,7 +205,7 @@ func TestRunnerRetryStopsOnShutdown(t *testing.T) {
 		Run: func(_ context.Context, _ postgres.DB) error { return errors.New("permanent failure") },
 	})
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 1)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 1)
 	runner.Start()
 
 	// Let it fail at least once, then stop.
@@ -229,15 +240,16 @@ func TestRunnerMigrationRespectsContext(t *testing.T) {
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
-func TestRunnerStopCancelsRolloutCheck(t *testing.T) {
+func TestRunnerStopDuringRolloutRetry(t *testing.T) {
 	resetRegistry()
 	ctrl := gomock.NewController(t)
 	db := pgMocks.NewMockDB(ctrl)
 
-	runner := newTestRunner(db, &blockingRolloutChecker{}, 0)
+	runner := newTestRunner(db, &notDoneRolloutChecker{}, 0)
 	runner.Start()
 
-	// Stop should cancel the blocking rollout check and the runner should exit.
+	// Let it retry at least once, then stop.
+	time.Sleep(50 * time.Millisecond)
 	runner.Stop()
 
 	done := make(chan struct{})
@@ -252,12 +264,26 @@ func TestRunnerStopCancelsRolloutCheck(t *testing.T) {
 	}
 }
 
+func TestRunnerRetriesOnRolloutCheckError(t *testing.T) {
+	resetRegistry()
+	ctrl := gomock.NewController(t)
+	db := pgMocks.NewMockDB(ctrl)
+
+	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
+
+	checker := &countingRolloutChecker{notDoneCount: 2}
+	runner := newTestRunner(db, checker, 0)
+	requireStoppedWithin(t, runner, testTimeout)
+
+	assert.Equal(t, 3, checker.callCount)
+}
+
 func TestRunnerLockBlocksUntilStopped(t *testing.T) {
 	resetRegistry()
 	ctrl := gomock.NewController(t)
 	db := pgMocks.NewMockDB(ctrl)
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
 	runner.tryAcquireLockFunc = neverAcquireLockFunc()
 	runner.Start()
 
@@ -282,7 +308,7 @@ func TestRunnerLockRetriesOnConnectionDrop(t *testing.T) {
 	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
 
 	callCount := 0
-	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
 	runner.tryAcquireLockFunc = func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
 		callCount++
 		if callCount < 3 {
@@ -302,7 +328,7 @@ func TestRunnerLockReleasedAfterMigrations(t *testing.T) {
 	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
 
 	released := false
-	runner := newTestRunner(db, &noopRolloutChecker{}, 0)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
 	runner.tryAcquireLockFunc = func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
 		return true, func() { released = true }, nil
 	}
@@ -328,7 +354,7 @@ func TestRunnerStopCancelsRunningMigration(t *testing.T) {
 		},
 	})
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 1)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 1)
 	runner.Start()
 
 	select {
@@ -383,7 +409,7 @@ func TestRunnerOverrideAppliesWithNewTag(t *testing.T) {
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 
 	assert.Equal(t, []int{0, 1, 2}, ran)
@@ -401,7 +427,7 @@ func TestRunnerOverrideSkipsWhenTagMatches(t *testing.T) {
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 }
 
@@ -435,7 +461,7 @@ func TestRunnerOverrideRerunsWithNewTag(t *testing.T) {
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-456")
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 
 	assert.Equal(t, []int{0, 1, 2}, ran)
@@ -452,7 +478,7 @@ func TestRunnerOverrideIgnoredWithoutTag(t *testing.T) {
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
 	// ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG not set.
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 }
 
@@ -468,7 +494,7 @@ func TestRunnerOverrideIgnoredWhenSeqNumExceedsCurrent(t *testing.T) {
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "10")
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-999")
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 }
 
@@ -483,6 +509,6 @@ func TestRunnerOverrideIgnoredWithoutSeqNum(t *testing.T) {
 	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 	// ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM not set (defaults to -1).
 
-	runner := newTestRunner(db, &noopRolloutChecker{}, 3)
+	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
 	requireStoppedWithin(t, runner, testTimeout)
 }

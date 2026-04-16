@@ -77,7 +77,6 @@ func (r *Runner) Stop() {
 func (r *Runner) run() {
 	defer r.stopper.Flow().ReportStopped()
 	log := logging.LoggerForModule()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
@@ -105,8 +104,13 @@ func (r *Runner) run() {
 }
 
 func (r *Runner) runOnce(ctx context.Context) error {
-	if err := r.rolloutChecker.WaitForRolloutComplete(ctx); err != nil {
+	done, err := r.rolloutChecker.IsRolloutDone(ctx)
+	if err != nil {
 		return errors.Wrap(err, "rollout check")
+	}
+	if !done {
+		log.Infof("rollout not yet complete, will retry")
+		return errors.New("rollout not yet complete")
 	}
 
 	release, err := r.acquireLock(ctx)

@@ -3,7 +3,6 @@ package backgroundmigrations
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -13,37 +12,34 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var defaultPollInterval = 10 * time.Second
-
 const deploymentName = "central"
 
 var log = logging.LoggerForModule()
 
 // RolloutChecker checks whether the Central deployment rollout is complete.
 type RolloutChecker interface {
-	WaitForRolloutComplete(ctx context.Context) error
+	IsRolloutDone(ctx context.Context) (bool, error)
 }
 
 type k8sRolloutChecker struct {
-	client       kubernetes.Interface
-	inCluster    bool
-	pollInterval time.Duration
+	client    kubernetes.Interface
+	inCluster bool
 }
 
-// NewCentralRolloutChecker creates a RolloutChecker that polls the K8s API.
+// NewCentralRolloutChecker creates a RolloutChecker that queries the K8s API.
 func NewCentralRolloutChecker() RolloutChecker {
 	cfg, err := rest.InClusterConfig()
-	rc := &k8sRolloutChecker{inCluster: true, pollInterval: defaultPollInterval}
+	rc := &k8sRolloutChecker{inCluster: true}
 
 	if err != nil {
-		log.Warnf("failed to get in cluster kubernetes config, assuming not running in a kubernetes cluster: %w", err)
+		log.Warnf("failed to get in cluster kubernetes config, assuming not running in a kubernetes cluster: %v", err)
 		rc.inCluster = false
 		return rc
 	}
 
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		log.Warnf("failed to create in cluster K8s client, assuming not running in a kubernetes cluster: %w", err)
+		log.Warnf("failed to create in cluster K8s client, assuming not running in a kubernetes cluster: %v", err)
 		rc.inCluster = false
 		return rc
 	}
@@ -53,33 +49,8 @@ func NewCentralRolloutChecker() RolloutChecker {
 	return rc
 }
 
-// WaitForRolloutComplet polls the K8s deployment of central and blocks until the rollout is complete
-func (c *k8sRolloutChecker) WaitForRolloutComplete(ctx context.Context) error {
-
-	namespace := env.Namespace.Setting()
-	log.Infof("Background migrations: waiting for deployment %s/%s rollout to complete", namespace, deploymentName)
-
-	ticker := time.NewTicker(c.pollInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			isDone, err := c.isRolloutDone(ctx)
-			if err != nil {
-				log.Warnf("failed to get central rollout state, will retry: %v", err)
-			}
-			if isDone {
-				return nil
-			}
-		}
-
-	}
-}
-
-func (c *k8sRolloutChecker) isRolloutDone(ctx context.Context) (bool, error) {
+// IsRolloutDone checks whether the Central deployment rollout is complete.
+func (c *k8sRolloutChecker) IsRolloutDone(ctx context.Context) (bool, error) {
 	if !c.inCluster {
 		return true, nil
 	}
@@ -93,19 +64,19 @@ func (c *k8sRolloutChecker) isRolloutDone(ctx context.Context) (bool, error) {
 	if done := c.checkRolloutStatus(deployment); !done {
 		return false, nil
 	}
-	log.Infof("No rollout in progress for central.")
+
 	terminatingPods, err := c.checkTerminatingPods(ctx, deployment)
 	if err != nil {
 		return false, err
 	}
 
 	if len(terminatingPods) > 0 {
-		log.Infof("Background migrations: deployment %s/%s rollout complete but pods still terminating: %v",
+		log.Infof("deployment %s/%s rollout complete but pods still terminating: %v",
 			namespace, deploymentName, terminatingPods)
 		return false, nil
 	}
 
-	log.Infof("Background migrations: deployment %s/%s rollout complete", namespace, deploymentName)
+	log.Infof("deployment %s/%s rollout complete, no terminating pods", namespace, deploymentName)
 	return true, nil
 }
 
@@ -118,7 +89,7 @@ func (c *k8sRolloutChecker) checkRolloutStatus(deployment *appsv1.Deployment) bo
 		deployment.Status.AvailableReplicas != replicas ||
 		deployment.Status.ObservedGeneration < deployment.Generation {
 		namespace := env.Namespace.Setting()
-		log.Infof("Background migrations: deployment %s/%s rollout in progress (updated=%d, available=%d, desired=%d)",
+		log.Infof("deployment %s/%s rollout in progress (updated=%d, available=%d, desired=%d)",
 			namespace, deploymentName,
 			deployment.Status.UpdatedReplicas,
 			deployment.Status.AvailableReplicas,
