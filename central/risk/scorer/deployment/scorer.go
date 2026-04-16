@@ -102,9 +102,11 @@ func (s *deploymentScorerImpl) scoreWithPlugins(ctx context.Context, deployment 
 
 	plugins := s.registry.GetEnabledPlugins()
 	if len(plugins) == 0 {
-		log.Warn("No enabled risk scoring plugins found")
+		log.Warnf("No enabled risk scoring plugins found for deployment %s", deployment.GetName())
 		return nil
 	}
+
+	log.Debugf("Scoring deployment %s with %d enabled plugins", deployment.GetName(), len(plugins))
 
 	var riskResults []*storage.Risk_Result
 	overallScore := float32(1.0)
@@ -112,20 +114,35 @@ func (s *deploymentScorerImpl) scoreWithPlugins(ctx context.Context, deployment 
 	for _, cp := range plugins {
 		result := cp.Plugin.Score(ctx, deployment, imageRiskResults)
 		if result == nil {
+			log.Debugf("Plugin %s returned nil for deployment %s", cp.Plugin.Name(), deployment.GetName())
 			continue
 		}
 
+		// Use weight of 1.0 if not set or invalid (prevents multiplication by zero)
+		weight := cp.Config.Weight
+		if weight <= 0 {
+			log.Warnf("Plugin %s has invalid weight %.2f, using 1.0", cp.Plugin.Name(), cp.Config.Weight)
+			weight = 1.0
+		}
+
 		// Apply weight to the score
-		weightedScore := result.GetScore() * cp.Config.Weight
+		weightedScore := result.GetScore() * weight
 		result.Score = weightedScore
+
+		log.Debugf("Plugin %s scored deployment %s: raw=%.2f, weight=%.2f, weighted=%.2f",
+			cp.Plugin.Name(), deployment.GetName(), result.GetScore()/weight, weight, weightedScore)
 
 		overallScore *= weightedScore
 		riskResults = append(riskResults, result)
 	}
 
 	if len(riskResults) == 0 {
+		log.Debugf("No risk factors found for deployment %s", deployment.GetName())
 		return nil
 	}
+
+	log.Debugf("Final risk score for deployment %s: %.2f (from %d factors)",
+		deployment.GetName(), overallScore, len(riskResults))
 
 	return s.buildRisk(deployment, overallScore, riskResults)
 }

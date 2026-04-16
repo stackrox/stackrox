@@ -80,6 +80,12 @@ func (r *registryImpl) UpsertConfig(config *plugin.Config) error {
 		}
 	}
 
+	// Normalize weight to avoid multiplication by zero
+	if config.Weight <= 0 {
+		log.Warnf("Plugin config %s has invalid weight %.2f, defaulting to 1.0", config.ID, config.Weight)
+		config.Weight = 1.0
+	}
+
 	r.configs[config.ID] = config
 	cb := r.onConfigChange
 	r.mu.Unlock()
