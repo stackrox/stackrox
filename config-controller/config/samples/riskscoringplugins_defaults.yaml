@@ -1,0 +1,106 @@
+# Default RiskScoringPlugin CRs for the 8 builtin plugins
+# These mirror Central's default configuration and can be customized
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: policy-violations
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: policy-violations
+  enabled: true
+  weight: "1.0"
+  priority: 100
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: process-baselines
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: process-baselines
+  enabled: true
+  weight: "1.0"
+  priority: 200
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: vulnerabilities
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: vulnerabilities
+  enabled: true
+  weight: "1.0"
+  priority: 300
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: service-config
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: service-config
+  enabled: true
+  weight: "1.0"
+  priority: 400
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: port-exposure
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: port-exposure
+  enabled: true
+  weight: "1.0"
+  priority: 500
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: risky-components
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: risky-components
+  enabled: true
+  weight: "1.0"
+  priority: 600
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: component-count
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: component-count
+  enabled: true
+  weight: "1.0"
+  priority: 700
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: RiskScoringPlugin
+metadata:
+  name: image-age
+  namespace: stackrox
+spec:
+  type: builtin
+  builtin:
+    name: image-age
+  enabled: true
+  weight: "1.0"
+  priority: 800

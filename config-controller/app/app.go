@@ -19,6 +19,7 @@ package app
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -164,6 +165,8 @@ func Run() {
 		os.Exit(1)
 	}
 
+	fmt.Println("=== SETTING UP RISKSCORINGPLUGIN CONTROLLER ===")
+	setupLog.Info("Setting up RiskScoringPlugin controller")
 	if err = (&controller.RiskScoringPluginReconciler{
 		K8sClient:     mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
@@ -172,6 +175,7 @@ func Run() {
 		setupLog.Error(err, "unable to create controller", "controller", "RiskScoringPlugin")
 		os.Exit(1)
 	}
+	setupLog.Info("RiskScoringPlugin controller setup complete")
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -12,6 +12,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// ConfigChangeCallback is called when a plugin configuration is changed.
+// It can be used to trigger reprocessing of risk scores.
+type ConfigChangeCallback func()
+
 // Registry manages risk scoring plugin configurations.
 // It provides thread-safe access to enabled plugins sorted by priority.
 type Registry interface {
@@ -33,6 +37,10 @@ type Registry interface {
 
 	// GetAllConfigs returns all plugin configurations.
 	GetAllConfigs() []*plugin.Config
+
+	// SetConfigChangeCallback sets a callback that is invoked when configs change.
+	// This can be used to trigger risk reprocessing.
+	SetConfigChangeCallback(cb ConfigChangeCallback)
 }
 
 // New creates a new plugin registry.
@@ -44,9 +52,10 @@ func New() Registry {
 }
 
 type registryImpl struct {
-	mu      sync.RWMutex
-	plugins map[string]plugin.Plugin  // plugin name -> implementation
-	configs map[string]*plugin.Config // config ID -> config
+	mu               sync.RWMutex
+	plugins          map[string]plugin.Plugin  // plugin name -> implementation
+	configs          map[string]*plugin.Config // config ID -> config
+	onConfigChange   ConfigChangeCallback
 }
 
 func (r *registryImpl) Register(p plugin.Plugin) {
@@ -57,10 +66,14 @@ func (r *registryImpl) Register(p plugin.Plugin) {
 	log.Infof("Registered risk scoring plugin: %s", p.Name())
 }
 
-func (r *registryImpl) UpsertConfig(config *plugin.Config) error {
+func (r *registryImpl) SetConfigChangeCallback(cb ConfigChangeCallback) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.onConfigChange = cb
+}
 
+func (r *registryImpl) UpsertConfig(config *plugin.Config) error {
+	r.mu.Lock()
 	if config.Type == plugin.PluginTypeBuiltin {
 		if _, ok := r.plugins[config.Name]; !ok {
 			log.Warnf("No registered plugin for config %s (plugin name: %s)", config.ID, config.Name)
@@ -68,17 +81,35 @@ func (r *registryImpl) UpsertConfig(config *plugin.Config) error {
 	}
 
 	r.configs[config.ID] = config
+	cb := r.onConfigChange
+	r.mu.Unlock()
+
 	log.Infof("Upserted plugin config: %s (enabled: %v, weight: %.2f, priority: %d)",
 		config.ID, config.Enabled, config.Weight, config.Priority)
+
+	// Trigger reprocessing if callback is set
+	if cb != nil {
+		log.Info("Triggering risk reprocessing due to plugin config change")
+		go cb()
+	}
+
 	return nil
 }
 
 func (r *registryImpl) DeleteConfig(id string) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	delete(r.configs, id)
+	cb := r.onConfigChange
+	r.mu.Unlock()
+
 	log.Infof("Deleted plugin config: %s", id)
+
+	// Trigger reprocessing if callback is set
+	if cb != nil {
+		log.Info("Triggering risk reprocessing due to plugin config deletion")
+		go cb()
+	}
+
 	return nil
 }
 

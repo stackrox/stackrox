@@ -149,6 +149,7 @@ import (
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	riskPluginConfigService "github.com/stackrox/rox/central/risk/pluginconfig/service"
+	pluginRegistry "github.com/stackrox/rox/central/risk/scorer/plugin/registry"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
@@ -377,6 +378,11 @@ func ensureDB(ctx context.Context) {
 
 func startServices() {
 	go cloudSourcesManager.Singleton().Start()
+
+	// Wire up risk reprocessing to trigger when plugin configs change
+	pluginRegistry.Singleton().SetConfigChangeCallback(func() {
+		reprocessor.Singleton().ShortCircuit()
+	})
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()

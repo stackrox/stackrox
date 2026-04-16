@@ -63,13 +63,27 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
 
+              # Debug: show workspace contents
+              echo "=== Workspace contents ==="
+              pwd
+              ls -la | head -20
+
               # Fix git ownership check (Tekton runs as different user)
               git config --global --add safe.directory "$(pwd)"
 
-              # Get version info from status.sh
+              # Get version info from git (status.sh relies on make targets that fail here)
               echo "=== Getting version info ==="
-              eval "$(./status.sh | sed 's/ /=/')"
+              GIT_SHA=$(git rev-parse --short HEAD)
+
+              # Use base image version to ensure compatibility
+              # Append git SHA to distinguish custom builds
+              STABLE_MAIN_VERSION="4.10.0-dev-${GIT_SHA}"
+              STABLE_COLLECTOR_VERSION="4.10.0"   # Match base image
+              STABLE_SCANNER_VERSION="4.10.0"     # Match base image
+              STABLE_GIT_SHORT_SHA="${GIT_SHA}"
+
               echo "MainVersion: ${STABLE_MAIN_VERSION}"
+              echo "GitSha: ${STABLE_GIT_SHORT_SHA}"
 
               # Build ldflags with version info
               VERSION_PKG="github.com/stackrox/rox/pkg/version/internal"
