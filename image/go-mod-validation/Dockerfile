@@ -7,7 +7,7 @@ COPY go.mod .
 
 # Validate Go version compatibility
 # go mod tidy will fail if go.mod requires a Go version higher than installed
-RUN set -ex && \
+RUN set -euo pipefail && \
     echo "Installed Go version:" && \
     go version && \
     echo "go.mod version requirement:" && \
@@ -18,7 +18,7 @@ RUN set -ex && \
 
 # Test that go mod tidy actually fails on incompatible versions
 # This validates we're not relying on behavior that silently changed
-RUN set -ex && \
+RUN set -euo pipefail && \
     echo "Testing go mod tidy failure detection..." && \
     GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//') && \
     echo "Current Go version: $GO_VERSION" && \
