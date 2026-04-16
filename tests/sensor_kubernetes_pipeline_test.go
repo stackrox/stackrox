@@ -12,6 +12,7 @@ import (
 	toxiproxy "github.com/Shopify/toxiproxy/v2/client"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,53 +88,80 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 	t.Log("Sensor is healthy (baseline)")
 
-	// Step 6: Verify sensor deployment is visible in Central (baseline)
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	deploymentService := v1.NewDeploymentServiceClient(conn)
+	// Step 6: Create test namespace and deployments
+	testNamespace := "pipeline-test"
+	_, err := k8sClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: testNamespace},
+	}, metav1.CreateOptions{})
+	require.NoError(t, err, "failed to create test namespace")
 
-	deployments, err := deploymentService.ListDeployments(ctx, &v1.RawQuery{Query: "Deployment:sensor"})
-	require.NoError(t, err, "failed to list deployments")
-	require.NotEmpty(t, deployments.GetDeployments(), "sensor deployment not found in Central")
+	t.Cleanup(func() {
+		_ = k8sClient.CoreV1().Namespaces().Delete(ctx, testNamespace, metav1.DeleteOptions{})
+	})
 
-	t.Logf("Baseline: sensor deployment visible in Central (found %d deployments)", len(deployments.GetDeployments()))
+	// Step 7: Create deployment BEFORE disconnection
+	deployment1 := "nginx-before"
+	require.NoError(t, createDeploymentViaAPI(t, "nginx:1.27", deployment1, 1, testNamespace))
+	waitForDeploymentInCentral(t, deployment1)
+	t.Logf("Deployment '%s' created and visible in Central (before disconnection)", deployment1)
 
-	// Step 7: Disable proxy to simulate connection loss
+	// Step 8: Disable proxy to simulate connection loss
 	centralProxy.Enabled = false
 	err = centralProxy.Save()
 	require.NoError(t, err, "failed to disable central proxy")
 
 	t.Log("Disabled toxiproxy - connection to Central severed")
 
-	// Step 8: Wait for sensor to become degraded
+	// Step 9: Wait for sensor to become degraded
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_DEGRADED)
 	t.Log("Sensor is degraded (connection disrupted)")
 
-	// Step 9: Sleep for disconnect duration (simulate sustained outage)
+	// Step 10: Create deployment DURING disconnection (while offline)
+	deployment2 := "redis-during"
+	require.NoError(t, createDeploymentViaAPI(t, "redis:7.4", deployment2, 1, testNamespace))
+	t.Logf("Deployment '%s' created while sensor is offline", deployment2)
+
+	// Step 11: Sleep for disconnect duration (simulate sustained outage)
 	disconnectDuration := 10 * time.Second
 	t.Logf("Sleeping for %s to simulate sustained connection loss", disconnectDuration)
 	time.Sleep(disconnectDuration)
 
-	// Step 10: Re-enable proxy to restore connection
+	// Step 12: Re-enable proxy to restore connection
 	centralProxy.Enabled = true
 	err = centralProxy.Save()
 	require.NoError(t, err, "failed to re-enable central proxy")
 
 	t.Log("Re-enabled toxiproxy - connection to Central restored")
 
-	// Step 11: Wait for sensor to become healthy again
+	// Step 13: Wait for sensor to become healthy again
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 	t.Log("Sensor is healthy again (reconnected)")
 
-	// Step 12: Verify sensor deployment is STILL visible in Central (critical validation)
-	var finalDeployments []*storage.ListDeployment
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		deployments, err := deploymentService.ListDeployments(ctx, &v1.RawQuery{Query: "Deployment:sensor"})
-		require.NoErrorf(c, err, "failed to list deployments")
-		require.NotEmptyf(c, deployments.GetDeployments(), "sensor deployment lost after reconnection")
-		finalDeployments = deployments.GetDeployments()
-	}, testTimeout, testInterval)
+	// Step 14: Create deployment AFTER reconnection
+	deployment3 := "busybox-after"
+	require.NoError(t, createDeploymentViaAPI(t, "busybox:1.36", deployment3, 1, testNamespace))
+	waitForDeploymentInCentral(t, deployment3)
+	t.Logf("Deployment '%s' created and visible in Central (after reconnection)", deployment3)
 
-	t.Logf("SUCCESS: sensor deployment still visible in Central after reconnection (found %d deployments)", len(finalDeployments))
+	// Step 15: Verify ALL three deployments are visible in Central (critical validation)
+	t.Log("Verifying all deployments are visible in Central...")
+
+	// Wait for deployment created during offline to sync
+	waitForDeploymentInCentral(t, deployment2)
+	t.Logf("Deployment '%s' (created during offline) now visible in Central", deployment2)
+
+	// Verify deployment created before disconnection is still there
+	waitForDeploymentInCentral(t, deployment1)
+	t.Logf("Deployment '%s' (created before disconnection) still visible in Central", deployment1)
+
+	// Verify all three deployments have scanned images
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	deploymentService := v1.NewDeploymentServiceClient(conn)
+	for _, deploymentName := range []string{deployment1, deployment2, deployment3} {
+		verifyDeploymentHasScannedImage(t, ctx, deploymentService, deploymentName)
+	}
+
+	t.Log("SUCCESS: All deployments visible in Central with scanned images after connection resilience test")
 }
 
 // Helper functions
@@ -366,4 +394,26 @@ func getToxiproxyCentralProxy(t *testing.T, toxiproxyEndpoint string) *toxiproxy
 
 	t.Logf("Got toxiproxy 'central' proxy: %s -> %s", centralProxy.Listen, centralProxy.Upstream)
 	return centralProxy
+}
+
+// verifyDeploymentHasScannedImage verifies that a deployment has a scanned image
+func verifyDeploymentHasScannedImage(t *testing.T, ctx context.Context, deploymentService v1.DeploymentServiceClient, deploymentName string) {
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		listDeployments, err := deploymentService.ListDeployments(ctx, &v1.RawQuery{
+			Query: search.NewQueryBuilder().AddExactMatches(search.DeploymentName, deploymentName).Query(),
+		})
+		require.NoErrorf(c, err, "failed to list deployments")
+		require.NotEmptyf(c, listDeployments.GetDeployments(), "deployment %s not found", deploymentName)
+
+		deployments, err := retrieveDeployments(deploymentService, listDeployments.GetDeployments())
+		require.NoErrorf(c, err, "failed to retrieve full deployment")
+		require.NotEmptyf(c, deployments, "no deployments retrieved")
+
+		deployment := deployments[0]
+		require.NotEmptyf(c, deployment.GetContainers(), "deployment has no containers")
+		require.NotNilf(c, deployment.GetContainers()[0].GetImage(), "container has no image")
+		require.NotEmptyf(c, deployment.GetContainers()[0].GetImage().GetId(), "image has not been scanned (no image ID)")
+	}, 3*time.Minute, testInterval)
+
+	t.Logf("Deployment %s has scanned image", deploymentName)
 }
