@@ -2,6 +2,7 @@ import { NamespaceBar, useActiveNamespace } from '@openshift-console/dynamic-plu
 
 import useURLSearch from 'hooks/useURLSearch';
 import { hideColumnIf } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';
 import { useDefaultWorkloadCveViewContext } from 'ConsolePlugin/hooks/useDefaultWorkloadCveViewContext';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
@@ -11,6 +12,7 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import ImageCvePage from 'Containers/Vulnerabilities/WorkloadCves/ImageCve/ImageCvePage';
 import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
 
@@ -20,12 +22,16 @@ export function CveDetailPage() {
     const [activeNamespace] = useActiveNamespace();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();
-    const searchFilterConfig = [
-        imageSearchFilterConfig,
-        imageComponentSearchFilterConfig,
-        deploymentSearchFilterConfig,
-        ...(activeNamespace === ALL_NAMESPACES_KEY ? [namespaceSearchFilterConfig] : []),
-    ];
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        [
+            imageSearchFilterConfig,
+            imageComponentSearchFilterConfig,
+            deploymentSearchFilterConfig,
+            ...(activeNamespace === ALL_NAMESPACES_KEY ? [namespaceSearchFilterConfig] : []),
+        ]
+    );
 
     return (
         <WorkloadCveViewContext.Provider value={context}>
