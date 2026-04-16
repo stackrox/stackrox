@@ -105,6 +105,7 @@ deploy_stackrox_with_roxie() {
     local load_balancer="${LOAD_BALANCER:-}"
     local rox_scanner_v4="${ROX_SCANNER_V4:-}"
     local cgo_checks="${CGO_CHECKS:-}"
+    local feature_flags=""
 
     if ! command -v roxie >/dev/null 2>&1; then
         die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
@@ -191,11 +192,13 @@ EOF
         ;;
     esac
 
-    custom_env_for_roxie_deployment | while read -r var_val; do
+    custom_env_for_deployment | while read -r var_val; do
         name="${var_val%%=*}"
         value="${var_val#*=}"
         patch_yaml "$override_file" ".spec.customize.envVars += {\"name\": \"${name}\", \"value\": \"${value}\"}"
     done
+
+    feature_flags=$(feature_flags_for_deployment)
 
     if [[ "$cgo_checks" == "true" ]]; then
         patch_yaml "$override_file" '.spec.customize.envVars += {"name": "GOEXPERIMENT", "value": "cgocheck2"}'
@@ -233,6 +236,7 @@ EOF
         --envrc "$roxie_envrc" \
         --single-namespace \
         --pause-reconciliation \
+        --features "$feature_flags" \
         --early-readiness=false \
         --override "$override_file"
 
@@ -253,6 +257,7 @@ EOF
         --envrc "$roxie_envrc" \
         --single-namespace \
         --pause-reconciliation \
+        --features "$feature_flags" \
         --early-readiness=false
 
     wait_for_collectors_to_be_operational stackrox
@@ -260,7 +265,39 @@ EOF
     # wait_for_scanner_V4
 }
 
-custom_env_for_roxie_deployment() {
+feature_flags_for_deployment() {
+    local feature_flags_overrides="${FEATURE_FLAG_OVERRIDES:-}"
+    enable ROX_VULN_MGMT_LEGACY_SNOOZE
+    enable ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS
+    enable ROX_CISA_KEV
+    enable ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING
+    enable ROX_NODE_VULNERABILITY_REPORTS
+    enable ROX_TAILORED_PROFILES
+    disable ROX_NETWORK_GRAPH_EXTERNAL_IPS
+    disable ROX_SENSITIVE_FILE_ACTIVITY
+    disable ROX_BASE_IMAGE_DETECTION
+    # Add any additional feature flag overrides from the environment variable.
+    local IFS=,
+    for flag in $feature_flags_overrides; do
+        flag=${flag## }   # trim leading spaces
+        flag=${flag%% }   # trim trailing spaces
+        [[ -n "$flag" ]] || continue
+        echo "$flag"
+    done
+}
+
+enable() {
+    local name="$1"
+    echo "+${name}"
+}
+
+disable() {
+    local name="$1"
+    echo "-${name}"
+}
+
+custom_env_for_deployment() {
+    # Configuration values (timeouts, durations, behavioral settings)
     add_env ROX_BASELINE_GENERATION_DURATION
     add_env ROX_DEVELOPMENT_BUILD "true"
     add_env ROX_NETWORK_BASELINE_OBSERVATION_PERIOD
@@ -269,15 +306,6 @@ custom_env_for_roxie_deployment() {
     add_env ROX_RISK_REPROCESSING_INTERVAL "15s"
     add_env ROX_REGISTRY_RESPONSE_TIMEOUT "90s"
     add_env ROX_REGISTRY_CLIENT_TIMEOUT "120s"
-    add_env ROX_VULN_MGMT_LEGACY_SNOOZE "true"
-    add_env ROX_NETWORK_GRAPH_EXTERNAL_IPS "false"
-    add_env ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
-    add_env ROX_CISA_KEV "true"
-    add_env ROX_SENSITIVE_FILE_ACTIVITY "false"
-    add_env ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING "true"
-    add_env ROX_NODE_VULNERABILITY_REPORTS "true"
-    add_env ROX_BASE_IMAGE_DETECTION "false"
-    add_env ROX_TAILORED_PROFILES "true"
 }
 
 add_env() {
