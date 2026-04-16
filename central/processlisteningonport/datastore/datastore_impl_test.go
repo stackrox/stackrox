@@ -1556,7 +1556,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Delete the indicator
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
-		suite.hasWriteCtx, idsToDelete))
+		suite.hasWriteCtx, idsToDelete, processIndicatorDataStore.RemovalReasonProcessFilter))
 
 	_, err := suite.datastore.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(suite.hasWriteCtx)
 	suite.NoError(err)
@@ -2696,7 +2696,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcess
 		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
-		suite.hasWriteCtx, indicatorIds))
+		suite.hasWriteCtx, indicatorIds, processIndicatorDataStore.RemovalReasonProcessFilter))
 
 	_, err := suite.datastore.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(suite.hasWriteCtx)
 	suite.NoError(err)
