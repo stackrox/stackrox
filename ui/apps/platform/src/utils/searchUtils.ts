@@ -433,9 +433,21 @@ const regexSearchOptions = [
  in both regex and exact-match search modes.
 */
 const labelSearchOptions: Set<string> = new Set(
-    ['Cluster Label', 'Deployment Label', 'Image Label', 'Namespace Label', 'Node Label'].map(
-        (label) => label.toLowerCase()
-    )
+    [
+        'Cluster Label',
+        'Deployment Annotation',
+        'Deployment Label',
+        'Image Label',
+        'Namespace Annotation',
+        'Namespace Label',
+        'Node Annotation',
+        'Node Label',
+        'Pod Label',
+        'Role Annotation',
+        'Role Binding Annotation',
+        'Role Binding Label',
+        'Role Label',
+    ].map((label) => label.toLowerCase())
 );
 
 export function isLabelSearchTerm(searchTerm: string): boolean {
