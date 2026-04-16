@@ -99,8 +99,11 @@ jobs:
         if: steps.filter.outputs.skip != 'true'
         env:
           # Schedule triggers pass empty strings for inputs; default to
-          # chroot for cron runs so scheduled builds keep working.
-          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'chroot' }}
+          # virt-customize for cron/push runs. TEMPORARY: while iterating,
+          # the chroot path hits "losetup: Permission denied" inside
+          # rootless --privileged podman on ubuntu-latest; evaluate
+          # virt-customize first.
+          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'virt-customize' }}
         run: |
           set -euo pipefail
           sudo apt-get update
@@ -219,7 +222,7 @@ jobs:
           RHEL_ACTIVATION_KEY: ${{ secrets.RHEL_ACTIVATION_KEY }}
           SRC_IMAGE: ${{ steps.upstream.outputs.src_pinned }}
           SOURCE_DIGEST: ${{ steps.upstream.outputs.digest }}
-          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'chroot' }}
+          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'virt-customize' }}
         run: |
           set -euo pipefail
           script="./vm-image-${SCRIPT_VARIANT}.sh"
@@ -232,7 +235,7 @@ jobs:
       - name: Summary
         if: steps.filter.outputs.skip != 'true'
         env:
-          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'chroot' }}
+          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'virt-customize' }}
         run: |
           {
             echo "### ${{ matrix.variant }}"
