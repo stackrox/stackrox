@@ -111,7 +111,10 @@ jobs:
           # idempotent so listing them keeps the step self-contained.
           pkgs=(podman skopeo jq)
           if [[ "$SCRIPT_VARIANT" == "virt-customize" ]]; then
-            pkgs+=(libguestfs-tools qemu-utils)
+            # `passt` is used by libguestfs for user-mode networking in the
+            # appliance on Ubuntu 24.04; pull it in explicitly in case
+            # libguestfs-tools doesn't hard-depend on it.
+            pkgs+=(libguestfs-tools qemu-utils passt)
           fi
           sudo apt-get install -y --no-install-recommends "${pkgs[@]}"
           podman --version

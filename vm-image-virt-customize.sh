@@ -107,8 +107,11 @@ REGISTER_CMD="subscription-manager register --org=$RHEL_ACTIVATION_ORG --activat
 [[ -n "$RHEL_ACTIVATION_ENDPOINT" ]] && REGISTER_CMD+=" --serverurl=$RHEL_ACTIVATION_ENDPOINT"
 
 echo "==> Running virt-customize (installing: $EXTRA_PACKAGES)..."
+# TEMPORARY: -v -x + LIBGUESTFS_DEBUG/TRACE until the appliance launches
+# cleanly in CI. Strip once the Ubuntu 24.04 runner is fully sorted.
+export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
 # shellcheck disable=SC2086 # EXTRA_PACKAGES is intentionally word-split.
-virt-customize -a "$DISK_PATH" \
+virt-customize -v -x -a "$DISK_PATH" \
   --run-command "$REGISTER_CMD" \
   --install "$(echo "$EXTRA_PACKAGES" | tr ' ' ',')" \
   --run-command 'subscription-manager unregister' \
