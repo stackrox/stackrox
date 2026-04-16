@@ -130,7 +130,8 @@ export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
 # guest before anything that needs DNS.
 # shellcheck disable=SC2086 # EXTRA_PACKAGES is intentionally word-split.
 virt-customize -v -x -a "$DISK_PATH" \
-  --run-command 'printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf' \
+  --run-command 'printf "nameserver 169.254.2.2\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf' \
+  --run-command 'echo === NETDIAG ===; ip addr show || true; ip route show || true; cat /etc/resolv.conf; echo --- dig 169.254.2.2 ---; timeout 5 getent hosts subscription.rhsm.redhat.com || echo getent-passt-FAIL; echo --- dig 8.8.8.8 ---; timeout 5 nslookup subscription.rhsm.redhat.com 8.8.8.8 2>&1 || echo nslookup-8888-FAIL; echo --- tcp connect ---; timeout 5 bash -c "exec 3<>/dev/tcp/169.254.2.2/53 && echo tcp-passt-53-OK" || echo tcp-passt-53-FAIL; timeout 5 bash -c "exec 3<>/dev/tcp/8.8.8.8/53 && echo tcp-8888-53-OK" || echo tcp-8888-53-FAIL; echo === END ===' \
   --run-command "$REGISTER_CMD" \
   --install "$(echo "$EXTRA_PACKAGES" | tr ' ' ',')" \
   --run-command 'subscription-manager unregister' \
