@@ -4,10 +4,15 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	clusterviewclient "github.com/stolostron/cluster-lifecycle-api/client/clusterview/clientset/versioned/typed/clusterview/v1alpha1"
 	clusterviewv1alpha1 "github.com/stolostron/cluster-lifecycle-api/clusterview/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ACMClient provides access to the ACM clusterview aggregate API.
@@ -47,10 +52,12 @@ func NewACMClientFromConfig(config *rest.Config) (*ACMClient, error) {
 // ListUserPermissions retrieves the list of user permissions from the ACM clusterview API.
 // This calls the aggregate API at /apis/clusterview.open-cluster-management.io/v1alpha1/userpermissions.
 func (c *ACMClient) ListUserPermissions(ctx context.Context, opts metav1.ListOptions) (*clusterviewv1alpha1.UserPermissionList, error) {
+	log.Info("ACM client ListUserPermissions")
 	list, err := c.clusterviewClient.UserPermissions().List(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list user permissions")
 	}
+	log.Info(len(list.Items), " user permission results ", list)
 	return list, nil
 }
 

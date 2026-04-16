@@ -55,7 +55,7 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get resolved roles from ACM")
 	}
-	log.Info(len(roles), "Resolved roles", roles)
+	log.Info(len(roles), " Resolved roles ", roles)
 	return roles, nil
 }
 
