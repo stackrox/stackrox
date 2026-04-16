@@ -262,10 +262,9 @@ def main() -> int:
         # Fetch open PRs
         prs_by_branch, all_jira_keys = _fetch_and_group_prs(gh_client, branch_names)
 
-        # Fetch merged PRs from git commits after last tag (only for branches with open PRs)
-        branches_with_open_prs = [b for b in branches if b.name in prs_by_branch]
+        # Fetch merged PRs from git commits after last tag (for all latest 3 branches)
         merged_prs_by_branch, merged_jira_keys = _fetch_merged_prs_from_commits(
-            gh_client, branches_with_open_prs
+            gh_client, branches
         )
 
         # Merge both sources

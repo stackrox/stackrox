@@ -113,7 +113,14 @@ def detect_release_branches(branches_arg: str) -> list[str]:
                 match = re.search(r"origin/(release-\d+\.\d+)", line)
                 if match:
                     branches.append(match.group(1))
-            return sorted(set(branches))
+
+            # Sort by version number (descending) and take latest 3
+            unique_branches = sorted(
+                set(branches),
+                key=lambda b: [int(x) for x in b.replace("release-", "").split(".")],
+                reverse=True,
+            )
+            return unique_branches[:3]
         except subprocess.CalledProcessError as e:
             msg = f"Failed to detect release branches: {e.stderr}"
             raise BackportAuditError(msg) from e
