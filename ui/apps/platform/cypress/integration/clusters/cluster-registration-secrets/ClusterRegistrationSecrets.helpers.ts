@@ -7,11 +7,10 @@ export function cleanupClusterRegistrationSecretsWithName(nameToDelete: string) 
 
         cy.request({ url: '/v1/cluster-init/crs', auth }).as('listCrs');
 
-        return cy.get('@listCrs').then(
-            (res: Cypress.Response<{ items: ClusterRegistrationSecret[] }>) => {
-                const automationTokens = res.body.items.filter(
-                    ({ name }) => name === nameToDelete
-                );
+        return cy
+            .get('@listCrs')
+            .then((res: Cypress.Response<{ items: ClusterRegistrationSecret[] }>) => {
+                const automationTokens = res.body.items.filter(({ name }) => name === nameToDelete);
                 const body = { ids: automationTokens.map(({ id }) => id) };
                 return cy.request({
                     url: '/v1/cluster-init/crs/revoke',
@@ -19,7 +18,6 @@ export function cleanupClusterRegistrationSecretsWithName(nameToDelete: string) 
                     auth,
                     method: 'PATCH',
                 });
-            }
-        );
+            });
     });
 }
