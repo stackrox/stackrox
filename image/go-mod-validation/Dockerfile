@@ -11,8 +11,8 @@ RUN echo "Installed Go version:" && \
     go version
 RUN echo "go.mod version requirement:" && \
     grep -E '^(go|toolchain) ' go.mod
-RUN echo "Checking go.mod compatibility..."
-RUN go mod tidy
+RUN echo "Checking go.mod compatibility..." && \
+    go mod tidy
 RUN echo "SUCCESS: Go version is compatible with go.mod"
 
 # Test that go mod tidy actually fails on incompatible versions
