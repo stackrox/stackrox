@@ -13,14 +13,26 @@ type RestrictionProps = {
 };
 
 function Restriction({ clusters, restriction }: RestrictionProps): ReactElement {
-    const { cluster: clusterId, namespace, label } = restriction;
+    const { cluster: clusterId, clusterLabel, namespace, namespaceLabel, label } = restriction;
 
     return (
-        <DescriptionList isCompact isHorizontal>
+        <DescriptionList isCompact isHorizontal horizontalTermWidthModifier={{ default: '16ch' }}>
             {clusterId && (
                 <DescriptionListItem term="Cluster" desc={getClusterName(clusters, clusterId)} />
             )}
+            {clusterLabel && (
+                <DescriptionListItem
+                    term="Cluster label"
+                    desc={`${clusterLabel.key}=${clusterLabel.value}`}
+                />
+            )}
             {namespace && <DescriptionListItem term="Namespace" desc={namespace} />}
+            {namespaceLabel && (
+                <DescriptionListItem
+                    term="Namespace label"
+                    desc={`${namespaceLabel.key}=${namespaceLabel.value}`}
+                />
+            )}
             {label && (
                 <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />
             )}
