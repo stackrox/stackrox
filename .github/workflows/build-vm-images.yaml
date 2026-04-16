@@ -56,7 +56,9 @@ permissions:
 
 jobs:
   build:
-    if: ${{ github.repository_owner == 'stackrox' }}
+    # FORK-ONLY: flipped from 'stackrox' to 'vikin91' for fork-based iteration
+    # testing. MUST BE REVERTED before the upstream PR merges.
+    if: ${{ github.repository_owner == 'vikin91' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
