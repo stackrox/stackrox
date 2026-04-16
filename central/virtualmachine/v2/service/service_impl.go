@@ -406,6 +406,7 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 }
 
 // GetVMCVEComponents returns components affected by a specific CVE on a specific VM.
+// TODO(ROX-34165): Simplify with a SQL view joining CVEs and components.
 func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMCVEComponentsRequest) (*v2.GetVMCVEComponentsResponse, error) {
 	if request.GetVmId() == "" || request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "vm_id and cve_id must be specified")
