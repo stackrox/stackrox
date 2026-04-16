@@ -17,10 +17,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -114,6 +116,10 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 
 	if excludeResolved {
 		q = applyDefaultState(q)
+	}
+
+	if env.ListAlertUseLegacyQuery.BooleanSetting() {
+		return ds.searchListAlertsLegacy(ctx, q)
 	}
 
 	cloned := q.CloneVT()
@@ -652,6 +658,10 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
+	if env.ListAlertUseLegacyQuery.BooleanSetting() {
+		return ds.walkAllLegacy(ctx, fn)
+	}
+
 	q := searchCommon.EmptyQuery()
 	q.Selects = listAlertSelectProtos
 
@@ -854,4 +864,29 @@ func (c *AlertSearchResultConverter) GetCategory() v1.SearchCategory {
 
 func (c *AlertSearchResultConverter) GetScore(result *search.Result) float64 {
 	return result.Score
+}
+
+// searchListAlertsLegacy is the original SearchListAlerts implementation that
+// deserializes the full alert blob. Used as a fallback via ROX_LIST_ALERT_LEGACY_QUERY.
+func (ds *datastoreImpl) searchListAlertsLegacy(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return listAlerts, nil
+}
+
+// walkAllLegacy is the original WalkAll implementation that deserializes the
+// full alert blob. Used as a fallback via ROX_LIST_ALERT_LEGACY_QUERY.
+func (ds *datastoreImpl) walkAllLegacy(ctx context.Context, fn func(*storage.ListAlert) error) error {
+	walkFn := func() error {
+		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
+			return fn(convert.AlertToListAlert(alert))
+		})
+	}
+	return pgutils.RetryIfPostgres(ctx, walkFn)
 }
