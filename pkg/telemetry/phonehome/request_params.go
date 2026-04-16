@@ -23,7 +23,7 @@ type RequestParams struct {
 	Headers Headers
 }
 
-type GlobMap map[string]glob.Pattern
+type GlobMap map[glob.Pattern]glob.Pattern
 
 // MatchHeaders checks whether the request headers satisfy all given patterns.
 // Returns nil if any pattern fails to match or if headers are absent. Returns
@@ -33,14 +33,22 @@ type GlobMap map[string]glob.Pattern
 func (rp *RequestParams) MatchHeaders(patterns GlobMap) Headers {
 	result := make(Headers)
 	for header, expression := range patterns {
-		values := rp.Headers.GetMatching(header, expression)
-		if values == nil {
+		matching := rp.Headers.GetMatching(header, expression)
+		if matching == nil {
 			if expression != NoHeaderOrAnyValue {
 				return nil
 			}
 			continue
 		}
-		result[header] = values
+		for k, v := range matching {
+			if existing, ok := result[k]; ok {
+				// Append appends nil instead of an empty array. That's why the
+				// else clause is needed.
+				result[k] = append(existing, v...)
+			} else {
+				result[k] = v
+			}
+		}
 	}
 	return result
 }

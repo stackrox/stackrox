@@ -3,22 +3,18 @@ package handler
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestUnconfirmedMessageHandler(t *testing.T) {
-	suite.Run(t, new(UnconfirmedMessageHandlerTestSuite))
-}
+const testResourceID = "test-resource"
 
-type UnconfirmedMessageHandlerTestSuite struct {
-	suite.Suite
-}
-
-func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
+func TestWithRetryable(t *testing.T) {
 	cases := map[string]struct {
 		baseDuration    time.Duration
 		wait            time.Duration
@@ -72,7 +68,7 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 	}
 
 	for name, cc := range cases {
-		suite.Run(name, func() {
+		t.Run(name, func(t *testing.T) {
 			counterMux := &sync.Mutex{}
 			counter := 0
 
@@ -83,22 +79,22 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			for _, tt := range cc.sendAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
-					suite.T().Logf("Sending test message")
-					umh.ObserveSending()
+					t.Logf("Sending test message")
+					umh.ObserveSending(testResourceID)
 				}(tt)
 			}
 			// acking loop
 			for _, tt := range cc.ackAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
-					umh.HandleACK()
+					umh.HandleACK(testResourceID)
 				}(tt)
 			}
 			// nacking loop
-			for _, tt := range cc.ackAfter {
+			for _, tt := range cc.nackAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
-					umh.HandleNACK()
+					umh.HandleNACK(testResourceID)
 				}(tt)
 			}
 			// retry-counting loop
@@ -113,7 +109,326 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 
 			counterMux.Lock()
 			defer counterMux.Unlock()
-			suite.Equal(cc.expectedRetries, counter)
+			assert.Equal(t, cc.expectedRetries, counter)
 		})
 	}
+}
+
+func TestMultipleResources(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		baseInterval := time.Second
+		umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
+
+		retries := make(chan string, 10)
+		go func() {
+			for rid := range umh.RetryCommand() {
+				retries <- rid
+			}
+		}()
+
+		umh.ObserveSending("resource-1")
+		umh.ObserveSending("resource-2")
+
+		// ACK only resource-1
+		umh.HandleACK("resource-1")
+
+		// Advance past the first retry interval for resource-2.
+		time.Sleep(baseInterval)
+		synctest.Wait()
+
+		select {
+		case resourceID := <-retries:
+			assert.Equal(t, "resource-2", resourceID, "should retry resource-2")
+		default:
+			t.Fatal("expected retry for resource-2")
+		}
+
+		// No additional retries should be pending (resource-1 was ACKed).
+		select {
+		case rid := <-retries:
+			t.Fatalf("unexpected extra retry: %s", rid)
+		default:
+		}
+	})
+}
+
+func TestNonPositiveBaseIntervalUsesDefaultForFirstRetry(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		umh := NewUnconfirmedMessageHandler(ctx, "test-default-interval", 0)
+		retryReceived := make(chan string, 1)
+		go func() {
+			retryReceived <- <-umh.RetryCommand()
+		}()
+
+		umh.ObserveSending(testResourceID)
+
+		// No immediate retry should happen when base interval is non-positive.
+		time.Sleep(time.Second)
+		synctest.Wait()
+		select {
+		case resourceID := <-retryReceived:
+			t.Fatalf("retry should not fire early; got %s", resourceID)
+		default:
+		}
+
+		// Retry should happen at the normalized default interval.
+		time.Sleep(defaultBaseInterval)
+		synctest.Wait()
+		select {
+		case resourceID := <-retryReceived:
+			assert.Equal(t, testResourceID, resourceID)
+		default:
+			t.Fatal("expected retry after default base interval")
+		}
+	})
+}
+
+func TestOnACKCallback(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	baseInterval := 50 * time.Millisecond
+	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
+
+	var ackedResources []string
+	var ackMu sync.Mutex
+	wg := concurrency.NewWaitGroup(3)
+	umh.OnACK(func(resourceID string) {
+		defer wg.Add(-1)
+		ackMu.Lock()
+		defer ackMu.Unlock()
+		ackedResources = append(ackedResources, resourceID)
+	})
+
+	// ACK should invoke the callback
+	umh.HandleACK("resource-ack-1")
+	umh.HandleACK("resource-ack-2")
+	umh.HandleACK("resource-ack-3")
+
+	select {
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("expected all callbacks to be invoked")
+	case <-wg.Done():
+	}
+
+	ackMu.Lock()
+	defer ackMu.Unlock()
+	assert.Len(t, ackedResources, 3)
+	assert.ElementsMatch(t, []string{"resource-ack-1", "resource-ack-2", "resource-ack-3"}, ackedResources)
+}
+
+func TestShutdown(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	baseInterval := 50 * time.Millisecond
+	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
+	// Observe sending, ACK, and trigger shutdown
+	umh.ObserveSending("resource-shutdown")
+	umh.HandleACK("resource-shutdown")
+	cancel()
+
+	// Wait for cleanup to complete using the stopper
+	select {
+	case <-umh.Stopped().Done():
+		// Cleanup complete
+	case <-time.After(time.Second):
+		t.Fatal("Cleanup should complete within timeout")
+	}
+
+	// After shutdown, retryCommand channel should be closed (receive returns zero value, ok=false)
+	select {
+	case rid, ok := <-umh.RetryCommand():
+		if ok {
+			t.Fatalf("expected channel to be closed or empty, got value: rid=%s", rid)
+		}
+		// ok=false means channel is closed, which is expected
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Channel should be closed and not block")
+	}
+}
+
+func TestOperationsOnDeadHandler(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	baseInterval := 50 * time.Millisecond
+	umh := NewUnconfirmedMessageHandler(ctx, "test-dead", baseInterval)
+
+	// Cancel immediately to shut down the handler
+	cancel()
+
+	// Wait for cleanup to complete
+	select {
+	case <-umh.Stopped().Done():
+		// Cleanup complete
+	case <-time.After(time.Second):
+		t.Fatal("Cleanup should complete within timeout")
+	}
+
+	// All operations on dead handler should be safe (no panic, no race, no blocking)
+	require.NotPanics(t, func() {
+		// These should not panic on a dead handler
+		umh.ObserveSending("resource-1")
+		umh.ObserveSending("resource-2")
+		umh.HandleACK("resource-1")
+		umh.HandleACK("unknown-resource")
+		umh.HandleNACK("resource-2")
+		umh.HandleNACK("unknown-resource")
+
+		// Channel accessor should return closed channel
+		_ = umh.RetryCommand()
+		_ = umh.Stopped()
+	})
+
+	// Verify RetryCommand channel is closed (receive should not block)
+	select {
+	case _, ok := <-umh.RetryCommand():
+		assert.False(t, ok, "RetryCommand channel should be closed")
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("RetryCommand channel should not block")
+	}
+
+	// Stopped should already be signaled
+	assert.True(t, umh.Stopped().IsDone(), "Stopped should be signaled")
+}
+
+func TestOnTimerFiredDoesNotBlockWhenRetryQueueFull(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		umh := NewUnconfirmedMessageHandler(ctx, "test-full-queue", 100*time.Millisecond)
+
+		// Seed one resource with an unacked sending so timer logic is exercised.
+		concurrency.WithLock(&umh.mu, func() {
+			umh.resources["resource-full-queue"] = &resourceState{
+				numUnackedSendings: 1,
+			}
+		})
+
+		// Fill the single-slot notify queue to force coalescing/default branch.
+		umh.retryNotifyCh <- struct{}{}
+
+		done := concurrency.NewSignal()
+		go func() {
+			umh.onTimerFired("resource-full-queue")
+			done.Signal()
+		}()
+
+		// Wait until all runnable goroutines settle before asserting completion.
+		synctest.Wait()
+		select {
+		case <-done.Done():
+		default:
+			t.Fatal("onTimerFired should not block when retry queue is full")
+		}
+
+		// Cleanup should complete without relying on real-time deadlines.
+		cancel()
+		synctest.Wait()
+		select {
+		case <-umh.Stopped().Done():
+		default:
+			t.Fatal("cleanup should complete")
+		}
+	})
+}
+
+// Regression: ACK must remove the resource from pendingRetries so that the
+// dispatcher never delivers a stale retry for an already-acknowledged resource.
+func TestACKClearsPendingRetryBeforeDispatch(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		umh := NewUnconfirmedMessageHandler(ctx, "test-ack-clears-pending", time.Minute)
+
+		// Simulate two resources whose timers have fired and are queued in pendingRetries.
+		concurrency.WithLock(&umh.mu, func() {
+			umh.resources["res-acked"] = &resourceState{numUnackedSendings: 1}
+			umh.resources["res-pending"] = &resourceState{numUnackedSendings: 1}
+			umh.pendingRetries.Add("res-acked")
+			umh.pendingRetries.Add("res-pending")
+		})
+
+		// ACK one resource before the dispatcher drains pendingRetries.
+		umh.HandleACK("res-acked")
+
+		// Notify the dispatcher so it drains the (now filtered) set.
+		umh.retryNotifyCh <- struct{}{}
+		synctest.Wait()
+
+		// Only the non-ACKed resource should be emitted.
+		select {
+		case rid := <-umh.RetryCommand():
+			assert.Equal(t, "res-pending", rid)
+		default:
+			t.Fatal("expected retry for res-pending")
+		}
+
+		// No further retries should be queued.
+		select {
+		case rid := <-umh.RetryCommand():
+			t.Fatalf("unexpected stale retry: %s", rid)
+		default:
+		}
+	})
+}
+
+// Regression: even if the dispatcher already took a resource from pendingRetries
+// into its local slice, isResourceActive must prevent delivery after a concurrent ACK.
+func TestDispatcherSkipsRetryForACKedResource(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		umh := NewUnconfirmedMessageHandler(ctx, "test-dispatcher-skip", time.Minute)
+
+		// Seed a tracked resource.
+		concurrency.WithLock(&umh.mu, func() {
+			umh.resources[testResourceID] = &resourceState{numUnackedSendings: 1}
+		})
+
+		// Before ACK, the dispatcher would consider this resource active.
+		assert.True(t, umh.isResourceActive(testResourceID),
+			"resource should be active before ACK")
+
+		umh.HandleACK(testResourceID)
+
+		// After ACK, the liveness check must return false.
+		assert.False(t, umh.isResourceActive(testResourceID),
+			"resource should be inactive after ACK")
+	})
+}
+
+func TestShutdownWithPendingRetrySignal(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		umh := NewUnconfirmedMessageHandler(ctx, "test-shutdown-signal", time.Second)
+
+		// Queue a pending retry and notify the worker without a retry consumer.
+		concurrency.WithLock(&umh.mu, func() {
+			umh.pendingRetries.Add("pending-retry")
+		})
+		umh.retryNotifyCh <- struct{}{}
+		// Let the worker run and potentially block on sending to RetryCommand.
+		synctest.Wait()
+
+		cancel()
+		synctest.Wait()
+
+		select {
+		case <-umh.Stopped().Done():
+		default:
+			t.Fatal("cleanup should complete")
+		}
+
+		// Retry command channel should be closed after shutdown.
+		select {
+		case _, ok := <-umh.RetryCommand():
+			assert.False(t, ok, "retry channel should be closed after shutdown")
+		default:
+			t.Fatal("retry channel close check should not block")
+		}
+	})
 }
