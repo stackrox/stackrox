@@ -272,6 +272,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/cvss/cvssv2",
 			"pkg/cvss/cvssv3",
 			"pkg/db",
+			"pkg/dblock",
 			"pkg/dberrors",
 			"pkg/dbhelper",
 			"pkg/defaults/policies",
