@@ -1,0 +1,191 @@
+name: Build VM scanning images
+
+# Builds customized RHEL ContainerDisk images used by the VM scanning E2E
+# tests. Each run:
+#   1. Inspects the current upstream RHEL guest image digest on
+#      registry.redhat.io.
+#   2. Inspects the last-built image on quay.io/rhacs-eng and reads the
+#      recorded `org.opencontainers.image.source-digest` annotation.
+#   3. Skips the build when the digests match (unless force-rebuild is set).
+#   4. Otherwise runs vm-image.sh to build and push a dnf-primed image
+#      annotated with the new upstream digest.
+#
+# This workflow is repo-independent: it does not consume any stackrox source
+# code and only needs one of the `vm-image-*.sh` build scripts plus registry
+# credentials. Two image-building approaches live side-by-side for
+# evaluation:
+#   - chroot:          privileged UBI9 container + losetup + chroot
+#   - virt-customize:  libguestfs appliance (native Linux, needs /dev/kvm)
+# One will eventually be kept and the other removed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Rebuild and push even when upstream digest is unchanged"
+        type: boolean
+        default: false
+      matrix_filter:
+        description: "Optional variant filter (rhel9|rhel10). Empty = all."
+        type: string
+        default: ""
+      script_variant:
+        description: "Which image-building script to use"
+        type: choice
+        default: chroot
+        options:
+          - chroot
+          - virt-customize
+  schedule:
+    # Weekly on Mondays at 06:00 UTC. Red Hat publishes guest image updates
+    # infrequently (roughly quarterly) so weekly is more than enough.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: ${{ github.repository_owner == 'stackrox' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: rhel9
+            src_image: registry.redhat.io/rhel9/rhel-guest-image:latest
+            target_tag: rhel9-dnf-primed:latest
+            platform: linux/amd64
+          - variant: rhel10
+            src_image: registry.redhat.io/rhel10/rhel-guest-image:latest
+            target_tag: rhel10-dnf-primed:latest
+            platform: linux/amd64
+    env:
+      # Temporary target while the workflow is being stabilized; will move to
+      # quay.io/rhacs-eng/ once repos and robot credentials are provisioned.
+      TARGET_REGISTRY: quay.io/prygiels
+      SRC_IMAGE_TAGGED: ${{ matrix.src_image }}
+      TARGET_TAG: ${{ matrix.target_tag }}
+      PLATFORM: ${{ matrix.platform }}
+    steps:
+      - name: Skip variants not matching filter
+        id: filter
+        run: |
+          filter='${{ github.event.inputs.matrix_filter }}'
+          if [[ -n "$filter" && "$filter" != "${{ matrix.variant }}" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping ${{ matrix.variant }} (filter=$filter)"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.filter.outputs.skip != 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - name: Install build tooling
+        if: steps.filter.outputs.skip != 'true'
+        env:
+          # Schedule triggers pass empty strings for inputs; default to
+          # chroot for cron runs so scheduled builds keep working.
+          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'chroot' }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          # podman + jq are preinstalled on ubuntu-latest, but apt-get is
+          # idempotent so listing them keeps the step self-contained.
+          pkgs=(podman skopeo jq)
+          if [[ "$SCRIPT_VARIANT" == "virt-customize" ]]; then
+            pkgs+=(libguestfs-tools qemu-utils)
+          fi
+          sudo apt-get install -y --no-install-recommends "${pkgs[@]}"
+          podman --version
+          skopeo --version
+
+      - name: Log in to registry.redhat.io
+        if: steps.filter.outputs.skip != 'true'
+        env:
+          REDHAT_REGISTRY_USER: ${{ secrets.REDHAT_REGISTRY_USER }}
+          REDHAT_REGISTRY_TOKEN: ${{ secrets.REDHAT_REGISTRY_TOKEN }}
+        run: |
+          echo "$REDHAT_REGISTRY_TOKEN" | \
+            podman login --username "$REDHAT_REGISTRY_USER" --password-stdin \
+            registry.redhat.io
+          # skopeo uses the same auth file as podman by default.
+
+      - name: Resolve upstream digest
+        if: steps.filter.outputs.skip != 'true'
+        id: upstream
+        run: |
+          set -euo pipefail
+          digest=$(skopeo inspect --format '{{.Digest}}' \
+            "docker://${SRC_IMAGE_TAGGED}")
+          echo "Upstream digest: $digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "src_pinned=${SRC_IMAGE_TAGGED%%:*}@${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to quay.io
+        if: steps.filter.outputs.skip != 'true'
+        env:
+          QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_ROBOT_USER }}
+          QUAY_TOKEN: ${{ secrets.QUAY_RHACS_ENG_ROBOT_TOKEN }}
+        run: |
+          echo "$QUAY_TOKEN" | \
+            podman login --username "$QUAY_USER" --password-stdin quay.io
+
+      - name: Check existing target image
+        if: steps.filter.outputs.skip != 'true'
+        id: existing
+        env:
+          FORCE_REBUILD: ${{ github.event.inputs.force_rebuild }}
+          UPSTREAM_DIGEST: ${{ steps.upstream.outputs.digest }}
+        run: |
+          set -euo pipefail
+          target="docker://${TARGET_REGISTRY}/${TARGET_TAG}"
+          last=""
+          if raw=$(skopeo inspect "$target" 2>/dev/null); then
+            last=$(echo "$raw" | jq -r \
+              '.Labels["org.opencontainers.image.source-digest"] // empty')
+          fi
+          echo "Last-built source-digest: ${last:-<none>}"
+          echo "last_digest=${last}" >> "$GITHUB_OUTPUT"
+          if [[ "$FORCE_REBUILD" == "true" ]]; then
+            echo "rebuild=true (force)" && echo "rebuild=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$last" == "$UPSTREAM_DIGEST" ]]; then
+            echo "rebuild=false (up-to-date)"
+            echo "rebuild=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "rebuild=true (digest changed or no prior image)"
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push image
+        if: steps.filter.outputs.skip != 'true' && steps.existing.outputs.rebuild == 'true'
+        env:
+          RHEL_ACTIVATION_ORG: ${{ secrets.RHEL_ACTIVATION_ORG }}
+          RHEL_ACTIVATION_KEY: ${{ secrets.RHEL_ACTIVATION_KEY }}
+          SRC_IMAGE: ${{ steps.upstream.outputs.src_pinned }}
+          SOURCE_DIGEST: ${{ steps.upstream.outputs.digest }}
+          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'chroot' }}
+        run: |
+          set -euo pipefail
+          script="./vm-image-${SCRIPT_VARIANT}.sh"
+          if [[ ! -x "$script" ]]; then
+            chmod +x "$script"
+          fi
+          echo "==> Using $script"
+          "$script"
+
+      - name: Summary
+        if: steps.filter.outputs.skip != 'true'
+        env:
+          SCRIPT_VARIANT: ${{ github.event.inputs.script_variant || 'chroot' }}
+        run: |
+          {
+            echo "### ${{ matrix.variant }}"
+            echo "- Upstream: \`${SRC_IMAGE_TAGGED}\`"
+            echo "- Digest:   \`${{ steps.upstream.outputs.digest }}\`"
+            echo "- Rebuilt:  \`${{ steps.existing.outputs.rebuild }}\`"
+            echo "- Script:   \`vm-image-${SCRIPT_VARIANT}.sh\`"
+            echo "- Target:   \`${TARGET_REGISTRY}/${TARGET_TAG}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
