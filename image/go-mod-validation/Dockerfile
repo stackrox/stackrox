@@ -18,7 +18,7 @@ RUN echo "SUCCESS: Go version is compatible with go.mod"
 # Test that go mod tidy actually fails on incompatible versions
 # This validates we're not relying on behavior that silently changed
 RUN echo "Testing go mod tidy failure detection..."
-RUN echo -e "module test\ngo 2.0.0" > go.mod
+RUN go mod edit -go=1.200
 RUN if go mod tidy; then \
         echo "ERROR: go mod tidy succeeded with incompatible version"; \
         echo "Our assumption about go mod tidy behavior is broken!"; \
