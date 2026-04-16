@@ -65,9 +65,9 @@ export VM_SCAN_TIMEOUT=20m
 export VM_SCAN_POLL_INTERVAL=10s
 export VM_SCAN_ESCALATION_ATTEMPT=5
 export VM_DELETE_TIMEOUT=5m
-export VM_SCAN_SKIP_CLEANUP=false   # keep VMs and namespace after test run for faster iteration
+export VM_SCAN_SKIP_CLEANUP=true   # keep VMs and namespace after test run for faster iteration
 
-export VM_SCAN_REQUIRE_ACTIVATION=true   # or true + activation creds
+export VM_SCAN_REQUIRE_ACTIVATION=false   # or true + activation creds
 export RHEL_ACTIVATION_ORG="<org>"
 export RHEL_ACTIVATION_KEY="<secret>"
 
