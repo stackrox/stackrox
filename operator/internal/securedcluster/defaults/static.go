@@ -73,6 +73,10 @@ var staticDefaults = platform.SecuredClusterSpec{
 			PinToNodes: ptr.To(platform.PinToNodesNone),
 		},
 	},
+	RuntimeDataControl: &platform.RuntimeDataControlSpec{
+		Persistence:      platform.RuntimeConfigEnabled.Pointer(),
+		ExcludeOpenshift: platform.RuntimeConfigDisabled.Pointer(),
+	},
 }
 
 var SecuredClusterStaticDefaults = SecuredClusterDefaultingFlow{

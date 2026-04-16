@@ -72,6 +72,21 @@ func (mr *MockStoreMockRecorder) DeleteByQuery(ctx, query any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByQuery", reflect.TypeOf((*MockStore)(nil).DeleteByQuery), ctx, query)
 }
 
+// DeleteByQueryWithIDs mocks base method.
+func (m *MockStore) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteByQueryWithIDs", ctx, query)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteByQueryWithIDs indicates an expected call of DeleteByQueryWithIDs.
+func (mr *MockStoreMockRecorder) DeleteByQueryWithIDs(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByQueryWithIDs", reflect.TypeOf((*MockStore)(nil).DeleteByQueryWithIDs), ctx, query)
+}
+
 // DeleteMany mocks base method.
 func (m *MockStore) DeleteMany(ctx context.Context, id []string) error {
 	m.ctrl.T.Helper()

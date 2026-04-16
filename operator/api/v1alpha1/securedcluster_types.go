@@ -111,6 +111,11 @@ type SecuredClusterSpec struct {
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
+
+	// Runtime data collection configuration. Placed here and not at PerNode level,
+	// because it refers to runtime data end-to-end, including handling in Central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=17,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	RuntimeDataControl *RuntimeDataControlSpec `json:"runtimeDataControl,omitempty"`
 }
 
 // ProcessBaselinesAutoLockMode is a type for values of spec.processBaselineAutoLockMode.
@@ -502,6 +507,39 @@ const (
 // Pointer returns the pointer of the policy.
 func (l LocalScannerV4ComponentPolicy) Pointer() *LocalScannerV4ComponentPolicy {
 	return &l
+}
+
+// RuntimeDataControl defines configuration for runtime data collection.
+type RuntimeDataControlSpec struct {
+	// Whether to persist individual process indicators.
+	// The default is: Enabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	Persistence *RuntimeConfigSwitch `json:"persistence,omitempty"`
+
+	// Whether to persist process indicators originating from openshift namespaces.
+	// The default is: Disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	ExcludeOpenshift *RuntimeConfigSwitch `json:"excludeOpenshift,omitempty"`
+
+	// A regex specifying to not persist process indicators from specified namespaces.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	NamespaceFilter *string `json:"namespaceFilter,omitempty"`
+}
+
+// RuntimeConfigSwitch is a type for following config knobs:
+// * spec.perNode.runtimeDataControl.persistence
+// * spec.perNode.runtimeDataControl.excludeOpenshift
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type RuntimeConfigSwitch string
+
+const (
+	RuntimeConfigEnabled  RuntimeConfigSwitch = "Enabled"
+	RuntimeConfigDisabled RuntimeConfigSwitch = "Disabled"
+)
+
+// Pointer returns the given config value as a pointer, needed in k8s resource structs.
+func (v RuntimeConfigSwitch) Pointer() *RuntimeConfigSwitch {
+	return &v
 }
 
 // -------------------------------------------------------------

@@ -610,6 +610,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig",
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
+		"runtimeDataControl: DynamicClusterConfig_RuntimeDataControl",
+	}))
+	utils.Must(builder.AddType("DynamicClusterConfig_RuntimeDataControl", []string{
+		"excludeOpenshift: Boolean!",
+		"namespaceFilter: String!",
+		"persistence: Boolean!",
 	}))
 	utils.Must(builder.AddType("EPSS", []string{
 		"epssPercentile: Float!",
@@ -7392,6 +7398,68 @@ func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Conte
 
 func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Context) string {
 	value := resolver.data.GetRegistryOverride()
+	return value
+}
+
+func (resolver *dynamicClusterConfigResolver) RuntimeDataControl(ctx context.Context) (*dynamicClusterConfig_RuntimeDataControlResolver, error) {
+	value := resolver.data.GetRuntimeDataControl()
+	return resolver.root.wrapDynamicClusterConfig_RuntimeDataControl(value, true, nil)
+}
+
+type dynamicClusterConfig_RuntimeDataControlResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.DynamicClusterConfig_RuntimeDataControl
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_RuntimeDataControl(value *storage.DynamicClusterConfig_RuntimeDataControl, ok bool, err error) (*dynamicClusterConfig_RuntimeDataControlResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &dynamicClusterConfig_RuntimeDataControlResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_RuntimeDataControls(values []*storage.DynamicClusterConfig_RuntimeDataControl, err error) ([]*dynamicClusterConfig_RuntimeDataControlResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*dynamicClusterConfig_RuntimeDataControlResolver, len(values))
+	for i, v := range values {
+		output[i] = &dynamicClusterConfig_RuntimeDataControlResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_RuntimeDataControlWithContext(ctx context.Context, value *storage.DynamicClusterConfig_RuntimeDataControl, ok bool, err error) (*dynamicClusterConfig_RuntimeDataControlResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &dynamicClusterConfig_RuntimeDataControlResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_RuntimeDataControlsWithContext(ctx context.Context, values []*storage.DynamicClusterConfig_RuntimeDataControl, err error) ([]*dynamicClusterConfig_RuntimeDataControlResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*dynamicClusterConfig_RuntimeDataControlResolver, len(values))
+	for i, v := range values {
+		output[i] = &dynamicClusterConfig_RuntimeDataControlResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *dynamicClusterConfig_RuntimeDataControlResolver) ExcludeOpenshift(ctx context.Context) bool {
+	value := resolver.data.GetExcludeOpenshift()
+	return value
+}
+
+func (resolver *dynamicClusterConfig_RuntimeDataControlResolver) NamespaceFilter(ctx context.Context) string {
+	value := resolver.data.GetNamespaceFilter()
+	return value
+}
+
+func (resolver *dynamicClusterConfig_RuntimeDataControlResolver) Persistence(ctx context.Context) bool {
+	value := resolver.data.GetPersistence()
 	return value
 }
 

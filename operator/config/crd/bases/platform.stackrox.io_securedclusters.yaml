@@ -1005,6 +1005,32 @@ spec:
                 description: Set this parameter to override the default registry in
                   images. For example, nginx:latest -> <registry override>/library/nginx:latest
                 type: string
+              runtimeDataControl:
+                description: |-
+                  Runtime data collection configuration. Placed here and not at PerNode level,
+                  because it refers to runtime data end-to-end, including handling in Central.
+                properties:
+                  excludeOpenshift:
+                    description: |-
+                      Whether to persist process indicators originating from openshift namespaces.
+                      The default is: Disabled.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                  namespaceFilter:
+                    description: A regex specifying to not persist process indicators
+                      from specified namespaces.
+                    type: string
+                  persistence:
+                    description: |-
+                      Whether to persist individual process indicators.
+                      The default is: Enabled.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
               scanner:
                 description: |-
                   Settings for the Scanner component, which is responsible for vulnerability scanning of container

@@ -33,5 +33,11 @@ clusterConfig:
     autoLockProcessBaselinesConfig:
       enabled: {{ ._rox.autoLockProcessBaselines.enabled }}
     [<- end >]
+    [<- if .FeatureFlags.ROX_RUNTIME_DATA_CONTROL >]
+    runtimeDataControl:
+      persistence: {{ ._rox.runtimeDataControl.persistence }}
+      excludeOpenshift: {{ ._rox.runtimeDataControl.excludeOpenshift }}
+      namespaceFilter: {{ ._rox.runtimeDataControl.namespaceFilter }}
+    [<- end >]
   configFingerprint: {{ ._rox._configFP }}
   clusterLabels: {{- toYaml ._rox.clusterLabels | nindent 4 }}

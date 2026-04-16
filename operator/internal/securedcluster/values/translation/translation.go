@@ -166,6 +166,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("consolePlugin", t.getConsolePluginValues(ctx))
 
+	v.AddChild("runtimeDataControl", getRuntimeDataControlValues(sc.Spec.RuntimeDataControl))
+
 	return v.Build()
 }
 
@@ -579,4 +581,27 @@ func (t Translator) isConsolePluginAPIAvailable(ctx context.Context) (bool, erro
 		return false, errors.Wrap(err, "listing ConsolePlugin resources")
 	}
 	return true, nil
+}
+
+func getRuntimeDataControlValues(runtimeControl *platform.RuntimeDataControlSpec) *translation.ValuesBuilder {
+	if runtimeControl == nil {
+		return nil
+	}
+	cv := translation.NewValuesBuilder()
+
+	if runtimeControl.Persistence != nil {
+		cv.SetBoolValue("persistence",
+			*runtimeControl.Persistence == platform.RuntimeConfigEnabled)
+	}
+
+	if runtimeControl.ExcludeOpenshift != nil {
+		cv.SetBoolValue("excludeOpenshift",
+			*runtimeControl.ExcludeOpenshift == platform.RuntimeConfigEnabled)
+	}
+
+	if runtimeControl.NamespaceFilter != nil && *runtimeControl.NamespaceFilter != "" {
+		cv.SetStringValue("namespaceFilter", *runtimeControl.NamespaceFilter)
+	}
+
+	return &cv
 }
