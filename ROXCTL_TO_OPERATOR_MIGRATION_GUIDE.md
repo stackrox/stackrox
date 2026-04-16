@@ -14,7 +14,6 @@ This guide helps users migrate from installing StackRox Central using `roxctl ce
   - [Persistence and Database](#persistence-and-database)
   - [Platform-Specific Options](#platform-specific-options)
   - [Advanced Configuration](#advanced-configuration)
-  - [Output and Deployment Options](#output-and-deployment-options)
 
 ## Overview
 
@@ -269,12 +268,111 @@ spec:
 
 ### Images and Repositories
 
+**Important Note on Image Overrides:**
+
+The Operator manages all component images automatically based on the operator version. Image references **cannot be overridden via the Central CR**. However, for disconnected/air-gapped environments where you need to mirror images to a local registry, you can override images by setting `RELATED_IMAGE_*` environment variables when installing or configuring the operator.
+
+#### Overriding Images for Disconnected Clusters
+
+**For disconnected/air-gapped clusters** where images must be mirrored to a local registry, configure the operator at installation time:
+
+**Method 1: Helm Chart Installation**
+
+If installing the operator using Helm:
+
+```bash
+# 1. Mirror images to your local registry
+skopeo copy docker://registry.redhat.io/rhacs/main:4.11.0 \
+            docker://internal.registry.example.com/rhacs/main:4.11.0
+
+# 2. Install operator with custom values
+helm install rhacs-operator operator/dist/chart \
+  --namespace rhacs-operator \
+  --create-namespace \
+  --set manager.envOverrides.RELATED_IMAGE_MAIN=internal.registry.example.com/rhacs/main:4.11.0 \
+  --set manager.envOverrides.RELATED_IMAGE_CENTRAL_DB=internal.registry.example.com/rhacs/central-db:4.11.0 \
+  --set manager.envOverrides.RELATED_IMAGE_SCANNER=internal.registry.example.com/rhacs/scanner:4.11.0 \
+  --set manager.envOverrides.RELATED_IMAGE_SCANNER_DB=internal.registry.example.com/rhacs/scanner-db:4.11.0 \
+  --set manager.envOverrides.RELATED_IMAGE_SCANNER_V4=internal.registry.example.com/rhacs/scanner-v4:4.11.0 \
+  --set manager.envOverrides.RELATED_IMAGE_SCANNER_V4_DB=internal.registry.example.com/rhacs/scanner-v4-db:4.11.0
+```
+
+Or create a values file:
+
+```yaml
+# custom-values.yaml
+manager:
+  envOverrides:
+    RELATED_IMAGE_MAIN: internal.registry.example.com/rhacs/main:4.11.0
+    RELATED_IMAGE_CENTRAL_DB: internal.registry.example.com/rhacs/central-db:4.11.0
+    RELATED_IMAGE_SCANNER: internal.registry.example.com/rhacs/scanner:4.11.0
+    RELATED_IMAGE_SCANNER_DB: internal.registry.example.com/rhacs/scanner-db:4.11.0
+    RELATED_IMAGE_SCANNER_V4: internal.registry.example.com/rhacs/scanner-v4:4.11.0
+    RELATED_IMAGE_SCANNER_V4_DB: internal.registry.example.com/rhacs/scanner-v4-db:4.11.0
+```
+
+Then install:
+```bash
+helm install rhacs-operator operator/dist/chart \
+  --namespace rhacs-operator \
+  --create-namespace \
+  -f custom-values.yaml
+```
+
+**Method 2: OLM Subscription (OpenShift/OLM)**
+
+If installing via Operator Lifecycle Manager (OLM):
+
+```yaml
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhacs-operator
+  namespace: rhacs-operator
+spec:
+  channel: stable
+  name: rhacs-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  config:
+    env:
+      - name: RELATED_IMAGE_MAIN
+        value: internal.registry.example.com/rhacs/main:4.11.0
+      - name: RELATED_IMAGE_CENTRAL_DB
+        value: internal.registry.example.com/rhacs/central-db:4.11.0
+      - name: RELATED_IMAGE_SCANNER
+        value: internal.registry.example.com/rhacs/scanner:4.11.0
+      - name: RELATED_IMAGE_SCANNER_DB
+        value: internal.registry.example.com/rhacs/scanner-db:4.11.0
+      - name: RELATED_IMAGE_SCANNER_V4
+        value: internal.registry.example.com/rhacs/scanner-v4:4.11.0
+      - name: RELATED_IMAGE_SCANNER_V4_DB
+        value: internal.registry.example.com/rhacs/scanner-v4-db:4.11.0
+```
+
+**Available RELATED_IMAGE_* environment variables:**
+
+| Environment Variable | Component |
+|---------------------|-----------|
+| `RELATED_IMAGE_MAIN` | Central (main) |
+| `RELATED_IMAGE_CENTRAL_DB` | Central DB (PostgreSQL) |
+| `RELATED_IMAGE_SCANNER` | Scanner (v2) |
+| `RELATED_IMAGE_SCANNER_SLIM` | Scanner Slim |
+| `RELATED_IMAGE_SCANNER_DB` | Scanner DB |
+| `RELATED_IMAGE_SCANNER_DB_SLIM` | Scanner DB Slim |
+| `RELATED_IMAGE_SCANNER_V4` | Scanner V4 (indexer/matcher) |
+| `RELATED_IMAGE_SCANNER_V4_DB` | Scanner V4 DB |
+| `RELATED_IMAGE_COLLECTOR` | Collector (for Sensor) |
+| `RELATED_IMAGE_FACT` | FACT component |
+
+---
+
 #### Main Central Image
 
 **CLI Usage:**
 ```bash
 roxctl central generate k8s pvc \
-  --main-image=quay.io/stackrox-io/main:4.5.0 \
+  --main-image=quay.io/stackrox-io/main:4.11.0 \
   --image-defaults=rhacs
 ```
 
@@ -285,20 +383,16 @@ kubectl get deployment central -n stackrox -o yaml | grep "image:"
 
 **Operator Equivalent:**
 ```yaml
-# The operator automatically determines the correct images
-# based on the operator version. Override only if needed:
-spec:
-  central:
-    image:
-      registry: quay.io
-      name: stackrox-io/main
-      tag: 4.5.0
+# Images are managed by the operator - no Central CR configuration
+# For disconnected clusters: set RELATED_IMAGE_MAIN when installing operator
+# See "Overriding Images for Disconnected Clusters" section above
 ```
 
 **Notes:**
-- **Not typically needed**: Operator manages image versions automatically
-- `--image-defaults` (rhacs/opensource) is set at operator deployment level, not in CR
-- Only override if you need a specific version different from the operator's default
+- **Cannot be set in Central CR**: Image references are managed by the operator
+- `--image-defaults` (rhacs/opensource) is determined by which operator bundle you install
+- For disconnected clusters: use `RELATED_IMAGE_MAIN` environment variable during operator installation
+- Default images are tied to the operator version
 
 ---
 
@@ -307,7 +401,7 @@ spec:
 **CLI Usage:**
 ```bash
 roxctl central generate k8s pvc \
-  --central-db-image=registry.redhat.io/rhacs/central-db:4.5.0
+  --central-db-image=registry.redhat.io/rhacs/central-db:4.11.0
 ```
 
 **How to check if used:**
@@ -317,14 +411,13 @@ kubectl get deployment central-db -n stackrox -o yaml | grep "image:"
 
 **Operator Equivalent:**
 ```yaml
-# Typically managed automatically by operator
-# Override only if specifically needed - this is advanced usage
+# Images are managed by the operator - no Central CR configuration
+# For disconnected clusters: set RELATED_IMAGE_CENTRAL_DB when installing operator
 ```
 
 **Notes:**
-- **Not typically needed**: Operator manages DB images automatically
-- Image overrides are generally not exposed in the CR API
-- Contact support if you need to override DB images
+- Use `RELATED_IMAGE_CENTRAL_DB` environment variable for disconnected clusters
+- Operator automatically determines the correct DB image version
 
 ---
 
@@ -333,8 +426,8 @@ kubectl get deployment central-db -n stackrox -o yaml | grep "image:"
 **CLI Usage:**
 ```bash
 roxctl central generate k8s pvc \
-  --scanner-image=registry.redhat.io/rhacs/scanner:4.5.0 \
-  --scanner-db-image=registry.redhat.io/rhacs/scanner-db:4.5.0
+  --scanner-image=registry.redhat.io/rhacs/scanner:4.11.0 \
+  --scanner-db-image=registry.redhat.io/rhacs/scanner-db:4.11.0
 ```
 
 **How to check if used:**
@@ -344,13 +437,16 @@ kubectl get deployment scanner -n stackrox -o yaml | grep "image:"
 
 **Operator Equivalent:**
 ```yaml
-# Managed automatically by operator
-# Similar to Central images, typically no override needed
+# Images are managed by the operator
+# Scanner can be disabled entirely if not needed:
+spec:
+  scanner:
+    scannerComponent: Disabled
 ```
 
 **Notes:**
-- **Not typically needed**: Operator manages scanner images
-- Scanner can be disabled entirely: `spec.scanner.scannerComponent: Disabled`
+- Use `RELATED_IMAGE_SCANNER` and `RELATED_IMAGE_SCANNER_DB` for disconnected clusters
+- Scanner can be disabled: `spec.scanner.scannerComponent: Disabled`
 
 ---
 
@@ -359,8 +455,8 @@ kubectl get deployment scanner -n stackrox -o yaml | grep "image:"
 **CLI Usage:**
 ```bash
 roxctl central generate k8s pvc \
-  --scanner-v4-image=registry.redhat.io/rhacs/scanner-v4:4.5.0 \
-  --scanner-v4-db-image=registry.redhat.io/rhacs/scanner-v4-db:4.5.0
+  --scanner-v4-image=registry.redhat.io/rhacs/scanner-v4:4.11.0 \
+  --scanner-v4-db-image=registry.redhat.io/rhacs/scanner-v4-db:4.11.0
 ```
 
 **How to check if used:**
@@ -373,12 +469,12 @@ kubectl get deployment scanner-v4-indexer -n stackrox -o yaml | grep "image:"
 spec:
   scannerV4:
     scannerComponent: Enabled        # Explicitly enable Scanner V4
-    # Images managed automatically
+    # Images managed by operator via RELATED_IMAGE_SCANNER_V4 and RELATED_IMAGE_SCANNER_V4_DB
 ```
 
 **Notes:**
 - Scanner V4 enablement is controlled by `scannerComponent` field
-- Images are managed by the operator
+- Use `RELATED_IMAGE_SCANNER_V4` and `RELATED_IMAGE_SCANNER_V4_DB` for disconnected clusters
 
 ---
 
@@ -721,14 +817,10 @@ kubectl get deployment central -n stackrox -o yaml | grep -i istio
 ```yaml
 # Not directly supported - Istio integration happens automatically via:
 # 1. Namespace labeling for sidecar injection
-# 2. Adding istio labels/annotations via customize section
+# 2. Istio automatically injects sidecars based on namespace labels
 
-spec:
-  customize:
-    labels:
-      # Add istio-specific labels if needed
-    annotations:
-      # Add istio-specific annotations if needed
+# Enable Istio injection on the namespace:
+kubectl label namespace stackrox istio-injection=enabled
 ```
 
 **Notes:**
@@ -872,335 +964,6 @@ kubectl get psp | grep stackrox
 
 ---
 
-#### Custom Labels and Annotations
-
-**CLI Usage:**
-```bash
-# Not available via roxctl - requires manual manifest editing
-```
-
-**Operator Equivalent:**
-```yaml
-spec:
-  customize:
-    labels:
-      my-label: my-value
-      environment: production
-    annotations:
-      my-annotation: my-value
-```
-
-**Notes:**
-- Applied to all managed resources (Deployments, Services, etc.)
-- Useful for organizational policies, monitoring, etc.
-
----
-
-#### Custom Environment Variables
-
-**CLI Usage:**
-```bash
-# Not available via roxctl
-```
-
-**Operator Equivalent:**
-```yaml
-spec:
-  customize:
-    envVars:
-      - name: MY_CUSTOM_VAR
-        value: my-value
-      - name: ANOTHER_VAR
-        valueFrom:
-          secretKeyRef:
-            name: my-secret
-            key: secret-key
-```
-
-**Notes:**
-- Environment variables are added to all Central Services pods
-- Supports both direct values and references (secrets, configmaps)
-
----
-
-#### Node Selector and Tolerations
-
-**CLI Usage:**
-```bash
-# HostPath mode only:
-roxctl central generate k8s hostpath \
-  --db-node-selector-key=kubernetes.io/hostname \
-  --db-node-selector-value=node-1
-```
-
-**How to check if used:**
-```bash
-kubectl get deployment central-db -n stackrox -o yaml | grep -A 5 nodeSelector
-```
-
-**Operator Equivalent:**
-
-**Global defaults (all deployments):**
-```yaml
-spec:
-  customize:
-    deploymentDefaults:
-      nodeSelector:
-        kubernetes.io/hostname: node-1
-      tolerations:
-        - key: node.kubernetes.io/unreachable
-          operator: Exists
-          effect: NoExecute
-```
-
-**Per-component (e.g., Central DB):**
-```yaml
-spec:
-  central:
-    db:
-      nodeSelector:
-        disktype: ssd
-      tolerations:
-        - key: dedicated
-          operator: Equal
-          value: database
-          effect: NoSchedule
-```
-
-**OpenShift Infrastructure Nodes (shortcut):**
-```yaml
-spec:
-  customize:
-    deploymentDefaults:
-      pinToNodes: InfraRole        # Automatically sets nodeSelector + tolerations
-```
-
-**Notes:**
-- `deploymentDefaults` applies to all Deployment-based components
-- Component-level settings override global defaults
-- `pinToNodes: InfraRole` is a convenience for OpenShift infra nodes
-- Cannot use `pinToNodes` together with `nodeSelector` or `tolerations`
-
----
-
-#### Resource Limits and Requests
-
-**CLI Usage:**
-```bash
-# Not configurable via roxctl - uses defaults
-```
-
-**Operator Equivalent:**
-
-**Central component:**
-```yaml
-spec:
-  central:
-    resources:
-      requests:
-        cpu: 1
-        memory: 4Gi
-      limits:
-        cpu: 2
-        memory: 8Gi
-```
-
-**Central DB:**
-```yaml
-spec:
-  central:
-    db:
-      resources:
-        requests:
-          cpu: 500m
-          memory: 4Gi
-        limits:
-          cpu: 2
-          memory: 8Gi
-```
-
-**Scanner components:**
-```yaml
-spec:
-  scanner:
-    analyzer:
-      resources:
-        requests:
-          cpu: 500m
-          memory: 500Mi
-    db:
-      resources:
-        requests:
-          cpu: 200m
-          memory: 200Mi
-```
-
-**Notes:**
-- Consult official documentation for sizing guidance
-- Resource requirements depend on cluster size and scan volume
-- Operator uses sensible defaults if not specified
-
----
-
-### Output and Deployment Options
-
-#### Output Directory
-
-**CLI Usage:**
-```bash
-roxctl central generate k8s pvc --output-dir=./my-central-bundle
-```
-
-**Operator Equivalent:**
-```yaml
-# Not applicable - Operator manages deployment directly
-# Save CR to a file for GitOps workflows:
-# kubectl create -f central-cr.yaml --dry-run=client -o yaml > central-cr.yaml
-```
-
-**Notes:**
-- With operator, you define desired state in CR, not generate static files
-- For GitOps: store the Central CR YAML in version control
-
----
-
-#### Output Format
-
-**CLI Usage:**
-```bash
-# Kubectl YAML
-roxctl central generate k8s pvc --output-format=kubectl
-
-# Helm chart
-roxctl central generate k8s pvc --output-format=helm
-
-# Helm values only
-roxctl central generate k8s pvc --output-format=helm-values
-```
-
-**Operator Equivalent:**
-```yaml
-# Not applicable - Operator uses Helm internally
-# Output is always reconciled Kubernetes resources
-```
-
-**Notes:**
-- Operator uses Helm charts internally but this is transparent to users
-- You only define the Central CR; operator handles Helm templating
-
----
-
-#### Backup Bundle
-
-**CLI Usage:**
-```bash
-roxctl central generate k8s pvc --backup-bundle=/path/to/backup.zip
-```
-
-**How to check:**
-```bash
-# Check if certificates were restored
-kubectl get secret -n stackrox | grep -E "ca|jwt"
-```
-
-**Operator Equivalent:**
-```yaml
-# Certificate and key restoration is manual before creating the CR:
-
-# 1. Extract certificates from backup bundle
-# 2. Create secrets manually:
-
-apiVersion: v1
-kind: Secret
-metadata:
-  name: central-tls
-  namespace: stackrox
-type: kubernetes.io/tls
-data:
-  ca.pem: <base64-ca-cert>
-  tls.crt: <base64-central-cert>
-  tls.key: <base64-central-key>
-
-# 3. Create Central CR - operator will use existing secrets if found
-```
-
-**Notes:**
-- Operator does not support `--backup-bundle` directly
-- Restoring from backup requires manual secret creation before deploying operator
-- Contact support for guidance on migration with certificate preservation
-
----
-
-#### Plaintext Endpoints
-
-**CLI Usage:**
-```bash
-roxctl central generate k8s pvc --plaintext-endpoints=8080
-```
-
-**Operator Equivalent:**
-```yaml
-# Not supported - not recommended for production
-# Requires custom network policy or environment variable configuration
-```
-
-**Notes:**
-- **Not recommended**: Exposing unencrypted endpoints is a security risk
-- Use TLS/HTTPS for all production deployments
-
----
-
-## Complete Migration Example
-
-Here's a complete example showing a roxctl command and its operator equivalent:
-
-**Original roxctl command:**
-```bash
-roxctl central generate openshift pvc \
-  --openshift-version=4 \
-  --lb-type=route \
-  --db-name=central-db \
-  --db-size=100 \
-  --db-storage-class=gp3-csi \
-  --offline=true \
-  --enable-telemetry=false \
-  --main-image=registry.redhat.io/rhacs/main:4.5.0 \
-  --scanner-db-image=registry.redhat.io/rhacs/scanner-db:4.5.0
-```
-
-**Equivalent Operator CR:**
-```yaml
-apiVersion: platform.stackrox.io/v1alpha1
-kind: Central
-metadata:
-  name: stackrox-central-services
-  namespace: stackrox
-spec:
-  central:
-    exposure:
-      route:
-        enabled: true                    # --lb-type=route
-    db:
-      persistence:
-        persistentVolumeClaim:
-          claimName: central-db          # --db-name
-          size: 100Gi                    # --db-size
-          storageClassName: gp3-csi      # --db-storage-class
-    telemetry:
-      enabled: false                     # --enable-telemetry=false
-  egress:
-    connectivityPolicy: Offline          # --offline=true
-  # --openshift-version: auto-detected by operator
-  # --main-image, --scanner-db-image: managed by operator
-```
-
-**Notes:**
-- Image versions are managed by the operator version
-- OpenShift-specific settings are auto-detected
-- Much simpler than managing static manifests
-
----
-
 ## Additional Resources
 
 - [Operator EXTENDING_CRDS.md](operator/EXTENDING_CRDS.md) - How CRD fields are structured
@@ -1212,7 +975,8 @@ spec:
 
 - [ ] Identify current roxctl command (from scripts/history)
 - [ ] Document current configuration (storage, exposure, images)
-- [ ] Install StackRox Operator
+- [ ] Install StackRox Operator (Helm or OLM)
+- [ ] Configure image overrides if using disconnected cluster (RELATED_IMAGE_* variables)
 - [ ] Create Central CR with equivalent configuration
 - [ ] Apply Central CR
 - [ ] Verify deployment: `kubectl get central -n stackrox`
@@ -1225,7 +989,13 @@ spec:
 ## Getting Help
 
 If you encounter issues during migration:
-1. Check operator logs: `kubectl logs -n stackrox-operator deployment/stackrox-operator`
+1. Check operator logs:
+   ```bash
+   # Find the operator deployment first
+   kubectl get deployment -A | grep rhacs-operator
+   # Then check logs (adjust namespace/deployment name as needed)
+   kubectl logs -n rhacs-operator deployment/rhacs-operator-controller-manager
+   ```
 2. Check Central CR status: `kubectl describe central stackrox-central-services -n stackrox`
 3. Review conditions: `kubectl get central stackrox-central-services -n stackrox -o yaml`
 4. Contact Red Hat support with your Central CR and operator logs
