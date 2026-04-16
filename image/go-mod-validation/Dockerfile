@@ -25,7 +25,7 @@ RUN echo "module test" > go.mod
 RUN echo "go 2.0.0" >> go.mod
 RUN echo "Created test go.mod:"
 RUN cat go.mod
-RUN if go mod tidy 2>&1; then \
+RUN if go mod tidy; then \
         echo "ERROR: go mod tidy succeeded with incompatible version 2.0.0"; \
         echo "Our assumption about go mod tidy behavior is broken!"; \
         exit 1; \
