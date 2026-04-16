@@ -14,6 +14,7 @@ import common.Constants
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
+import services.FeatureFlagService
 import services.NetworkBaselineService
 import services.PolicyService
 import util.Env
@@ -135,14 +136,17 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify Splunk violations: file access violations reach Splunk TA"() {
         given:
-        "FACT is enabled in the collector"
+        "Fact is enabled in the collector"
         Assume.assumeTrue(
-                "FACT container not found in collector DaemonSet — skipping file access test",
+                "Fact container not found in collector DaemonSet — skipping file access test",
                 orchestrator.containsDaemonSetContainer(
                         Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER))
+        Assume.assumeTrue(
+                "ROX_SENSITIVE_FILE_ACTIVITY is not enabled — skipping file access test",
+                FeatureFlagService.isFeatureFlagEnabled("ROX_SENSITIVE_FILE_ACTIVITY"))
 
         and:
-        "FACT is configured to monitor /tmp paths"
+        "Fact is configured to monitor /tmp paths"
         patchFactEnv()
 
         and:
