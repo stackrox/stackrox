@@ -84,7 +84,13 @@ if [[ ! -e /dev/kvm ]]; then
   echo "acceleration and take several minutes." >&2
 fi
 
-WORKDIR="$(mktemp -d)"
+# Place the workdir under /var/tmp with mode 0755 so qemu (launched by
+# libguestfs, potentially under a different uid/namespace view of /tmp)
+# can read the disk image. `mktemp -d` defaults to 0700 which on
+# ubuntu-latest runners causes qemu to fail with
+# "Could not open '/tmp/.../*.qcow2': Permission denied".
+WORKDIR="$(mktemp -d -p /var/tmp vm-image.XXXXXXXX)"
+chmod 0755 "$WORKDIR"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 # --- Step 1: Extract qcow2 from ContainerDisk image ---
@@ -95,9 +101,15 @@ echo "==> Extracting qcow2 from container image (platform=$PLATFORM)..."
 CID=$(podman create --platform "$PLATFORM" "$SRC_IMAGE" true)
 podman cp "$CID:/disk/." "$WORKDIR/"
 podman rm "$CID"
+# `podman cp` from rootless podman preserves the container's file uid via
+# userns mapping, so files can end up owned by an unmapped namespaced
+# uid the runner user cannot read. Force ownership back to us.
+sudo chown -R "$(id -u):$(id -g)" "$WORKDIR"
 DISK_NAME="$(basename "$(find "$WORKDIR" -maxdepth 1 -type f \( -name '*.qcow2' -o -name '*.img' \) | head -1)")"
 DISK_PATH="$WORKDIR/$DISK_NAME"
+chmod 0644 "$DISK_PATH"
 echo "==> Disk: $DISK_NAME"
+ls -la "$WORKDIR"
 
 # --- Step 2: Customize with virt-customize ---
 # Activation keys aren't a first-class selector for --sm-credentials, so
