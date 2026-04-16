@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -610,6 +611,30 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 		for _, selectedField := range entry.SelectedFields {
 			if seenSelectFields.Add(selectedField.SelectPath) {
 				newQE.SelectedFields = append(newQE.SelectedFields, selectedField)
+			} else if selectedField.PostTransform != nil {
+				// When multiple entries target the same column with different
+				// PostTransform functions (e.g., map/label queries with multiple
+				// filter values in a disjunction), compose the transforms so all
+				// matching values are included in the results.
+				for i, existing := range newQE.SelectedFields {
+					if existing.SelectPath == selectedField.SelectPath && existing.PostTransform != nil {
+						prevTransform := existing.PostTransform
+						newTransform := selectedField.PostTransform
+						newQE.SelectedFields[i].PostTransform = func(v interface{}) interface{} {
+							prevResult := prevTransform(v)
+							newResult := newTransform(v)
+							prevSlice, prevOk := prevResult.([]string)
+							newSlice, newOk := newResult.([]string)
+							if prevOk && newOk {
+								combined := append(prevSlice, newSlice...)
+								slices.Sort(combined)
+								return slices.Compact(combined)
+							}
+							return prevResult
+						}
+						break
+					}
+				}
 			}
 		}
 		if len(entry.GroupBy) > 0 {
