@@ -37,7 +37,7 @@ var (
 	ComplianceRemediationV2 = registerFeature("Enable Compliance Remediation feature", "ROX_COMPLIANCE_REMEDIATION", enabled)
 
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
-	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION")
+	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION", enabled)
 
 	// AttemptManifestDigest enables attempting to pull manifest digests from registries that historically did not
 	// support it but now appear to (ie: Nexus and RHEL).
