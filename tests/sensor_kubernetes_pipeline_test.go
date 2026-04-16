@@ -99,51 +99,72 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 		_ = k8sClient.CoreV1().Namespaces().Delete(ctx, testNamespace, metav1.DeleteOptions{})
 	})
 
-	// Step 7: Create deployment BEFORE disconnection
+	// Step 7: Create docker config secrets to trigger ResolveAllDeployments
+	// This simulates the customer case where docker secrets caused amplification
+	numSecrets := 5
+	for i := 0; i < numSecrets; i++ {
+		secretName := fmt.Sprintf("docker-secret-%d", i)
+		createDockerConfigSecret(ctx, t, k8sClient, testNamespace, secretName)
+	}
+	t.Logf("Created %d docker config secrets in namespace %s", numSecrets, testNamespace)
+
+	// Step 8: Create deployment BEFORE disconnection
 	deployment1 := "nginx-before"
 	require.NoError(t, createDeploymentViaAPI(t, "nginx:1.27", deployment1, 1, testNamespace))
 	waitForDeploymentInCentral(t, deployment1)
 	t.Logf("Deployment '%s' created and visible in Central (before disconnection)", deployment1)
 
-	// Step 8: Disable proxy to simulate connection loss
+	// Step 9: Update one docker secret to trigger ResolveAllDeployments before disconnection
+	updateDockerConfigSecret(ctx, t, k8sClient, testNamespace, "docker-secret-0")
+	t.Log("Updated docker secret to trigger ResolveAllDeployments (baseline)")
+
+	// Step 10: Disable proxy to simulate connection loss
 	centralProxy.Enabled = false
 	err = centralProxy.Save()
 	require.NoError(t, err, "failed to disable central proxy")
 
 	t.Log("Disabled toxiproxy - connection to Central severed")
 
-	// Step 9: Wait for sensor to become degraded
+	// Step 11: Wait for sensor to become degraded
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_DEGRADED)
 	t.Log("Sensor is degraded (connection disrupted)")
 
-	// Step 10: Create deployment DURING disconnection (while offline)
+	// Step 12: Create deployment DURING disconnection (while offline)
 	deployment2 := "redis-during"
 	require.NoError(t, createDeploymentViaAPI(t, "redis:7.4", deployment2, 1, testNamespace))
 	t.Logf("Deployment '%s' created while sensor is offline", deployment2)
 
-	// Step 11: Sleep for disconnect duration (simulate sustained outage)
+	// Step 13: Update docker secret DURING disconnection to trigger ResolveAllDeployments while offline
+	updateDockerConfigSecret(ctx, t, k8sClient, testNamespace, "docker-secret-1")
+	t.Log("Updated docker secret while sensor is offline")
+
+	// Step 14: Sleep for disconnect duration (simulate sustained outage)
 	disconnectDuration := 10 * time.Second
 	t.Logf("Sleeping for %s to simulate sustained connection loss", disconnectDuration)
 	time.Sleep(disconnectDuration)
 
-	// Step 12: Re-enable proxy to restore connection
+	// Step 15: Re-enable proxy to restore connection
 	centralProxy.Enabled = true
 	err = centralProxy.Save()
 	require.NoError(t, err, "failed to re-enable central proxy")
 
 	t.Log("Re-enabled toxiproxy - connection to Central restored")
 
-	// Step 13: Wait for sensor to become healthy again
+	// Step 16: Wait for sensor to become healthy again
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 	t.Log("Sensor is healthy again (reconnected)")
 
-	// Step 14: Create deployment AFTER reconnection
+	// Step 17: Create deployment AFTER reconnection
 	deployment3 := "busybox-after"
 	require.NoError(t, createDeploymentViaAPI(t, "busybox:1.36", deployment3, 1, testNamespace))
 	waitForDeploymentInCentral(t, deployment3)
 	t.Logf("Deployment '%s' created and visible in Central (after reconnection)", deployment3)
 
-	// Step 15: Verify ALL three deployments are visible in Central (critical validation)
+	// Step 18: Update docker secret AFTER reconnection to trigger ResolveAllDeployments after reconnection
+	updateDockerConfigSecret(ctx, t, k8sClient, testNamespace, "docker-secret-2")
+	t.Log("Updated docker secret after reconnection")
+
+	// Step 19: Verify ALL three deployments are visible in Central (critical validation)
 	t.Log("Verifying all deployments are visible in Central...")
 
 	// Wait for deployment created during offline to sync
@@ -416,4 +437,36 @@ func verifyDeploymentHasScannedImage(t *testing.T, ctx context.Context, deployme
 	}, 3*time.Minute, testInterval)
 
 	t.Logf("Deployment %s has scanned image", deploymentName)
+}
+
+// createDockerConfigSecret creates a docker config secret in the specified namespace
+func createDockerConfigSecret(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface, namespace, name string) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			corev1.DockerConfigJsonKey: []byte(`{"auths":{"https://index.docker.io/v1/":{"username":"test","password":"test","auth":"dGVzdDp0ZXN0"}}}`),
+		},
+	}
+
+	_, err := k8sClient.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+	require.NoError(t, err, "failed to create docker config secret %s", name)
+}
+
+// updateDockerConfigSecret updates a docker config secret to trigger ResolveAllDeployments
+func updateDockerConfigSecret(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface, namespace, name string) {
+	secret, err := k8sClient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+	require.NoError(t, err, "failed to get secret %s", name)
+
+	// Update the annotation to trigger a change event
+	if secret.Annotations == nil {
+		secret.Annotations = make(map[string]string)
+	}
+	secret.Annotations["updated"] = time.Now().Format(time.RFC3339)
+
+	_, err = k8sClient.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
+	require.NoError(t, err, "failed to update docker config secret %s", name)
 }
