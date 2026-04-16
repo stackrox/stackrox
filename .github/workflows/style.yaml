@@ -175,7 +175,7 @@ jobs:
         uses: ./.github/actions/cache-eslint
 
       - name: make style-slim
-        run: make style-slim
+        run: make -j style-slim
 
   golangci-lint:
     timeout-minutes: 240
