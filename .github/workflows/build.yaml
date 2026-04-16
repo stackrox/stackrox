@@ -496,7 +496,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
@@ -823,7 +823,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable
