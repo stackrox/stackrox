@@ -119,8 +119,9 @@ REGISTER_CMD="subscription-manager register --org=$RHEL_ACTIVATION_ORG --activat
 [[ -n "$RHEL_ACTIVATION_ENDPOINT" ]] && REGISTER_CMD+=" --serverurl=$RHEL_ACTIVATION_ENDPOINT"
 
 echo "==> Running virt-customize (installing: $EXTRA_PACKAGES)..."
-# TEMPORARY: -v -x + LIBGUESTFS_DEBUG/TRACE until the appliance launches
-# cleanly in CI. Strip once the Ubuntu 24.04 runner is fully sorted.
+# TODO(ROX-34170): Remove -v -x and LIBGUESTFS_DEBUG/TRACE once the
+# workflow is stable on ubuntu-latest. Kept for now to ease debugging
+# appliance boot / networking issues.
 export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
 # The appliance gets network via passt, and passt forwards DNS through
 # the host's resolver. On Azure hosted runners the host's
@@ -129,9 +130,11 @@ export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
 # "Name or service not known". Force a public resolver inside the
 # guest before anything that needs DNS.
 # shellcheck disable=SC2086 # EXTRA_PACKAGES is intentionally word-split.
+# TODO(ROX-34170): Remove -v -x flags and the NETDIAG --run-command once
+# the workflow is stable.
 virt-customize -v -x -a "$DISK_PATH" \
   --run-command 'printf "nameserver 169.254.2.2\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf' \
-  --run-command 'echo === NETDIAG ===; ip addr show || true; ip route show || true; cat /etc/resolv.conf; echo --- dig 169.254.2.2 ---; timeout 5 getent hosts subscription.rhsm.redhat.com || echo getent-passt-FAIL; echo --- dig 8.8.8.8 ---; timeout 5 nslookup subscription.rhsm.redhat.com 8.8.8.8 2>&1 || echo nslookup-8888-FAIL; echo --- tcp connect ---; timeout 5 bash -c "exec 3<>/dev/tcp/169.254.2.2/53 && echo tcp-passt-53-OK" || echo tcp-passt-53-FAIL; timeout 5 bash -c "exec 3<>/dev/tcp/8.8.8.8/53 && echo tcp-8888-53-OK" || echo tcp-8888-53-FAIL; echo === END ===' \
+  --run-command 'echo === NETDIAG ===; ip addr show || true; ip route show || true; cat /etc/resolv.conf; echo === END ===' \
   --run-command "$REGISTER_CMD" \
   --install "$(echo "$EXTRA_PACKAGES" | tr ' ' ',')" \
   --run-command 'subscription-manager unregister' \

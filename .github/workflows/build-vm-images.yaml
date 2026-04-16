@@ -19,10 +19,10 @@ name: Build VM scanning images
 # One will eventually be kept and the other removed.
 
 on:
-  # TEMPORARY: fires on every push to the feature branch that touches the
-  # workflow or the build scripts so we can iterate before merging. The
-  # default branch doesn't know this workflow yet, so workflow_dispatch is
-  # not usable from a branch until this PR merges. REMOVE BEFORE MERGE.
+  # TODO(ROX-34170): Remove the `push` trigger before merging. It fires on
+  # every push to the feature branch so we can iterate without waiting for
+  # workflow_dispatch to become available (which requires the default branch
+  # to know this workflow).
   push:
     branches:
       - piotr/ROX-34170-vm-image-automation
@@ -56,9 +56,7 @@ permissions:
 
 jobs:
   build:
-    # FORK-ONLY: flipped from 'stackrox' to 'vikin91' for fork-based iteration
-    # testing. MUST BE REVERTED before the upstream PR merges.
-    if: ${{ github.repository_owner == 'vikin91' }}
+    if: ${{ github.repository_owner == 'stackrox' || github.repository_owner == 'vikin91' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -73,8 +71,8 @@ jobs:
             target_tag: rhel10-dnf-primed:latest
             platform: linux/amd64
     env:
-      # Temporary target while the workflow is being stabilized; will move to
-      # quay.io/rhacs-eng/ once repos and robot credentials are provisioned.
+      # TODO(ROX-34170): Change to quay.io/rhacs-eng once repos and robot
+      # credentials are provisioned on the upstream repo.
       TARGET_REGISTRY: quay.io/prygiels
       SRC_IMAGE_TAGGED: ${{ matrix.src_image }}
       TARGET_TAG: ${{ matrix.target_tag }}
@@ -258,9 +256,8 @@ jobs:
           fi
           echo "Last-built source-digest: ${last:-<none>}"
           echo "last_digest=${last}" >> "$GITHUB_OUTPUT"
-          # TEMPORARY: push events on the iteration branch always rebuild so
-          # script/workflow changes can actually be tested. Remove together
-          # with the `push:` trigger before merging.
+          # TODO(ROX-34170): Remove the push-event shortcut together with
+          # the `push:` trigger before merging.
           if [[ "$FORCE_REBUILD" == "true" ]]; then
             echo "rebuild=true (force)" && echo "rebuild=true" >> "$GITHUB_OUTPUT"
           elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
