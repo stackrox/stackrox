@@ -454,7 +454,7 @@ export function isKeyValueSearchTerm(searchTerm: string): boolean {
     return keyValueSearchOptions.has(searchTerm.toLowerCase());
 }
 
-function isQuotedString(value: string): boolean {
+export function isQuotedString(value: string): boolean {
     return value.startsWith('"') && value.endsWith('"') && value.length >= 2;
 }
 
