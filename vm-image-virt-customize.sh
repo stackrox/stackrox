@@ -122,12 +122,20 @@ echo "==> Running virt-customize (installing: $EXTRA_PACKAGES)..."
 # TEMPORARY: -v -x + LIBGUESTFS_DEBUG/TRACE until the appliance launches
 # cleanly in CI. Strip once the Ubuntu 24.04 runner is fully sorted.
 export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
+# The appliance gets network via passt, and passt forwards DNS through
+# the host's resolver. On Azure hosted runners the host's
+# /etc/resolv.conf points to 127.0.0.53 (systemd-resolved on loopback),
+# which the guest cannot reach, so subscription-manager fails with
+# "Name or service not known". Force a public resolver inside the
+# guest before anything that needs DNS.
 # shellcheck disable=SC2086 # EXTRA_PACKAGES is intentionally word-split.
 virt-customize -v -x -a "$DISK_PATH" \
+  --run-command 'printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf' \
   --run-command "$REGISTER_CMD" \
   --install "$(echo "$EXTRA_PACKAGES" | tr ' ' ',')" \
   --run-command 'subscription-manager unregister' \
   --run-command 'dnf clean all' \
+  --run-command ': > /etc/resolv.conf' \
   --selinux-relabel
 
 # --- Step 3: Compact the image ---
