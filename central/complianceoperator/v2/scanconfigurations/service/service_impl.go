@@ -36,7 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
-	"k8s.io/utils/strings/slices"
+	"slices"
 )
 
 const (
@@ -550,6 +550,9 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 	profileNames, err := s.scanConfigDS.GetProfilesNames(ctx, query)
 	if err != nil {
 		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
+	}
+	if len(profileNames) == 0 {
+		return nil, 0, nil
 	}
 
 	// Build query to get the filtered list by profile names

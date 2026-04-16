@@ -19,7 +19,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -56,18 +55,18 @@ var (
 		},
 	}
 
-	defaultAPISchedule = &apiV2.Schedule{
+	defaultAPISchedule = &v2.Schedule{
 		IntervalType: 1,
 		Hour:         15,
 		Minute:       0,
-		Interval: &apiV2.Schedule_DaysOfWeek_{
-			DaysOfWeek: &apiV2.Schedule_DaysOfWeek{
+		Interval: &v2.Schedule_DaysOfWeek_{
+			DaysOfWeek: &v2.Schedule_DaysOfWeek{
 				Days: []int32{1, 2, 3, 4, 5, 6, 7},
 			},
 		},
 	}
 
-	apiRequester = &apiV2.SlimUser{
+	apiRequester = &v2.SlimUser{
 		Id:   "uid",
 		Name: "name",
 	}
@@ -301,28 +300,28 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 	testCases := []struct {
 		desc           string
-		query          *apiV2.RawQuery
+		query          *v2.RawQuery
 		expectedQ      *v1.Query
 		expectedCountQ *v1.Query
 	}{
 		{
 			desc:           "Empty query",
-			query:          &apiV2.RawQuery{Query: ""},
+			query:          &v2.RawQuery{Query: ""},
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 		},
 		{
 			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
+			query: &v2.RawQuery{Query: "Cluster ID:id"},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
 		},
 		{
 			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
+			query: &v2.RawQuery{
 				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 1},
+				Pagination: &v2.Pagination{Limit: 1},
 			},
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
@@ -331,8 +330,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListComplianceScanConfigurationsResponse{
-				Configurations: []*apiV2.ComplianceScanConfigurationStatus{
+			expectedResp := &v2.ListComplianceScanConfigurationsResponse{
+				Configurations: []*v2.ComplianceScanConfigurationStatus{
 					getTestAPIStatusRec(createdTime, lastUpdatedTime),
 				},
 				TotalCount: 6,
@@ -426,7 +425,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 	testCases := []struct {
 		desc         string
 		scanID       string
-		expectedResp *apiV2.ComplianceScanConfigurationStatus
+		expectedResp *v2.ComplianceScanConfigurationStatus
 		expectedErr  error
 		found        bool
 	}{
@@ -523,7 +522,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 					Return(nil, false, errors.New("record not found")).Times(1)
 			}
 
-			config, err := s.service.GetComplianceScanConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.scanID})
+			config, err := s.service.GetComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: tc.scanID})
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
 			} else {
@@ -539,28 +538,28 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 
 	testCases := []struct {
 		desc           string
-		query          *apiV2.RawQuery
+		query          *v2.RawQuery
 		expectedQ      *v1.Query
 		expectedCountQ *v1.Query
 	}{
 		{
 			desc:           "Empty query",
-			query:          &apiV2.RawQuery{Query: ""},
+			query:          &v2.RawQuery{Query: ""},
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 		},
 		{
 			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
+			query: &v2.RawQuery{Query: "Cluster ID:id"},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
 		},
 		{
 			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
+			query: &v2.RawQuery{
 				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 1},
+				Pagination: &v2.Pagination{Limit: 1},
 			},
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
@@ -569,7 +568,7 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListComplianceScanConfigsProfileResponse{
+			expectedResp := &v2.ListComplianceScanConfigsProfileResponse{
 				Profiles:   nil,
 				TotalCount: 6,
 			}
@@ -1168,23 +1167,23 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteReport() {
 	})
 }
 
-func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.ComplianceScanConfigurationStatus {
-	return &apiV2.ComplianceScanConfigurationStatus{
+func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *v2.ComplianceScanConfigurationStatus {
+	return &v2.ComplianceScanConfigurationStatus{
 		Id:       uuid.NewDummy().String(),
 		ScanName: "test-scan",
-		ScanConfig: &apiV2.BaseComplianceScanConfigurationSettings{
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan:  false,
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
 			Description:  "test-description",
 			Notifiers:    []*v2.NotifierConfiguration{},
 		},
-		ClusterStatus: []*apiV2.ClusterScanStatus{
+		ClusterStatus: []*v2.ClusterScanStatus{
 			{
 				ClusterId:   fixtureconsts.Cluster1,
 				ClusterName: mockClusterName,
 				Errors:      []string{"This binding is not ready", "Error 1", "Error 2", "Error 3"},
-				SuiteStatus: &apiV2.ClusterScanStatus_SuiteStatus{
+				SuiteStatus: &v2.ClusterScanStatus_SuiteStatus{
 					Phase:              "DONE",
 					Result:             "NON-COMPLIANT",
 					LastTransitionTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
@@ -1198,10 +1197,23 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 	}
 }
 
-func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
-	return &apiV2.ComplianceScanConfiguration{
+// TestGetProfiles_NoMatch verifies that when GetProfilesNames returns nil (filter
+// matches no scan configs), getProfiles short-circuits and returns an empty list
+// rather than falling through to SearchProfiles with no WHERE clause (which would
+// return every profile in the database).
+func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_NoMatch() {
+	s.scanConfigDatastore.EXPECT().GetProfilesNames(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+
+	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, search.EmptyQuery(), search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Empty(profiles)
+	s.Zero(count)
+}
+
+func getTestAPIRec() *v2.ComplianceScanConfiguration {
+	return &v2.ComplianceScanConfiguration{
 		ScanName: "test-scan",
-		ScanConfig: &apiV2.BaseComplianceScanConfigurationSettings{
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan:  false,
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
