@@ -193,6 +193,29 @@ func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
 	return &cert, nil
 }
 
+// LoadInternalCertificateFromDirectory loads the internal service leaf certificate
+// (cert.pem + key.pem) from the given directory.
+func LoadInternalCertificateFromDirectory(dir string) (*tls.Certificate, error) {
+	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
+	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
+
+	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
+		return nil, err
+	}
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading internal certificate")
+	}
+
+	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing internal leaf certificate")
+	}
+
+	return &cert, nil
+}
+
 func issueInternalCertificate(namespace string) (*tls.Certificate, error) {
 	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, mtls.WithNamespace(namespace))
 	if err != nil {

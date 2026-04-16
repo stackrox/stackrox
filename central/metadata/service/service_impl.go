@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"sync/atomic"
 
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
@@ -50,10 +52,9 @@ var (
 		},
 	})
 
-	// Primary leaf certificate caching
-	primaryLeafCertOnce sync.Once
-	primaryLeafCert     tls.Certificate
-	primaryLeafCertErr  error
+	// watchedPrimaryLeafCert holds the latest primary leaf certificate, updated by a file watcher.
+	watchedPrimaryLeafCert     atomic.Pointer[tls.Certificate]
+	primaryLeafCertWatcherOnce sync.Once
 
 	// Secondary CA leaf certificate caching
 	secondaryCALeafCertOnce sync.Once
@@ -80,21 +81,26 @@ type CertificateProvider interface {
 // defaultCertificateProvider implements CertificateProvider using global mtls functions
 type defaultCertificateProvider struct{}
 
+func startPrimaryLeafCertWatcher() {
+	primaryLeafCertWatcherOnce.Do(func() {
+		certwatch.WatchCertDir(mtls.CertsPrefix, tlsconfig.LoadInternalCertificateFromDirectory, func(cert *tls.Certificate) {
+			if cert != nil {
+				watchedPrimaryLeafCert.Store(cert)
+			}
+		}, certwatch.WithVerify(false))
+	})
+}
+
 func (p *defaultCertificateProvider) GetPrimaryCACert() (*x509.Certificate, []byte, error) {
 	return mtls.CACert()
 }
 
 func (p *defaultCertificateProvider) GetPrimaryLeafCert() (tls.Certificate, error) {
-	primaryLeafCertOnce.Do(func() {
-		cert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			primaryLeafCertErr = err
-			return
-		}
-		primaryLeafCert = cert
-	})
-
-	return primaryLeafCert, primaryLeafCertErr
+	startPrimaryLeafCertWatcher()
+	if cert := watchedPrimaryLeafCert.Load(); cert != nil {
+		return *cert, nil
+	}
+	return mtls.LeafCertificateFromFile()
 }
 
 func (p *defaultCertificateProvider) GetSecondaryCAForSigning() (mtls.CA, error) {

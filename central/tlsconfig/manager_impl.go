@@ -26,6 +26,8 @@ type providerData struct {
 type managerImpl struct {
 	mutex sync.RWMutex
 
+	namespace string
+
 	internalTrustRoots []*x509.Certificate
 	userTrustRoots     []*x509.Certificate
 
@@ -57,11 +59,13 @@ func newManager(namespace string) (*managerImpl, error) {
 
 	mgr := &managerImpl{
 		providerIDToProviderData: make(map[string]providerData),
+		namespace:                namespace,
 		internalTrustRoots:       trustRoots,
 		internalCerts:            internalCerts,
 	}
 
 	certwatch.WatchCertDir(DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
+	certwatch.WatchCertDir(mtls.CertsPrefix, LoadInternalCertificateFromDirectory, mgr.UpdateInternalCertificate, certwatch.WithVerify(false))
 
 	return mgr, nil
 }
@@ -76,6 +80,33 @@ func (m *managerImpl) UpdateDefaultTLSCertificate(defaultCert *tls.Certificate) 
 		m.defaultCerts = []tls.Certificate{*defaultCert}
 	}
 
+	m.updateConfigurersNoLock()
+}
+
+func (m *managerImpl) UpdateInternalCertificate(cert *tls.Certificate) {
+	if cert == nil {
+		return
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	internalCerts := []tls.Certificate{*cert}
+
+	if cert.Leaf != nil && !validForAllDNSNames(cert.Leaf, mtls.CentralSubject.AllHostnamesForNamespace(m.namespace)...) {
+		log.Warnw("Reloaded internal TLS certificate is not valid for all cluster-internal DNS names, "+
+			"issuing ephemeral certificate with adequate DNS names",
+			logging.String("namespace", m.namespace),
+			logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(m.namespace)))
+		ephemeralCert, err := issueInternalCertificate(m.namespace)
+		if err != nil {
+			log.Errorf("Failed to issue ephemeral internal certificate during reload: %v", err)
+		} else {
+			internalCerts = append(internalCerts, *ephemeralCert)
+		}
+	}
+
+	m.internalCerts = internalCerts
 	m.updateConfigurersNoLock()
 }
 
