@@ -56,7 +56,7 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	return &ver, nil
 }
 
-// UpdateVersionPostgres - updates the version allowing for outer transaction
+// UpdateVersionPostgres - updates the version allowing for outer transaction.
 func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
 	err := pgutils.Retry(ctx, func() error {
 		_, err := db.Exec(ctx, "DELETE FROM versions")
@@ -64,7 +64,9 @@ func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *
 			return err
 		}
 
-		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)",
+			updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
+			protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
 		return err
 	})
 	utils.Must(errors.Wrap(err, "failed to write migration version"))
@@ -77,11 +79,11 @@ func SetVersionPostgres(ctx context.Context, dbName string, updatedVersion *stor
 		utils.Must(errors.Wrapf(err, "failed to connect to database %s", dbName))
 	}
 	defer migGorm.Close(db)
-	SetVersionGormDB(ctx, db, updatedVersion, true)
+	SetVersion(ctx, db, updatedVersion, true)
 }
 
-// SetVersionGormDB - sets the version in the postgres database specified with the Gorm instance
-func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.Version, ensureSchema bool) {
+// SetVersion - sets the version in the postgres database specified with the Gorm instance
+func SetVersion(ctx context.Context, db *gorm.DB, updatedVersion *storage.Version, ensureSchema bool) {
 	if ensureSchema {
 		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	}
@@ -94,7 +96,9 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 				return err
 			}
 
-			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)",
+				updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
+				protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
 			return result.Error
 		})
 	})
@@ -103,13 +107,13 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 	}
 }
 
-// SetCurrentVersionPostgres - sets the current version in the postgres database
-func SetCurrentVersionPostgres(ctx context.Context) {
+// SetCurrentVersion - sets the current version via gormDB database
+func SetCurrentVersion(ctx context.Context, gormDB *gorm.DB) {
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
-	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
+	SetVersion(ctx, gormDB, newVersion, false)
 }

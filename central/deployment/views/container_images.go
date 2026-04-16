@@ -1,15 +1,18 @@
 package views
 
+import "github.com/stackrox/rox/generated/storage"
+
 // ContainerImageView represents a container image with its associated cluster IDs.
 // This view is used to get distinct container images from active deployments
 // along with the clusters where they are deployed.
 type ContainerImageView struct {
-	ImageIDV2 string `db:"image_id"`
-	// Each imageIDV2 will map to a single digest, but SQL wants us to apply an aggreate func to all selected fields
-	// when grouing by imageIDV2. So we need to select the digest with a min aggregate,
-	// which will be a no-op for a single value.
-	ImageDigest string   `db:"image_sha"`
-	ClusterIDs  []string `db:"cluster_id"`
+	ImageIDV2         string   `db:"image_id"`
+	ImageDigest       string   `db:"image_sha"`
+	ClusterIDs        []string `db:"cluster_id"`
+	ImageNameRegistry string   `db:"image_registry"`
+	ImageNameRemote   string   `db:"image_remote"`
+	ImageNameTag      string   `db:"image_tag"`
+	ImageNameFullName string   `db:"image"`
 }
 
 // GetImageDigest returns the image digest.
@@ -25,4 +28,14 @@ func (c *ContainerImageView) GetImageID() string {
 // GetClusterIDs returns the cluster IDs.
 func (c *ContainerImageView) GetClusterIDs() []string {
 	return c.ClusterIDs
+}
+
+// GetImageName returns the image name.
+func (c *ContainerImageView) GetImageName() *storage.ImageName {
+	return &storage.ImageName{
+		Registry: c.ImageNameRegistry,
+		Remote:   c.ImageNameRemote,
+		Tag:      c.ImageNameTag,
+		FullName: c.ImageNameFullName,
+	}
 }

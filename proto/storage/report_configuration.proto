@@ -5,6 +5,7 @@ package storage;
 import "google/protobuf/timestamp.proto";
 import "storage/cve.proto";
 import "storage/report_notifier_configuration.proto";
+import "storage/resource_collection.proto";
 import "storage/role.proto";
 import "storage/schedule.proto";
 import "storage/user.proto";
@@ -72,12 +73,42 @@ message VulnerabilityReportFilters {
   bool include_nvd_cvss = 9;
   bool include_epss_probability = 10;
   bool include_advisory = 11;
+  // this field stores enhanced filters related to image, cve etc for non collection based scopes
+  string query = 12;
 }
 
 message ResourceScope {
   oneof scope_reference {
     string collection_id = 1; // @gotags: search:"Collection ID"
+    EntityScope entity_scope = 2;
   }
+}
+
+// EntityScope is a new scoping method using ns,deployments,clusters filters introduced in 4.11
+message EntityScope {
+  repeated EntityScopeRule rules = 1;
+}
+
+// EntityScopeRule stores the filter as an entity field pair along with a list of values
+message EntityScopeRule {
+  EntityType entity = 1;
+  EntityField field = 2;
+  repeated RuleValue values = 3;
+}
+
+enum EntityType {
+  ENTITY_TYPE_UNSET = 0;
+  ENTITY_TYPE_DEPLOYMENT = 1;
+  ENTITY_TYPE_NAMESPACE = 2;
+  ENTITY_TYPE_CLUSTER = 3;
+}
+
+enum EntityField {
+  FIELD_UNSET = 0;
+  FIELD_ID = 1;
+  FIELD_NAME = 2;
+  FIELD_LABEL = 3;
+  FIELD_ANNOTATION = 4;
 }
 
 // filter for view based reports

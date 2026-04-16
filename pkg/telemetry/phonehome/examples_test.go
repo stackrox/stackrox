@@ -16,7 +16,7 @@ import (
 )
 
 func printMessage(message map[string]any) {
-	fmt.Printf("---")
+	fmt.Print("---")
 	for key, value := range mock.FilterMessageFields(message,
 		"type", "event", "traits", "properties", "context") {
 		fmt.Printf("  %s: %v\n", key, value)

@@ -217,10 +217,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		return errors.New("central did not acknowledge SensorHello," +
-			" likely due to a networking or TLS configuration issue" +
-			" (e.g., re-encrypt routes or TLS termination)" +
-			" preventing central from receiving sensor's TLS certificate")
+		return DiagnoseConnectionFailure(stream, "the credentials may be revoked or expired")
 	}
 
 	var centralHello *central.CentralHello

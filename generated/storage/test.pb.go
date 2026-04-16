@@ -403,6 +403,7 @@ type TestSingleUUIDKeyStruct struct {
 	//	*TestSingleUUIDKeyStruct_OneofTwoString
 	//	*TestSingleUUIDKeyStruct_OneofTwoInt
 	OneofTwo      isTestSingleUUIDKeyStruct_OneofTwo `protobuf_oneof:"oneof_two"`
+	OptionalUuid  string                             `protobuf:"bytes,19,opt,name=optional_uuid,json=optionalUuid,proto3" json:"optional_uuid,omitempty" search:"Test UUID" sql:"type(uuid)"` // @gotags: search:"Test UUID" sql:"type(uuid)"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -583,6 +584,13 @@ func (x *TestSingleUUIDKeyStruct) GetOneofTwoInt() int64 {
 		}
 	}
 	return 0
+}
+
+func (x *TestSingleUUIDKeyStruct) GetOptionalUuid() string {
+	if x != nil {
+		return x.OptionalUuid
+	}
+	return ""
 }
 
 type isTestSingleUUIDKeyStruct_Oneof interface {
@@ -2718,7 +2726,7 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x05ENUM0\x10\x00\x12\t\n" +
 	"\x05ENUM1\x10\x01\x12\t\n" +
 	"\x05ENUM2\x10\x02B\a\n" +
-	"\x05oneof\"\x95\n" +
+	"\x05oneof\"\xba\n" +
 	"\n" +
 	"\x17TestSingleUUIDKeyStruct\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
@@ -2739,7 +2747,8 @@ const file_storage_test_proto_rawDesc = "" +
 	"\voneofnested\x18\x0f \x01(\v2,.storage.TestSingleUUIDKeyStruct.OneOfNestedH\x00R\voneofnested\x12\x16\n" +
 	"\x06bytess\x18\x10 \x01(\fR\x06bytess\x12*\n" +
 	"\x10oneof_two_string\x18\x11 \x01(\tH\x01R\x0eoneofTwoString\x12$\n" +
-	"\roneof_two_int\x18\x12 \x01(\x03H\x01R\voneofTwoInt\x1a9\n" +
+	"\roneof_two_int\x18\x12 \x01(\x03H\x01R\voneofTwoInt\x12#\n" +
+	"\roptional_uuid\x18\x13 \x01(\tR\foptionalUuid\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aO\n" +

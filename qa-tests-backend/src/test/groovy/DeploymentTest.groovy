@@ -17,13 +17,11 @@ import spock.lang.IgnoreIf
 @Tag("PZ")
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
-    // The image name in quay.io includes the SHA from the original image
-    // imported from docker.io which is somewhat confusingly different.
     private static final String DEPLOYMENT_IMAGE_NAME =
-        "quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
+        "quay.io/rhacs-eng/qa-multi-arch:nginx-3.21-1"
     private static final String DEPLOYMENT_IMAGE_SHA =
-        "b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
-    private static final String CVE_NO = "CVE-2018-18314"
+        "4645523a9a4718f38f0a55459f8d7cb979f9371be5106a8606e476055fc1985b"
+    private static final String CVE_NO = "CVE-2019-11068"
     private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
     private static final String OPENSHIFT_ORCHESTRATOR_NAMESPACE = Env.getManagedControlPlane() == "true" ?
         "openshift-console" : "openshift-apiserver"

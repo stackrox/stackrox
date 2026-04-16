@@ -28,17 +28,44 @@ func TestNewClient_release(t *testing.T) {
 
 	t.Run("no key", func(t *testing.T) {
 		// This is a self-managed installation case.
+		reconfigured := make(chan struct{}, 1)
 		c := NewClient("test", "Test", "0.0.0",
 			WithStorageKey(""),
 			WithEndpoint(server.URL),
 			WithConfigURL(server.URL),
 			WithConfigureCallback(func(rc *RuntimeConfig) {
 				t.Logf("reconfigured with %v", rc)
+				reconfigured <- struct{}{}
 			}),
 		)
+		// Wait for the background Reconfigure to complete before
+		// checking the key, to avoid relying on eventual.Value
+		// blocking for synchronization.
+		<-reconfigured
 		assert.True(t, c.IsEnabled())
-		assert.False(t, c.IsActive())
 		assert.Equal(t, remoteKey, c.GetStorageKey(), "should fetch the key")
+	})
+
+	t.Run("explicit key preserved", func(t *testing.T) {
+		// When a key is explicitly provided via ROX_TELEMETRY_STORAGE_KEY_V1,
+		// it must not be overwritten by the remote configuration.
+		const explicitKey = "explicit-key"
+		reconfigured := make(chan struct{}, 1)
+		c := NewClient("test", "Test", "0.0.0",
+			WithStorageKey(explicitKey),
+			WithEndpoint(server.URL),
+			WithConfigURL(server.URL),
+			WithConfigureCallback(func(rc *RuntimeConfig) {
+				t.Logf("reconfigured with %v", rc)
+				reconfigured <- struct{}{}
+			}),
+		)
+		// Wait for the background Reconfigure to complete, so we
+		// verify the key survives the overwrite attempt.
+		<-reconfigured
+		assert.True(t, c.IsEnabled())
+		assert.Equal(t, explicitKey, c.GetStorageKey(),
+			"explicit key must not be overwritten by remote key")
 	})
 
 	t.Run("DISABLED key", func(t *testing.T) {

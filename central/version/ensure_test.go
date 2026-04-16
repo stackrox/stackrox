@@ -39,10 +39,7 @@ func (suite *EnsurerTestSuite) TearDownTest() {
 }
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
-	suite.NoError(Ensure(store.NewPostgres(suite.pool)))
-	version, err := suite.versionStore.GetVersion()
-	suite.NoError(err)
-	suite.Equal(migrations.CurrentDBVersionSeqNum(), int(version.GetSeqNum()))
+	suite.Error(Ensure(store.NewPostgres(suite.pool)))
 }
 
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
@@ -57,4 +54,9 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum()) - 2}))
 	suite.Error(Ensure(store.NewPostgres(suite.pool)))
+}
+
+func (suite *EnsurerTestSuite) TestWithSmallerVersion() {
+	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum()) + 3}))
+	suite.NoError(Ensure(store.NewPostgres(suite.pool)))
 }

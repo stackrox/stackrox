@@ -213,9 +213,8 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		log.Error("Central did not send the SensorHello metadata key after connection attempt using a cluster registration secret.")
-		log.Error("Possible reason: central does not support CRS-based cluster registration.")
-		return nil, errors.New("central headers are missing the SensorHello metadata key ")
+		return nil, sensorCommon.DiagnoseConnectionFailure(stream,
+			"the cluster registration secret may be revoked or expired")
 	}
 
 	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})

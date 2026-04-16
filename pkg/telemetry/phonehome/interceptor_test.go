@@ -140,11 +140,11 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	testRP := &RequestParams{
 		Code:    0,
 		Path:    "/v1.Test",
-		Headers: withUserAgent(s.T(), nil, "test"),
+		Headers: withUserAgent("test"),
 	}
 
 	md := metadata.New(nil)
-	md.Set(userAgentHeaderKey, testRP.Headers(userAgentHeaderKey)...)
+	md.Set(userAgentHeaderKey, testRP.Headers.Get(userAgentHeaderKey)...)
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 
 	rih := requestinfo.NewRequestInfoHandler()
@@ -156,7 +156,16 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	s.Equal(testRP.Code, rp.Code)
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
-	s.Equal(testRP.Headers(userAgentHeaderKey), rp.Headers(userAgentHeaderKey))
+	s.Equal(testRP.Headers.Get(userAgentHeaderKey), rp.Headers.Get(userAgentHeaderKey))
+
+	// Verify that gRPC metadata lowercase keys are canonicalized so that
+	// glob patterns with canonical case (e.g., "User-Agent") match.
+	ua := rp.Headers.Get("User-Agent")
+	s.NoError(err)
+	s.Equal([]string{"test"}, ua)
+
+	matching := rp.Headers.GetMatching("User-*", "*")
+	s.Equal(map[string][]string{"User-Agent": {"test"}}, matching)
 }
 
 func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
@@ -172,7 +181,7 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 
 	rp := getGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
 	s.Equal(http.StatusOK, rp.Code)
-	s.Equal([]string{"gateway", "user"}, rp.Headers(userAgentHeaderKey))
+	s.Equal([]string{"gateway", "user"}, rp.Headers.Get(userAgentHeaderKey))
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
@@ -215,18 +224,18 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	testRP := &RequestParams{
 		UserID:  mockID,
 		Code:    200,
-		Headers: withUserAgent(s.T(), nil, "test"),
+		Headers: withUserAgent("test"),
 		Path:    "/v1/test",
 	}
 
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
-	req.Header.Add(userAgentHeaderKey, testRP.Headers(userAgentHeaderKey)[0])
+	req.Header.Add(userAgentHeaderKey, testRP.Headers.Get(userAgentHeaderKey)[0])
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
 	rp := getHTTPRequestDetails(ctx, req, 200)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(mockID, rp.UserID)
-	s.Equal(testRP.Headers(userAgentHeaderKey), rp.Headers(userAgentHeaderKey))
+	s.Equal(testRP.Headers.Get(userAgentHeaderKey), rp.Headers.Get(userAgentHeaderKey))
 }

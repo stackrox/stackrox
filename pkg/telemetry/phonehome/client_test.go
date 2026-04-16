@@ -268,6 +268,35 @@ func TestClient_Reconfigure(t *testing.T) {
 		assert.Nil(t, lastRC)
 	})
 
+	t.Run("explicit key not overwritten by remote", func(t *testing.T) {
+		setConfig(`{"storage_key_v1": "` + remoteKey + `"}`)
+		c := newInactiveClient("explicit-key", server.URL)
+		assert.True(t, c.IsEnabled())
+		c.consented.Set(true)
+		assert.True(t, c.IsActive())
+
+		err := c.Reconfigure()
+		assert.Nil(t, err)
+		assert.True(t, c.IsEnabled())
+		assert.Equal(t, "explicit-key", c.storageKey.Get(), "explicit key must not be overwritten")
+		assert.NotNil(t, c.telemeter, "telemeter must not be reset when key is unchanged")
+		assert.NotNil(t, lastRC, "onReconfigure callback must still be called")
+	})
+
+	t.Run("explicit key overwritten by DISABLED", func(t *testing.T) {
+		setConfig(`{"storage_key_v1": "` + DisabledKey + `"}`)
+		c := newInactiveClient("explicit-key", server.URL)
+		assert.True(t, c.IsEnabled())
+		c.consented.Set(true)
+		assert.True(t, c.IsActive())
+
+		err := c.Reconfigure()
+		assert.Nil(t, err)
+		assert.False(t, c.IsEnabled())
+		assert.False(t, c.IsActive())
+		assert.Equal(t, DisabledKey, c.storageKey.Get(), "DISABLED must override explicit key")
+	})
+
 	t.Run("reconfigure with DISABLED key", func(t *testing.T) {
 		setConfig(`{"storage_key_v1": "` + DisabledKey + `"}`)
 		c := newInactiveClient("some key", server.URL)
@@ -294,7 +323,7 @@ func TestClient_Telemeter(t *testing.T) {
 		assert.True(t, ok)
 	})
 
-	t.Run("new telemeter on reconfigure", func(t *testing.T) {
+	t.Run("explicit key preserves telemeter on reconfigure", func(t *testing.T) {
 		const remoteKey = "remote-key"
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -308,16 +337,39 @@ func TestClient_Telemeter(t *testing.T) {
 			configURL:  server.URL,
 		})
 		assert.Nil(t, c.telemeter)
-		c.GrantConsent() // make IsActive() return true.
+		c.GrantConsent()
 
 		previousTelemeter := c.Telemeter()
 		assert.NotNil(t, c.telemeter)
 
-		// Reconfigure will reset the telemeter even if the key doesn't change
-		// in non-prod.
 		assert.NoError(t, c.Reconfigure())
-		assert.Equal(t, "test-key", c.storageKey.Get())
-		assert.Nil(t, c.telemeter)
+		assert.Equal(t, "test-key", c.storageKey.Get(), "explicit key must be preserved")
+		assert.NotNil(t, c.telemeter, "telemeter must not be reset when explicit key is unchanged")
+		assert.Equal(t, previousTelemeter, c.Telemeter())
+	})
+
+	t.Run("new telemeter on reconfigure with downloaded key", func(t *testing.T) {
+		const remoteKey = "remote-key"
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
+		}))
+		defer server.Close()
+
+		// Empty storageKey simulates key to be downloaded from remote.
+		c := newClientFromConfig(&config{
+			configURL: server.URL,
+		})
+		c.storageKey.Set("old-key")
+		c.GrantConsent()
+
+		previousTelemeter := c.Telemeter()
+		assert.NotNil(t, c.telemeter)
+
+		// Reconfigure resets the telemeter when the downloaded key differs.
+		assert.NoError(t, c.Reconfigure())
+		assert.Nil(t, c.telemeter, "telemeter must be reset for new key")
 		assert.NotEqual(t, previousTelemeter, c.Telemeter())
 	})
 }

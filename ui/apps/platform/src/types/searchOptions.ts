@@ -247,6 +247,7 @@ export type SearchFieldLabel =
     | 'Compliance Profile Name'
     | 'Compliance Config Profile Name'
     | 'Compliance Profile Product Type'
+    | 'Compliance Profile Operator Kind'
     | 'Compliance Profile Version'
     | 'Compliance Standard'
     | 'Compliance Control'

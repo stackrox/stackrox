@@ -46,7 +46,7 @@ func TestOptionsMapExist(t *testing.T) {
 func TestOptionsMap(t *testing.T) {
 	expectedOptions := []string{
 		"Add Capabilities", "Advisory Link", "Advisory Name", "CPU Cores Limit", "CPU Cores Request", "CVE", "CVE Published On", "CVE Snoozed", "CVSS",
-		"Cluster", "Component", "Component Version", "Deployment", "Deployment Annotation", "Deployment Label",
+		"Cluster", "Component", "Component Version", "Container Type", "Deployment", "Deployment Annotation", "Deployment Label",
 		"Deployment Type", "Dockerfile Instruction Keyword", "Dockerfile Instruction Value", "Drop Capabilities",
 		"EPSS Probability", "Environment Key", "Environment Value", "Environment Variable Source", "Exposed Node Port", "Exposing Service",
 		"Exposing Service Port", "Exposure Level", "External Hostname", "External IP", "Image", "Image CVE Count", "Image Command",

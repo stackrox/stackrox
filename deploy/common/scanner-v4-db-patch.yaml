@@ -1,0 +1,13 @@
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init-db
+          resources:
+            requests:
+              cpu: "500m"
+      containers:
+        - name: db
+          resources:
+            requests:
+              cpu: "500m"
