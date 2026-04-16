@@ -7,22 +7,26 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const sensorHelloNotAcknowledgedMsg = "central did not acknowledge SensorHello," +
+const networkingOrTLSMsg = "Connection to Central failed," +
 	" likely due to a networking or TLS configuration issue" +
-	" (e.g., re-encrypt routes or TLS termination)"
+	" (e.g., re-encrypt routes or TLS termination)."
 
-// ProbeStreamForConnectionError probes a stream via Recv() to retrieve the
-// actual server-side error when central did not echo the SensorHello metadata
-// key. When central responds with PermissionDenied (e.g. revoked or expired credentials),
-// the returned error incorporates deniedMsg. For any other error, or when Recv()
-// succeeds without an error, this function returns a generic networking/TLS suggestion.
-func ProbeStreamForConnectionError(stream central.SensorService_CommunicateClient, deniedMsg string) error {
-	if _, recvErr := stream.Recv(); recvErr != nil {
-		if st, ok := status.FromError(recvErr); ok && st.Code() == codes.PermissionDenied {
-			return errors.Wrapf(recvErr, "central rejected the connection: %s."+
-				" Check central logs for details", deniedMsg)
+// DiagnoseConnectionFailure probes the stream to retrieve the actual server-side error
+// when central did not acknowledge the SensorHello message. It logs a user-actionable
+// message (credential issue for PermissionDenied, networking/TLS suggestion otherwise)
+// and returns an error.
+func DiagnoseConnectionFailure(stream central.SensorService_CommunicateClient, deniedMsg string) error {
+	_, err := stream.Recv()
+
+	if err != nil {
+		if st, ok := status.FromError(err); ok && st.Code() == codes.PermissionDenied {
+			log.Errorf("Central rejected the connection: %s. Check central logs for details.", deniedMsg)
+			return errors.Wrap(err, "permission denied by central")
 		}
-		return errors.Wrap(recvErr, sensorHelloNotAcknowledgedMsg)
+	} else {
+		err = errors.New("central did not acknowledge SensorHello")
 	}
-	return errors.New(sensorHelloNotAcknowledgedMsg)
+
+	log.Error(networkingOrTLSMsg)
+	return err
 }

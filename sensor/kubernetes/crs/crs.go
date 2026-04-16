@@ -213,7 +213,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		return nil, sensorCommon.ProbeStreamForConnectionError(stream,
+		return nil, sensorCommon.DiagnoseConnectionFailure(stream,
 			"the cluster registration secret may be revoked or expired")
 	}
 
