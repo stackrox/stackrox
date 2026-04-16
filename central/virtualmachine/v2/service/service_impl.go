@@ -347,17 +347,7 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 	}
 
 	proto := storagetov2.SeverityCountsToProto(severityCounts)
-	var fixable, notFixable int32
-	for _, sev := range []*v2.VulnFixableCount{
-		proto.GetCritical(),
-		proto.GetImportant(),
-		proto.GetModerate(),
-		proto.GetLow(),
-		proto.GetUnknown(),
-	} {
-		fixable += sev.GetFixable()
-		notFixable += sev.GetTotal() - sev.GetFixable()
-	}
+	fixable, notFixable := countFixability(proto)
 
 	return &v2.VMVulnSummary{
 		SeverityCounts:  proto,
@@ -499,4 +489,20 @@ func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMCo
 		Components: items,
 		TotalCount: int32(totalCount),
 	}, nil
+}
+
+// countFixability sums fixable and not-fixable counts across all severity levels.
+func countFixability(counts *v2.VulnCountBySeverity) (fixable, notFixable int32) {
+	for _, sev := range []func() *v2.VulnFixableCount{
+		counts.GetCritical,
+		counts.GetImportant,
+		counts.GetModerate,
+		counts.GetLow,
+		counts.GetUnknown,
+	} {
+		c := sev()
+		fixable += c.GetFixable()
+		notFixable += c.GetTotal() - c.GetFixable()
+	}
+	return
 }
