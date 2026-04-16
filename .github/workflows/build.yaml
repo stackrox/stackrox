@@ -417,7 +417,7 @@ jobs:
 
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -745,7 +745,7 @@ jobs:
         message-path: build-comment.md
 
   build-and-push-operator:
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
