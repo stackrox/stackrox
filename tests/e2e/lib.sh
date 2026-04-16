@@ -192,13 +192,18 @@ EOF
         ;;
     esac
 
+    patch_yaml "$override_file" '.spec.customize.envVars = []'
     custom_env_for_deployment | while read -r var_val; do
         name="${var_val%%=*}"
         value="${var_val#*=}"
+        echo "Setting custom environment:"
+        echo "  ${name}=${value}"
         patch_yaml "$override_file" ".spec.customize.envVars += {\"name\": \"${name}\", \"value\": \"${value}\"}"
     done
 
     feature_flags=$(feature_flags_for_deployment)
+    echo "Feature flags:"
+    echo "$feature_flags" | tr ',' '\n' | sed -e 's/^/  /;'
 
     if [[ "$cgo_checks" == "true" ]]; then
         patch_yaml "$override_file" '.spec.customize.envVars += {"name": "GOEXPERIMENT", "value": "cgocheck2"}'
