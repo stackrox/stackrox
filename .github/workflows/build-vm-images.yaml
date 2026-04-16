@@ -143,14 +143,25 @@ jobs:
             # "PID file open: Permission denied" and `passt exited with
             # status 1`. Unload the profile (keep AppArmor on for everything
             # else).
-            if [[ -f /etc/apparmor.d/usr.bin.passt ]]; then
-              sudo apparmor_parser -R /etc/apparmor.d/usr.bin.passt || true
-              sudo ln -sf /etc/apparmor.d/usr.bin.passt /etc/apparmor.d/disable/ || true
-            fi
-            if [[ -f /etc/apparmor.d/passt ]]; then
-              sudo apparmor_parser -R /etc/apparmor.d/passt || true
-              sudo ln -sf /etc/apparmor.d/passt /etc/apparmor.d/disable/ || true
-            fi
+            # Unload AppArmor profiles that would otherwise block passt
+            # and qemu. passt: writes --pid under /run/user/*/libguestfs*/
+            # which its profile doesn't permit. qemu-system-x86_64: can't
+            # read disk images out of /tmp under the distro profile used
+            # by libvirt. libguestfs's `direct` backend invokes both from
+            # our runner user, so both profiles must be unloaded. We
+            # leave AppArmor on for everything else.
+            for profile in \
+                /etc/apparmor.d/usr.bin.passt \
+                /etc/apparmor.d/passt \
+                /etc/apparmor.d/usr.sbin.libvirtd \
+                /etc/apparmor.d/libvirt-* \
+                /etc/apparmor.d/usr.bin.qemu-system-x86_64; do
+              for p in $profile; do
+                [[ -f "$p" ]] || continue
+                sudo apparmor_parser -R "$p" 2>/dev/null || true
+                sudo ln -sf "$p" /etc/apparmor.d/disable/ || true
+              done
+            done
             ls -l /dev/kvm
           fi
 
