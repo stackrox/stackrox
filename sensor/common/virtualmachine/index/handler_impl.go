@@ -141,6 +141,8 @@ func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSens
 	reason := sensorAck.GetReason()
 	h.forwardToCompliance(ctx, vmID, action, reason)
 
+	// Not limiting to ACK & NACK and recording all types of actions for better debuggability.
+	// The risk of prometheus label cardinality explosion is considered low and accepted hereby.
 	metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
 
 	return nil
@@ -269,8 +271,14 @@ func (h *handlerImpl) forwardToCompliance(
 	select {
 	case <-ctx.Done():
 		log.Warnf("Dropping VM ACK/NACK (resourceID=%s): %v", resourceID, ctx.Err())
+		return
 	case <-h.stopper.Flow().StopRequested():
 		log.Debugf("Dropping VM ACK/NACK (resourceID=%s) during shutdown", resourceID)
+		return
+	default:
+	}
+
+	select {
 	case h.toCompliance <- msg:
 	default:
 		log.Warnf("Dropping VM ACK/NACK (resourceID=%s): compliance queue is full", resourceID)
