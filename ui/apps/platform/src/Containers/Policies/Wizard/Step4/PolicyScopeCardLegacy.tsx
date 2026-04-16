@@ -112,9 +112,7 @@ function PolicyScopeCardLegacy({
                                 className="pf-v6-u-mr-md"
                                 onClick={onDelete}
                                 title={
-                                    type === 'inclusion'
-                                        ? 'Delete included resource'
-                                        : 'Delete excluded resource'
+                                    type === 'inclusion' ? 'Delete inclusion' : 'Delete exclusion'
                                 }
                             />
                         </>
@@ -125,7 +123,7 @@ function PolicyScopeCardLegacy({
                 className="pf-v6-u-p-0"
             >
                 <CardTitle className="pf-v6-u-pl-lg">
-                    {type === 'inclusion' ? 'Included resource' : 'Excluded resource'}
+                    {type === 'inclusion' ? 'Inclusion' : 'Exclusion'}
                 </CardTitle>
             </CardHeader>
             <Divider component="div" />

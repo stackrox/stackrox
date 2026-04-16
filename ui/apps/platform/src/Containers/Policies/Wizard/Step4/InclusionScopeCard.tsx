@@ -60,7 +60,7 @@ function InclusionScopeCard({
     }
 
     return (
-        <PolicyScopeCardBase title="Included resource" onDelete={onDelete}>
+        <PolicyScopeCardBase title="Inclusion" onDelete={onDelete}>
             <Form>
                 <FormGroup label="Cluster" role="radiogroup">
                     <Flex direction={{ default: 'column' }}>
