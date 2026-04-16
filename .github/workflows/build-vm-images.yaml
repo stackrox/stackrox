@@ -155,6 +155,18 @@ jobs:
             echo "==> AppArmor status after teardown:"
             sudo aa-status || true
             ls -l /dev/kvm
+
+            # Replace the host's /etc/resolv.conf (symlinked to
+            # 127.0.0.53 = systemd-resolved stub) with a real upstream
+            # DNS. passt reads the host's resolver to forward guest DNS
+            # queries, and can't reach 127.0.0.53 from inside the
+            # appliance. Leaves the runner in a working DNS state
+            # because the public resolvers work from the host too.
+            sudo rm -f /etc/resolv.conf
+            printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' | \
+              sudo tee /etc/resolv.conf >/dev/null
+            echo "==> Host /etc/resolv.conf after override:"
+            cat /etc/resolv.conf
           fi
 
       - name: Check required secrets
