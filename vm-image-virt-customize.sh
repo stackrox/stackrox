@@ -89,7 +89,10 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 # --- Step 1: Extract qcow2 from ContainerDisk image ---
 echo "==> Extracting qcow2 from container image (platform=$PLATFORM)..."
-CID=$(podman create --platform "$PLATFORM" "$SRC_IMAGE")
+# Pass a placeholder command: ContainerDisk images carry no CMD/ENTRYPOINT,
+# and `podman create` refuses without one even though we never start the
+# container (we only `podman cp` out of it).
+CID=$(podman create --platform "$PLATFORM" "$SRC_IMAGE" true)
 podman cp "$CID:/disk/." "$WORKDIR/"
 podman rm "$CID"
 DISK_NAME="$(basename "$(find "$WORKDIR" -maxdepth 1 -type f \( -name '*.qcow2' -o -name '*.img' \) | head -1)")"
