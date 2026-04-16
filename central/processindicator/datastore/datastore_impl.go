@@ -167,7 +167,7 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reas
 	}
 
 	log.Infof("successfully pruned %d out of %d indicators", successfullyPruned, initialSize)
-	incrementPrunedProcessesMetric(successfullyPruned, reason)
+	recordProcessIndicatorsRemoved(successfullyPruned, reason)
 	return successfullyPruned
 }
 

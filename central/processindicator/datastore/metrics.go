@@ -74,10 +74,6 @@ var (
 	})
 )
 
-func incrementPrunedProcessesMetric(num int, reason string) {
-	recordProcessIndicatorsRemoved(num, reason)
-}
-
 func recordProcessIndicatorsRemoved(num int, reason string) {
 	processIndicatorsRemoved.WithLabelValues(reason).Add(float64(num))
 	processIndicatorsRemovedTotal.Add(float64(num))
