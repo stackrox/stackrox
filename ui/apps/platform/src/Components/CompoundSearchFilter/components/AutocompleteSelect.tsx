@@ -19,9 +19,9 @@ import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
 import {
-    formatLabelValue,
+    formatKeyValue,
     getRequestQueryStringForSearchFilter,
-    isLabelSearchTerm,
+    isKeyValueSearchTerm,
     wrapInQuotes,
 } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
@@ -119,8 +119,8 @@ function AutocompleteSelect({
     );
 
     let autocompleteFilterValue = filterValue ? `r/${filterValue}` : '';
-    if (filterValue && isLabelSearchTerm(searchTerm)) {
-        autocompleteFilterValue = formatLabelValue(filterValue, (v) => `r/${v}`).join(',');
+    if (filterValue && isKeyValueSearchTerm(searchTerm)) {
+        autocompleteFilterValue = formatKeyValue(filterValue, (v) => `r/${v}`).join(',');
     }
     const autocompleteSearchString = `${searchTerm}:${autocompleteFilterValue}`;
 

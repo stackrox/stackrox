@@ -6,13 +6,13 @@ import {
     convertToExactMatch,
     convertToRestSearch,
     deleteKeysCaseInsensitive,
-    formatLabelValue,
+    formatKeyValue,
     getListQueryParams,
     getPaginationParams,
     getSearchFilterFromSearchString,
     getViewStateFromSearch,
     hasSearchKeyValue,
-    isLabelSearchTerm,
+    isKeyValueSearchTerm,
     searchValueAsArray,
     wrapInQuotes,
 } from './searchUtils';
@@ -435,50 +435,45 @@ describe('searchUtils', () => {
         });
     });
 
-    describe('isLabelSearchTerm', () => {
+    describe('isKeyValueSearchTerm', () => {
         it('returns true for label search terms', () => {
-            expect(isLabelSearchTerm('Deployment Label')).toBe(true);
-            expect(isLabelSearchTerm('Image Label')).toBe(true);
-            expect(isLabelSearchTerm('Node Label')).toBe(true);
-            expect(isLabelSearchTerm('Namespace Label')).toBe(true);
-            expect(isLabelSearchTerm('Cluster Label')).toBe(true);
+            expect(isKeyValueSearchTerm('Deployment Label')).toBe(true);
+            expect(isKeyValueSearchTerm('Image Label')).toBe(true);
+            expect(isKeyValueSearchTerm('Node Label')).toBe(true);
+            expect(isKeyValueSearchTerm('Namespace Label')).toBe(true);
+            expect(isKeyValueSearchTerm('Cluster Label')).toBe(true);
         });
 
         it('returns true for label search terms in any case', () => {
-            expect(isLabelSearchTerm('deployment label')).toBe(true);
-            expect(isLabelSearchTerm('DEPLOYMENT LABEL')).toBe(true);
-            expect(isLabelSearchTerm('dEpLoYmEnT lAbEl')).toBe(true);
+            expect(isKeyValueSearchTerm('deployment label')).toBe(true);
+            expect(isKeyValueSearchTerm('DEPLOYMENT LABEL')).toBe(true);
+            expect(isKeyValueSearchTerm('dEpLoYmEnT lAbEl')).toBe(true);
         });
 
         it('returns false for non-label search terms', () => {
-            expect(isLabelSearchTerm('Cluster')).toBe(false);
-            expect(isLabelSearchTerm('Deployment')).toBe(false);
-            expect(isLabelSearchTerm('Image')).toBe(false);
+            expect(isKeyValueSearchTerm('Cluster')).toBe(false);
+            expect(isKeyValueSearchTerm('Deployment')).toBe(false);
+            expect(isKeyValueSearchTerm('Image')).toBe(false);
         });
     });
 
-    describe('formatLabelValue', () => {
+    describe('formatKeyValue', () => {
         it('splits on first equals sign and applies formatter to each part', () => {
-            expect(formatLabelValue('app=reporting', wrapInQuotes)).toEqual(['"app"="reporting"']);
-            expect(formatLabelValue('app=reporting', (v) => `r/${v}`)).toEqual([
-                'r/app=r/reporting',
-            ]);
+            expect(formatKeyValue('app=reporting', wrapInQuotes)).toEqual(['"app"="reporting"']);
+            expect(formatKeyValue('app=reporting', (v) => `r/${v}`)).toEqual(['r/app=r/reporting']);
         });
 
         it('handles values with multiple equals signs by splitting on the first', () => {
-            expect(formatLabelValue('key=val=extra', wrapInQuotes)).toEqual(['"key"="val=extra"']);
+            expect(formatKeyValue('key=val=extra', wrapInQuotes)).toEqual(['"key"="val=extra"']);
         });
 
         it('returns two entries for key OR value matching when no equals sign is present', () => {
-            expect(formatLabelValue('visa', wrapInQuotes)).toEqual(['"visa"=r/.*', 'r/.*="visa"']);
-            expect(formatLabelValue('visa', (v) => `r/${v}`)).toEqual([
-                'r/visa=r/.*',
-                'r/.*=r/visa',
-            ]);
+            expect(formatKeyValue('visa', wrapInQuotes)).toEqual(['"visa"=r/.*', 'r/.*="visa"']);
+            expect(formatKeyValue('visa', (v) => `r/${v}`)).toEqual(['r/visa=r/.*', 'r/.*=r/visa']);
         });
 
         it('escapes internal double quotes in key and value', () => {
-            expect(formatLabelValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k\\"ey"="v\\"al"']);
+            expect(formatKeyValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k\\"ey"="v\\"al"']);
         });
     });
 

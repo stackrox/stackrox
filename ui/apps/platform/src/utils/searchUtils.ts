@@ -432,7 +432,7 @@ const regexSearchOptions = [
  Search terms that use the key=value label format and need special handling
  in both regex and exact-match search modes.
 */
-const labelSearchOptions: Set<string> = new Set(
+const keyValueSearchOptions: Set<string> = new Set(
     [
         'Cluster Label',
         'Deployment Annotation',
@@ -450,8 +450,8 @@ const labelSearchOptions: Set<string> = new Set(
     ].map((label) => label.toLowerCase())
 );
 
-export function isLabelSearchTerm(searchTerm: string): boolean {
-    return labelSearchOptions.has(searchTerm.toLowerCase());
+export function isKeyValueSearchTerm(searchTerm: string): boolean {
+    return keyValueSearchOptions.has(searchTerm.toLowerCase());
 }
 
 function isQuotedString(value: string): boolean {
@@ -475,7 +475,7 @@ export function wrapInQuotes(value: string): string {
  * Used for both exact-match (formatter = wrapInQuotes) and regex (formatter = r/ prefix)
  * label formatting.
  */
-export function formatLabelValue(value: string, formatPart: (part: string) => string): string[] {
+export function formatKeyValue(value: string, formatPart: (part: string) => string): string[] {
     const eqIndex = value.indexOf('=');
     if (eqIndex !== -1) {
         const key = value.slice(0, eqIndex);
@@ -503,12 +503,12 @@ export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFil
 
     Object.entries(regexSearchFilter).forEach(([key, value]) => {
         if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
-            const isLabel = isLabelSearchTerm(key);
+            const isLabel = isKeyValueSearchTerm(key);
             regexSearchFilter[key] = searchValueAsArray(value).flatMap((val) => {
                 if (isLabel) {
                     const rawValue = isQuotedString(val) ? val.slice(1, -1) : val;
                     const formatter = isQuotedString(val) ? wrapInQuotes : (v: string) => `r/${v}`;
-                    return formatLabelValue(rawValue, formatter);
+                    return formatKeyValue(rawValue, formatter);
                 }
                 return isQuotedString(val) ? val : `r/${val}`;
             });
