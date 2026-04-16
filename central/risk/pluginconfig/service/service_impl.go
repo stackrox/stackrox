@@ -22,11 +22,11 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.WorkflowAdministration)): {
+		user.With(permissions.View(resources.DeploymentExtension)): {
 			v1.RiskScoringPluginService_ListRiskScoringPluginConfigs_FullMethodName,
 			v1.RiskScoringPluginService_GetRiskScoringPluginConfig_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.RiskScoringPluginService_UpsertRiskScoringPluginConfig_FullMethodName,
 			v1.RiskScoringPluginService_DeleteRiskScoringPluginConfig_FullMethodName,
 		},
