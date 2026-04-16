@@ -46,7 +46,7 @@ func TestKeyCase(t *testing.T) {
 	})
 }
 
-func TestGetMatching(t *testing.T) {
+func TestGetMatchingValues(t *testing.T) {
 	cases := map[string]struct {
 		headers  http.Header
 		key      string
@@ -57,13 +57,13 @@ func TestGetMatching(t *testing.T) {
 			headers:  nil,
 			key:      "Missing",
 			pattern:  NoHeaderOrAnyValue,
-			expected: nil,
+			expected: []string{},
 		},
-		"absent key returns nil regardless of pattern": {
+		"absent key returns empty on NoHeaderOrAnyValue": {
 			headers:  http.Header{},
 			key:      "Missing",
 			pattern:  NoHeaderOrAnyValue,
-			expected: nil,
+			expected: []string{},
 		},
 		"key with no values, matching pattern returns empty slice": {
 			headers:  http.Header{"Key": {}},
@@ -116,8 +116,39 @@ func TestGetMatching(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			result := Headers(tc.headers).GetMatching(tc.key, tc.pattern)
+			result := Headers(tc.headers).getMatchingValues(tc.key, tc.pattern)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+func TestGetMatching_withKeyPattern(t *testing.T) {
+	h := make(http.Header)
+	h.Add("key-1", "value 1")
+	h.Add("key-2", "value 2")
+	h.Add("key-2", "value 1")
+	h.Add("something-else", "value 2")
+	h.Add("something-else", "value 3")
+
+	headers := Headers(h)
+	matching := headers.GetMatching("Key-*", "value 1")
+	assert.Equal(t, map[string][]string{"Key-1": {"value 1"}, "Key-2": {"value 1"}}, matching)
+
+	matching = headers.GetMatching("nope", "value 1")
+	assert.Nil(t, matching)
+
+	matching = headers.GetMatching("Key-1", "nope")
+	assert.Nil(t, matching)
+
+	matching = headers.GetMatching("Key-[1-]", "nope")
+	assert.Nil(t, matching, "nil as bad pattern")
+
+	matching = headers.GetMatching("Key-1", "value [1-]")
+	assert.Nil(t, matching, "nil as bad pattern")
+
+	matching = headers.GetMatching("Key-??", NoHeaderOrAnyValue)
+	assert.Equal(t, map[string][]string{}, matching)
+
+	matching = headers.GetMatching("*", "value [2-3]")
+	assert.Equal(t, map[string][]string{"Something-Else": {"value 2", "value 3"}, "Key-2": {"value 2"}}, matching)
 }
