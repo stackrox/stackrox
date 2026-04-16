@@ -136,6 +136,21 @@ jobs:
             sudo chmod 0666 /dev/kvm || true
             sudo chmod 0644 /boot/vmlinuz-* || true
             echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns >/dev/null || true
+            # Ubuntu 24.04 ships an AppArmor profile for /usr/bin/passt that
+            # confines passt's writable paths to its own tmpdir. libguestfs
+            # launches passt with --pid under its own /run/user/*/libguestfs*/
+            # dir, which the profile doesn't permit, causing
+            # "PID file open: Permission denied" and `passt exited with
+            # status 1`. Unload the profile (keep AppArmor on for everything
+            # else).
+            if [[ -f /etc/apparmor.d/usr.bin.passt ]]; then
+              sudo apparmor_parser -R /etc/apparmor.d/usr.bin.passt || true
+              sudo ln -sf /etc/apparmor.d/usr.bin.passt /etc/apparmor.d/disable/ || true
+            fi
+            if [[ -f /etc/apparmor.d/passt ]]; then
+              sudo apparmor_parser -R /etc/apparmor.d/passt || true
+              sudo ln -sf /etc/apparmor.d/passt /etc/apparmor.d/disable/ || true
+            fi
             ls -l /dev/kvm
           fi
 
