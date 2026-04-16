@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/configmap"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
@@ -47,8 +48,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/store"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
-	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
@@ -78,6 +79,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			[]pubsub.LaneConfig{
 				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
 				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
+				lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
+				lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
 			},
 		))
 		if err != nil {
@@ -89,7 +92,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
 	storeProvider := resources.InitializeStore(hm)
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.Deployments(), storeProvider.Pods())
+
+	var namespaces store.NamespaceStore
+	if features.LabelBasedPolicyScoping.Enabled() {
+		namespaces = storeProvider.Namespaces()
+	}
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
@@ -140,7 +148,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes())
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels())
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {
@@ -153,7 +161,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	processPipeline, err := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating process pipeline")
+	}
 	if cfg.processPipelineObserver != nil {
 		cfg.processPipelineObserver(processPipeline)
 	}
@@ -218,7 +229,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	sensorNamespace := pods.GetPodNamespace()
 
 	if admCtrlSettingsMgr != nil {
-		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
+		components = append(components,
+			configmap.NewConfigMapPersister(
+				"admissionController",
+				sensorNamespace,
+				cfg.k8sClient.Kubernetes(),
+				admCtrlSettingsMgr.ConfigMapStream().Iterator(false),
+			),
+		)
 	}
 
 	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {

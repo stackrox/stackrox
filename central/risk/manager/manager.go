@@ -356,7 +356,12 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 	}
 
 	imageComponent.RiskScore = risk.GetScore()
-	// skip direct upsert here since it is handled during image upsert
+	// Update the in-memory ranker so that downstream updateComponentRisk
+	// in the imagev2 datastore reads the correct score before DB write.
+	e.imageComponentRanker.Add(
+		scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex),
+		risk.GetScore(),
+	)
 }
 
 // reprocessNodeComponentRisk will reprocess risk of node components and save the results.
@@ -370,7 +375,12 @@ func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.Embedded
 	}
 
 	nodeComponent.RiskScore = risk.GetScore()
-	// skip direct upsert here since it is handled during node upsert
+	// Update the in-memory ranker so that downstream updateComponentRisk
+	// in the node datastore reads the correct score before DB write.
+	e.nodeComponentRanker.Add(
+		scancomponent.ComponentID(nodeComponent.GetName(), nodeComponent.GetVersion(), os),
+		risk.GetScore(),
+	)
 }
 
 func (e *managerImpl) updateNamespaceRisk(nsID string, oldDeploymentScore float32, newDeploymentScore float32) {

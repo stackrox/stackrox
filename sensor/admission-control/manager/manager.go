@@ -20,6 +20,7 @@ type Manager interface {
 
 	SettingsUpdateC() chan<- *sensor.AdmissionControlSettings
 	ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest
+	ImageCacheInvalidationC() chan<- *sensor.AdmCtrlImageCacheInvalidation
 
 	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
 	SensorConnStatusFlag() *concurrency.Flag
@@ -41,5 +42,6 @@ type Manager interface {
 // New creates a new admission control manager
 func New(conn *grpc.ClientConn, namespace string) Manager {
 	cacheSize := int64(env.AdmissionControlImageCacheMaxSizeMB.IntegerSetting())
-	return NewManager(namespace, cacheSize*size.MB, sensor.NewImageServiceClient(conn), sensor.NewDeploymentServiceClient(conn))
+	imageNameCacheEnabled := env.AdmissionControlImageNameCacheEnabled.BooleanSetting()
+	return NewManager(namespace, cacheSize*size.MB, imageNameCacheEnabled, sensor.NewImageServiceClient(conn), sensor.NewDeploymentServiceClient(conn))
 }

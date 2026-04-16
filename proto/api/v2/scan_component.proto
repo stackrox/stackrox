@@ -24,8 +24,6 @@ message ScanComponent {
     UNSCANNED = 1;
   }
   repeated Note notes = 8;
-
-  // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
 }
 
 enum SourceType {

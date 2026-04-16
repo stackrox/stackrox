@@ -60,72 +60,305 @@ If **stackrox/ui** is your workspace root folder, you can create or edit stackro
 
 ### Running as an OpenShift Console plugin
 
-A subset of the code can also be embedded in the OpenShift Console UI using webpack federated modules. The build tooling for
-this is completely separate from the build tooling for the standalone version, but both versions share a large amount of application code.
+A subset of the code can also be embedded in the OpenShift Console UI using
+[webpack federated modules](https://webpack.js.org/concepts/module-federation/).
+The build tooling for this is completely separate from the build tooling for the
+standalone version, but both versions share a large amount of application code.
 
-**Prerequisites**
+For additional reference, see the
+[OpenShift Console Plugin SDK docs](https://github.com/openshift/console/tree/main/frontend/packages/console-dynamic-plugin-sdk)
+and the [console-plugin-template](https://github.com/openshift/console-plugin-template?tab=readme-ov-file#development)
+repository.
 
-For additional reference, see the [console-plugin-template](https://github.com/openshift/console-plugin-template?tab=readme-ov-file#development) repository.
+#### How the plugin works
 
-You need
+OpenShift Console uses webpack Module Federation to load plugins at runtime. The
+key concepts are:
+
+- **Host / Remote**: The console is the "host" application. Our plugin is a
+  "remote" that exposes named modules (React components) via a manifest.
+- **Shared singletons**: Certain dependencies (React, Redux, PatternFly
+  Topology, react-router, etc.) are provided by the console as singletons.
+  Plugins use the console's copy at runtime -- they cannot bundle their own.
+  See [Compatibility](#compatibility) for the full list and implications.
+- **ConsolePlugin CRD**: In production, the console discovers plugins via a
+  `ConsolePlugin` custom resource that points to the Service and base path
+  serving the plugin manifest and bundles.
+
+The plugin webpack config (`webpack.ocp-plugin.config.js`) uses the
+`ConsoleRemotePlugin` from `@openshift-console/dynamic-plugin-sdk-webpack`,
+which wraps Module Federation with console-specific conventions. It generates
+the manifest, declares shared modules, and registers console
+[extensions](https://github.com/openshift/console/tree/main/frontend/packages/console-dynamic-plugin-sdk/docs)
+(routes, nav items, resource tabs, context providers).
+
+#### Authentication and request flow
+
+The plugin never talks to Central directly. All API requests flow through the
+console's proxy and `sensor-proxy`, which handles authentication and
+authorization using the user's existing OpenShift session.
+
+```txt
+Browser (OpenShift Console)
+  |
+  |  Plugin component calls axios.get('/v1/...')
+  |
+  v
+consoleFetchAxiosAdapter (src/ConsolePlugin/consoleFetchAxiosAdapter.ts)
+  |  Overrides axios default adapter
+  |  Injects ACS-AUTH-NAMESPACE-SCOPE header (active namespace)
+  |  Calls consoleFetch() from SDK (adds user's OCP bearer token + CSRF)
+  |
+  v
+Console Proxy
+  |  Route: /api/proxy/plugin/advanced-cluster-security/api-service/...
+  |  ConsolePlugin CRD proxy config: authorization: UserToken
+  |  Console injects the user's bearer token into the upstream request
+  |
+  v
+sensor-proxy (in-cluster Service, port 443)
+  |  Validates OCP token against Kubernetes RBAC
+  |  Applies ACS RBAC based on namespace scope header
+  |  Forwards authenticated request to Central
+  |
+  v
+Central
+  |  Generates dynamic access scope
+  |  Processes request with full auth context
+  |  Returns data filtered by user permissions
+```
+
+#### Code structure
+
+The plugin-specific code lives in `src/ConsolePlugin/`. Everything else under
+`src/` (providers, services, hooks, components in `Containers/`) is shared
+between the standalone UI and the plugin.
+
+```txt
+src/
+├── index.tsx                         # Standalone UI entry point
+├── ConsolePlugin/                    # Plugin-specific code and wrappers
+│   ├── PluginProvider.tsx            # Context provider: sets up axios adapter,
+│   │                                 #   wraps shared providers (auth, flags, etc.)
+│   ├── consoleFetchAxiosAdapter.ts   # Bridges axios -> consoleFetch (SDK)
+│   ├── ScopeContext.tsx              # Tracks active namespace from console
+│   ├── PluginContent.tsx             # Permission gate wrapper
+│   ├── hooks/                        # Plugin-specific hooks
+│   │   ├── useAnalyticsPageView.ts
+│   │   ├── useDefaultWorkloadCveViewContext.ts
+│   │   └── useWorkloadId.ts
+│   ├── Components/                  # Plugin-specific general UI components
+│   │
+│   │   # Exposed modules (entry points registered as console extensions):
+│   ├── SecurityVulnerabilitiesPage/  # Top-level /acs/security/vulnerabilities route
+│   ├── CveDetailPage/               # CVE detail route
+│   ├── ImageDetailPage/             # Image detail route
+│   ├── WorkloadSecurityTab/         # "Security" tab on Deployment, StatefulSet, etc.
+│   ├── AdministrationNamespaceSecurityTab/  # "Security" tab on Namespace
+│   └── ProjectSecurityTab/          # "Security" tab on Project
+│
+├── Containers/Vulnerabilities/       # Vuln Management page components - shared
+├── providers/                        # Shared context providers
+├── services/                         # Shared API service functions
+└── hooks/                            # Shared hooks
+```
+
+Each exposed module is a thin wrapper that imports shared
+components from `Containers/` and adds plugin-specific concerns like namespace
+scoping and analytics tracking.
+
+#### Adding a new plugin extension
+
+To add a new UI surface to the console plugin (e.g. a new tab on a Kubernetes
+resource, or a new route), follow these steps. For the full list of available
+extension types, see the
+[Console SDK extension docs](https://github.com/openshift/console/tree/main/frontend/packages/console-dynamic-plugin-sdk/docs).
+
+1. **Create the entry point component** in `src/ConsolePlugin/YourExtension/YourExtension.tsx`.
+
+    Keep it minimal -- import shared components and add only what's plugin-specific.
+    Use existing entry points as templates. For example, a resource tab:
+
+    ```tsx
+    // src/ConsolePlugin/MyResourceSecurityTab/MyResourceSecurityTab.tsx
+    import { useParams } from 'react-router-dom-v5-compat';
+
+    import SomeSharedComponent from 'Containers/SomeArea/SomeSharedComponent';
+    import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
+
+    export function MyResourceSecurityTab() {
+        useAnalyticsPageView();
+        const { ns, name } = useParams();
+
+        return <SomeSharedComponent namespace={ns} name={name} />;
+    }
+    ```
+
+2. **Register the exposed module** in `webpack.ocp-plugin.config.js` under
+   `pluginMetadata.exposedModules`:
+
+    ```js
+    exposedModules: {
+        // ...existing modules
+        MyResourceSecurityTab: './ConsolePlugin/MyResourceSecurityTab/MyResourceSecurityTab',
+    },
+    ```
+
+3. **Add the console extension** in the `extensions` array in the same file.
+
+    For a horizontal nav tab on a Kubernetes resource:
+
+    ```js
+    {
+        type: 'console.tab/horizontalNav',
+        properties: {
+            model: {
+                group: 'apps',
+                kind: 'MyResource',
+                version: 'v1',
+            },
+            page: {
+                name: 'Security',
+                href: 'security',
+            },
+            component: { $codeRef: 'MyResourceSecurityTab.MyResourceSecurityTab' },
+        },
+    },
+    ```
+
+    For a new route:
+
+    ```js
+    {
+        type: 'console.page/route',
+        properties: {
+            exact: true,
+            path: '/acs/my-area/my-page',
+            component: { $codeRef: 'MyPage.MyPage' },
+        },
+    },
+    ```
+
+4. **Test it** by running the plugin dev environment (see [Running the plugin](#running-the-plugin)
+   below) and navigating to the resource or route in the console.
+
+#### Compatibility
+
+The plugin's runtime environment is controlled by the OpenShift Console, not by
+us. The console provides a set of
+[shared singleton modules](https://github.com/openshift/console/blob/release-4.19/frontend/packages/console-dynamic-plugin-sdk/src/shared-modules/shared-modules-meta.ts)
+that plugins **must** use -- you cannot bundle your own copy of these libraries.
+At runtime, the console's version is what executes, regardless of what version
+is in our `package.json`.
+
+The shared modules ([shared-modules-meta.ts](https://github.com/openshift/console/blob/main/frontend/packages/console-dynamic-plugin-sdk/src/shared-modules/shared-modules-meta.ts)) (as of console 4.19) are:
+
+- `react` / `react-dom`
+- `react-redux`
+- `react-router`
+- `react-router-dom`
+- `react-router-dom-v5-compat`
+- `react-i18next`
+- `redux`
+- `redux-thunk`
+- `@openshift-console/dynamic-plugin-sdk`
+- `@openshift-console/dynamic-plugin-sdk-internal`
+- `@patternfly/react-topology`
+
+All are singletons with no fallback allowed.
+
+Libraries **not** in this list (e.g. `@patternfly/react-core`,
+`@patternfly/react-table`, `@patternfly/react-icons`, `axios`, `@apollo/client`)
+are bundled in our plugin and can be versioned independently.
+
+**Note that although _we_ provide `@patterfly/react-core`, the console plugin build strips out PatternFlyCSS.
+This means that although we do ship the PatternFly runtime code, we are still limited to the styles provided
+by the console.**
+
+**What this means in practice:**
+
+- **React version**: Console 4.19 ships React 17. Our `package.json` declares
+  React 18, but the plugin runs on React 17 at runtime. Avoid React 18-only
+  APIs (`useId`, `useDeferredValue`, `useTransition`, `createRoot`, automatic
+  batching) in any code path reachable from the plugin.
+- **react-router**: Console 4.19 ships react-router v5. We use
+  `react-router-dom-v5-compat` for v6-style APIs (`useParams`, `useNavigate`).
+  Note that both `react-router-dom` and `react-router-dom-v5-compat` are
+  deprecated in newer console versions in favor of `react-router` (v7+).
+- **PatternFly**: Non-shared PF packages (react-core, react-table, etc.) are
+  bundled by us, so minor version differences are fine. However, large version
+  gaps between our bundled PF and the console's PF can cause visual
+  inconsistencies (spacing, colors, component behavior).
+  major version bumps that will require migration work when we target newer
+  console releases.
+
+Our webpack config declares `dependencies: { '@console/pluginAPI': '>=4.19.0' }`,
+which means the console will only load our plugin if its API version satisfies
+that constraint.
+
+#### Prerequisites
+
+You need:
 
 1. A running OpenShift cluster and kubeconfig available in order to run the plugin.
 2. `podman` or `docker`
 3. `oc`
 
-**Architecture**
+#### Architecture
 
-A plugin development environment has a handful of network components that can be configured in a variety of ways to talk to one another:
+A plugin development environment has the following network components:
 
-1. A running OpenShift installation
+1. A running OpenShift installation with StackRox secured cluster services installed
 2. A local OpenShift console container
 3. A local development server for the plugin
-4. An API server for the `central` component
+4. An exposed `sensor-proxy` service via LoadBalancer
 
-> When using the plugin via the console web UI, all requests for data to `central` will first be proxied through the console backend. The console _may_ inject authorization
-> headers into each request, overwriting any `Authorization` header that is initially sent in the request. The token injected into this header is the current OpenShift user's opaque
-> access token, and must be handled correctly by the backend for this to succeed. **As of today, `central` is unable to do this and all requests will fail.** In other words, the default
-> behavior of the commands in the **Running the plugin** section below will not work without additional configuration. After the backend is developed, we should be able to revert
-> to the bare commands and removed the need for overrides.
+The plugin uses OpenShift user authentication and proxies all API requests through the `sensor-proxy` service, which handles authentication/authorization and forwards requests to Central. This matches the production flow where the console plugin communicates through sensor-proxy rather than directly to Central.
 
-**Running the plugin**
+#### Running the plugin
 
-First, we need to generate an API token against the `central` instance that is intended to be used for development. If `central` was installed through the local `deploy` scripts and the current admin password is available in `../../../deploy/k8s/central-deploy/password` this can be done with the included script:
-
-```sh
-UI_API_TOKEN_NAME=ocp-console-dev UI_API_TOKEN_ROLE=Analyst ./scripts/get-auth-token.sh
-```
-
-Otherwise, generate a new API token via the UI and save it somewhere secure.
-
-Next, start the webpack dev server to make the plugin configuration files and js bundles available. Pass the token obtained above
-to the command:
+First, start the webpack dev server to make the plugin configuration files and js bundles available:
 
 ```sh
 # In a new terminal
-ACS_PROXY_BASE_PATH='/' ACS_CONSOLE_DEV_TOKEN=<your-token> npm run start:ocp-plugin
+npm run start:ocp-plugin
 ```
 
-This will run a webpack development server on http://localhost:9001 serving the plugin files and ensure the UI passes the token in the `Authorization` header of API requests.
-
-Note that the full end-to-end stack will proxy through sensor to central, and append `/proxy/central` to all API requests. The value of `ACS_PROXY_BASE_PATH` allows us to keep the URL bare, which is required in development environments when connecting directly to central. This variable must be set both in the terminal that runs webpack as well as the terminal that runs the console container, as shown below.
+This will run a webpack development server on http://localhost:9001 serving the plugin files.
 
 Next, start a local development version of the console in another terminal:
 
+**Note: running the below `./scripts/start-ocp-console.sh` script will create a LoadBalancer that exposes `sensor-proxy` to the internet. Ensure you are only connected to a development cluster before proceeding.**
+
+
 ```sh
-# With kubectx pointing to your openshift cluster, login via web browser
+# With kubectx pointing to your OpenShift cluster, login via web browser
 oc login --web
 
-# Run the following script to start a local instance of the OCP console as a bridge for plugin development. Disable the console
-# token injection to ensure our API token from above is passed in all requests.
-ACS_PROXY_BASE_PATH='/' ACS_INJECT_OCP_AUTH_TOKEN=false ./scripts/start-ocp-console.sh
-
-# By default, requests will be proxied to the detected central running in the cluster. If you wish to use an alternative central, instead run:
-ACS_PROXY_BASE_PATH='/' ACS_INJECT_OCP_AUTH_TOKEN=false ACS_API_SERVICE_URL=<central-service-url> ./scripts/start-ocp-console.sh
+# Run the following script to start a local instance of the OCP console.
+# This will automatically:
+# - Expose sensor-proxy via a LoadBalancer with NetworkPolicy
+# - Configure the console to use the sensor-proxy endpoint
+# - Clean up resources when the defined expiration time has elapsed
+./scripts/start-ocp-console.sh
 ```
 
-This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in automatically as kubeadmin using the token retrieved via `oc login --web` above. With token injection disabled, all requests will include the central API token specified when running the plugin server. Visit http://localhost:9000 in
-your browser to develop and test the plugin.
+This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in automatically using the token retrieved via `oc login --web` above. The script handles all backend connectivity automatically. Visit http://localhost:9000 in your browser to develop and test the plugin.
+
+**Configuration options**
+
+The console startup script supports the following environment variables:
+
+- `SENSOR_PROXY_NAMESPACE` - Namespace containing sensor-proxy (default: `stackrox`)
+- `SENSOR_PROXY_EXPIRY_HOURS` - Hours until LoadBalancer auto-cleanup (default: `8`)
+- `CONSOLE_PORT` - Local console port (default: `9000`)
+- `CONSOLE_IMAGE` - Console container image (default: `quay.io/openshift/origin-console:latest`)
+
+Example with custom configuration:
+
+```sh
+SENSOR_PROXY_EXPIRY_HOURS=12 ./scripts/start-ocp-console.sh
+```
 
 _Note: At this time https is not supported for local plugin development._
 
@@ -272,7 +505,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
         customize_envVars+=$'\n        value: "true"'
         ```
 
-    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go 
+    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go
 
 5. To turn on a feature flag for **local deployment**, do either or both of the following:
 
@@ -379,7 +612,6 @@ Read and obey comments to add strings or properties **in alphabetical order to m
 1. Edit ui/apps/platform/src/routePaths.ts file.
 
     * Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element.
-
         * Use a **plural** noun for something like **clusters**.
         * Use a **singular** noun for something like **compliance**.
 

@@ -143,6 +143,7 @@ var (
 	ContainerID                  = newFieldLabel("Container ID")
 	ContainerImageDigest         = newFieldLabel("Container Image Digest")
 	ContainerName                = newFieldLabel("Container Name")
+	ContainerType                = newFieldLabel("Container Type")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentHash               = newFieldLabel("Deployment Hash")
 	DeploymentName               = newFieldLabel("Deployment")
@@ -263,6 +264,7 @@ var (
 	ComplianceOperatorProfileName              = newFieldLabel("Compliance Profile Name")
 	ComplianceOperatorConfigProfileName        = newFieldLabel("Compliance Config Profile Name")
 	ComplianceOperatorProfileProductType       = newFieldLabel("Compliance Profile Product Type")
+	ComplianceOperatorProfileOperatorKind      = newFieldLabel("Compliance Profile Operator Kind")
 	ComplianceOperatorProfileVersion           = newFieldLabel("Compliance Profile Version")
 	ComplianceOperatorStandard                 = newFieldLabel("Compliance Standard")
 	ComplianceOperatorControl                  = newFieldLabel("Compliance Control")
@@ -521,6 +523,7 @@ var (
 	TestNestedInt64       = newFieldLabel("Test Nested Int64")
 	TestNested2Int64      = newFieldLabel("Test Nested Int64 2")
 	TestOneofNestedString = newFieldLabel("Test Oneof Nested String")
+	TestUUID              = newFieldLabel("Test UUID")
 
 	TestGrandparentID        = newFieldLabel("Test Grandparent ID")
 	TestGrandparentVal       = newFieldLabel("Test Grandparent Val")

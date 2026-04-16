@@ -62,7 +62,7 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
                         <Tab
                             eventKey="Helm"
                             tabContentId={idHelm}
-                            title={<TabTitleText>Helm chart</TabTitleText>}
+                            title={<TabTitleText>Helm chart (deprecated)</TabTitleText>}
                         />
                     </Tabs>
                     <Divider component="div" />

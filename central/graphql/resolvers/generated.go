@@ -519,6 +519,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resources: Resources",
 		"secrets: [EmbeddedSecret]!",
 		"securityContext: SecurityContext",
+		"type: ContainerType!",
 		"volumes: [Volume]!",
 	}))
 	utils.Must(builder.AddType("ContainerConfig", []string{
@@ -564,6 +565,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerType(0)))
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
@@ -1396,11 +1398,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules", []string{
 		"clusterLabelSelectors: [SetBasedLabelSelector]!",
+		"includedClusterIds: [String!]!",
 		"includedClusters: [String!]!",
 		"includedNamespaces: [SimpleAccessScope_Rules_Namespace]!",
 		"namespaceLabelSelectors: [SetBasedLabelSelector]!",
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules_Namespace", []string{
+		"clusterId: String!",
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
@@ -6492,6 +6496,11 @@ func (resolver *containerResolver) SecurityContext(ctx context.Context) (*securi
 	return resolver.root.wrapSecurityContext(value, true, nil)
 }
 
+func (resolver *containerResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 func (resolver *containerResolver) Volumes(ctx context.Context) ([]*volumeResolver, error) {
 	value := resolver.data.GetVolumes()
 	return resolver.root.wrapVolumes(value, nil)
@@ -6928,6 +6937,24 @@ func (resolver *containerRuntimeInfoResolver) Type(ctx context.Context) string {
 func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
+}
+
+func toContainerType(value *string) storage.ContainerType {
+	if value != nil {
+		return storage.ContainerType(storage.ContainerType_value[*value])
+	}
+	return storage.ContainerType(0)
+}
+
+func toContainerTypes(values *[]string) []storage.ContainerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ContainerType, len(*values))
+	for i, v := range *values {
+		output[i] = toContainerType(&v)
+	}
+	return output
 }
 
 type cosignSignatureResolver struct {
@@ -15161,6 +15188,11 @@ func (resolver *simpleAccessScope_RulesResolver) ClusterLabelSelectors(ctx conte
 	return resolver.root.wrapSetBasedLabelSelectors(value, nil)
 }
 
+func (resolver *simpleAccessScope_RulesResolver) IncludedClusterIds(ctx context.Context) []string {
+	value := resolver.data.GetIncludedClusterIds()
+	return value
+}
+
 func (resolver *simpleAccessScope_RulesResolver) IncludedClusters(ctx context.Context) []string {
 	value := resolver.data.GetIncludedClusters()
 	return value
@@ -15216,6 +15248,11 @@ func (resolver *Resolver) wrapSimpleAccessScope_Rules_NamespacesWithContext(ctx 
 		output[i] = &simpleAccessScope_Rules_NamespaceResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
 }
 
 func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx context.Context) string {

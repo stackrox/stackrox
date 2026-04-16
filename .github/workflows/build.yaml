@@ -28,12 +28,40 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+      build-tag: ${{ steps.build-tag.outputs.tag }}
+      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
+      gotags: ${{ steps.gotags.outputs.gotags }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Compute build tag
+        id: build-tag
+        run: |
+          TAG=$(make --quiet --no-print-directory tag)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute short commit
+        id: short-commit
+        run: |
+          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
+          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute GOTAGS
+        id: gotags
+        run: |
+          GOTAGS=""
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+            # Tag builds (release or nightly) get release GOTAGS
+            GOTAGS="release"
+          fi
+          echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -113,14 +141,9 @@ jobs:
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -129,9 +152,12 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+        with:
+          node-version-file: ui/package.json
 
-      - uses: ./.github/actions/handle-tagged-build
+      - uses: ./.github/actions/cache-ui-dependencies
 
       - name: Fetch UI deps
         run: make -C ui deps
@@ -147,17 +173,21 @@ jobs:
             ui/apps/platform/package-lock.json
 
   pre-build-cli:
+    needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -166,8 +196,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
 
       - name: Build CLI
         run: make cli
@@ -183,22 +211,25 @@ jobs:
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
-      # default - built with environment defaults (see handle-tagged-build & env.mk)
+      # default - built with environment defaults (see env.mk)
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -209,11 +240,13 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
+        with:
+          # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
+          # Default and prerelease share 93% of entries and should use the same cache.
+          key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.9
+        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
       - name: Setup build env for debugging support
         run: |
@@ -259,14 +292,9 @@ jobs:
 
   pre-build-docs:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -275,13 +303,17 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
 
       - name: Generate the swagger docs
         run: |
@@ -295,14 +327,103 @@ jobs:
           path: |
             image/rhel/docs
 
+  pre-build-oss-notice:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Go
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Set up Node.js
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Fetch UI deps
+      run: make -C ui deps
+
+    - name: Generate OSS notice
+      run: make ossls-notice
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: oss-notice
+        path: image/rhel/THIRD_PARTY_NOTICES
+
+  build-operator-bundle:
+    runs-on: ubuntu-latest
+    env:
+      QUAY_ORG: rhacs-eng
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: operator/tools/kubebuilder/go.mod
+          cache: false
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6.2.0
+        with:
+          python-version-file: operator/bundle_helpers/.python-version
+
+      - name: Build Operator Bundle
+        run: make -C operator/ bundle bundle-build
+
+      - name: Push Operator Bundle and Index
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+          make -C operator/ docker-push-bundle | cat
+          make -C operator/ index-build
+          make -C operator/ docker-push-index | cat
+
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-      - pre-build-ui
       - pre-build-cli
-      - pre-build-go-binaries
       - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-oss-notice
+      - pre-build-ui
     # This step will run even if required pre-* steps failed. By following this
     # approach as much of the build matrix as possible is completed despite
     # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
@@ -319,18 +440,9 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Setup build env
         run: |
@@ -365,9 +477,8 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -375,7 +486,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v4
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -385,16 +496,14 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
 
       - name: Checkout submodules
         run: |
             git submodule update --init
-
-      - uses: ./.github/actions/handle-tagged-build
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -422,15 +531,10 @@ jobs:
           name: docs-build
           path: image/rhel/docs
 
-      # needed to restore node_modules for ossls-nostice
-      - uses: ./.github/actions/cache-ui-dependencies
-
-      # explicitly fetch deps just in case cache was not ready
-      - name: Fetch UI deps
-        run: make -C ui deps
-
-      - name: Generate OSS notice
-        run: make ossls-notice
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
@@ -456,6 +560,9 @@ jobs:
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
@@ -463,6 +570,11 @@ jobs:
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
             echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -472,15 +584,41 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
+  push-matching-collector-scanner:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [RHACS_BRANDING, STACKROX_BRANDING]
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
       - name: Push matching collector and scanner images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
-            # Need to free up some space before push_matching_collector_scanner_images() does its pull.
-            docker system prune --all --force
-            source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+          source ./scripts/ci/lib.sh
+          push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"
 
   push-main-manifests:
     runs-on: ubuntu-latest
@@ -493,6 +631,8 @@ jobs:
     # some e2e jobs that require some part of the build matrix can still
     # proceed.
     if: ${{ !cancelled() }}
+    permissions:
+      pull-requests: write
     strategy:
       # Supports four image builds (see Setup build env):
       # STACKROX_BRANDING
@@ -503,18 +643,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
     - name: Setup build env
       run: |
@@ -541,20 +672,20 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
     - name: Checkout submodules
       run: |
         git submodule update --init
-
-    - uses: ./.github/actions/handle-tagged-build
 
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
@@ -568,6 +699,11 @@ jobs:
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
       run: |
         source ./scripts/ci/lib.sh
         echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -584,41 +720,48 @@ jobs:
         fi
         push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
+    - name: Prepare build comment
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        cat > build-comment.md <<EOF
+        ## 🚀 Build Images Ready
+
+        Images are ready for commit ${{ needs.define-job-matrix.outputs.short-commit }}. To use with deploy scripts:
+        \`\`\`bash
+        export MAIN_IMAGE_TAG=${{ needs.define-job-matrix.outputs.build-tag }}
+        \`\`\`
+        EOF
+
     - name: Comment on the PR
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
-      run: |
-        source ./scripts/ci/lib.sh
-        add_build_comment_to_pr
+      uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # ratchet:mshick/add-pr-comment@v3
+      with:
+        message-id: build-images-ready
+        message-path: build-comment.md
 
   build-and-push-operator:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      - pre-build-go-binaries
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      # Proto sources freshness is checked in another workflow.
+      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -627,20 +770,19 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
 
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Download prebuilt operator binaries
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-${{ matrix.arch }}-default
+          path: .
 
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Extract prebuilt binaries
+        run: tar xzf go-binaries-build.tgz
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.9
+        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go release build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
@@ -658,35 +800,20 @@ jobs:
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
-      - name: Build Operator Bundle image
-        if: |
-          matrix.name != 'STACKROX_BRANDING'
-        run: |
-          make -C operator/ bundle bundle-build
-
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
-        run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
-
       - name: Build Operator image
         run: |
-          # The first invocation builds native architecture dependencies, which helps avoid the following error,
-          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
-          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
-          # or in a separate intermediate target.
-          #   + protoc-gen-go
-          #   go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
-          # Once the native architecture dependencies are installed by the above command, the following one
-          # simply builds the actual operator binary for the correct target architecture.
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v4
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -696,7 +823,7 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable
         run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
@@ -705,6 +832,12 @@ jobs:
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
             echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -718,28 +851,6 @@ jobs:
               exit 1
             fi
             echo "Operator image push completed successfully"
-
-      - name: Push bundle image
-        # Skip for external contributions, and for upstream.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ docker-push-bundle | cat
-
-      # Index image can only be built once bundle was pushed
-      - name: Build index
-        # Skip for external contributions and for upstream, as the build relies on the previous image to be pushed.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ index-build
-
-      - name: Push index image
-        # Skip for external contributions, and for upstream.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ docker-push-index | cat
 
   push-operator-manifests:
     runs-on: ubuntu-latest
@@ -760,35 +871,31 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/handle-tagged-build
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
 
     - name: Push operator manifest lists
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
       run: |
         source ./scripts/ci/lib.sh
         echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -804,14 +911,12 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     needs:
     - pre-build-cli
     - pre-build-go-binaries
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -819,6 +924,12 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Go
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -841,7 +952,7 @@ jobs:
         ./scripts/ci/govulncheck.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/**/*.xml'
@@ -859,10 +970,11 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
-      - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
+      - define-job-matrix
       - push-main-manifests
+      - push-matching-collector-scanner
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -874,29 +986,30 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: ./.github/actions/handle-tagged-build
-
       - name: Central login
-        uses: stackrox/central-login@v1
+        uses: stackrox/central-login@a090772359782ced9df63d091123154ce297ac6a # ratchet:stackrox/central-login@v1
         with:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Install roxctl
-        uses: stackrox/roxctl-installer-action@v1
+        uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
         with:
           central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
+        env:
+          BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+          SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+          GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then
@@ -929,19 +1042,21 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - pre-build-ui
-      - pre-build-cli
-      - pre-build-go-binaries
-      - pre-build-docs
       - build-and-push-main
       - build-and-push-operator
-      - scan-images-with-roxctl
+      - build-operator-bundle
+      - pre-build-cli
+      - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-ui
+      - push-matching-collector-scanner
       - scan-go-binaries
+      - scan-images-with-roxctl
     permissions:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
       - name: Slack message
         env:

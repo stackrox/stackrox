@@ -35,6 +35,7 @@ const (
 	SplunkViolation_ViolationInfo_K8S_EVENT     SplunkViolation_ViolationInfo_ViolationType = 2
 	SplunkViolation_ViolationInfo_PROCESS_EVENT SplunkViolation_ViolationInfo_ViolationType = 3
 	SplunkViolation_ViolationInfo_NETWORK_FLOW  SplunkViolation_ViolationInfo_ViolationType = 4
+	SplunkViolation_ViolationInfo_FILE_ACCESS   SplunkViolation_ViolationInfo_ViolationType = 5
 )
 
 // Enum value maps for SplunkViolation_ViolationInfo_ViolationType.
@@ -45,6 +46,7 @@ var (
 		2: "K8S_EVENT",
 		3: "PROCESS_EVENT",
 		4: "NETWORK_FLOW",
+		5: "FILE_ACCESS",
 	}
 	SplunkViolation_ViolationInfo_ViolationType_value = map[string]int32{
 		"UNKNOWN":       0,
@@ -52,6 +54,7 @@ var (
 		"K8S_EVENT":     2,
 		"PROCESS_EVENT": 3,
 		"NETWORK_FLOW":  4,
+		"FILE_ACCESS":   5,
 	}
 )
 
@@ -157,8 +160,10 @@ type SplunkViolation struct {
 	PolicyInfo *SplunkViolation_PolicyInfo  `protobuf:"bytes,5,opt,name=policy_info,json=policyInfo,proto3" json:"policy_info,omitempty"`
 	// extra details for network violation
 	NetworkFlowInfo *storage.Alert_Violation_NetworkFlowInfo `protobuf:"bytes,6,opt,name=network_flow_info,json=networkFlowInfo,proto3" json:"network_flow_info,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// extra details for file access violation
+	FileAccessInfo *SplunkViolation_FileAccessInfo `protobuf:"bytes,7,opt,name=file_access_info,json=fileAccessInfo,proto3" json:"file_access_info,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SplunkViolation) Reset() {
@@ -247,6 +252,13 @@ func (x *SplunkViolation) GetPolicyInfo() *SplunkViolation_PolicyInfo {
 func (x *SplunkViolation) GetNetworkFlowInfo() *storage.Alert_Violation_NetworkFlowInfo {
 	if x != nil {
 		return x.NetworkFlowInfo
+	}
+	return nil
+}
+
+func (x *SplunkViolation) GetFileAccessInfo() *SplunkViolation_FileAccessInfo {
+	if x != nil {
+		return x.FileAccessInfo
 	}
 	return nil
 }
@@ -876,6 +888,139 @@ func (x *SplunkViolation_PolicyInfo) GetPolicyVersion() string {
 	return ""
 }
 
+// From storage.FileAccess — extra details for file access violations.
+type SplunkViolation_FileAccessInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Container-relative path (e.g. /tmp/etc/passwd when /etc is mounted to /tmp/etc)
+	EffectivePath string `protobuf:"bytes,1,opt,name=effective_path,json=effectivePath,proto3" json:"effective_path,omitempty"`
+	// Host path (e.g. /etc/passwd)
+	ActualPath string `protobuf:"bytes,2,opt,name=actual_path,json=actualPath,proto3" json:"actual_path,omitempty"`
+	// Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE"
+	Operation string `protobuf:"bytes,3,opt,name=operation,proto3" json:"operation,omitempty"`
+	// For RENAME operations, the destination paths
+	MovedEffectivePath string `protobuf:"bytes,4,opt,name=moved_effective_path,json=movedEffectivePath,proto3" json:"moved_effective_path,omitempty"`
+	MovedActualPath    string `protobuf:"bytes,5,opt,name=moved_actual_path,json=movedActualPath,proto3" json:"moved_actual_path,omitempty"`
+	// File metadata
+	FileUid      *wrapperspb.UInt32Value `protobuf:"bytes,6,opt,name=file_uid,json=fileUid,proto3" json:"file_uid,omitempty"`
+	FileGid      *wrapperspb.UInt32Value `protobuf:"bytes,7,opt,name=file_gid,json=fileGid,proto3" json:"file_gid,omitempty"`
+	FileMode     *wrapperspb.UInt32Value `protobuf:"bytes,8,opt,name=file_mode,json=fileMode,proto3" json:"file_mode,omitempty"`
+	FileUsername string                  `protobuf:"bytes,9,opt,name=file_username,json=fileUsername,proto3" json:"file_username,omitempty"`
+	FileGroup    string                  `protobuf:"bytes,10,opt,name=file_group,json=fileGroup,proto3" json:"file_group,omitempty"`
+	// Node where the file activity occurred. Present on all file access violations.
+	// For deployment-level violations, deployment context is in SplunkViolation.DeploymentInfo.
+	// For node-level violations (no container/deployment), hostname is the primary location identifier.
+	Hostname      string `protobuf:"bytes,11,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SplunkViolation_FileAccessInfo) Reset() {
+	*x = SplunkViolation_FileAccessInfo{}
+	mi := &file_api_integrations_splunk_service_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SplunkViolation_FileAccessInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SplunkViolation_FileAccessInfo) ProtoMessage() {}
+
+func (x *SplunkViolation_FileAccessInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_api_integrations_splunk_service_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SplunkViolation_FileAccessInfo.ProtoReflect.Descriptor instead.
+func (*SplunkViolation_FileAccessInfo) Descriptor() ([]byte, []int) {
+	return file_api_integrations_splunk_service_proto_rawDescGZIP(), []int{1, 6}
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetEffectivePath() string {
+	if x != nil {
+		return x.EffectivePath
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetActualPath() string {
+	if x != nil {
+		return x.ActualPath
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetMovedEffectivePath() string {
+	if x != nil {
+		return x.MovedEffectivePath
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetMovedActualPath() string {
+	if x != nil {
+		return x.MovedActualPath
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetFileUid() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.FileUid
+	}
+	return nil
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetFileGid() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.FileGid
+	}
+	return nil
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetFileMode() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.FileMode
+	}
+	return nil
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetFileUsername() string {
+	if x != nil {
+		return x.FileUsername
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetFileGroup() string {
+	if x != nil {
+		return x.FileGroup
+	}
+	return ""
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
+}
+
 var File_api_integrations_splunk_service_proto protoreflect.FileDescriptor
 
 const file_api_integrations_splunk_service_proto_rawDesc = "" +
@@ -885,7 +1030,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\n" +
 	"violations\x18\x01 \x03(\v2\x1d.integrations.SplunkViolationR\n" +
 	"violations\x12%\n" +
-	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\xcd\x1a\n" +
+	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\x9a\x1f\n" +
 	"\x0fSplunkViolation\x12R\n" +
 	"\x0eviolation_info\x18\x01 \x01(\v2+.integrations.SplunkViolation.ViolationInfoR\rviolationInfo\x12F\n" +
 	"\n" +
@@ -896,7 +1041,8 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	" \x01(\v2*.integrations.SplunkViolation.ResourceInfoH\x00R\fresourceInfo\x12I\n" +
 	"\vpolicy_info\x18\x05 \x01(\v2(.integrations.SplunkViolation.PolicyInfoR\n" +
 	"policyInfo\x12T\n" +
-	"\x11network_flow_info\x18\x06 \x01(\v2(.storage.Alert.Violation.NetworkFlowInfoR\x0fnetworkFlowInfo\x1a\xa2\x05\n" +
+	"\x11network_flow_info\x18\x06 \x01(\v2(.storage.Alert.Violation.NetworkFlowInfoR\x0fnetworkFlowInfo\x12V\n" +
+	"\x10file_access_info\x18\a \x01(\v2,.integrations.SplunkViolation.FileAccessInfoR\x0efileAccessInfo\x1a\xb3\x05\n" +
 	"\rViolationInfo\x12!\n" +
 	"\fviolation_id\x18\x01 \x01(\tR\vviolationId\x12+\n" +
 	"\x11violation_message\x18\x02 \x01(\tR\x10violationMessage\x12u\n" +
@@ -907,13 +1053,14 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\apod_uid\x18g \x01(\tR\x06podUid\x12%\n" +
 	"\x0econtainer_name\x18h \x01(\tR\rcontainerName\x12L\n" +
 	"\x14container_start_time\x18i \x01(\v2\x1a.google.protobuf.TimestampR\x12containerStartTime\x12!\n" +
-	"\fcontainer_id\x18j \x01(\tR\vcontainerId\"]\n" +
+	"\fcontainer_id\x18j \x01(\tR\vcontainerId\"n\n" +
 	"\rViolationType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aGENERIC\x10\x01\x12\r\n" +
 	"\tK8S_EVENT\x10\x02\x12\x11\n" +
 	"\rPROCESS_EVENT\x10\x03\x12\x10\n" +
-	"\fNETWORK_FLOW\x10\x04\x1a\xbc\x01\n" +
+	"\fNETWORK_FLOW\x10\x04\x12\x0f\n" +
+	"\vFILE_ACCESS\x10\x05\x1a\xbc\x01\n" +
 	"\tAlertInfo\x12\x19\n" +
 	"\balert_id\x18\x01 \x01(\tR\aalertId\x12@\n" +
 	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12L\n" +
@@ -967,7 +1114,22 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\x11policy_categories\x18\x05 \x03(\tR\x10policyCategories\x126\n" +
 	"\x17policy_lifecycle_stages\x18\x06 \x03(\tR\x15policyLifecycleStages\x12'\n" +
 	"\x0fpolicy_severity\x18\a \x01(\tR\x0epolicySeverity\x12%\n" +
-	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersionB\f\n" +
+	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersion\x1a\xe1\x03\n" +
+	"\x0eFileAccessInfo\x12%\n" +
+	"\x0eeffective_path\x18\x01 \x01(\tR\reffectivePath\x12\x1f\n" +
+	"\vactual_path\x18\x02 \x01(\tR\n" +
+	"actualPath\x12\x1c\n" +
+	"\toperation\x18\x03 \x01(\tR\toperation\x120\n" +
+	"\x14moved_effective_path\x18\x04 \x01(\tR\x12movedEffectivePath\x12*\n" +
+	"\x11moved_actual_path\x18\x05 \x01(\tR\x0fmovedActualPath\x127\n" +
+	"\bfile_uid\x18\x06 \x01(\v2\x1c.google.protobuf.UInt32ValueR\afileUid\x127\n" +
+	"\bfile_gid\x18\a \x01(\v2\x1c.google.protobuf.UInt32ValueR\afileGid\x129\n" +
+	"\tfile_mode\x18\b \x01(\v2\x1c.google.protobuf.UInt32ValueR\bfileMode\x12#\n" +
+	"\rfile_username\x18\t \x01(\tR\ffileUsername\x12\x1d\n" +
+	"\n" +
+	"file_group\x18\n" +
+	" \x01(\tR\tfileGroup\x12\x1a\n" +
+	"\bhostname\x18\v \x01(\tR\bhostnameB\f\n" +
 	"\n" +
 	"EntityInfoBE\n" +
 	"\"io.stackrox.proto.api.integrationsZ\x1f./api/integrations;integrationsb\x06proto3"
@@ -985,7 +1147,7 @@ func file_api_integrations_splunk_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_integrations_splunk_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_integrations_splunk_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_api_integrations_splunk_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_api_integrations_splunk_service_proto_goTypes = []any{
 	(SplunkViolation_ViolationInfo_ViolationType)(0),           // 0: integrations.SplunkViolation.ViolationInfo.ViolationType
 	(*SplunkViolationsResponse)(nil),                           // 1: integrations.SplunkViolationsResponse
@@ -996,16 +1158,17 @@ var file_api_integrations_splunk_service_proto_goTypes = []any{
 	(*SplunkViolation_DeploymentInfo)(nil),                     // 6: integrations.SplunkViolation.DeploymentInfo
 	(*SplunkViolation_ResourceInfo)(nil),                       // 7: integrations.SplunkViolation.ResourceInfo
 	(*SplunkViolation_PolicyInfo)(nil),                         // 8: integrations.SplunkViolation.PolicyInfo
-	nil,                                                        // 9: integrations.SplunkViolation.DeploymentInfo.DeploymentLabelsEntry
-	nil,                                                        // 10: integrations.SplunkViolation.DeploymentInfo.DeploymentAnnotationsEntry
-	(*storage.Alert_Violation_NetworkFlowInfo)(nil),            // 11: storage.Alert.Violation.NetworkFlowInfo
-	(*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr)(nil), // 12: storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
-	(*timestamppb.Timestamp)(nil),                              // 13: google.protobuf.Timestamp
-	(storage.LifecycleStage)(0),                                // 14: storage.LifecycleStage
-	(*wrapperspb.UInt32Value)(nil),                             // 15: google.protobuf.UInt32Value
-	(*storage.ProcessSignal_LineageInfo)(nil),                  // 16: storage.ProcessSignal.LineageInfo
-	(*storage.Alert_Deployment_Container)(nil),                 // 17: storage.Alert.Deployment.Container
-	(*storage.ContainerImage)(nil),                             // 18: storage.ContainerImage
+	(*SplunkViolation_FileAccessInfo)(nil),                     // 9: integrations.SplunkViolation.FileAccessInfo
+	nil,                                                        // 10: integrations.SplunkViolation.DeploymentInfo.DeploymentLabelsEntry
+	nil,                                                        // 11: integrations.SplunkViolation.DeploymentInfo.DeploymentAnnotationsEntry
+	(*storage.Alert_Violation_NetworkFlowInfo)(nil),            // 12: storage.Alert.Violation.NetworkFlowInfo
+	(*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr)(nil), // 13: storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
+	(*timestamppb.Timestamp)(nil),                              // 14: google.protobuf.Timestamp
+	(storage.LifecycleStage)(0),                                // 15: storage.LifecycleStage
+	(*wrapperspb.UInt32Value)(nil),                             // 16: google.protobuf.UInt32Value
+	(*storage.ProcessSignal_LineageInfo)(nil),                  // 17: storage.ProcessSignal.LineageInfo
+	(*storage.Alert_Deployment_Container)(nil),                 // 18: storage.Alert.Deployment.Container
+	(*storage.ContainerImage)(nil),                             // 19: storage.ContainerImage
 }
 var file_api_integrations_splunk_service_proto_depIdxs = []int32{
 	2,  // 0: integrations.SplunkViolationsResponse.violations:type_name -> integrations.SplunkViolation
@@ -1015,27 +1178,31 @@ var file_api_integrations_splunk_service_proto_depIdxs = []int32{
 	6,  // 4: integrations.SplunkViolation.deployment_info:type_name -> integrations.SplunkViolation.DeploymentInfo
 	7,  // 5: integrations.SplunkViolation.resource_info:type_name -> integrations.SplunkViolation.ResourceInfo
 	8,  // 6: integrations.SplunkViolation.policy_info:type_name -> integrations.SplunkViolation.PolicyInfo
-	11, // 7: integrations.SplunkViolation.network_flow_info:type_name -> storage.Alert.Violation.NetworkFlowInfo
-	12, // 8: integrations.SplunkViolation.ViolationInfo.violation_message_attributes:type_name -> storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
-	0,  // 9: integrations.SplunkViolation.ViolationInfo.violation_type:type_name -> integrations.SplunkViolation.ViolationInfo.ViolationType
-	13, // 10: integrations.SplunkViolation.ViolationInfo.violation_time:type_name -> google.protobuf.Timestamp
-	13, // 11: integrations.SplunkViolation.ViolationInfo.container_start_time:type_name -> google.protobuf.Timestamp
-	14, // 12: integrations.SplunkViolation.AlertInfo.lifecycle_stage:type_name -> storage.LifecycleStage
-	13, // 13: integrations.SplunkViolation.AlertInfo.alert_first_occurred:type_name -> google.protobuf.Timestamp
-	13, // 14: integrations.SplunkViolation.ProcessInfo.process_creation_time:type_name -> google.protobuf.Timestamp
-	15, // 15: integrations.SplunkViolation.ProcessInfo.pid:type_name -> google.protobuf.UInt32Value
-	15, // 16: integrations.SplunkViolation.ProcessInfo.process_uid:type_name -> google.protobuf.UInt32Value
-	15, // 17: integrations.SplunkViolation.ProcessInfo.process_gid:type_name -> google.protobuf.UInt32Value
-	16, // 18: integrations.SplunkViolation.ProcessInfo.process_lineage_info:type_name -> storage.ProcessSignal.LineageInfo
-	9,  // 19: integrations.SplunkViolation.DeploymentInfo.deployment_labels:type_name -> integrations.SplunkViolation.DeploymentInfo.DeploymentLabelsEntry
-	17, // 20: integrations.SplunkViolation.DeploymentInfo.deployment_containers:type_name -> storage.Alert.Deployment.Container
-	10, // 21: integrations.SplunkViolation.DeploymentInfo.deployment_annotations:type_name -> integrations.SplunkViolation.DeploymentInfo.DeploymentAnnotationsEntry
-	18, // 22: integrations.SplunkViolation.DeploymentInfo.deployment_image:type_name -> storage.ContainerImage
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	12, // 7: integrations.SplunkViolation.network_flow_info:type_name -> storage.Alert.Violation.NetworkFlowInfo
+	9,  // 8: integrations.SplunkViolation.file_access_info:type_name -> integrations.SplunkViolation.FileAccessInfo
+	13, // 9: integrations.SplunkViolation.ViolationInfo.violation_message_attributes:type_name -> storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
+	0,  // 10: integrations.SplunkViolation.ViolationInfo.violation_type:type_name -> integrations.SplunkViolation.ViolationInfo.ViolationType
+	14, // 11: integrations.SplunkViolation.ViolationInfo.violation_time:type_name -> google.protobuf.Timestamp
+	14, // 12: integrations.SplunkViolation.ViolationInfo.container_start_time:type_name -> google.protobuf.Timestamp
+	15, // 13: integrations.SplunkViolation.AlertInfo.lifecycle_stage:type_name -> storage.LifecycleStage
+	14, // 14: integrations.SplunkViolation.AlertInfo.alert_first_occurred:type_name -> google.protobuf.Timestamp
+	14, // 15: integrations.SplunkViolation.ProcessInfo.process_creation_time:type_name -> google.protobuf.Timestamp
+	16, // 16: integrations.SplunkViolation.ProcessInfo.pid:type_name -> google.protobuf.UInt32Value
+	16, // 17: integrations.SplunkViolation.ProcessInfo.process_uid:type_name -> google.protobuf.UInt32Value
+	16, // 18: integrations.SplunkViolation.ProcessInfo.process_gid:type_name -> google.protobuf.UInt32Value
+	17, // 19: integrations.SplunkViolation.ProcessInfo.process_lineage_info:type_name -> storage.ProcessSignal.LineageInfo
+	10, // 20: integrations.SplunkViolation.DeploymentInfo.deployment_labels:type_name -> integrations.SplunkViolation.DeploymentInfo.DeploymentLabelsEntry
+	18, // 21: integrations.SplunkViolation.DeploymentInfo.deployment_containers:type_name -> storage.Alert.Deployment.Container
+	11, // 22: integrations.SplunkViolation.DeploymentInfo.deployment_annotations:type_name -> integrations.SplunkViolation.DeploymentInfo.DeploymentAnnotationsEntry
+	19, // 23: integrations.SplunkViolation.DeploymentInfo.deployment_image:type_name -> storage.ContainerImage
+	16, // 24: integrations.SplunkViolation.FileAccessInfo.file_uid:type_name -> google.protobuf.UInt32Value
+	16, // 25: integrations.SplunkViolation.FileAccessInfo.file_gid:type_name -> google.protobuf.UInt32Value
+	16, // 26: integrations.SplunkViolation.FileAccessInfo.file_mode:type_name -> google.protobuf.UInt32Value
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_api_integrations_splunk_service_proto_init() }
@@ -1053,7 +1220,7 @@ func file_api_integrations_splunk_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_integrations_splunk_service_proto_rawDesc), len(file_api_integrations_splunk_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

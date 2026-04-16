@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 
 // BaseImageRepository configures automatic tag discovery for a base image repository.
 // Defines which repository to watch, what tag patterns to match, and health tracking.
-// Next tag: 9
+// Next tag: 12
 message BaseImageRepository {
   // Unique identifier for this repository pattern configuration.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -22,7 +22,17 @@ message BaseImageRepository {
   // Glob pattern for tag filtering (e.g., "8.10-*").
   string tag_pattern = 3;
 
-  // Timestamp of last update (successful poll or configuration change).
+  // Asynchronous lifecycle state of this repository resource.
+  enum Status {
+    CREATED = 0;
+    QUEUED = 1;
+    IN_PROGRESS = 2;
+    READY = 3;
+    FAILED = 4;
+  }
+  Status status = 10;
+
+  // Timestamp of last configuration update.
   google.protobuf.Timestamp updated_at = 4;
 
   // Count of consecutive poll failures (for health tracking).
@@ -42,6 +52,13 @@ message BaseImageRepository {
 
   // User who created the base image repository.
   SlimUser created_by = 8; // @gotags: sql:"ignore_labels(User ID)
+
+  // Timestamp of last attempted poll by the watcher.
+  // NULL means never polled (eligible immediately on next scheduler pass).
+  google.protobuf.Timestamp last_polled_at = 9;
+
+  // Last polling failure message.
+  string last_failure_message = 11;
 }
 
 // BaseImageTag stores cached base image tag metadata.

@@ -5,12 +5,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
@@ -72,16 +74,41 @@ func (s *state) clusterID() string {
 	return clusterID
 }
 
+func (s *state) admissionTimeoutCtx() (context.Context, context.CancelFunc) {
+	timeout := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
+	return context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+}
+
 func (s *state) activeForOperation(op admission.Operation) bool {
 	_, active := s.enforcedOps[op]
 	return active
 }
+
+const (
+	// imageNameCacheSize is the maximum number of entries in the image name-to-cache-key
+	// LRU. Each entry maps a full image name (e.g. "docker.io/library/nginx:1.25") to its
+	// resolved cache key in imageCache. 8192 covers large clusters with aggressive CI/CD
+	// while bounding memory to ~1.6MB. Dead entries (old tags never referenced again) are
+	// naturally evicted by LRU pressure from new entries.
+	imageNameCacheSize = 8192
+)
 
 type manager struct {
 	stopper concurrency.Stopper
 
 	client     sensor.ImageServiceClient
 	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
+	// imageNameToImageCacheKey resolves image full names (e.g. "docker.io/library/nginx:1.25")
+	// to their cache keys in imageCache. This is needed because admission requests for CREATE/UPDATE
+	// operations only contain image names (no digest/ID), so imageKey() returns the full name as the
+	// cache key. After a scan, the cache stores the result under the image's resolved digest. Without this
+	// map, subsequent requests for the same image by name would miss the cache and trigger redundant scans.
+	// Bounded by imageNameCacheSize to prevent unbounded growth during long-lived Sensor sessions.
+	imageNameToImageCacheKey *lru.Cache[string, string]
+	imageNameCacheEnabled    bool
+	imageFetchGroup          *coalescer.Coalescer[*storage.Image]
+
+	imageCacheInvalidationC chan *sensor.AdmCtrlImageCacheInvalidation
 
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
@@ -96,7 +123,8 @@ type manager struct {
 
 	syncC chan *concurrency.Signal
 
-	state atomic.Pointer[state]
+	state         atomic.Pointer[state]
+	clusterLabels atomic.Pointer[map[string]string]
 
 	cacheVersion string
 
@@ -108,10 +136,13 @@ type manager struct {
 }
 
 // NewManager creates a new manager
-func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
+func NewManager(namespace string, maxImageCacheSize int64, imageNameCacheEnabled bool, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
 	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value imageCacheEntry) int64 {
 		return int64(len(key) + value.SizeVT())
 	})
+	utils.CrashOnError(err)
+
+	nameCache, err := lru.New[string, string](imageNameCacheSize)
 	utils.CrashOnError(err)
 
 	podStore := resources.NewPodStore()
@@ -123,17 +154,21 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 		stopper:        concurrency.NewStopper(),
 		syncC:          make(chan *concurrency.Signal),
 
-		client:     imageServiceClient,
-		imageCache: cache,
+		client:                   imageServiceClient,
+		imageCache:               cache,
+		imageNameToImageCacheKey: nameCache,
+		imageNameCacheEnabled:    imageNameCacheEnabled,
+		imageFetchGroup:          coalescer.New[*storage.Image](),
 
 		alertsC: make(chan []*storage.Alert),
 
-		namespaces:       nsStore,
-		deployments:      depStore,
-		pods:             podStore,
-		resourceUpdatesC: make(chan *sensor.AdmCtrlUpdateResourceRequest),
-		initialSyncSig:   concurrency.NewSignal(),
-		depClient:        deploymentServiceClient,
+		namespaces:              nsStore,
+		deployments:             depStore,
+		pods:                    podStore,
+		resourceUpdatesC:        make(chan *sensor.AdmCtrlUpdateResourceRequest),
+		imageCacheInvalidationC: make(chan *sensor.AdmCtrlImageCacheInvalidation),
+		initialSyncSig:          concurrency.NewSignal(),
+		depClient:               deploymentServiceClient,
 
 		ownNamespace: namespace,
 	}
@@ -145,6 +180,24 @@ func (m *manager) currentState() *state {
 
 func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
 	return m.settingsStream
+}
+
+// GetClusterLabels implements scopecomp.ClusterLabelProvider interface.
+func (m *manager) GetClusterLabels(_ context.Context, _ string) (map[string]string, error) {
+	labels := m.clusterLabels.Load()
+	if labels == nil {
+		return nil, nil
+	}
+	return *labels, nil
+}
+
+// GetNamespaceLabels implements scopecomp.NamespaceLabelProvider interface.
+func (m *manager) GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error) {
+	labels, err := m.namespaces.GetNamespaceLabels(ctx, clusterID, namespaceName)
+	if err != nil {
+		return nil, pkgErr.Wrapf(err, "getting namespace labels for %q", namespaceName)
+	}
+	return labels, nil
 }
 
 func (m *manager) IsReady() bool {
@@ -197,6 +250,10 @@ func (m *manager) ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest
 	return m.resourceUpdatesC
 }
 
+func (m *manager) ImageCacheInvalidationC() chan<- *sensor.AdmCtrlImageCacheInvalidation {
+	return m.imageCacheInvalidationC
+}
+
 func (m *manager) InitialResourceSyncSig() *concurrency.Signal {
 	return &m.initialSyncSig
 }
@@ -214,6 +271,8 @@ func (m *manager) run() {
 			m.ProcessNewSettings(newSettings)
 		case req := <-m.resourceUpdatesC:
 			m.processUpdateResourceRequest(req)
+		case inv := <-m.imageCacheInvalidationC:
+			m.processImageCacheInvalidation(inv)
 		default:
 			// Select on syncC only if there is nothing to be read from the main
 			// channels. The duplication of select branches is a bit ugly, but inevitable
@@ -226,6 +285,8 @@ func (m *manager) run() {
 				m.ProcessNewSettings(newSettings)
 			case req := <-m.resourceUpdatesC:
 				m.processUpdateResourceRequest(req)
+			case inv := <-m.imageCacheInvalidationC:
+				m.processImageCacheInvalidation(inv)
 			case syncSig := <-m.syncC:
 				syncSig.Signal()
 			}
@@ -247,11 +308,9 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	// TODO(ROX-33188): Wire cluster and namespace label providers.
-	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
-	// fail closed (not match) in admission control.
-	allK8sEventPolicies := detection.NewPolicySet(nil, nil)
-	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
+	// Manager implements both ClusterLabelProvider and NamespaceLabelProvider interfaces.
+	allK8sEventPolicies := detection.NewPolicySet(m, m)
+	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(m, m), detection.NewPolicySet(m, m)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.AlertsOnMissingEnrichment(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
@@ -277,8 +336,9 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 
-	specOnlyPolicies := detection.NewPolicySet(nil, nil)
-	enrichmentRequiredPolicies := detection.NewPolicySet(nil, nil)
+	// Manager implements both ClusterLabelProvider and NamespaceLabelProvider interfaces.
+	specOnlyPolicies := detection.NewPolicySet(m, m)
+	enrichmentRequiredPolicies := detection.NewPolicySet(m, m)
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 			if policyfields.AlertsOnMissingEnrichment(policy) &&
@@ -286,7 +346,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 				log.Warn(errors.ImageScanUnavailableMsg(policy))
 				continue
 			}
-			compiled, err := detection.CompilePolicy(policy, nil, nil)
+			compiled, err := detection.CompilePolicy(policy, m, m)
 			if err != nil {
 				log.Errorf("Unable to compile policy %q (%s): %v", policy.GetName(), policy.GetId(), err)
 				continue
@@ -346,6 +406,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	if newSettings.GetCacheVersion() != m.cacheVersion {
 		m.imageCache.Purge()
+		m.imageNameToImageCacheKey.Purge()
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
@@ -455,6 +516,10 @@ func (m *manager) processUpdateResourceRequest(req *sensor.AdmCtrlUpdateResource
 		m.pods.ProcessEvent(req.GetAction(), req.GetPod())
 	case *sensor.AdmCtrlUpdateResourceRequest_Namespace:
 		m.namespaces.ProcessEvent(req.GetAction(), req.GetNamespace())
+	case *sensor.AdmCtrlUpdateResourceRequest_ClusterLabels:
+		labels := req.GetClusterLabels().GetLabels()
+		m.clusterLabels.Store(&labels)
+		log.Infof("Updated cluster labels: %v", labels)
 	default:
 		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)
 	}
@@ -462,4 +527,30 @@ func (m *manager) processUpdateResourceRequest(req *sensor.AdmCtrlUpdateResource
 
 func (m *manager) getDeploymentForPod(namespace, podName string) *storage.Deployment {
 	return m.deployments.Get(namespace, m.pods.GetDeploymentID(namespace, podName))
+}
+
+func (m *manager) processImageCacheInvalidation(inv *sensor.AdmCtrlImageCacheInvalidation) {
+	s := m.currentState()
+	flatten := s != nil && s.GetFlattenImageData()
+
+	invalidated := 0
+	for _, key := range inv.GetImageKeys() {
+		cacheKey := key.GetImageId()
+		if flatten && key.GetImageIdV2() != "" {
+			cacheKey = key.GetImageIdV2()
+		}
+		fullName := key.GetImageFullName()
+
+		if cacheKey != "" {
+			m.imageCache.Remove(cacheKey)
+			m.imageFetchGroup.Forget(cacheKey)
+			invalidated++
+		}
+		if fullName != "" {
+			m.imageNameToImageCacheKey.Remove(fullName)
+			m.imageFetchGroup.Forget(fullName)
+		}
+	}
+
+	log.Infof("Targeted image cache invalidation: invalidated %d entries", invalidated)
 }

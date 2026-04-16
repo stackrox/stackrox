@@ -64,7 +64,7 @@ func (lm *multiLineLogMatcher) String() string {
 
 func (lm *multiLineLogMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	if lm.re == nil {
-		return false, fmt.Errorf("invalid matcher config, re is nil")
+		return false, errors.New("invalid matcher config, re is nil")
 	}
 
 	if lm.numLines <= 0 {
@@ -127,7 +127,7 @@ func (lm *notFoundLineMatcher) String() string {
 
 func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	if lm.re == nil {
-		return false, fmt.Errorf("invalid matcher config, re is nil")
+		return false, errors.New("invalid matcher config, re is nil")
 	}
 
 	if lm.fromByte < 0 {

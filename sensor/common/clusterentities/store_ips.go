@@ -83,6 +83,7 @@ func (e *podIPsStore) RecordTick() bool {
 			removedPublic = removedPublic || removed && ip.IsPublic()
 		}
 	}
+	e.updateMetricsNoLock()
 	return removedPublic
 }
 

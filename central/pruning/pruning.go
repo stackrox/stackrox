@@ -15,7 +15,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
@@ -116,7 +116,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	processbaseline processBaselineDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
 	config configDatastore.DataStore,
-	imageComponentsV2 imageComponentV2Datastore.DataStore,
 	risks riskDataStore.DataStore,
 	vulnReqs vulnReqDataStore.DataStore,
 	serviceAccts serviceAccountDataStore.DataStore,
@@ -130,61 +129,59 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	roleStore roleDataStore.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
-		alerts:            alerts,
-		clusters:          clusters,
-		nodes:             nodes,
-		images:            images,
-		imagesV2:          imagesV2,
-		imageComponentsV2: imageComponentsV2,
-		deployments:       deployments,
-		pods:              pods,
-		processes:         processes,
-		processbaseline:   processbaseline,
-		networkflows:      networkflows,
-		config:            config,
-		risks:             risks,
-		vulnReqs:          vulnReqs,
-		serviceAccts:      serviceAccts,
-		k8sRoles:          k8sRoles,
-		k8sRoleBindings:   k8sRoleBindings,
-		logimbueStore:     logimbueStore,
-		stopper:           concurrency.NewStopper(),
-		postgres:          globaldb.GetPostgres(),
-		reportSnapshot:    reportSnapshotDS,
-		plops:             plops,
-		blobStore:         blobStore,
-		nodeCVEStore:      nodeCVEStore,
-		roleStore:         roleStore,
+		alerts:          alerts,
+		clusters:        clusters,
+		nodes:           nodes,
+		images:          images,
+		imagesV2:        imagesV2,
+		deployments:     deployments,
+		pods:            pods,
+		processes:       processes,
+		processbaseline: processbaseline,
+		networkflows:    networkflows,
+		config:          config,
+		risks:           risks,
+		vulnReqs:        vulnReqs,
+		serviceAccts:    serviceAccts,
+		k8sRoles:        k8sRoles,
+		k8sRoleBindings: k8sRoleBindings,
+		logimbueStore:   logimbueStore,
+		stopper:         concurrency.NewStopper(),
+		postgres:        globaldb.GetPostgres(),
+		reportSnapshot:  reportSnapshotDS,
+		plops:           plops,
+		blobStore:       blobStore,
+		nodeCVEStore:    nodeCVEStore,
+		roleStore:       roleStore,
 	}
 }
 
 type garbageCollectorImpl struct {
 	postgres pgPkg.DB
 
-	alerts            alertDatastore.DataStore
-	clusters          clusterDatastore.DataStore
-	nodes             nodeDatastore.DataStore
-	images            imageDatastore.DataStore
-	imagesV2          imageV2Datastore.DataStore
-	imageComponentsV2 imageComponentV2Datastore.DataStore
-	deployments       deploymentDatastore.DataStore
-	pods              podDatastore.DataStore
-	processes         processDatastore.DataStore
-	processbaseline   processBaselineDatastore.DataStore
-	networkflows      networkFlowDatastore.ClusterDataStore
-	config            configDatastore.DataStore
-	risks             riskDataStore.DataStore
-	vulnReqs          vulnReqDataStore.DataStore
-	serviceAccts      serviceAccountDataStore.DataStore
-	k8sRoles          k8sRoleDataStore.DataStore
-	k8sRoleBindings   roleBindingDataStore.DataStore
-	logimbueStore     logimbueDataStore.Store
-	stopper           concurrency.Stopper
-	reportSnapshot    snapshotDS.DataStore
-	plops             plopDataStore.DataStore
-	blobStore         blobDatastore.Datastore
-	nodeCVEStore      nodeCVEDS.DataStore
-	roleStore         roleDataStore.DataStore
+	alerts          alertDatastore.DataStore
+	clusters        clusterDatastore.DataStore
+	nodes           nodeDatastore.DataStore
+	images          imageDatastore.DataStore
+	imagesV2        imageV2Datastore.DataStore
+	deployments     deploymentDatastore.DataStore
+	pods            podDatastore.DataStore
+	processes       processDatastore.DataStore
+	processbaseline processBaselineDatastore.DataStore
+	networkflows    networkFlowDatastore.ClusterDataStore
+	config          configDatastore.DataStore
+	risks           riskDataStore.DataStore
+	vulnReqs        vulnReqDataStore.DataStore
+	serviceAccts    serviceAccountDataStore.DataStore
+	k8sRoles        k8sRoleDataStore.DataStore
+	k8sRoleBindings roleBindingDataStore.DataStore
+	logimbueStore   logimbueDataStore.Store
+	stopper         concurrency.Stopper
+	reportSnapshot  snapshotDS.DataStore
+	plops           plopDataStore.DataStore
+	blobStore       blobDatastore.Datastore
+	nodeCVEStore    nodeCVEDS.DataStore
+	roleStore       roleDataStore.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -1031,7 +1028,6 @@ func (g *garbageCollectorImpl) getAlertsToPrune(query *v1.Query) ([]string, erro
 func (g *garbageCollectorImpl) removeOrphanedRisks() {
 	g.removeOrphanedDeploymentRisks()
 	g.removeOrphanedImageRisks()
-	g.removeOrphanedImageComponentRisks()
 	g.removeOrphanedNodeRisks()
 }
 
@@ -1067,24 +1063,6 @@ func (g *garbageCollectorImpl) removeOrphanedImageRisks() {
 	prunable := imagesWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
 	log.Infof("[Risk pruning] Removing %d image risks", len(prunable))
 	g.removeRisks(storage.RiskSubjectType_IMAGE, prunable...)
-}
-
-func (g *garbageCollectorImpl) removeOrphanedImageComponentRisks() {
-	defer metrics.SetPruningDuration(time.Now(), "ImageCompositionRisks")
-	var prunable []string
-	var results []search.Result
-	var err error
-	componentsWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE_COMPONENT)
-
-	results, err = g.imageComponentsV2.Search(pruningCtx, search.EmptyQuery())
-	if err != nil {
-		log.Errorf("[Risk pruning] Searching image components: %v", err)
-		return
-	}
-
-	prunable = componentsWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
-	log.Infof("[Risk pruning] Removing %d image component risks", len(prunable))
-	g.removeRisks(storage.RiskSubjectType_IMAGE_COMPONENT, prunable...)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedNodeRisks() {

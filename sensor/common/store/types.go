@@ -35,6 +35,13 @@ type PodStore interface {
 	GetByName(podName, namespace string) *storage.Pod
 }
 
+// NamespaceStore provides functionality to fetch all namespaces from underlying store.
+//
+//go:generate mockgen-wrapper
+type NamespaceStore interface {
+	GetAll() []*storage.NamespaceMetadata
+}
+
 // NetworkPolicyStore provides functionality to find matching Network Policies given a deployment
 // object.
 //
@@ -75,6 +82,7 @@ type RBACStore interface {
 type Provider interface {
 	Deployments() DeploymentStore
 	Pods() PodStore
+	Namespaces() NamespaceStore
 	Services() ServiceStore
 	NetworkPolicies() NetworkPolicyStore
 	RBAC() RBACStore

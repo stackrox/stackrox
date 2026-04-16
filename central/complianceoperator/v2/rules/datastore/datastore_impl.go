@@ -71,7 +71,11 @@ func (d *datastoreImpl) GetControlsByRulesAndBenchmarks(ctx context.Context, rul
 	)
 
 	query := builder.ProtoQuery()
-	results, err := pgSearch.RunSelectRequestForSchema[ControlResult](ctx, d.db, postgresSchema.ComplianceOperatorRuleV2Schema, query)
+	var results []*ControlResult
+	err := pgSearch.RunSelectRequestForSchemaFn[ControlResult](ctx, d.db, postgresSchema.ComplianceOperatorRuleV2Schema, query, func(r *ControlResult) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

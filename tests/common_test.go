@@ -4,6 +4,7 @@ package tests
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -81,7 +82,7 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 
 		if currentCall <= 2 {
 			// Simulate network error for first 2 calls
-			return nil, fmt.Errorf("network error: connection refused")
+			return nil, errors.New("network error: connection refused")
 		}
 
 		// Succeed on the 3rd call - return a mock successful response

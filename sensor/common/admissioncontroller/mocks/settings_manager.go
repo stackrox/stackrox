@@ -17,6 +17,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	gomock "go.uber.org/mock/gomock"
+	v1 "k8s.io/api/core/v1"
 )
 
 // MockSettingsManager is a mock of SettingsManager interface.
@@ -43,6 +44,20 @@ func (m *MockSettingsManager) EXPECT() *MockSettingsManagerMockRecorder {
 	return m.recorder
 }
 
+// ConfigMapStream mocks base method.
+func (m *MockSettingsManager) ConfigMapStream() concurrency.ReadOnlyValueStream[*v1.ConfigMap] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigMapStream")
+	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream[*v1.ConfigMap])
+	return ret0
+}
+
+// ConfigMapStream indicates an expected call of ConfigMapStream.
+func (mr *MockSettingsManagerMockRecorder) ConfigMapStream() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigMapStream", reflect.TypeOf((*MockSettingsManager)(nil).ConfigMapStream))
+}
+
 // FlushCache mocks base method.
 func (m *MockSettingsManager) FlushCache() {
 	m.ctrl.T.Helper()
@@ -67,6 +82,32 @@ func (m *MockSettingsManager) GetResourcesForSync() []*sensor.AdmCtrlUpdateResou
 func (mr *MockSettingsManagerMockRecorder) GetResourcesForSync() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResourcesForSync", reflect.TypeOf((*MockSettingsManager)(nil).GetResourcesForSync))
+}
+
+// ImageCacheInvalidationStream mocks base method.
+func (m *MockSettingsManager) ImageCacheInvalidationStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlImageCacheInvalidation] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ImageCacheInvalidationStream")
+	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream[*sensor.AdmCtrlImageCacheInvalidation])
+	return ret0
+}
+
+// ImageCacheInvalidationStream indicates an expected call of ImageCacheInvalidationStream.
+func (mr *MockSettingsManagerMockRecorder) ImageCacheInvalidationStream() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageCacheInvalidationStream", reflect.TypeOf((*MockSettingsManager)(nil).ImageCacheInvalidationStream))
+}
+
+// InvalidateImageCache mocks base method.
+func (m *MockSettingsManager) InvalidateImageCache(keys []*central.ImageKey) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "InvalidateImageCache", keys)
+}
+
+// InvalidateImageCache indicates an expected call of InvalidateImageCache.
+func (mr *MockSettingsManagerMockRecorder) InvalidateImageCache(keys any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InvalidateImageCache", reflect.TypeOf((*MockSettingsManager)(nil).InvalidateImageCache), keys)
 }
 
 // SensorEventsStream mocks base method.

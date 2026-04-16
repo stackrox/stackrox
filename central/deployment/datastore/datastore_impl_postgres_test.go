@@ -446,7 +446,11 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 		{2, "daemonset"},
 		{1, "replicaset"},
 	}
-	results, err := postgres.RunSelectRequestForSchema[deploymentCountByType](ctx, testDB.DB, schema.DeploymentsSchema, q)
+	var results []*deploymentCountByType
+	err = postgres.RunSelectRequestForSchemaFn[deploymentCountByType](ctx, testDB.DB, schema.DeploymentsSchema, q, func(r *deploymentCountByType) error {
+		results = append(results, r)
+		return nil
+	})
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
 }
@@ -700,12 +704,14 @@ func TestContainerImagesView(t *testing.T) {
 	type imageInfo struct {
 		digest     string
 		clusterIDs []string
+		imageName  *storage.ImageName
 	}
 	responseMap := make(map[string]imageInfo)
 	for _, resp := range responses {
 		responseMap[resp.GetImageID()] = imageInfo{
 			digest:     resp.GetImageDigest(),
 			clusterIDs: resp.GetClusterIDs(),
+			imageName:  resp.GetImageName(),
 		}
 	}
 
@@ -715,6 +721,8 @@ func TestContainerImagesView(t *testing.T) {
 		"sharedImageIDV2_1 should have correct digest")
 	assert.ElementsMatch(t, []string{cluster1, cluster2}, responseMap[sharedImageIDV2_1].clusterIDs,
 		"sharedImageIDV2_1 should be in both cluster1 and cluster2")
+	assert.Equal(t, "nginx:1.0", responseMap[sharedImageIDV2_1].imageName.GetFullName(),
+		"sharedImageIDV2_1 should have correct image name")
 
 	// Verify sharedImageIDV2_2 is only in cluster2 with correct digest
 	assert.Contains(t, responseMap, sharedImageIDV2_2)
@@ -722,6 +730,8 @@ func TestContainerImagesView(t *testing.T) {
 		"sharedImageIDV2_2 should have correct digest")
 	assert.ElementsMatch(t, []string{cluster2}, responseMap[sharedImageIDV2_2].clusterIDs,
 		"sharedImageIDV2_2 should be only in cluster2")
+	assert.Equal(t, "redis:latest", responseMap[sharedImageIDV2_2].imageName.GetFullName(),
+		"sharedImageIDV2_2 should have correct image name")
 
 	// Verify uniqueImageIDV2 is only in cluster2 with correct digest
 	assert.Contains(t, responseMap, uniqueImageIDV2)
@@ -729,4 +739,6 @@ func TestContainerImagesView(t *testing.T) {
 		"uniqueImageIDV2 should have correct digest")
 	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2].clusterIDs,
 		"uniqueImageIDV2 should be only in cluster2")
+	assert.Equal(t, "postgres:15", responseMap[uniqueImageIDV2].imageName.GetFullName(),
+		"uniqueImageIDV2 should have correct image name")
 }

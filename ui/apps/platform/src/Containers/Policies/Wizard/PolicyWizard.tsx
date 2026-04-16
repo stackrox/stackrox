@@ -132,6 +132,19 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     }, [policy]);
 
     function onStepChange(_event, currentStep: WizardStepType): void {
+        if (currentStep.id === POLICY_BEHAVIOR_ACTIONS_ID) {
+            const hasStaleMarker = values.enforcementActions?.some(
+                (a) => a === 'UNSET_ENFORCEMENT'
+            );
+            if (hasStaleMarker) {
+                formik
+                    .setFieldValue(
+                        'enforcementActions',
+                        values.enforcementActions.filter((a) => a !== 'UNSET_ENFORCEMENT')
+                    )
+                    .catch(() => {});
+            }
+        }
         setStepId(currentStep.id);
         scrollToTop();
     }
@@ -179,7 +192,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Details"
                                     id={POLICY_DEFINITION_DETAILS_ID}
-                                    key={POLICY_DEFINITION_DETAILS_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -191,7 +203,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Lifecycle"
                                     id={POLICY_DEFINITION_LIFECYCLE_ID}
-                                    key={POLICY_DEFINITION_LIFECYCLE_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -200,7 +211,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Rules"
                                     id={POLICY_DEFINITION_RULES_ID}
-                                    key={POLICY_DEFINITION_RULES_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -216,7 +226,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Scope"
                                     id={POLICY_BEHAVIOR_SCOPE_ID}
-                                    key={POLICY_BEHAVIOR_SCOPE_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -225,7 +234,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Actions"
                                     id={POLICY_BEHAVIOR_ACTIONS_ID}
-                                    key={POLICY_BEHAVIOR_ACTIONS_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >

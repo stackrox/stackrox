@@ -332,7 +332,7 @@ func TestWithinScope(t *testing.T) {
 		if test.clusterLabels != nil {
 			mockCluster := mocks.NewMockClusterLabelProvider(ctrl)
 			mockCluster.EXPECT().
-				GetClusterLabels(gomock.Any(), gomock.Any()).
+				GetClusterLabels(gomock.Any(), gomock.Eq(test.deployment.GetClusterId())).
 				Return(test.clusterLabels, nil).
 				AnyTimes()
 			clusterProvider = mockCluster
@@ -340,7 +340,7 @@ func TestWithinScope(t *testing.T) {
 		if test.namespaceLabels != nil {
 			mockNamespace := mocks.NewMockNamespaceLabelProvider(ctrl)
 			mockNamespace.EXPECT().
-				GetNamespaceLabels(gomock.Any(), gomock.Any()).
+				GetNamespaceLabels(gomock.Any(), gomock.Eq(test.deployment.GetClusterId()), gomock.Eq(test.deployment.GetNamespace())).
 				Return(test.namespaceLabels, nil).
 				AnyTimes()
 			namespaceProvider = mockNamespace

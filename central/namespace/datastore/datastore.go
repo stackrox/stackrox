@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 //go:generate mockgen-wrapper
@@ -29,7 +32,7 @@ type DataStore interface {
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
-	GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error)
+	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
 	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -273,15 +276,26 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 }
 
 // GetNamespaceLabels returns the labels for the specified namespace.
-func (b *datastoreImpl) GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error) {
-	namespace, exists, err := b.GetNamespace(ctx, namespaceID)
+// TODO: Evaluate metric to see if we need to optimize this function at all
+func (b *datastoreImpl) GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Namespace", "GetNamespaceLabels")
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.Namespace, namespaceName).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery()
+
+	namespaces, err := b.SearchNamespaces(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
+	if len(namespaces) == 0 {
 		return nil, nil
 	}
-	return namespace.GetLabels(), nil
+	if len(namespaces) > 1 {
+		utils.Should(errors.Errorf("found %d namespaces for cluster %q and name %q", len(namespaces), clusterID, namespaceName))
+	}
+	return namespaces[0].GetLabels(), nil
 }
 
 // NamespaceSearchResultConverter implements search.SearchResultConverter for namespace search results.

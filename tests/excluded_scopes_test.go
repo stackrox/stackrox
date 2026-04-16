@@ -12,7 +12,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
@@ -30,28 +29,6 @@ func TestExcludedScopes(t *testing.T) {
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
 	verifyAlertForExcludedScopesRemoval(t, deploymentName)
-}
-
-func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
-	var alerts []*storage.ListAlert
-	// Retry until desired alert count is reached when sensor(s) resync
-	for i := 0; i < 45; i++ {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		resp, err := service.ListAlerts(ctx, req)
-		cancel()
-		require.NoError(t, err)
-		alerts = resp.GetAlerts()
-		if len(alerts) == desired {
-			return
-		}
-		time.Sleep(2 * time.Second)
-	}
-	alertStrings := ""
-	for _, alert := range alerts {
-		alertStrings = fmt.Sprintf("%s%s\n", alertStrings, protocompat.MarshalTextString(alert))
-	}
-	t.Logf("Received alerts:\n%s", alertStrings)
-	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 
 func verifyNoAlertForExcludedScopes(t *testing.T, deploymentName string) {

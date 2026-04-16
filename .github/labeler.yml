@@ -66,13 +66,27 @@ backport:
 - base-branch: 'release-*'
 
 konflux-build:
+# This label triggers Konflux pipelines.
+# The list here should be kept in sync with the CODEOWNERS section for Konflux related files.
 - changed-files:
   - any-glob-to-any-file:
     - '**/konflux*.Dockerfile'
     - .tekton/**/*
     - .konflux/**/*
+    - rpms.*
 
 ai-review:
+- changed-files:
+  - any-glob-to-any-file:
+    - .github/**/*
+    - .openshift-ci/**/*
+    - pkg/auth/**/*
+    - pkg/sac/**/*
+    - roxctl/**/*
+    - scripts/ci/**/
+    - sensor/**/*
+
+coderabbit-review:
 - changed-files:
   - any-glob-to-any-file:
     - .github/**/*

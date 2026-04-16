@@ -173,7 +173,7 @@ message ImageCVEV2 {
   // within the component
   string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   // was hash index, making it btree
-  string image_id = 2 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree"
+  string image_id = 2 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree,allow-null"
   CVEInfo cve_base_info = 3;
   // cvss stores ACS preferred cvss score
   float cvss = 4; // @gotags: search:"CVSS"

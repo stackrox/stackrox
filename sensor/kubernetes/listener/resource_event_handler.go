@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
+	sensorMetrics "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -428,9 +429,7 @@ func (k *listenerImpl) handleAllEvents() {
 		profileGenericInformer := crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource())
 		complianceProfileInformer := profileGenericInformer.Informer()
 		profileLister = profileGenericInformer.Lister()
-		complianceTailoredProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		handle(k.context, informerComplianceProfiles, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
-		handle(k.context, informerComplianceTailoredProfiles, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(profileLister), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, osRouteFactory) {
@@ -457,8 +456,14 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerDeploymentConfigs, osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 
+	// Compliance operator tailored profiles may depend on non-tailored profiles, so we need to start the informer after those were synced
+	if coAvailable {
+		complianceTailoredProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
+		handle(k.context, informerComplianceTailoredProfiles, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(profileLister), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	}
+
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	if !startAndWait(stopSignal, wg, sif, osAppsFactory) {
+	if !startAndWait(stopSignal, wg, sif, osAppsFactory, crdSharedInformerFactory) {
 		return
 	}
 
@@ -551,13 +556,35 @@ func handle(
 	go func() {
 		defer wg.Add(-1)
 		if !cache.WaitForCacheSync(stopSignal.Done(), informer.HasSynced) {
+			log.Warnf("Informer %q: cache sync wait aborted", name)
 			return
 		}
 		tracker.markSynced(name)
-		doneChannel := handlerImpl.PopulateInitialObjects(informer.GetIndexer().List())
-		select {
-		case <-stopSignal.Done():
-		case <-doneChannel:
+		initialObjects := informer.GetIndexer().List()
+		doneChannel := handlerImpl.PopulateInitialObjects(initialObjects)
+		waitStarted := time.Now()
+		warnTicker := time.NewTicker(15 * time.Second)
+		defer warnTicker.Stop()
+		for {
+			select {
+			case <-stopSignal.Done():
+				log.Infof("Informer %q: initial object population wait interrupted after %s", name, time.Since(waitStarted).Truncate(time.Millisecond))
+				return
+			case <-doneChannel:
+				duration := time.Since(waitStarted)
+				sensorMetrics.ObserveInformerInitialObjectPopulationDuration(name, duration)
+				log.Debugf("Informer %q: initial object population completed in %s", name, duration.Truncate(time.Millisecond))
+				return
+			case <-warnTicker.C:
+				missingCount, totalCount := handlerImpl.initialSyncDebugState()
+				log.Infof(
+					"Informer %q: still waiting for initial object population after %s (missing=%d total=%d)",
+					name,
+					time.Since(waitStarted).Truncate(time.Millisecond),
+					missingCount,
+					totalCount,
+				)
+			}
 		}
 	}()
 }

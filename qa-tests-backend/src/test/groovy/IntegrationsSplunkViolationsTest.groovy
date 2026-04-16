@@ -1,132 +1,95 @@
+import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
-import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
-import static util.SplunkUtil.waitForSplunkBoot
-
-import java.nio.file.Paths
-import java.util.concurrent.TimeUnit
+import static util.SplunkUtil.waitForSplunkReady
 
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 
 import common.Constants
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import services.PolicyService
 import util.Env
 import util.NetworkGraphUtil
 import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
+import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
 // ROX-14228 skipping tests for 1st release on power & z
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
-    private static final String ASSETS_DIR = Paths.get(
-            System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
-    private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
-    "2024-09-17-TA-stackrox-2.0.3.spl")
-    // CIM downloaded from https://classic.splunkbase.splunk.com/app/1621/
-    private static final String PATH_TO_CIM_TA_TGZ = Paths.get(ASSETS_DIR,
-    "splunk-common-information-model-cim_511.tgz")
-    private static final String STACKROX_REMOTE_LOCATION = "/tmp/stackrox.spl"
-    private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
     private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
     private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
-            "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule"
+            "Threat - Create Notable from RHACS Alert - Rule"
 
+    @spock.lang.Shared
     private SplunkDeployment splunkDeployment
+    private static final String FACT_CONTAINER = "fact"
+    private static final String COLLECTOR_DS = "collector"
 
     def setupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
-
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
         addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
+
+        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
+        waitForSplunkReady(splunkDeployment.splunkPortForward.getLocalPort())
+
+        String centralHost = orchestrator.getServiceIP("central", "stackrox")
+        configureSplunkTA(splunkDeployment, centralHost)
     }
 
     def cleanupSpec() {
-        orchestrator.deleteNamespace(TEST_NAMESPACE)
-    }
-
-    def setup() {
-        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
-        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
-    }
-
-    def cleanup() {
         if (splunkDeployment) {
             tearDownSplunk(orchestrator, splunkDeployment)
         }
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
-        log.info "Starting Splunk TA configuration"
-        def podName = orchestrator
-                .getPods(TEST_NAMESPACE, splunkDeployment.deployment.getName())
-                .get(0)
-                .getMetadata()
-                .getName()
+        log.info "Configuring Stackrox TA"
         int port = splunkDeployment.splunkPortForward.getLocalPort()
 
-        log.info "Copying TA and CIM app files to splunk pod"
-        orchestrator.copyFileToPod(PATH_TO_SPLUNK_TA_SPL, TEST_NAMESPACE, podName, STACKROX_REMOTE_LOCATION)
-        orchestrator.copyFileToPod(PATH_TO_CIM_TA_TGZ, TEST_NAMESPACE, podName, CIM_REMOTE_LOCATION)
-        log.info "Installing TA"
-        postToSplunk(port, "/services/apps/local",
-                ["name": STACKROX_REMOTE_LOCATION, "filename": "true"])
-        log.info "Installing CIM app"
-        postToSplunk(port, "/services/apps/local",
-                ["name": CIM_REMOTE_LOCATION, "filename": "true"])
-        // fix minimum free disk space parameter
-        // default value is 5Gb and CircleCI free disk space is less than that
-        // that can prevent data from being indexed
-        orchestrator.execInContainer(splunkDeployment.deployment,
-                "sudo /opt/splunk/bin/splunk set minfreemb 200 -auth admin:${SPLUNK_ADMIN_PASSWORD}"
-        )
-        // Splunk needs to be restarted after TA installation
-        log.info "Restarting Splunk to apply settings and TA"
-        postToSplunk(splunkDeployment.splunkPortForward.getLocalPort(), "/services/server/control/restart", [:])
-        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
-
-        log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/configs/conf-ta_stackrox_settings/additional_parameters",
                 ["central_endpoint": "${centralHost}:443",
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
-        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
-                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
+        // UCC-based TAs register inputs via custom REST handlers, not data/inputs/
+        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/TA_stackrox_stackrox_violations",
+                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z",
+                 "index": "main",])
     }
 
     @Tag("Integration")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
-        "Splunk TA is installed and configured, network and process violations triggered"
+        "network and process violations are triggered"
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
-
-        configureSplunkTA(splunkDeployment, centralHost)
         triggerProcessViolation(splunkDeployment)
         triggerNetworkFlowViolation(splunkDeployment, centralHost)
 
         when:
         "Search for violations in Splunk"
-        // Splunk search for violations is volatile for some reason.
-        // We added retries to make this test less flaky.
+        // The TA polls Central every 5s (input interval). Violations may not be indexed yet.
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         withRetry(40, 15) {
             def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
-            TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
             assert response != null
@@ -134,49 +97,146 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert !results.isEmpty()
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
-            log.debug "Violations currently indexed in Splunk: \n${results}"
-            log.info "Current Splunk index contains " +
-                    "any Network Violation: ${hasNetworkViolation} and any Process Violation: ${hasProcessViolation}"
+            log.info "Found ${results.size()} violations in Splunk — " +
+                    "Network: ${hasNetworkViolation}, Process: ${hasProcessViolation}"
             assert hasNetworkViolation && hasProcessViolation
         }
 
-        log.info "Starting conversion of ACS violations to Splunk alerts"
-        // This conversion job is run by the Splunk Cronjob every 5 minutes. We need the created alerts.
-        // This forces an out of schedule run to minimize waiting time for its results.
-        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME +"/dispatch", [
-                "dispatch.now": "true",
-                "force_dispatch": "true",
-        ])
-
-        // Check for Alerts
+        // Query the CIM Alerts data model to validate CIM field extractions (app, severity, etc.).
+        // Use "| datamodel ... search" instead of "| from datamodel" to prevent Splunk's optimizer
+        // from using summariesonly=true on a fresh instance with no acceleration built.
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
         withRetry(40, 15) {
-            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
-            // This can be done by expanding `createSearch` with a new parameter.
-            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
-            TimeUnit.SECONDS.sleep(15)
+            def vSearchId = SplunkUtil.createSearch(port,
+                    "| datamodel Alerts Alerts search | rename Alerts.* AS *" +
+                    " | search sourcetype=stackrox-violations", "-30m")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
-            // We should have at least one violation in the response
             assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
             assert !alerts.isEmpty()
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
-            log.debug "Alerts currently indexed in Splunk: \n${alerts}"
-            log.info "Current Splunk index contains " +
-                    "any Network Alert: ${hasNetworkAlert} and any Process Alert: ${hasProcessAlert}"
+            log.info "Found ${alerts.size()} alerts via data model — " +
+                    "Network: ${hasNetworkAlert}, Process: ${hasProcessAlert}"
             assert hasNetworkAlert && hasProcessAlert
         }
 
         then:
-        "StackRox violations are in Splunk and have been converted to alerts"
+        "StackRox violations are in Splunk with correct CIM field mappings"
         assert !alerts.isEmpty()
         log.info "Validating CIM mappings for alerts"
         for (alert in alerts) {
             validateCimMappings(alert)
         }
+    }
+
+    @Tag("Integration")
+    def "Verify Splunk violations: file access violations reach Splunk TA"() {
+        given:
+        "FACT is enabled in the collector"
+        Assume.assumeTrue(
+                "FACT container not found in collector DaemonSet — skipping file access test",
+                orchestrator.containsDaemonSetContainer(
+                        Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER))
+
+        and:
+        "FACT is configured to monitor /tmp paths"
+        patchFactEnv()
+
+        and:
+        "a file activity policy targeting a unique path"
+        def path = "/tmp/fa-splunk-${UUID.randomUUID()}"
+        def policyName = "FA-Splunk-${UUID.randomUUID()}"
+        def policy = createFileActivityPolicy(policyName, path)
+        def policyID = PolicyService.createNewPolicy(policy)
+        assert policyID
+
+        when:
+        "a file is created at that path inside the Splunk pod"
+        orchestrator.execInContainer(splunkDeployment.deployment, "touch ${path}")
+
+        and:
+        "we wait for the violation to be detected"
+        assert Services.waitForViolation(splunkDeployment.deployment.name, policyName, 90)
+
+        and:
+        "we search for file access violations in Splunk"
+        def port = splunkDeployment.splunkPortForward.getLocalPort()
+        List<Map<String, String>> results = []
+        withRetry(40, 15) {
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
+            Response response = SplunkUtil.getSearchResults(port, searchId)
+            assert response != null
+            results = response.getBody().jsonPath().getList("results")
+            assert results.any { isViolationOfType(it, "FILE_ACCESS") }
+        }
+
+        then:
+        "file access violations are present with correct fields"
+        def fileAccessResults = results.findAll { isViolationOfType(it, "FILE_ACCESS") }
+        assert !fileAccessResults.isEmpty()
+
+        for (result in fileAccessResults) {
+            // Splunk results are flat maps of extracted/CIM fields; nested violation
+            // structure (fileAccessInfo, processInfo, etc.) is only in _raw as a JSON string
+            def originalEvent = new JsonPath(result.get("_raw"))
+            def fileAccessInfo = originalEvent.getMap("fileAccessInfo") ?: [:]
+
+            verifyAll {
+                fileAccessInfo.get("operation") != null
+                fileAccessInfo.get("hostname") != null
+                coalesce(
+                        fileAccessInfo.get("effectivePath"),
+                        fileAccessInfo.get("actualPath")) != null
+            }
+        }
+
+        cleanup:
+        if (policyID) {
+            PolicyService.deletePolicy(policyID)
+        }
+    }
+
+    private void patchFactEnv() {
+        log.info "Setting FACT_PATHS on collector DaemonSet"
+        waitForTrue(20, 20) {
+            orchestrator.updateDaemonSetEnv(
+                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                    "FACT_PATHS", "/tmp/**/*")
+            orchestrator.daemonSetEnvVarUpdated(
+                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                    "FACT_PATHS", "/tmp/**/*")
+            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
+        }
+    }
+
+    private static PolicyOuterClass.Policy createFileActivityPolicy(String name, String path) {
+        return PolicyOuterClass.Policy.newBuilder()
+                .setName(name)
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
+                .setEventSource(PolicyOuterClass.EventSource.DEPLOYMENT_EVENT)
+                .setSeverityValue(2)
+                .addCategories("File Activity Monitoring")
+                .setDisabled(false)
+                .addPolicySections(
+                        PolicyOuterClass.PolicySection.newBuilder()
+                                .setSectionName("file-access")
+                                .addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("File Path")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue(path))
+                                                .build())
+                                .addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("File Operation")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("CREATE"))
+                                                .build())
+                                .build())
+                .build()
     }
 
     private static void validateCimMappings(Map<String, String> result) {
@@ -193,7 +253,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // Note that policyDescription and signature might be absent, i.e. null
         assert result.get("signature") == policyInfo.get("policyDescription")
 
-        // user
+        // user — when processInfo fields are absent (e.g. K8S_EVENT violations),
+        // Splunk's EVAL-user concatenation produces "unknown" rather than null
         def processUid = processInfo.get("processUid")
         def processGid = processInfo.get("processGid")
         def expectedUser = processUid == null || processGid == null
@@ -223,7 +284,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         )
         verifyRequiredResultKey(result, "src_type", srcType)
 
-        // dest
+        // dest — CIM data model fills missing dest with "unknown"
         String dest = coalesce(
                 extractDestOrSrc(originalEvent, "destination"),
                 extractNestedString(originalEvent, "networkFlowInfo.destination.name"),
@@ -389,6 +450,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     boolean isProcessViolation(Map<String, String> result) {
         return isViolationOfType(result, "PROCESS_EVENT")
+    }
+
+    boolean isFileAccessViolation(Map<String, String> result) {
+        return isViolationOfType(result, "FILE_ACCESS")
     }
 
     boolean isViolationOfType(Map<String, String> result, String type) {

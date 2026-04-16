@@ -1029,45 +1029,145 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 	var err error
 	switch tc.resultStruct.(type) {
 	case Struct1:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct1](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct1
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct1](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct1) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct2:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct2
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct2](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct2) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct2GrpBy1:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy1](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct2GrpBy1
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct2GrpBy1](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct2GrpBy1) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct2GrpBy2:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy2](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct2GrpBy2
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct2GrpBy2](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct2GrpBy2) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct2GrpBy3:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct2GrpBy3
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct2GrpBy3](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct2GrpBy3) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct2GrpBy4:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy4](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct2GrpBy4
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct2GrpBy4](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct2GrpBy4) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct2GrpBy5:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy5](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct2GrpBy5
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct2GrpBy5](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct2GrpBy5) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct3:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct3
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct3](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct3) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct4:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct4](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct4
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct4](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct4) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case Struct5:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct5](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*Struct5
+		err = pgSearch.RunSelectRequestForSchemaFn[Struct5](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *Struct5) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct1:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct1](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct1
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct1](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct1) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct2:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct2](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct2
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct2](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct2) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct22:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct22](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct22
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct22](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct22) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct3:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct3
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct3](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct3) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct4:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct4](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct4
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct4](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct4) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct5:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct5](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct5
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct5](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct5) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct6:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct6](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct6
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct6](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct6) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct7:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct7](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct7
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct7](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct7) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct8:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct8](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct8
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct8](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct8) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	case DerivedStruct9:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct9](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+		var structs []*DerivedStruct9
+		err = pgSearch.RunSelectRequestForSchemaFn[DerivedStruct9](ctx, testDB.DB, schema.TestStructsSchema, tc.q, func(r *DerivedStruct9) error {
+			structs = append(structs, r)
+			return nil
+		})
+		results = structs
 	}
 	if tc.expectedError != "" {
 		assert.Error(t, err, tc.expectedError)

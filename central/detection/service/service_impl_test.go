@@ -6,13 +6,11 @@ import (
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	openshiftRouteV1 "github.com/openshift/api/route/v1"
-	namespaceMockStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkPolicyMockStore "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/enricher"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -736,133 +734,6 @@ func TestGetPolicyNamesAsSlice(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			actual := getPolicyNamesAsSlice(c.policies)
 			assert.ElementsMatch(t, c.expected, actual)
-		})
-	}
-}
-
-const simpleDeploymentYAML = `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-deployment
-  namespace: default
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: test
-  template:
-    metadata:
-      labels:
-        app: test
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:latest
-`
-
-func TestDetectDeployTimeFromYAML_NamespaceIDPopulation(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	testClusterID := uuid.NewV4().String()
-	testNamespaceID := uuid.NewV4().String()
-
-	cases := map[string]struct {
-		setupMocks          func(*namespaceMockStore.MockDataStore)
-		expectedNamespaceID string
-		expectWarningLogged bool
-	}{
-		"namespace found - ID populated": {
-			setupMocks: func(nsMock *namespaceMockStore.MockDataStore) {
-				// Expect SearchNamespaces call with cluster ID and namespace name
-				nsMock.EXPECT().
-					SearchNamespaces(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
-						// Verify the query has the right fields
-						assert.NotNil(t, q)
-						return []*storage.NamespaceMetadata{
-							{Id: testNamespaceID, Name: "default", ClusterId: testClusterID},
-						}, nil
-					})
-			},
-			expectedNamespaceID: testNamespaceID,
-			expectWarningLogged: false,
-		},
-		"namespace not found - warning logged": {
-			setupMocks: func(nsMock *namespaceMockStore.MockDataStore) {
-				// SearchNamespaces returns empty results
-				nsMock.EXPECT().
-					SearchNamespaces(gomock.Any(), gomock.Any()).
-					Return([]*storage.NamespaceMetadata{}, nil)
-			},
-			expectedNamespaceID: "",
-			expectWarningLogged: true,
-		},
-		"namespace lookup error - warning logged": {
-			setupMocks: func(nsMock *namespaceMockStore.MockDataStore) {
-				// SearchNamespaces returns error
-				nsMock.EXPECT().
-					SearchNamespaces(gomock.Any(), gomock.Any()).
-					Return(nil, errox.InvariantViolation.New("database error"))
-			},
-			expectedNamespaceID: "",
-			expectWarningLogged: true,
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			nsMock := namespaceMockStore.NewMockDataStore(mockCtrl)
-
-			tc.setupMocks(nsMock)
-
-			// Create minimal service with only the datastores needed for this code path
-			s := &serviceImpl{
-				namespaces: nsMock,
-			}
-
-			// Parse YAML to get deployments
-			resources, _, err := getObjectsFromYAML(simpleDeploymentYAML)
-			require.NoError(t, err)
-			require.Len(t, resources, 1)
-
-			deployment, err := convertK8sResource(resources[0])
-			require.NoError(t, err)
-			require.NotNil(t, deployment)
-
-			// Simulate the code path from DetectDeployTimeFromYAML
-			eCtx := enricher.EnrichmentContext{
-				ClusterID: testClusterID,
-			}
-
-			deployments := []*storage.Deployment{deployment}
-
-			// This is the code under test (from service_impl.go lines 486-504)
-			for _, d := range deployments {
-				if eCtx.ClusterID != "" {
-					d.ClusterId = eCtx.ClusterID
-					// Look up the real namespace UUID from the datastore
-					query := search.NewQueryBuilder().
-						AddExactMatches(search.ClusterID, eCtx.ClusterID).
-						AddExactMatches(search.Namespace, d.GetNamespace()).
-						ProtoQuery()
-					namespaces, err := s.namespaces.SearchNamespaces(context.Background(), query)
-					if err != nil {
-						// Warning would be logged here (we're testing this path)
-						assert.Empty(t, tc.expectedNamespaceID, "expected no namespace ID when error occurs")
-					} else if len(namespaces) == 0 {
-						// Warning would be logged here (we're testing this path)
-						assert.Empty(t, tc.expectedNamespaceID, "expected no namespace ID when namespace not found")
-					} else {
-						d.NamespaceId = namespaces[0].GetId()
-					}
-				}
-			}
-
-			// Verify the deployment has the expected namespace ID
-			assert.Equal(t, tc.expectedNamespaceID, deployment.GetNamespaceId())
-			assert.Equal(t, testClusterID, deployment.GetClusterId())
 		})
 	}
 }

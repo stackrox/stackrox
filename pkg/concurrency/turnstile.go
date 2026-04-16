@@ -13,9 +13,7 @@ type Turnstile interface {
 // NewTurnstile returns a new instance of a Turnstile.
 func NewTurnstile() Turnstile {
 	return &turnstileImpl{
-		flag: Flag{
-			val: 0,
-		},
+		flag:           Flag{}, // This should set val to an atomic UInt32 value of 0.
 		pendingChannel: make(chan struct{}, 1),
 	}
 }

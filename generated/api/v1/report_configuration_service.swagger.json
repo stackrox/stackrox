@@ -396,11 +396,19 @@
     "SimpleAccessScopeRules": {
       "type": "object",
       "properties": {
+        "includedClusterIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "included_cluster_ids contains a list of clusters to which\nfull access is granted, identified by their IDs."
+        },
         "includedClusters": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "included_clusters contains a list of clusters to which\nfull access is granted, identified by their names."
         },
         "includedNamespaces": {
           "type": "array",
@@ -429,9 +437,12 @@
     "SimpleAccessScopeRulesNamespace": {
       "type": "object",
       "properties": {
-        "clusterName": {
+        "clusterId": {
           "type": "string",
-          "description": "Both fields must be set."
+          "description": "The namespace field and at least one cluster field must be set.\nThe cluster ID takes precedence over the cluster name when a cluster with that ID exists."
+        },
+        "clusterName": {
+          "type": "string"
         },
         "namespaceName": {
           "type": "string"
@@ -504,6 +515,67 @@
           "type": "string"
         }
       }
+    },
+    "storageEntityField": {
+      "type": "string",
+      "enum": [
+        "FIELD_UNSET",
+        "FIELD_ID",
+        "FIELD_NAME",
+        "FIELD_LABEL",
+        "FIELD_ANNOTATION"
+      ],
+      "default": "FIELD_UNSET"
+    },
+    "storageEntityScope": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEntityScopeRule"
+          }
+        }
+      },
+      "title": "EntityScope is a new scoping method using ns,deployments,clusters filters introduced in 4.11"
+    },
+    "storageEntityScopeRule": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageEntityType"
+        },
+        "field": {
+          "$ref": "#/definitions/storageEntityField"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageRuleValue"
+          }
+        }
+      },
+      "title": "EntityScopeRule stores the filter as an entity field pair along with a list of values"
+    },
+    "storageEntityType": {
+      "type": "string",
+      "enum": [
+        "ENTITY_TYPE_UNSET",
+        "ENTITY_TYPE_DEPLOYMENT",
+        "ENTITY_TYPE_NAMESPACE",
+        "ENTITY_TYPE_CLUSTER"
+      ],
+      "default": "ENTITY_TYPE_UNSET"
+    },
+    "storageMatchType": {
+      "type": "string",
+      "enum": [
+        "EXACT",
+        "REGEX"
+      ],
+      "default": "EXACT"
     },
     "storageNotifierConfiguration": {
       "type": "object",
@@ -590,6 +662,20 @@
       "properties": {
         "collectionId": {
           "type": "string"
+        },
+        "entityScope": {
+          "$ref": "#/definitions/storageEntityScope"
+        }
+      }
+    },
+    "storageRuleValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/storageMatchType"
         }
       }
     },
@@ -688,6 +774,10 @@
         },
         "includeAdvisory": {
           "type": "boolean"
+        },
+        "query": {
+          "type": "string",
+          "title": "this field stores enhanced filters related to image, cve etc for non collection based scopes"
         }
       }
     },

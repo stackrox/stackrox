@@ -1,22 +1,15 @@
 package centralclient
 
 import (
-	"net/http"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
-	return func(key string) []string {
-		if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
-			return []string{ua}
-		}
-		return headers[key]
-	}
+func withUserAgent(ua string) phonehome.Headers {
+	return phonehome.Headers{userAgentHeaderKey: {ua}}
 }
 
 func Test_apiCall(t *testing.T) {
@@ -28,7 +21,7 @@ func Test_apiCall(t *testing.T) {
 	}{
 		"roxctl": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some roxctl client"),
+				Headers: withUserAgent("Some roxctl client"),
 				Method:  "GET",
 				Path:    "/v1/endpoint",
 				Code:    200,
@@ -38,7 +31,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"not roxctl": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some other client"),
+				Headers: withUserAgent("Some other client"),
 				Method:  "GET",
 				Path:    "/v1/endpoint",
 				Code:    200,
@@ -48,7 +41,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"don't catch user-agent": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some client"),
+				Headers: withUserAgent("Some client"),
 				Method:  "GET",
 				Path:    "/v1/test-endpoint",
 				Code:    200,
@@ -58,7 +51,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"roxctl ignored path": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some roxctl client"),
+				Headers: withUserAgent("Some roxctl client"),
 				Method:  "GET",
 				Path:    "/v1/ping",
 				Code:    200,
@@ -68,7 +61,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"ServiceNow clusters": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some ServiceNow client"),
+				Headers: withUserAgent("Some ServiceNow client"),
 				Method:  "GET",
 				Path:    "/v1/clusters",
 				Code:    200,
@@ -78,7 +71,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"ServiceNow deployments": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some ServiceNow client"),
+				Headers: withUserAgent("Some ServiceNow client"),
 				Method:  "GET",
 				Path:    "/v1/deployments",
 				Code:    200,
@@ -88,9 +81,10 @@ func Test_apiCall(t *testing.T) {
 		},
 		"ServiceNow from integration": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, map[string][]string{
+				Headers: phonehome.Headers{
 					snowIntegrationHeader: {"v1.0.3"},
-				}, "RHACS Integration ServiceNow client"),
+					"User-Agent":          {"RHACS Integration ServiceNow client"},
+				},
 				Method: "GET",
 				Path:   "/v1/clusters",
 				Code:   200,
@@ -103,7 +97,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"central-login GitHub action": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "central-login-GHA"),
+				Headers: withUserAgent("central-login-GHA"),
 				Method:  "POST",
 				Path:    "/v1/auth/m2m/exchange",
 			},
@@ -114,7 +108,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"roxctl-installer GitHub action": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "roxctl-installer-GHA"),
+				Headers: withUserAgent("roxctl-installer-GHA"),
 				Method:  "GET",
 				Path:    "/api/cli/download/roxctl-linux-amd64",
 			},
@@ -125,7 +119,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"SBOM generation": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, nil, "Some SBOM client"),
+				Headers: withUserAgent("Some SBOM client"),
 				Method:  "POST",
 				Path:    "/api/v1/images/sbom",
 				Code:    200,
@@ -148,88 +142,4 @@ func Test_apiCall(t *testing.T) {
 			assert.Equal(t, c.expectedProps, props)
 		})
 	}
-}
-
-func Test_addCustomHeaders(t *testing.T) {
-	tc := permanentTelemetryCampaign
-	require.NoError(t, tc.Compile())
-	t.Run(snowIntegrationHeader, func(t *testing.T) {
-		rp := &phonehome.RequestParams{
-			Method: "GET",
-			Path:   "/v1/clusters",
-			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey:    {"RHACS Integration ServiceNow client"},
-					snowIntegrationHeader: {"v1.0.3", "beta"},
-				}[h]
-			},
-		}
-		props := map[string]any{}
-		addCustomHeaders(rp, tc[1], props)
-		assert.Equal(t, map[string]any{
-			userAgentHeaderKey:    "RHACS Integration ServiceNow client",
-			snowIntegrationHeader: "v1.0.3; beta",
-		}, props)
-	})
-	t.Run("3rd-party Integration", func(t *testing.T) {
-		rp := &phonehome.RequestParams{
-			Method: "GET",
-			Path:   "/v1/clusters",
-			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey:      {"ServiceNow"},
-					"3rd-party-integration": {"v1.0.3", "beta"},
-				}[h]
-			},
-		}
-		props := map[string]any{}
-		addCustomHeaders(rp, tc[1], props)
-		assert.Equal(t, map[string]any{
-			userAgentHeaderKey: "ServiceNow",
-		}, props)
-	})
-	t.Run("roxctl", func(t *testing.T) {
-		rp := &phonehome.RequestParams{
-			Method: "GET",
-			Path:   "/v1/clusters",
-			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey:                  {"roxctl"},
-					clientconn.RoxctlCommandHeader:      {"central"},
-					clientconn.RoxctlCommandIndexHeader: {"1"},
-					clientconn.ExecutionEnvironment:     {"github"},
-				}[h]
-			},
-		}
-		props := map[string]any{}
-		addCustomHeaders(rp, tc[0], props)
-		assert.Equal(t, map[string]any{
-			userAgentHeaderKey:                  "roxctl",
-			clientconn.RoxctlCommandHeader:      "central",
-			clientconn.RoxctlCommandIndexHeader: "1",
-			clientconn.ExecutionEnvironment:     "github",
-		}, props)
-	})
-	t.Run("add header from the single criterion", func(t *testing.T) {
-		tc = append(tc, phonehome.HeaderPattern("Custom-Header", ""))
-		require.NoError(t, tc.Compile())
-		rp := &phonehome.RequestParams{
-			Method: "GET",
-			Path:   "/v1/config",
-			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey: {"roxctl"},
-				}[h]
-			},
-		}
-		props := map[string]any{}
-		addCustomHeaders(rp, tc[0], props)
-		assert.Equal(t, map[string]any{
-			userAgentHeaderKey: "roxctl",
-		}, props)
-	})
 }

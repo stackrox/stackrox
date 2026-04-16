@@ -174,20 +174,24 @@ func (c *Client) Reconfigure() error {
 		return err
 	}
 	log.Debugf("Remote configuration key: %q", rc.Key)
-	if c.storageKey.IsSet() && c.storageKey.Get() != rc.Key {
-		// The key has changed, the telemeter needs to be reset.
-		c.telemeterMux.Lock()
-		defer c.telemeterMux.Unlock()
-		if c.telemeter != nil {
-			c.telemeter.Stop()
-			c.telemeter = nil
+	// Only update the storage key if it was not explicitly provided in the
+	// configuration, unless the remote config disables telemetry.
+	if c.config.storageKey == "" || rc.Key == DisabledKey {
+		if c.storageKey.IsSet() && c.storageKey.Get() != rc.Key {
+			// The key has changed, the telemeter needs to be reset.
+			c.telemeterMux.Lock()
+			defer c.telemeterMux.Unlock()
+			if c.telemeter != nil {
+				c.telemeter.Stop()
+				c.telemeter = nil
+			}
 		}
-	}
-	// We do not want to send test data accidentally, so we ignore the
-	// non-DISABLED remote key in non-release environment.
-	// But for testing purposes we keep the other fields.
-	if version.IsReleaseVersion() || rc.Key == DisabledKey {
-		c.storageKey.Set(rc.Key)
+		// We do not want to send test data accidentally, so we ignore the
+		// non-DISABLED remote key in non-release environment.
+		// But for testing purposes we keep the other fields.
+		if version.IsReleaseVersion() || rc.Key == DisabledKey {
+			c.storageKey.Set(rc.Key)
+		}
 	}
 
 	// The rc.Key could be empty, which tells the client to not send anything

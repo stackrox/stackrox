@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/stackrox/rox/pkg/registrymirror"
+	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/clusterlabels"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -161,4 +162,14 @@ func (p *StoreProvider) VirtualMachines() *vmStore.VirtualMachineStore {
 // ClusterLabels returns the cluster labels store
 func (p *StoreProvider) ClusterLabels() *clusterlabels.Store {
 	return p.clusterLabelsStore
+}
+
+// NamespaceLabels returns the namespace store as a NamespaceLabelProvider
+func (p *StoreProvider) NamespaceLabels() scopecomp.NamespaceLabelProvider {
+	return p.nsStore
+}
+
+// Namespaces returns the namespace store public interface
+func (p *StoreProvider) Namespaces() store.NamespaceStore {
+	return p.nsStore
 }

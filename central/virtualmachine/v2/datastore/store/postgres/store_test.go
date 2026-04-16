@@ -30,6 +30,7 @@ type VMStoreTestSuite struct {
 }
 
 func TestVMStore(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
 		t.Skip("VM enhanced data model is not enabled")
 	}
@@ -468,13 +469,21 @@ func (s *VMStoreTestSuite) TestGetMany() {
 	s.NoError(s.store.UpsertVM(s.ctx, vm1))
 	s.NoError(s.store.UpsertVM(s.ctx, vm2))
 
+	// Re-fetch to capture server-set fields (LastUpdated, Hash).
+	expected1, exists, err := s.store.Get(s.ctx, vm1.GetId())
+	s.NoError(err)
+	s.True(exists)
+	expected2, exists, err := s.store.Get(s.ctx, vm2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
 	nonExistentID := uuid.NewV4().String()
 	results, missing, err := s.store.GetMany(s.ctx, []string{vm1.GetId(), nonExistentID, vm2.GetId()})
 	s.NoError(err)
 	s.Len(results, 2)
 	s.Equal([]int{1}, missing)
 
-	protoassert.SlicesEqual(s.T(), []*storage.VirtualMachineV2{vm1, vm2}, results)
+	protoassert.SlicesEqual(s.T(), []*storage.VirtualMachineV2{expected1, expected2}, results)
 }
 
 // endregion Read operation tests

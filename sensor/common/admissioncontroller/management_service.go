@@ -25,8 +25,9 @@ var (
 type managementService struct {
 	sensor.UnimplementedAdmissionControlManagementServiceServer
 
-	settingsStream     concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
-	sensorEventsStream concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
+	settingsStream               concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
+	sensorEventsStream           concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
+	imageCacheInvalidationStream concurrency.ReadOnlyValueStream[*sensor.AdmCtrlImageCacheInvalidation]
 
 	alertHandler AlertHandler
 	admCtrlMgr   SettingsManager
@@ -36,8 +37,9 @@ type managementService struct {
 // to admission control service replicas.
 func NewManagementService(mgr SettingsManager, alertHandler AlertHandler) pkgGRPC.APIService {
 	return &managementService{
-		settingsStream:     mgr.SettingsStream(),
-		sensorEventsStream: mgr.SensorEventsStream(),
+		settingsStream:               mgr.SettingsStream(),
+		sensorEventsStream:           mgr.SensorEventsStream(),
+		imageCacheInvalidationStream: mgr.ImageCacheInvalidationStream(),
 
 		alertHandler: alertHandler,
 		admCtrlMgr:   mgr,
@@ -100,6 +102,7 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 	}
 
 	settingsIt := s.settingsStream.Iterator(false)
+	imageCacheInvIt := s.imageCacheInvalidationStream.Iterator(true)
 
 	if err := s.sendCurrentSettings(stream, settingsIt); err != nil {
 		return errors.Wrap(err, "sending initial settings")
@@ -119,6 +122,10 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 		if sensorEventIt != nil {
 			sensorEventItrDoneC = sensorEventIt.Done()
 		}
+		var imageCacheInvDoneC <-chan struct{}
+		if imageCacheInvIt != nil {
+			imageCacheInvDoneC = imageCacheInvIt.Done()
+		}
 
 		select {
 		case err := <-recvErrC:
@@ -137,6 +144,11 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			sensorEventIt = sensorEventIt.TryNext()
 			if err := s.sendSensorEvent(stream, sensorEventIt); err != nil {
 				return errors.Wrap(err, "sending sensor events to admission control service")
+			}
+		case <-imageCacheInvDoneC:
+			imageCacheInvIt = imageCacheInvIt.TryNext()
+			if err := s.sendImageCacheInvalidation(stream, imageCacheInvIt); err != nil {
+				return errors.Wrap(err, "sending image cache invalidation to admission control service")
 			}
 
 		case <-stream.Context().Done():
@@ -164,6 +176,22 @@ func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManage
 			},
 		}),
 		"sending update resource request",
+	)
+}
+
+func (s *managementService) sendImageCacheInvalidation(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.AdmCtrlImageCacheInvalidation]) error {
+	obj := iter.Value()
+	if obj == nil {
+		return nil
+	}
+
+	return errors.Wrap(
+		stream.Send(&sensor.MsgToAdmissionControl{
+			Msg: &sensor.MsgToAdmissionControl_ImageCacheInvalidation{
+				ImageCacheInvalidation: obj,
+			},
+		}),
+		"sending image cache invalidation",
 	)
 }
 

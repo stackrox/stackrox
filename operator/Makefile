@@ -262,6 +262,10 @@ test: manifests generate fmt vet  ## Run go unit tests
 test-integration: manifests generate fmt vet envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./tests/... -coverprofile cover-integration.out
 
+test-helm: ## Run operator helm chart tests.
+	ROX_PRODUCT_BRANDING=RHACS_BRANDING $(MAKE) chart # Setting the env var to produce the rhacs- flavor assumed by the subsequent test.
+	go test -tags operator_helmtest -count=1 -v ./tests/chart/...
+
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
 validate-crs: yq
@@ -302,7 +306,17 @@ check-ci-setup: ## Make sure this target is not started in CI environment.
 	$(SILENT)if [ -n "$${CI:-}" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
 
 .PHONY: run
-run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
+run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet quick-run ## Run operator from your host without deploying it to a cluster.
+
+.PHONY: quick-run
+quick-run: ## Same as run, but without ensuring dependencies.
+	@if [[ -n "$$MAIN_IMAGE_TAG" ]]; then \
+		echo "MAIN_IMAGE_TAG=$$MAIN_IMAGE_TAG specified, using related images with this tag."; \
+		IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh | while read -r line; do \
+			echo " * $$line"; \
+			export "$$line"; \
+		done; \
+	fi ;\
 	../scripts/go-run.sh ./cmd/main.go
 
 .PHONY: ensure-rox-main-image-exists
@@ -361,10 +375,19 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator (build binary inside Docker).
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
+		-f $< \
+		..
+
+.PHONY: docker-build-prebuilt
+docker-build-prebuilt: prebuilt.Dockerfile ## Build docker image with pre-built operator binary.
+	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
+		-t ${IMG} \
+		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		-f $< \
 		..
 
@@ -439,6 +462,13 @@ upgrade-via-olm: kuttl
 .PHONY: upgrade-dirty-tag-via-olm
 upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
+
+.PHONY: upgrade-via-chart
+upgrade-via-chart:
+# TODO(ROX-33128): drop --take-ownership (and possibly replace with deploy-via-chart) after 4.11 release
+	helm install --take-ownership --namespace $(TEST_NAMESPACE) --wait \
+		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
+		rhacs-operator ./dist/chart
 
 ##@ Bundle and Index build
 

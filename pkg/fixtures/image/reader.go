@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -35,6 +36,19 @@ func GetTestImages(_ *testing.T) ([]*storage.Image, error) {
 		images = append(images, image)
 	}
 	return images, nil
+}
+
+// GetTestImagesV2 returns a slice of ImageV2 for testing purposes, converted from the embedded test image JSON files.
+func GetTestImagesV2(t *testing.T) ([]*storage.ImageV2, error) {
+	images, err := GetTestImages(t)
+	if err != nil {
+		return nil, err
+	}
+	imagesV2 := make([]*storage.ImageV2, 0, len(images))
+	for _, image := range images {
+		imagesV2 = append(imagesV2, imageUtils.ConvertToV2(image))
+	}
+	return imagesV2, nil
 }
 
 func readContents(path string) (*storage.Image, error) {

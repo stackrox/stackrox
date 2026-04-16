@@ -3,6 +3,7 @@ import * as yup from 'yup';
 import type { ClientPolicy } from 'types/policy.proto';
 
 import {
+    POLICY_BEHAVIOR_ACTIONS_ID,
     POLICY_BEHAVIOR_SCOPE_ID,
     POLICY_DEFINITION_DETAILS_ID,
     POLICY_DEFINITION_LIFECYCLE_ID,
@@ -221,7 +222,9 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                     scope: yup
                         .object({
                             cluster: yup.string().ensure(),
+                            clusterLabel: labelSchema,
                             namespace: yup.string().ensure(),
+                            namespaceLabel: labelSchema,
                             label: labelSchema,
                         })
                         .nullable(),
@@ -235,7 +238,11 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                             value?.scope?.cluster.trim() ||
                             value?.scope?.namespace.trim() ||
                             value?.scope?.label?.key.trim() ||
-                            value?.scope?.label?.value.trim()
+                            value?.scope?.label?.value.trim() ||
+                            value?.scope?.clusterLabel?.key.trim() ||
+                            value?.scope?.clusterLabel?.value.trim() ||
+                            value?.scope?.namespaceLabel?.key.trim() ||
+                            value?.scope?.namespaceLabel?.value.trim()
                         )
                 )
         )
@@ -243,7 +250,20 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
     excludedImageNames: yup.array().of(yup.string().trim().required()).required(),
 });
 
-const validationSchemaStep5 = yup.object().shape({});
+export const validationSchemaStep5 = yup.object().shape({
+    enforcementActions: yup
+        .array()
+        .test(
+            'has-real-enforcement',
+            'At least one enforcement action must be selected when enforcement is enabled',
+            (value) => {
+                if (!value || value.length === 0) {
+                    return true;
+                }
+                return value.some((action) => action !== 'UNSET_ENFORCEMENT');
+            }
+        ),
+});
 
 export function getValidationSchema(stepId: number | string): yup.Schema {
     switch (stepId) {
@@ -255,7 +275,9 @@ export function getValidationSchema(stepId: number | string): yup.Schema {
             return validationSchemaStep3;
         case POLICY_BEHAVIOR_SCOPE_ID:
             return validationSchemaStep4;
-        default:
+        case POLICY_BEHAVIOR_ACTIONS_ID:
             return validationSchemaStep5;
+        default:
+            return yup.object().shape({});
     }
 }

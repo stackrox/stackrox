@@ -120,6 +120,46 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	}
 }
 
+func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
+	testCases := map[string]struct {
+		recvMsg *central.MsgToSensor
+		recvErr error
+		wantMsg string
+	}{
+		"PermissionDenied error suggests revoked or expired credentials": {
+			recvErr: status.Error(codes.PermissionDenied, "not authorized: no authorizer could authorize this request"),
+			wantMsg: "may be revoked or expired",
+		},
+		"Other gRPC error includes networking suggestion": {
+			recvErr: status.Error(codes.Internal, "unexpected HTTP status code received from server"),
+			wantMsg: "likely due to a networking or TLS configuration issue",
+		},
+		"No error from Recv falls back to networking suggestion": {
+			recvMsg: &central.MsgToSensor{},
+			recvErr: nil,
+			wantMsg: "likely due to a networking or TLS configuration issue",
+		},
+	}
+
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			_, closeFn := c.createCentralCommunication(false)
+			defer closeFn()
+
+			// Return empty headers (no SensorHello key)
+			c.mockService.client.EXPECT().Header().Return(metadata.MD{}, nil)
+			// Probe Recv returns the test error
+			c.mockService.client.EXPECT().Recv().Return(tc.recvMsg, tc.recvErr)
+
+			comm := c.comm.(*centralCommunicationImpl)
+			err := comm.hello(c.mockService.client, &central.SensorHello{})
+
+			c.Require().Error(err)
+			c.Assert().Contains(err.Error(), tc.wantMsg)
+		})
+	}
+}
+
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	goleak.AssertNoGoroutineLeaks(c.T())
 
