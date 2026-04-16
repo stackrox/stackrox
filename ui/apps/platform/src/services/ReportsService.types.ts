@@ -104,6 +104,36 @@ export type CollectionScope = {
     collectionName: string;
 };
 
+export type EntityScope = {
+    rules: EntityScopeRule[];
+};
+
+export type MatchType = 'EXACT' | 'REGEX';
+
+export type RuleValue = {
+    value: string;
+    matchType: MatchType;
+};
+
+export type EntityScopeRule = {
+    entity: ScopeEntity;
+    field: ScopeField;
+    values: RuleValue[];
+};
+
+export type ScopeEntity =
+    | 'SCOPE_ENTITY_UNSET'
+    | 'SCOPE_ENTITY_DEPLOYMENT'
+    | 'SCOPE_ENTITY_NAMESPACE'
+    | 'SCOPE_ENTITY_CLUSTER';
+
+export type ScopeField =
+    | 'FIELD_UNSET'
+    | 'FIELD_ID'
+    | 'FIELD_NAME'
+    | 'FIELD_LABEL'
+    | 'FIELD_ANNOTATION';
+
 export type CollectionSnapshot = {
     id: string;
     name: string;

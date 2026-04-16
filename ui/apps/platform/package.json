@@ -103,7 +103,7 @@
         "build:ocp-plugin": "tsc && NODE_ENV=production webpack --config webpack.ocp-plugin.config.js",
         "test": "TZ=UTC vitest",
         "test-coverage": "TZ=UTC vitest run --coverage",
-        "lint": "eslint --quiet",
+        "lint": "eslint --quiet --cache --cache-strategy content",
         "lint:fast-dev": "eslint --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
         "lint:fast-dev-fix": "eslint --fix --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
         "lint:fix": "eslint --fix",

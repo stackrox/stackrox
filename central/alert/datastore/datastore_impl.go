@@ -566,6 +566,8 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 	resourceName := fv[strings.ToLower(search.ResourceName.String())]
 	resourceType := fv[strings.ToLower(search.ResourceType.String())]
 
+	nodeName := fv[strings.ToLower(search.Node.String())]
+
 	var entityName string
 	switch entityType {
 	case "DEPLOYMENT":
@@ -573,6 +575,9 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 		resourceType = entityType
 	case "RESOURCE":
 		entityName = resourceName
+	case "NODE":
+		entityName = nodeName
+		resourceType = entityType
 	}
 
 	var location string

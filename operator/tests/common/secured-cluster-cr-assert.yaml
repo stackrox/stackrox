@@ -13,6 +13,8 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=sensor
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=admission-control
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=collector
+- command: retry-kubectl.sh describe pv
+- command: retry-kubectl.sh describe pvc -n $NAMESPACE
 # Please keep the above lists in sync with pods-debug.yaml
 - command: retry-kubectl.sh describe securedcluster.platform.stackrox.io -n $NAMESPACE stackrox-secured-cluster-services
 resourceRefs:
