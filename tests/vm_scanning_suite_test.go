@@ -744,7 +744,7 @@ func (s *VMScanningSuite) provisionPersistentVMs() {
 	s.logVMPlacement(ctx)
 }
 
-const vmImagePullSecretName = "vm-image-pull-secret"
+const vmImagePullSecretName = "vm-image-pull-secret" //nolint:gosec // G101: not a credential, just the k8s Secret resource name
 
 func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	if s.cfg.ImagePullSecretPath == "" {
