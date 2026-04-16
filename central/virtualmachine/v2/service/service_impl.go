@@ -22,6 +22,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -313,4 +315,194 @@ func (s *serviceImpl) batchComponentScanCounts(ctx context.Context, vmIDs []stri
 	}
 
 	return result, nil
+}
+
+// GetVMVulnSummary returns vulnerability severity counts for a single VM.
+func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVulnSummaryRequest) (*v2.VMVulnSummary, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "id must be specified")
+	}
+
+	vmQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
+	count, err := s.vmDS.CountVirtualMachines(ctx, vmQuery)
+	if err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return nil, status.Errorf(codes.NotFound, "virtual machine %q not found", request.GetId())
+	}
+
+	vmFilter := vmQuery.CloneVT()
+	if request.GetQuery().GetQuery() != "" {
+		additionalQuery, err := search.ParseQuery(request.GetQuery().GetQuery())
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing input query")
+		}
+		vmFilter = search.ConjunctionQuery(vmFilter, additionalQuery)
+	}
+
+	severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	proto := storagetov2.SeverityCountsToProto(severityCounts)
+	fixable, notFixable := countFixability(proto)
+
+	return &v2.VMVulnSummary{
+		SeverityCounts:  proto,
+		FixableCount:    fixable,
+		NotFixableCount: notFixable,
+	}, nil
+}
+
+// ListVMCVEsByVM returns a paginated list of CVEs affecting a specific VM.
+func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEsByVMRequest) (*v2.ListVMCVEsByVMResponse, error) {
+	if request.GetVmId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "vm_id must be specified")
+	}
+
+	searchQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing input query")
+	}
+	searchQuery = search.ConjunctionQuery(
+		searchQuery,
+		search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetVmId()).ProtoQuery(),
+	)
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+
+	countQuery := searchQuery.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := s.cveDS.Count(ctx, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	cves, err := s.cveDS.SearchRawVMCVEs(ctx, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*v2.VMCVERow, 0, len(cves))
+	for _, cve := range cves {
+		items = append(items, storagetov2.VirtualMachineCVEV2ToRow(cve))
+	}
+
+	return &v2.ListVMCVEsByVMResponse{
+		Cves:       items,
+		TotalCount: int32(totalCount),
+	}, nil
+}
+
+// GetVMCVEComponents returns components affected by a specific CVE on a specific VM.
+// TODO(ROX-34165): Simplify with a SQL view joining CVEs and components.
+func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMCVEComponentsRequest) (*v2.GetVMCVEComponentsResponse, error) {
+	if request.GetVmId() == "" || request.GetCveId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "vm_id and cve_id must be specified")
+	}
+
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetVmId()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
+	)
+
+	// Get CVEs matching the CVE ID to find the associated component IDs.
+	cves, err := s.cveDS.SearchRawVMCVEs(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	componentIDSet := make(map[string]struct{}, len(cves))
+	cveByComponent := make(map[string]*v2.Advisory, len(cves))
+	fixedByComponent := make(map[string]string, len(cves))
+	for _, cve := range cves {
+		componentIDSet[cve.GetVmComponentId()] = struct{}{}
+		if cve.GetAdvisory() != nil {
+			cveByComponent[cve.GetVmComponentId()] = &v2.Advisory{
+				Name: cve.GetAdvisory().GetName(),
+				Link: cve.GetAdvisory().GetLink(),
+			}
+		}
+		fixedByComponent[cve.GetVmComponentId()] = cve.GetFixedBy()
+	}
+
+	componentIDs := make([]string, 0, len(componentIDSet))
+	for id := range componentIDSet {
+		componentIDs = append(componentIDs, id)
+	}
+	components, err := s.componentDS.GetBatch(ctx, componentIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	rows := make([]*v2.VMCVEComponentRow, 0, len(components))
+	for _, comp := range components {
+		rows = append(rows, &v2.VMCVEComponentRow{
+			ComponentName:    comp.GetName(),
+			ComponentVersion: comp.GetVersion(),
+			Source:           v2.SourceType(comp.GetSource()),
+			FixedBy:          fixedByComponent[comp.GetId()],
+			Advisory:         cveByComponent[comp.GetId()],
+		})
+	}
+
+	return &v2.GetVMCVEComponentsResponse{
+		Components: rows,
+	}, nil
+}
+
+// ListVMComponents returns a paginated list of components for a specific VM.
+func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMComponentsRequest) (*v2.ListVMComponentsResponse, error) {
+	if request.GetVmId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "vm_id must be specified")
+	}
+
+	searchQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing input query")
+	}
+	searchQuery = search.ConjunctionQuery(
+		searchQuery,
+		search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetVmId()).ProtoQuery(),
+	)
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
+
+	countQuery := searchQuery.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := s.componentDS.Count(ctx, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	components, err := s.componentDS.SearchRawVMComponents(ctx, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*v2.VMComponentRow, 0, len(components))
+	for _, comp := range components {
+		items = append(items, storagetov2.VirtualMachineComponentV2ToRow(comp))
+	}
+
+	return &v2.ListVMComponentsResponse{
+		Components: items,
+		TotalCount: int32(totalCount),
+	}, nil
+}
+
+// countFixability sums fixable and not-fixable counts across all severity levels.
+func countFixability(counts *v2.VulnCountBySeverity) (fixable, notFixable int32) {
+	for _, sev := range []func() *v2.VulnFixableCount{
+		counts.GetCritical,
+		counts.GetImportant,
+		counts.GetModerate,
+		counts.GetLow,
+		counts.GetUnknown,
+	} {
+		c := sev()
+		fixable += c.GetFixable()
+		notFixable += c.GetTotal() - c.GetFixable()
+	}
+	return
 }
