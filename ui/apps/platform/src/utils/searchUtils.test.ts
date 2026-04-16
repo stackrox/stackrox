@@ -6,11 +6,13 @@ import {
     convertToExactMatch,
     convertToRestSearch,
     deleteKeysCaseInsensitive,
+    formatLabelValue,
     getListQueryParams,
     getPaginationParams,
     getSearchFilterFromSearchString,
     getViewStateFromSearch,
     hasSearchKeyValue,
+    isLabelSearchTerm,
     searchValueAsArray,
     wrapInQuotes,
 } from './searchUtils';
@@ -433,6 +435,53 @@ describe('searchUtils', () => {
         });
     });
 
+    describe('isLabelSearchTerm', () => {
+        it('returns true for label search terms', () => {
+            expect(isLabelSearchTerm('Deployment Label')).toBe(true);
+            expect(isLabelSearchTerm('Image Label')).toBe(true);
+            expect(isLabelSearchTerm('Node Label')).toBe(true);
+            expect(isLabelSearchTerm('Namespace Label')).toBe(true);
+            expect(isLabelSearchTerm('Cluster Label')).toBe(true);
+        });
+
+        it('returns true for label search terms in any case', () => {
+            expect(isLabelSearchTerm('deployment label')).toBe(true);
+            expect(isLabelSearchTerm('DEPLOYMENT LABEL')).toBe(true);
+            expect(isLabelSearchTerm('dEpLoYmEnT lAbEl')).toBe(true);
+        });
+
+        it('returns false for non-label search terms', () => {
+            expect(isLabelSearchTerm('Cluster')).toBe(false);
+            expect(isLabelSearchTerm('Deployment')).toBe(false);
+            expect(isLabelSearchTerm('Image')).toBe(false);
+        });
+    });
+
+    describe('formatLabelValue', () => {
+        it('splits on first equals sign and applies formatter to each part', () => {
+            expect(formatLabelValue('app=reporting', wrapInQuotes)).toEqual(['"app"="reporting"']);
+            expect(formatLabelValue('app=reporting', (v) => `r/${v}`)).toEqual([
+                'r/app=r/reporting',
+            ]);
+        });
+
+        it('handles values with multiple equals signs by splitting on the first', () => {
+            expect(formatLabelValue('key=val=extra', wrapInQuotes)).toEqual(['"key"="val=extra"']);
+        });
+
+        it('returns two entries for key OR value matching when no equals sign is present', () => {
+            expect(formatLabelValue('visa', wrapInQuotes)).toEqual(['"visa"=r/.*', 'r/.*="visa"']);
+            expect(formatLabelValue('visa', (v) => `r/${v}`)).toEqual([
+                'r/visa=r/.*',
+                'r/.*=r/visa',
+            ]);
+        });
+
+        it('escapes internal double quotes in key and value', () => {
+            expect(formatLabelValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k\\"ey"="v\\"al"']);
+        });
+    });
+
     describe('wrapInQuotes', () => {
         it('wraps a string in double quotes', () => {
             expect(wrapInQuotes('hello')).toBe('"hello"');
@@ -498,6 +547,58 @@ describe('searchUtils', () => {
             const result = applyRegexSearchModifiers(searchFilter);
             expect(result.Cluster).toEqual(['r/production']);
             expect(result['Random Field']).toEqual('value'); // should not be modified
+        });
+
+        it('formats label regex values with equals sign by prefixing both sides', () => {
+            const searchFilter = { 'Deployment Label': 'app=reporting' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['r/app=r/reporting'] });
+        });
+
+        it('formats label regex values without equals sign as two entries for key OR value match', () => {
+            const searchFilter = { 'Deployment Label': 'visa' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['r/visa=r/.*', 'r/.*=r/visa'] });
+        });
+
+        it('formats quoted label values with equals sign by quoting each side separately', () => {
+            const searchFilter = { 'Deployment Label': '"app=reporting"' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['"app"="reporting"'] });
+        });
+
+        it('formats quoted label values without equals sign as two entries for key OR value match', () => {
+            const searchFilter = { 'Deployment Label': '"visa"' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['"visa"=r/.*', 'r/.*="visa"'] });
+        });
+
+        it('applies label formatting to all label search terms', () => {
+            const searchFilter = {
+                'Image Label': 'env=prod',
+                'Node Label': 'role=worker',
+                'Cluster Label': 'team=platform',
+                'Namespace Label': 'app=web',
+            };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({
+                'Image Label': ['r/env=r/prod'],
+                'Node Label': ['r/role=r/worker'],
+                'Cluster Label': ['r/team=r/platform'],
+                'Namespace Label': ['r/app=r/web'],
+            });
+        });
+
+        it('does not apply label formatting to non-label search terms', () => {
+            const searchFilter = {
+                Cluster: 'production',
+                'Deployment Label': 'app=reporting',
+            };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({
+                Cluster: ['r/production'],
+                'Deployment Label': ['r/app=r/reporting'],
+            });
         });
     });
 });

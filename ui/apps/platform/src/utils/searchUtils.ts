@@ -428,6 +428,20 @@ const regexSearchOptions = [
     .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
     .map(({ searchTerm }) => searchTerm);
 
+/*
+ Search terms that use the key=value label format and need special handling
+ in both regex and exact-match search modes.
+*/
+const labelSearchOptions: Set<string> = new Set(
+    ['Cluster Label', 'Deployment Label', 'Image Label', 'Namespace Label', 'Node Label'].map(
+        (label) => label.toLowerCase()
+    )
+);
+
+export function isLabelSearchTerm(searchTerm: string): boolean {
+    return labelSearchOptions.has(searchTerm.toLowerCase());
+}
+
 function isQuotedString(value: string): boolean {
     return value.startsWith('"') && value.endsWith('"') && value.length >= 2;
 }
@@ -442,17 +456,50 @@ export function wrapInQuotes(value: string): string {
 }
 
 /**
+ * Formats a label value by splitting on the first '=' and applying a formatter
+ * to each half. If no '=' is present, the value is used for both sides with
+ * a `r/.*` regex wildcard on the opposite side.
+ *
+ * Used for both exact-match (formatter = wrapInQuotes) and regex (formatter = r/ prefix)
+ * label formatting.
+ */
+export function formatLabelValue(value: string, formatPart: (part: string) => string): string[] {
+    const eqIndex = value.indexOf('=');
+    if (eqIndex !== -1) {
+        const key = value.slice(0, eqIndex);
+        const val = value.slice(eqIndex + 1);
+        return [`${formatPart(key)}=${formatPart(val)}`];
+    }
+    // No '=' present — emit two entries to match the value against either the
+    // label key or the label value (OR semantics via comma-joined values).
+    // The wildcard 'r/.*' always uses regex so it matches anything regardless of
+    // whether the user's value is exact-match or regex.
+    return [`${formatPart(value)}=r/.*`, `r/.*=${formatPart(value)}`];
+}
+
+/**
  * Adds the regex search modifier to the search filter for any search options that support it.
  * Skips regex wrapping for values that are already quoted (exact-match strings).
+ *
+ * Label search terms (e.g. "Deployment Label") receive special formatting because the
+ * search API treats labels as key=value pairs:
+ *   - With "=": app=reporting -> r/app=r/reporting (regex), "app"="reporting" (exact)
+ *   - Without "=": visa -> [r/visa=r/.*, r/.*=r/visa] (matches key OR value)
  */
 export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
     const regexSearchFilter = cloneDeep(searchFilter);
 
     Object.entries(regexSearchFilter).forEach(([key, value]) => {
         if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
-            regexSearchFilter[key] = searchValueAsArray(value).map((val) =>
-                isQuotedString(val) ? val : `r/${val}`
-            );
+            const isLabel = isLabelSearchTerm(key);
+            regexSearchFilter[key] = searchValueAsArray(value).flatMap((val) => {
+                if (isLabel) {
+                    const rawValue = isQuotedString(val) ? val.slice(1, -1) : val;
+                    const formatter = isQuotedString(val) ? wrapInQuotes : (v: string) => `r/${v}`;
+                    return formatLabelValue(rawValue, formatter);
+                }
+                return isQuotedString(val) ? val : `r/${val}`;
+            });
         }
     });
 
