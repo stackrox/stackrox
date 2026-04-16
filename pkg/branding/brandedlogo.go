@@ -4,8 +4,6 @@ import (
 	"embed"
 	"encoding/base64"
 
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -16,25 +14,24 @@ const (
 
 var (
 	//go:embed files/*.png
-	logoFS embed.FS
-
-	logoRHACSBase64 = sync.OnceValue(func() string {
+	logoFS          embed.FS
+	logoRHACSBase64 = func() string {
 		bytes, err := logoFS.ReadFile(rhacslogoFile)
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
-	})
+	}()
 
-	logoStackRoxBase64 = sync.OnceValue(func() string {
+	logoStackRoxBase64 = func() string {
 		bytes, err := logoFS.ReadFile(stackroxLogoFile)
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
-	})
+	}()
 )
 
 // GetLogoBase64 returns the logo bytes in base64 encoded string.
 func GetLogoBase64() string {
 	if getProductBrandingEnv() == ProductBrandingRHACS {
-		return logoRHACSBase64()
+		return logoRHACSBase64
 	}
-	return logoStackRoxBase64()
+	return logoStackRoxBase64
 }

@@ -1,5 +1,3 @@
-//go:build fakeworkloads
-
 package fake
 
 import (

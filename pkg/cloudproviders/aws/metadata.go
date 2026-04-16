@@ -91,7 +91,7 @@ func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.Instan
 		return nil, errors.Wrap(err, "parsing RSA-2048 signature")
 	}
 
-	p7.Certificates = awsCerts()
+	p7.Certificates = awsCerts
 	if err := p7.Verify(); err != nil {
 		return nil, errors.Wrap(err, "verifying RSA-2048 signature")
 	}
