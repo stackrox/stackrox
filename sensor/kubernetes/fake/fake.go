@@ -306,7 +306,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr.initializePreexistingResources()
 
 	if warn := validateWorkload(&workload); warn != nil {
-		log.Warnf("Validaing workload: %s", warn)
+		log.Warnf("Validating workload: %s", warn)
 	}
 
 	log.Info("Created Workload manager for workload")
@@ -318,7 +318,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 func validateWorkload(workload *Workload) error {
 	if workload.OfflineModeInterval < 0 {
 		workload.OfflineModeInterval = 0
-		return errors.New("negative offlineModeInterval, clamped to 0")
+		log.Warn("negative offlineModeInterval in workload; clamped to 0")
 	}
 	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
 		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))

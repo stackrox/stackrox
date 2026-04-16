@@ -398,8 +398,10 @@ func (s *Sensor) Stop() {
 }
 
 // TriggerOfflineMode simulates a full offline→online state transition by
-// notifying all components of OfflineMode, CentralReachable, and SyncFinished
-// events. The gRPC stream and Central communication remain unaffected.
+// notifying all components of OfflineMode, CentralReachableHTTP,
+// CentralReachable, and SyncFinished events — the same sequence as a real
+// Central reconnect. The gRPC stream and Central communication remain
+// unaffected.
 //
 // This method is exclusively for fake workload testing in local-sensor.
 // DO NOT CALL IT IN PRODUCTION CODE.
@@ -419,6 +421,7 @@ func (s *Sensor) TriggerOfflineMode(reason string) {
 
 	log.Infof("Synthetic offline mode triggered: %s", reason)
 	s.changeState(common.SensorComponentEventOfflineMode)
+	s.changeState(common.SensorComponentEventCentralReachableHTTP)
 	s.changeState(common.SensorComponentEventCentralReachable)
 	s.changeState(common.SensorComponentEventSyncFinished)
 }
