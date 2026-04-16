@@ -8,6 +8,13 @@ export PATH
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
+# Debug build support. When enabled, disables compiler optimizations for debugging.
+# If git branch name contains substring "-debug", a debug build will be made, unless overridden.
+ifneq (,$(findstring -debug,$(shell git rev-parse --abbrev-ref HEAD)))
+	DEBUG_BUILD ?= yes
+endif
+DEBUG_BUILD ?= no
+
 # CGO is disabled for Scanner V4 builds because:
 #
 # 1. Local builds aren't dockerized. And, upon packaging the locally-built scanner in a container when e.g. host
@@ -46,10 +53,18 @@ endif
 GOOS := $(HOST_OS)
 
 GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
+
+# Debug build flags: disable optimizations and inlining for better debugging.
+GO_DEBUG_FLAGS =
+ifeq ($(DEBUG_BUILD),yes)
+GO_DEBUG_FLAGS = -gcflags "all=-N -l"
+endif
+
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG) -X github.com/stackrox/rox/scanner/internal/version.VulnerabilityVersion=$(SCANNER_VULNERABILITY_VERSION)" \
                    -tags=$(GOTAGS) \
+                   $(GO_DEBUG_FLAGS) \
                    $(RACE_FLAG)
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
@@ -57,7 +72,8 @@ DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
 DOCKERBUILD_ARGS = --build-arg LABEL_VERSION=$(TAG) \
                    --build-arg LABEL_RELEASE=$(TAG) \
-                   --build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION)
+                   --build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+                   --build-arg DEBUG_BUILD=$(DEBUG_BUILD)
 
 DB_DOCKERBUILD_ARGS =
 ifeq ($(GOARCH),s390x)

@@ -183,11 +183,12 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: transport,
 	}
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
-		Store:         store,
-		Locker:        locker,
-		MetadataStore: metadataStore,
-		Client:        client,
-		URLs:          cfg.VulnerabilitiesURLs,
+		Store:               store,
+		Locker:              locker,
+		MetadataStore:       metadataStore,
+		Client:              client,
+		URLs:                cfg.VulnerabilitiesURLs,
+		VulnBundleAllowlist: cfg.VulnBundleAllowlist,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)

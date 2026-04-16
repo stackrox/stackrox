@@ -227,14 +227,12 @@ func (m *AdmCtrlImageCacheInvalidation) CloneVT() *AdmCtrlImageCacheInvalidation
 	}
 	r := new(AdmCtrlImageCacheInvalidation)
 	if rhs := m.ImageKeys; rhs != nil {
-		tmpContainer := make([]*central.InvalidateImageCache_ImageKey, len(rhs))
+		tmpContainer := make([]*central.ImageKey, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
-				CloneVT() *central.InvalidateImageCache_ImageKey
-			}); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *central.ImageKey }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
-				tmpContainer[k] = proto.Clone(v).(*central.InvalidateImageCache_ImageKey)
+				tmpContainer[k] = proto.Clone(v).(*central.ImageKey)
 			}
 		}
 		r.ImageKeys = tmpContainer
@@ -576,14 +574,12 @@ func (this *AdmCtrlImageCacheInvalidation) EqualVT(that *AdmCtrlImageCacheInvali
 		vy := that.ImageKeys[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &central.InvalidateImageCache_ImageKey{}
+				p = &central.ImageKey{}
 			}
 			if q == nil {
-				q = &central.InvalidateImageCache_ImageKey{}
+				q = &central.ImageKey{}
 			}
-			if equal, ok := interface{}(p).(interface {
-				EqualVT(*central.InvalidateImageCache_ImageKey) bool
-			}); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*central.ImageKey) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -2412,7 +2408,7 @@ func (m *AdmCtrlImageCacheInvalidation) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageKeys = append(m.ImageKeys, &central.InvalidateImageCache_ImageKey{})
+			m.ImageKeys = append(m.ImageKeys, &central.ImageKey{})
 			if unmarshal, ok := interface{}(m.ImageKeys[len(m.ImageKeys)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
@@ -3505,7 +3501,7 @@ func (m *AdmCtrlImageCacheInvalidation) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageKeys = append(m.ImageKeys, &central.InvalidateImageCache_ImageKey{})
+			m.ImageKeys = append(m.ImageKeys, &central.ImageKey{})
 			if unmarshal, ok := interface{}(m.ImageKeys[len(m.ImageKeys)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {

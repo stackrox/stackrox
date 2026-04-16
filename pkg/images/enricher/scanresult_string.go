@@ -11,11 +11,12 @@ func _() {
 	_ = x[ScanNotDone-0]
 	_ = x[ScanTriggered-1]
 	_ = x[ScanSucceeded-2]
+	_ = x[ScanReused-3]
 }
 
-const _ScanResult_name = "ScanNotDoneScanTriggeredScanSucceeded"
+const _ScanResult_name = "ScanNotDoneScanTriggeredScanSucceededScanReused"
 
-var _ScanResult_index = [...]uint8{0, 11, 24, 37}
+var _ScanResult_index = [...]uint8{0, 11, 24, 37, 47}
 
 func (i ScanResult) String() string {
 	idx := int(i) - 0

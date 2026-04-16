@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protomock"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -387,12 +388,9 @@ func TestPipelineReconcileV2(t *testing.T) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
 			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
-				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
-					Return([]*storage.VirtualMachineV2{
-						{
-							Id:        "existing-vm",
-							ClusterId: testClusterID,
-						},
+				m.EXPECT().Search(gomock.Any(), gomock.Any()).
+					Return([]search.Result{
+						{ID: "existing-vm"},
 					}, nil)
 			},
 		},
@@ -403,12 +401,9 @@ func TestPipelineReconcileV2(t *testing.T) {
 			},
 			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				// Query is now cluster-scoped, so only VMs from testClusterID are returned.
-				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
-					Return([]*storage.VirtualMachineV2{
-						{
-							Id:        "existing-vm",
-							ClusterId: testClusterID,
-						},
+				m.EXPECT().Search(gomock.Any(), gomock.Any()).
+					Return([]search.Result{
+						{ID: "existing-vm"},
 					}, nil)
 			},
 		},
@@ -419,16 +414,10 @@ func TestPipelineReconcileV2(t *testing.T) {
 			},
 			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				m.EXPECT().
-					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
-					Return([]*storage.VirtualMachineV2{
-						{
-							Id:        "existing-vm",
-							ClusterId: testClusterID,
-						},
-						{
-							Id:        "vm-to-remove-from-cluster",
-							ClusterId: testClusterID,
-						},
+					Search(gomock.Any(), gomock.Any()).
+					Return([]search.Result{
+						{ID: "existing-vm"},
+						{ID: "vm-to-remove-from-cluster"},
 					}, nil)
 				m.EXPECT().
 					DeleteVirtualMachines(gomock.Any(), "vm-to-remove-from-cluster").
@@ -442,7 +431,7 @@ func TestPipelineReconcileV2(t *testing.T) {
 			},
 			setupMock: func(m *virtualMachineV2DSMocks.MockDataStore) {
 				m.EXPECT().
-					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
+					Search(gomock.Any(), gomock.Any()).
 					Return(nil, errox.InvalidArgs)
 			},
 			expectsError: true,

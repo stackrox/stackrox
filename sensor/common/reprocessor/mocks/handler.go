@@ -126,6 +126,20 @@ func (mr *MockHandlerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), ctx, msg)
 }
 
+// ProcessRefreshImageCacheTTL mocks base method.
+func (m *MockHandler) ProcessRefreshImageCacheTTL(arg0 *central.RefreshImageCacheTTL) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessRefreshImageCacheTTL", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessRefreshImageCacheTTL indicates an expected call of ProcessRefreshImageCacheTTL.
+func (mr *MockHandlerMockRecorder) ProcessRefreshImageCacheTTL(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessRefreshImageCacheTTL", reflect.TypeOf((*MockHandler)(nil).ProcessRefreshImageCacheTTL), arg0)
+}
+
 // ProcessReprocessDeployments mocks base method.
 func (m *MockHandler) ProcessReprocessDeployments(arg0 *central.ReprocessDeployment) error {
 	m.ctrl.T.Helper()

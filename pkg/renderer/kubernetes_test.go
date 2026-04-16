@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -98,7 +99,7 @@ func (suite *renderSuite) TestRenderMultiple() {
 			IsUpgrade: true,
 		},
 	}
-	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
+	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
 				conf := getBaseConfig()
@@ -114,6 +115,23 @@ func (suite *renderSuite) TestRenderMultiple() {
 			})
 		}
 	}
+}
+
+func (suite *renderSuite) TestRenderFailsForOpenShift3() {
+	orch := storage.ClusterType_OPENSHIFT_CLUSTER
+	format := v1.DeploymentFormat_KUBECTL
+	conf := getBaseConfig()
+	conf.ClusterType = orch
+	conf.K8sConfig.DeploymentFormat = format
+	conf.RenderOpts = &helmUtil.Options{
+		ReleaseOptions: chartutil.ReleaseOptions{
+			Name:      "stackrox-secured-cluster-services",
+			Namespace: "stackrox",
+		},
+	}
+	_, err := Render(conf, suite.testFlavor)
+	require.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "You have specified OpenShift version 3")
 }
 
 func (suite *renderSuite) TestRenderWithBadImage() {

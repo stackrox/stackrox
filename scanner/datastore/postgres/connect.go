@@ -18,10 +18,18 @@ const (
 // Connect is a wrapper around ClairCore's postgres.Connect which retries the connection upon failure.
 //
 // At this time, this function does 30 attempts with a 10-second interval between attempts.
-func Connect(ctx context.Context, connString string, applicationName string) (pool *pgxpool.Pool, err error) {
+func Connect(ctx context.Context, connString string, applicationName string) (*pgxpool.Pool, error) {
+	// ClairCore's postgres.Connect uses pgxpool.New (pgx v5), which does not
+	// eagerly establish connections.
+	pool, err := postgres.Connect(ctx, connString, applicationName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ping explicitly to verify DB reachability, with retries for the case where
+	// the DB is not yet ready to accept connections.
 	err = retry.WithRetry(func() error {
-		pool, err = postgres.Connect(ctx, connString, applicationName)
-		return err
+		return pool.Ping(ctx)
 	}, retry.Tries(connTries), retry.OnFailedAttempts(func(err error) {
 		zlog.Error(ctx).Err(err).Msg("failed to connect to postgres database")
 	}), retry.BetweenAttempts(func(previousAttemptNumber int) {
@@ -29,6 +37,7 @@ func Connect(ctx context.Context, connString string, applicationName string) (po
 		time.Sleep(interval)
 	}))
 	if err != nil {
+		pool.Close()
 		return nil, err
 	}
 	return pool, nil

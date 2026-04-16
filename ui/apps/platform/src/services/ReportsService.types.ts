@@ -33,16 +33,18 @@ export type VulnerabilityReportFiltersBase = {
     includeNvdCvss: boolean;
 };
 
-export type VulnerabilityReportFilters =
-    | (VulnerabilityReportFiltersBase & {
+export type VulnerabilityReportFilters = VulnerabilityReportFiltersBase & CvesSince;
+
+export type CvesSince =
+    | {
           allVuln: boolean;
-      })
-    | (VulnerabilityReportFiltersBase & {
+      }
+    | {
           sinceLastSentScheduledReport: boolean;
-      })
-    | (VulnerabilityReportFiltersBase & {
+      }
+    | {
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
-      });
+      };
 
 export type ViewBasedVulnerabilityReportFilters = {
     query: string;
@@ -94,10 +96,12 @@ export type NotifierConfiguration = {
 // Resource scope types
 
 export type ResourceScope = {
-    collectionScope: {
-        collectionId: string;
-        collectionName: string;
-    };
+    collectionScope: CollectionScope;
+};
+
+export type CollectionScope = {
+    collectionId: string;
+    collectionName: string;
 };
 
 export type CollectionSnapshot = {

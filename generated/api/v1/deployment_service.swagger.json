@@ -667,6 +667,9 @@
         },
         "readinessProbe": {
           "$ref": "#/definitions/storageReadinessProbe"
+        },
+        "type": {
+          "$ref": "#/definitions/storageContainerType"
         }
       }
     },
@@ -742,6 +745,14 @@
         }
       },
       "description": "`ContainerNameAndBaselineStatus` represents a cached result\nof process evaluation on a specific container name."
+    },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
     },
     "storageDeployment": {
       "type": "object",

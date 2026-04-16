@@ -160,7 +160,7 @@ func (suite *centralDBTestSuite) testWithPV(t *testing.T, c Config, m mode) {
 }
 
 func (suite *centralDBTestSuite) TestRenderCentralDBBundle() {
-	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
+	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		suite.T().Run(fmt.Sprintf("DbBundle-%s", orch), func(t *testing.T) {
 			centralFileMap := make(map[string][]byte, 4)
 			centralFileMap["central-db-password"] = []byte("Apassword")
@@ -184,4 +184,28 @@ func (suite *centralDBTestSuite) TestRenderCentralDBBundle() {
 			suite.testWithPV(t, conf, centralDBOnly)
 		})
 	}
+}
+
+func (suite *centralDBTestSuite) TestRenderCentralDBBundleFailsForOpenShift3() {
+	centralFileMap := make(map[string][]byte, 4)
+	centralFileMap["central-db-password"] = []byte("Apassword")
+	centralFileMap["central-db-cert.pem"] = suite.centralDBCert.CertPEM
+	centralFileMap["central-db-key.pem"] = suite.centralDBCert.KeyPEM
+	centralFileMap[mtls.CACertFileName] = suite.testCA.CertPEM()
+
+	conf := Config{
+		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
+		K8sConfig: &K8sConfig{
+			CommonConfig: CommonConfig{
+				CentralDBImage: "stackrox/central-db:2.2.11.0-57-g392c0f5bed-dirty",
+			},
+			EnableCentralDB: true,
+		},
+		SecretsByteMap: centralFileMap,
+	}
+	conf.K8sConfig.DeploymentFormat = v1.DeploymentFormat_KUBECTL
+	conf.ClusterType = storage.ClusterType_OPENSHIFT_CLUSTER
+	_, err := render(conf, centralDBOnly, suite.testFlavor)
+	require.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "You have specified OpenShift version 3")
 }
