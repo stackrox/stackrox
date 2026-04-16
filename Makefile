@@ -494,14 +494,12 @@ main-build-nodeps:
 		config-controller \
 		migrator \
 		operator/cmd \
+		roxctl \
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
 		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
-ifndef CI
-	CGO_ENABLED=0 $(GOBUILD) roxctl
-endif
 
 .PHONY: scale-build
 scale-build: build-prep
