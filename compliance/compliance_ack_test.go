@@ -4,20 +4,37 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 )
 
+// fakeUMH is a minimal test double for node.UnconfirmedMessageHandler.
+// Set retryC to a non-nil channel when tests need RetryCommand() to be selectable.
 type fakeUMH struct {
 	ackCount  int
 	nackCount int
+	retryC    chan string
 }
 
-func (f *fakeUMH) HandleACK()                    { f.ackCount++ }
-func (f *fakeUMH) HandleNACK()                   { f.nackCount++ }
-func (f *fakeUMH) ObserveSending()               {}
-func (f *fakeUMH) RetryCommand() <-chan struct{} { return nil }
+func (f *fakeUMH) HandleACK(string)      { f.ackCount++ }
+func (f *fakeUMH) HandleNACK(string)     { f.nackCount++ }
+func (f *fakeUMH) ObserveSending(string) {}
+func (f *fakeUMH) OnACK(func(string))    {}
 
-func TestHandleNodeScanningComplianceAck(t *testing.T) {
+func (f *fakeUMH) RetryCommand() <-chan string {
+	if f.retryC != nil {
+		return f.retryC
+	}
+	return nil
+}
+
+func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal {
+	s := concurrency.NewStopper()
+	s.Flow().ReportStopped()
+	return s.Client().Stopped()
+}
+
+func TestHandleComplianceACK(t *testing.T) {
 	inv := &fakeUMH{}
 	idx := &fakeUMH{}
 	c := &Compliance{
@@ -89,7 +106,7 @@ func TestHandleNodeScanningComplianceAck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			inv.ackCount, inv.nackCount = 0, 0
 			idx.ackCount, idx.nackCount = 0, 0
-			c.handleNodeScanningComplianceAck(tt.ack)
+			c.handleComplianceACK(tt.ack)
 			assert.Equal(t, tt.wantInvACK, inv.ackCount)
 			assert.Equal(t, tt.wantInvNACK, inv.nackCount)
 			assert.Equal(t, tt.wantIdxACK, idx.ackCount)
