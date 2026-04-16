@@ -7,8 +7,8 @@ COPY go.mod .
 
 # Validate Go version compatibility
 # go mod tidy will fail if go.mod requires a Go version higher than installed
-RUN echo "Installed Go version:"
-RUN go version
+RUN echo "Installed Go version:" && \
+    go version
 RUN echo "go.mod version requirement:"
 RUN grep -E '^(go|toolchain) ' go.mod
 RUN echo "Checking go.mod compatibility..."
