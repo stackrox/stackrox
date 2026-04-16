@@ -137,7 +137,9 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 		}(i)
 	}
 
-	// Collect all responses with shorter timeout.
+	// Collect all responses. The timeout breaks the loop so the Assert
+	// below reports the actual vs expected count — do not fail inside
+	// the select; that would abort before the diagnostic assertion.
 	totalResponses := 0
 	for range numGoroutines * numVMsPerGoroutine {
 		select {
@@ -145,7 +147,8 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 			totalResponses++
 		case <-time.After(500 * time.Millisecond):
 			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
-			return // Don't fail, just exit
+			s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
+			return
 		}
 	}
 	s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
@@ -523,8 +526,8 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DoesNotBlockWhenSto
 		}},
 	}
 
-	// Non-blocking: the default branch drops immediately when the channel
-	// is full, regardless of stopper state.
+	// The first select in forwardToCompliance sees StopRequested and
+	// returns before attempting the channel send.
 	err = s.handler.ProcessMessage(ctx, msg)
 	s.Require().NoError(err)
 
@@ -610,9 +613,8 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsOnCancelledCon
 		}},
 	}
 
-	// With a cancelled context and a full buffer, ProcessMessage must
-	// not block. The default branch fires before ctx.Done() is even
-	// checked, but either path results in a drop.
+	// The first select in forwardToCompliance sees ctx.Done() and
+	// returns before attempting the channel send.
 	err = s.handler.ProcessMessage(ctx, msg)
 	s.Require().NoError(err)
 
@@ -642,4 +644,37 @@ func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
 	s.Require().ErrorIs(err, errCapabilityNotSupported)
 	s.Require().ErrorIs(err, errox.NotImplemented)
 	s.Assert().ErrorContains(err, "Central does not have virtual machine capability")
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_AfterStop() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Stop()
+
+	vm := &v1.IndexReport{VsockCid: "1"}
+	err = s.handler.Send(context.Background(), vm)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, errInputChanClosed)
+	s.Require().ErrorIs(err, errox.InvariantViolation)
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_CentralNotReachable() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	vm := &v1.IndexReport{VsockCid: "1"}
+	err = s.handler.Send(context.Background(), vm)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, errCentralNotReachable)
+	s.Require().ErrorIs(err, errox.ResourceExhausted)
+}
+
+func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	err = s.handler.Start()
+	s.Require().ErrorIs(err, errStartMoreThanOnce)
 }
