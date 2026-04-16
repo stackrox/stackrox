@@ -36,20 +36,21 @@ config_part_1() {
     require_environment "KUBECONFIG"
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
     export_test_environment
 
     setup_gcp
     setup_deployment_env false false
-    if [[ "${USE_ROXIE_DEPLOY:-false}" == "false" ]]; then
+    if [[ "$use_roxie_deploy" == "false" ]]; then
         remove_existing_stackrox_resources
     fi
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
     image_prefetcher_system_await
 
-    if [[ "${USE_ROXIE_DEPLOY:-false}" == "true" ]]; then
+    if [[ "$use_roxie_deploy" == "true" ]]; then
         info "Using roxie-based config_part_1 for qa-tests-backend"
+        info "Roxie version: $(roxie version)"
         deploy_stackrox_with_roxie
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     else
