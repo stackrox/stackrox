@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # Trigger on master, release branches, and tags
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
+      )
+    pipelinesascode.tekton.dev/on-label: "[]"
+  labels:
+    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/component: operator-index
+    pipelines.appstudio.openshift.io/type: build
+  name: operator-index-on-push
+  namespace: rh-acs-tenant
+
+spec:
+
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: image-expires-after
+    value: '13w'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/stackrox-operator-index
+  - name: revision
+    value: '{{revision}}'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+  - name: extra-labels
+    value:
+    # X.Y in the cpe label must be adjusted for every version stream.
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el8"
+  - name: bundle-image-repo
+    value: quay.io/rhacs-eng/release-operator-bundle
+
+  pipelineRef:
+    name: operator-index-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-index
+
+  # The operator-index build waits for the operator-bundle to be built and pushed.
+  # The timeout must account for:
+  # 1. Bundle build timeout (3h20m from operator-bundle-build.yaml)
+  # 2. Index build itself (~10-30 minutes)
+  # Total: 3h20m + 30m = 3h50m, rounded to 4h for safety
+  timeouts:
+    tasks: 4h
+    finally: 10m
+    pipeline: 4h10m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
