@@ -223,8 +223,9 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 					}
 				case storage.Alert_NODE:
 					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName: clusterName.String,
-						ClusterId:   clusterID.String,
+						ClusterName:  clusterName.String,
+						ClusterId:    clusterID.String,
+						ResourceType: storage.ListAlert_NODE,
 					}
 					la.Entity = &storage.ListAlert_Node{
 						Node: &storage.ListAlert_NodeEntity{
@@ -761,8 +762,9 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 					}
 				case storage.Alert_NODE:
 					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName: clusterName.String,
-						ClusterId:   clusterID.String,
+						ClusterName:  clusterName.String,
+						ClusterId:    clusterID.String,
+						ResourceType: storage.ListAlert_NODE,
 					}
 					la.Entity = &storage.ListAlert_Node{
 						Node: &storage.ListAlert_NodeEntity{
