@@ -9,8 +9,8 @@ COPY go.mod .
 # go mod tidy will fail if go.mod requires a Go version higher than installed
 RUN echo "Installed Go version:" && \
     go version
-RUN echo "go.mod version requirement:"
-RUN grep -E '^(go|toolchain) ' go.mod
+RUN echo "go.mod version requirement:" && \
+    grep -E '^(go|toolchain) ' go.mod
 RUN echo "Checking go.mod compatibility..."
 RUN go mod tidy
 RUN echo "SUCCESS: Go version is compatible with go.mod"
@@ -18,17 +18,11 @@ RUN echo "SUCCESS: Go version is compatible with go.mod"
 # Test that go mod tidy actually fails on incompatible versions
 # This validates we're not relying on behavior that silently changed
 RUN echo "Testing go mod tidy failure detection..."
-RUN mkdir -p /tmp/test-validation
-WORKDIR /tmp/test-validation
-RUN echo "Testing with incompatible version: 2.0.0"
-RUN echo "module test" > go.mod
-RUN echo "go 2.0.0" >> go.mod
-RUN echo "Created test go.mod:"
-RUN cat go.mod
+RUN echo -e "module test\ngo 2.0.0" > go.mod
 RUN if go mod tidy; then \
-        echo "ERROR: go mod tidy succeeded with incompatible version 2.0.0"; \
+        echo "ERROR: go mod tidy succeeded with incompatible version"; \
         echo "Our assumption about go mod tidy behavior is broken!"; \
         exit 1; \
     else \
-        echo "SUCCESS: go mod tidy correctly failed with incompatible version 2.0.0"; \
+        echo "SUCCESS: go mod tidy correctly failed with incompatible version"; \
     fi
