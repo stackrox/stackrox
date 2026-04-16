@@ -19,6 +19,16 @@ name: Build VM scanning images
 # One will eventually be kept and the other removed.
 
 on:
+  # TEMPORARY: fires on every push to the feature branch that touches the
+  # workflow or the build scripts so we can iterate before merging. The
+  # default branch doesn't know this workflow yet, so workflow_dispatch is
+  # not usable from a branch until this PR merges. REMOVE BEFORE MERGE.
+  push:
+    branches:
+      - piotr/ROX-34170-vm-image-automation
+    paths:
+      - '.github/workflows/build-vm-images.yaml'
+      - 'vm-image-*.sh'
   workflow_dispatch:
     inputs:
       force_rebuild:
@@ -149,8 +159,14 @@ jobs:
           fi
           echo "Last-built source-digest: ${last:-<none>}"
           echo "last_digest=${last}" >> "$GITHUB_OUTPUT"
+          # TEMPORARY: push events on the iteration branch always rebuild so
+          # script/workflow changes can actually be tested. Remove together
+          # with the `push:` trigger before merging.
           if [[ "$FORCE_REBUILD" == "true" ]]; then
             echo "rebuild=true (force)" && echo "rebuild=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            echo "rebuild=true (push on iteration branch)"
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
           elif [[ "$last" == "$UPSTREAM_DIGEST" ]]; then
             echo "rebuild=false (up-to-date)"
             echo "rebuild=false" >> "$GITHUB_OUTPUT"
