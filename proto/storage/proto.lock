@@ -315,6 +315,10 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 7
+              },
+              {
+                "name": "NODE",
+                "integer": 8
               }
             ]
           },
