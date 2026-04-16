@@ -36,7 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
-	"slices"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
