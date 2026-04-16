@@ -117,6 +117,25 @@ jobs:
           podman --version
           skopeo --version
 
+          if [[ "$SCRIPT_VARIANT" == "virt-customize" ]]; then
+            # libguestfs on Ubuntu 24.04 hosted runners needs a few
+            # workarounds to boot the qemu appliance:
+            #  - /dev/kvm is 0660 root:kvm and runner isn't in kvm group;
+            #    without read/write access libguestfs warns and falls back
+            #    to TCG (super slow).
+            #  - libguestfs reads /boot/vmlinuz-* to build the appliance,
+            #    but Ubuntu 24.04 ships these as 0600.
+            #  - The `passt` user-mode networking backend that libguestfs
+            #    launches requires unprivileged user namespaces, which
+            #    AppArmor restricts by default on Ubuntu 24.04. Without
+            #    this the appliance fails with
+            #    `libguestfs error: passt exited with status 1`.
+            sudo chmod 0666 /dev/kvm || true
+            sudo chmod 0644 /boot/vmlinuz-* || true
+            echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns >/dev/null || true
+            ls -l /dev/kvm
+          fi
+
       - name: Check required secrets
         if: steps.filter.outputs.skip != 'true'
         # Unset repo secrets expand to empty strings, which makes the first
