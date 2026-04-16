@@ -114,7 +114,14 @@ jobs:
             # `passt` is used by libguestfs for user-mode networking in the
             # appliance on Ubuntu 24.04; pull it in explicitly in case
             # libguestfs-tools doesn't hard-depend on it.
-            pkgs+=(libguestfs-tools qemu-utils passt)
+            # isc-dhcp-client provides `dhclient`, which supermin bundles
+            # into the libguestfs appliance. Without a DHCP client in the
+            # appliance, eth0 is never brought up + configured by passt,
+            # so the guest has no network at all and subscription-manager
+            # fails with `Name or service not known`. The appliance's
+            # /init tries `dhclient` then falls through to `dhcpcd` (also
+            # missing on the runner), hence `dhcpcd: command not found`.
+            pkgs+=(libguestfs-tools qemu-utils passt isc-dhcp-client)
           fi
           sudo apt-get install -y --no-install-recommends "${pkgs[@]}"
           podman --version
