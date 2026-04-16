@@ -14,7 +14,9 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import type { Deployment } from 'types/deployment.proto';
 import type { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
@@ -62,6 +64,20 @@ function DeploymentDetails({
 }: DeploymentDetailsProps) {
     const labelKeys = Object.keys(deployment.labels);
     const annotationKeys = Object.keys(deployment.annotations);
+
+    const vulnMgmtBasePath = deployment.platformComponent
+        ? vulnerabilitiesPlatformPath
+        : vulnerabilitiesUserWorkloadsPath;
+    const getImageUrl = (imageId: string) => `${vulnMgmtBasePath}/images/${imageId}`;
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showInitContainers = isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT');
+    const regularContainers = showInitContainers
+        ? deployment.containers.filter((c) => c.type !== 'INIT')
+        : deployment.containers;
+    const initContainers = showInitContainers
+        ? deployment.containers.filter((c) => c.type === 'INIT')
+        : [];
 
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
@@ -283,28 +299,52 @@ function DeploymentDetails({
                         )}
                     </DetailSection>
                 </li>
-                <li>
-                    <Divider className="pf-v6-u-mb-sm" />
-                    <DetailSection title="Container configurations">
-                        {deployment.containers.length ? (
+                {regularContainers.length > 0 && (
+                    <li>
+                        <Divider className="pf-v6-u-mb-sm" />
+                        <DetailSection title="Container configurations">
                             <Stack hasGutter>
-                                {deployment.containers.map((container) => {
-                                    return (
-                                        <StackItem key={container.id}>
-                                            <DeploymentContainerConfig container={container} />
-                                        </StackItem>
-                                    );
-                                })}
+                                {regularContainers.map((container) => (
+                                    <StackItem key={container.id}>
+                                        <DeploymentContainerConfig
+                                            container={container}
+                                            getImageUrl={getImageUrl}
+                                        />
+                                    </StackItem>
+                                ))}
                             </Stack>
-                        ) : (
+                        </DetailSection>
+                    </li>
+                )}
+                {initContainers.length > 0 && (
+                    <li>
+                        <Divider className="pf-v6-u-mb-sm" />
+                        <DetailSection title="Init container configurations">
+                            <Stack hasGutter>
+                                {initContainers.map((container) => (
+                                    <StackItem key={container.id}>
+                                        <DeploymentContainerConfig
+                                            container={container}
+                                            getImageUrl={getImageUrl}
+                                        />
+                                    </StackItem>
+                                ))}
+                            </Stack>
+                        </DetailSection>
+                    </li>
+                )}
+                {regularContainers.length === 0 && initContainers.length === 0 && (
+                    <li>
+                        <Divider className="pf-v6-u-mb-sm" />
+                        <DetailSection title="Container configurations">
                             <EmptyState
                                 headingLevel="h4"
                                 titleText="No containers available"
                                 variant="xs"
                             ></EmptyState>
-                        )}
-                    </DetailSection>
-                </li>
+                        </DetailSection>
+                    </li>
+                )}
             </ul>
         </div>
     );
