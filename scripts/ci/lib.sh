@@ -726,9 +726,11 @@ image_prefetcher_start_set() {
 
     # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
     if [[ "${ORCHESTRATOR_FLAVOR}" != "k8s" ]]; then
+        local filtered_image_list
+        filtered_image_list=$(mktemp)
         info "Filtering out *.gcr.io images for non-GKE cluster"
-        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${image_list}.tmp" || true
-        mv "${image_list}.tmp" "${image_list}"
+        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${filtered_image_list}" || true
+        mv "${filtered_image_list}" "${image_list}"
     fi
 
     echo "---" >> "$manifest"
