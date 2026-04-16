@@ -59,7 +59,7 @@ func (m *mockTokenTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 	reqCopy := req.Clone(req.Context())
 	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", m.token))
-	return m.base.RoundTrip(reqCopy) //nolint:wrapcheck
+	return m.base.RoundTrip(reqCopy)
 }
 
 // newTestHandler creates a Handler for testing with the given components.

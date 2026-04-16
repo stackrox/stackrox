@@ -1,6 +1,8 @@
 package booleanpolicy
 
 import (
+	"github.com/stackrox/rox/pkg/sync"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
@@ -9,15 +11,35 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 )
 
+// lazyFactory defers evaluator.Factory creation until first use.
+type lazyFactory struct {
+	once sync.Once
+	meta *pathutil.AugmentedObjMeta
+	val  evaluator.Factory
+}
+
+func newLazyFactory(meta *pathutil.AugmentedObjMeta) lazyFactory {
+	return lazyFactory{meta: meta}
+}
+
+func (f *lazyFactory) get() *evaluator.Factory {
+	f.once.Do(func() { f.val = evaluator.MustCreateNewFactory(f.meta) })
+	return &f.val
+}
+
+func (f *lazyFactory) GenerateEvaluator(q *query.Query) (evaluator.Evaluator, error) {
+	return f.get().GenerateEvaluator(q)
+}
+
 var (
-	deploymentEvalFactory       = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
-	deploymentFileAccessFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentFileAccessMeta)
-	processEvalFactory          = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
-	imageEvalFactory            = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
-	kubeEventFactory            = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
-	networkFlowFactory          = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
-	nodeEvalFactory             = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
-	fileAccessFactory           = evaluator.MustCreateNewFactory(augmentedobjs.FileAccessMeta)
+	deploymentEvalFactory       = newLazyFactory(augmentedobjs.DeploymentMeta)
+	deploymentFileAccessFactory = newLazyFactory(augmentedobjs.DeploymentFileAccessMeta)
+	processEvalFactory          = newLazyFactory(augmentedobjs.ProcessMeta)
+	imageEvalFactory            = newLazyFactory(augmentedobjs.ImageMeta)
+	kubeEventFactory            = newLazyFactory(augmentedobjs.KubeEventMeta)
+	networkFlowFactory          = newLazyFactory(augmentedobjs.NetworkFlowMeta)
+	nodeEvalFactory             = newLazyFactory(augmentedobjs.NodeMeta)
+	fileAccessFactory           = newLazyFactory(augmentedobjs.FileAccessMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -101,7 +123,7 @@ type sectionAndEvaluator struct {
 
 // BuildKubeEventMatcher builds a KubeEventMatcher.
 func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEventMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory.get(), p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +166,7 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 
 // BuildAuditLogEventMatcher builds a AuditLogEventMatcher.
 func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (AuditLogEventMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&kubeEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(kubeEventFactory.get(), p, storage.LifecycleStage_RUNTIME, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +179,7 @@ func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (Au
 
 // BuildDeploymentWithProcessMatcher builds a DeploymentWithProcessMatcher.
 func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithProcessMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory.get(), p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +226,7 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 
 // BuildDeploymentWithNetworkFlowMatcher builds a DeploymentWithNetworkFlowMatcher
 func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithNetworkFlowMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory.get(), p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +265,7 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 }
 
 func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithFileAccessMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentFileAccessFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentFileAccessFactory.get(), p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -283,7 +305,7 @@ func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...Validate
 // BuildDeploymentMatcher builds a matcher for deployments against the given policy,
 // which must be a boolean policy.
 func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory.get(), p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +318,7 @@ func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (Deplo
 // BuildImageMatcher builds a matcher for images against the given policy,
 // which must be a boolean policy.
 func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&imageEvalFactory, p, storage.LifecycleStage_BUILD, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(imageEvalFactory.get(), p, storage.LifecycleStage_BUILD, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +330,7 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 // BuildNodeEventMatcher builds a matcher for nodes against the given policy.
 // It currently only supports runtime fields for node event policies, but may change in the future.
 func BuildNodeEventMatcher(p *storage.Policy, options ...ValidateOption) (NodeEventMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&nodeEvalFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(nodeEvalFactory.get(), p, storage.LifecycleStage_RUNTIME, options...)
 	if err != nil {
 		return nil, err
 	}
