@@ -320,7 +320,7 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		return item
 	}
 
-	mapV31 := func(m *schema.CvssMetricV31) *schema.CVEAPIJSON20CVSSV31 {
+	mapV31 := func(m *schema.CVEAPIJSON20CVSSV31) *schema.CVEAPIJSON20CVSSV31 {
 		return &schema.CVEAPIJSON20CVSSV31{
 			CvssData: &schema.CVSSV31{
 				Version:      m.CvssData.Version,
@@ -330,7 +330,7 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		}
 	}
 
-	mapV30 := func(m *schema.CvssMetricV30) *schema.CVEAPIJSON20CVSSV30 {
+	mapV30 := func(m *schema.CVEAPIJSON20CVSSV30) *schema.CVEAPIJSON20CVSSV30 {
 		return &schema.CVEAPIJSON20CVSSV30{
 			CvssData: &schema.CVSSV30{
 				Version:      m.CvssData.Version,
@@ -340,7 +340,7 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		}
 	}
 
-	mapV2 := func(m *schema.CvssMetricV2) *schema.CVEAPIJSON20CVSSV2 {
+	mapV2 := func(m *schema.CVEAPIJSON20CVSSV2) *schema.CVEAPIJSON20CVSSV2 {
 		return &schema.CVEAPIJSON20CVSSV2{
 			CvssData: &schema.CVSSV20{
 				Version:      m.CvssData.Version,
