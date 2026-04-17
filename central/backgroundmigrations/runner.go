@@ -39,24 +39,22 @@ const (
 
 // Runner executes background migrations after Central is ready.
 type Runner struct {
-	db                  postgres.DB
-	rolloutChecker      RolloutChecker
-	stopper             concurrency.Stopper
-	started             bool
-	currentBgSeqNumFunc func() int
-	lockRetryInterval   time.Duration
-	tryAcquireLockFunc  func(ctx context.Context, db postgres.DB, lockID int64) (bool, func(), error)
+	db             postgres.DB
+	rolloutChecker RolloutChecker
+	stopper        concurrency.Stopper
+	started        bool
+	targetSeqNum   int
+	retryInterval  time.Duration
 }
 
 // NewRunner creates a new Runner.
 func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 	return &Runner{
-		db:                  db,
-		rolloutChecker:      rolloutChecker,
-		stopper:             concurrency.NewStopper(),
-		currentBgSeqNumFunc: func() int { return CurrentBgMigrationSeqNum },
-		lockRetryInterval:   retryInterval,
-		tryAcquireLockFunc:  dblock.TryAcquireAdvisoryLock,
+		db:             db,
+		rolloutChecker: rolloutChecker,
+		stopper:        concurrency.NewStopper(),
+		targetSeqNum:   CurrentBgMigrationSeqNum,
+		retryInterval:  retryInterval,
 	}
 }
 
@@ -93,12 +91,12 @@ func (r *Runner) run() {
 			return
 		}
 
-		log.Errorf("background migrations failed, retrying in %v: %v", r.lockRetryInterval, err)
+		log.Errorf("background migrations failed, retrying in %v: %v", r.retryInterval, err)
 		select {
 		case <-ctx.Done():
 			log.Infof("background migrations stopped")
 			return
-		case <-time.After(r.lockRetryInterval):
+		case <-time.After(r.retryInterval):
 		}
 	}
 }
@@ -129,7 +127,7 @@ func (r *Runner) runOnce(ctx context.Context) error {
 // acquireLock attempts to acquire the advisory lock once.
 // Returns (release, nil) on success, or an error if the lock could not be acquired.
 func (r *Runner) acquireLock(ctx context.Context) (func(), error) {
-	acquired, release, err := r.tryAcquireLockFunc(ctx, r.db, bgMigrationAdvisoryLockID)
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, r.db, bgMigrationAdvisoryLockID)
 	if err != nil {
 		return nil, errors.Wrap(err, "acquiring advisory lock")
 	}
@@ -147,9 +145,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		return errors.Wrap(err, "reading current state")
 	}
 
-	currentSeqNum := r.currentBgSeqNumFunc()
-
-	overrideSeqNum, overrideTag, shouldOverride := r.checkSeqNumOverrideConfig(currentSeqNum, dbOverrideTag)
+	overrideSeqNum, overrideTag, shouldOverride := r.checkSeqNumOverrideConfig(r.targetSeqNum, dbOverrideTag)
 	if shouldOverride {
 		log.Infof("applying override tag %q, resetting seq num from %d to %d", overrideTag, dbSeqNum, overrideSeqNum)
 		if err := r.writeState(ctx, overrideSeqNum, overrideTag); err != nil {
@@ -158,22 +154,22 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		dbSeqNum = overrideSeqNum
 	}
 
-	if dbSeqNum > currentSeqNum {
-		log.Warnf("rollback detected (db=%d, current=%d). Resetting to current seq num.", dbSeqNum, currentSeqNum)
-		if err := r.writeSeqNum(ctx, currentSeqNum); err != nil {
+	if dbSeqNum > r.targetSeqNum {
+		log.Warnf("rollback detected (db=%d, current=%d). Resetting to current seq num.", dbSeqNum, r.targetSeqNum)
+		if err := r.writeSeqNum(ctx, r.targetSeqNum); err != nil {
 			return errors.Wrap(err, "resetting seq num after rollback")
 		}
-		dbSeqNum = currentSeqNum
+		dbSeqNum = r.targetSeqNum
 	}
 
-	if dbSeqNum == currentSeqNum {
+	if dbSeqNum == r.targetSeqNum {
 		log.Infof("up to date at seq num %d", dbSeqNum)
 		return nil
 	}
 
-	log.Infof("running migrations from %d to %d", dbSeqNum, currentSeqNum)
+	log.Infof("running migrations from %d to %d", dbSeqNum, r.targetSeqNum)
 
-	for seqNum := dbSeqNum; seqNum < currentSeqNum; seqNum++ {
+	for seqNum := dbSeqNum; seqNum < r.targetSeqNum; seqNum++ {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
@@ -196,7 +192,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		log.Infof("completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
 	}
 
-	log.Infof("all migrations complete, at seq num %d", currentSeqNum)
+	log.Infof("all migrations complete, at seq num %d", r.targetSeqNum)
 	return nil
 }
 

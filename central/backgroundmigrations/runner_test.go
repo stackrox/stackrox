@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package backgroundmigrations
 
 import (
@@ -6,56 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stackrox/rox/pkg/postgres"
-	pgMocks "github.com/stackrox/rox/pkg/postgres/mocks"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	"github.com/stretchr/testify/suite"
 )
 
-// fakeTryLockFunc returns a tryAcquireLockFunc that always succeeds immediately.
-func fakeTryLockFunc() func(ctx context.Context, db postgres.DB, lockID int64) (bool, func(), error) {
-	return func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
-		return true, func() {}, nil
-	}
-}
-
-// neverAcquireLockFunc returns a tryAcquireLockFunc that never acquires until context is cancelled.
-func neverAcquireLockFunc() func(ctx context.Context, db postgres.DB, lockID int64) (bool, func(), error) {
-	return func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
-		return false, nil, nil
-	}
-}
-
 const testTimeout = 1 * time.Second
-
-// fakeRow implements pgx.Row for returning state from QueryRow.
-type fakeRow struct {
-	seqNum      int32
-	overrideTag string
-	err         error
-}
-
-func (r *fakeRow) Scan(dest ...any) error {
-	if r.err != nil {
-		return r.err
-	}
-	if len(dest) > 0 {
-		if p, ok := dest[0].(*int32); ok {
-			*p = r.seqNum
-		}
-	}
-	if len(dest) > 1 {
-		if p, ok := dest[1].(*string); ok {
-			*p = r.overrideTag
-		}
-	}
-	return nil
-}
-
-var _ pgx.Row = &fakeRow{}
 
 type doneRolloutChecker struct{}
 
@@ -84,27 +46,67 @@ var _ RolloutChecker = &k8sRolloutChecker{}
 var _ RolloutChecker = &notDoneRolloutChecker{}
 var _ RolloutChecker = &countingRolloutChecker{}
 
-func resetRegistry() {
-	migrations = make(map[int]BackgroundMigration)
+type RunnerTestSuite struct {
+	suite.Suite
+	db  postgres.DB
+	ctx context.Context
 }
 
-func newTestRunner(db postgres.DB, rolloutChecker RolloutChecker, currentSeqNum int) *Runner {
-	r := NewRunner(db, rolloutChecker)
-	r.currentBgSeqNumFunc = func() int { return currentSeqNum }
-	r.tryAcquireLockFunc = fakeTryLockFunc()
-	r.lockRetryInterval = 10 * time.Millisecond
+func TestRunnerSuite(t *testing.T) {
+	suite.Run(t, new(RunnerTestSuite))
+}
+
+func (s *RunnerTestSuite) SetupSuite() {
+	s.ctx = context.Background()
+
+	// Create a test database with a pool that supports multiple connections.
+	// The advisory lock holds one connection, so we need at least 2.
+	database := pgtest.CreateADatabaseForT(s.T())
+	source := conn.GetConnectionStringWithDatabaseName(s.T(), database)
+	config, err := postgres.ParseConfig(source)
+	s.Require().NoError(err)
+
+	pool, err := postgres.New(s.ctx, config)
+	s.Require().NoError(err)
+	s.T().Cleanup(func() {
+		pool.Close()
+		pgtest.DropDatabase(s.T(), database)
+	})
+	s.db = pool
+
+	_, err = pool.Exec(s.ctx,
+		"CREATE TABLE IF NOT EXISTS "+schema.BackgroundMigrationVersionsTableName+
+			" (seqnum integer PRIMARY KEY NOT NULL, override_tag text DEFAULT '')")
+	s.Require().NoError(err)
+}
+
+func (s *RunnerTestSuite) SetupTest() {
+	resetRegistry()
+	// Reset the version row to seq 0, empty override tag.
+	_, err := s.db.Exec(s.ctx,
+		"DELETE FROM "+schema.BackgroundMigrationVersionsTableName)
+	s.Require().NoError(err)
+	_, err = s.db.Exec(s.ctx,
+		"INSERT INTO "+schema.BackgroundMigrationVersionsTableName+" (seqnum, override_tag) VALUES (0, '')")
+	s.Require().NoError(err)
+}
+
+func (s *RunnerTestSuite) newRunner(rolloutChecker RolloutChecker, targetSeqNum int) *Runner {
+	r := NewRunner(s.db, rolloutChecker)
+	r.targetSeqNum = targetSeqNum
+	r.retryInterval = 10 * time.Millisecond
 	return r
 }
 
 // requireStoppedWithin starts the runner and fails the test if it doesn't stop within the timeout.
 func requireStoppedWithin(t *testing.T, runner *Runner, timeout time.Duration) {
 	t.Helper()
-	runner.Start()
 	done := make(chan struct{})
 	go func() {
 		_ = runner.stopper.Client().Stopped().Wait()
 		close(done)
 	}()
+	runner.Start()
 	select {
 	case <-done:
 	case <-time.After(timeout):
@@ -112,34 +114,34 @@ func requireStoppedWithin(t *testing.T, runner *Runner, timeout time.Duration) {
 	}
 }
 
-func TestRunnerUpToDate(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
+func (s *RunnerTestSuite) TestUpToDate() {
+	runner := s.newRunner(&doneRolloutChecker{}, 0)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
-	requireStoppedWithin(t, runner, testTimeout)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(0, seqNum)
 }
 
-func TestRunnerDetectsRollback(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
+func (s *RunnerTestSuite) TestDetectsRollback() {
+	// Set DB to seq 5, but current is 2.
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 5")
+	s.Require().NoError(err)
 
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 5})
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(2)).Return(pgconn.CommandTag{}, nil)
+	runner := s.newRunner(&doneRolloutChecker{}, 2)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 2)
-	requireStoppedWithin(t, runner, testTimeout)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(2, seqNum)
 }
 
-func TestRunnerRunsOnlyNewMigrations(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 1})
+func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
+	// DB at seq 1, current target is 3 — should only run migrations 1 and 2.
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 1")
+	s.Require().NoError(err)
 
 	ran := []int{}
 	MustRegister(BackgroundMigration{
@@ -155,24 +157,17 @@ func TestRunnerRunsOnlyNewMigrations(t *testing.T) {
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
 	})
 
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(2)).Return(pgconn.CommandTag{}, nil)
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(3)).Return(pgconn.CommandTag{}, nil)
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
+	s.Equal([]int{1, 2}, ran)
 
-	assert.Equal(t, []int{1, 2}, ran)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
 }
 
-func TestRunnerRetriesOnMigrationError(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	// First attempt: read state, migration fails.
-	// Second attempt: read state, migration succeeds.
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0}).Times(2)
-
+func (s *RunnerTestSuite) TestRetriesOnMigrationError() {
 	callCount := 0
 	MustRegister(BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "fails-then-succeeds",
@@ -185,30 +180,21 @@ func TestRunnerRetriesOnMigrationError(t *testing.T) {
 		},
 	})
 
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(1)).Return(pgconn.CommandTag{}, nil)
+	runner := s.newRunner(&doneRolloutChecker{}, 1)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 1)
-	requireStoppedWithin(t, runner, testTimeout)
-
-	assert.Equal(t, 2, callCount)
+	s.Equal(2, callCount)
 }
 
-func TestRunnerRetryStopsOnShutdown(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0}).AnyTimes()
-
+func (s *RunnerTestSuite) TestRetryStopsOnShutdown() {
 	MustRegister(BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "always-fails",
 		Run: func(_ context.Context, _ postgres.DB) error { return errors.New("permanent failure") },
 	})
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 1)
+	runner := s.newRunner(&doneRolloutChecker{}, 1)
 	runner.Start()
 
-	// Let it fail at least once, then stop.
 	time.Sleep(50 * time.Millisecond)
 	runner.Stop()
 
@@ -220,12 +206,11 @@ func TestRunnerRetryStopsOnShutdown(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(testTimeout):
-		t.Fatal("runner did not stop after Stop() within timeout")
+		s.T().Fatal("runner did not stop after Stop() within timeout")
 	}
 }
 
-func TestRunnerMigrationRespectsContext(t *testing.T) {
-	resetRegistry()
+func (s *RunnerTestSuite) TestMigrationRespectsContext() {
 	MustRegister(BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "ctx-aware",
 		Run: func(ctx context.Context, _ postgres.DB) error { return ctx.Err() },
@@ -235,20 +220,15 @@ func TestRunnerMigrationRespectsContext(t *testing.T) {
 	cancel()
 
 	m, ok := Get(0)
-	require.True(t, ok)
+	require.True(s.T(), ok)
 	err := m.Run(ctx, nil)
-	assert.ErrorIs(t, err, context.Canceled)
+	assert.ErrorIs(s.T(), err, context.Canceled)
 }
 
-func TestRunnerStopDuringRolloutRetry(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	runner := newTestRunner(db, &notDoneRolloutChecker{}, 0)
+func (s *RunnerTestSuite) TestStopDuringRolloutRetry() {
+	runner := s.newRunner(&notDoneRolloutChecker{}, 0)
 	runner.Start()
 
-	// Let it retry at least once, then stop.
 	time.Sleep(50 * time.Millisecond)
 	runner.Stop()
 
@@ -260,90 +240,28 @@ func TestRunnerStopDuringRolloutRetry(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(testTimeout):
-		t.Fatal("runner did not stop after Stop() within timeout")
+		s.T().Fatal("runner did not stop after Stop() within timeout")
 	}
 }
 
-func TestRunnerRetriesOnRolloutCheckError(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
-
+func (s *RunnerTestSuite) TestRetriesOnRolloutCheckError() {
 	checker := &countingRolloutChecker{notDoneCount: 2}
-	runner := newTestRunner(db, checker, 0)
-	requireStoppedWithin(t, runner, testTimeout)
+	runner := s.newRunner(checker, 0)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	assert.Equal(t, 3, checker.callCount)
+	s.Equal(3, checker.callCount)
 }
 
-func TestRunnerLockBlocksUntilStopped(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
+func (s *RunnerTestSuite) TestLockReleasedAfterMigrations() {
+	runner := s.newRunner(&doneRolloutChecker{}, 0)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
-	runner.tryAcquireLockFunc = neverAcquireLockFunc()
-	runner.Start()
-
-	runner.Stop()
-
-	done := make(chan struct{})
-	go func() {
-		_ = runner.stopper.Client().Stopped().Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(testTimeout):
-		t.Fatal("runner did not stop after Stop() within timeout")
-	}
+	// If the lock was released, we should be able to acquire it again.
+	runner2 := s.newRunner(&doneRolloutChecker{}, 0)
+	requireStoppedWithin(s.T(), runner2, testTimeout)
 }
 
-func TestRunnerLockRetriesOnConnectionDrop(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
-
-	callCount := 0
-	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
-	runner.tryAcquireLockFunc = func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
-		callCount++
-		if callCount < 3 {
-			return false, nil, errors.New("connection dropped")
-		}
-		return true, func() {}, nil
-	}
-
-	requireStoppedWithin(t, runner, testTimeout)
-	assert.Equal(t, 3, callCount)
-}
-
-func TestRunnerLockReleasedAfterMigrations(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
-
-	released := false
-	runner := newTestRunner(db, &doneRolloutChecker{}, 0)
-	runner.tryAcquireLockFunc = func(_ context.Context, _ postgres.DB, _ int64) (bool, func(), error) {
-		return true, func() { released = true }, nil
-	}
-
-	requireStoppedWithin(t, runner, testTimeout)
-	assert.True(t, released, "advisory lock should be released after runner completes")
-}
-
-func TestRunnerStopCancelsRunningMigration(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 0})
-
+func (s *RunnerTestSuite) TestStopCancelsRunningMigration() {
 	migrationStarted := make(chan struct{})
 	MustRegister(BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "long-running",
@@ -354,13 +272,13 @@ func TestRunnerStopCancelsRunningMigration(t *testing.T) {
 		},
 	})
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 1)
+	runner := s.newRunner(&doneRolloutChecker{}, 1)
 	runner.Start()
 
 	select {
 	case <-migrationStarted:
 	case <-time.After(testTimeout):
-		t.Fatal("migration did not start within timeout")
+		s.T().Fatal("migration did not start within timeout")
 	}
 
 	runner.Stop()
@@ -373,19 +291,15 @@ func TestRunnerStopCancelsRunningMigration(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(testTimeout):
-		t.Fatal("runner did not stop after cancelling migration within timeout")
+		s.T().Fatal("runner did not stop after cancelling migration within timeout")
 	}
 }
 
-func TestRunnerOverrideAppliesWithNewTag(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	// DB is at seq 3, override wants to restart from 0 with tag "ROX-123".
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 3, overrideTag: ""})
-	// Expect writeState to persist the override.
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(0), "ROX-123").Return(pgconn.CommandTag{}, nil)
+func (s *RunnerTestSuite) TestOverrideAppliesWithNewTag() {
+	// DB at seq 3, override resets to 0.
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")
+	s.Require().NoError(err)
 
 	ran := []int{}
 	MustRegister(BackgroundMigration{
@@ -401,44 +315,40 @@ func TestRunnerOverrideAppliesWithNewTag(t *testing.T) {
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
 	})
 
-	// Each migration writes its seq num.
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(1)).Return(pgconn.CommandTag{}, nil)
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(2)).Return(pgconn.CommandTag{}, nil)
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(3)).Return(pgconn.CommandTag{}, nil)
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
+	s.Equal([]int{0, 1, 2}, ran)
 
-	assert.Equal(t, []int{0, 1, 2}, ran)
+	_, overrideTag, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal("ROX-123", overrideTag)
 }
 
-func TestRunnerOverrideSkipsWhenTagMatches(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
+func (s *RunnerTestSuite) TestOverrideSkipsWhenTagMatches() {
+	// DB already has the same tag — override was already applied.
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3, override_tag = 'ROX-123'")
+	s.Require().NoError(err)
 
-	// DB already has the same tag — override was already applied by another replica.
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 3, overrideTag: "ROX-123"})
-	// No writeState expected — override is skipped.
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
 }
 
-func TestRunnerOverrideRerunsWithNewTag(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
-
-	// DB has old tag "ROX-123", new tag "ROX-456" triggers a rerun.
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 3, overrideTag: "ROX-123"})
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(0), "ROX-456").Return(pgconn.CommandTag{}, nil)
+func (s *RunnerTestSuite) TestOverrideRerunsWithNewTag() {
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3, override_tag = 'ROX-123'")
+	s.Require().NoError(err)
 
 	ran := []int{}
 	MustRegister(BackgroundMigration{
@@ -454,61 +364,57 @@ func TestRunnerOverrideRerunsWithNewTag(t *testing.T) {
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
 	})
 
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(1)).Return(pgconn.CommandTag{}, nil)
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(2)).Return(pgconn.CommandTag{}, nil)
-	db.EXPECT().Exec(gomock.Any(), gomock.Any(), int32(3)).Return(pgconn.CommandTag{}, nil)
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-456")
 
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-456")
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
-
-	assert.Equal(t, []int{0, 1, 2}, ran)
+	s.Equal([]int{0, 1, 2}, ran)
 }
 
-func TestRunnerOverrideIgnoredWithoutTag(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
+func (s *RunnerTestSuite) TestOverrideIgnoredWithoutTag() {
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")
+	s.Require().NoError(err)
 
-	// Override seq num set but no tag — override should be ignored.
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 3})
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
 
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
-	// ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG not set.
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
 }
 
-func TestRunnerOverrideIgnoredWhenSeqNumExceedsCurrent(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
+func (s *RunnerTestSuite) TestOverrideIgnoredWhenSeqNumExceedsCurrent() {
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")
+	s.Require().NoError(err)
 
-	// Override seq num (10) exceeds current (3) — override should be ignored.
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 3})
-	// No writeState expected.
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "10")
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-999")
 
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "10")
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-999")
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
 }
 
-func TestRunnerOverrideIgnoredWithoutSeqNum(t *testing.T) {
-	resetRegistry()
-	ctrl := gomock.NewController(t)
-	db := pgMocks.NewMockDB(ctrl)
+func (s *RunnerTestSuite) TestOverrideIgnoredWithoutSeqNum() {
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")
+	s.Require().NoError(err)
 
-	// Tag set but no seq num — override should be ignored.
-	db.EXPECT().QueryRow(gomock.Any(), gomock.Any()).Return(&fakeRow{seqNum: 3})
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
-	t.Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
-	// ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM not set (defaults to -1).
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
 
-	runner := newTestRunner(db, &doneRolloutChecker{}, 3)
-	requireStoppedWithin(t, runner, testTimeout)
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
 }

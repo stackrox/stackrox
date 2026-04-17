@@ -6,6 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func resetRegistry() {
+	migrations = make(map[int]BackgroundMigration)
+}
+
 func TestRegistryPanicsOnDuplicate(t *testing.T) {
 	resetRegistry()
 	MustRegister(BackgroundMigration{StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "first"})
