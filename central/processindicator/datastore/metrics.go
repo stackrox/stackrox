@@ -8,14 +8,21 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-var (
-	prunedProcesses = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "pruned_process_indicators",
-		Help:      "Number of process indicators removed by pruning",
-	})
+const (
+	// PruneReasonSimilarity represents pruning based on Jaccard similarity algorithm
+	PruneReasonSimilarity = "similarity"
+	// PruneReasonOrphanedByDeployment represents pruning of indicators orphaned by deleted deployments
+	PruneReasonOrphanedByDeployment = "orphaned_deployment"
+	// PruneReasonOrphanedByPod represents pruning of indicators orphaned by deleted pods
+	PruneReasonOrphanedByPod = "orphaned_pod"
 
+	// RemovalReasonProcessFilter represents removal during process filter cleanup
+	RemovalReasonProcessFilter = "process_filter"
+	// RemovalReasonPodDeletion represents removal when a pod is deleted
+	RemovalReasonPodDeletion = "pod_deletion"
+)
+
+var (
 	processPruningCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -51,10 +58,25 @@ var (
 		Name:      "process_upserted_count",
 		Help:      "Number of process indicators upserted by cluster and namespace",
 	}, []string{"cluster", "namespace"})
+
+	processIndicatorsRemoved = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_indicators_removed",
+		Help:      "Number of process indicators removed from the database, broken down by reason",
+	}, []string{"reason"})
+
+	processIndicatorsRemovedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_indicators_removed_total",
+		Help:      "Total number of process indicators removed from the database across all reasons",
+	})
 )
 
-func incrementPrunedProcessesMetric(num int) {
-	prunedProcesses.Add(float64(num))
+func recordProcessIndicatorsRemoved(num int, reason string) {
+	processIndicatorsRemoved.WithLabelValues(reason).Add(float64(num))
+	processIndicatorsRemovedTotal.Add(float64(num))
 }
 
 func incrementProcessPruningCacheHitsMetrics() {
@@ -86,7 +108,6 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 		namespace := indicator.GetNamespace()
 
 		processUpsertedArgsSizeHistogram.Observe(float64(argsSizeChars))
-
 		processUpsertedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeChars))
 		processUpsertedCount.WithLabelValues(clusterID, namespace).Inc()
 	}
@@ -94,11 +115,12 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 
 func init() {
 	prometheus.MustRegister(
-		prunedProcesses,
 		processPruningCacheHits,
 		processPruningCacheMisses,
 		processUpsertedArgsSizeHistogram,
 		processUpsertedArgsSizeTotal,
 		processUpsertedCount,
+		processIndicatorsRemoved,
+		processIndicatorsRemovedTotal,
 	)
 }
