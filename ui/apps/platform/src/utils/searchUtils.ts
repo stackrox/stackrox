@@ -480,7 +480,9 @@ export function formatKeyValue(value: string, formatPart: (part: string) => stri
     if (eqIndex !== -1) {
         const key = value.slice(0, eqIndex);
         const val = value.slice(eqIndex + 1);
-        return [`${formatPart(key)}=${formatPart(val)}`];
+        const formattedKey = key ? formatPart(key) : 'r/.*';
+        const formattedVal = val ? formatPart(val) : 'r/.*';
+        return [`${formattedKey}=${formattedVal}`];
     }
     // No '=' present — emit two entries to match the value against either the
     // label key or the label value (OR semantics via comma-joined values).
@@ -507,8 +509,8 @@ export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFil
             regexSearchFilter[key] = searchValueAsArray(value).flatMap((val) => {
                 if (isLabel) {
                     const rawValue = isQuotedString(val) ? val.slice(1, -1) : val;
-                    const formatter = isQuotedString(val) ? wrapInQuotes : (v: string) => `r/${v}`;
-                    return formatKeyValue(rawValue, formatter);
+                    const formatPart = isQuotedString(val) ? wrapInQuotes : (v: string) => `r/${v}`;
+                    return formatKeyValue(rawValue, formatPart);
                 }
                 return isQuotedString(val) ? val : `r/${val}`;
             });

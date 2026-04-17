@@ -475,6 +475,13 @@ describe('searchUtils', () => {
         it('escapes internal double quotes in key and value', () => {
             expect(formatKeyValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k\\"ey"="v\\"al"']);
         });
+
+        it('uses wildcard for empty key or value around equals sign', () => {
+            expect(formatKeyValue('=value', (v) => `r/${v}`)).toEqual(['r/.*=r/value']);
+            expect(formatKeyValue('key=', (v) => `r/${v}`)).toEqual(['r/key=r/.*']);
+            expect(formatKeyValue('=value', wrapInQuotes)).toEqual(['r/.*="value"']);
+            expect(formatKeyValue('key=', wrapInQuotes)).toEqual(['"key"=r/.*']);
+        });
     });
 
     describe('wrapInQuotes', () => {
