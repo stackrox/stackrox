@@ -129,9 +129,8 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 
 // RunSelectRequestForSchemaFn executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
-func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) error {
+func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) (retErr error) {
 	var query *query
-	var err error
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
 	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
@@ -144,13 +143,14 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
 			debug.PrintStack()
-			err = fmt.Errorf("unexpected error running search request: %v", r)
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
 		}
 	}()
 
 	// Extract array fields from destination type T to automatically detect child table aggregation
 	arrayFields := getArrayFieldsFromType[T]()
 
+	var err error
 	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
 	if err != nil {
 		return err
@@ -306,9 +306,8 @@ type DirectScanConfig struct {
 // The arrayFields parameter indicates which selected fields are array columns
 // in the parent table (same semantics as RunSelectRequestForSchemaFn's
 // type-detected array fields). Pass nil if no array fields are selected.
-func RunSelectDirectFn(ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, arrayFields map[string]bool, cfg *DirectScanConfig) error {
+func RunSelectDirectFn(ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, arrayFields map[string]bool, cfg *DirectScanConfig) (retErr error) {
 	var builtQuery *query
-	var err error
 	defer func() {
 		if r := recover(); r != nil {
 			if builtQuery != nil {
@@ -317,11 +316,11 @@ func RunSelectDirectFn(ctx context.Context, db postgres.DB, schema *walker.Schem
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
 			debug.PrintStack()
-			err = fmt.Errorf("unexpected error running search request: %v", r)
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
 		}
 	}()
 
-	builtQuery, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
+	builtQuery, err := standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
 	if err != nil {
 		return err
 	}
@@ -338,6 +337,13 @@ func retryableRunSelectDirectFn(ctx context.Context, db postgres.DB, q *query, c
 		return errors.New("select fields required for select query")
 	}
 
+	// Guard against the query builder injecting columns beyond what the caller expects.
+	expectedCols := len(q.SelectedFields) + len(q.ExtraSelectedFieldPaths())
+	dests := cfg.ScanDests()
+	if len(dests) != expectedCols {
+		return errors.Errorf("scan destination count %d does not match projected column count %d", len(dests), expectedCols)
+	}
+
 	queryStr := q.AsSQL()
 
 	rows, err := tracedQuery(ctx, db, queryStr, q.Data...)
@@ -347,7 +353,6 @@ func retryableRunSelectDirectFn(ctx context.Context, db postgres.DB, q *query, c
 	defer rows.Close()
 
 	for rows.Next() {
-		dests := cfg.ScanDests()
 		if err := rows.Scan(dests...); err != nil {
 			return err
 		}

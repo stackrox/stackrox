@@ -4,6 +4,7 @@ package postgres_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -1311,5 +1312,25 @@ func TestRunSelectDirectFn(t *testing.T) {
 			})
 		require.NoError(t, err)
 		assert.False(t, called)
+	})
+
+	t.Run("OnRow error propagates", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(search.NewQuerySelect(search.TestString)).
+			ProtoQuery()
+
+		expectedErr := errors.New("callback failed")
+		var testString string
+		dests := []any{&testString}
+
+		err := pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return dests },
+				OnRow: func() error {
+					return expectedErr
+				},
+			})
+		require.Error(t, err)
+		assert.ErrorIs(t, err, expectedErr)
 	})
 }
