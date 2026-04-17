@@ -3,7 +3,6 @@ package networkpolicies
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -146,8 +145,8 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 
 func (t *applyTx) Rollback(ctx context.Context) error {
 	var errList errorhelpers.ErrorList
-	for _, action := range slices.Backward(t.rollbackActions) {
-		errList.AddError(action.Execute(ctx, t.networkingClient))
+	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
+		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
 	}
 	if err := errList.ToError(); err != nil {
 		return errors.Wrap(err, "reverting network policy modifications")
@@ -265,8 +264,8 @@ func (t *applyTx) deleteNetworkPolicy(ctx context.Context, namespace, name strin
 
 func (t *applyTx) UndoModification() *storage.NetworkPolicyModification {
 	mod := &storage.NetworkPolicyModification{}
-	for _, action := range slices.Backward(t.rollbackActions) {
-		action.Record(mod)
+	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
+		t.rollbackActions[i].Record(mod)
 	}
 	return mod
 }

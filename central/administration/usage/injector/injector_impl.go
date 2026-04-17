@@ -50,11 +50,9 @@ func (i *injectorImpl) gatherLoop() {
 	for {
 		select {
 		case <-i.tickChan:
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				i.gather(ctx)
-			}()
+			})
 		case <-i.stop.Done():
 			cancel()
 			wg.Wait()
