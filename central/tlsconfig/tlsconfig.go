@@ -236,34 +236,45 @@ func issueInternalCertificate(namespace string) (*tls.Certificate, error) {
 }
 
 func getInternalCertificates(namespace string) ([]tls.Certificate, error) {
-	var internalCerts []tls.Certificate
-	// First try to load the internal certificate from files. If the files don't exist, issue
-	// ourselves a cert.
-	if certFromFiles, err := loadInternalCertificateFromFiles(); err != nil {
-		return nil, err
-	} else if certFromFiles != nil {
-		internalCerts = append(internalCerts, *certFromFiles)
-	}
-
-	if len(internalCerts) > 0 {
-		serviceCert, err := x509.ParseCertificate(internalCerts[0].Certificate[0])
-		if err != nil {
-			return nil, errors.Wrap(err, "loaded internal certificate is invalid")
-		}
-		if validForAllDNSNames(serviceCert, mtls.CentralSubject.AllHostnamesForNamespace(namespace)...) {
-			return internalCerts, nil // cert loaded from secret is sufficient
-		}
-	}
-
-	log.Warnw("Internal TLS certificates are not valid for all cluster-internal DNS names due to deployment in "+
-		"alternative namespace, issuing ephemeral certificate with adequate DNS names",
-		logging.String("namespace", namespace), logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
-	newInternalCert, err := issueInternalCertificate(namespace)
+	certFromFiles, err := loadInternalCertificateFromFiles()
 	if err != nil {
-		return internalCerts, err
+		return nil, err
 	}
-	internalCerts = append(internalCerts, *newInternalCert)
-	return internalCerts, nil
+	if certFromFiles != nil {
+		if certFromFiles.Leaf == nil {
+			certFromFiles.Leaf, err = x509.ParseCertificate(certFromFiles.Certificate[0])
+			if err != nil {
+				return nil, errors.Wrap(err, "loaded internal certificate is invalid")
+			}
+		}
+		return buildInternalCerts(certFromFiles, namespace)
+	}
+
+	// No cert files on disk — issue an ephemeral cert from scratch.
+	ephemeralCert, err := issueInternalCertificate(namespace)
+	if err != nil {
+		return nil, err
+	}
+	return []tls.Certificate{*ephemeralCert}, nil
+}
+
+// buildInternalCerts returns a cert slice containing the given cert. If the cert
+// is not valid for all DNS names in the given namespace, an additional ephemeral
+// cert with the correct SANs is appended.
+func buildInternalCerts(cert *tls.Certificate, namespace string) ([]tls.Certificate, error) {
+	if cert.Leaf != nil && validForAllDNSNames(cert.Leaf, mtls.CentralSubject.AllHostnamesForNamespace(namespace)...) {
+		return []tls.Certificate{*cert}, nil
+	}
+
+	log.Warnw("Internal TLS certificate is not valid for all cluster-internal DNS names, "+
+		"issuing ephemeral certificate with adequate DNS names",
+		logging.String("namespace", namespace),
+		logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
+	ephemeralCert, err := issueInternalCertificate(namespace)
+	if err != nil {
+		return []tls.Certificate{*cert}, err
+	}
+	return []tls.Certificate{*cert, *ephemeralCert}, nil
 }
 
 func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {

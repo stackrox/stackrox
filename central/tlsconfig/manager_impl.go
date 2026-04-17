@@ -88,24 +88,14 @@ func (m *managerImpl) UpdateInternalCertificate(cert *tls.Certificate) {
 		return
 	}
 
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	internalCerts := []tls.Certificate{*cert}
-
-	if cert.Leaf != nil && !validForAllDNSNames(cert.Leaf, mtls.CentralSubject.AllHostnamesForNamespace(m.namespace)...) {
-		log.Warnw("Reloaded internal TLS certificate is not valid for all cluster-internal DNS names, "+
-			"issuing ephemeral certificate with adequate DNS names",
-			logging.String("namespace", m.namespace),
-			logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(m.namespace)))
-		ephemeralCert, err := issueInternalCertificate(m.namespace)
-		if err != nil {
-			log.Errorf("Failed to issue ephemeral internal certificate during reload: %v", err)
-		} else {
-			internalCerts = append(internalCerts, *ephemeralCert)
-		}
+	internalCerts, err := buildInternalCerts(cert, m.namespace)
+	if err != nil {
+		log.Errorf("Failed to issue ephemeral certificate for alternative namespace during reload, keeping previous certs: %v", err)
+		return
 	}
 
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	m.internalCerts = internalCerts
 	m.updateConfigurersNoLock()
 }
