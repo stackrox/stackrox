@@ -105,14 +105,10 @@ deploy_stackrox_with_roxie() {
     local load_balancer="${LOAD_BALANCER:-}"
     local rox_scanner_v4="${ROX_SCANNER_V4:-}"
     local feature_flags_overrides="${FEATURE_FLAGS_OVERRIDES:-}"
-    local orchestrator_flavor="${ORCHESTRATOR_FLAVOR:-k8s}"
 
-    if ! command -v roxie >/dev/null 2>&1; then
-        die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
-    fi
-    if [[ "$pod_security_policies" == "true" ]]; then
-        info "WARNING: roxie-based deployments do not support PodSecurityPolicies"
-    fi
+    check_for_roxie
+
+    handle_pod_security_policies "$pod_security_policies"
 
     predeployment_cleanup "$namespace" "$managed_by"
 
@@ -164,23 +160,12 @@ deploy_stackrox_with_roxie() {
         --early-readiness=false \
         --override "$override_file"
 
-    # Replaces deploy_stackrox steps: export_central_basic_auth_creds
-    # shellcheck source=/dev/null
-    source "$roxie_envrc"
-    ci_export "ROX_USERNAME" "$ROX_USERNAME"
-    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+    extend_roxie_envrc "$roxie_envrc"
 
-    # roxie does not export these yet via envrc, but they are needed by the tests.
-    if [[ ! "$API_ENDPOINT" =~ ^[^:]+:[0-9]+$ ]]; then
-        die "API_ENDPOINT has unexpected format: $API_ENDPOINT (expected hostname:port)"
+    # Persist roxie environment, mimicing the effect of ci_export.
+    if [[ -n "$BASH_ENV" ]]; then
+        cat "$roxie_envrc" >> "$BASH_ENV"
     fi
-    API_HOSTNAME="${API_ENDPOINT%:*}"  # Remove :port from end
-    export API_HOSTNAME
-    API_PORT="${API_ENDPOINT##*:}"     # Remove hostname: from start
-    export API_PORT
-
-    CLUSTER="$(echo "$orchestrator_flavor" | tr '[:lower:]' '[:upper:]')"
-    export CLUSTER
 
     record_build_info "${namespace}"
 
@@ -199,6 +184,53 @@ deploy_stackrox_with_roxie() {
     wait_for_collectors_to_be_operational stackrox
     touch "${STATE_DEPLOYED}"
     # wait_for_scanner_V4
+}
+
+check_for_roxie() {
+    if ! command -v roxie >/dev/null 2>&1; then
+        die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
+    fi
+
+    info "roxie found, version: $(roxie version)"
+}
+
+handle_pod_security_policies() {
+    local pod_security_policies="$1"
+    if [[ "$pod_security_policies" == "true" ]]; then
+        info "WARNING: roxie-based deployments do not support PodSecurityPolicies"
+    fi
+    export POD_SECURITY_POLICIES="false"
+    ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
+}
+
+extend_roxie_envrc() {
+    local roxie_envrc="$1"
+    local orchestrator_flavor="${ORCHESTRATOR_FLAVOR:-k8s}"
+
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+
+    # roxie does not export these yet via envrc, but they are needed by the tests.
+    ## First validation
+    if [[ ! "$API_ENDPOINT" =~ ^[^:]+:[0-9]+$ ]]; then
+        die "API_ENDPOINT has unexpected format: $API_ENDPOINT (expected hostname:port)"
+    fi
+    ## ROX_USERNAME
+    local ROX_USERNAME; ROX_USERNAME="admin"
+    ## CLUSTER
+    local CLUSTER; CLUSTER="$(echo "$orchestrator_flavor" | tr '[:lower:]' '[:upper:]')"
+    ## API_HOSTNAME, remove :port from end of API_ENDPOINT.
+    local API_HOSTNAME; API_HOSTNAME="${API_ENDPOINT%:*}"
+    ## API_PORT, remove hostname: from beginning of API_ENDPOINT.
+    local API_PORT; API_PORT="${API_ENDPOINT##*:}"
+
+    # Add these to roxie's envrc.
+    cat >> "$roxie_envrc" <<EOF
+export ROX_USERNAME="${ROX_USERNAME}"
+export CLUSTER="${CLUSTER}"
+export API_HOSTNAME="${API_HOSTNAME}"
+export API_PORT="${API_PORT}"
+EOF
 }
 
 set_custom_env() {
