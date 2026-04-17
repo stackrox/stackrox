@@ -226,7 +226,10 @@ func TestBuildEntityScopeQuery(t *testing.T) {
 					},
 				},
 			},
-			expected:      search.NewQueryBuilder().AddExactMatches(search.Namespace, "prod", "staging").ProtoQuery(),
+			expected: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.Namespace, "prod").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.Namespace, "staging").ProtoQuery(),
+			),
 			assertQueries: assertByDirectComparison,
 		},
 		{
@@ -259,7 +262,10 @@ func TestBuildEntityScopeQuery(t *testing.T) {
 					},
 				},
 			},
-			expected:      search.NewQueryBuilder().AddExactMatches(search.Cluster, "prod-us", "prod-eu").ProtoQuery(),
+			expected: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.Cluster, "prod-us").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.Cluster, "prod-eu").ProtoQuery(),
+			),
 			assertQueries: assertByDirectComparison,
 		},
 		{
@@ -285,7 +291,10 @@ func TestBuildEntityScopeQuery(t *testing.T) {
 			},
 			expected: search.ConjunctionQuery(
 				search.NewQueryBuilder().AddExactMatches(search.Namespace, "prod").ProtoQuery(),
-				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "backend", "frontend").ProtoQuery(),
+				search.DisjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "backend").ProtoQuery(),
+					search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "frontend").ProtoQuery(),
+				),
 			),
 			assertQueries: assertByDirectComparison,
 		},
