@@ -1223,11 +1223,12 @@ func (x *AutoLockProcessBaselinesConfig) GetEnabled() bool {
 
 // The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 type DynamicClusterConfig struct {
-	state                          protoimpl.MessageState          `protogen:"open.v1"`
-	AdmissionControllerConfig      *AdmissionControllerConfig      `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig,proto3" json:"admission_controller_config,omitempty"`
-	RegistryOverride               string                          `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride,proto3" json:"registry_override,omitempty"`
-	DisableAuditLogs               bool                            `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs,proto3" json:"disable_audit_logs,omitempty"`
-	AutoLockProcessBaselinesConfig *AutoLockProcessBaselinesConfig `protobuf:"bytes,4,opt,name=auto_lock_process_baselines_config,json=autoLockProcessBaselinesConfig,proto3" json:"auto_lock_process_baselines_config,omitempty"`
+	state                          protoimpl.MessageState                        `protogen:"open.v1"`
+	AdmissionControllerConfig      *AdmissionControllerConfig                    `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig,proto3" json:"admission_controller_config,omitempty"`
+	RegistryOverride               string                                        `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride,proto3" json:"registry_override,omitempty"`
+	DisableAuditLogs               bool                                          `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs,proto3" json:"disable_audit_logs,omitempty"`
+	AutoLockProcessBaselinesConfig *AutoLockProcessBaselinesConfig               `protobuf:"bytes,4,opt,name=auto_lock_process_baselines_config,json=autoLockProcessBaselinesConfig,proto3" json:"auto_lock_process_baselines_config,omitempty"`
+	ProcessIndicators              *DynamicClusterConfig_ProcessIndicatorsConfig `protobuf:"bytes,5,opt,name=process_indicators,json=processIndicators,proto3" json:"process_indicators,omitempty"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -1286,6 +1287,13 @@ func (x *DynamicClusterConfig) GetDisableAuditLogs() bool {
 func (x *DynamicClusterConfig) GetAutoLockProcessBaselinesConfig() *AutoLockProcessBaselinesConfig {
 	if x != nil {
 		return x.AutoLockProcessBaselinesConfig
+	}
+	return nil
+}
+
+func (x *DynamicClusterConfig) GetProcessIndicators() *DynamicClusterConfig_ProcessIndicatorsConfig {
+	if x != nil {
+		return x.ProcessIndicators
 	}
 	return nil
 }
@@ -2569,6 +2577,78 @@ type ScannerHealthInfo_TotalReadyDbPods struct {
 
 func (*ScannerHealthInfo_TotalReadyDbPods) isScannerHealthInfo_TotalReadyDbPodsOpt() {}
 
+// Configure per-namespace persistence for ProcessIndicators
+type DynamicClusterConfig_ProcessIndicatorsConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Specifies whether to persist process indicators independently from
+	// other configuratons. If true, the filters above are ignored, and no
+	// process indicators are persisted. If false (the protobuf default for
+	// booleans), process indicators are persisted according to
+	// namespace_filter and exclude_openshift_ns.
+	NoPersistence bool `protobuf:"varint,1,opt,name=no_persistence,json=noPersistence,proto3" json:"no_persistence,omitempty"`
+	// A regex specifying to not persist process indicators from specified
+	// namespaces. E.g. namespace_filter: "test-.*" will instruct Central to
+	// not persist any process indicator coming from the "test-filtering"
+	// namespace.
+	ExcludeNamespaceFilter string `protobuf:"bytes,2,opt,name=exclude_namespace_filter,json=excludeNamespaceFilter,proto3" json:"exclude_namespace_filter,omitempty"`
+	// A short-cut to not persist process indicators from openshift namespaces.
+	// Equivalent to namespace_filter: "openshift-.*".
+	ExcludeOpenshiftNs bool `protobuf:"varint,3,opt,name=exclude_openshift_ns,json=excludeOpenshiftNs,proto3" json:"exclude_openshift_ns,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *DynamicClusterConfig_ProcessIndicatorsConfig) Reset() {
+	*x = DynamicClusterConfig_ProcessIndicatorsConfig{}
+	mi := &file_storage_cluster_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DynamicClusterConfig_ProcessIndicatorsConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DynamicClusterConfig_ProcessIndicatorsConfig) ProtoMessage() {}
+
+func (x *DynamicClusterConfig_ProcessIndicatorsConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_cluster_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DynamicClusterConfig_ProcessIndicatorsConfig.ProtoReflect.Descriptor instead.
+func (*DynamicClusterConfig_ProcessIndicatorsConfig) Descriptor() ([]byte, []int) {
+	return file_storage_cluster_proto_rawDescGZIP(), []int{10, 0}
+}
+
+func (x *DynamicClusterConfig_ProcessIndicatorsConfig) GetNoPersistence() bool {
+	if x != nil {
+		return x.NoPersistence
+	}
+	return false
+}
+
+func (x *DynamicClusterConfig_ProcessIndicatorsConfig) GetExcludeNamespaceFilter() string {
+	if x != nil {
+		return x.ExcludeNamespaceFilter
+	}
+	return ""
+}
+
+func (x *DynamicClusterConfig_ProcessIndicatorsConfig) GetExcludeOpenshiftNs() bool {
+	if x != nil {
+		return x.ExcludeOpenshiftNs
+	}
+	return false
+}
+
 type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 	state         protoimpl.MessageState                                       `protogen:"open.v1"`
 	Active        bool                                                         `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
@@ -2584,7 +2664,7 @@ type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) Reset() {
 	*x = ClusterUpgradeStatus_UpgradeProcessStatus{}
-	mi := &file_storage_cluster_proto_msgTypes[26]
+	mi := &file_storage_cluster_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2596,7 +2676,7 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) String() string {
 func (*ClusterUpgradeStatus_UpgradeProcessStatus) ProtoMessage() {}
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[26]
+	mi := &file_storage_cluster_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2728,12 +2808,17 @@ const file_storage_cluster_proto_rawDesc = "" +
 	" \x01(\bR\x19admissionControllerEvents\x12J\n" +
 	"\"admission_controller_fail_on_error\x18\v \x01(\bR\x1eadmissionControllerFailOnError\":\n" +
 	"\x1eAutoLockProcessBaselinesConfig\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xca\x02\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xdf\x04\n" +
 	"\x14DynamicClusterConfig\x12b\n" +
 	"\x1badmission_controller_config\x18\x01 \x01(\v2\".storage.AdmissionControllerConfigR\x19admissionControllerConfig\x12+\n" +
 	"\x11registry_override\x18\x02 \x01(\tR\x10registryOverride\x12,\n" +
 	"\x12disable_audit_logs\x18\x03 \x01(\bR\x10disableAuditLogs\x12s\n" +
-	"\"auto_lock_process_baselines_config\x18\x04 \x01(\v2'.storage.AutoLockProcessBaselinesConfigR\x1eautoLockProcessBaselinesConfig\"\xeb\x02\n" +
+	"\"auto_lock_process_baselines_config\x18\x04 \x01(\v2'.storage.AutoLockProcessBaselinesConfigR\x1eautoLockProcessBaselinesConfig\x12d\n" +
+	"\x12process_indicators\x18\x05 \x01(\v25.storage.DynamicClusterConfig.ProcessIndicatorsConfigR\x11processIndicators\x1a\xac\x01\n" +
+	"\x17ProcessIndicatorsConfig\x12%\n" +
+	"\x0eno_persistence\x18\x01 \x01(\bR\rnoPersistence\x128\n" +
+	"\x18exclude_namespace_filter\x18\x02 \x01(\tR\x16excludeNamespaceFilter\x120\n" +
+	"\x14exclude_openshift_ns\x18\x03 \x01(\bR\x12excludeOpenshiftNs\"\xeb\x02\n" +
 	"\x15CompleteClusterConfig\x12D\n" +
 	"\x0edynamic_config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\rdynamicConfig\x12A\n" +
 	"\rstatic_config\x18\x02 \x01(\v2\x1c.storage.StaticClusterConfigR\fstaticConfig\x12-\n" +
@@ -2915,7 +3000,7 @@ func file_storage_cluster_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_cluster_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_storage_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_storage_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_storage_cluster_proto_goTypes = []any{
 	(ClusterType)(0),                        // 0: storage.ClusterType
 	(CollectionMethod)(0),                   // 1: storage.CollectionMethod
@@ -2948,11 +3033,12 @@ var file_storage_cluster_proto_goTypes = []any{
 	(*CollectorHealthInfo)(nil),                                       // 28: storage.CollectorHealthInfo
 	(*AdmissionControlHealthInfo)(nil),                                // 29: storage.AdmissionControlHealthInfo
 	(*ScannerHealthInfo)(nil),                                         // 30: storage.ScannerHealthInfo
-	nil,                                                               // 31: storage.CompleteClusterConfig.ClusterLabelsEntry
-	nil,                                                               // 32: storage.Cluster.LabelsEntry
-	nil,                                                               // 33: storage.Cluster.AuditLogStateEntry
-	(*ClusterUpgradeStatus_UpgradeProcessStatus)(nil),                 // 34: storage.ClusterUpgradeStatus.UpgradeProcessStatus
-	(*timestamppb.Timestamp)(nil),                                     // 35: google.protobuf.Timestamp
+	(*DynamicClusterConfig_ProcessIndicatorsConfig)(nil),              // 31: storage.DynamicClusterConfig.ProcessIndicatorsConfig
+	nil, // 32: storage.CompleteClusterConfig.ClusterLabelsEntry
+	nil, // 33: storage.Cluster.LabelsEntry
+	nil, // 34: storage.Cluster.AuditLogStateEntry
+	(*ClusterUpgradeStatus_UpgradeProcessStatus)(nil), // 35: storage.ClusterUpgradeStatus.UpgradeProcessStatus
+	(*timestamppb.Timestamp)(nil),                     // 36: google.protobuf.Timestamp
 }
 var file_storage_cluster_proto_depIdxs = []int32{
 	3,  // 0: storage.ClusterMetadata.type:type_name -> storage.ClusterMetadata.Type
@@ -2960,56 +3046,57 @@ var file_storage_cluster_proto_depIdxs = []int32{
 	10, // 2: storage.ProviderMetadata.aws:type_name -> storage.AWSProviderMetadata
 	11, // 3: storage.ProviderMetadata.azure:type_name -> storage.AzureProviderMetadata
 	8,  // 4: storage.ProviderMetadata.cluster:type_name -> storage.ClusterMetadata
-	35, // 5: storage.OrchestratorMetadata.build_date:type_name -> google.protobuf.Timestamp
+	36, // 5: storage.OrchestratorMetadata.build_date:type_name -> google.protobuf.Timestamp
 	0,  // 6: storage.StaticClusterConfig.type:type_name -> storage.ClusterType
 	1,  // 7: storage.StaticClusterConfig.collection_method:type_name -> storage.CollectionMethod
 	15, // 8: storage.StaticClusterConfig.tolerations_config:type_name -> storage.TolerationsConfig
 	14, // 9: storage.DynamicClusterConfig.admission_controller_config:type_name -> storage.AdmissionControllerConfig
 	17, // 10: storage.DynamicClusterConfig.auto_lock_process_baselines_config:type_name -> storage.AutoLockProcessBaselinesConfig
-	18, // 11: storage.CompleteClusterConfig.dynamic_config:type_name -> storage.DynamicClusterConfig
-	16, // 12: storage.CompleteClusterConfig.static_config:type_name -> storage.StaticClusterConfig
-	31, // 13: storage.CompleteClusterConfig.cluster_labels:type_name -> storage.CompleteClusterConfig.ClusterLabelsEntry
-	0,  // 14: storage.Cluster.type:type_name -> storage.ClusterType
-	32, // 15: storage.Cluster.labels:type_name -> storage.Cluster.LabelsEntry
-	1,  // 16: storage.Cluster.collection_method:type_name -> storage.CollectionMethod
-	23, // 17: storage.Cluster.status:type_name -> storage.ClusterStatus
-	18, // 18: storage.Cluster.dynamic_config:type_name -> storage.DynamicClusterConfig
-	15, // 19: storage.Cluster.tolerations_config:type_name -> storage.TolerationsConfig
-	27, // 20: storage.Cluster.health_status:type_name -> storage.ClusterHealthStatus
-	19, // 21: storage.Cluster.helm_config:type_name -> storage.CompleteClusterConfig
-	20, // 22: storage.Cluster.most_recent_sensor_id:type_name -> storage.SensorDeploymentIdentification
-	33, // 23: storage.Cluster.audit_log_state:type_name -> storage.Cluster.AuditLogStateEntry
-	2,  // 24: storage.Cluster.managed_by:type_name -> storage.ManagerType
-	35, // 25: storage.ClusterCertExpiryStatus.sensor_cert_expiry:type_name -> google.protobuf.Timestamp
-	35, // 26: storage.ClusterCertExpiryStatus.sensor_cert_not_before:type_name -> google.protobuf.Timestamp
-	35, // 27: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
-	12, // 28: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
-	13, // 29: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
-	24, // 30: storage.ClusterStatus.upgrade_status:type_name -> storage.ClusterUpgradeStatus
-	22, // 31: storage.ClusterStatus.cert_expiry_status:type_name -> storage.ClusterCertExpiryStatus
-	4,  // 32: storage.ClusterUpgradeStatus.upgradability:type_name -> storage.ClusterUpgradeStatus.Upgradability
-	34, // 33: storage.ClusterUpgradeStatus.most_recent_process:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus
-	6,  // 34: storage.UpgradeProgress.upgrade_state:type_name -> storage.UpgradeProgress.UpgradeState
-	35, // 35: storage.UpgradeProgress.since:type_name -> google.protobuf.Timestamp
-	35, // 36: storage.AuditLogFileState.collect_logs_since:type_name -> google.protobuf.Timestamp
-	28, // 37: storage.ClusterHealthStatus.collector_health_info:type_name -> storage.CollectorHealthInfo
-	29, // 38: storage.ClusterHealthStatus.admission_control_health_info:type_name -> storage.AdmissionControlHealthInfo
-	30, // 39: storage.ClusterHealthStatus.scanner_health_info:type_name -> storage.ScannerHealthInfo
-	7,  // 40: storage.ClusterHealthStatus.sensor_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 41: storage.ClusterHealthStatus.collector_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 42: storage.ClusterHealthStatus.overall_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 43: storage.ClusterHealthStatus.admission_control_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 44: storage.ClusterHealthStatus.scanner_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	35, // 45: storage.ClusterHealthStatus.last_contact:type_name -> google.protobuf.Timestamp
-	26, // 46: storage.Cluster.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
-	35, // 47: storage.ClusterUpgradeStatus.UpgradeProcessStatus.initiated_at:type_name -> google.protobuf.Timestamp
-	25, // 48: storage.ClusterUpgradeStatus.UpgradeProcessStatus.progress:type_name -> storage.UpgradeProgress
-	5,  // 49: storage.ClusterUpgradeStatus.UpgradeProcessStatus.type:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-	50, // [50:50] is the sub-list for method output_type
-	50, // [50:50] is the sub-list for method input_type
-	50, // [50:50] is the sub-list for extension type_name
-	50, // [50:50] is the sub-list for extension extendee
-	0,  // [0:50] is the sub-list for field type_name
+	31, // 11: storage.DynamicClusterConfig.process_indicators:type_name -> storage.DynamicClusterConfig.ProcessIndicatorsConfig
+	18, // 12: storage.CompleteClusterConfig.dynamic_config:type_name -> storage.DynamicClusterConfig
+	16, // 13: storage.CompleteClusterConfig.static_config:type_name -> storage.StaticClusterConfig
+	32, // 14: storage.CompleteClusterConfig.cluster_labels:type_name -> storage.CompleteClusterConfig.ClusterLabelsEntry
+	0,  // 15: storage.Cluster.type:type_name -> storage.ClusterType
+	33, // 16: storage.Cluster.labels:type_name -> storage.Cluster.LabelsEntry
+	1,  // 17: storage.Cluster.collection_method:type_name -> storage.CollectionMethod
+	23, // 18: storage.Cluster.status:type_name -> storage.ClusterStatus
+	18, // 19: storage.Cluster.dynamic_config:type_name -> storage.DynamicClusterConfig
+	15, // 20: storage.Cluster.tolerations_config:type_name -> storage.TolerationsConfig
+	27, // 21: storage.Cluster.health_status:type_name -> storage.ClusterHealthStatus
+	19, // 22: storage.Cluster.helm_config:type_name -> storage.CompleteClusterConfig
+	20, // 23: storage.Cluster.most_recent_sensor_id:type_name -> storage.SensorDeploymentIdentification
+	34, // 24: storage.Cluster.audit_log_state:type_name -> storage.Cluster.AuditLogStateEntry
+	2,  // 25: storage.Cluster.managed_by:type_name -> storage.ManagerType
+	36, // 26: storage.ClusterCertExpiryStatus.sensor_cert_expiry:type_name -> google.protobuf.Timestamp
+	36, // 27: storage.ClusterCertExpiryStatus.sensor_cert_not_before:type_name -> google.protobuf.Timestamp
+	36, // 28: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
+	12, // 29: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
+	13, // 30: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
+	24, // 31: storage.ClusterStatus.upgrade_status:type_name -> storage.ClusterUpgradeStatus
+	22, // 32: storage.ClusterStatus.cert_expiry_status:type_name -> storage.ClusterCertExpiryStatus
+	4,  // 33: storage.ClusterUpgradeStatus.upgradability:type_name -> storage.ClusterUpgradeStatus.Upgradability
+	35, // 34: storage.ClusterUpgradeStatus.most_recent_process:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus
+	6,  // 35: storage.UpgradeProgress.upgrade_state:type_name -> storage.UpgradeProgress.UpgradeState
+	36, // 36: storage.UpgradeProgress.since:type_name -> google.protobuf.Timestamp
+	36, // 37: storage.AuditLogFileState.collect_logs_since:type_name -> google.protobuf.Timestamp
+	28, // 38: storage.ClusterHealthStatus.collector_health_info:type_name -> storage.CollectorHealthInfo
+	29, // 39: storage.ClusterHealthStatus.admission_control_health_info:type_name -> storage.AdmissionControlHealthInfo
+	30, // 40: storage.ClusterHealthStatus.scanner_health_info:type_name -> storage.ScannerHealthInfo
+	7,  // 41: storage.ClusterHealthStatus.sensor_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 42: storage.ClusterHealthStatus.collector_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 43: storage.ClusterHealthStatus.overall_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 44: storage.ClusterHealthStatus.admission_control_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 45: storage.ClusterHealthStatus.scanner_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	36, // 46: storage.ClusterHealthStatus.last_contact:type_name -> google.protobuf.Timestamp
+	26, // 47: storage.Cluster.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
+	36, // 48: storage.ClusterUpgradeStatus.UpgradeProcessStatus.initiated_at:type_name -> google.protobuf.Timestamp
+	25, // 49: storage.ClusterUpgradeStatus.UpgradeProcessStatus.progress:type_name -> storage.UpgradeProgress
+	5,  // 50: storage.ClusterUpgradeStatus.UpgradeProcessStatus.type:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+	51, // [51:51] is the sub-list for method output_type
+	51, // [51:51] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_storage_cluster_proto_init() }
@@ -3046,7 +3133,7 @@ func file_storage_cluster_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_cluster_proto_rawDesc), len(file_storage_cluster_proto_rawDesc)),
 			NumEnums:      8,
-			NumMessages:   27,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
