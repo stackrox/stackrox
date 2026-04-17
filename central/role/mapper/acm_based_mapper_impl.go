@@ -7,12 +7,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
-	acmclient "github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
+	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/rest"
 )
 
 type acmBasedMapperImpl struct {
+	clientFactory func(ctx context.Context, token string) (externalrolebroker.ACMClient, error)
 }
 
 type user struct {
@@ -53,16 +54,11 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	if len(tokens) == 0 || tokens[0] == "" {
 		return nil, nil
 	}
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, errox.NoAuthzConfigured.CausedBy("failed to load k8s cluster config")
-	}
-	cfg.BearerToken = tokens[0]
-	acmClient, err := acmclient.NewACMClientFromConfig(cfg)
-	if err != nil {
-		return nil, errox.NoAuthzConfigured.CausedBy("failed to instantiate ACM client")
-	}
 	log.Info("ACM token ", tokens[0])
+	acmClient, err := rm.clientFactory(ctx, tokens[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to instantiate ACM client")
+	}
 	ctxForACM := request.WithUser(ctx, userForCtx)
 	log.Info("Querying ACM for user", userForCtx)
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctxForACM, acmClient)
@@ -73,24 +69,28 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	return roles, nil
 }
 
+func defaultACMClientFactory(ctx context.Context, token string) (externalrolebroker.ACMClient, error) {
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load k8s config")
+	}
+	cfg.BearerToken = token
+	return acmclient.NewACMClientFromConfig(cfg)
+}
+
 // NewACMBasedMapper creates a RoleMapper that retrieves roles from ACM UserPermissions.
 // It creates an ACM client using in-cluster configuration and uses it to fetch
 // user permissions from the ACM clusterview aggregate API.
 func NewACMBasedMapper() (permissions.RoleMapper, error) {
-	client, err := acmclient.NewACMClient()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create ACM client")
-	}
-
 	return &acmBasedMapperImpl{
-		acmClient: client,
+		clientFactory: defaultACMClientFactory,
 	}, nil
 }
 
 // NewACMBasedMapperWithClient creates a RoleMapper with a custom ACM client.
 // This is useful for testing or when you need to provide a custom client configuration.
-func NewACMBasedMapperWithClient(client externalrolebroker.ACMClient) permissions.RoleMapper {
+func NewACMBasedMapperWithClient(clientFactory func(context.Context, string) (externalrolebroker.ACMClient, error)) permissions.RoleMapper {
 	return &acmBasedMapperImpl{
-		acmClient: client,
+		clientFactory: clientFactory,
 	}
 }
