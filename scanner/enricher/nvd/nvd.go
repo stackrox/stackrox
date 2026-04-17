@@ -319,41 +319,77 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 	if cve.Metrics == nil {
 		return item
 	}
-	for _, cvss := range cve.Metrics.CvssMetricV31 {
-		if cvss.Type != "Primary" && cvss.Type != "" {
-			continue
-		}
-		item.Metrics.CvssMetricV31 = append(item.Metrics.CvssMetricV31, &schema.CVEAPIJSON20CVSSV31{
+
+	mapV31 := func(m *schema.CvssMetricV31) *schema.CVEAPIJSON20CVSSV31 {
+		return &schema.CVEAPIJSON20CVSSV31{
 			CvssData: &schema.CVSSV31{
-				Version:      cvss.CvssData.Version,
-				VectorString: cvss.CvssData.VectorString,
-				BaseScore:    cvss.CvssData.BaseScore,
+				Version:      m.CvssData.Version,
+				VectorString: m.CvssData.VectorString,
+				BaseScore:    m.CvssData.BaseScore,
 			},
-		})
-	}
-	for _, cvss := range cve.Metrics.CvssMetricV30 {
-		if cvss.Type != "Primary" && cvss.Type != "" {
-			continue
 		}
-		item.Metrics.CvssMetricV30 = append(item.Metrics.CvssMetricV30, &schema.CVEAPIJSON20CVSSV30{
+	}
+
+	mapV30 := func(m *schema.CvssMetricV30) *schema.CVEAPIJSON20CVSSV30 {
+		return &schema.CVEAPIJSON20CVSSV30{
 			CvssData: &schema.CVSSV30{
-				Version:      cvss.CvssData.Version,
-				VectorString: cvss.CvssData.VectorString,
-				BaseScore:    cvss.CvssData.BaseScore,
+				Version:      m.CvssData.Version,
+				VectorString: m.CvssData.VectorString,
+				BaseScore:    m.CvssData.BaseScore,
 			},
-		})
-	}
-	for _, cvss := range cve.Metrics.CvssMetricV2 {
-		if cvss.Type != "Primary" && cvss.Type != "" {
-			continue
 		}
-		item.Metrics.CvssMetricV2 = append(item.Metrics.CvssMetricV2, &schema.CVEAPIJSON20CVSSV2{
+	}
+
+	mapV2 := func(m *schema.CvssMetricV2) *schema.CVEAPIJSON20CVSSV2 {
+		return &schema.CVEAPIJSON20CVSSV2{
 			CvssData: &schema.CVSSV20{
-				Version:      cvss.CvssData.Version,
-				VectorString: cvss.CvssData.VectorString,
-				BaseScore:    cvss.CvssData.BaseScore,
+				Version:      m.CvssData.Version,
+				VectorString: m.CvssData.VectorString,
+				BaseScore:    m.CvssData.BaseScore,
 			},
-		})
+		}
+	}
+
+	hasPrimary := false
+
+	for _, cvss := range cve.Metrics.CvssMetricV31 {
+		if cvss.Type == "Primary" || cvss.Type == "" {
+			item.Metrics.CvssMetricV31 = append(item.Metrics.CvssMetricV31, mapV31(cvss))
+			hasPrimary = true
+		}
+	}
+
+	for _, cvss := range cve.Metrics.CvssMetricV30 {
+		if cvss.Type == "Primary" || cvss.Type == "" {
+			item.Metrics.CvssMetricV30 = append(item.Metrics.CvssMetricV30, mapV30(cvss))
+			hasPrimary = true
+		}
+	}
+
+	for _, cvss := range cve.Metrics.CvssMetricV2 {
+		if cvss.Type == "Primary" || cvss.Type == "" {
+			item.Metrics.CvssMetricV2 = append(item.Metrics.CvssMetricV2, mapV2(cvss))
+			hasPrimary = true
+		}
+	}
+
+	// Fallback only if NO primary was found in any version
+	if !hasPrimary {
+		for _, cvss := range cve.Metrics.CvssMetricV31 {
+			if cvss.Type == "Secondary" {
+				item.Metrics.CvssMetricV31 = append(item.Metrics.CvssMetricV31, mapV31(cvss))
+			}
+		}
+		for _, cvss := range cve.Metrics.CvssMetricV30 {
+			if cvss.Type == "Secondary" {
+				item.Metrics.CvssMetricV30 = append(item.Metrics.CvssMetricV30, mapV30(cvss))
+			}
+		}
+		for _, cvss := range cve.Metrics.CvssMetricV2 {
+			if cvss.Type == "Secondary" {
+				item.Metrics.CvssMetricV2 = append(item.Metrics.CvssMetricV2, mapV2(cvss))
+			}
+		}
 	}
 	return item
 }
