@@ -2,6 +2,7 @@ package relay
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -46,13 +48,15 @@ func WithBackoff(factory func() backoff.BackOff) RetryOption {
 // exits on context cancellation, which is treated as a permanent (non-retryable) error.
 //
 // Retries continue indefinitely until the parent context is cancelled at shutdown.
-func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient, opts ...RetryOption) error {
+func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient, umh UnconfirmedMessageHandler, opts ...RetryOption) error {
 	cfg := retryConfig{
-		operation:      defaultOperation,
 		backOffFactory: defaultBackOff,
 	}
 	for _, opt := range opts {
 		opt(&cfg)
+	}
+	if cfg.operation == nil {
+		cfg.operation = makeDefaultOperation(umh)
 	}
 
 	operation := func() error {
@@ -85,16 +89,49 @@ func defaultBackOff() backoff.BackOff {
 	return eb
 }
 
-func defaultOperation(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+// noopUMH is a no-op UnconfirmedMessageHandler used as a fallback
+// when RunWithRetry is called without explicit UMH wiring.
+type noopUMH struct {
+	retryCh chan string
+}
 
-	reportStream, err := stream.New()
-	if err != nil {
-		return err
+func newNoopUMH() *noopUMH {
+	return &noopUMH{retryCh: make(chan string)}
+}
+
+func (n *noopUMH) HandleACK(string)              {}
+func (n *noopUMH) HandleNACK(string)             {}
+func (n *noopUMH) ObserveSending(string)         {}
+func (n *noopUMH) RetryCommand() <-chan string   { return n.retryCh }
+func (n *noopUMH) OnACK(func(resourceID string)) {}
+
+func makeDefaultOperation(umh UnconfirmedMessageHandler) Operation {
+	return func(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		reportStream, err := stream.New()
+		if err != nil {
+			return err
+		}
+
+		reportSender := sender.New(sensorClient)
+
+		maxPerMinuteStr := env.VMRelayMaxReportsPerMinute.Setting()
+		maxPerMinute, err := strconv.ParseFloat(maxPerMinuteStr, 64)
+		if err != nil {
+			return errors.Wrapf(err, "parsing %s value %q", env.VMRelayMaxReportsPerMinute.EnvVar(), maxPerMinuteStr)
+		}
+
+		vmRelay := New(
+			reportStream,
+			reportSender,
+			umh,
+			maxPerMinute,
+			env.VMRelayStaleAckThreshold.DurationSetting(),
+			env.VMIndexReportRelayCacheSlots.IntegerSetting(),
+			env.VMIndexReportRelayCacheTTL.DurationSetting(),
+		)
+		return vmRelay.Run(ctx)
 	}
-
-	reportSender := sender.New(sensorClient)
-	vmRelay := New(reportStream, reportSender)
-	return vmRelay.Run(ctx)
 }
