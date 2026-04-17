@@ -183,8 +183,12 @@ deploy_stackrox_with_roxie() {
         --early-readiness=false
 
     wait_for_collectors_to_be_operational stackrox
+
+    if retrying_kubectl </dev/null -n "${namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "${namespace}"
+    fi
+
     touch "${STATE_DEPLOYED}"
-    # wait_for_scanner_V4
 }
 
 check_for_roxie() {
