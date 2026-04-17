@@ -10,8 +10,14 @@ import (
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	processIndicatorsDataStoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
+	piFilter "github.com/stackrox/rox/central/processindicator/filter"
+
+	"github.com/stackrox/rox/central/deployment/cache"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -23,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -75,6 +82,7 @@ type ManagerTestSuite struct {
 	suite.Suite
 
 	baselines                  *processBaselineDataStoreMocks.MockDataStore
+	indicators                 *processIndicatorsDataStoreMocks.MockDataStore
 	reprocessor                *reprocessorMocks.MockLoop
 	alertManager               *alertManagerMocks.MockAlertManager
 	deploymentObservationQueue *queueMocks.MockDeploymentObservationQueue
@@ -82,6 +90,8 @@ type ManagerTestSuite struct {
 	mockCtrl                   *gomock.Controller
 	connectionManager          *connectionMocks.MockManager
 	cluster                    *clusterDataStoreMocks.MockDataStore
+	filter                     filter.Filter
+	matcher                    *matcherMocks.MockPlatformMatcher
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
@@ -93,6 +103,9 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.cluster = clusterDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.filter = piFilter.Singleton()
+	suite.indicators = processIndicatorsDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.matcher = matcherMocks.NewMockPlatformMatcher(suite.mockCtrl)
 
 	suite.manager = &managerImpl{
 		baselines:                  suite.baselines,
@@ -101,6 +114,11 @@ func (suite *ManagerTestSuite) SetupTest() {
 		deploymentObservationQueue: suite.deploymentObservationQueue,
 		connectionManager:          suite.connectionManager,
 		clusterDataStore:           suite.cluster,
+		processFilter:				suite.filter,
+		processesDataStore:			suite.indicators,
+		queuedIndicators:			make(map[string]*storage.ProcessIndicator),
+		deletedDeploymentsCache:	cache.DeletedDeploymentsSingleton(),
+		matcher:					suite.matcher,
 	}
 }
 
@@ -330,4 +348,27 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(nil, false, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
 	suite.False(enabled)
+}
+
+func (suite *ManagerTestSuite) TestFlushIndicators() {
+	_, indicator := makeIndicator()
+	indicator.Namespace = "openshift-ovn-kubernetes"
+	// intentionally permissive rate limiter to flush indicators
+	suite.manager.indicatorRateLimiter = rate.NewLimiter(rate.Every(time.Second), 1000)
+
+	suite.deploymentObservationQueue.EXPECT().
+		Push(gomock.Any())
+
+	// Matcher filters out the indicator
+	suite.matcher.EXPECT().
+		MatchProcessIndicator(gomock.Any()).
+		Return(true, nil).AnyTimes()
+
+	// The indicator is not getting stored
+	suite.indicators.EXPECT().
+		AddProcessIndicators(gomock.Any(), gomock.Any()).
+		MaxTimes(0)
+
+	err := suite.manager.IndicatorAdded(indicator)
+	suite.NoError(err)
 }

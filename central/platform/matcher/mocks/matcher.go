@@ -65,10 +65,25 @@ func (m *MockPlatformMatcher) MatchDeployment(deployment *storage.Deployment) (b
 	return ret0, ret1
 }
 
+// MatchProcessIndicator mocks base method.
+func (m *MockPlatformMatcher) MatchProcessIndicator(process *storage.ProcessIndicator) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MatchProcessIndicator", process)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
 // MatchDeployment indicates an expected call of MatchDeployment.
 func (mr *MockPlatformMatcherMockRecorder) MatchDeployment(deployment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchDeployment", reflect.TypeOf((*MockPlatformMatcher)(nil).MatchDeployment), deployment)
+}
+
+// MatchProcessIndicator indicates an expected call of MatchProcessIndicator.
+func (mr *MockPlatformMatcherMockRecorder) MatchProcessIndicator(process any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchProcessIndicator", reflect.TypeOf((*MockPlatformMatcher)(nil).MatchProcessIndicator), process)
 }
 
 // SetRegexes mocks base method.

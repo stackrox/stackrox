@@ -18,6 +18,7 @@ import (
 	centralMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processbaseline"
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -86,6 +87,8 @@ type managerImpl struct {
 	removedOrDisabledPolicies set.StringSet
 
 	connectionManager connection.Manager
+
+	matcher platformmatcher.PlatformMatcher
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -252,6 +255,16 @@ func (m *managerImpl) flushIndicatorQueue() {
 		if m.deletedDeploymentsCache.Contains(indicator.GetDeploymentId()) {
 			continue
 		}
+
+		match, err := m.matcher.MatchProcessIndicator(indicator)
+		if err != nil {
+			log.Warnf("Cannot match process indicator: %+v", err)
+		}
+
+		if match {
+			continue
+		}
+
 		indicatorSlice = append(indicatorSlice, indicator)
 	}
 
