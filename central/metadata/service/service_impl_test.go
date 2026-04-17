@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -265,6 +266,63 @@ func (s *serviceImplTestSuite) TestIssueSecondaryCALeafCert() {
 		s.Require().Error(err)
 		s.Contains(err.Error(), "failed to load secondary CA for signing")
 		s.Contains(err.Error(), "secondary CA file not found")
+	})
+
+	s.Run("issued cert has short validity", func() {
+		mockProvider := &testCertificateProvider{
+			secondaryCA:         secondaryCA,
+			shouldFailSecondary: false,
+		}
+
+		cert, err := issueSecondaryCALeafCert(mockProvider)
+		s.Require().NoError(err)
+		s.Require().NotNil(cert.Leaf)
+
+		validity := cert.Leaf.NotAfter.Sub(cert.Leaf.NotBefore)
+		s.Less(validity, 3*24*time.Hour, "secondary leaf cert should have short validity (<=2 days)")
+	})
+}
+
+func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
+	s.Run("returns nil when no cert is cached", func() {
+		cachedSecondaryLeafCert.Store(nil)
+		s.Nil(loadSecondaryLeafCertIfValid())
+	})
+
+	s.Run("returns cert when valid", func() {
+		secondaryCA := s.createTestCA("Test Secondary CA", "17520h")
+		mockProvider := &testCertificateProvider{
+			secondaryCA:         secondaryCA,
+			shouldFailSecondary: false,
+		}
+		cert, err := issueSecondaryCALeafCert(mockProvider)
+		s.Require().NoError(err)
+
+		cachedSecondaryLeafCert.Store(&cert)
+		s.NotNil(loadSecondaryLeafCertIfValid())
+		cachedSecondaryLeafCert.Store(nil)
+	})
+
+	s.Run("returns nil when cert is expired", func() {
+		expiredCert := &tls.Certificate{
+			Leaf: &x509.Certificate{
+				NotAfter: time.Now().Add(-1 * time.Hour),
+			},
+		}
+		cachedSecondaryLeafCert.Store(expiredCert)
+		s.Nil(loadSecondaryLeafCertIfValid())
+		cachedSecondaryLeafCert.Store(nil)
+	})
+
+	s.Run("returns nil when cert is within renewal buffer", func() {
+		nearExpiryCert := &tls.Certificate{
+			Leaf: &x509.Certificate{
+				NotAfter: time.Now().Add(30 * time.Minute),
+			},
+		}
+		cachedSecondaryLeafCert.Store(nearExpiryCert)
+		s.Nil(loadSecondaryLeafCertIfValid(), "cert expiring within renewal buffer should trigger re-issue")
+		cachedSecondaryLeafCert.Store(nil)
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"sync/atomic"
+	"time"
 
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -56,10 +57,12 @@ var (
 	watchedPrimaryLeafCert     atomic.Pointer[tls.Certificate]
 	primaryLeafCertWatcherOnce sync.Once
 
-	// Secondary CA leaf certificate caching
-	secondaryCALeafCertOnce sync.Once
-	secondaryCALeafCert     tls.Certificate
-	secondaryCALeafCertErr  error
+	// cachedSecondaryLeafCert holds a short-lived leaf cert signed by the secondary CA,
+	// used only to sign TLSChallenge responses for Sensors that trust the secondary CA.
+	// Re-issued automatically when it nears expiry.
+	cachedSecondaryLeafCert     atomic.Pointer[tls.Certificate]
+	secondaryLeafCertIssueMu    sync.Mutex
+	secondaryLeafCertRenewalBuf = 1 * time.Hour
 )
 
 // CertificateProvider provides certificates for TLS challenge operations
@@ -111,21 +114,36 @@ func (p *defaultCertificateProvider) GetSecondaryCACert() (*x509.Certificate, []
 	return mtls.SecondaryCACert()
 }
 
-func (p *defaultCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, error) {
-	secondaryCALeafCertOnce.Do(func() {
-		leafCert, err := issueSecondaryCALeafCert(p)
-		if err != nil {
-			secondaryCALeafCertErr = err
-			return
-		}
-		secondaryCALeafCert = leafCert
-	})
+func loadSecondaryLeafCertIfValid() *tls.Certificate {
+	cert := cachedSecondaryLeafCert.Load()
+	if cert != nil && cert.Leaf != nil &&
+		time.Now().Add(secondaryLeafCertRenewalBuf).Before(cert.Leaf.NotAfter) {
+		return cert
+	}
+	return nil
+}
 
-	if secondaryCALeafCertErr != nil {
-		return tls.Certificate{}, secondaryCALeafCertErr
+func (p *defaultCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, error) {
+	if cert := loadSecondaryLeafCertIfValid(); cert != nil {
+		return *cert, nil
+	}
+	return p.issueAndCacheSecondaryLeafCert()
+}
+
+func (p *defaultCertificateProvider) issueAndCacheSecondaryLeafCert() (tls.Certificate, error) {
+	secondaryLeafCertIssueMu.Lock()
+	defer secondaryLeafCertIssueMu.Unlock()
+
+	if cert := loadSecondaryLeafCertIfValid(); cert != nil {
+		return *cert, nil
 	}
 
-	return secondaryCALeafCert, nil
+	leafCert, err := issueSecondaryCALeafCert(p)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	cachedSecondaryLeafCert.Store(&leafCert)
+	return leafCert, nil
 }
 
 func issueSecondaryCALeafCert(certProvider CertificateProvider) (tls.Certificate, error) {
@@ -134,7 +152,7 @@ func issueSecondaryCALeafCert(certProvider CertificateProvider) (tls.Certificate
 		return tls.Certificate{}, errors.Wrap(err, "failed to load secondary CA for signing")
 	}
 
-	issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject)
+	issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject, mtls.WithValidityExpiringInDays())
 	if issueErr != nil {
 		return tls.Certificate{}, errors.Wrap(issueErr, "failed to issue leaf certificate from secondary CA")
 	}
@@ -142,6 +160,11 @@ func issueSecondaryCALeafCert(certProvider CertificateProvider) (tls.Certificate
 	leafCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
 	if err != nil {
 		return tls.Certificate{}, errors.Wrap(err, "failed to load X509 key pair for temporary leaf cert from secondary CA")
+	}
+
+	leafCert.Leaf, err = x509.ParseCertificate(leafCert.Certificate[0])
+	if err != nil {
+		return tls.Certificate{}, errors.Wrap(err, "parsing secondary leaf certificate")
 	}
 
 	return leafCert, nil
