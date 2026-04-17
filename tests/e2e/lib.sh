@@ -174,6 +174,7 @@ deploy_stackrox_with_roxie() {
     # - pause_stackrox_operator_reconcile
     # - sensor_wait
     roxie deploy sensor \
+        --set spec.clusterName=remote \
         --resources=ci \
         --envrc "$roxie_envrc" \
         --single-namespace \
