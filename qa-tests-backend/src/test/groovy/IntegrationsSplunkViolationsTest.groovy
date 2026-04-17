@@ -50,6 +50,11 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
         configureSplunkTA(splunkDeployment, centralHost)
+
+        if (orchestrator.containsDaemonSetContainer(
+                Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER)) {
+            patchFactEnv()
+        }
     }
 
     def cleanupSpec() {
@@ -144,10 +149,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         Assume.assumeTrue(
                 "ROX_SENSITIVE_FILE_ACTIVITY is not enabled — skipping file access test",
                 FeatureFlagService.isFeatureFlagEnabled("ROX_SENSITIVE_FILE_ACTIVITY"))
-
-        and:
-        "Fact is configured to monitor /tmp paths"
-        patchFactEnv()
 
         and:
         "a file activity policy targeting a unique path"
