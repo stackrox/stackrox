@@ -245,7 +245,9 @@ set_custom_env() {
 log_feature_flags() {
     local feature_flags="$1"
     info "Feature flags:"
-    info "$(echo "$feature_flags" | tr ',' '\n' | sed -e 's/^/  /;')"
+    echo "$feature_flags" | tr ',' '\n' | while read -r feature_flag; do
+        info "  $feature_flag"
+    done
 }
 
 handle_scanner_v4_setting() {
