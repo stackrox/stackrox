@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -38,7 +39,8 @@ var log = logging.LoggerForModule()
 const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
 	// Compliance handles exactly one node, so a single constant suffices.
-	nodeResourceID = "this-node"
+	nodeResourceID           = "this-node"
+	vmACKResourceIDSeparator = ":"
 )
 
 // Compliance represents the Compliance app
@@ -405,19 +407,37 @@ func dispatchACK(umh node.UnconfirmedMessageHandler, label string, action sensor
 
 // handleVMIndexACK handles ACK/NACK for VM index report messages.
 func (c *Compliance) handleVMIndexACK(resourceID string, action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
+	relayResourceID := resolveVMRelayResourceID(resourceID)
 	switch action {
 	case sensor.MsgToCompliance_ComplianceACK_ACK:
 		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("ACK").Inc()
-		c.umhVMIndex.HandleACK(resourceID)
+		c.umhVMIndex.HandleACK(relayResourceID)
 	case sensor.MsgToCompliance_ComplianceACK_NACK:
 		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("NACK").Inc()
 		if reason != "" {
-			log.Infof("VM index NACK received for %s: %s", resourceID, reason)
+			log.Infof("VM index NACK received for %s: %s", relayResourceID, reason)
 		}
-		c.umhVMIndex.HandleNACK(resourceID)
+		c.umhVMIndex.HandleNACK(relayResourceID)
 	default:
 		log.Errorf("Unknown ComplianceACK action for VM index: %s", action)
 	}
+}
+
+// resolveVMRelayResourceID returns the CID key expected by relay/UMH.
+// Sensor can send VM index ACK/NACK as VMID:CID correlation pairs; relay state
+// remains CID-keyed, so we extract the CID portion when present.
+//
+// Limitation: VMID:CID does not distinguish multiple reports for the same VM
+// when the CID is unchanged, so a stale ACK can still match the latest entry.
+func resolveVMRelayResourceID(resourceID string) string {
+	vmID, cid, found := strings.Cut(resourceID, vmACKResourceIDSeparator)
+	if !found {
+		return resourceID
+	}
+	if vmID == "" || cid == "" || strings.Contains(cid, vmACKResourceIDSeparator) {
+		return resourceID
+	}
+	return cid
 }
 
 func (c *Compliance) startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {
