@@ -36,6 +36,11 @@ const (
 
 	testTimeout  = 120 * time.Second
 	testInterval = 5 * time.Second
+
+	// Test deployment images
+	testImageNginxLatest = "quay.io/rhacs-eng/qa-multi-arch-nginx:latest"
+	testImageBusybox     = "quay.io/rhacs-eng/qa-multi-arch:busybox-1-28"
+	testImageNginx121    = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"
 )
 
 // TestSensorKubernetesPipeline_ConnectionResilience verifies that the sensor Kubernetes
@@ -110,7 +115,7 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 
 	// Step 8: Create deployment BEFORE disconnection
 	deployment1 := "nginx-before"
-	require.NoError(t, createDeploymentViaAPI(t, "nginx:1.27", deployment1, 1, testNamespace))
+	require.NoError(t, createDeploymentViaAPI(t, testImageNginxLatest, deployment1, 1, testNamespace))
 	waitForDeploymentInCentral(t, deployment1)
 	t.Logf("Deployment '%s' created and visible in Central (before disconnection)", deployment1)
 
@@ -130,8 +135,8 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	t.Log("Sensor is degraded (connection disrupted)")
 
 	// Step 12: Create deployment DURING disconnection (while offline)
-	deployment2 := "redis-during"
-	require.NoError(t, createDeploymentViaAPI(t, "redis:7.4", deployment2, 1, testNamespace))
+	deployment2 := "busybox-during"
+	require.NoError(t, createDeploymentViaAPI(t, testImageBusybox, deployment2, 1, testNamespace))
 	t.Logf("Deployment '%s' created while sensor is offline", deployment2)
 
 	// Step 13: Update docker secret DURING disconnection to trigger ResolveAllDeployments while offline
@@ -155,8 +160,8 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	t.Log("Sensor is healthy again (reconnected)")
 
 	// Step 17: Create deployment AFTER reconnection
-	deployment3 := "busybox-after"
-	require.NoError(t, createDeploymentViaAPI(t, "busybox:1.36", deployment3, 1, testNamespace))
+	deployment3 := "nginx-after"
+	require.NoError(t, createDeploymentViaAPI(t, testImageNginx121, deployment3, 1, testNamespace))
 	waitForDeploymentInCentral(t, deployment3)
 	t.Logf("Deployment '%s' created and visible in Central (after reconnection)", deployment3)
 
