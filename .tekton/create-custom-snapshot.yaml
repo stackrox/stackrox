@@ -150,8 +150,11 @@ spec:
               fi
             }
 
-            is_pull_request="false"
-            [[ "{{ pull_request_number }}" == "" ]] || is_pull_request="true"
+            is_pull_request="true"
+            if [[ "{{ pull_request_number }}" == "" || "{{ pull_request_number }}" == *pull_request_number* ]]; then
+              # If it's an empty string or remains literally "{{ pull_request_number }}", it's not a pull request.
+              is_pull_request="false"
+            fi
             assert_boolean is_pull_request "pull_request_number: {{ pull_request_number }}"
 
             is_matching_target_branch='{{ cel: target_branch.startsWith("release-") }}'
