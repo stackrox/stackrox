@@ -1115,8 +1115,7 @@ func combineStrings(toCombine [][]string) []string {
 		}
 		combinations = append(combinations, combination)
 
-		for index := len(indices) - 1; index >= 0; index-- {
-			indices[index]++
+		for index := range slices.Backward(indices) {
 			if indices[index] < len(toCombine[index]) {
 				break
 			}

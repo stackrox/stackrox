@@ -112,10 +112,9 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
 
 	// Write to the file in parallel to simulate the log file getting written to in parallel
-	go func() {
+	wg.Go(func() {
 		for _, line := range lines {
 			s.appendToFile(logPath, line)
 		}
@@ -123,8 +122,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 		// unlikely scenario is real life since the audit log is constantly being written to
 		line, _ := s.fakeAuditLogLineAtTime("get", "configmaps", "extra-map", "stackrox", eventTime.Format(time.RFC3339Nano))
 		s.appendToFile(logPath, line)
-		wg.Done()
-	}()
+	})
 
 	for _, expectedEvent := range expectedEvents {
 		event = s.getSentEvent(sender.sentC)

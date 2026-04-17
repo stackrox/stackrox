@@ -68,11 +68,9 @@ func (i *injectorImpl) gatherLoop() {
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
-	i.gatherersGroup.Add(1)
-	go func() {
-		defer i.gatherersGroup.Done()
+	i.gatherersGroup.Go(func() {
 		i.gatherLoop()
-	}()
+	})
 }
 
 // Stop stops the scheduled timer and wait for the gatherer to stop.
