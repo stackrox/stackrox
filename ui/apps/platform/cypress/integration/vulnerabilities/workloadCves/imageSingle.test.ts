@@ -164,7 +164,9 @@ describe('Workload CVE Image Single page', () => {
         const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
 
         const imageData = {
-            id: 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
+            id: isFlattenImageData
+                ? '4c657931-d333-5cb8-8f0d-7e3836525ec7'
+                : 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
             ...(isFlattenImageData
                 ? {
                       digest: 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
