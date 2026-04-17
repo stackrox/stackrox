@@ -571,6 +571,7 @@ func (s *serviceImpl) GetVMCVEDetail(ctx context.Context, request *v2.GetVMCVEDe
 }
 
 // ListVMCVEAffectedVMs returns VMs affected by a specific CVE.
+// TODO(ROX-34181): Replace with a SQL view to enable proper pagination.
 func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.ListVMCVEAffectedVMsRequest) (*v2.ListVMCVEAffectedVMsResponse, error) {
 	if request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cve_id must be specified")
