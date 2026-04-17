@@ -108,13 +108,24 @@ func isMatcherNotReadyError(err error) bool {
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
-	if !features.VirtualMachines.Enabled() {
-		// ACK to prevent the sender from retrying when the feature is disabled on Central.
-		sendVMIndexACK(ctx, msg.GetEvent().GetVirtualMachineIndexReport().GetId(), centralsensor.SensorACKReasonFeatureDisabled, injector)
-		return nil
-	}
 	event := msg.GetEvent()
 	index := event.GetVirtualMachineIndexReport()
+	resourceID := ""
+	if index != nil {
+		// Compliance relay/UMH correlate VM index ACK/NACK by VSOCK CID.
+		// Fallback to VM ID is defensive (avoid empty resource_id), but it cannot
+		// clear CID-keyed relay retry/cache state.
+		resourceID = index.GetId()
+		if vsockCID := index.GetIndex().GetVsockCid(); vsockCID != "" {
+			resourceID = vsockCID
+		}
+	}
+
+	if !features.VirtualMachines.Enabled() {
+		// ACK to prevent the sender from retrying when the feature is disabled on Central.
+		sendVMIndexACK(ctx, resourceID, centralsensor.SensorACKReasonFeatureDisabled, injector)
+		return nil
+	}
 	if index == nil {
 		return errors.Errorf("unexpected resource type %T for virtual machine index report", event.GetResource())
 	}
@@ -124,14 +135,14 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			event.GetAction().String(),
 			central.ResourceAction_SYNC_RESOURCE.String(),
 		)
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonUnsupportedAction, injector)
+		sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonUnsupportedAction, injector)
 		return nil
 	}
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
 	if clusterID == "" {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonMissingClusterID, injector)
+		sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonMissingClusterID, injector)
 		return errors.New("missing cluster ID in pipeline context")
 	}
 
@@ -141,26 +152,26 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Extract Scanner V4 index report from VM index report event
 	indexV4 := index.GetIndex().GetIndexV4()
 	if indexV4 == nil {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonMissingScanData, injector)
+		sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonMissingScanData, injector)
 		return errors.Errorf("VM index report %s missing Scanner V4 index data", index.GetId())
 	}
 
 	// Enrich VM with vulnerabilities
 	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
 	if err != nil {
-		sendVMIndexNACK(ctx, index.GetId(), reasonForEnrichmentFailure(err), injector)
+		sendVMIndexNACK(ctx, resourceID, reasonForEnrichmentFailure(err), injector)
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
 	// Store enriched VM via v1 or v2 path.
 	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		if err := p.storeV2Scan(ctx, clusterID, vm); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+			sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonStorageFailed, injector)
 			return err
 		}
 	} else {
 		if err := p.storeV1Scan(ctx, vm); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+			sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonStorageFailed, injector)
 			return err
 		}
 	}
@@ -168,7 +179,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
-	sendVMIndexACK(ctx, index.GetId(), "", injector)
+	sendVMIndexACK(ctx, resourceID, "", injector)
 	return nil
 }
 

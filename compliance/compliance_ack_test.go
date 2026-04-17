@@ -37,18 +37,21 @@ func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal {
 func TestHandleComplianceACK(t *testing.T) {
 	inv := &fakeUMH{}
 	idx := &fakeUMH{}
+	vmIdx := &fakeUMH{}
 	c := &Compliance{
 		umhNodeInventory: inv,
 		umhNodeIndex:     idx,
+		umhVMIndex:       vmIdx,
 	}
 
 	tests := []struct {
-		name        string
-		ack         *sensor.MsgToCompliance_ComplianceACK
-		wantInvACK  int
-		wantInvNACK int
-		wantIdxACK  int
-		wantIdxNACK int
+		name         string
+		ack          *sensor.MsgToCompliance_ComplianceACK
+		wantInvACK   int
+		wantInvNACK  int
+		wantIdxACK   int
+		wantIdxNACK  int
+		wantVMIdxACK int
 	}{
 		{
 			name: "node inventory ack",
@@ -83,11 +86,12 @@ func TestHandleComplianceACK(t *testing.T) {
 			wantIdxNACK: 1,
 		},
 		{
-			name: "vm message type ignored",
+			name: "vm index ack",
 			ack: &sensor.MsgToCompliance_ComplianceACK{
 				Action:      sensor.MsgToCompliance_ComplianceACK_ACK,
 				MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
 			},
+			wantVMIdxACK: 1,
 		},
 		{
 			name: "unknown action ignored",
@@ -106,11 +110,13 @@ func TestHandleComplianceACK(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			inv.ackCount, inv.nackCount = 0, 0
 			idx.ackCount, idx.nackCount = 0, 0
+			vmIdx.ackCount, vmIdx.nackCount = 0, 0
 			c.handleComplianceACK(tt.ack)
 			assert.Equal(t, tt.wantInvACK, inv.ackCount)
 			assert.Equal(t, tt.wantInvNACK, inv.nackCount)
 			assert.Equal(t, tt.wantIdxACK, idx.ackCount)
 			assert.Equal(t, tt.wantIdxNACK, idx.nackCount)
+			assert.Equal(t, tt.wantVMIdxACK, vmIdx.ackCount)
 		})
 	}
 }

@@ -15,6 +15,7 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
+	vmmetrics "github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -47,19 +48,23 @@ type Compliance struct {
 	nodeIndexer        node.NodeIndexer
 	umhNodeInventory   node.UnconfirmedMessageHandler
 	umhNodeIndex       node.UnconfirmedMessageHandler
+	umhVMIndex         node.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
 }
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
-	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
+	umhNodeInv, umhNodeIndex, umhVMIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider: nnp,
-		nodeScanner:      scanner,
-		nodeIndexer:      nodeIndexer,
-		umhNodeInventory: umhNodeInv,
-		umhNodeIndex:     umhNodeIndex,
+		nodeNameProvider:   nnp,
+		nodeScanner:        scanner,
+		nodeIndexer:        nodeIndexer,
+		umhNodeInventory:   umhNodeInv,
+		umhNodeIndex:       umhNodeIndex,
+		umhVMIndex:         umhVMIndex,
+		nodeInventoryCache: atomic.Pointer[sensor.MsgFromCompliance]{},
+		nodeIndexCache:     atomic.Pointer[sensor.MsgFromCompliance]{},
 	}
 }
 
@@ -138,7 +143,7 @@ func (c *Compliance) Start() {
 		log.Infof("Virtual machine relay enabled")
 
 		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-		err := relay.RunWithRetry(ctx, sensorClient)
+		err := relay.RunWithRetry(ctx, sensorClient, c.umhVMIndex)
 		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 			log.Errorf("Error running virtual machine relay: %v", err)
 		}
@@ -377,7 +382,7 @@ func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceA
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
 		dispatchACK(c.umhNodeIndex, "node index", ack.GetAction(), ack.GetReason())
 	case sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT:
-		// TODO: Implement basic handling of VM_INDEX_REPORT ACK/NACK messages in ROX-33555.
+		c.handleVMIndexACK(ack.GetResourceId(), ack.GetAction(), ack.GetReason())
 	default:
 		log.Errorf("Unknown ComplianceACK message type: %s", ack.GetMessageType())
 	}
@@ -395,6 +400,23 @@ func dispatchACK(umh node.UnconfirmedMessageHandler, label string, action sensor
 		umh.HandleNACK(nodeResourceID)
 	default:
 		log.Errorf("Unknown ComplianceACK action for %s: %s", label, action)
+	}
+}
+
+// handleVMIndexACK handles ACK/NACK for VM index report messages.
+func (c *Compliance) handleVMIndexACK(resourceID string, action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
+	switch action {
+	case sensor.MsgToCompliance_ComplianceACK_ACK:
+		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("ACK").Inc()
+		c.umhVMIndex.HandleACK(resourceID)
+	case sensor.MsgToCompliance_ComplianceACK_NACK:
+		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("NACK").Inc()
+		if reason != "" {
+			log.Infof("VM index NACK received for %s: %s", resourceID, reason)
+		}
+		c.umhVMIndex.HandleNACK(resourceID)
+	default:
+		log.Errorf("Unknown ComplianceACK action for VM index: %s", action)
 	}
 }
 
