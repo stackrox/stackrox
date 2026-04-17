@@ -277,11 +277,28 @@ func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
 	return true
 }
 
-func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.Deployment) error {
-	if deployment.GetType() != kubernetes.CronJob {
-		return nil
+func isMissingImageID(c *storage.Container) bool {
+	if features.FlattenImageData.Enabled() {
+		return c.GetImage().GetId() == "" || c.GetImage().GetIdV2() == ""
 	}
-	if allImagesAreSpecifiedByDigest(deployment) {
+	return c.GetImage().GetId() == ""
+}
+
+func copyImageID(from, to *storage.Container) {
+	if from.GetImage().GetId() == "" {
+		return
+	}
+	if to.GetImage().GetName().GetFullName() != from.GetImage().GetName().GetFullName() {
+		return
+	}
+	to.GetImage().Id = from.GetImage().GetId()
+	if features.FlattenImageData.Enabled() {
+		to.GetImage().IdV2 = utils.NewImageV2ID(to.GetImage().GetName(), to.GetImage().GetId())
+	}
+}
+
+func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.Deployment) error {
+	if deployment.GetType() != kubernetes.CronJob || allImagesAreSpecifiedByDigest(deployment) {
 		return nil
 	}
 	oldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
@@ -296,28 +313,8 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 		oldContainersByName[c.GetName()] = c
 	}
 	for _, container := range deployment.GetContainers() {
-		if features.FlattenImageData.Enabled() {
-			if container.GetImage().GetId() != "" && container.GetImage().GetIdV2() != "" {
-				continue
-			}
-		} else {
-			if container.GetImage().GetId() != "" {
-				continue
-			}
-		}
-		oldContainer, found := oldContainersByName[container.GetName()]
-		if !found {
-			continue
-		}
-		if oldContainer.GetImage().GetId() == "" {
-			continue
-		}
-		if container.GetImage().GetName().GetFullName() != oldContainer.GetImage().GetName().GetFullName() {
-			continue
-		}
-		container.GetImage().Id = oldContainer.GetImage().GetId()
-		if features.FlattenImageData.Enabled() {
-			container.GetImage().IdV2 = utils.NewImageV2ID(container.GetImage().GetName(), container.GetImage().GetId())
+		if oldC, found := oldContainersByName[container.GetName()]; found && isMissingImageID(container) {
+			copyImageID(oldC, container)
 		}
 	}
 	return nil
