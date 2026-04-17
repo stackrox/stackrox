@@ -74,7 +74,7 @@ function SecureClusterPage(): ReactElement {
                 <Alert
                     variant="info"
                     isInline
-                    title="You can use one bundle to secure multiple clusters that have the same installation method."
+                    title="You can use one bundle to secure multiple clusters."
                     component="p"
                 />
             </PageSection>
