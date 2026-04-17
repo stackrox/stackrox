@@ -284,14 +284,12 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 	// Read all items in another goroutine
 	received := set.NewIntSet()
 	var readerWg sync.WaitGroup
-	readerWg.Add(1)
-	go func() {
-		defer readerWg.Done()
+	readerWg.Go(func() {
 		for range numGoroutines * numWrites {
 			val := <-ch.Chan()
 			received.Add(val)
 		}
-	}()
+	})
 
 	readerWg.Wait()
 
