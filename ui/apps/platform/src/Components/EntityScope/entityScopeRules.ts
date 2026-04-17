@@ -8,7 +8,12 @@ import type { SearchFilter } from 'types/search';
 import type { SearchFieldLabel } from 'types/searchOptions';
 import { isQuotedString, searchValueAsArray } from 'utils/searchUtils';
 
-type EntityScopeSearchFieldLabel = Extract<
+type EntityScopeSearchFieldLabelForCluster = Extract<
+    SearchFieldLabel,
+    'Cluster ID' | 'Cluster' | 'Cluster Label'
+>;
+
+type EntityScopeSearchFieldLabelForWorkload = Extract<
     SearchFieldLabel,
     | 'Cluster ID'
     | 'Cluster'
@@ -28,7 +33,10 @@ type EntityScopeRuleWithoutValues = {
     field: Exclude<ScopeField, 'FIELD_UNSET'>;
 };
 
-const searchFieldLabelMap: Record<EntityScopeSearchFieldLabel, EntityScopeRuleWithoutValues> = {
+const searchFieldLabelMapForCluster: Record<
+    EntityScopeSearchFieldLabelForCluster,
+    EntityScopeRuleWithoutValues
+> = {
     'Cluster ID': {
         entity: 'SCOPE_ENTITY_CLUSTER',
         field: 'FIELD_ID',
@@ -42,6 +50,13 @@ const searchFieldLabelMap: Record<EntityScopeSearchFieldLabel, EntityScopeRuleWi
         field: 'FIELD_LABEL',
     },
     // 'Cluster Annotation' is not a search filter
+} as const;
+
+const searchFieldLabelMapForWorkload: Record<
+    EntityScopeSearchFieldLabelForWorkload,
+    EntityScopeRuleWithoutValues
+> = {
+    ...searchFieldLabelMapForCluster,
     'Namespace ID': {
         entity: 'SCOPE_ENTITY_NAMESPACE',
         field: 'FIELD_ID',
@@ -85,7 +100,10 @@ export const searchFieldValueMapper = (value: string): RuleValue =>
  * Return initial entity scope rules for corresponding search fields
  * when user creates scheduled report configuration from results page.
  */
-export function getEntityScopeRulesForSearchFilter(searchFilter: SearchFilter) {
+function getEntityScopeRulesFromSearchFilter(
+    searchFilter: SearchFilter,
+    searchFieldLabelMap: Record<string, EntityScopeRuleWithoutValues>
+) {
     const rules: EntityScopeRule[] = [];
 
     Object.entries(searchFilter).forEach(([searchFieldLabel, searchFieldValue]) => {
@@ -101,4 +119,20 @@ export function getEntityScopeRulesForSearchFilter(searchFilter: SearchFilter) {
     });
 
     return rules;
+}
+
+/**
+ * Return initial entity scope rules for corresponding search fields
+ * when user creates node vulnerability report configuration from results page.
+ */
+export function getEntityScopeRulesFromSearchFilterForCluster(searchFilter: SearchFilter) {
+    return getEntityScopeRulesFromSearchFilter(searchFilter, searchFieldLabelMapForCluster);
+}
+
+/**
+ * Return initial entity scope rules for corresponding search fields
+ * when user creates either violation or image vulnerability report configuration from results page.
+ */
+export function getEntityScopeRulesFromSearchFilterForCWorkload(searchFilter: SearchFilter) {
+    return getEntityScopeRulesFromSearchFilter(searchFilter, searchFieldLabelMapForWorkload);
 }
