@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -34,18 +36,21 @@ func SendSensorACK(ctx concurrency.Waitable, action central.SensorACK_Action, me
 
 // VMIndexACKResourceID builds the correlation key for VM index ACK/NACK.
 //
-// The format is always "vmID:vsockCID" with the separator present even when
-// one component is empty (e.g. ":100" or "vm-1:"). This makes it unambiguous
-// which part is which when debugging logs or parsing the resource ID.
+// The key prefers a VMID:CID pair when both are available:
+// - VMID avoids cross-VM collisions if a CID is reused by another VM.
+// - CID allows Compliance relay/UMH to correlate with CID-keyed retry/cache state.
 //
 // Limitation: this pair cannot distinguish multiple in-flight reports from the
 // same VM while it keeps the same CID; a stale ACK may still match the latest
 // VMID:CID entry.
 func VMIndexACKResourceID(vmID, vsockCID string) string {
-	if vmID == "" && vsockCID == "" {
-		return ""
+	if vmID == "" {
+		return vsockCID
 	}
-	return vmID + vmIndexACKResourceIDSeparator + vsockCID
+	if vsockCID == "" {
+		return vmID
+	}
+	return strings.Join([]string{vmID, vsockCID}, vmIndexACKResourceIDSeparator)
 }
 
 // SendLegacyNodeInventoryACK sends the legacy NodeInventoryACK message supported since version 4.1.
