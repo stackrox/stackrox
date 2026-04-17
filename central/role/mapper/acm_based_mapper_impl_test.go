@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	clusterviewv1alpha1 "github.com/stolostron/cluster-lifecycle-api/clusterview/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -210,13 +211,20 @@ func TestACMBasedMapper_FromUserDescriptor(t *testing.T) {
 			client := &mockACMClient{
 				listFunc: tc.mockListFunc,
 			}
+			clientFactory := func(_ context.Context, _ string) (externalrolebroker.ACMClient, error) {
+				return client, nil
+			}
 
-			mapper := NewACMBasedMapperWithClient(client)
+			mapper := NewACMBasedMapperWithClient(clientFactory)
 
 			// UserDescriptor is not used by ACM mapper, so we can pass nil or empty
 			userDescriptor := &permissions.UserDescriptor{
-				UserID:     "test-user",
-				Attributes: map[string][]string{},
+				UserID: "test-user",
+				Attributes: map[string][]string{
+					"name":   {"someone"},
+					"userid": {"user-id"},
+					"token":  {"some-token"},
+				},
 			}
 
 			roles, err := mapper.FromUserDescriptor(context.Background(), userDescriptor)
@@ -244,8 +252,11 @@ func TestNewACMBasedMapperWithClient(t *testing.T) {
 			}, nil
 		},
 	}
+	clientFactory := func(_ context.Context, _ string) (externalrolebroker.ACMClient, error) {
+		return client, nil
+	}
 
-	mapper := NewACMBasedMapperWithClient(client)
+	mapper := NewACMBasedMapperWithClient(clientFactory)
 	require.NotNil(t, mapper)
 
 	// Verify it implements RoleMapper interface
