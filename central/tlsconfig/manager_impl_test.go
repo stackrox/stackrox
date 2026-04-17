@@ -204,7 +204,7 @@ func (s *managerTestSuite) TestUpdateInternalCertificatePropagates() {
 }
 
 func (s *managerTestSuite) TestLoadInternalCertificateFromDirectory() {
-	ca, err := certgen.GenerateCA()
+	ca, err := mtls.CAForSigning()
 	s.Require().NoError(err)
 
 	centralCert, err := ca.IssueCertForSubject(mtls.CentralSubject)

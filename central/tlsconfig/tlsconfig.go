@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/x509utils"
 )
@@ -194,7 +195,8 @@ func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
 }
 
 // LoadInternalCertificateFromDirectory loads the internal service leaf certificate
-// (cert.pem + key.pem) from the given directory.
+// (cert.pem + key.pem) from the given directory and verifies it against the
+// internal CA trust roots.
 func LoadInternalCertificateFromDirectory(dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
 	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
@@ -211,6 +213,14 @@ func LoadInternalCertificateFromDirectory(dir string) (*tls.Certificate, error) 
 	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing internal leaf certificate")
+	}
+
+	trustPool, err := verifier.TrustedCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "building trust pool for internal certificate verification")
+	}
+	if _, err := cert.Leaf.Verify(x509.VerifyOptions{Roots: trustPool}); err != nil {
+		return nil, errors.Wrap(err, "verifying internal certificate against trusted CAs")
 	}
 
 	return &cert, nil
