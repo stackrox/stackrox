@@ -85,13 +85,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	index := event.GetVirtualMachineIndexReport()
 	resourceID := ""
 	if index != nil {
-		// Compliance relay/UMH correlate VM index ACK/NACK by VSOCK CID.
-		// Fallback to VM ID is defensive (avoid empty resource_id), but it cannot
-		// clear CID-keyed relay retry/cache state.
-		resourceID = index.GetId()
-		if vsockCID := index.GetIndex().GetVsockCid(); vsockCID != "" {
-			resourceID = vsockCID
-		}
+		resourceID = common.VMIndexACKResourceID(index.GetId(), index.GetIndex().GetVsockCid())
 	}
 
 	if !features.VirtualMachines.Enabled() {

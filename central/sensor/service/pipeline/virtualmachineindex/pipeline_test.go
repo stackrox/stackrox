@@ -380,7 +380,7 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 	suite.Empty(ack.GetReason())
 }
 
-func (suite *PipelineTestSuite) TestRun_SendsACKWithVsockCIDResourceID() {
+func (suite *PipelineTestSuite) TestRun_SendsACKWithVMIDAndVsockCIDResourceID() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
 	vmID := "vm-ack-vsock-correlation"
@@ -409,7 +409,7 @@ func (suite *PipelineTestSuite) TestRun_SendsACKWithVsockCIDResourceID() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_ACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vsockCID, ack.GetResourceId(), "expected ACK resource_id to match vsock CID for relay cache correlation")
+	suite.Equal(vmID+":"+vsockCID, ack.GetResourceId(), "expected ACK resource_id to match VMID:CID pair for relay correlation")
 	suite.Empty(ack.GetReason())
 }
 
