@@ -51,49 +51,27 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
 
-	// Step 1: Get sensor deployment using Eventually
-	var sensorDeploy *appsv1.Deployment
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		deploy, err := k8sClient.AppsV1().Deployments(sensorNamespace).Get(ctx, sensorDeploymentName, metav1.GetOptions{})
-		require.NoErrorf(c, err, "failed to get sensor deployment")
-		sensorDeploy = deploy
-	}, testTimeout, testInterval)
-
-	// Get original central endpoint
-	var originalCentralEndpoint string
-	for _, container := range sensorDeploy.Spec.Template.Spec.Containers {
-		if container.Name == "sensor" {
-			for _, env := range container.Env {
-				if env.Name == "ROX_CENTRAL_ENDPOINT" {
-					originalCentralEndpoint = env.Value
-					break
-				}
-			}
-		}
-	}
-	require.NotEmpty(t, originalCentralEndpoint, "ROX_CENTRAL_ENDPOINT not found")
-
-	// Step 2: Configure sensor with toxiproxy sidecar and wait for pod to be ready
-	sensorPod := configureSensorWithToxiproxy(ctx, t, k8sClient, originalCentralEndpoint)
+	// Configure sensor with toxiproxy sidecar and wait for pod to be ready
+	sensorPod, originalCentralEndpoint := configureSensorWithToxiproxy(ctx, t, k8sClient)
 
 	// Cleanup: restore original deployment on test completion
 	t.Cleanup(func() {
 		cleanupSensorToxiproxyConfig(ctx, t, k8sClient, originalCentralEndpoint)
 	})
 
-	// Step 3: Set up port-forward to toxiproxy API
+	// Set up port-forward to toxiproxy API
 	localPort, cleanupPortForward := setupPortForward(t, sensorPod, toxiproxyAPIPort)
 	t.Cleanup(cleanupPortForward)
 
-	// Step 4: Connect to toxiproxy API and get "central" proxy
+	// Connect to toxiproxy API and get "central" proxy
 	toxiproxyEndpoint := fmt.Sprintf("localhost:%d", localPort)
 	centralProxy := getToxiproxyCentralProxy(t, toxiproxyEndpoint)
 
-	// Step 5: Wait for sensor to be healthy
+	// Wait for sensor to be healthy
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 	t.Log("Sensor is healthy (baseline)")
 
-	// Step 6: Create test namespace and deployments
+	// Create test namespace and deployments
 	testNamespace := "pipeline-test"
 	_, err := k8sClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{Name: testNamespace},
@@ -104,7 +82,7 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 		_ = k8sClient.CoreV1().Namespaces().Delete(ctx, testNamespace, metav1.DeleteOptions{})
 	})
 
-	// Step 7: Create docker config secrets to trigger ResolveAllDeployments
+	// Create docker config secrets to trigger ResolveAllDeployments
 	// This simulates the customer case where docker secrets caused amplification
 	numSecrets := 5
 	for i := 0; i < numSecrets; i++ {
@@ -113,63 +91,63 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	}
 	t.Logf("Created %d docker config secrets in namespace %s", numSecrets, testNamespace)
 
-	// Step 8: Create deployment BEFORE disconnection
+	// Create deployment BEFORE disconnection
 	deployment1 := "nginx-before"
 	require.NoError(t, createDeploymentViaAPI(t, testImageNginxLatest, deployment1, 1, testNamespace))
 	waitForDeploymentInCentral(t, deployment1)
 	t.Logf("Deployment '%s' created and visible in Central (before disconnection)", deployment1)
 
-	// Step 9: Update one docker secret to trigger ResolveAllDeployments before disconnection
+	// Update one docker secret to trigger ResolveAllDeployments before disconnection
 	updateDockerConfigSecret(ctx, t, k8sClient, testNamespace, "docker-secret-0")
 	t.Log("Updated docker secret to trigger ResolveAllDeployments (baseline)")
 
-	// Step 10: Disable proxy to simulate connection loss
+	// Disable proxy to simulate connection loss
 	centralProxy.Enabled = false
 	err = centralProxy.Save()
 	require.NoError(t, err, "failed to disable central proxy")
 
 	t.Log("Disabled toxiproxy - connection to Central severed")
 
-	// Step 11: Wait for sensor to become degraded
+	// Wait for sensor to become degraded
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_DEGRADED)
 	t.Log("Sensor is degraded (connection disrupted)")
 
-	// Step 12: Create deployment DURING disconnection (while offline)
+	// Create deployment DURING disconnection (while offline)
 	deployment2 := "busybox-during"
 	require.NoError(t, createDeploymentViaAPI(t, testImageBusybox, deployment2, 1, testNamespace))
 	t.Logf("Deployment '%s' created while sensor is offline", deployment2)
 
-	// Step 13: Update docker secret DURING disconnection to trigger ResolveAllDeployments while offline
+	// Update docker secret DURING disconnection to trigger ResolveAllDeployments while offline
 	updateDockerConfigSecret(ctx, t, k8sClient, testNamespace, "docker-secret-1")
 	t.Log("Updated docker secret while sensor is offline")
 
-	// Step 14: Sleep for disconnect duration (simulate sustained outage)
+	// Sleep for disconnect duration (simulate sustained outage)
 	disconnectDuration := 10 * time.Second
 	t.Logf("Sleeping for %s to simulate sustained connection loss", disconnectDuration)
 	time.Sleep(disconnectDuration)
 
-	// Step 15: Re-enable proxy to restore connection
+	// Re-enable proxy to restore connection
 	centralProxy.Enabled = true
 	err = centralProxy.Save()
 	require.NoError(t, err, "failed to re-enable central proxy")
 
 	t.Log("Re-enabled toxiproxy - connection to Central restored")
 
-	// Step 16: Wait for sensor to become healthy again
+	// Wait for sensor to become healthy again
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 	t.Log("Sensor is healthy again (reconnected)")
 
-	// Step 17: Create deployment AFTER reconnection
+	// Create deployment AFTER reconnection
 	deployment3 := "nginx-after"
 	require.NoError(t, createDeploymentViaAPI(t, testImageNginx121, deployment3, 1, testNamespace))
 	waitForDeploymentInCentral(t, deployment3)
 	t.Logf("Deployment '%s' created and visible in Central (after reconnection)", deployment3)
 
-	// Step 18: Update docker secret AFTER reconnection to trigger ResolveAllDeployments after reconnection
+	// Update docker secret AFTER reconnection to trigger ResolveAllDeployments after reconnection
 	updateDockerConfigSecret(ctx, t, k8sClient, testNamespace, "docker-secret-2")
 	t.Log("Updated docker secret after reconnection")
 
-	// Step 19: Verify ALL three deployments are visible in Central (critical validation)
+	// Verify ALL three deployments are visible in Central (critical validation)
 	t.Log("Verifying all deployments are visible in Central...")
 
 	// Wait for deployment created during offline to sync
@@ -195,13 +173,28 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 // configureSensorWithToxiproxy patches the sensor deployment to add toxiproxy sidecar
 // and configure sensor to proxy Central connection through toxiproxy.
 // Waits for the sensor pod to be ready with both containers.
-func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface, originalCentralEndpoint string) *corev1.Pod {
+// Returns the sensor pod and the original Central endpoint.
+func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface) (*corev1.Pod, string) {
 	var deploy *appsv1.Deployment
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		d, err := k8sClient.AppsV1().Deployments(sensorNamespace).Get(ctx, sensorDeploymentName, metav1.GetOptions{})
 		require.NoErrorf(c, err, "failed to get sensor deployment")
 		deploy = d
 	}, testTimeout, testInterval)
+
+	// Extract original central endpoint
+	var originalCentralEndpoint string
+	for _, container := range deploy.Spec.Template.Spec.Containers {
+		if container.Name == "sensor" {
+			for _, env := range container.Env {
+				if env.Name == "ROX_CENTRAL_ENDPOINT" {
+					originalCentralEndpoint = env.Value
+					break
+				}
+			}
+		}
+	}
+	require.NotEmpty(t, originalCentralEndpoint, "ROX_CENTRAL_ENDPOINT not found")
 
 	// Add toxiproxy sidecar container
 	toxiproxyContainer := corev1.Container{
@@ -266,7 +259,7 @@ func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient k
 	}, testTimeout, testInterval)
 
 	t.Logf("Sensor pod %s is ready with toxiproxy", sensorPod.Name)
-	return sensorPod
+	return sensorPod, originalCentralEndpoint
 }
 
 // cleanupSensorToxiproxyConfig removes toxiproxy sidecar and restores original sensor configuration.
@@ -398,23 +391,20 @@ func setupPortForward(t *testing.T, pod *corev1.Pod, remotePort int32) (uint16, 
 	return localPort, cleanup
 }
 
-// getToxiproxyCentralProxy connects to toxiproxy API and returns the "central" proxy
+// getToxiproxyCentralProxy connects to toxiproxy API and returns the "central" proxy.
+// The proxy is automatically created by sensor during initialization when ROX_CHAOS_PROFILE is set.
 func getToxiproxyCentralProxy(t *testing.T, toxiproxyEndpoint string) *toxiproxy.Proxy {
 	toxiproxyClient := toxiproxy.NewClient(fmt.Sprintf("http://%s", toxiproxyEndpoint))
 
 	var centralProxy *toxiproxy.Proxy
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		// First check if toxiproxy is reachable
-		_, err := toxiproxyClient.Proxies()
+		// Get the "central" proxy (created by sensor during initialization)
+		proxy, err := toxiproxyClient.Proxy("central")
 		if err != nil {
-			t.Logf("Toxiproxy API not ready yet: %v", err)
-			require.NoErrorf(c, err, "toxiproxy API not reachable")
+			t.Logf("Central proxy not ready yet: %v", err)
+			require.NoErrorf(c, err, "failed to get central proxy")
 			return
 		}
-
-		// Get the "central" proxy
-		proxy, err := toxiproxyClient.Proxy("central")
-		require.NoErrorf(c, err, "failed to get central proxy")
 		centralProxy = proxy
 	}, testTimeout, testInterval)
 
