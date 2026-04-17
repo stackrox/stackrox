@@ -9,10 +9,10 @@ import (
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
 	acmclient "github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
 	"k8s.io/apiserver/pkg/endpoints/request"
+	"k8s.io/client-go/rest"
 )
 
 type acmBasedMapperImpl struct {
-	acmClient externalrolebroker.ACMClient
 }
 
 type user struct {
@@ -49,9 +49,23 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 		identifier: ud.Attributes["userid"][0],
 		groups:     ud.Attributes["groups"],
 	}
+	tokens := ud.Attributes["providerToken"]
+	if len(tokens) == 0 || tokens[0] == "" {
+		return nil, nil
+	}
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, errox.NoAuthzConfigured.CausedBy("failed to load k8s cluster config")
+	}
+	cfg.BearerToken = tokens[0]
+	acmClient, err := acmclient.NewACMClientFromConfig(cfg)
+	if err != nil {
+		return nil, errox.NoAuthzConfigured.CausedBy("failed to instantiate ACM client")
+	}
+	log.Info("ACM token ", tokens[0])
 	ctxForACM := request.WithUser(ctx, userForCtx)
 	log.Info("Querying ACM for user", userForCtx)
-	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctxForACM, rm.acmClient)
+	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctxForACM, acmClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get resolved roles from ACM")
 	}
