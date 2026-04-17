@@ -1,6 +1,9 @@
 package phonehome
 
 import (
+	"maps"
+	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,11 +20,11 @@ func TestMatchHeaders(t *testing.T) {
 	})
 
 	rp := RequestParams{
-		Headers: Headers{
+		Headers: Headers(http.Header{
 			"Empty": {},
 			"One":   {"one"},
 			"Two":   {"one", "two"},
-		},
+		}),
 	}
 
 	tests := map[string]struct {
@@ -89,13 +92,25 @@ func TestMatchHeaders(t *testing.T) {
 			},
 			expected: nil,
 		},
+		"multiple matching": {
+			headers: GlobMap{
+				"Tw?": "one",
+				"?wo": "two",
+			},
+			expected: Headers{"Two": {"one", "two"}},
+		},
 	}
 	for name, test := range tests {
 		require.NoError(t, (&APICallCampaignCriterion{Headers: test.headers}).Compile())
 
 		t.Run(name, func(t *testing.T) {
 			h := rp.MatchHeaders(test.headers)
-			assert.Equal(t, test.expected, h)
+			// The order of the values joined from different matching keys may differ due to the map access order.
+			if assert.ElementsMatch(t, slices.Collect(maps.Keys(test.expected)), slices.Collect(maps.Keys(h))) {
+				for k, values := range test.expected {
+					assert.ElementsMatch(t, values, h[k])
+				}
+			}
 		})
 	}
 }

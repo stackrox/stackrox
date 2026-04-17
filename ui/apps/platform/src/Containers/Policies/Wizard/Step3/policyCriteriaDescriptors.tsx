@@ -30,6 +30,52 @@ export function validateFilePath(value: string): string | undefined {
     return undefined;
 }
 
+const highChurnPrefixes: Record<string, string> = {
+    '/tmp': 'temporary file',
+    '/proc': 'system',
+    '/sys': 'system',
+    '/var/log': 'log file',
+};
+
+/**
+ * Returns a warning message when a file path glob pattern is structurally too broad,
+ * such as root-level catch-alls or globs under high-churn directories.
+ */
+export function warnBroadFilePath(value: string): string | undefined {
+    const trimmed = value.trim();
+
+    // Root-level catch-all without additional path segments: /**, /*
+    if (trimmed === '/**' || trimmed === '/*') {
+        return 'This pattern matches every file event on the system, creating significant evaluation overhead. Consider narrowing to a specific directory like /etc/**.';
+    }
+
+    // Root-level glob with trailing path: /*/bar, /**/bar
+    if (trimmed.startsWith('/*/') || trimmed.startsWith('/**/')) {
+        return 'This pattern matches across all subdirectories of root. Consider scoping to a specific directory.';
+    }
+
+    // High-churn directories with unscoped glob wildcards
+    const matchedPrefix = Object.keys(highChurnPrefixes).find(
+        (prefix) =>
+            trimmed.startsWith(`${prefix}/`) && (trimmed.endsWith('/**') || trimmed.endsWith('/*'))
+    );
+    if (matchedPrefix) {
+        return `This directory is known for frequent ${highChurnPrefixes[matchedPrefix]} activity and may generate a high volume of file events, which increases policy evaluation overhead.`;
+    }
+
+    // Unscoped recursive glob (ends with **) under any other prefix
+    if (trimmed.endsWith('/**')) {
+        return 'Recursive glob patterns that match everything under a directory can generate a high volume of alerts and evaluation overhead. Consider scoping the pattern more narrowly.';
+    }
+
+    // Unscoped single-level glob (ends with /*) under any other prefix
+    if (trimmed.endsWith('/*')) {
+        return 'Single-level glob patterns under a directory can still match a high volume of file events. Consider narrowing to a specific file name or extension.';
+    }
+
+    return undefined;
+}
+
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
     {
@@ -390,6 +436,7 @@ export type TextDescriptor = {
     placeholder?: string;
     helperText?: string;
     validate?: (value: string) => string | undefined;
+    warn?: (value: string) => string | undefined;
 } & BaseDescriptor &
     DescriptorCanBoolean &
     DescriptorCanNegate;
@@ -1532,6 +1579,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '/home/**/.ssh/id_*',
         helperText: 'Enter an absolute file path. Supports glob patterns.',
         validate: validateFilePath,
+        warn: warnBroadFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
@@ -1679,6 +1727,7 @@ export const nodeEventDescriptor: Descriptor[] = [
         placeholder: '/home/**/.ssh/id_*',
         helperText: 'Enter an absolute file path. Supports glob patterns.',
         validate: validateFilePath,
+        warn: warnBroadFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

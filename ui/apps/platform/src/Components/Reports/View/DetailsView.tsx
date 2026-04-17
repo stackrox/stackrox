@@ -9,7 +9,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import type { DetailsType } from '../imageVulnerabilityReports.types';
+import type { DetailsType } from '../reports.types';
 
 export type DetailsViewProps = {
     headingLevel: 'h2' | 'h3';

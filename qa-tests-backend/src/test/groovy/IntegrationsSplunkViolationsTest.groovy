@@ -46,6 +46,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
         waitForSplunkReady(splunkDeployment.splunkPortForward.getLocalPort())
+
+        String centralHost = orchestrator.getServiceIP("central", "stackrox")
+        configureSplunkTA(splunkDeployment, centralHost)
     }
 
     def cleanupSpec() {
@@ -73,10 +76,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
-        "Splunk TA is installed and configured, network and process violations triggered"
+        "network and process violations are triggered"
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
-
-        configureSplunkTA(splunkDeployment, centralHost)
         triggerProcessViolation(splunkDeployment)
         triggerNetworkFlowViolation(splunkDeployment, centralHost)
 
@@ -143,11 +144,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         and:
         "FACT is configured to monitor /tmp paths"
         patchFactEnv()
-
-        and:
-        "Splunk TA is installed and configured"
-        String centralHost = orchestrator.getServiceIP("central", "stackrox")
-        configureSplunkTA(splunkDeployment, centralHost)
 
         and:
         "a file activity policy targeting a unique path"

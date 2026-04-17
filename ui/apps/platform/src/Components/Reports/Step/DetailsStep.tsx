@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Divider, Flex, PageSection, Title } from '@patternfly/react-core';
 
-// import type { DetailsType } from '../../imageVulnerabilityReports.types';
+// import type { DetailsType } from '../reports.types';
 
 function DetailsStep(): ReactElement {
     return (

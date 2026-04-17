@@ -137,7 +137,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			},
 		}
 		expected := APICallCampaign{campaign[1], campaign[2], campaign[5]}
-		expecedHeaders := Headers{
+		expectedHeaders := Headers{
 			userAgentHeaderKey: rp.Headers[userAgentHeaderKey],
 			"X-Header-1":       {"value 2"}, // "value 1" is not matched
 			"X-Header-2":       {"value 1", "value 2"},
@@ -152,7 +152,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				maps.Copy(matchedHeaders, h)
 			}))
 		assert.Equal(t, expected, fulfilled)
-		assert.Equal(t, expecedHeaders, matchedHeaders)
+		assert.Equal(t, expectedHeaders, matchedHeaders)
 	})
 
 	t.Run("Missing headers", func(t *testing.T) {
@@ -189,6 +189,97 @@ func TestCampaignFulfilled(t *testing.T) {
 			assert.Same(t, campaign[0], fulfilled[0])
 			assert.Same(t, campaign[1], fulfilled[1])
 		}
+	})
+	t.Run("Header name and value globs", func(t *testing.T) {
+		headers := Headers{
+			"X-Custom-One": {"alpha"},
+			"X-Custom-Two": {"beta"},
+			"X-Other":      {"gamma"},
+		}
+		rp := &RequestParams{
+			Headers: headers,
+			Method:  "GET",
+			Path:    "/test",
+			Code:    200,
+		}
+
+		t.Run("Glob header name matches", func(t *testing.T) {
+			campaign := APICallCampaign{
+				HeaderPattern("X-Custom-*", "*"),
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+		})
+
+		t.Run("Glob header name and value match", func(t *testing.T) {
+			campaign := APICallCampaign{
+				HeaderPattern("X-Custom-*", "al*"),
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+		})
+
+		t.Run("Glob header name matches but value does not", func(t *testing.T) {
+			campaign := APICallCampaign{
+				HeaderPattern("X-Custom-*", "zzz*"),
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+		})
+
+		t.Run("Glob header name does not match", func(t *testing.T) {
+			campaign := APICallCampaign{
+				HeaderPattern("X-Missing-*", "*"),
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+		})
+
+		t.Run("Multiple glob header criteria", func(t *testing.T) {
+			campaign := APICallCampaign{
+				{
+					Headers: GlobMap{
+						"X-Custom-*": "al*",
+						"X-Other":    "gam*",
+					},
+				},
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+		})
+
+		t.Run("Method match captures all X- headers", func(t *testing.T) {
+			campaign := APICallCampaign{
+				{
+					Method:  glob.Pattern("GET").Ptr(),
+					Headers: GlobMap{"X-*": "*"},
+				},
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+
+			rpPost := &RequestParams{
+				Headers: headers,
+				Method:  "POST",
+				Path:    "/test",
+				Code:    200,
+			}
+			assert.Zero(t, campaign.CountFulfilled(rpPost, doNothing))
+		})
+
+		t.Run("Capture by method with missing glob header pattern", func(t *testing.T) {
+			campaign := APICallCampaign{
+				{
+					Method:  glob.Pattern("GET").Ptr(),
+					Headers: GlobMap{"X-*": NoHeaderOrAnyValue},
+				},
+			}
+			require.NoError(t, campaign.Compile())
+			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+
+			campaign[0].Method = glob.Pattern("POST").Ptr()
+			assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+		})
 	})
 
 	t.Run("All criteria", func(t *testing.T) {

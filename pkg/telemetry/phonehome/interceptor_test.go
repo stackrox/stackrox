@@ -163,6 +163,9 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	ua := rp.Headers.Get("User-Agent")
 	s.NoError(err)
 	s.Equal([]string{"test"}, ua)
+
+	matching := rp.Headers.GetMatching("User-*", "*")
+	s.Equal(map[string][]string{"User-Agent": {"test"}}, matching)
 }
 
 func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
