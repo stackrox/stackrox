@@ -104,6 +104,8 @@ deploy_stackrox_with_roxie() {
     local rox_default_tls_cert_file="${ROX_DEFAULT_TLS_CERT_FILE:-}"
     local load_balancer="${LOAD_BALANCER:-}"
     local rox_scanner_v4="${ROX_SCANNER_V4:-}"
+    local feature_flags_overrides="${FEATURE_FLAGS_OVERRIDES:-}"
+    local orchestrator_flavor="${ORCHESTRATOR_FLAVOR:-k8s}"
 
     if ! command -v roxie >/dev/null 2>&1; then
         die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
@@ -135,7 +137,7 @@ deploy_stackrox_with_roxie() {
 
     info "Determining feature flags for deployment"
     local feature_flags
-    feature_flags=$(feature_flags_for_deployment)
+    feature_flags="$(feature_flags_for_deployment "$feature_flags_overrides")"
     log_feature_flags "$feature_flags"
 
     info "Configuring scanner V4 component for deployment"
@@ -167,6 +169,18 @@ deploy_stackrox_with_roxie() {
     source "$roxie_envrc"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+
+    # roxie does not export these yet via envrc, but they are needed by the tests.
+    if [[ ! "$API_ENDPOINT" =~ ^[^:]+:[0-9]+$ ]]; then
+        die "API_ENDPOINT has unexpected format: $API_ENDPOINT (expected hostname:port)"
+    fi
+    API_HOSTNAME="${API_ENDPOINT%:*}"  # Remove :port from end
+    export API_HOSTNAME
+    API_PORT="${API_ENDPOINT##*:}"     # Remove hostname: from start
+    export API_PORT
+
+    CLUSTER="$(echo "$orchestrator_flavor" | tr '[:lower:]' '[:upper:]')"
+    export CLUSTER
 
     record_build_info "${namespace}"
 
@@ -226,24 +240,26 @@ gen_admin_password() {
 }
 
 feature_flags_for_deployment() {
-    local feature_flags_overrides="${FEATURE_FLAG_OVERRIDES:-}"
-    enable ROX_VULN_MGMT_LEGACY_SNOOZE
-    enable ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS
-    enable ROX_CISA_KEV
-    enable ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING
-    enable ROX_NODE_VULNERABILITY_REPORTS
-    enable ROX_TAILORED_PROFILES
-    disable ROX_NETWORK_GRAPH_EXTERNAL_IPS
-    disable ROX_SENSITIVE_FILE_ACTIVITY
-    disable ROX_BASE_IMAGE_DETECTION
-    # Add any additional feature flag overrides from the environment variable.
-    local IFS=,
-    for flag in $feature_flags_overrides; do
-        flag=${flag## }   # trim leading spaces
-        flag=${flag%% }   # trim trailing spaces
-        [[ -n "$flag" ]] || continue
-        echo "$flag"
-    done
+    local feature_flags_overrides="$1"
+    {
+        enable ROX_VULN_MGMT_LEGACY_SNOOZE
+        enable ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS
+        enable ROX_CISA_KEV
+        enable ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING
+        enable ROX_NODE_VULNERABILITY_REPORTS
+        enable ROX_TAILORED_PROFILES
+        disable ROX_NETWORK_GRAPH_EXTERNAL_IPS
+        disable ROX_SENSITIVE_FILE_ACTIVITY
+        disable ROX_BASE_IMAGE_DETECTION
+        # Add any additional feature flag overrides from the environment variable.
+        local IFS=,
+        for flag in $feature_flags_overrides; do
+            flag=${flag## }   # trim leading spaces
+            flag=${flag%% }   # trim trailing spaces
+            [[ -n "$flag" ]] || continue
+            echo "$flag"
+        done
+    } | tr '\n' ',' | sed 's/,$//'
 }
 
 enable() {
