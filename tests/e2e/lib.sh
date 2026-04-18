@@ -113,13 +113,11 @@ deploy_stackrox_with_roxie() {
     local namespace="$1"
     info "Deploying into namespace ${namespace}"
 
-    local override_file="${2:-}"
-    local cleanup_override_file="false"
-    if [[ -n "$override_file" ]]; then
-        info "Applying overrides from ${override_file}"
-    else
-        override_file="$(mktemp)"
-        cleanup_override_file="true"
+    local provided_override_file="${2:-}"
+    local override_file; override_file="$(mktemp)"
+    if [[ -n "$provided_override_file" ]]; then
+        info "Applying overrides from ${provided_override_file}"
+        cp "$provided_override_file" "$override_file"
     fi
 
     local feature_flags_overrides="${FEATURE_FLAGS_OVERRIDES:-}"
@@ -186,9 +184,7 @@ deploy_stackrox_with_roxie() {
 
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
-    if [[ "$cleanup_override_file" == "true" ]]; then
-        rm -f "$override_file"
-    fi
+    rm -f "$override_file"
 }
 
 managed_by="stackrox-tests"
