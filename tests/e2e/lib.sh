@@ -122,8 +122,6 @@ deploy_stackrox_with_roxie() {
 
     local feature_flags_overrides="${FEATURE_FLAGS_OVERRIDES:-}"
 
-    predeployment_cleanup "$namespace"
-
     info "Determining feature flags for deployment"
     local feature_flags
     feature_flags="$(feature_flags_for_deployment "$feature_flags_overrides")"
@@ -197,6 +195,13 @@ deploy_stackrox_with_roxie_compat() {
     info "Deploying StackRox with roxie (compat layer)"
 
     check_for_roxie
+
+    if retrying_kubectl get ns "${namespace}" </dev/null >/dev/null 2>&1; then
+        # Deletes secrets created outside of roxie, e.g. default TLS secret for central.
+        retrying_kubectl -n "${namespace}" delete secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait </dev/null
+    else
+        retrying_kubectl create ns "${namespace}" </dev/null
+    fi
 
     handle_pod_security_policies
 
@@ -345,19 +350,6 @@ enable() {
 disable() {
     local name="$1"
     echo "-${name}"
-}
-
-predeployment_cleanup() {
-    local namespace="$1"
-
-    # Clean up first.
-    roxie teardown all --single-namespace
-    if kubectl get ns "${namespace}" >/dev/null 2>&1; then
-        # Deletes secrets created outside of roxie, e.g. default TLS secret for central.
-        kubectl -n "${namespace}" delete secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait
-    else
-        kubectl create ns "${namespace}"
-    fi
 }
 
 handle_trusted_ca_file() {
