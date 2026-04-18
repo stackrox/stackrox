@@ -84,16 +84,6 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
-override_file=""
-roxie_envrc=""
-
-# shellcheck disable=SC2329
-roxie_trap_cleanup() {
-    [[ -z "$override_file" ]] || { rm -f "$override_file"; override_file=""; }
-    [[ -z "$roxie_envrc" ]] || { rm -f "$roxie_envrc"; roxie_envrc=""; }
-}
-
-
 # YAML Manipulation Helpers
 
 merge_yaml() {
@@ -113,55 +103,40 @@ patch_yaml() {
 }
 
 # TODO: Make namespaces configurable?
+#
+# Uses from environment:
+#   * FEATURE_FLAGS_OVERRIDES
 deploy_stackrox_with_roxie() {
     info "Deploying StackRox with roxie"
 
-    local namespace="stackrox"
-    local managed_by="acs-tests"
-    local pod_security_policies="${POD_SECURITY_POLICIES:-false}"
-    local trusted_ca_file="${TRUSTED_CA_FILE:-}"
-    local rox_default_tls_key_file="${ROX_DEFAULT_TLS_KEY_FILE:-}"
-    local rox_default_tls_cert_file="${ROX_DEFAULT_TLS_CERT_FILE:-}"
-    local load_balancer="${LOAD_BALANCER:-}"
-    local rox_scanner_v4="${ROX_SCANNER_V4:-}"
+    local namespace="$1"
+    info "Deploying into namespace ${namespace}"
+
+    local override_file="${2:-}"
+    local cleanup_override_file="false"
+    if [[ -n "$override_file" ]]; then
+        info "Applying overrides from ${override_file}"
+    else
+        override_file="$(mktemp)"
+        cleanup_override_file="true"
+    fi
+
     local feature_flags_overrides="${FEATURE_FLAGS_OVERRIDES:-}"
 
-    check_for_roxie
-
-    handle_pod_security_policies "$pod_security_policies"
-
-    predeployment_cleanup "$namespace" "$managed_by"
-
-    # Start creating resources.
-    override_file="$(mktemp)"
-    trap roxie_trap_cleanup EXIT
-
-    info "Handling TRUSTED_CA_FILE configuration"
-    handle_trusted_ca_file "$override_file" "$trusted_ca_file"
-
-    info "Handling default TLS configuration"
-    handle_default_tls_settings "$override_file" "$namespace" "$managed_by" "$rox_default_tls_key_file" "$rox_default_tls_cert_file"
-
-    info "Determining load balancer settings for deployment"
-    handle_load_balancer_setting "$override_file" "$load_balancer"
-
-    info "Determining custom environment variables for deployment"
-    patch_yaml "$override_file" '.spec.customize.envVars = []'
-    custom_env_for_deployment | while read -r var_val; do
-        set_custom_env "$override_file" "$var_val"
-    done
+    predeployment_cleanup "$namespace"
 
     info "Determining feature flags for deployment"
     local feature_flags
     feature_flags="$(feature_flags_for_deployment "$feature_flags_overrides")"
     log_feature_flags "$feature_flags"
 
-    info "Configuring scanner V4 component for deployment"
-    handle_scanner_v4_setting "$override_file" "$rox_scanner_v4"
-
     info "Creating admin password"
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
+
+    # Workaround bug in roxie
+    patch_yaml "$override_file" '.central.spec.scanner.scannerComponent = "Enabled"'
+    patch_yaml "$override_file" '.securedCluster.spec.scanner.scannerComponent = "Enabled"'
 
     # Replaces deploy_stackrox steps:
     # - deploy_stackrox_operator (implicit)
@@ -170,7 +145,7 @@ deploy_stackrox_with_roxie() {
     # - wait_for_api (implicit)
     # - wait_for_scanner_V4 (-early-readiness=false)
     # Note: --single-namespace deploys both components into the namespace "stackrox".
-    roxie_envrc="$(mktemp)"
+    local roxie_envrc; roxie_envrc="$(mktemp)"
     roxie deploy central \
         --resources=ci \
         --envrc "$roxie_envrc" \
@@ -178,7 +153,7 @@ deploy_stackrox_with_roxie() {
         --pause-reconciliation \
         --features "$feature_flags" \
         --early-readiness=false \
-        --override "$override_file"
+        --override <(yq eval '.central // {}' "$override_file")
 
     extend_roxie_envrc "$roxie_envrc"
 
@@ -186,6 +161,9 @@ deploy_stackrox_with_roxie() {
     if [[ -n "${BASH_ENV:-}" ]]; then
         cat "$roxie_envrc" >> "$BASH_ENV"
     fi
+
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
 
     record_build_info "${namespace}"
 
@@ -200,15 +178,54 @@ deploy_stackrox_with_roxie() {
         --single-namespace \
         --pause-reconciliation \
         --features "$feature_flags" \
-        --early-readiness=false
+        --early-readiness=false \
+        --override <(yq eval '.securedCluster // {}' "$override_file")
 
     wait_for_collectors_to_be_operational stackrox
 
-    if retrying_kubectl </dev/null -n "${namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
-        wait_for_scanner_V4 "${namespace}"
-    fi
-
     touch "${STATE_DEPLOYED}"
+    rm -f "$roxie_envrc"
+    if [[ "$cleanup_override_file" == "true" ]]; then
+        rm -f "$override_file"
+    fi
+}
+
+managed_by="stackrox-tests"
+
+# TODO: Make namespaces configurable?
+# Implements a compatibility configuration layer.
+# For new use-cases, please use deploy_stackrox_with_roxie() instead.
+deploy_stackrox_with_roxie_compat() {
+    local namespace="stackrox"
+    info "Deploying StackRox with roxie (compat layer)"
+
+    check_for_roxie
+
+    handle_pod_security_policies
+
+    local override_file; override_file="$(mktemp)"
+
+    info "Handling TRUSTED_CA_FILE configuration"
+    handle_trusted_ca_file "$override_file"
+
+    info "Handling default TLS configuration"
+    handle_default_tls_settings "$override_file" "$namespace"
+
+    info "Determining load balancer settings for deployment"
+    handle_load_balancer_setting "$override_file"
+
+    info "Determining custom central environment"
+    patch_yaml "$override_file" '.central.spec.customize.envVars = []'
+    custom_env_for_deployment | while read -r var_val; do
+        set_custom_env "$override_file" ".central.spec.customize.envVars" "$var_val"
+    done
+
+    info "Configuring scanner V4 component for deployment"
+    handle_scanner_v4_setting "$override_file" ".central.spec.scannerV4.scannerComponent"
+    handle_scanner_v4_setting "$override_file" ".securedCluster.spec.scannerV4.scannerComponent"
+
+    deploy_stackrox_with_roxie "$namespace" "$override_file"
+    rm -f "$override_file"
 }
 
 check_for_roxie() {
@@ -220,7 +237,7 @@ check_for_roxie() {
 }
 
 handle_pod_security_policies() {
-    local pod_security_policies="$1"
+    local pod_security_policies="${POD_SECURITY_POLICIES:-false}"
     if [[ "$pod_security_policies" == "true" ]]; then
         info "WARNING: roxie-based deployments do not support PodSecurityPolicies"
     fi
@@ -260,11 +277,12 @@ EOF
 
 set_custom_env() {
     local override_file="$1"
-    local var_val="$2"
+    local path="$2"
+    local var_val="$3"
     local name="${var_val%%=*}"
     local value="${var_val#*=}"
     info "  ${name}=${value}"
-    patch_yaml "$override_file" ".spec.customize.envVars += {\"name\": \"${name}\", \"value\": \"${value}\"}"
+    patch_yaml "$override_file" "${path} += {\"name\": \"${name}\", \"value\": \"${value}\"}"
 }
 
 log_feature_flags() {
@@ -277,16 +295,17 @@ log_feature_flags() {
 
 handle_scanner_v4_setting() {
     local override_file="$1"
-    local rox_scanner_v4="$2"
+    local path="$2"
+    local rox_scanner_v4="${ROX_SCANNER_V4:-}"
 
     case "$rox_scanner_v4" in
         "")
             ;;
         true)
-            patch_yaml "$override_file" '.spec.scannerV4.scannerComponent = "Enabled"'
+            patch_yaml "$override_file" "${path} = \"Enabled\""
             ;;
         false)
-            patch_yaml "$override_file" '.spec.scannerV4.scannerComponent = "Disabled"'
+            patch_yaml "$override_file" "${path} = \"Disabled\""
             ;;
         *)
             die "Unsupported value for ROX_SCANNER_V4: $rox_scanner_v4"
@@ -333,7 +352,7 @@ disable() {
 
 predeployment_cleanup() {
     local namespace="$1"
-    local managed_by="$2"
+
     # Clean up first.
     roxie teardown all --single-namespace
     if kubectl get ns "${namespace}" >/dev/null 2>&1; then
@@ -346,17 +365,18 @@ predeployment_cleanup() {
 
 handle_trusted_ca_file() {
     local override_file="$1"
-    local trusted_ca_file="$2"
+    local trusted_ca_file="${TRUSTED_CA_FILE:-}"
 
     if [[ -n "$trusted_ca_file" ]]; then
         [[ -f "$trusted_ca_file" ]] || die "Trusted CA file not found: $trusted_ca_file"
         trusted_ca_as_string=$(jq -Rs . < "$trusted_ca_file")
         merge_yaml "$override_file" <<EOF
-spec:
-  tls:
-    additionalCAs:
-    - name: additional-ca
-      content: $trusted_ca_as_string
+central:
+  spec:
+    tls:
+      additionalCAs:
+      - name: additional-ca
+        content: $trusted_ca_as_string
 EOF
     fi
 }
@@ -364,9 +384,9 @@ EOF
 handle_default_tls_settings() {
     local override_file="$1"
     local namespace="$2"
-    local managed_by="$3"
-    local rox_default_tls_key_file="$4"
-    local rox_default_tls_cert_file="$5"
+    local rox_default_tls_key_file="${ROX_DEFAULT_TLS_KEY_FILE:-}"
+    local rox_default_tls_cert_file="${ROX_DEFAULT_TLS_CERT_FILE:-}"
+
     if [[ -n "$rox_default_tls_key_file" && -n "$rox_default_tls_cert_file" ]]; then
         info "Setting up default TLS certificate"
         [[ -f "$rox_default_tls_key_file" ]] || die "TLS key file not found: $rox_default_tls_key_file"
@@ -386,38 +406,27 @@ data:
   tls.crt: $(base64 < "$rox_default_tls_cert_file" | tr -d '\n')
 EOF
         merge_yaml "$override_file" << EOF
-spec:
-  central:
-    defaultTLSSecret:
-      name: "${central_default_tls_secret_name}"
+central:
+  spec:
+    central:
+      defaultTLSSecret:
+        name: "${central_default_tls_secret_name}"
 EOF
     fi
 }
 
 handle_load_balancer_setting() {
     local override_file="$1"
-    local load_balancer="$2"
+    local load_balancer="${LOAD_BALANCER:-}"
 
     case "$load_balancer" in
     "")
         ;;
     lb)
-        merge_yaml "$override_file" <<EOF
-spec:
-  central:
-    exposure:
-      loadBalancer:
-        enabled: true
-EOF
+        patch_yaml "$override_file" ".central.spec.central.exposure.loadBalancer.enabled = true"
         ;;
     route)
-        merge_yaml "$override_file" <<EOF
-spec:
-  central:
-    exposure:
-      route:
-        enabled: true
-EOF
+        patch_yaml "$override_file" ".central.spec.central.exposure.route.enabled = true"
         ;;
     *)
         die "Unsupported value for LOAD_BALANCER: $load_balancer"
