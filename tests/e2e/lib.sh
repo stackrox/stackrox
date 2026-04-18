@@ -93,6 +93,26 @@ roxie_trap_cleanup() {
     [[ -z "$roxie_envrc" ]] || { rm -f "$roxie_envrc"; roxie_envrc=""; }
 }
 
+
+# YAML Manipulation Helpers
+
+merge_yaml() {
+    local input="$1"
+    local tmpfile; tmpfile="$(mktemp)"
+
+    yq eval-all '(select(fi == 0) // {}) * select(fi == 1)' "$input" <(cat) > "$tmpfile"
+    cat "$tmpfile" > "$input"
+    rm -f "$tmpfile"
+}
+
+patch_yaml() {
+    local input="$1"
+    local patch="$2"
+
+    yq -i eval "$patch" "$input"
+}
+
+# TODO: Make namespaces configurable?
 deploy_stackrox_with_roxie() {
     info "Deploying StackRox with roxie"
 
@@ -163,7 +183,7 @@ deploy_stackrox_with_roxie() {
     extend_roxie_envrc "$roxie_envrc"
 
     # Persist roxie environment, mimicing the effect of ci_export.
-    if [[ -n "$BASH_ENV" ]]; then
+    if [[ -n "${BASH_ENV:-}" ]]; then
         cat "$roxie_envrc" >> "$BASH_ENV"
     fi
 
@@ -2039,23 +2059,4 @@ update_junit_prefix_with_central_and_sensor_version() {
         [[ ! -e $f ]] && continue
         sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
     done
-}
-
-
-# YAML Manipulation Helpers
-
-merge_yaml() {
-    local input="$1"
-    local tmpfile; tmpfile="$(mktemp)"
-
-    yq eval-all '(select(fi == 0) // {}) * select(fi == 1)' "$input" <(cat) > "$tmpfile"
-    cat "$tmpfile" > "$input"
-    rm -f "$tmpfile"
-}
-
-patch_yaml() {
-    local input="$1"
-    local patch="$2"
-
-    yq -i eval "$patch" "$input"
 }
