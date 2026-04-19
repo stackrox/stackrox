@@ -102,7 +102,7 @@ patch_yaml() {
     yq -i eval "$patch" "$input"
 }
 
-# TODO: Make namespaces configurable?
+# TODO: Make namespaces configurable.
 #
 # Uses from environment:
 #   * FEATURE_FLAGS_OVERRIDES
@@ -191,7 +191,7 @@ deploy_stackrox_with_roxie() {
     echo "║                     ║"
     echo "║  StackRox deployed  ║"
     echo "║                     ║"
-    echo "╚═════════════════════╝"``
+    echo "╚═════════════════════╝"
 }
 
 managed_by="stackrox-tests"
@@ -205,9 +205,11 @@ deploy_stackrox_with_roxie_compat() {
 
     check_for_roxie
 
-    if retrying_kubectl get ns "${namespace}" </dev/null >/dev/null 2>&1; then
+    if retrying_kubectl get ns "$namespace" </dev/null >/dev/null 2>&1; then
         # Deletes secrets created outside of roxie, e.g. default TLS secret for central.
-        retrying_kubectl -n "${namespace}" delete secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait </dev/null
+        retrying_kubectl -n "$namespace" delete secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait </dev/null
+        retrying_kubectl -n "$namespace" delete configmap declarative-configurations --wait </dev/null
+        retrying_kubectl -n "$namespace" delete configmap sensitive-declarative-configurations --wait </dev/null
     else
         retrying_kubectl create ns "${namespace}" </dev/null
     fi
@@ -227,13 +229,22 @@ deploy_stackrox_with_roxie_compat() {
 
     info "Determining custom central environment"
     patch_yaml "$override_file" '.central.spec.customize.envVars = []'
-    custom_env_for_deployment | while read -r var_val; do
+    custom_env_for_central | while read -r var_val; do
         set_custom_env "$override_file" ".central.spec.customize.envVars" "$var_val"
+    done
+
+    info "Determining custom securedCluster environment"
+    patch_yaml "$override_file" '.securedCluster.spec.customize.envVars = []'
+    custom_env_for_secured_cluster | while read -r var_val; do
+        set_custom_env "$override_file" ".securedCluster.spec.customize.envVars" "$var_val"
     done
 
     info "Configuring scanner V4 component for deployment"
     handle_scanner_v4_setting "$override_file" ".central.spec.scannerV4.scannerComponent"
     handle_scanner_v4_setting "$override_file" ".securedCluster.spec.scannerV4.scannerComponent"
+
+    info "Configuring declarative configurations"
+    handle_declarative_configuration "$override_file"
 
     deploy_stackrox_with_roxie "$namespace" "$override_file"
     rm -f "$override_file"
@@ -294,6 +305,7 @@ set_custom_env() {
     local value="${var_val#*=}"
     info "  ${name}=${value}"
     patch_yaml "$override_file" "${path} += {\"name\": \"${name}\", \"value\": \"${value}\"}"
+    ci_export "$name" "$value"
 }
 
 log_feature_flags() {
@@ -430,7 +442,21 @@ handle_load_balancer_setting() {
     esac
 }
 
-custom_env_for_deployment() {
+handle_declarative_configuration() {
+    local override_file="$1"
+    merge_yaml "$override_file" <<EOF
+central:
+  spec:
+    central:
+      declarativeConfiguration:
+        configMaps:
+        - name: "declarative-configurations"
+        secrets:
+        - name: "sensitive-declarative-configurations"
+EOF
+}
+
+custom_env_for_central() {
     # Configuration values (timeouts, durations, behavioral settings)
     add_env ROX_BASELINE_GENERATION_DURATION
     add_env ROX_DEVELOPMENT_BUILD "true"
@@ -445,6 +471,12 @@ custom_env_for_deployment() {
         add_env GOEXPERIMENT "cgocheck2"
         add_env MUTEX_WATCHDOG_TIMEOUT_SECS "15"
     fi
+}
+
+custom_env_for_secured_cluster() {
+    # Configuration values (timeouts, durations, behavioral settings)
+    add_env ROX_AFTERGLOW_PERIOD "15"
+    add_env ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 }
 
 add_env() {
