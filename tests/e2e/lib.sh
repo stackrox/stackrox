@@ -297,11 +297,9 @@ log_feature_flags() {
 handle_scanner_v4_setting() {
     local override_file="$1"
     local path="$2"
-    local rox_scanner_v4="${ROX_SCANNER_V4:-}"
+    local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
 
     case "$rox_scanner_v4" in
-        "")
-            ;;
         true)
             patch_yaml "$override_file" "${path} = \"Enabled\""
             ;;

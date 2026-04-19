@@ -51,7 +51,7 @@ config_part_1() {
     if [[ "$use_roxie_deploy" == "true" ]]; then
         info "Using roxie-based config_part_1 for qa-tests-backend"
         info "Roxie version: $(roxie version)"
-        deploy_stackrox_with_roxie
+        deploy_stackrox_with_roxie_compat
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     else
         info "Using traditional config_part_1 for qa-tests-backend"
