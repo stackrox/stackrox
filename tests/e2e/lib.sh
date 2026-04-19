@@ -108,7 +108,11 @@ patch_yaml() {
 # Uses from environment:
 #   * FEATURE_FLAGS_OVERRIDES
 deploy_stackrox_with_roxie() {
-    info "Deploying StackRox with roxie"
+    echo "╔═════════════════════════════════╗"
+    echo "║                                 ║"
+    echo "║  Deploying StackRox with roxie  ║"
+    echo "║                                 ║"
+    echo "╚═════════════════════════════════╝"
 
     local namespace="$1"
     info "Deploying into namespace ${namespace}"
