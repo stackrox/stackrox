@@ -186,6 +186,12 @@ deploy_stackrox_with_roxie() {
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
     rm -f "$override_file"
+
+    echo "╔═════════════════════╗"
+    echo "║                     ║"
+    echo "║  StackRox deployed  ║"
+    echo "║                     ║"
+    echo "╚═════════════════════╝"``
 }
 
 managed_by="stackrox-tests"
