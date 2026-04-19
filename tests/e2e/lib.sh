@@ -137,7 +137,7 @@ deploy_stackrox_with_roxie() {
 
     # Workaround bug in roxie
     patch_yaml "$override_file" '.central.spec.scanner.scannerComponent = "Enabled"'
-    patch_yaml "$override_file" '.securedCluster.spec.scanner.scannerComponent = "Enabled"'
+    patch_yaml "$override_file" '.securedCluster.spec.scanner.scannerComponent = "AutoSense"'
 
     # Replaces deploy_stackrox steps:
     # - deploy_stackrox_operator (implicit)
