@@ -18,7 +18,13 @@ import {
     clusterPlatformTypeAttribute,
     clusterTypeAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
-import { Annotation, ID, Label, Name } from 'Components/CompoundSearchFilter/attributes/deployment';
+import {
+    Annotation,
+    ContainerType,
+    ID,
+    Label,
+    Name,
+} from 'Components/CompoundSearchFilter/attributes/deployment';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
@@ -81,7 +87,7 @@ export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
 export const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',
     searchCategory: 'DEPLOYMENTS',
-    attributes: [Annotation, ID, Label, Name],
+    attributes: [Annotation, ContainerType, ID, Label, Name],
 };
 
 export const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {

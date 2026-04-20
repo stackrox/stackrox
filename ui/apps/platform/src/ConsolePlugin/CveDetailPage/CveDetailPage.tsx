@@ -1,7 +1,9 @@
 import { NamespaceBar, useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 
 import useURLSearch from 'hooks/useURLSearch';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { hideColumnIf } from 'hooks/useManagedColumns';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';
 import { useDefaultWorkloadCveViewContext } from 'ConsolePlugin/hooks/useDefaultWorkloadCveViewContext';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
@@ -19,13 +21,17 @@ export function CveDetailPage() {
 
     const [activeNamespace] = useActiveNamespace();
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const context = useDefaultWorkloadCveViewContext();
-    const searchFilterConfig = [
-        imageSearchFilterConfig,
-        imageComponentSearchFilterConfig,
-        deploymentSearchFilterConfig,
-        ...(activeNamespace === ALL_NAMESPACES_KEY ? [namespaceSearchFilterConfig] : []),
-    ];
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        [
+            imageSearchFilterConfig,
+            imageComponentSearchFilterConfig,
+            deploymentSearchFilterConfig,
+            ...(activeNamespace === ALL_NAMESPACES_KEY ? [namespaceSearchFilterConfig] : []),
+        ]
+    );
 
     return (
         <WorkloadCveViewContext.Provider value={context}>

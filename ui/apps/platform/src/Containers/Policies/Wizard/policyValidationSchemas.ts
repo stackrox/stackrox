@@ -4,7 +4,7 @@ import type { ClientPolicy } from 'types/policy.proto';
 
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,
-    POLICY_BEHAVIOR_SCOPE_ID,
+    POLICY_BEHAVIOR_RESOURCES_ID,
     POLICY_DEFINITION_DETAILS_ID,
     POLICY_DEFINITION_LIFECYCLE_ID,
     POLICY_DEFINITION_RULES_ID,
@@ -198,7 +198,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                 })
                 .test(
                     'scope-has-at-least-one-property',
-                    'Scope must have at least one property',
+                    'Each inclusion must have at least one field populated',
                     (scope) =>
                         Boolean(
                             scope?.cluster.trim() ||
@@ -231,7 +231,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                 })
                 .test(
                     'excluded-scope-has-at-least-one-property',
-                    'Excluded scope must have at least one property',
+                    'Each exclusion must have at least one field populated',
                     (value) =>
                         Boolean(
                             value?.name.trim() ||
@@ -273,7 +273,7 @@ export function getValidationSchema(stepId: number | string): yup.Schema {
             return validationSchemaStep2;
         case POLICY_DEFINITION_RULES_ID:
             return validationSchemaStep3;
-        case POLICY_BEHAVIOR_SCOPE_ID:
+        case POLICY_BEHAVIOR_RESOURCES_ID:
             return validationSchemaStep4;
         case POLICY_BEHAVIOR_ACTIONS_ID:
             return validationSchemaStep5;
