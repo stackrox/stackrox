@@ -59,7 +59,6 @@ var (
 		Help:      "Number of process indicators upserted by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 
-<<<<<<< HEAD
 	processIndicatorsRemoved = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
