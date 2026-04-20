@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientprofile"
-	"github.com/stackrox/rox/pkg/glob"
 )
 
 // profileTracker wraps a TrackerBase with api_requests-specific concerns:
@@ -34,8 +33,7 @@ func (pt *profileTracker) Reconfigure(cfg *tracker.Configuration) {
 func matchesProfileHeader(label tracker.Label, profile clientprofile.RuleSet) bool {
 	for _, rule := range profile {
 		for header := range rule.Headers {
-			p := glob.Pattern(headerToLabel(header))
-			if p.Match(string(label)) {
+			if header.Match(string(label)) {
 				return true
 			}
 		}
