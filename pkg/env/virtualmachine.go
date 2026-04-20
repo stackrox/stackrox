@@ -58,13 +58,4 @@ var (
 	// If rate limited and ACK is recent, the report is silently dropped to protect Sensor/Central.
 	// Default: 4 hours
 	VMRelayStaleAckThreshold = registerDurationSetting("ROX_VM_RELAY_STALE_ACK_THRESHOLD", 4*time.Hour)
-
-	// VMIndexReportRelayCacheSlots is the maximum number of VM index report payloads the compliance-side relay
-	// retains in memory for UMH-driven retransmission (one slot per distinct VSOCK ID with a cached report).
-	// Set to 0 to disable the cache.
-	VMIndexReportRelayCacheSlots = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_RELAY_CACHE_SLOTS", 100).WithMinimum(0)
-
-	// VMIndexReportRelayCacheTTL is how long a cached VM index report payload may be kept before it is evicted
-	// from the relay's retransmission cache.
-	VMIndexReportRelayCacheTTL = registerDurationSetting("ROX_VM_INDEX_REPORT_RELAY_CACHE_TTL", 4*time.Hour)
 )
