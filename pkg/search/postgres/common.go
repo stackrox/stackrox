@@ -589,6 +589,27 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 
 }
 
+// composePostTransforms returns a PostTransform that runs both a and b on the
+// same input and merges their deduplicated []string results. Both transforms
+// return interface{}, but for map fields (labels, annotations) the concrete
+// type is []string.
+func composePostTransforms(a, b func(interface{}) interface{}) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		aResult := a(v)
+		bResult := b(v)
+		aSlice, aOk := aResult.([]string)
+		bSlice, bOk := bResult.([]string)
+		if aOk && bOk {
+			combined := make([]string, 0, len(aSlice)+len(bSlice))
+			combined = append(combined, aSlice...)
+			combined = append(combined, bSlice...)
+			slices.Sort(combined)
+			return slices.Compact(combined)
+		}
+		return aResult
+	}
+}
+
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
 	if len(entries) == 0 {
 		return nil
@@ -618,20 +639,9 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 				// matching values are included in the results.
 				for i, existing := range newQE.SelectedFields {
 					if existing.SelectPath == selectedField.SelectPath && existing.PostTransform != nil {
-						prevTransform := existing.PostTransform
-						newTransform := selectedField.PostTransform
-						newQE.SelectedFields[i].PostTransform = func(v interface{}) interface{} {
-							prevResult := prevTransform(v)
-							newResult := newTransform(v)
-							prevSlice, prevOk := prevResult.([]string)
-							newSlice, newOk := newResult.([]string)
-							if prevOk && newOk {
-								combined := append(prevSlice, newSlice...)
-								slices.Sort(combined)
-								return slices.Compact(combined)
-							}
-							return prevResult
-						}
+						newQE.SelectedFields[i].PostTransform = composePostTransforms(
+							existing.PostTransform, selectedField.PostTransform,
+						)
 						break
 					}
 				}
