@@ -14,7 +14,6 @@ import (
 	cveDSMocks "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore/mocks"
 	scanDSMocks "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore/mocks"
 	vmDSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
@@ -582,12 +581,7 @@ func TestGetVM(t *testing.T) {
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(vm1, true, nil)
-				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).DoAndReturn(func(ctx context.Context, q *v1.Query) ([]*storage.VirtualMachineScanV2, error) {
-					// Verify query includes VM ID filter and pagination
-					assert.NotNil(t, q.GetPagination())
-					assert.Equal(t, int32(1), q.GetPagination().GetLimit())
-					return []*storage.VirtualMachineScanV2{scan1}, nil
-				})
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{scan1}, nil)
 			},
 			expectedResult: func() *v2.VMDetail {
 				detail := storagetov2.VirtualMachineV2ToDetail(vm1)
@@ -599,6 +593,35 @@ func TestGetVM(t *testing.T) {
 				}
 				return detail
 			}(),
+		},
+		"successful without scan data": {
+			request: &v2.GetVMRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(vm1, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, nil)
+			},
+			expectedResult: storagetov2.VirtualMachineV2ToDetail(vm1),
+		},
+		"datastore error": {
+			request: &v2.GetVMRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(nil, false, errors.New("db error"))
+			},
+			expectedError: "db error",
+		},
+		"scan search error": {
+			request: &v2.GetVMRequest{
+				Id: "vm-1",
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockVM.EXPECT().GetVirtualMachine(ctx, "vm-1").Return(vm1, true, nil)
+				mockScan.EXPECT().SearchRawVMScans(ctx, gomock.Any()).Return(nil, errors.New("scan error"))
+			},
+			expectedError: "scan error",
 		},
 	}
 
@@ -811,6 +834,92 @@ func TestListVMCVEs(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, result.GetTotalCount())
+			}
+		})
+	}
+}
+
+func TestListVMCVEAffectedVMs(t *testing.T) {
+	ctx := context.Background()
+
+	cve1 := &storage.VirtualMachineCVEV2{
+		Id:            "cve-uuid-1",
+		VmV2Id:        "vm-1",
+		VmComponentId: "comp-1",
+		CveBaseInfo:   &storage.CVEInfo{Cve: "CVE-2024-1234"},
+		PreferredCvss: 7.5,
+		Severity:      storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		IsFixable:     true,
+	}
+
+	vm1 := &storage.VirtualMachineV2{
+		Id: "vm-1", Name: "test-vm-1", GuestOs: "rhel-9",
+	}
+
+	tests := map[string]struct {
+		request       *v2.ListVMCVEAffectedVMsRequest
+		setupMock     func(*vmDSMocks.MockDataStore, *cveDSMocks.MockDataStore, *componentDSMocks.MockDataStore, *scanDSMocks.MockDataStore, *cveViewMocks.MockCveView)
+		expectedError string
+		expectedCount int32
+	}{
+		"empty cve_id": {
+			request: &v2.ListVMCVEAffectedVMsRequest{CveId: ""},
+			setupMock: func(_ *vmDSMocks.MockDataStore, _ *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, _ *cveViewMocks.MockCveView) {
+			},
+			expectedError: "cve_id must be specified",
+		},
+		"successful list": {
+			request: &v2.ListVMCVEAffectedVMsRequest{CveId: "CVE-2024-1234"},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, _ *cveViewMocks.MockCveView) {
+				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				mockVM.EXPECT().GetManyVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{vm1}, nil, nil)
+			},
+			expectedCount: 1,
+		},
+		"cve search error": {
+			request: &v2.ListVMCVEAffectedVMsRequest{CveId: "CVE-2024-1234"},
+			setupMock: func(_ *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, _ *cveViewMocks.MockCveView) {
+				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return(nil, errors.New("search error"))
+			},
+			expectedError: "search error",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockVM := vmDSMocks.NewMockDataStore(ctrl)
+			mockCVE := cveDSMocks.NewMockDataStore(ctrl)
+			mockComp := componentDSMocks.NewMockDataStore(ctrl)
+			mockScan := scanDSMocks.NewMockDataStore(ctrl)
+			mockView := cveViewMocks.NewMockCveView(ctrl)
+
+			svc := &serviceImpl{
+				vmDS: mockVM, cveDS: mockCVE, componentDS: mockComp,
+				scanDS: mockScan, cveView: mockView,
+			}
+
+			tt.setupMock(mockVM, mockCVE, mockComp, mockScan, mockView)
+
+			result, err := svc.ListVMCVEAffectedVMs(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedCount, result.GetTotalCount())
+				if len(result.GetVms()) > 0 {
+					row := result.GetVms()[0]
+					assert.Equal(t, "vm-1", row.GetVmId())
+					assert.Equal(t, "test-vm-1", row.GetVmName())
+					assert.Equal(t, v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, row.GetSeverity())
+					assert.True(t, row.GetIsFixable())
+					assert.Equal(t, "rhel-9", row.GetGuestOs())
+					assert.Equal(t, int32(1), row.GetAffectedComponentCount())
+				}
 			}
 		})
 	}

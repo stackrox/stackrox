@@ -664,7 +664,9 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 
 	detail := storagetov2.VirtualMachineV2ToDetail(vm)
 
-	// Get the latest scan for this VM (scan IDs are UUIDv7, so ordering by ID descending gives latest).
+	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable) but the
+	// search framework has no field label for scan ID, so we sort by scan_time which
+	// has a btree index.
 	scanQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
 	scanQuery.Pagination = &v1.QueryPagination{
 		Limit: 1,
@@ -680,7 +682,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		scan := scans[0]
 		scanNotes := make([]v2.VMScanNote, 0, len(scan.GetNotes()))
 		for _, n := range scan.GetNotes() {
-			scanNotes = append(scanNotes, convertScanNote(n))
+			scanNotes = append(scanNotes, storagetov2.ConvertScanNote(n))
 		}
 		detail.LatestScan = &v2.VMScanInfo{
 			ScanId:    scan.GetId(),
@@ -692,15 +694,4 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 	}
 
 	return detail, nil
-}
-
-func convertScanNote(note storage.VirtualMachineScanV2_Note) v2.VMScanNote {
-	switch note {
-	case storage.VirtualMachineScanV2_OS_UNKNOWN:
-		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNKNOWN
-	case storage.VirtualMachineScanV2_OS_UNSUPPORTED:
-		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNSUPPORTED
-	default:
-		return v2.VMScanNote_VM_SCAN_NOTE_UNSET
-	}
 }

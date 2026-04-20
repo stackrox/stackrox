@@ -145,3 +145,15 @@ func fixabilityToProto(f common.ResourceCountByFixability) *v2.VulnFixableCount 
 		Fixable: int32(f.GetFixable()),
 	}
 }
+
+// ConvertScanNote converts a storage scan note to a v2 API scan note.
+func ConvertScanNote(note storage.VirtualMachineScanV2_Note) v2.VMScanNote {
+	switch note {
+	case storage.VirtualMachineScanV2_OS_UNKNOWN:
+		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNKNOWN
+	case storage.VirtualMachineScanV2_OS_UNSUPPORTED:
+		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNSUPPORTED
+	default:
+		return v2.VMScanNote_VM_SCAN_NOTE_UNSET
+	}
+}
