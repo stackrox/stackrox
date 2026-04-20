@@ -284,7 +284,7 @@ jobs:
     - name: Upload individual bundles to GCS
       if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')
       run: |
-        python3 .github/workflows/scripts/aggregate_bundles.py upload \
+        python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py upload \
           --local-dir bundles \
           --version "$SCANNER_BUNDLE_VERSION"
 
@@ -469,7 +469,7 @@ jobs:
           version="$(basename "$version_dir")"
           echo "=== Processing version: $version ==="
 
-          python3 .github/workflows/scripts/aggregate_bundles.py aggregate \
+          python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py aggregate \
             --version "$version" \
             --output-dir "$version_dir"
         done
@@ -538,7 +538,7 @@ jobs:
           job_failed_flag="--job-failed"
         fi
 
-        python3 .github/workflows/scripts/scanner_vuln_notify.py \
+        python3 .github/workflows/scripts/scanner-versioned-definitions-notify.py \
           --webhook-url "${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}" \
           --workflow-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           $job_failed_flag
