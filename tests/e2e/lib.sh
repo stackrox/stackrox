@@ -108,11 +108,11 @@ patch_yaml() {
 # Uses from environment:
 #   * FEATURE_FLAGS_OVERRIDES
 deploy_stackrox_with_roxie() {
-    echo "╔═════════════════════════════════╗"
-    echo "║                                 ║"
-    echo "║  Deploying StackRox with roxie  ║"
-    echo "║                                 ║"
-    echo "╚═════════════════════════════════╝"
+    info "╔═════════════════════════════════╗"
+    info "║                                 ║"
+    info "║  Deploying StackRox with roxie  ║"
+    info "║                                 ║"
+    info "╚═════════════════════════════════╝"
 
     local namespace="$1"
     info "Deploying into namespace ${namespace}"
@@ -188,11 +188,11 @@ deploy_stackrox_with_roxie() {
     rm -f "$roxie_envrc"
     rm -f "$override_file"
 
-    echo "╔═════════════════════╗"
-    echo "║                     ║"
-    echo "║  StackRox deployed  ║"
-    echo "║                     ║"
-    echo "╚═════════════════════╝"
+    info "╔═════════════════════╗"
+    info "║                     ║"
+    info "║  StackRox deployed  ║"
+    info "║                     ║"
+    info "╚═════════════════════╝"
 }
 
 managed_by="stackrox-tests"
