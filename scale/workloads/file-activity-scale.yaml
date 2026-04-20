@@ -23,5 +23,5 @@ networkWorkload:
 
 fileActivityWorkload:
   activityInterval: 50ms
-  batchSize: 800
+  batchSize: 100
   numPaths: 500

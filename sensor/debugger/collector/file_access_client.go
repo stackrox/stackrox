@@ -72,8 +72,13 @@ func (m *fakeFileAccessManager) run(stream sensor.FileActivityService_Communicat
 				log.Errorf("Error closing stream: %v", err)
 			}
 			return
-		case err := <-m.sendErrC:
-			log.Errorf("Error sending %v", err)
+		case err, ok := <-m.sendErrC:
+			if !ok {
+				return
+			}
+			if err != nil {
+				log.Errorf("Error sending %v", err)
+			}
 			return
 		}
 	}
@@ -101,6 +106,7 @@ func (m *fakeFileAccessManager) start(address string) error {
 	cli := sensor.NewFileActivityServiceClient(conn)
 	client, err := cli.Communicate(ctx)
 	if err != nil {
+		_ = conn.Close()
 		return errors.Wrap(err, "opening file activity stream")
 	}
 	go m.runSend(client, m.messageToSendC, m.sendErrC)
