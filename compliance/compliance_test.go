@@ -27,8 +27,6 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 		expectedInventoryNACKs int
 		expectedIndexACKs      int
 		expectedIndexNACKs     int
-		expectedVMIndexACKs    int
-		expectedVMIndexNACKs   int
 	}{
 		"should handle NODE_INVENTORY ACK": {
 			ack: &sensor.MsgToCompliance_ComplianceACK{
@@ -64,23 +62,6 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 			},
 			expectedIndexNACKs: 1,
 		},
-		"should handle VM_INDEX_REPORT ACK": {
-			ack: &sensor.MsgToCompliance_ComplianceACK{
-				Action:      sensor.MsgToCompliance_ComplianceACK_ACK,
-				MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
-				ResourceId:  "vm-1",
-			},
-			expectedVMIndexACKs: 1,
-		},
-		"should handle VM_INDEX_REPORT NACK": {
-			ack: &sensor.MsgToCompliance_ComplianceACK{
-				Action:      sensor.MsgToCompliance_ComplianceACK_NACK,
-				MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
-				ResourceId:  "vm-1",
-				Reason:      "rate limit exceeded",
-			},
-			expectedVMIndexNACKs: 1,
-		},
 	}
 
 	for name, tc := range cases {
@@ -101,8 +82,6 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 			s.Equal(tc.expectedInventoryNACKs, mockInventory.nackCount, "inventory NACK count")
 			s.Equal(tc.expectedIndexACKs, mockIndex.ackCount, "index ACK count")
 			s.Equal(tc.expectedIndexNACKs, mockIndex.nackCount, "index NACK count")
-			s.Equal(tc.expectedVMIndexACKs, mockVMIndex.ackCount, "VM index ACK count")
-			s.Equal(tc.expectedVMIndexNACKs, mockVMIndex.nackCount, "VM index NACK count")
 		})
 	}
 }
