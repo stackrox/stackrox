@@ -103,7 +103,16 @@ patch_yaml() {
     yq -i eval "$patch" "$input"
 }
 
-# TODO: Make namespaces configurable.
+# Deploy StackRox using roxie.
+#
+# This is the modern way of deploying StackRox for tests.
+# This function expects two arguments:
+# 1) Namespace to deploy into (required)
+# 2) Path to a 'roxie override file' (optional)
+#
+# The override file is a YAML file with two top-level keys: 'central' and 'securedCluster',
+# which correspond to the central and sensor components respectively.
+# Expected under each key is an overlay for a central or a secured cluster custom resource.
 #
 # Uses from environment:
 #   * FEATURE_FLAGS_OVERRIDES
@@ -215,9 +224,20 @@ deploy_stackrox_with_roxie_compat() {
         retrying_kubectl create ns "${namespace}" </dev/null
     fi
 
-    handle_pod_security_policies
-
     local override_file; override_file="$(mktemp)"
+    roxie_override_from_environment_compat "$override_file"
+
+    deploy_stackrox_with_roxie "$namespace" "$override_file"
+    rm -f "$override_file"
+}
+
+# This function translates environment settings into a roxie override.
+# This is a compatibility function to allow using roxie with existing environment variable-based configuration for tests,
+# without needing to switch to the new override file approach immediately.
+roxie_override_from_environment_compat() {
+    local override_file="$1"
+
+    handle_pod_security_policies
 
     info "Handling TRUSTED_CA_FILE configuration"
     handle_trusted_ca_file "$override_file"
@@ -246,9 +266,6 @@ deploy_stackrox_with_roxie_compat() {
 
     info "Configuring declarative configurations"
     handle_declarative_configuration "$override_file"
-
-    deploy_stackrox_with_roxie "$namespace" "$override_file"
-    rm -f "$override_file"
 }
 
 check_for_roxie() {
