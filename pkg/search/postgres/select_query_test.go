@@ -1314,6 +1314,60 @@ func TestRunSelectDirectFn(t *testing.T) {
 		assert.False(t, called)
 	})
 
+	t.Run("sort by non-selected field with distinct adds extra column", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(search.NewQuerySelect(search.TestString).Distinct()).
+			WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestBool)),
+			).
+			ProtoQuery()
+
+		// With DISTINCT + ORDER BY on a non-selected field, the query builder
+		// injects the sort column into the SELECT list via ExtraSelectedFieldPaths.
+		// A caller that only provides destinations for the explicit selects will
+		// get a column count mismatch error from the runtime guard.
+		var testString string
+		wrongDests := []any{&testString}
+
+		err := pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return wrongDests },
+				OnRow: func() error {
+					return nil
+				},
+			})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "scan destination count")
+	})
+
+	t.Run("sort by non-selected field with correct dest count succeeds", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(search.NewQuerySelect(search.TestString).Distinct()).
+			WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestBool)),
+			).
+			ProtoQuery()
+
+		// Caller accounts for the extra sort column injected by the query builder.
+		var testString string
+		var extraBool bool
+		correctDests := []any{&testString, &extraBool}
+
+		var actual []string
+		err := pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return correctDests },
+				OnRow: func() error {
+					actual = append(actual, testString)
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.NotEmpty(t, actual)
+	})
+
 	t.Run("OnRow error propagates", func(t *testing.T) {
 		q := search.NewQueryBuilder().
 			AddSelectFields(search.NewQuerySelect(search.TestString)).
