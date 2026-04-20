@@ -73,7 +73,7 @@ if [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]]; then
     info 'Installing latest roxie release...'
     if [[ ${USE_ROXIE_VERSION:-latest} == 'latest' ]]; then
         USE_ROXIE_VERSION="$(curl -s -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
-          "https://api.github.com/repos/stackrox/roxie/releases/latest" | jq -r '.tag_name')"
+          "https://api.github.com/repos/stackrox/roxie/releases/latest" | jq -r '.tag_name' || echo 'latest')"
     fi
     curl -o /tmp/roxie \
       -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
