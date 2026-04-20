@@ -423,7 +423,10 @@ jobs:
       working-directory: ./definitions_files
       run: |
         # Collect directory names (strip trailing slash) as space-separated list
-        versions=$(ls -d */ | sed 's|/||g' | tr '\n' ' ')
+        versions=""
+        for d in ./*/; do
+          versions="$versions $(basename "$d")"
+        done
         echo "versions=$versions" >> "$GITHUB_OUTPUT"
         echo "Versions: $versions"
 
