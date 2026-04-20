@@ -691,7 +691,8 @@ func TestContainerImagesView(t *testing.T) {
 	}
 
 	// Test GetContainerImageViews
-	responses, err := deploymentDS.GetContainerImageViews(ctx, pkgSearch.EmptyQuery())
+	q1 := pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.ImageID, ".+").ProtoQuery()
+	responses, err := deploymentDS.GetContainerImageViews(ctx, q1)
 	require.NoError(t, err)
 
 	// Expected results:
