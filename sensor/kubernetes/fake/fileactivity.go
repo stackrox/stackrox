@@ -92,13 +92,21 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 }
 
 func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) *sensorAPI.FileActivity {
-	containerID, ok := w.containerPool.randomElem()
-	if !ok {
-		return nil
-	}
-
 	path := paths[rand.Intn(len(paths))]
 	now := timestamppb.Now()
+
+	nodePercent := w.workload.FileActivityWorkload.NodeEventPercent
+	if nodePercent == 0 {
+		nodePercent = 50
+	}
+
+	var containerID string
+	if rand.Intn(100) >= nodePercent {
+		cid, ok := w.containerPool.randomElem()
+		if ok {
+			containerID = cid
+		}
+	}
 
 	process := &sensorAPI.ProcessSignal{
 		Id:           uuid.NewV4().String(),

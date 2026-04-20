@@ -25,3 +25,4 @@ fileActivityWorkload:
   activityInterval: 50ms
   batchSize: 100
   numPaths: 500
+  nodeEventPercent: 50
