@@ -28,7 +28,7 @@ try:
 
     m = re.match(EXPR, ocp_variant)
     if int(m.group("major")) >= 4 and int(m.group("minor")) >= 16:
-        os.environ["SFA_AGENT"] = "Enabled"
+        os.environ["SFA_AGENT"] = "true"
 except Exception as ex:
     print(f"Could not identify the OCP version, {ex}, SFA is disabled")
 
