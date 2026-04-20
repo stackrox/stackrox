@@ -106,6 +106,8 @@ func makeDefaultOperation(umh UnconfirmedMessageHandler) Operation {
 			umh,
 			env.VMRelayMaxReportsPerMinute.FloatSetting(),
 			env.VMRelayStaleAckThreshold.DurationSetting(),
+			env.VMIndexReportRelayCacheSlots.IntegerSetting(),
+			env.VMIndexReportRelayCacheTTL.DurationSetting(),
 		)
 		return vmRelay.Run(ctx)
 	}
