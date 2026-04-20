@@ -163,12 +163,10 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
-	}()
+	})
 
 	wg.Wait()
 
@@ -192,12 +190,10 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
-	}()
+	})
 
 	wg.Wait()
 
