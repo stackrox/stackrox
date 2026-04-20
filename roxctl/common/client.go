@@ -13,9 +13,9 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"golang.org/x/net/http2"
@@ -155,7 +155,7 @@ func setCustomHeaders(headers func(string, ...string)) {
 
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
-	setCustomHeaders(phonehome.Headers(req.Header).Set)
+	setCustomHeaders(clientprofile.Headers(req.Header).Set)
 
 	resp, err := client.http.Do(req)
 	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
