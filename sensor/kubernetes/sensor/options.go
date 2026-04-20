@@ -16,22 +16,23 @@ import (
 // CreateOptions represents the custom configuration that can be provided when creating sensor
 // using CreateSensor.
 type CreateOptions struct {
-	clusterIDHandler                   clusterIDHandler
-	workloadManager                    *fake.WorkloadManager
-	centralConnFactory                 centralclient.CentralConnectionFactory
-	certLoader                         centralclient.CertLoader
-	localSensor                        bool
-	k8sClient                          client.Interface
-	introspectionK8sClient             client.Interface
-	traceWriter                        io.Writer
-	eventPipelineQueueSize             int
-	networkFlowServiceAuthFuncOverride func(context.Context, string) (context.Context, error)
-	signalServiceAuthFuncOverride      func(context.Context, string) (context.Context, error)
-	networkFlowWriter                  io.Writer
-	processIndicatorWriter             io.Writer
-	networkFlowTicker                  <-chan time.Time
-	deploymentIdentification           *storage.SensorDeploymentIdentification
-	processPipelineObserver            func(ProcessPipelineHandle)
+	clusterIDHandler                    clusterIDHandler
+	workloadManager                     *fake.WorkloadManager
+	centralConnFactory                  centralclient.CentralConnectionFactory
+	certLoader                          centralclient.CertLoader
+	localSensor                         bool
+	k8sClient                           client.Interface
+	introspectionK8sClient              client.Interface
+	traceWriter                         io.Writer
+	eventPipelineQueueSize              int
+	networkFlowServiceAuthFuncOverride  func(context.Context, string) (context.Context, error)
+	signalServiceAuthFuncOverride       func(context.Context, string) (context.Context, error)
+	fileActivityServiceAuthFuncOverride func(context.Context, string) (context.Context, error)
+	networkFlowWriter                   io.Writer
+	processIndicatorWriter              io.Writer
+	networkFlowTicker                   <-chan time.Time
+	deploymentIdentification            *storage.SensorDeploymentIdentification
+	processPipelineObserver             func(ProcessPipelineHandle)
 }
 
 // ProcessPipelineHandle exposes the subset of process pipeline functionality external callers need.
@@ -144,6 +145,13 @@ func (cfg *CreateOptions) WithNetworkFlowServiceAuthFuncOverride(fn func(context
 // Default: nil
 func (cfg *CreateOptions) WithSignalServiceAuthFuncOverride(fn func(context.Context, string) (context.Context, error)) *CreateOptions {
 	cfg.signalServiceAuthFuncOverride = fn
+	return cfg
+}
+
+// WithFileActivityServiceAuthFuncOverride sets the AuthFuncOverride for the FileActivity service.
+// Default: nil
+func (cfg *CreateOptions) WithFileActivityServiceAuthFuncOverride(fn func(context.Context, string) (context.Context, error)) *CreateOptions {
+	cfg.fileActivityServiceAuthFuncOverride = fn
 	return cfg
 }
 

@@ -44,6 +44,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
@@ -110,6 +112,13 @@ type localSensorConfig struct {
 	FakeCollector      bool
 	Namespace          string
 	OperatorInstall    bool
+
+	// File activity load driver settings
+	FileActivityLoad      bool
+	FileActivityRate      int
+	FileActivityPaths     int
+	FileActivityHostname  string
+	FileActivityContainer string
 }
 
 func mustGetCommandLineArgs() localSensorConfig {
@@ -137,6 +146,12 @@ func mustGetCommandLineArgs() localSensorConfig {
 		FakeCollector:      false,
 		Namespace:          certs.DefaultNamespace,
 		OperatorInstall:    false,
+
+		FileActivityLoad:      false,
+		FileActivityRate:      100,
+		FileActivityPaths:     50,
+		FileActivityHostname:  "fake-collector",
+		FileActivityContainer: "",
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -161,6 +176,11 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
 	flag.BoolVar(&sensorConfig.FakeCollector, "with-fake-collector", sensorConfig.FakeCollector, "enables sensor to allow connections from a fake collector")
 	flag.BoolVar(&sensorConfig.OperatorInstall, "operator-install", sensorConfig.OperatorInstall, "use together with connect-central, indicates that the remote ACS was installed with the Operator")
+	flag.BoolVar(&sensorConfig.FileActivityLoad, "file-activity-load", sensorConfig.FileActivityLoad, "generate synthetic file activity events at a configurable rate")
+	flag.IntVar(&sensorConfig.FileActivityRate, "file-activity-rate", sensorConfig.FileActivityRate, "target events/sec for file activity load (0 = unlimited burst)")
+	flag.IntVar(&sensorConfig.FileActivityPaths, "file-activity-paths", sensorConfig.FileActivityPaths, "number of unique file paths in generated events")
+	flag.StringVar(&sensorConfig.FileActivityHostname, "file-activity-hostname", sensorConfig.FileActivityHostname, "hostname for generated file activity events")
+	flag.StringVar(&sensorConfig.FileActivityContainer, "file-activity-container", sensorConfig.FileActivityContainer, "container ID for generated events (empty = node-level events)")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -335,9 +355,12 @@ func main() {
 		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 	}
 	var k8sClient client.Interface
-	// when replying a trace, there is no need to connect to K8s cluster
-	if localConfig.ReplayK8sEnabled {
+	// when replying a trace or running a load test, there is no need to connect to K8s cluster
+	if localConfig.ReplayK8sEnabled || localConfig.FileActivityLoad {
 		k8sClient = k8s.MakeFakeClient()
+		if localConfig.FileActivityLoad {
+			seedFakeNode(k8sClient, localConfig.FileActivityHostname)
+		}
 	}
 	var (
 		workloadManager *fake.WorkloadManager
@@ -428,12 +451,13 @@ func main() {
 		sensorConfig = sensorConfig.WithDeploymentIdentification(deploymentID)
 	}
 
-	if localConfig.FakeCollector {
+	if localConfig.FakeCollector || localConfig.FileActivityLoad {
 		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
 			return ctx, nil
 		}
 		sensorConfig.WithSignalServiceAuthFuncOverride(acceptAnyFn).
-			WithNetworkFlowServiceAuthFuncOverride(acceptAnyFn)
+			WithNetworkFlowServiceAuthFuncOverride(acceptAnyFn).
+			WithFileActivityServiceAuthFuncOverride(acceptAnyFn)
 	}
 
 	if localConfig.RecordK8sEnabled {
@@ -529,10 +553,33 @@ func main() {
 		}
 	}
 
-	if !durationExpired && localConfig.FakeCollector {
-		fakeCollector := collector.NewFakeCollector(collector.WithDefaultConfig())
+	var loadDriver *collector.FileActivityLoadDriver
+	var fakeCollector *collector.FakeCollector
+	if !durationExpired && (localConfig.FakeCollector || localConfig.FileActivityLoad) {
+		fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig())
 		if err := fakeCollector.Start(); err != nil {
 			log.Fatalln(err)
+		}
+
+		if localConfig.FileActivityLoad {
+			cfg := collector.LoadDriverConfig{
+				EventsPerSecond: localConfig.FileActivityRate,
+				NumUniquePaths:  localConfig.FileActivityPaths,
+				Hostname:        localConfig.FileActivityHostname,
+				ContainerID:     localConfig.FileActivityContainer,
+				OperationWeights: map[string]int{
+					"open": 40, "create": 20, "unlink": 10,
+					"rename": 10, "chmod": 10, "chown": 10,
+				},
+			}
+			loadDriver = collector.NewFileActivityLoadDriver(fakeCollector, cfg)
+			go func() {
+				log.Printf("Starting file activity load driver: rate=%d events/sec, paths=%d\n",
+					cfg.EventsPerSecond, cfg.NumUniquePaths)
+				stats := loadDriver.Run()
+				log.Printf("Load driver finished: sent=%d events, actual_rate=%.1f events/sec, errors=%d\n",
+					stats.EventsSent, stats.ActualRate(), stats.Errors)
+			}()
 		}
 	}
 
@@ -556,6 +603,14 @@ func main() {
 	}
 
 	cancelFunc()
+	if loadDriver != nil {
+		log.Printf("Stopping file activity load driver...")
+		loadDriver.Stop()
+	}
+	if fakeCollector != nil {
+		log.Printf("Stopping fake collector...")
+		fakeCollector.Stop()
+	}
 	if !localConfig.NoMemProfile {
 		writeMemoryProfile(runLabel)
 	}
@@ -648,4 +703,15 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	return fakeConnectionFactory, centralclient.EmptyCertLoader(), spyCentral
+}
+
+func seedFakeNode(k8sClient client.Interface, hostname string) {
+	_, err := k8sClient.Kubernetes().CoreV1().Nodes().Create(context.Background(), &v1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: hostname,
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		log.Fatalf("Failed to seed fake node %q: %v", hostname, err)
+	}
 }
