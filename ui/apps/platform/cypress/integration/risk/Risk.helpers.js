@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 
 import { graphql } from '../../constants/apiEndpoints';
+import { visitFromHorizontalNav } from '../../helpers/nav';
 import { interactAndVisitNetworkGraphWithDeploymentSelected } from '../../helpers/networkGraph';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
@@ -158,4 +159,11 @@ export function clickTab(tabText) {
 export function filterEventsByType(eventType) {
     cy.get('[aria-label="Modal"] .react-select__control').click();
     cy.get(`[aria-label="Modal"] .react-select__option:contains("${eventType}")`).click();
+}
+
+/**
+ * @param {'User Workloads'|'Platform'|'All Deployments'} viewName
+ */
+export function selectFilteredWorkflowView(viewName) {
+    visitFromHorizontalNav(viewName);
 }
