@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -48,6 +49,10 @@ const (
 // disruption. This test simulates a network outage using toxiproxy and verifies that
 // deployments remain visible in Central after reconnection.
 func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Skip on OpenShift: test images require privileged security context")
+	}
+
 	ctx := context.Background()
 	k8sClient := createK8sClient(t)
 
@@ -63,9 +68,9 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	localPort, cleanupPortForward := setupPortForward(t, sensorPod, toxiproxyAPIPort)
 	t.Cleanup(cleanupPortForward)
 
-	// Connect to toxiproxy API and get "central" proxy
+	// Connect to toxiproxy API and ensure "central" proxy exists
 	toxiproxyEndpoint := fmt.Sprintf("localhost:%d", localPort)
-	centralProxy := getToxiproxyCentralProxy(t, toxiproxyEndpoint)
+	centralProxy := ensureToxiproxyCentralProxy(t, toxiproxyEndpoint, originalCentralEndpoint)
 
 	// Wait for sensor to be healthy
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
@@ -391,25 +396,34 @@ func setupPortForward(t *testing.T, pod *corev1.Pod, remotePort int32) (uint16, 
 	return localPort, cleanup
 }
 
-// getToxiproxyCentralProxy connects to toxiproxy API and returns the "central" proxy.
-// The proxy is automatically created by sensor during initialization when ROX_CHAOS_PROFILE is set.
-func getToxiproxyCentralProxy(t *testing.T, toxiproxyEndpoint string) *toxiproxy.Proxy {
+// ensureToxiproxyCentralProxy connects to toxiproxy API and returns the "central" proxy.
+// It waits for sensor to create the proxy during initialization (via ROX_CHAOS_PROFILE).
+// If sensor fails to create it (sidecar race condition), the test creates it as a fallback.
+func ensureToxiproxyCentralProxy(t *testing.T, toxiproxyEndpoint, centralEndpoint string) *toxiproxy.Proxy {
 	toxiproxyClient := toxiproxy.NewClient(fmt.Sprintf("http://%s", toxiproxyEndpoint))
 
-	var centralProxy *toxiproxy.Proxy
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		// Get the "central" proxy (created by sensor during initialization)
-		proxy, err := toxiproxyClient.Proxy("central")
-		if err != nil {
-			t.Logf("Central proxy not ready yet: %v", err)
-			require.NoErrorf(c, err, "failed to get central proxy")
-			return
-		}
-		centralProxy = proxy
-	}, testTimeout, testInterval)
+	deadline := time.After(testTimeout)
+	ticker := time.NewTicker(testInterval)
+	defer ticker.Stop()
 
-	t.Logf("Got toxiproxy 'central' proxy: %s -> %s", centralProxy.Listen, centralProxy.Upstream)
-	return centralProxy
+	for {
+		proxy, err := toxiproxyClient.Proxy("central")
+		if err == nil {
+			t.Logf("Toxiproxy 'central' proxy (created by sensor): %s -> %s", proxy.Listen, proxy.Upstream)
+			return proxy
+		}
+
+		select {
+		case <-deadline:
+			t.Log("Sensor did not create the central proxy, creating it manually")
+			proxy, err := toxiproxyClient.CreateProxy("central", fmt.Sprintf("0.0.0.0:%d", toxiproxyProxyPort), centralEndpoint)
+			require.NoError(t, err, "failed to create central proxy")
+			t.Logf("Toxiproxy 'central' proxy (created by test): %s -> %s", proxy.Listen, proxy.Upstream)
+			return proxy
+		case <-ticker.C:
+			t.Logf("Central proxy not ready yet: %v", err)
+		}
+	}
 }
 
 // verifyDeploymentHasScannedImage verifies that a deployment has a scanned image
