@@ -435,10 +435,13 @@ jobs:
         ls -l
         empty && error "definitions directory (current directory) is empty"
 
-        for d in */; do
+        # Look for version dirs (use globbing, dot files included).
+        shopt -s dotglob
+        for d in *; do
             echo "Listing bundle version directory '$d':"
             ls -l "$d"
             [ -d "$d" ] || error "found a non-directory in definitions_files/: $d"
+            [[ "$d" = .* ]] && error "version directory name not allowed (starts with dot): $d"
             empty "$d" && error "bundle version directory is empty"
             for f in "$d"/*; do
                 case "$f" in
