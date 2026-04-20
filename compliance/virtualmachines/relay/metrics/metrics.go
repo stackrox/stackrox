@@ -137,6 +137,61 @@ var VMIndexACKsFromSensor = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK", "NACK"
 )
 
+// IndexReportCacheSlotsUsed is the current number of entries held in the VM index report payload cache.
+var IndexReportCacheSlotsUsed = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_cache_slots_used",
+		Help:      "Number of VM index report payloads currently stored in the Relay payload cache",
+	},
+)
+
+// IndexReportCacheSlotsCapacity is the maximum number of entries the VM index report payload cache can hold.
+var IndexReportCacheSlotsCapacity = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_cache_slots_capacity",
+		Help:      "Maximum number of VM index report payloads the Relay payload cache can store",
+	},
+)
+
+// IndexReportCacheResidencySeconds observes elapsed time from the most recent payload update
+// (updatedAt) to cache removal for VM index report payloads.
+var IndexReportCacheResidencySeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_cache_residency_seconds",
+		Help:      "For each VM index report payload removed from cache, elapsed time between its most recent update and removal",
+		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
+	},
+)
+
+// IndexReportCacheLifetimeSeconds observes elapsed time from the first payload insert
+// for the current cache entry (firstUpdatedAt) to cache removal.
+var IndexReportCacheLifetimeSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_cache_lifetime_seconds",
+		Help:      "For each VM index report payload removed from cache, elapsed time between first insert and removal",
+		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
+	},
+)
+
+// IndexReportCacheLookupsTotal counts payload cache lookups by hit or miss.
+var IndexReportCacheLookupsTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_cache_lookups_total",
+		Help:      "Lookups against the VM index report payload cache partitioned by result",
+	},
+	[]string{"result"}, // hit|miss
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsMismatchingVsockCID,
@@ -151,5 +206,10 @@ func init() {
 		ReportsRateLimited,
 		AcksReceived,
 		VMIndexACKsFromSensor,
+		IndexReportCacheSlotsUsed,
+		IndexReportCacheSlotsCapacity,
+		IndexReportCacheResidencySeconds,
+		IndexReportCacheLifetimeSeconds,
+		IndexReportCacheLookupsTotal,
 	)
 }

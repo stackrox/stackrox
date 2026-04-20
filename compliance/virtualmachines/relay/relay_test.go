@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -55,7 +58,7 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 	}
 
 	// Construct the relay under test.
-	relay := New(stream, sender, &mockUMH{}, 0, 4*time.Hour)
+	relay := New(stream, sender, &mockUMH{}, 0, 4*time.Hour, 0, 0)
 
 	// Run the relay in a goroutine so we can assert it returns promptly and
 	// does not block in its select loop.
@@ -112,7 +115,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	// Create relay with mock dependencies using the public constructor
 	// Rate limiting disabled (0)
-	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour, 0, 0)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -182,7 +185,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	}
 
 	umh := &mockUMH{}
-	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour, 0, 0)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -233,7 +236,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour, 0, 0)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -277,7 +280,7 @@ func (s *relayTestSuite) TestRelay_RateLimiting() {
 	}
 
 	// Rate limit: 1 per minute (effectively blocks after first)
-	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 1, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 1, 4*time.Hour, 0, 0)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 1*time.Second)
 	defer cancel()
@@ -330,7 +333,7 @@ func (s *relayTestSuite) TestRelay_UMHInteraction() {
 		retryCh: make(chan string, 1),
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour, 0, 0)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
@@ -389,6 +392,7 @@ func (s *relayTestSuite) TestRelay_StaleCacheEntriesAreEvicted() {
 		staleAckThreshold: threshold,
 		cacheEvictTickCh:  evictCh,
 		cache:             make(map[string]*cachedReportMetadata),
+		payloadCache:      newReportPayloadCache(0, time.Hour),
 	}
 	r.umh.OnACK(r.markAcked)
 
@@ -500,25 +504,36 @@ func (s *relayTestSuite) TestRelay_EvictStaleEntries() {
 	}
 }
 
-func (s *relayTestSuite) TestRelay_StaleAckTicker() {
+func (s *relayTestSuite) TestRelay_StaleAckAndPayloadSweepTickers() {
 	cases := map[string]struct {
-		staleAck time.Duration
-		wantMeta bool
+		staleAck    time.Duration
+		payloadTTL  time.Duration
+		wantMeta    bool
+		wantPayload bool
 	}{
-		"non-positive stale ACK disables ticker": {
-			staleAck: 0, wantMeta: false,
+		"non-positive stale ACK and zero payload TTL disable both tickers": {
+			staleAck: 0, payloadTTL: 0, wantMeta: false, wantPayload: false,
 		},
-		"negative stale ACK disables ticker": {
-			staleAck: -time.Second, wantMeta: false,
+		"negative stale ACK and zero payload TTL disable both tickers": {
+			staleAck: -time.Second, payloadTTL: 0, wantMeta: false, wantPayload: false,
 		},
-		"positive stale ACK enables ticker": {
-			staleAck: time.Hour, wantMeta: true,
+		"non-positive stale ACK but positive payload TTL disables metadata ticker only": {
+			staleAck: 0, payloadTTL: time.Hour, wantMeta: false, wantPayload: true,
+		},
+		"negative stale ACK but positive payload TTL disables metadata ticker only": {
+			staleAck: -time.Second, payloadTTL: time.Hour, wantMeta: false, wantPayload: true,
+		},
+		"positive stale ACK and zero payload TTL enables metadata ticker only": {
+			staleAck: time.Hour, payloadTTL: 0, wantMeta: true, wantPayload: false,
+		},
+		"positive stale ACK and positive payload TTL enables both tickers": {
+			staleAck: time.Hour, payloadTTL: time.Hour, wantMeta: true, wantPayload: true,
 		},
 	}
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, &mockUMH{}, 0, tc.staleAck)
+			r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, &mockUMH{}, 0, tc.staleAck, 0, tc.payloadTTL)
 			if tc.wantMeta {
 				s.NotNil(r.cacheEvictTicker, "metadata eviction ticker should exist")
 				s.NotNil(r.cacheEvictTickCh, "metadata eviction channel should be set")
@@ -526,8 +541,60 @@ func (s *relayTestSuite) TestRelay_StaleAckTicker() {
 				s.Nil(r.cacheEvictTicker, "metadata eviction ticker should not exist")
 				s.Nil(r.cacheEvictTickCh, "metadata eviction channel should be disabled")
 			}
+			if tc.wantPayload {
+				s.NotNil(r.payloadSweepTicker, "payload sweep ticker should exist when payload TTL is positive")
+				s.NotNil(r.payloadSweepTickCh, "payload sweep channel should be set when payload TTL is positive")
+			} else {
+				s.Nil(r.payloadSweepTicker, "payload sweep ticker should not exist when payload TTL is non-positive")
+				s.Nil(r.payloadSweepTickCh, "payload sweep channel should be disabled when payload TTL is non-positive")
+			}
 		})
 	}
+}
+
+func (s *relayTestSuite) TestRelay_Run_InvokesPayloadSweepWhenStaleAckEvictionDisabled() {
+	sweepCh := make(chan time.Time, 1)
+	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
+	ttl := 10 * time.Millisecond
+
+	r := &Relay{
+		reportStream:       &mockIndexReportStream{},
+		reportSender:       &mockIndexReportSender{failOnIndex: -1},
+		umh:                &mockUMH{},
+		staleAckThreshold:  0,
+		payloadCacheTTL:    ttl,
+		cacheEvictTickCh:   nil,
+		payloadSweepTickCh: sweepCh,
+		cache:              make(map[string]*cachedReportMetadata),
+		payloadCache:       newReportPayloadCache(4, ttl),
+	}
+	r.umh.OnACK(r.markAcked)
+
+	vmr := relaytest.NewTestVMReport("100")
+	s.Require().Empty(r.payloadCache.Upsert("100", vmr, now.Add(-2*ttl)))
+	s.Require().Equal(1, r.payloadCache.Len(), "precondition: one cached payload entry")
+
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	sweepCh <- now
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- r.Run(ctx)
+	}()
+
+	s.Eventually(
+		func() bool {
+			return r.payloadCache.Len() == 0
+		},
+		time.Second,
+		10*time.Millisecond,
+		"expired payload entry should be removed on payload sweep tick",
+	)
+
+	cancel()
+	s.ErrorIs(<-errCh, context.Canceled)
 }
 
 func (s *relayTestSuite) TestRelay_RunReturnsErrorWhenRetryChannelCloses() {
@@ -536,7 +603,7 @@ func (s *relayTestSuite) TestRelay_RunReturnsErrorWhenRetryChannelCloses() {
 	umh := &mockUMH{
 		retryCh: retryCh,
 	}
-	r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, umh, 0, 4*time.Hour)
+	r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, umh, 0, 4*time.Hour, 0, 0)
 	s.Require().NotNil(r.cacheEvictTicker)
 
 	ctx, cancel := context.WithTimeout(s.ctx, time.Second)
@@ -545,6 +612,300 @@ func (s *relayTestSuite) TestRelay_RunReturnsErrorWhenRetryChannelCloses() {
 	err := r.Run(ctx)
 	s.Require().Error(err)
 	s.ErrorContains(err, "UMH retry command channel closed")
+}
+
+func (s *relayTestSuite) TestRelay_RetryCommand_CacheHit_Resends() {
+	done := concurrency.NewSignal()
+	mockSender := &mockIndexReportSender{
+		failOnIndex:   -1,
+		done:          &done,
+		expectedCount: 1,
+	}
+	umh := &mockUMH{
+		retryCh: make(chan string, 1),
+	}
+	stream := &mockIndexReportStream{
+		reports: []*v1.VMReport{
+			relaytest.NewTestVMReport("100"),
+		},
+	}
+	relay := New(stream, mockSender, umh, 0, 4*time.Hour, 4, 24*time.Hour)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- relay.Run(ctx)
+	}()
+
+	select {
+	case <-done.Done():
+	case <-time.After(2 * time.Second):
+		s.Fail("timeout waiting for initial send")
+	}
+
+	hitBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit"))
+
+	umh.retryCh <- "100"
+	time.Sleep(300 * time.Millisecond)
+
+	var sentMessages []*v1.VMReport
+	concurrency.WithLock(&mockSender.mu, func() {
+		sentMessages = append(sentMessages, mockSender.sentMessages...)
+	})
+	s.Len(sentMessages, 2)
+	s.Equal("100", sentMessages[0].GetIndexReport().GetVsockCid())
+	s.Equal("100", sentMessages[1].GetIndexReport().GetVsockCid())
+
+	var sends []string
+	concurrency.WithLock(&umh.mu, func() {
+		sends = append(sends, umh.sends...)
+	})
+	s.Len(sends, 2)
+	s.Equal([]string{"100", "100"}, sends)
+
+	hitDelta := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit")) - hitBefore
+	s.Equal(1.0, hitDelta)
+
+	cancel()
+	<-errCh
+}
+
+func (s *relayTestSuite) TestRelay_RetryCommand_CacheMiss_IncrementsMissAndDoesNotSend() {
+	mockSender := &mockIndexReportSender{
+		failOnIndex: -1,
+	}
+	umh := &mockUMH{
+		retryCh: make(chan string, 1),
+	}
+	stream := &mockIndexReportStream{
+		reports: nil,
+	}
+	relay := New(stream, mockSender, umh, 0, 4*time.Hour, 4, 24*time.Hour)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 3*time.Second)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- relay.Run(ctx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	missBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))
+
+	umh.retryCh <- "not-cached"
+	time.Sleep(200 * time.Millisecond)
+
+	missDelta := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) - missBefore
+	s.Equal(1.0, missDelta)
+
+	var sentCount int
+	concurrency.WithLock(&mockSender.mu, func() {
+		sentCount = len(mockSender.sentMessages)
+	})
+	s.Zero(sentCount)
+
+	cancel()
+	<-errCh
+}
+
+func (s *relayTestSuite) TestRelay_RetryCommand_CacheDisabled_DoesNotResend() {
+	done := concurrency.NewSignal()
+	mockSender := &mockIndexReportSender{
+		failOnIndex:   -1,
+		done:          &done,
+		expectedCount: 1,
+	}
+	umh := &mockUMH{
+		retryCh: make(chan string, 1),
+	}
+	stream := &mockIndexReportStream{
+		reports: []*v1.VMReport{
+			relaytest.NewTestVMReport("100"),
+		},
+	}
+	relay := New(stream, mockSender, umh, 0, 4*time.Hour, 0, 24*time.Hour)
+	s.Equal(0.0, testutil.ToFloat64(metrics.IndexReportCacheSlotsCapacity), "expected cache slots capacity 0 when cache is disabled")
+	slotsBase := testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- relay.Run(ctx)
+	}()
+
+	select {
+	case <-done.Done():
+	case <-time.After(2 * time.Second):
+		s.Fail("timeout waiting for initial send")
+	}
+
+	s.Equal(0, relay.payloadCache.Len(), "expected payload cache to stay empty when disabled")
+	s.Equal(slotsBase, testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed), "expected slots used to remain unchanged when cache is disabled")
+
+	missBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))
+	umh.retryCh <- "100"
+
+	s.Eventually(
+		func() bool {
+			return testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) > missBefore
+		},
+		2*time.Second,
+		10*time.Millisecond,
+		"expected retry lookup to be processed as cache miss",
+	)
+	s.Equal(1.0, testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))-missBefore)
+
+	var sentCount int
+	concurrency.WithLock(&mockSender.mu, func() {
+		sentCount = len(mockSender.sentMessages)
+	})
+	s.Equal(1, sentCount)
+
+	var sends []string
+	concurrency.WithLock(&umh.mu, func() {
+		sends = append(sends, umh.sends...)
+	})
+	s.Equal([]string{"100"}, sends)
+
+	cancel()
+	s.ErrorIs(<-errCh, context.Canceled)
+}
+
+func (s *relayTestSuite) TestRelay_ACK_RemovesPayloadCacheEntry() {
+	done := concurrency.NewSignal()
+	mockSender := &mockIndexReportSender{
+		failOnIndex:   -1,
+		done:          &done,
+		expectedCount: 1,
+	}
+	umh := &mockUMH{
+		retryCh: make(chan string, 1),
+	}
+	stream := &mockIndexReportStream{
+		reports: []*v1.VMReport{
+			relaytest.NewTestVMReport("100"),
+		},
+	}
+	relay := New(stream, mockSender, umh, 0, 4*time.Hour, 4, 24*time.Hour)
+	slotsBase := testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- relay.Run(ctx)
+	}()
+
+	select {
+	case <-done.Done():
+	case <-time.After(2 * time.Second):
+		s.Fail("timeout waiting for send")
+	}
+
+	s.Equal(slotsBase+1.0, testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed))
+
+	missBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))
+
+	umh.HandleACK("100")
+	time.Sleep(100 * time.Millisecond)
+	s.Equal(slotsBase+0.0, testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed))
+
+	umh.retryCh <- "100"
+	time.Sleep(200 * time.Millisecond)
+
+	missDelta := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) - missBefore
+	s.Equal(1.0, missDelta)
+
+	var sentCount int
+	concurrency.WithLock(&mockSender.mu, func() {
+		sentCount = len(mockSender.sentMessages)
+	})
+	s.Equal(1, sentCount)
+
+	cancel()
+	<-errCh
+}
+
+func (s *relayTestSuite) TestRelay_RetryCommand_ExpiredPayloadResendsUntilSweepEvicts() {
+	ttl := 50 * time.Millisecond
+	mockSender := &mockIndexReportSender{
+		failOnIndex: -1,
+	}
+	umh := &mockUMH{}
+	relay := &Relay{
+		reportSender: mockSender,
+		umh:          umh,
+		payloadCache: newReportPayloadCache(4, ttl),
+	}
+
+	now := time.Now()
+	s.Require().Empty(relay.payloadCache.Upsert("100", relaytest.NewTestVMReport("100"), now.Add(-3*ttl)))
+	metrics.IndexReportCacheSlotsUsed.Set(float64(relay.payloadCache.Len()))
+	s.Equal(1, relay.payloadCache.Len(), "precondition: expired payload should still be present before sweep")
+
+	missBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))
+	hitBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit"))
+	resCountBefore := residencyHistogramSampleCount(s.T())
+	lifeCountBefore := lifetimeHistogramSampleCount(s.T())
+
+	relay.handleRetryCommand(s.ctx, "100")
+
+	s.Equal(0.0, testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))-missBefore)
+	s.Equal(1.0, testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit"))-hitBefore)
+	s.Equal(1, relay.payloadCache.Len(), "expired payload should remain in cache until sweep")
+	s.Equal(1.0, testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed))
+	var sentCount int
+	concurrency.WithLock(&mockSender.mu, func() {
+		sentCount = len(mockSender.sentMessages)
+	})
+	s.Equal(1, sentCount)
+	s.Equal(resCountBefore, residencyHistogramSampleCount(s.T()))
+	s.Equal(lifeCountBefore, lifetimeHistogramSampleCount(s.T()))
+
+	relay.sweepPayloadCache(now)
+	s.Equal(0, relay.payloadCache.Len(), "sweep should evict expired payload")
+	s.Equal(0.0, testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed))
+	s.Equal(resCountBefore+1, residencyHistogramSampleCount(s.T()))
+	s.Equal(lifeCountBefore+1, lifetimeHistogramSampleCount(s.T()))
+}
+
+func lifetimeHistogramSampleCount(t *testing.T) uint64 {
+	t.Helper()
+	return histogramSampleCount(t, "rox_compliance_virtual_machine_relay_index_report_cache_lifetime_seconds")
+}
+
+// residencyHistogramSampleCount returns Histogram sample_count for the VM index report payload residency metric.
+func residencyHistogramSampleCount(t *testing.T) uint64 {
+	t.Helper()
+	return histogramSampleCount(t, "rox_compliance_virtual_machine_relay_index_report_cache_residency_seconds")
+}
+
+func histogramSampleCount(t *testing.T, wantName string) uint64 {
+	t.Helper()
+	mfs, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gathering prometheus metrics should succeed, but failed with: %v", err)
+	}
+	for _, mf := range mfs {
+		if mf.GetName() != wantName {
+			continue
+		}
+		var n uint64
+		for _, m := range mf.GetMetric() {
+			if h := m.GetHistogram(); h != nil {
+				n += h.GetSampleCount()
+			}
+		}
+		return n
+	}
+	t.Fatalf("metric family %q should exist in default gatherer, but was not found", wantName)
+	return 0
 }
 
 // Mock implementations

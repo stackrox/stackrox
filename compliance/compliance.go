@@ -167,6 +167,8 @@ func (c *Compliance) Start() {
 				c.umhVMIndex,
 				maxPerMinute,
 				env.VMRelayStaleAckThreshold.DurationSetting(),
+				env.VMIndexReportRelayCacheSlots.IntegerSetting(),
+				env.VMIndexReportRelayCacheTTL.DurationSetting(),
 			)
 			if err := vmRelay.Run(ctx); err != nil {
 				log.Errorf("Running virtual machine relay: %v", err)
