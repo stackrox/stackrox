@@ -193,6 +193,11 @@ deploy_stackrox_with_roxie() {
 
     wait_for_collectors_to_be_operational stackrox
 
+    # This will be rendered obsolete once --early-readiness=false is properly implemented in roxie.
+    if retrying_kubectl </dev/null -n "$namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "$namespace"
+    fi
+
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
     rm -f "$override_file"
