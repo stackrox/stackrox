@@ -11,8 +11,8 @@ const unknownProfile = "unknown"
 var builtinProfiles = map[string]clientprofile.RuleSet{
 	"servicenow": {{
 		Headers: clientprofile.GlobMap{
-			"User-Agent":             "*ServiceNow*",
-			"Rh-Servicenow-Instance": clientprofile.NoHeaderOrAnyValue,
+			"User-Agent": "*ServiceNow*",
+			"Rh-*":       clientprofile.NoHeaderOrAnyValue,
 		},
 	}},
 	"splunk_ta": {
@@ -20,11 +20,13 @@ var builtinProfiles = map[string]clientprofile.RuleSet{
 	},
 	"roxctl": {{
 		Headers: clientprofile.GlobMap{
-			"User-Agent":              "roxctl/*",
-			"Rh-Roxctl-Command":       clientprofile.NoHeaderOrAnyValue,
-			"Rh-Roxctl-Command-Index": clientprofile.NoHeaderOrAnyValue,
+			"User-Agent": "roxctl/*",
+			"Rh-*":       clientprofile.NoHeaderOrAnyValue,
 		},
 	}},
+	"central": {
+		clientprofile.HeaderPattern("User-Agent", "Rox Central/*"),
+	},
 	"sensor": {
 		clientprofile.HeaderPattern("User-Agent", "Rox Sensor/*"),
 	},

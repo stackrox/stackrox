@@ -12,58 +12,46 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/eventual"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestHeaderToLabel(t *testing.T) {
-	cases := map[string]string{
-		"User-Agent":             "UserAgent",
-		"Rh-Servicenow-Instance": "RhServicenowInstance",
-		"Rh-Roxctl-Command":      "RhRoxctlCommand",
-		"Accept":                 "Accept",
-	}
-	for header, expected := range cases {
-		t.Run(header, func(t *testing.T) {
-			assert.Equal(t, tracker.Label(expected), headerToLabel(header))
-		})
-	}
-}
-
-func TestMatchesCriteriaHeader(t *testing.T) {
+func TestMatchingProfileHeader(t *testing.T) {
 	cases := map[string]struct {
-		label    tracker.Label
-		profile  clientprofile.RuleSet
-		expected bool
+		label          tracker.Label
+		profile        clientprofile.RuleSet
+		expectedHeader glob.Pattern
+		expectedValue  glob.Pattern
 	}{
 		"concrete header match": {
 			label: "XCustomHeader",
 			profile: clientprofile.RuleSet{
 				clientprofile.HeaderPattern("X-Custom-Header", "*"),
 			},
-			expected: true,
+			expectedHeader: "X-Custom-Header",
+			expectedValue:  "*",
 		},
 		"glob header match": {
 			label: "RhServicenowInstance",
 			profile: clientprofile.RuleSet{{
 				Headers: clientprofile.GlobMap{"Rh-*": "*"},
 			}},
-			expected: true,
+			expectedHeader: "Rh-*",
+			expectedValue:  "*",
 		},
 		"no match": {
 			label: "CompletelyUnknown",
 			profile: clientprofile.RuleSet{{
 				Headers: clientprofile.GlobMap{"Rh-*": "*"},
 			}},
-			expected: false,
 		},
 		"no headers in profile": {
 			label: "Anything",
 			profile: clientprofile.RuleSet{
 				clientprofile.PathPattern("/api/*"),
 			},
-			expected: false,
 		},
 		"matches across rules": {
 			label: "XExact",
@@ -71,12 +59,15 @@ func TestMatchesCriteriaHeader(t *testing.T) {
 				{Headers: clientprofile.GlobMap{"Rh-*": "*"}},
 				{Headers: clientprofile.GlobMap{"X-Exact": "*"}},
 			},
-			expected: true,
+			expectedHeader: "X-Exact",
+			expectedValue:  "*",
 		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.expected, matchesProfileHeader(tc.label, tc.profile))
+			header, value := matchingProfileHeader(tc.label, tc.profile)
+			assert.Equal(t, tc.expectedHeader, header)
+			assert.Equal(t, tc.expectedValue, value)
 		})
 	}
 }
@@ -131,7 +122,7 @@ func TestLabelPatternAcceptsDynamicLabels(t *testing.T) {
 		labels := commonLabels.Labels()
 		for _, desc := range descriptors {
 			for _, label := range desc.GetLabels() {
-				if matchesProfileHeader(tracker.Label(label), pt.profile) {
+				if hp, _ := matchingProfileHeader(tracker.Label(label), pt.profile); hp != "" {
 					labels = append(labels, tracker.Label(label))
 				}
 			}

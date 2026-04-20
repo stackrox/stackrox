@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
+	"github.com/stackrox/rox/pkg/clientprofile"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 )
 
@@ -23,21 +25,40 @@ var commonLabels = tracker.LazyLabelGetters[*finding]{
 	"Status": func(f *finding) string { return strconv.Itoa(f.Code) },
 }
 
-// headerToLabel converts an HTTP header name to a valid Prometheus label name
-// by removing hyphens. E.g. "Rh-Servicenow-Instance" -> "RhServicenowInstance".
-func headerToLabel(header string) tracker.Label {
-	return tracker.Label(strings.ReplaceAll(header, "-", ""))
+// headerPatternToLabelPattern converts an HTTP header name pattern to a
+// Prometheus label pattern by removing hyphens.
+// E.g. "Rh-Servicenow-*" -> "RhServicenow*".
+func labelMatchesHeaderPattern(label tracker.Label, header glob.Pattern) bool {
+	p := glob.Pattern(strings.ReplaceAll(string(header), "-", ""))
+	return p.Match(string(label))
 }
 
-// makeHeaderGetter creates a getter that finds the request header whose
-// hyphen-stripped name matches the label and returns its value.
-func makeHeaderGetter(label tracker.Label) tracker.Getter[*finding] {
+// makeHeaderGetter creates a getter that returns filtered values of the request
+// header matching the given label. headerPattern and valuePattern are the
+// profile header entry that matched the label at configuration time.
+func makeHeaderGetter(headerPattern, valuePattern glob.Pattern, label tracker.Label) tracker.Getter[*finding] {
 	return func(f *finding) string {
-		for h := range f.Headers {
-			if headerToLabel(h) == label {
-				return strings.Join(f.Headers.Values(h), "; ")
+		for h, values := range clientprofile.Headers(f.Headers).GetMatching(headerPattern, valuePattern) {
+			if compareIgnoringDash(h, label) {
+				return strings.Join(values, "; ")
 			}
 		}
 		return ""
 	}
+}
+
+// compareIgnoringDash reports whether header equals label when dashes in
+// header are skipped.
+func compareIgnoringDash(header string, label tracker.Label) bool {
+	li := 0
+	for i := range len(header) {
+		if header[i] == '-' {
+			continue
+		}
+		if li >= len(label) || header[i] != label[li] {
+			return false
+		}
+		li++
+	}
+	return li == len(label)
 }

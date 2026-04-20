@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientprofile"
+	"github.com/stackrox/rox/pkg/glob"
 )
 
 // profileTracker wraps a TrackerBase with api_requests-specific concerns:
@@ -28,17 +29,17 @@ func (pt *profileTracker) Reconfigure(cfg *tracker.Configuration) {
 	pt.TrackerBase.Reconfigure(cfg)
 }
 
-// matchesProfileHeader returns true if the label matches any header name
-// pattern in the profile (after hyphen-stripping).
-func matchesProfileHeader(label tracker.Label, profile clientprofile.RuleSet) bool {
+// matchingProfileHeader returns the profile header entry whose label-form
+// matches the given metric label, or empty patterns if none matches.
+func matchingProfileHeader(label tracker.Label, profile clientprofile.RuleSet) (glob.Pattern, glob.Pattern) {
 	for _, rule := range profile {
-		for header := range rule.Headers {
-			if header.Match(string(label)) {
-				return true
+		for header, value := range rule.Headers {
+			if labelMatchesHeaderPattern(label, header) {
+				return header, value
 			}
 		}
 	}
-	return false
+	return "", ""
 }
 
 // resolveGetters builds a getters map from common labels and resolved header
@@ -50,8 +51,8 @@ func resolveGetters(metrics tracker.MetricDescriptors, profile clientprofile.Rul
 			if _, isCommon := commonLabels[label]; isCommon {
 				continue
 			}
-			if matchesProfileHeader(label, profile) {
-				getters[label] = makeHeaderGetter(label)
+			if hp, vp := matchingProfileHeader(label, profile); hp != "" {
+				getters[label] = makeHeaderGetter(hp, vp, label)
 			}
 		}
 	}
@@ -101,7 +102,7 @@ var profileTrackers = func() map[string]*profileTracker {
 			labels := commonLabels.Labels()
 			for _, desc := range descriptors {
 				for _, label := range desc.GetLabels() {
-					if matchesProfileHeader(tracker.Label(label), pt.profile) {
+					if hp, _ := matchingProfileHeader(tracker.Label(label), pt.profile); hp != "" {
 						labels = append(labels, tracker.Label(label))
 					}
 				}
