@@ -166,7 +166,7 @@ func (s *migrationTestSuite) verifyBlobIDV2(dep *storage.Deployment) {
 	s.Require().NoError(updated.UnmarshalVT(serialized))
 
 	for i, c := range updated.GetContainers() {
-		expected := expectedIDV2(c)
+		expected := expectedIDV2(dep.GetContainers()[i])
 		s.Equal(expected, c.GetImage().GetIdV2(),
 			"blob idv2 mismatch for deployment %s container %d", dep.GetName(), i)
 	}

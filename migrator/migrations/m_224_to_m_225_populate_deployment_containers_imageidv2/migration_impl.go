@@ -36,10 +36,11 @@ func migrate(database *types.Databases) error {
 	// deployments consistently fail to update.
 	lastID := uuid.Nil.String()
 	for {
-		batchUpdated, newLastID, err := migrateBatch(ctx, db, lastID, &upsertErrors)
+		batchUpdated, newLastID, batchErrs, err := migrateBatch(ctx, db, lastID)
 		if err != nil {
 			return err
 		}
+		upsertErrors = multierror.Append(upsertErrors, batchErrs)
 		if newLastID == "" {
 			break
 		}
@@ -62,7 +63,9 @@ type depRow struct {
 // migrateBatch processes one page of deployments starting after lastID.
 // Returns the number of deployments updated, the last deployment ID processed
 // (empty if no rows found), and any fatal error.
-func migrateBatch(ctx context.Context, db postgres.DB, lastID string, upsertErrors **multierror.Error) (int, string, error) {
+func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, string, *multierror.Error, error) {
+	var upsertErrors *multierror.Error
+
 	rows, err := db.Query(ctx, `
 		SELECT d.id, d.serialized
 		FROM deployments d
@@ -76,7 +79,7 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string, upsertErro
 		ORDER BY d.id
 		LIMIT $1`, batchSize, lastID)
 	if err != nil {
-		return 0, "", fmt.Errorf("querying deployments: %w", err)
+		return 0, "", upsertErrors, fmt.Errorf("querying deployments: %w", err)
 	}
 	defer rows.Close()
 
@@ -84,23 +87,23 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string, upsertErro
 	for rows.Next() {
 		var d depRow
 		if err := rows.Scan(&d.id, &d.serialized); err != nil {
-			*upsertErrors = multierror.Append(*upsertErrors, fmt.Errorf("scanning deployment row: %w", err))
+			upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("scanning deployment row: %w", err))
 			continue
 		}
 		deps = append(deps, d)
 	}
 	if err := rows.Err(); err != nil {
-		return 0, "", fmt.Errorf("iterating deployment rows: %w", err)
+		return 0, "", upsertErrors, fmt.Errorf("iterating deployment rows: %w", err)
 	}
 
 	if len(deps) == 0 {
-		return 0, "", nil
+		return 0, "", upsertErrors, nil
 	}
 	newLastID := deps[len(deps)-1].id
 
 	conn, err := db.Acquire(ctx)
 	if err != nil {
-		return 0, "", fmt.Errorf("acquiring connection: %w", err)
+		return 0, "", upsertErrors, fmt.Errorf("acquiring connection: %w", err)
 	}
 	defer conn.Release()
 
@@ -110,7 +113,7 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string, upsertErro
 	for _, dep := range deps {
 		d := &storage.Deployment{}
 		if err := d.UnmarshalVT(dep.serialized); err != nil {
-			*upsertErrors = multierror.Append(*upsertErrors, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err))
+			upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err))
 			continue
 		}
 
@@ -119,7 +122,7 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string, upsertErro
 		if blobChanged {
 			newSerialized, err := d.MarshalVT()
 			if err != nil {
-				*upsertErrors = multierror.Append(*upsertErrors, fmt.Errorf("marshal deployment %s: %w", dep.id, err))
+				upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("marshal deployment %s: %w", dep.id, err))
 				continue
 			}
 			batch.Queue("UPDATE deployments SET serialized = $1 WHERE id = $2",
@@ -141,15 +144,15 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string, upsertErro
 		results := conn.SendBatch(ctx, batch)
 		for i := 0; i < batch.Len(); i++ {
 			if _, err := results.Exec(); err != nil {
-				*upsertErrors = multierror.Append(*upsertErrors, fmt.Errorf("batch exec: %w", err))
+				upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("batch exec: %w", err))
 			}
 		}
 		if err := results.Close(); err != nil {
-			return 0, "", fmt.Errorf("closing batch results: %w", err)
+			return 0, "", upsertErrors, fmt.Errorf("closing batch results: %w", err)
 		}
 	}
 
-	return batchDeploymentCount, newLastID, nil
+	return batchDeploymentCount, newLastID, upsertErrors, nil
 }
 
 // populateContainerImageIDV2s sets IdV2 on containers that have an image ID
@@ -158,7 +161,7 @@ func populateContainerImageIDV2s(deployment *storage.Deployment) bool {
 	changed := false
 	for _, container := range deployment.GetContainers() {
 		img := container.GetImage()
-		if img.GetIdV2() != "" {
+		if img == nil || img.GetIdV2() != "" {
 			continue
 		}
 		if idV2 := newImageV2ID(img.GetName().GetFullName(), img.GetId()); idV2 != "" {
