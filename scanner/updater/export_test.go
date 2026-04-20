@@ -165,6 +165,15 @@ func (t *testBundleExporter) ExportBundle(ctx context.Context, w io.Writer, opts
 	return t.exportFunc(ctx, w, opts)
 }
 
+func readStatusFile(t *testing.T, dir string) ExportStatus {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(dir, "status.json"))
+	require.NoError(t, err)
+	var status ExportStatus
+	require.NoError(t, json.Unmarshal(data, &status))
+	return status
+}
+
 func TestExport_PartialFailure(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()
@@ -174,12 +183,9 @@ func TestExport_PartialFailure(t *testing.T) {
 	exporter := &testBundleExporter{
 		exportFunc: func(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
 			callCount++
-			// Write some data to simulate bundle content.
 			if _, err := w.Write([]byte(`{"test":"data"}`)); err != nil {
 				return err
 			}
-
-			// Simulate failure for the third bundle (arbitrary choice for testing).
 			if callCount == 3 {
 				return errors.New("simulated bundle export failure")
 			}
@@ -187,38 +193,21 @@ func TestExport_PartialFailure(t *testing.T) {
 		},
 	}
 
-	// Run export with a minimal manual URL (will be one of the bundles).
-	opts := &ExportOptions{
-		ManualVulnURL: "", // Empty URL should still work for testing structure.
-	}
+	opts := &ExportOptions{ManualVulnURL: ""}
 
-	status, err := Export(ctx, tmpDir, opts, exporter)
+	err := Export(ctx, tmpDir, opts, exporter)
 
 	// Should not return error since not ALL bundles failed.
 	require.NoError(t, err)
-	require.NotNil(t, status)
 
-	// Verify status was recorded.
+	// Verify status.json was created with expected content.
+	status := readStatusFile(t, tmpDir)
 	assert.Greater(t, len(status.Updaters), 0, "should have recorded updater statuses")
 
-	// Verify we have both successes and failures.
 	sc, fc := status.Counts()
 	assert.Greater(t, sc, 0, "should have at least one success")
 	assert.Greater(t, fc, 0, "should have at least one failure")
 	assert.True(t, status.HasFailures(), "should report having failures")
-
-	// Verify status.json was created.
-	statusPath := filepath.Join(tmpDir, "status.json")
-	assert.FileExists(t, statusPath)
-
-	// Verify status.json content.
-	statusData, err := os.ReadFile(statusPath)
-	require.NoError(t, err)
-
-	var readStatus ExportStatus
-	err = json.Unmarshal(statusData, &readStatus)
-	require.NoError(t, err)
-	assert.Equal(t, len(status.Updaters), len(readStatus.Updaters))
 
 	// Verify failed bundle file was deleted and successful ones remain.
 	for _, u := range status.Updaters {
@@ -235,32 +224,25 @@ func TestExport_AllFailed(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()
 
-	// Create a mock exporter that always fails.
 	exporter := &testBundleExporter{
 		exportFunc: func(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
 			return errors.New("all bundles fail")
 		},
 	}
 
-	opts := &ExportOptions{
-		ManualVulnURL: "",
-	}
+	opts := &ExportOptions{ManualVulnURL: ""}
 
-	status, err := Export(ctx, tmpDir, opts, exporter)
+	err := Export(ctx, tmpDir, opts, exporter)
 
 	// Should return error when ALL bundles fail.
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "all")
-	require.NotNil(t, status)
 
-	// Verify all updaters failed.
+	// Verify status.json was still created with all failures.
+	status := readStatusFile(t, tmpDir)
 	sc, fc := status.Counts()
 	assert.Equal(t, 0, sc)
 	assert.Greater(t, fc, 0)
-
-	// Verify status.json was still created.
-	statusPath := filepath.Join(tmpDir, "status.json")
-	assert.FileExists(t, statusPath)
 
 	// Verify no bundle files remain.
 	files, err := os.ReadDir(tmpDir)

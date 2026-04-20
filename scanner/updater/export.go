@@ -152,10 +152,10 @@ type ExportOptions struct {
 // are still written. A status.json file is written to outputDir alongside the bundle files,
 // recording the success or failure status of each updater. An error is only returned if ALL
 // updaters fail.
-func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter BundleExporter) (*ExportStatus, error) {
+func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter BundleExporter) error {
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
-		return nil, fmt.Errorf("creating output dir: %w", err)
+		return fmt.Errorf("creating output dir: %w", err)
 	}
 
 	// Map of vulnerability bundles to their updater options.
@@ -164,7 +164,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter
 	// Our own updaters.
 	bundles["manual"], err = manualOpts(ctx, opts.ManualVulnURL)
 	if err != nil {
-		return nil, fmt.Errorf("initializing: manual: %w", err)
+		return fmt.Errorf("initializing: manual: %w", err)
 	}
 	bundles["nvd"] = nvdOpts()
 	bundles["epss"] = epssOpts()
@@ -237,13 +237,28 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter
 		zlog.Warn(ctx).Err(err).Msg("failed to write status.json")
 	}
 
-	// Only return error if ALL bundles failed
-	successCount, _ := status.Counts()
-	if successCount == 0 {
-		return &status, fmt.Errorf("all %d updaters failed", len(bundles))
+	// Log summary
+	successCount, failureCount := status.Counts()
+	zlog.Info(ctx).
+		Int("success", successCount).
+		Int("failed", failureCount).
+		Int("total", len(bundles)).
+		Msg("export summary")
+
+	if status.HasFailures() {
+		for _, u := range status.Updaters {
+			if u.Status == StatusFailed {
+				zlog.Warn(ctx).Str("updater", u.Name).Str("error", u.Error).Msg("updater failed")
+			}
+		}
 	}
 
-	return &status, nil
+	// Only return error if ALL bundles failed
+	if successCount == 0 {
+		return fmt.Errorf("all %d updaters failed", len(bundles))
+	}
+
+	return nil
 }
 
 // writeStatusFile writes the export status to a JSON file in the output directory.

@@ -15,38 +15,12 @@ import (
 
 const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
 
-func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) (*updater.ExportStatus, error) {
+func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
 	const timeout = 3 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	exporter := updater.NewDefaultBundleExporter()
 	return updater.Export(ctx, outputDir, opts, exporter)
-}
-
-// printStatusSummary prints a summary of the export results.
-func printStatusSummary(status *updater.ExportStatus) {
-	if status == nil {
-		return
-	}
-
-	successCount, failureCount := status.Counts()
-	total := len(status.Updaters)
-
-	fmt.Printf("\nExport Summary: %d/%d updaters succeeded\n", successCount, total)
-
-	if failureCount > 0 {
-		fmt.Println("\nFailed updaters:")
-		for _, u := range status.Updaters {
-			if u.Status == updater.StatusFailed {
-				fmt.Printf("  - %s: %s\n", u.Name, u.Error)
-			}
-		}
-	}
-
-	if successCount > 0 && failureCount > 0 {
-		fmt.Printf("\nPartial success: %d bundles written, %d failed\n", successCount, failureCount)
-		fmt.Println("See status.json in output directory for full details.")
-	}
 }
 
 func main() {
@@ -70,15 +44,13 @@ func main() {
 				return err
 			}
 			const retries = 3
-			var lastStatus *updater.ExportStatus
 			for attempt := 1; attempt <= retries; attempt++ {
 				zlog.Info(ctx).
 					Int("attempt", attempt).
 					Str("manual vulns URL", manualURL).
 					Str("output directory", outputDir).
 					Msg("exporting vulnerabilities")
-				status, err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
-				lastStatus = status
+				err = tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						zlog.Warn(ctx).
@@ -88,22 +60,10 @@ func main() {
 							Msg("export failed; will retry if within retry limits")
 						continue
 					}
-					// Print summary before returning error (all updaters failed)
-					printStatusSummary(status)
 					return fmt.Errorf("data export failed: %w", err)
-				}
-				// Print summary on success (may include partial failures)
-				printStatusSummary(status)
-				if status != nil && status.HasFailures() {
-					sc, fc := status.Counts()
-					zlog.Warn(ctx).
-						Int("success", sc).
-						Int("failed", fc).
-						Msg("export completed with partial failures")
 				}
 				return nil
 			}
-			printStatusSummary(lastStatus)
 			return errors.New("data export failed: max retries exceeded")
 		},
 	}
