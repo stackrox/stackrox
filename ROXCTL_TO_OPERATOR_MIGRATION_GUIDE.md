@@ -70,8 +70,7 @@ roxctl central generate k8s pvc \
 
 **How to check if used:**
 ```bash
-kubectl get pvc -n stackrox
-# Look for: central-db PVC
+kubectl get -n stackrox deployments.apps central-db -o 'jsonpath={.spec.template.spec.volumes[?(@.name=="disk")].persistentVolumeClaim.claimName}{"\n"}'
 ```
 
 **Operator Equivalent:**
