@@ -695,17 +695,21 @@ image_prefetcher_start_set() {
     manifest=$(mktemp)
 
     local kubelet_image_creds
-    case "${ORCHESTRATOR_FLAVOR}" in
-    k8s)
+    case "${KUBERNETES_PROVIDER}" in
+    gke)
         flavor=vanilla
         kubelet_image_creds=GKE
         ;;
-    openshift)
+    eks|aks)
+        flavor=vanilla
+        kubelet_image_creds="" # i.e. disabled
+        ;;
+    ocp)
         flavor=ocp
         kubelet_image_creds="" # i.e. disabled
         ;;
     *)
-        die "unsupported ORCHESTRATOR: ${ORCHESTRATOR_FLAVOR}"
+        die "unsupported KUBERNETES_PROVIDER: ${KUBERNETES_PROVIDER}"
         ;;
     esac
 
@@ -725,7 +729,7 @@ image_prefetcher_start_set() {
     populate_prefetcher_image_list "$name" "${image_list}"
 
     # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
-    if [[ "${ORCHESTRATOR_FLAVOR}" != "k8s" ]]; then
+    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
         local filtered_image_list
         filtered_image_list=$(mktemp)
         info "Filtering out *.gcr.io images for non-GKE cluster"
