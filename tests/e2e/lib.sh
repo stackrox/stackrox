@@ -13,6 +13,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
+export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
@@ -357,7 +358,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CISA_KEV'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SENSITIVE_FILE_ACTIVITY'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "'"${SFA_AGENT}"'"'
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
@@ -476,8 +477,8 @@ deploy_sensor_via_operator() {
         secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
     fi
 
-    if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
-       echo "Enabling File Activity Monitoring due to SFA_AGENT variable: ${SFA_AGENT}"
+    if [[ "${SFA_AGENT:-}" == "true" ]]; then
+       echo "Enabling File Activity Monitoring"
        fam_mode_setting="Enabled"
     fi
 

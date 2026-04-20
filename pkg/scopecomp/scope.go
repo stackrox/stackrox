@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/regexutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -100,8 +101,10 @@ func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *st
 	if c.ClusterLabelKey == nil {
 		return true
 	}
+	// Unreachable: all CompileScope callers for inclusion scopes pass real
+	// providers, and exclusion scopes reject labels at validation time.
 	if c.clusterLabelProvider == nil {
-		log.Error("Cluster label matcher defined but provider is nil - failing closed")
+		utils.Should(errors.New("cluster label matcher defined but provider is nil"))
 		return false
 	}
 	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(ctx, deployment.GetClusterId())
@@ -117,8 +120,10 @@ func (c *CompiledScope) MatchesNamespaceLabels(ctx context.Context, deployment *
 	if c.NamespaceLabelKey == nil {
 		return true
 	}
+	// Unreachable: all CompileScope callers for inclusion scopes pass real
+	// providers, and exclusion scopes reject labels at validation time.
 	if c.namespaceLabelProvider == nil {
-		log.Error("Namespace label matcher defined but provider is nil - failing closed")
+		utils.Should(errors.New("namespace label matcher defined but provider is nil"))
 		return false
 	}
 	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(ctx, deployment.GetClusterId(), deployment.GetNamespace())

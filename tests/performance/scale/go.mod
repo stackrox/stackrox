@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/cloud-bulldozer/go-commons v1.0.19
-	github.com/go-git/go-git/v5 v5.17.2
+	github.com/go-git/go-git/v5 v5.18.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/spf13/cobra v1.10.2
 	go.yaml.in/yaml/v3 v3.0.4

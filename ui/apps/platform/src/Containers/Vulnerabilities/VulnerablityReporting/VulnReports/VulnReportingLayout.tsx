@@ -2,6 +2,7 @@ import { PageSection, Tab, Tabs, Title } from '@patternfly/react-core';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import PageTitle from 'Components/PageTitle';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
     vulnerabilityConfigurationReportsPath,
     vulnerabilityViewBasedReportsPath,
@@ -24,6 +25,11 @@ function VulnReportingLayout() {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEnhancedFilteringEnabled = isFeatureFlagEnabled(
+        'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
+    );
+
     const activeTabIndex = tabs.findIndex((tab) => location.pathname.startsWith(tab.path));
 
     const onTabSelect = (_event, tabIndex) => {
@@ -34,7 +40,11 @@ function VulnReportingLayout() {
         <>
             <PageTitle title="Vulnerability reporting" />
             <PageSection>
-                <Title headingLevel="h1">Vulnerability reporting</Title>
+                <Title headingLevel="h1">
+                    {isEnhancedFilteringEnabled
+                        ? 'Image vulnerability reports'
+                        : 'Vulnerability reporting'}
+                </Title>
             </PageSection>
             <PageSection type="tabs">
                 <Tabs

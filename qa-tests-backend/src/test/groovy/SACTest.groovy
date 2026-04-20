@@ -404,7 +404,7 @@ class SACTest extends BaseSpecification {
         tokenName                | category     | numResults
         NOACCESSTOKEN            | "Cluster"    | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | (flattenImageDataEnabled ? 2 : 1)
     }
 
     @Unroll

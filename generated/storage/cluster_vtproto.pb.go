@@ -264,6 +264,25 @@ func (m *AutoLockProcessBaselinesConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) CloneVT() *DynamicClusterConfig_ProcessIndicatorsConfig {
+	if m == nil {
+		return (*DynamicClusterConfig_ProcessIndicatorsConfig)(nil)
+	}
+	r := new(DynamicClusterConfig_ProcessIndicatorsConfig)
+	r.NoPersistence = m.NoPersistence
+	r.ExcludeNamespaceFilter = m.ExcludeNamespaceFilter
+	r.ExcludeOpenshiftNs = m.ExcludeOpenshiftNs
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *DynamicClusterConfig) CloneVT() *DynamicClusterConfig {
 	if m == nil {
 		return (*DynamicClusterConfig)(nil)
@@ -273,6 +292,7 @@ func (m *DynamicClusterConfig) CloneVT() *DynamicClusterConfig {
 	r.RegistryOverride = m.RegistryOverride
 	r.DisableAuditLogs = m.DisableAuditLogs
 	r.AutoLockProcessBaselinesConfig = m.AutoLockProcessBaselinesConfig.CloneVT()
+	r.ProcessIndicators = m.ProcessIndicators.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1103,6 +1123,31 @@ func (this *AutoLockProcessBaselinesConfig) EqualMessageVT(thatMsg proto.Message
 	}
 	return this.EqualVT(that)
 }
+func (this *DynamicClusterConfig_ProcessIndicatorsConfig) EqualVT(that *DynamicClusterConfig_ProcessIndicatorsConfig) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.NoPersistence != that.NoPersistence {
+		return false
+	}
+	if this.ExcludeNamespaceFilter != that.ExcludeNamespaceFilter {
+		return false
+	}
+	if this.ExcludeOpenshiftNs != that.ExcludeOpenshiftNs {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *DynamicClusterConfig_ProcessIndicatorsConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*DynamicClusterConfig_ProcessIndicatorsConfig)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (this *DynamicClusterConfig) EqualVT(that *DynamicClusterConfig) bool {
 	if this == that {
 		return true
@@ -1119,6 +1164,9 @@ func (this *DynamicClusterConfig) EqualVT(that *DynamicClusterConfig) bool {
 		return false
 	}
 	if !this.AutoLockProcessBaselinesConfig.EqualVT(that.AutoLockProcessBaselinesConfig) {
+		return false
+	}
+	if !this.ProcessIndicators.EqualVT(that.ProcessIndicators) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2574,6 +2622,66 @@ func (m *AutoLockProcessBaselinesConfig) MarshalToSizedBufferVT(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ExcludeOpenshiftNs {
+		i--
+		if m.ExcludeOpenshiftNs {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.ExcludeNamespaceFilter) > 0 {
+		i -= len(m.ExcludeNamespaceFilter)
+		copy(dAtA[i:], m.ExcludeNamespaceFilter)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ExcludeNamespaceFilter)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.NoPersistence {
+		i--
+		if m.NoPersistence {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *DynamicClusterConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -2603,6 +2711,16 @@ func (m *DynamicClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ProcessIndicators != nil {
+		size, err := m.ProcessIndicators.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.AutoLockProcessBaselinesConfig != nil {
 		size, err := m.AutoLockProcessBaselinesConfig.MarshalToSizedBufferVT(dAtA[:i])
@@ -4198,6 +4316,26 @@ func (m *AutoLockProcessBaselinesConfig) SizeVT() (n int) {
 	return n
 }
 
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NoPersistence {
+		n += 2
+	}
+	l = len(m.ExcludeNamespaceFilter)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ExcludeOpenshiftNs {
+		n += 2
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *DynamicClusterConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4217,6 +4355,10 @@ func (m *DynamicClusterConfig) SizeVT() (n int) {
 	}
 	if m.AutoLockProcessBaselinesConfig != nil {
 		l = m.AutoLockProcessBaselinesConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ProcessIndicators != nil {
+		l = m.ProcessIndicators.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -6263,6 +6405,129 @@ func (m *AutoLockProcessBaselinesConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DynamicClusterConfig_ProcessIndicatorsConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DynamicClusterConfig_ProcessIndicatorsConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NoPersistence", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.NoPersistence = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludeNamespaceFilter", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExcludeNamespaceFilter = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludeOpenshiftNs", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ExcludeOpenshiftNs = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -6413,6 +6678,42 @@ func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 				m.AutoLockProcessBaselinesConfig = &AutoLockProcessBaselinesConfig{}
 			}
 			if err := m.AutoLockProcessBaselinesConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessIndicators", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProcessIndicators == nil {
+				m.ProcessIndicators = &DynamicClusterConfig_ProcessIndicatorsConfig{}
+			}
+			if err := m.ProcessIndicators.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11309,6 +11610,133 @@ func (m *AutoLockProcessBaselinesConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *DynamicClusterConfig_ProcessIndicatorsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DynamicClusterConfig_ProcessIndicatorsConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DynamicClusterConfig_ProcessIndicatorsConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NoPersistence", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.NoPersistence = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludeNamespaceFilter", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ExcludeNamespaceFilter = stringValue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludeOpenshiftNs", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ExcludeOpenshiftNs = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *DynamicClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -11463,6 +11891,42 @@ func (m *DynamicClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.AutoLockProcessBaselinesConfig = &AutoLockProcessBaselinesConfig{}
 			}
 			if err := m.AutoLockProcessBaselinesConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessIndicators", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProcessIndicators == nil {
+				m.ProcessIndicators = &DynamicClusterConfig_ProcessIndicatorsConfig{}
+			}
+			if err := m.ProcessIndicators.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

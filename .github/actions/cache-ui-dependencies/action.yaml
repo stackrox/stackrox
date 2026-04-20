@@ -10,7 +10,7 @@ runs:
   steps:
     - name: Cache UI Dependencies
       if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: |
           ~/.npm
@@ -20,7 +20,7 @@ runs:
 
     - name: Restore UI Dependencies
       if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
-      uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache/restore@v5
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: |
           ~/.npm

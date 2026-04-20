@@ -273,7 +273,7 @@ jobs:
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # ratchet:actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
