@@ -317,13 +317,13 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 // Next available tag: 27
 type Alert struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
-	Policy         *Policy                `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"`                                                                    // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                             // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
+	Policy         *Policy                `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"`                                                  // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
 	LifecycleStage LifecycleStage         `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage" sql:"index=btree"` // @gotags: search:"Lifecycle Stage" sql:"index=btree"
-	ClusterId      string                 `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`                                            // @gotags: search:"Cluster ID" sql:"type(uuid)"
-	ClusterName    string                 `protobuf:"bytes,19,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                      // @gotags: search:"Cluster"
-	Namespace      string                 `protobuf:"bytes,20,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                             // @gotags: search:"Namespace"
-	NamespaceId    string                 `protobuf:"bytes,21,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"type(uuid)"`                                      // @gotags: search:"Namespace ID" sql:"type(uuid)"
+	ClusterId      string                 `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`                                                  // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	ClusterName    string                 `protobuf:"bytes,19,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                                                // @gotags: search:"Cluster"
+	Namespace      string                 `protobuf:"bytes,20,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                     // @gotags: search:"Namespace"
+	NamespaceId    string                 `protobuf:"bytes,21,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"type(uuid)"`                                          // @gotags: search:"Namespace ID" sql:"type(uuid)"
 	// Types that are valid to be assigned to Entity:
 	//
 	//	*Alert_Deployment_
@@ -335,12 +335,12 @@ type Alert struct {
 	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" search:"-"`                                      // @gotags: search:"-"
 	ProcessViolation *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation,proto3" json:"process_violation,omitempty" search:"-"` // @gotags: search:"-"
 	Enforcement      *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
-	Time             *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
-	FirstOccurred    *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	Time             *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"` // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
+	FirstOccurred    *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"`   // @gotags: sensorhash:"ignore"
 	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-	ResolvedAt        *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"`                                // @gotags: sensorhash:"ignore"
-	State             ViolationState         `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State" sql:"index=btree"`                               // @gotags: search:"Violation State" sql:"index=btree"
-	PlatformComponent bool                   `protobuf:"varint,22,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`          // @gotags: search:"Platform Component"
+	ResolvedAt        *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"`                                 // @gotags: sensorhash:"ignore"
+	State             ViolationState         `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State" sql:"index=btree"`         // @gotags: search:"Violation State" sql:"index=btree"
+	PlatformComponent bool                   `protobuf:"varint,22,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`   // @gotags: search:"Platform Component"
 	EntityType        Alert_EntityType       `protobuf:"varint,23,opt,name=entity_type,json=entityType,proto3,enum=storage.Alert_EntityType" json:"entity_type,omitempty" search:"Entity Type"` // @gotags: search:"Entity Type"
 	// Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts
 	// this is the number of unique pods killed. For DEPLOY alerts with enforcement
@@ -951,17 +951,17 @@ func (x *ListAlertDeployment) GetDeploymentType() string {
 
 type Alert_Deployment struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Id            string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"index,type(uuid)"`                                                                                   // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
+	Id            string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"index,type(uuid)"`                                                  // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
 	Name          string                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                               // @gotags: search:"Deployment"
-	Type          string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                               // @gotags: search:"Deployment Type"
-	Namespace     string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
+	Type          string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                          // @gotags: search:"Deployment Type"
+	Namespace     string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                                         // This field has to be duplicated in Alert for scope management and search.
+	NamespaceId   string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                                                 // This field has to be duplicated in Alert for scope management and search.
 	Labels        map[string]string             `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	ClusterId     string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
+	ClusterId     string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                                        // This field has to be duplicated in Alert for scope management and search.
+	ClusterName   string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                                                 // This field has to be duplicated in Alert for scope management and search.
 	Containers    []*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
 	Annotations   map[string]string             `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	Inactive      bool                          `protobuf:"varint,15,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`                                                                                // @gotags: search:"Inactive Deployment"
+	Inactive      bool                          `protobuf:"varint,15,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`                                                                       // @gotags: search:"Inactive Deployment"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1077,11 +1077,11 @@ func (x *Alert_Deployment) GetInactive() bool {
 type Alert_Resource struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	ResourceType  Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type"` // @gotags: search:"Resource Type"
-	Name          string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`                                                                               // @gotags: search:"Resource"
-	ClusterId     string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                    // This field has to be duplicated in Alert for scope management and search.
-	ClusterName   string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
-	Namespace     string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
-	NamespaceId   string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                              // This field has to be duplicated in Alert for scope management and search.
+	Name          string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`                                                                                    // @gotags: search:"Resource"
+	ClusterId     string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                                           // This field has to be duplicated in Alert for scope management and search.
+	ClusterName   string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
+	Namespace     string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                                            // This field has to be duplicated in Alert for scope management and search.
+	NamespaceId   string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1160,8 +1160,8 @@ func (x *Alert_Resource) GetNamespaceId() string {
 
 type Alert_Node struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID"`                                      // @gotags: search:"Node ID"
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node"`                                  // @gotags: search:"Node"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID"`                     // @gotags: search:"Node ID"
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node"`                    // @gotags: search:"Node"
 	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`       // This field has to be duplicated in Alert for scope management and search.
 	ClusterName   string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // This field has to be duplicated in Alert for scope management and search.
 	unknownFields protoimpl.UnknownFields
@@ -1406,7 +1406,7 @@ func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 
 type Alert_Enforcement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement Action"` // @gotags: search:"Enforcement Action"
+	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
