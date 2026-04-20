@@ -78,8 +78,8 @@ if [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]]; then
     curl -o /tmp/roxie \
       -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
       -H "Accept:application/octet-stream"\
-      "https://github.com/stackrox/roxie/releases/download/${USE_ROXIE_VERSION}/roxie-linux-amd64" || break
-    install -b /tmp/roxie /usr/bin/
+      "https://github.com/stackrox/roxie/releases/download/${USE_ROXIE_VERSION}/roxie-linux-amd64"
+    install -b --suffix=.old /tmp/roxie /usr/bin/
     roxie version || { error 'roxie failed, restoring original version:'; cp /usr/bin/roxie.old /usr/bin/roxie; roxie version; }
 fi
 
