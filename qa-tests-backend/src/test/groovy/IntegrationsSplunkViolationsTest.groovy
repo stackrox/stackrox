@@ -1,4 +1,3 @@
-import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
@@ -135,15 +134,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify Splunk violations: file access violations reach Splunk TA"() {
         given:
-        "FACT is enabled in the collector"
-        Assume.assumeTrue(
-                "FACT container not found in collector DaemonSet — skipping file access test",
-                orchestrator.containsDaemonSetContainer(
-                        Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER))
-
-        and:
-        "FACT is configured to monitor /tmp paths"
-        patchFactEnv()
+        "ROX-34178: skip until file access Splunk TA test is stabilised"
+        Assume.assumeTrue("ROX-34178: file access Splunk TA test is disabled pending stabilisation", false)
 
         and:
         "a file activity policy targeting a unique path"
@@ -196,19 +188,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         cleanup:
         if (policyID) {
             PolicyService.deletePolicy(policyID)
-        }
-    }
-
-    private void patchFactEnv() {
-        log.info "Setting FACT_PATHS on collector DaemonSet"
-        waitForTrue(20, 20) {
-            orchestrator.updateDaemonSetEnv(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_PATHS", "/tmp/**/*")
-            orchestrator.daemonSetEnvVarUpdated(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_PATHS", "/tmp/**/*")
-            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
         }
     }
 

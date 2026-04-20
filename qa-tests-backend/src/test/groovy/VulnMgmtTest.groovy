@@ -3,6 +3,7 @@ import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import org.junit.Assume
 import services.GraphQLService
 import services.ImageService
+import util.Helpers
 
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -28,6 +29,9 @@ class VulnMgmtTest extends BaseSpecification {
             "sha256:c9672795a48854502d9dc0f1b719ac36dd99259a2f8ce425904a5cb4ae0d60d2"
     static final private String UBUNTU_IMAGE =
             "quay.io/rhacs-eng/qa:ubuntu-22.04-amd64"
+
+    static final private MODERATE = VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY
+    static final private LOW = VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY
 
     private static final EMBEDDED_IMAGE_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
@@ -187,14 +191,14 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         Assume.assumeFalse(scannerV4Enabled)
 
         expect:
-        verifySeveritiesAndCvss(imageDigest, component, cve, severity, cvss)
+        verifySeveritiesAndCvss(imageDigest, imageName, component, cve, severity, cvss)
 
         where:
         "Data inputs are: "
 
-        imageDigest              | component | cve              | severity                                        | cvss
-        RHEL_IMAGE_LEGACY_DIGEST | "glib2"   | "CVE-2019-13012" | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
-        UBUNTU_IMAGE_DIGEST      | "gnupg2"  | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 3.3
+        imageDigest               | imageName           | component | cve              | severity | cvss
+        RHEL_IMAGE_LEGACY_DIGEST  | RHEL_IMAGE_LEGACY   | "glib2"   | "CVE-2019-13012" | LOW      | 4.4
+        UBUNTU_IMAGE_DIGEST       | UBUNTU_IMAGE        | "gnupg2"  | "CVE-2022-3219"  | LOW      | 3.3
     }
 
     @Unroll
@@ -203,27 +207,28 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         Assume.assumeTrue(scannerV4Enabled)
 
         expect:
-        verifySeveritiesAndCvss(imageDigest, component, cve, severity, cvss)
+        verifySeveritiesAndCvss(imageDigest, imageName, component, cve, severity, cvss)
 
         where:
         "Data inputs are: "
 
-        imageDigest         | component | cve              | severity                                             | cvss
-        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" | VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5
-        UBUNTU_IMAGE_DIGEST | "gpgv"    | "CVE-2022-3219"  | VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 3.3
+        imageDigest         | imageName    | component | cve              | severity | cvss
+        RHEL_IMAGE_DIGEST   | RHEL_IMAGE   | "python3" | "CVE-2025-11468" | MODERATE | 4.5
+        UBUNTU_IMAGE_DIGEST | UBUNTU_IMAGE | "gpgv"    | "CVE-2022-3219"  | LOW      | 3.3
     }
 
-    private void verifySeveritiesAndCvss(String imageDigest, String component, String cve,
+    private void verifySeveritiesAndCvss(String imageDigest, String imageName, String component, String cve,
                                           VulnerabilitySeverity severity, double cvss) {
         def gqlService = new GraphQLService()
 
         def query = "CVE:${cve}"
+        def imageId = flattenImageDataEnabled ? Helpers.generateImageV2ID(imageName, imageDigest) : imageDigest
 
         // Fetch the component ID dynamically since IDs now include image ID and index
-        def componentID = getComponentIDForImage(gqlService, imageDigest, component)
+        def componentID = getComponentIDForImage(gqlService, imageId, component)
 
         def embeddedImageRes = gqlService.Call(getEmbeddedImageQuery(),
-                [id: imageDigest, query: query])
+                [id: imageId, query: query])
 
         // Expanded instead of using hasErrors() for easier debugging if there are errors
         // as the test framework will actually print out the errors now
@@ -235,12 +240,12 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
         def embeddedImageResVuln = embeddedImageRes.value.result.scan.imageComponents[0].imageVulnerabilities[0]
 
         def topLevelImageRes = gqlService.Call(getTopLevelImageQuery(),
-                [id: imageDigest, query: query])
+                [id: imageId, query: query])
         assert topLevelImageRes.hasNoErrors()
         def topLevelImageResVuln = topLevelImageRes.value.result.vulns[0]
 
         def fixableCVEImageRes = gqlService.Call(getImageFixableCVEQuery(),
-                [id: imageDigest, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
+                [id: imageId, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEImageRes.hasNoErrors()
         def fixableCVEImageResVuln = fixableCVEImageRes.value.result.vulnerabilities[0]
 
