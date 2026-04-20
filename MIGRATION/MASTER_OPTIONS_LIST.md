@@ -68,12 +68,12 @@ kubectl get pvc -n stackrox -l app=central-db -o jsonpath='{.items[0].spec.stora
 **Available in:** openshift-pvc ✗, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✓
 **Default:** `/var/lib/stackrox-central`
 **Description:** Path on the host for database storage
-**Impact:** Changes hostPath volume path in central-db StatefulSet
+**Impact:** Changes hostPath volume path in central-db Deployment
 **Affected files:**
 - `central/01-central-12-central-db.yaml` - volumes[disk].hostPath.path
 **Detection method:**
 ```bash
-kubectl get statefulset -n stackrox central-db -o jsonpath='{.spec.template.spec.volumes[?(@.name=="disk")].hostPath.path}'
+kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.volumes[?(@.name=="disk")].hostPath.path}'
 ```
 **Expected output:**
 - Default: `/var/lib/stackrox-central`
@@ -85,12 +85,12 @@ kubectl get statefulset -n stackrox central-db -o jsonpath='{.spec.template.spec
 **Available in:** openshift-pvc ✗, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✓
 **Default:** (none)
 **Description:** Node selector key (e.g. kubernetes.io/hostname)
-**Impact:** Adds nodeSelector to central-db StatefulSet (requires --db-node-selector-value)
+**Impact:** Adds nodeSelector to central-db Deployment (requires --db-node-selector-value)
 **Affected files:**
 - `central/01-central-12-central-db.yaml` - spec.template.spec.nodeSelector
 **Detection method:**
 ```bash
-kubectl get statefulset -n stackrox central-db -o jsonpath='{.spec.template.spec.nodeSelector}'
+kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.nodeSelector}'
 ```
 **Expected output:**
 - Default: `{}` (empty)
@@ -116,7 +116,7 @@ kubectl get statefulset -n stackrox central-db -o jsonpath='{.spec.template.spec
 **Available in:** openshift-pvc ✓, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✗
 **Default:** `auto`
 **Description:** Integration with OpenShift 4 monitoring
-**Impact:** Enables OpenShift monitoring integration by creating ServiceMonitor resources
+**Impact:** Controls whether OpenShift monitoring resources are created
 **Affected files:**
 - `central/99-openshift-monitoring.yaml`
 - `central/99-scanner-v4-openshift-monitoring.yaml`
@@ -125,9 +125,9 @@ kubectl get statefulset -n stackrox central-db -o jsonpath='{.spec.template.spec
 kubectl get servicemonitor -n stackrox
 ```
 **Expected output:**
-- Default (auto): ServiceMonitor resources may be created on OpenShift
-- When enabled: ServiceMonitor resources for Prometheus integration
-**Note:** OpenShift only
+- Default (auto): Monitoring files ARE created in baseline (enabled on OpenShift by default)
+- When explicitly enabled/disabled: Unknown (not tested)
+**Note:** OpenShift only. Default `auto` creates monitoring resources. Behavior when explicitly set to false/true not verified.
 
 ---
 
@@ -182,15 +182,15 @@ kubectl get secret -n stackrox central-tls -o jsonpath='{.data.ca\.pem}' | base6
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
 **Default:** (determined by --image-defaults)
 **Description:** The central-db image to use
-**Impact:** Overrides central-db image in StatefulSet
+**Impact:** Overrides central-db image in Deployment
 **Affected files:**
 - `central/01-central-12-central-db.yaml`
 **Detection method:**
 ```bash
-kubectl get statefulset -n stackrox central-db -o jsonpath='{.spec.template.spec.containers[0].image}'
+kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 **Expected output:**
-- Default (rhacs): `quay.io/rhacs-eng/central-db:4.x.x`
+- Default (rhacs): `registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8:4.x.x`
 - Default (opensource): `quay.io/stackrox-io/central-db:4.x.x`
 - If custom: The specified custom image
 
@@ -300,18 +300,20 @@ kubectl get psp | grep stackrox
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
 **Default:** `true`
 **Description:** Whether to enable telemetry
-**Impact:** Sets ROX_OFFLINE_MODE environment variable (inverse relationship)
+**Impact:** Controls telemetry-related environment variables (NOT ROX_OFFLINE_MODE)
 **Affected files:**
 - `central/01-central-13-deployment.yaml`
-- `central/01-central-12-central-db.yaml`
 **Detection method:**
 ```bash
-kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_OFFLINE_MODE")].value}'
+# Check if telemetry is enabled
+kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_TELEMETRY_ENDPOINT")].value}'
+# Or check if explicitly disabled
+kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_TELEMETRY_STORAGE_KEY_V1")].value}'
 ```
 **Expected output:**
-- Default (`--enable-telemetry=true`): `false` (ROX_OFFLINE_MODE=false means telemetry enabled)
-- If `--enable-telemetry=false`: `true` (ROX_OFFLINE_MODE=true means telemetry disabled)
-**Note:** Telemetry and offline mode are inversely related
+- Default (enabled): ROX_TELEMETRY_ENDPOINT and ROX_TELEMETRY_API_WHITELIST are present
+- If disabled: ROX_TELEMETRY_STORAGE_KEY_V1="DISABLED" is set, telemetry endpoint vars removed
+**Note:** This is SEPARATE from --offline. Telemetry controls data collection, offline controls internet connectivity.
 
 ---
 
@@ -332,8 +334,11 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 **Expected output:**
-- Default (rhacs): `quay.io/rhacs-eng/main:4.x.x`
+- Default (rhacs): `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:4.x.x`
 - If opensource: `quay.io/stackrox-io/main:4.x.x`
+**Image patterns:**
+- rhacs: `registry.redhat.io/advanced-cluster-security/rhacs-<component>-rhel8:<version>`
+- opensource: `quay.io/stackrox-io/<component>:<version>`
 **Note:** This is a MAJOR change affecting ALL component images (Central, DB, Scanner, Scanner-v4)
 
 ---
@@ -343,20 +348,21 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 **Default:** (none)
 **Description:** Generate deployment files supporting the given Istio version (valid: 1.0-1.7)
 **Note:** k8s modes specify "kubectl output format only"
-**Impact:** Adds Istio-specific annotations to Services
+**Impact:** Appends DestinationRule resources to service YAML files
 **Affected files:**
-- `central/01-central-14-service.yaml`
-- `scanner/02-scanner-07-service.yaml`
-- `scanner-v4/02-scanner-v4-08-db-service.yaml`
-- `scanner-v4/02-scanner-v4-08-indexer-service.yaml`
-- `scanner-v4/02-scanner-v4-08-matcher-service.yaml`
+- `central/01-central-14-service.yaml` - DestinationRule appended
+- `scanner/02-scanner-07-service.yaml` - DestinationRule appended
+- `scanner-v4/02-scanner-v4-08-db-service.yaml` - DestinationRule appended
+- `scanner-v4/02-scanner-v4-08-indexer-service.yaml` - DestinationRule appended
+- `scanner-v4/02-scanner-v4-08-matcher-service.yaml` - DestinationRule appended
 **Detection method:**
 ```bash
-kubectl get svc -n stackrox central -o jsonpath='{.metadata.annotations}' | grep 'traffic.sidecar.istio.io'
+kubectl get destinationrule -n stackrox central-internal-no-istio-mtls
 ```
 **Expected output:**
-- Default: No Istio annotations
-- If set: Istio traffic annotations present (e.g., `traffic.sidecar.istio.io/*`)
+- Default: DestinationRule not found
+- If set: DestinationRule exists that disables Istio mTLS for port 443
+**Note:** Creates Istio DestinationRule resources, not just annotations
 
 ---
 
@@ -479,7 +485,8 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 kubectl get deploy -n stackrox scanner-db -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 **Expected output:**
-- Default: Determined by --image-defaults
+- Default (rhacs): `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:4.x.x`
+- Default (opensource): `quay.io/stackrox-io/scanner-db:4.x.x`
 - If custom: The specified custom image
 
 ---
@@ -496,7 +503,8 @@ kubectl get deploy -n stackrox scanner-db -o jsonpath='{.spec.template.spec.cont
 kubectl get deploy -n stackrox scanner -o jsonpath='{.spec.template.spec.containers[?(@.name=="scanner")].image}'
 ```
 **Expected output:**
-- Default: Determined by --image-defaults
+- Default (rhacs): `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:4.x.x`
+- Default (opensource): `quay.io/stackrox-io/scanner:4.x.x`
 - If custom: The specified custom image
 
 ---
@@ -513,7 +521,8 @@ kubectl get deploy -n stackrox scanner -o jsonpath='{.spec.template.spec.contain
 kubectl get deploy -n stackrox scanner-v4-db -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 **Expected output:**
-- Default: Determined by --image-defaults
+- Default (rhacs): `registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8:4.x.x`
+- Default (opensource): `quay.io/stackrox-io/scanner-v4-db:4.x.x`
 - If custom: The specified custom image
 
 ---
@@ -532,7 +541,8 @@ kubectl get deploy -n stackrox scanner-v4-matcher -o jsonpath='{.spec.template.s
 kubectl get deploy -n stackrox scanner-v4-indexer -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 **Expected output:**
-- Default: Determined by --image-defaults
+- Default (rhacs): `registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8:4.x.x`
+- Default (opensource): `quay.io/stackrox-io/scanner-v4:4.x.x`
 - If custom: The specified custom image
 
 ---
