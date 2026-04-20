@@ -402,6 +402,8 @@ jobs:
     - build-and-run
     if: ${{ (failure() || success()) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')) }}
     runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.get-versions.outputs.versions }}
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@v6
@@ -415,6 +417,15 @@ jobs:
         path: definitions_files
         # Merge all artifacts (`<version>/<files>`) into the directory.
         merge-multiple: true
+
+    - name: Determine versions
+      id: get-versions
+      working-directory: ./definitions_files
+      run: |
+        # Collect directory names (strip trailing slash) as space-separated list
+        versions=$(ls -d */ | sed 's|/||g' | tr '\n' ' ')
+        echo "versions=$versions" >> "$GITHUB_OUTPUT"
+        echo "Versions: $versions"
 
     - name: Check vulnerability bundles
       working-directory: ./definitions_files
@@ -541,4 +552,5 @@ jobs:
         python3 .github/workflows/scripts/scanner-versioned-definitions-notify.py \
           --webhook-url "${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}" \
           --workflow-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-          $job_failed_flag
+          $job_failed_flag \
+          ${{ needs.upload-definitions.outputs.versions }}

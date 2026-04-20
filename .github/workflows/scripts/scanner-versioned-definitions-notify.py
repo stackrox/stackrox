@@ -6,8 +6,8 @@ Checks status.json in GCS for each version stream and sends
 a Slack notification if any vulnerability updaters failed.
 
 Usage:
-    python scanner_vuln_notify.py --webhook-url $SLACK_WEBHOOK --workflow-url $URL
-    python scanner_vuln_notify.py --webhook-url $SLACK_WEBHOOK --workflow-url $URL --job-failed
+    python scanner-versioned-definitions-notify.py --webhook-url $SLACK_WEBHOOK --workflow-url $URL dev v2
+    python scanner-versioned-definitions-notify.py --webhook-url $SLACK_WEBHOOK --workflow-url $URL --job-failed dev v2
 """
 
 import argparse
@@ -20,7 +20,6 @@ from pathlib import Path
 
 
 GCS_BUCKET = "gs://definitions.stackrox.io/v4/vulnerability-bundles"
-VERSION_STREAMS = ["dev", "v2", "v3"]
 
 
 def gsutil_copy(src, dest) -> subprocess.CompletedProcess:
@@ -41,12 +40,12 @@ def get_failed_updaters(status_path: Path) -> list[str]:
     return [u["name"] for u in status.get("updaters", []) if u.get("status") == "failed"]
 
 
-def check_partial_failures() -> dict[str, list[str]]:
+def check_partial_failures(versions: list[str]) -> dict[str, list[str]]:
     """Check each version stream for partial failures. Returns {version: [failed_updaters]}."""
     failures = {}
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        for version in VERSION_STREAMS:
+        for version in versions:
             status_url = f"{GCS_BUCKET}/{version}/bundles/status.json"
             local_path = Path(tmpdir) / f"status-{version}.json"
 
@@ -87,9 +86,10 @@ def main():
     parser.add_argument("--webhook-url", required=True, help="Slack webhook URL")
     parser.add_argument("--workflow-url", required=True, help="URL to workflow run")
     parser.add_argument("--job-failed", action="store_true", help="Indicates the build job failed completely")
+    parser.add_argument("versions", nargs="+", help="Version streams to check (e.g., dev v2)")
     args = parser.parse_args()
 
-    partial_failures = check_partial_failures()
+    partial_failures = check_partial_failures(args.versions)
 
     if not partial_failures and not args.job_failed:
         print("No failures to report")
