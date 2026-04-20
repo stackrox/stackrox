@@ -53,26 +53,17 @@ func (s *ExportStatus) HasFailures() bool {
 	return false
 }
 
-// SuccessCount returns the number of successful updaters.
-func (s *ExportStatus) SuccessCount() int {
-	count := 0
+// Counts returns the number of successful and failed updaters.
+func (s *ExportStatus) Counts() (success, failure int) {
 	for _, u := range s.Updaters {
-		if u.Status == StatusSuccess {
-			count++
+		switch u.Status {
+		case StatusSuccess:
+			success++
+		case StatusFailed:
+			failure++
 		}
 	}
-	return count
-}
-
-// FailureCount returns the number of failed updaters.
-func (s *ExportStatus) FailureCount() int {
-	count := 0
-	for _, u := range s.Updaters {
-		if u.Status == StatusFailed {
-			count++
-		}
-	}
-	return count
+	return success, failure
 }
 
 const (
@@ -247,7 +238,8 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter
 	}
 
 	// Only return error if ALL bundles failed
-	if status.SuccessCount() == 0 {
+	successCount, _ := status.Counts()
+	if successCount == 0 {
 		return &status, fmt.Errorf("all %d updaters failed", len(bundles))
 	}
 

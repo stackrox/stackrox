@@ -65,30 +65,20 @@ func TestExportStatus_HasFailures(t *testing.T) {
 	}
 }
 
-func TestExportStatus_SuccessCount(t *testing.T) {
+func TestExportStatus_Counts(t *testing.T) {
 	status := ExportStatus{
 		Updaters: []UpdaterStatus{
 			{Name: "alpine", Status: StatusSuccess},
 			{Name: "nvd", Status: StatusSuccess},
 			{Name: "photon", Status: StatusFailed, Error: "404"},
 			{Name: "debian", Status: StatusSuccess},
-		},
-	}
-
-	assert.Equal(t, 3, status.SuccessCount())
-}
-
-func TestExportStatus_FailureCount(t *testing.T) {
-	status := ExportStatus{
-		Updaters: []UpdaterStatus{
-			{Name: "alpine", Status: StatusSuccess},
-			{Name: "nvd", Status: StatusSuccess},
-			{Name: "photon", Status: StatusFailed, Error: "404"},
 			{Name: "oracle", Status: StatusFailed, Error: "timeout"},
 		},
 	}
 
-	assert.Equal(t, 2, status.FailureCount())
+	success, failure := status.Counts()
+	assert.Equal(t, 3, success)
+	assert.Equal(t, 2, failure)
 }
 
 func TestWriteStatusFile(t *testing.T) {
@@ -212,8 +202,9 @@ func TestExport_PartialFailure(t *testing.T) {
 	assert.Greater(t, len(status.Updaters), 0, "should have recorded updater statuses")
 
 	// Verify we have both successes and failures.
-	assert.Greater(t, status.SuccessCount(), 0, "should have at least one success")
-	assert.Greater(t, status.FailureCount(), 0, "should have at least one failure")
+	sc, fc := status.Counts()
+	assert.Greater(t, sc, 0, "should have at least one success")
+	assert.Greater(t, fc, 0, "should have at least one failure")
 	assert.True(t, status.HasFailures(), "should report having failures")
 
 	// Verify status.json was created.
@@ -263,8 +254,9 @@ func TestExport_AllFailed(t *testing.T) {
 	require.NotNil(t, status)
 
 	// Verify all updaters failed.
-	assert.Equal(t, 0, status.SuccessCount())
-	assert.Greater(t, status.FailureCount(), 0)
+	sc, fc := status.Counts()
+	assert.Equal(t, 0, sc)
+	assert.Greater(t, fc, 0)
 
 	// Verify status.json was still created.
 	statusPath := filepath.Join(tmpDir, "status.json")

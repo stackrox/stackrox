@@ -29,8 +29,7 @@ func printStatusSummary(status *updater.ExportStatus) {
 		return
 	}
 
-	successCount := status.SuccessCount()
-	failureCount := status.FailureCount()
+	successCount, failureCount := status.Counts()
 	total := len(status.Updaters)
 
 	fmt.Printf("\nExport Summary: %d/%d updaters succeeded\n", successCount, total)
@@ -96,9 +95,10 @@ func main() {
 				// Print summary on success (may include partial failures)
 				printStatusSummary(status)
 				if status != nil && status.HasFailures() {
+					sc, fc := status.Counts()
 					zlog.Warn(ctx).
-						Int("success", status.SuccessCount()).
-						Int("failed", status.FailureCount()).
+						Int("success", sc).
+						Int("failed", fc).
 						Msg("export completed with partial failures")
 				}
 				return nil
