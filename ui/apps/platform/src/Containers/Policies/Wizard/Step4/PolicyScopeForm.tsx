@@ -160,8 +160,10 @@ function PolicyScopeForm(): ReactElement {
                         <Flex direction={{ default: 'column' }}>
                             <Title headingLevel="h3">Included resources</Title>
                             <div>
-                                Define which clusters, namespaces, and deployments this policy
-                                evaluates. If no inclusions are added, all resources are included.
+                                Define one or more clusters, namespaces of workloads (if applicable)
+                                to apply this policy to. If no inclusions are configured, the policy
+                                will apply to all resources in your environment, except those
+                                excluded.
                             </div>
                             <PolicyScopeRE2Description />
                         </Flex>
@@ -211,9 +213,8 @@ function PolicyScopeForm(): ReactElement {
                         <Flex direction={{ default: 'column' }}>
                             <Title headingLevel="h3">Excluded resources</Title>
                             <div>
-                                Excluded resources define what this policy will not evaluate. They
-                                narrow the result of your inclusions (or all resources, if you added
-                                none).
+                                Define one or more clusters, namespaces or workloads (if applicable)
+                                to be excluded from this policy.
                             </div>
                             <PolicyScopeRE2Description />
                         </Flex>

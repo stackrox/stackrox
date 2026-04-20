@@ -198,7 +198,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                 })
                 .test(
                     'scope-has-at-least-one-property',
-                    'Each included resource must have at least one field populated',
+                    'Each inclusion must have at least one field populated',
                     (scope) =>
                         Boolean(
                             scope?.cluster.trim() ||
@@ -231,7 +231,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                 })
                 .test(
                     'excluded-scope-has-at-least-one-property',
-                    'Each excluded resource must have at least one field populated',
+                    'Each exclusion must have at least one field populated',
                     (value) =>
                         Boolean(
                             value?.name.trim() ||
