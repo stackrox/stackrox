@@ -597,6 +597,10 @@ func composePostTransforms(a, b func(interface{}) interface{}) func(interface{})
 	return func(v interface{}) interface{} {
 		aResult := a(v)
 		bResult := b(v)
+		// PostTransform returns interface{}, but for map fields (labels,
+		// annotations) the concrete type is []string. If either assertion
+		// fails we skip the merge and return aResult untouched — this is
+		// safe because only map fields produce duplicate SelectPath entries.
 		aSlice, aOk := aResult.([]string)
 		bSlice, bOk := bResult.([]string)
 		if aOk && bOk {
