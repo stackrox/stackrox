@@ -121,6 +121,10 @@ type FileActivityWorkload struct {
 	ActivityInterval time.Duration `yaml:"activityInterval"`
 	BatchSize        int           `yaml:"batchSize"`
 	NumPaths         int           `yaml:"numPaths"`
+	// NodeEventPercent is the percentage of events generated as node-level (0-100).
+	// The remainder are deployment-level events with a container ID.
+	// Default: 50
+	NodeEventPercent int `yaml:"nodeEventPercent"`
 }
 
 // Workload is the definition of a scale workload

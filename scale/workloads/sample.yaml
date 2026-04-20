@@ -89,4 +89,6 @@ fileActivityWorkload:
   batchSize: 100
   # Number of unique file paths to generate events for
   numPaths: 200
+  # Percentage of events generated as node-level (0-100), remainder are deployment-level
+  nodeEventPercent: 50
 
