@@ -81,3 +81,12 @@ virtualMachineWorkload:
   # Delay before the first index report for each VM (±20% max deviation applied)
   initialReportDelay: 10s
 
+# File activity workload generates synthetic file access events (requires ROX_SENSITIVE_FILE_ACTIVITY=true)
+fileActivityWorkload:
+  # Every time the specified interval is reached...
+  activityInterval: 1s
+  # ...create this many random file access events
+  batchSize: 100
+  # Number of unique file paths to generate events for
+  numPaths: 200
+

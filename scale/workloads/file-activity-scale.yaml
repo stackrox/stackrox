@@ -1,0 +1,27 @@
+nodeWorkload:
+  numNodes: 10
+
+numNamespaces: 3
+
+deploymentWorkload:
+- deploymentType: Deployment
+  numDeployments: 100
+  numLabels: 5
+  lifecycleDuration: 30m
+  updateInterval: 5m
+  podWorkload:
+    numContainers: 2
+    numPods: 3
+    lifecycleDuration: 10m
+    processWorkload:
+      processInterval: 30s
+      alertRate: 0
+
+networkWorkload:
+  flowInterval: 60s
+  batchSize: 50
+
+fileActivityWorkload:
+  activityInterval: 100ms
+  batchSize: 100
+  numPaths: 500

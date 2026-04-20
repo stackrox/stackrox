@@ -116,6 +116,13 @@ type VirtualMachineWorkload struct {
 	NumPackages int `yaml:"numPackages"`
 }
 
+// FileActivityWorkload defines the rate and shape of file activity events
+type FileActivityWorkload struct {
+	ActivityInterval time.Duration `yaml:"activityInterval"`
+	BatchSize        int           `yaml:"batchSize"`
+	NumPaths         int           `yaml:"numPaths"`
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
 	DeploymentWorkload     []DeploymentWorkload    `yaml:"deploymentWorkload"`
@@ -126,6 +133,7 @@ type Workload struct {
 	ServiceWorkload        ServiceWorkload         `yaml:"serviceWorkload"`
 	SecretWorkload         SecretWorkload          `yaml:"secretWorkload"`
 	VirtualMachineWorkload VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
+	FileActivityWorkload   FileActivityWorkload    `yaml:"fileActivityWorkload"`
 	NumNamespaces          int                     `yaml:"numNamespaces"`
 	MatchLabels            bool                    `yaml:"matchLabels"`
 }

@@ -13,8 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
@@ -27,8 +31,14 @@ var (
 
 // MakeFakeClient creates a k8s client that is not connected to any cluster
 func MakeFakeClient() *ClientSet {
+	scheme := runtime.NewScheme()
+	_ = apiextensionsv1.AddToScheme(scheme)
+	listKinds := map[schema.GroupVersionResource]string{
+		{Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions"}: "CustomResourceDefinitionList",
+	}
 	return &ClientSet{
-		k8s: fake.NewClientset(),
+		k8s:     fake.NewClientset(),
+		dynamic: fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, listKinds),
 	}
 }
 

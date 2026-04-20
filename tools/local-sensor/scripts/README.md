@@ -106,3 +106,42 @@ These steps will generate five output files located in `tools/local-sensor/out`:
 - `local-sensor-cpu-<date>.prof`: Contains the CPU profile of the test run.
 - `local-sensor-mem-<date>.prof`: Contains the Memory profile of the test run.
 - `sensor_events_dump.json`: Contains information of all the events sent from sensor.
+
+## File activity load testing
+
+The script can generate synthetic file activity events to stress-test the Sensor file activity pipeline. This runs without a cluster -- it uses the fake collector and fake central.
+
+### Quick start
+
+```bash
+# Build and run a 60-second load test at 1000 events/sec
+./local-sensor.sh --build --file-activity-load --file-activity-rate 1000
+```
+
+### Full options
+
+```bash
+./local-sensor.sh --build --file-activity-load \
+  --file-activity-rate 5000 \
+  --file-activity-paths 200 \
+  --file-activity-duration 120 \
+  --with-policies path/to/policies.json
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--file-activity-load` | off | Enable the file activity load test |
+| `--file-activity-rate` | 100 | Target events/sec (0 = unlimited burst) |
+| `--file-activity-paths` | 50 | Number of unique file paths |
+| `--file-activity-duration` | 60 | Test duration in seconds |
+| `--file-activity-hostname` | fake-collector | Hostname on generated events |
+| `--file-activity-container` | (empty) | Container ID (empty = node-level events) |
+| `--with-policies` | sensor/tests/data/policies.json | Policies file for evaluation |
+
+### Output
+
+Results are printed to stdout and saved to `tools/local-sensor/out/`:
+
+- `file_activity_report.txt`: Human-readable summary with achieved rate, drop count, and queue metrics.
+- `file_activity_metrics.json`: Raw Prometheus metrics dump (requires `jq` for formatted report).
+- `file_activity_load.log`: Full local-sensor log output.
