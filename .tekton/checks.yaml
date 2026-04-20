@@ -8,18 +8,14 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    pipelinesascode.tekton.dev/on-comment: "/konflux-retest go-mod-validation"
+    pipelinesascode.tekton.dev/on-comment: "/konflux-retest checks"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" &&
-      (has(body.pull_request) && has(body.pull_request.labels) &&
-       body.pull_request.labels.exists(l, l.name == "go-mod-check")) &&
-      body.action != "ready_for_review"
-    pipelinesascode.tekton.dev/on-label: "[]"
+      (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
+      (event == "pull_request" && body.action != "ready_for_review")
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: go-mod-validation
     pipelines.appstudio.openshift.io/type: build
-  name: go-mod-validation-on-push
+  name: checks
   namespace: rh-acs-tenant
 
 spec:
@@ -101,10 +97,6 @@ spec:
       description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
       name: oci-artifact-expires-after
       type: string
-    - default: "false"
-      description: Enable cache proxy configuration
-      name: enable-cache-proxy
-      type: string
 
     results:
     - description: ""
@@ -121,20 +113,6 @@ spec:
 
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
-
-    - name: init
-      params:
-      - name: enable-cache-proxy
-        value: $(params.enable-cache-proxy)
-      taskRef:
-        params:
-        - name: name
-          value: init
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-init:0.4@sha256:288f3106118edc1d0f0c79a89c960abf5841a4dd8bc3f38feb10527253105b19
-        - name: kind
-          value: task
-        resolver: bundles
 
     - name: clone-repository
       params:
@@ -163,35 +141,32 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
-    - name: verify-go-mod-tidy
+    - name: verify-go-builder-version
       params:
       - name: IMAGE
         value: $(params.output-image-repo):$(params.revision)-go-mod-validation
       - name: DOCKERFILE
-        value: image/go-mod-validation/Dockerfile
+        value: .konflux/go-mod-validation.konflux.Dockerfile
       - name: CONTEXT
         value: .
       - name: IMAGE_EXPIRES_AFTER
         value: $(params.oci-artifact-expires-after)
       - name: COMMIT_SHA
         value: $(params.revision)
-      - name: PLATFORM
-        value: linux/amd64
       - name: SOURCE_ARTIFACT
         value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
       taskRef:
         params:
         - name: name
-          value: buildah-remote-oci-ta
+          value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.9@sha256:a9ca472e297388d6ef8d1f51ee205abee6076aed7c5356ec0df84f14a2e78ad8
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:4f177774f52d6ab28ceda38ae843d40fbcd6a32ae637637ae23cbb207e675185
         - name: kind
           value: task
         resolver: bundles
 
   taskRunTemplate:
-    # TODO: Change to build-pipeline-go-mod-validation once created
-    serviceAccountName: build-pipeline-roxctl
+    serviceAccountName: build-pipeline-operator-bundle
 
   timeouts:
     tasks: 10m
