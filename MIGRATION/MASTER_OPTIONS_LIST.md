@@ -125,9 +125,8 @@ kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.
 kubectl get servicemonitor -n stackrox
 ```
 **Expected output:**
-- Default (auto): Monitoring files ARE created in baseline (enabled on OpenShift by default)
-- When explicitly enabled/disabled: Unknown (not tested)
-**Note:** OpenShift only. Default `auto` creates monitoring resources. Behavior when explicitly set to false/true not verified.
+- Default (auto): ServiceMonitor and related monitoring resources exist
+**Note:** OpenShift only. With default `auto`, monitoring resources are created.
 
 ---
 
@@ -347,22 +346,23 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
 **Default:** (none)
 **Description:** Generate deployment files supporting the given Istio version (valid: 1.0-1.7)
-**Note:** k8s modes specify "kubectl output format only"
-**Impact:** Appends DestinationRule resources to service YAML files
+**Impact:** Appends Istio DestinationRule resources to service YAML files to disable Istio mTLS on specific ports (since StackRox uses built-in mTLS)
 **Affected files:**
-- `central/01-central-14-service.yaml` - DestinationRule appended
-- `scanner/02-scanner-07-service.yaml` - DestinationRule appended
-- `scanner-v4/02-scanner-v4-08-db-service.yaml` - DestinationRule appended
-- `scanner-v4/02-scanner-v4-08-indexer-service.yaml` - DestinationRule appended
-- `scanner-v4/02-scanner-v4-08-matcher-service.yaml` - DestinationRule appended
+- `central/01-central-14-service.yaml` - Appends DestinationRule `central-internal-no-istio-mtls` (disables mTLS on port 443)
+- `scanner/02-scanner-07-service.yaml` - Appends two DestinationRules:
+  - `scanner-internal-no-istio-mtls` (disables mTLS on ports 8080, 8443)
+  - `scanner-db-internal-no-istio-mtls` (disables mTLS on port 5432)
+- `scanner-v4/02-scanner-v4-08-db-service.yaml` - Appends DestinationRule `scanner-v4-db-internal-no-istio-mtls`
+- `scanner-v4/02-scanner-v4-08-indexer-service.yaml` - Appends DestinationRule `scanner-v4-indexer-internal-no-istio-mtls`
+- `scanner-v4/02-scanner-v4-08-matcher-service.yaml` - Appends DestinationRule `scanner-v4-matcher-internal-no-istio-mtls`
 **Detection method:**
 ```bash
-kubectl get destinationrule -n stackrox central-internal-no-istio-mtls
+kubectl get destinationrule -n stackrox
 ```
 **Expected output:**
-- Default: DestinationRule not found
-- If set: DestinationRule exists that disables Istio mTLS for port 443
-**Note:** Creates Istio DestinationRule resources, not just annotations
+- Default: No DestinationRules
+- If set: Multiple DestinationRules with names like `*-internal-no-istio-mtls`
+**Purpose:** Each DestinationRule configures Istio to disable its own mTLS (`tls.mode: DISABLE`) for specific service ports because StackRox components use their own built-in mTLS implementation.
 
 ---
 
@@ -427,7 +427,6 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 **Expected output:**
 - Default: `false`
 - If `--offline=true`: `true`
-**Note:** Related to --enable-telemetry (they affect the same env var inversely)
 
 ---
 

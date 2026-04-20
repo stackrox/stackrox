@@ -26,11 +26,11 @@ kubectl get pvc -n stackrox -l app=central-db -o jsonpath='{.items[0].spec.stora
 
 ```bash
 # Detect --db-hostpath
-kubectl get sts -n stackrox central-db -o jsonpath='{.spec.template.spec.volumes[?(@.name=="disk")].hostPath.path}'
+kubectl get deploy -n stackrox central-db -o jsonpath='{.spec.template.spec.volumes[?(@.name=="disk")].hostPath.path}'
 # Default: /var/lib/stackrox-central
 
 # Detect --db-node-selector-key/value
-kubectl get sts -n stackrox central-db -o jsonpath='{.spec.template.spec.nodeSelector}'
+kubectl get deploy -n stackrox central-db -o jsonpath='{.spec.template.spec.nodeSelector}'
 # Default: {}
 # If set: {"key":"value"}
 ```
@@ -69,8 +69,8 @@ kubectl get svc -n stackrox central -o jsonpath='{.spec.type}'
 ```bash
 # Detect --image-defaults
 kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.containers[0].image}'
-# If contains "rhacs-eng": --image-defaults=rhacs (default)
-# If contains "stackrox-io": --image-defaults=opensource
+# If contains "registry.redhat.io/advanced-cluster-security": --image-defaults=rhacs (default)
+# If contains "quay.io/stackrox-io": --image-defaults=opensource
 
 # Detect --main-image
 kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}'
@@ -78,7 +78,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 # If different: custom --main-image was used
 
 # Detect --central-db-image
-kubectl get sts -n stackrox central-db -o jsonpath='{.spec.template.spec.containers[0].image}'
+kubectl get deploy -n stackrox central-db -o jsonpath='{.spec.template.spec.containers[0].image}'
 
 # Detect --scanner-image
 kubectl get deploy -n stackrox scanner -o jsonpath='{.spec.template.spec.containers[0].image}'
@@ -120,8 +120,8 @@ kubectl get servicemonitor -n stackrox central 2>/dev/null && echo "enabled" || 
 
 ```bash
 # Detect --istio-support
-kubectl get svc -n stackrox central -o jsonpath='{.metadata.annotations}' | grep -o 'traffic\.sidecar\.istio\.io' && echo "enabled" || echo "disabled"
-# If Istio annotations present: enabled
+kubectl get destinationrule -n stackrox | grep 'internal-no-istio-mtls' && echo "enabled" || echo "disabled"
+# If DestinationRules exist: enabled
 # If not: disabled (default)
 ```
 
@@ -216,7 +216,7 @@ CENTRAL_IMAGE=$(kubectl get deploy -n stackrox central -o jsonpath='{.spec.templ
 if echo "$CENTRAL_IMAGE" | grep -q "stackrox-io"; then
     echo "Opensource images detected"
     echo "Add to Central CR: spec.image.registry: quay.io/stackrox-io"
-elif ! echo "$CENTRAL_IMAGE" | grep -q "rhacs-eng"; then
+elif ! echo "$CENTRAL_IMAGE" | grep -q "registry.redhat.io/advanced-cluster-security"; then
     echo "Custom image detected: $CENTRAL_IMAGE"
     echo "Add to Central CR: spec.central.image: $CENTRAL_IMAGE"
 fi
