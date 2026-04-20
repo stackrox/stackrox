@@ -69,7 +69,7 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     oc create clusterrolebinding system:openshift:scc:restricted --clusterrole=system:openshift:scc:restricted --group=system:authenticated || true
 fi
 
-if [[ "${USE_ROXIE_DEPLOY:-false}" != 'false' ]]; then
+if [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]]; then
     info 'Installing latest roxie release...'
     if [[ ${USE_ROXIE_VERSION:-latest} == 'latest' ]]; then
         USE_ROXIE_VERSION="$(curl -s -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
