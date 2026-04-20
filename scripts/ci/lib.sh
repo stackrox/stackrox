@@ -1512,11 +1512,7 @@ openshift_ci_import_creds() {
     shopt -s globstar
     shopt -s nullglob
     echo "openshift_ci_import_creds"
-    ls -la /tmp/vault/ || true
-    ls -la /tmp/vault/**/ || true
-    ls -la /tmp/vault/**/[A-Z]* || true
     for cred in /tmp/vault/**/[A-Z]*; do
-        echo "$(basename "$cred")"
         export "$(basename "$cred")"="$(cat "$cred")"
     done
 }
