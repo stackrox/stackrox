@@ -3,18 +3,15 @@ package phonehome
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/version"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -302,29 +299,11 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 	return c.telemeter
 }
 
-// GetGRPCInterceptor returns an API interceptor function for GRPC requests.
-func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		resp, err := handler(ctx, req)
-		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
+// GetRequestHandler returns a handler that tracks telemetry events
+// asynchronously. Register it with a RequestInterceptor.
+func (c *Client) GetRequestHandler() func(*RequestParams) {
+	return func(rp *RequestParams) {
 		go c.track(rp)
-		return resp, err
-	}
-}
-
-// GetHTTPInterceptor returns an API interceptor function for HTTP requests.
-func (c *Client) GetHTTPInterceptor() httputil.HTTPInterceptor {
-	return func(handler http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
-			handler.ServeHTTP(statusTrackingWriter, r)
-			status := 0
-			if sptr := statusTrackingWriter.GetStatusCode(); sptr != nil {
-				status = *sptr
-			}
-			rp := getHTTPRequestDetails(r.Context(), r, status)
-			go c.track(rp)
-		})
 	}
 }
 

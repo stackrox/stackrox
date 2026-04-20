@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	installationDS "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -41,7 +42,7 @@ type CentralClient struct {
 	*phonehome.Client
 
 	campaignMux       sync.RWMutex
-	telemetryCampaign phonehome.APICallCampaign
+	telemetryCampaign clientprofile.RuleSet
 }
 
 // noopClient returns a disabled client.
@@ -221,7 +222,7 @@ func (c *CentralClient) Enable() {
 	go c.Track("Telemetry Enabled", nil)
 }
 
-func (c *CentralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign) {
+func (c *CentralClient) appendRuntimeCampaign(campaign clientprofile.RuleSet) {
 	c.campaignMux.Lock()
 	defer c.campaignMux.Unlock()
 	c.telemetryCampaign = append(permanentTelemetryCampaign, campaign...)

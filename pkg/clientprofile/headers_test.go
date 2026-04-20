@@ -1,11 +1,14 @@
-package phonehome
+package clientprofile
 
 import (
+	"maps"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -151,4 +154,116 @@ func TestGetMatching_withKeyPattern(t *testing.T) {
 
 	matching = headers.GetMatching("*", "value [2-3]")
 	assert.Equal(t, map[string][]string{"Something-Else": {"value 2", "value 3"}, "Key-2": {"value 2"}}, matching)
+}
+
+func TestHeaders_Match(t *testing.T) {
+
+	t.Run("empty request", func(t *testing.T) {
+		var h Headers
+		ok, matched := h.Match(nil)
+		assert.True(t, ok)
+		assert.Equal(t, Headers{}, matched)
+
+		ok, matched = h.Match(GlobMap{"header": "value"})
+		assert.False(t, ok)
+		assert.Nil(t, matched)
+
+		ok, matched = h.Match(GlobMap{"header": NoHeaderOrAnyValue})
+		assert.True(t, ok)
+		assert.Equal(t, Headers{}, matched)
+	})
+
+	headers := Headers{
+		"Empty": {},
+		"One":   {"one"},
+		"Two":   {"one", "two"},
+	}
+
+	tests := map[string]struct {
+		patterns GlobMap
+		expected Headers
+	}{
+		"empty": {
+			expected: Headers{},
+		},
+		"empty not matching": {
+			patterns: GlobMap{
+				"Empty": "with value",
+			},
+			expected: nil,
+		},
+		"empty matching": {
+			patterns: GlobMap{
+				"Empty": NoHeaderOrAnyValue,
+			},
+			expected: Headers{"Empty": {}},
+		},
+		"unknown empty": {
+			patterns: GlobMap{
+				"Third": NoHeaderOrAnyValue,
+			},
+			expected: Headers{},
+		},
+		"one": {
+			patterns: GlobMap{
+				"One": "on?",
+			},
+			expected: Headers{"One": {"one"}},
+		},
+		"one-two": {
+			patterns: GlobMap{
+				"Two": "two",
+			},
+			expected: Headers{"Two": {"two"}},
+		},
+		"no match": {
+			patterns: GlobMap{
+				"Three": "x*",
+			},
+			expected: nil,
+		},
+		"one of multiple match": {
+			patterns: GlobMap{
+				"One": "on?",
+				"Two": "x",
+			},
+			expected: nil,
+		},
+		"all of multiple match": {
+			patterns: GlobMap{
+				"One": "on?",
+				"Two": "two",
+			},
+			expected: Headers{"One": {"one"}, "Two": {"two"}},
+		},
+		"one of multiple doesn't exist": {
+			patterns: GlobMap{
+				"One":   "on?",
+				"Two":   "two",
+				"Three": "th*",
+			},
+			expected: nil,
+		},
+		"multiple matching": {
+			patterns: GlobMap{
+				"Tw?": "one",
+				"?wo": "two",
+			},
+			expected: Headers{"Two": {"one", "two"}},
+		},
+	}
+	for name, test := range tests {
+		require.NoError(t, (&Rule{Headers: test.patterns}).Compile())
+
+		t.Run(name, func(t *testing.T) {
+			ok, h := headers.Match(test.patterns)
+			assert.Equal(t, test.expected != nil, ok)
+			// The order of the values joined from different matching keys may differ due to the map access order.
+			if assert.ElementsMatch(t, slices.Collect(maps.Keys(test.expected)), slices.Collect(maps.Keys(h))) {
+				for k, values := range test.expected {
+					assert.ElementsMatch(t, values, h[k])
+				}
+			}
+		})
+	}
 }

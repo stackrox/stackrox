@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment/mock"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
@@ -152,10 +153,13 @@ func ExampleClient_AddInterceptorFuncs() {
 		})
 	c.GrantConsent()
 
+	ri := requestinterceptor.NewRequestInterceptor()
+	ri.Add("telemetry", c.GetRequestHandler())
+
 	myServiceHandler := http.NotFoundHandler()
 
 	mux := http.NewServeMux()
-	mux.Handle("/", c.GetHTTPInterceptor()(myServiceHandler))
+	mux.Handle("/", ri.HTTPInterceptor()(myServiceHandler))
 	mux.ServeHTTP(
 		httptest.NewRecorder(),
 		httptest.NewRequest(http.MethodGet, "/service", bytes.NewReader([]byte{})),

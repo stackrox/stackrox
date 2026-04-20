@@ -1,11 +1,17 @@
-package phonehome
+package clientprofile
 
 import (
 	"net/http"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/pkg/glob"
-	"google.golang.org/grpc/metadata"
 )
+
+// NoHeaderOrAnyValue pattern allows no header or a header with any value.
+const NoHeaderOrAnyValue glob.Pattern = ""
+
+// GlobMap maps header name to value patterns for matching.
+type GlobMap map[glob.Pattern]glob.Pattern
 
 // Headers wraps http.Header with a metadata.MD-like interface.
 type Headers http.Header
@@ -93,4 +99,31 @@ func (h Headers) Set(key string, values ...string) {
 			http.Header(h).Add(key, value)
 		}
 	}
+}
+
+// Match checks whether the given headers satisfy all patterns. Returns false if
+// any pattern fails to match or if headers are absent. Returns Headers
+// containing only the matched values on success. Absent headers satisfy
+// NoHeaderOrAnyValue without appearing in the result.
+func (h Headers) Match(patterns GlobMap) (bool, Headers) {
+	result := make(Headers)
+	for header, expression := range patterns {
+		matching := h.GetMatching(header, expression)
+		if matching == nil {
+			if expression != NoHeaderOrAnyValue {
+				return false, nil
+			}
+			continue
+		}
+		for k, v := range matching {
+			if existing, ok := result[k]; ok {
+				// Append appends nil instead of an empty array. That's why the
+				// else clause is needed.
+				result[k] = append(existing, v...)
+			} else {
+				result[k] = v
+			}
+		}
+	}
+	return true, result
 }
