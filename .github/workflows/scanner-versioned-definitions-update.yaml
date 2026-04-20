@@ -288,9 +288,11 @@ jobs:
           --local-dir bundles \
           --version "$SCANNER_BUNDLE_VERSION"
 
-    - name: Create local zip for artifact
+    - name: Copy status to definitions
       run: |
-        zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
+        if [ -f bundles/status.json ]; then
+          cp bundles/status.json definitions/"$SCANNER_BUNDLE_VERSION"/
+        fi
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v7
@@ -442,6 +444,7 @@ jobs:
                 case "$f" in
                     */vulnerabilities.zip) ;;
                     */vulns.json.zst) ;;
+                    */status.json) ;;
                     *) error "found unexpected file name in bundle version '$d/': $f" ;;
                 esac
                 [ -f "$f" ] || error "non-regular file in bundle version '$d/': $f"
