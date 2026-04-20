@@ -22,6 +22,7 @@ import {
 } from 'Components/CompoundSearchFilter/attributes/namespace';
 import {
     Annotation as DeploymentAnnotation,
+    ContainerType as DeploymentContainerType,
     ID as DeploymentID,
     Inactive as DeploymentInactive,
     Label as DeploymentLabel,
@@ -55,6 +56,7 @@ const allSearchFilterEntities: CompoundSearchFilterConfig = [
         searchCategory: 'ALERTS',
         attributes: [
             DeploymentAnnotation,
+            DeploymentContainerType,
             DeploymentID,
             DeploymentLabel,
             DeploymentName,
