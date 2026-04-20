@@ -212,6 +212,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
@@ -640,10 +641,15 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	// Telemetry client has to add interceptors before starting the server.
+	// Single request interceptor computes RequestParams once and fans out to
+	// all registered handlers (telemetry, metrics, etc.).
+	ri := requestinterceptor.NewRequestInterceptor()
+	config.HTTPInterceptors = append(config.HTTPInterceptors, ri.HTTPInterceptor())
+	config.UnaryInterceptors = append(config.UnaryInterceptors, ri.UnaryServerInterceptor())
+	config.StreamInterceptors = append(config.StreamInterceptors, ri.StreamServerInterceptor())
+
 	c := phonehomeClient.Singleton()
-	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
-	config.UnaryInterceptors = append(config.UnaryInterceptors, c.GetGRPCInterceptor())
+	ri.Add("telemetry", c.GetRequestHandler())
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)

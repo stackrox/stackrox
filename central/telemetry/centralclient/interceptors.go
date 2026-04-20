@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
@@ -13,66 +14,65 @@ const userAgentHeaderKey = "User-Agent"
 var (
 	ignoredPaths = glob.Pattern("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
 
-	permanentTelemetryCampaign = phonehome.APICallCampaign{
+	permanentTelemetryCampaign = clientprofile.RuleSet{
 		{
-			Headers: phonehome.GlobMap{
+			Headers: clientprofile.GlobMap{
 				userAgentHeaderKey:                  "*roxctl*",
-				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValue,
-				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValue,
-				clientconn.ExecutionEnvironment:     phonehome.NoHeaderOrAnyValue,
+				clientconn.RoxctlCommandHeader:      clientprofile.NoHeaderOrAnyValue,
+				clientconn.RoxctlCommandIndexHeader: clientprofile.NoHeaderOrAnyValue,
+				clientconn.ExecutionEnvironment:     clientprofile.NoHeaderOrAnyValue,
 			},
 		},
 		{
 			Path: glob.Pattern("/v1/clusters").Ptr(),
-			Headers: phonehome.GlobMap{
+			Headers: clientprofile.GlobMap{
 				// ServiceNow default User-Agent includes "ServiceNow", but
 				// customers are free to change it.
 				// See https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1511513.
 				userAgentHeaderKey: "*ServiceNow*",
-				"Rh-*":             phonehome.NoHeaderOrAnyValue,
+				"Rh-*":             clientprofile.NoHeaderOrAnyValue,
 			},
 		},
 		// Capture requests from GitHub action user agents.
 		// See https://github.com/stackrox/central-login/blob/68785c129f3faba128d820cfe767558287be53a3/src/main.ts#L73
 		// and https://github.com/stackrox/roxctl-installer-action/blob/47fb4f5b275066b8322369e6e33fa010915b0d13/action.yml#L59.
-		phonehome.HeaderPattern(userAgentHeaderKey, "*-GHA*"),
+		clientprofile.HeaderPattern(userAgentHeaderKey, "*-GHA*"),
 		{
 			// Capture SBOM generation requests. Corresponding handler in central/image/service/http_handler.go.
 			Path:    glob.Pattern("/api/v1/images/sbom").Ptr(),
 			Method:  glob.Pattern("POST").Ptr(),
-			Headers: phonehome.GlobMap{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
+			Headers: clientprofile.GlobMap{userAgentHeaderKey: clientprofile.NoHeaderOrAnyValue},
 		},
 		// Capture Jenkins Plugin requests
-		phonehome.HeaderPattern(userAgentHeaderKey, "*stackrox-container-image-scanner*"),
+		clientprofile.HeaderPattern(userAgentHeaderKey, "*stackrox-container-image-scanner*"),
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
 )
 
-// apiPathsCampaign constructs an APICallCampaignCriterion from the apiWhiteList
-// setting when that setting is non-empty.
-// The criterion matches requests whose path fits the provided glob pattern and
+// apiPathsCampaign constructs a rule from the apiWhiteList setting when that
+// setting is non-empty.
+// The rule matches requests whose path fits the provided glob pattern and
 // requires only the presence (or any value) of a User-Agent header.
 // Returns nil when the apiWhiteList setting is empty.
-func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
+func apiPathsCampaign() *clientprofile.Rule {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
-		return &phonehome.APICallCampaignCriterion{
+		return &clientprofile.Rule{
 			Path: glob.Pattern("{" + pattern + "}").Ptr(),
-			Headers: phonehome.GlobMap{
-				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
+			Headers: clientprofile.GlobMap{
+				userAgentHeaderKey: clientprofile.NoHeaderOrAnyValue,
 			},
 		}
 	}
 	return nil
 }
 
-// userAgentsCampaign constructs an APICallCampaignCriterion that matches the
-// "User-Agent" header against the glob pattern defined by the userAgentsList
-// setting.
+// userAgentsCampaign constructs a rule that matches the "User-Agent" header
+// against the glob pattern defined by the userAgentsList setting.
 // If the setting is empty, it returns nil.
-func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
+func userAgentsCampaign() *clientprofile.Rule {
 	if pattern := userAgentsList.Setting(); pattern != "" {
-		return phonehome.HeaderPattern(userAgentHeaderKey, glob.Pattern("{"+pattern+"}"))
+		return clientprofile.HeaderPattern(userAgentHeaderKey, glob.Pattern("{"+pattern+"}"))
 	}
 	return nil
 }
@@ -92,8 +92,8 @@ func (c *CentralClient) apiCallInterceptor() phonehome.Interceptor {
 	return func(rp *phonehome.RequestParams, props map[string]any) bool {
 		c.campaignMux.RLock()
 		defer c.campaignMux.RUnlock()
-		return !ignoredPaths.Match(rp.Path) && c.telemetryCampaign.CountFulfilled(rp,
-			func(_ *phonehome.APICallCampaignCriterion, h phonehome.Headers) {
+		return !ignoredPaths.Match(rp.Path) && c.telemetryCampaign.CountMatched(rp,
+			func(_ *clientprofile.Rule, h clientprofile.Headers) {
 				for k, values := range h {
 					props[k] = strings.Join(values, "; ")
 				}
