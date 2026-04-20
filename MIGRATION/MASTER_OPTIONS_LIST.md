@@ -5,6 +5,8 @@ This document tracks all options available in `roxctl central generate` commands
 **Legend:**
 - ✓ = Available in this mode
 - ✗ = Not available in this mode
+- ☐ = Not tested
+- ☑ = Tested and documented
 
 ---
 
@@ -12,6 +14,7 @@ This document tracks all options available in `roxctl central generate` commands
 
 ### --db-name
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✗, k8s-hostpath ✗
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐
 **Default:** `central-db`
 **Description:** External volume name for Central DB
 **Impact:** Changes PVC name and its reference in StatefulSet
@@ -30,6 +33,7 @@ kubectl get pvc -n stackrox -l app=central-db -o jsonpath='{.items[0].metadata.n
 
 ### --db-size
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✗, k8s-hostpath ✗
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐
 **Default:** `100`
 **Description:** External volume size in Gi for Central DB
 **Impact:** Changes PVC storage request size
@@ -47,6 +51,7 @@ kubectl get pvc -n stackrox -l app=central-db -o jsonpath='{.items[0].spec.resou
 
 ### --db-storage-class
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✗, k8s-hostpath ✗
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐
 **Default:** (none - optional if default StorageClass exists)
 **Description:** Storage class name for Central DB
 **Impact:** Sets explicit storageClassName in PVC
@@ -66,6 +71,7 @@ kubectl get pvc -n stackrox -l app=central-db -o jsonpath='{.items[0].spec.stora
 
 ### --db-hostpath
 **Available in:** openshift-pvc ✗, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `/var/lib/stackrox-central`
 **Description:** Path on the host for database storage
 **Impact:** Changes hostPath volume path in central-db Deployment
@@ -83,6 +89,7 @@ kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.
 
 ### --db-node-selector-key
 **Available in:** openshift-pvc ✗, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** Node selector key (e.g. kubernetes.io/hostname)
 **Impact:** Adds nodeSelector to central-db Deployment (requires --db-node-selector-value)
@@ -100,6 +107,7 @@ kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.
 
 ### --db-node-selector-value
 **Available in:** openshift-pvc ✗, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** Node selector value
 **Impact:** Used together with --db-node-selector-key to add nodeSelector
@@ -114,6 +122,7 @@ kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.
 
 ### --openshift-monitoring
 **Available in:** openshift-pvc ✓, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✗
+**Testing Status:** openshift-pvc ☐, openshift-hostpath ☐
 **Default:** `auto`
 **Description:** Integration with OpenShift 4 monitoring
 **Impact:** Controls whether OpenShift monitoring resources are created
@@ -132,6 +141,7 @@ kubectl get servicemonitor -n stackrox
 
 ### --openshift-version
 **Available in:** openshift-pvc ✓, k8s-pvc ✗, openshift-hostpath ✓, k8s-hostpath ✗
+**Testing Status:** openshift-pvc ☐, openshift-hostpath ☐
 **Default:** `0`
 **Description:** The OpenShift major version (3 or 4) to deploy on
 **Impact:** Minimal in manifests (may affect Helm values and scripts)
@@ -146,6 +156,7 @@ kubectl get servicemonitor -n stackrox
 
 ### --backup-bundle
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** Path to the backup bundle from which to restore keys and certificates
 **Impact:** Affects TLS secrets and certificates
@@ -161,6 +172,7 @@ kubectl get secret -n stackrox central-tls -o jsonpath='{.data}'
 
 ### --ca
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** Path to a custom CA certificate to use (PEM format)
 **Impact:** Replaces auto-generated CA certificate in TLS secrets
@@ -179,6 +191,7 @@ kubectl get secret -n stackrox central-tls -o jsonpath='{.data.ca\.pem}' | base6
 
 ### --central-db-image
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (determined by --image-defaults)
 **Description:** The central-db image to use
 **Impact:** Overrides central-db image in Deployment
@@ -197,6 +210,7 @@ kubectl get deployment -n stackrox central-db -o jsonpath='{.spec.template.spec.
 
 ### --declarative-config-config-maps
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `[]`
 **Description:** List of config maps to add as declarative configuration mounts in central
 **Impact:** Mounts additional configmaps into Central deployment
@@ -215,6 +229,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.volumes
 
 ### --declarative-config-secrets
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `[]`
 **Description:** List of secrets to add as declarative configuration mounts in central
 **Impact:** Mounts additional secrets into Central deployment
@@ -234,6 +249,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.volumes
 
 ### --default-tls-cert
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** PEM cert bundle file
 **Impact:** Replaces auto-generated TLS certificate in Central TLS secret
@@ -249,6 +265,7 @@ kubectl get secret -n stackrox central-tls -o jsonpath='{.data.cert\.pem}' | bas
 
 ### --default-tls-key
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** PEM private key file
 **Impact:** Replaces auto-generated TLS private key in Central TLS secret
@@ -264,6 +281,7 @@ kubectl get secret -n stackrox central-tls -o jsonpath='{.data.key\.pem}'
 
 ### --disable-admin-password
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `false`
 **Description:** Disable the administrator password (only use if IdP configured)
 **Impact:** Minimal - htpasswd secret still created but admin password may not be used for auth
@@ -276,6 +294,7 @@ kubectl get secret -n stackrox central-tls -o jsonpath='{.data.key\.pem}'
 
 ### --enable-pod-security-policies
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `false`
 **Description:** Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)
 **Impact:** Creates PodSecurityPolicy resources (NEW FILES)
@@ -297,6 +316,7 @@ kubectl get psp | grep stackrox
 
 ### --enable-telemetry
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `true`
 **Description:** Whether to enable telemetry
 **Impact:** Controls telemetry-related environment variables (NOT ROX_OFFLINE_MODE)
@@ -318,6 +338,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 
 ### --image-defaults
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `rhacs`
 **Description:** Default container images settings (rhacs, opensource)
 **Impact:** Changes image repositories, names, and tags across ALL deployments (MAJOR IMPACT)
@@ -344,6 +365,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 
 ### --istio-support
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** Generate deployment files supporting the given Istio version (valid: 1.0-1.7)
 **Impact:** Appends Istio DestinationRule resources to service YAML files to disable Istio mTLS on specific ports (since StackRox uses built-in mTLS)
@@ -368,6 +390,7 @@ kubectl get destinationrule -n stackrox
 
 ### --lb-type
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `none`
 **Description:** The method of exposing Central
 **Valid values:** 
@@ -395,6 +418,7 @@ kubectl get svc -n stackrox central -o jsonpath='{.spec.type}'
 
 ### --main-image (-i)
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (determined by --image-defaults)
 **Description:** The main image to use
 **Impact:** Overrides main/Central image in Central deployment and config controller
@@ -415,6 +439,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 
 ### --offline
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** `false`
 **Description:** Whether to run StackRox in offline mode
 **Impact:** Sets ROX_OFFLINE_MODE environment variable in Central deployment
@@ -451,6 +476,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 
 ### --password (-p)
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (autogenerated)
 **Description:** Administrator password
 **Impact:** Sets specific admin password hash in htpasswd secret
@@ -464,6 +490,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 
 ### --plaintext-endpoints
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (none)
 **Description:** The ports or endpoints to use for plaintext (unencrypted) exposure
 **Impact:** Not fully tested - may add plaintext endpoint configuration
@@ -474,6 +501,7 @@ kubectl get deploy -n stackrox central -o jsonpath='{.spec.template.spec.contain
 
 ### --scanner-db-image
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (determined by --image-defaults)
 **Description:** The scanner-db image to use
 **Impact:** Overrides scanner-db image in Scanner deployment
@@ -492,6 +520,7 @@ kubectl get deploy -n stackrox scanner-db -o jsonpath='{.spec.template.spec.cont
 
 ### --scanner-image
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (determined by --image-defaults)
 **Description:** The scanner image to use
 **Impact:** Overrides scanner image in Scanner deployment
@@ -510,6 +539,7 @@ kubectl get deploy -n stackrox scanner -o jsonpath='{.spec.template.spec.contain
 
 ### --scanner-v4-db-image
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (determined by --image-defaults)
 **Description:** The scanner-v4-db image to use
 **Impact:** Overrides scanner-v4-db image in Scanner V4 DB deployment
@@ -528,6 +558,7 @@ kubectl get deploy -n stackrox scanner-v4-db -o jsonpath='{.spec.template.spec.c
 
 ### --scanner-v4-image
 **Available in:** openshift-pvc ✓, k8s-pvc ✓, openshift-hostpath ✓, k8s-hostpath ✓
+**Testing Status:** openshift-pvc ☐, k8s-pvc ☐, openshift-hostpath ☐, k8s-hostpath ☐
 **Default:** (determined by --image-defaults)
 **Description:** The scanner-v4 image to use
 **Impact:** Overrides scanner-v4 image in Matcher and Indexer deployments
