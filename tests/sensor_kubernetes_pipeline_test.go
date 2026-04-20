@@ -173,7 +173,68 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	t.Log("SUCCESS: All deployments visible in Central with scanned images after connection resilience test")
 }
 
+// TestSensorKubernetesPipeline_DeploymentAfterSensorRestart verifies that deployments
+// created after a sensor restart are visible in Central with image information.
+func TestSensorKubernetesPipeline_DeploymentAfterSensorRestart(t *testing.T) {
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Skip on OpenShift: test images require privileged security context")
+	}
+
+	ctx := context.Background()
+	k8sClient := createK8sClient(t)
+
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+	t.Log("Sensor is healthy (before restart)")
+
+	bounceSensorPod(ctx, t, k8sClient)
+
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+	t.Log("Sensor is healthy (after restart)")
+
+	testNamespace := "pipeline-restart-test"
+	_, err := k8sClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: testNamespace},
+	}, metav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = k8sClient.CoreV1().Namespaces().Delete(ctx, testNamespace, metav1.DeleteOptions{})
+	})
+
+	deploymentName := "nginx-after-restart"
+	require.NoError(t, createDeploymentViaAPI(t, testImageNginxLatest, deploymentName, 1, testNamespace))
+	waitForDeploymentInCentral(t, deploymentName)
+	t.Logf("Deployment '%s' visible in Central after sensor restart", deploymentName)
+}
+
 // Helper functions
+
+// bounceSensorPod deletes the sensor pod and waits for a new one to be ready.
+func bounceSensorPod(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface) {
+	pods, err := k8sClient.CoreV1().Pods(sensorNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "app=sensor",
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, pods.Items)
+
+	oldPodName := pods.Items[0].Name
+	t.Logf("Deleting sensor pod %s", oldPodName)
+	err = k8sClient.CoreV1().Pods(sensorNamespace).Delete(ctx, oldPodName, metav1.DeleteOptions{})
+	require.NoError(t, err)
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		pods, err := k8sClient.CoreV1().Pods(sensorNamespace).List(ctx, metav1.ListOptions{
+			LabelSelector: "app=sensor",
+		})
+		require.NoErrorf(c, err, "failed to list sensor pods")
+		require.NotEmptyf(c, pods.Items, "no sensor pods found")
+		pod := &pods.Items[0]
+		require.NotEqualf(c, oldPodName, pod.Name, "old sensor pod still present")
+		for _, status := range pod.Status.ContainerStatuses {
+			require.Truef(c, status.Ready, "container %s not ready", status.Name)
+		}
+	}, testTimeout, testInterval)
+	t.Log("New sensor pod is ready")
+}
 
 // configureSensorWithToxiproxy patches the sensor deployment to add toxiproxy sidecar
 // and configure sensor to proxy Central connection through toxiproxy.
