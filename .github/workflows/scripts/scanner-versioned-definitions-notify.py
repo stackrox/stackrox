@@ -51,7 +51,7 @@ def check_partial_failures() -> dict[str, list[str]]:
             local_path = Path(tmpdir) / f"status-{version}.json"
 
             if not gsutil_exists(status_url):
-                print(f"Info: status.json not found for {version}, skipping")
+                print(f"status.json not found for {version}, skipping (older git refs may predate partial failure support)")
                 continue
 
             result = gsutil_copy(status_url, local_path)
