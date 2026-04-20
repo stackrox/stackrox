@@ -11,16 +11,22 @@ import (
 	alertDS "github.com/stackrox/rox/central/alert/datastore/mocks"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/metrics/custom/api_requests"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 func TestRunner_makeRunner(t *testing.T) {
+	// Provide the interceptor so that RegisterHandler (called from
+	// runner.Reconfigure) does not block.
+	api_requests.SetInterceptor(requestinterceptor.NewRequestInterceptor())
+
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
 		cds := configDS.NewMockDataStore(ctrl)

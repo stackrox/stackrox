@@ -89,16 +89,19 @@ message PrometheusMetrics {
       // filters.
       map<string, string> exclude_filters = 3;
     }
-    // The gathering period for periodically gathered metrics. If set to zero,
-    // gathering is disabled.
+    // Period in minutes for periodic gatherers.
+    // Ignored for non-periodic gatherers.
     uint32 gathering_period_minutes = 1;
     // Metric descriptors is a map of metric names to the list of allowed
     // labels.
     map<string, Labels> descriptors = 2;
+    // Enable gathering for non-periodic gatherers, such as counters.
+    bool enabled = 3;
   }
   Group image_vulnerabilities = 1;
   Group policy_violations = 2;
   Group node_vulnerabilities = 3;
+  Group api_requests = 4;
 }
 
 // next available tag: 10

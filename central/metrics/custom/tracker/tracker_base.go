@@ -40,7 +40,8 @@ type Getter[F Finding] func(F) string
 // specific label only when provided with a finding.
 type LazyLabelGetters[F Finding] map[Label]Getter[F]
 
-// GetLabels returns a slice of label names from the list of lazy getters.
+// GetLabels returns a sorted slice of label names from the list of lazy
+// getters.
 func (ll LazyLabelGetters[F]) GetLabels() []string {
 	result := make([]string, 0, len(ll))
 	for _, label := range ll.Labels() {
@@ -139,11 +140,31 @@ type TrackerBase[F Finding] struct {
 	KnownLabels func(map[string]*storage.PrometheusMetrics_Group_Labels) []Label
 }
 
+// IsEnabled returns true if this tracker has an active configuration with
+// metrics defined. For counter trackers this also requires the enabled flag.
+func (tracker *TrackerBase[F]) IsEnabled() bool {
+	cfg, _ := tracker.getConfiguration()
+	if tracker.isCounter() {
+		return cfg.isEnabled()
+	}
+	return cfg.isGatheringEnabled()
+}
+
+// isCounter returns true if this is a counter tracker (real-time increments)
+// as opposed to a gauge tracker (periodic gathering).
+func (tracker *TrackerBase[F]) isCounter() bool {
+	return tracker.generator == nil
+}
+
 // MakeTrackerBase initializes a scoped tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
+// NOTE: Scoped counter trackers (generator == nil) are not supported and will panic.
 func MakeTrackerBase[F Finding](metricPrefix, description string,
 	getters LazyLabelGetters[F], generator FindingGenerator[F],
 ) *TrackerBase[F] {
+	if generator == nil {
+		panic("scoped counter trackers are not supported; use MakeGlobalTrackerBase for counters")
+	}
 	return makeTrackerBase(metricPrefix, description, true, getters, generator)
 }
 
@@ -165,22 +186,33 @@ func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
 	if scoped {
 		registryFactory = metrics.GetCustomRegistry
 	}
-	return &TrackerBase[F]{
+	tb := &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
 		getters:         getters,
 		generator:       generator,
 		scoped:          scoped,
 		registryFactory: registryFactory,
-		KnownLabels: func(map[string]*storage.PrometheusMetrics_Group_Labels) []Label {
-			return getters.Labels()
-		},
 	}
+	tb.KnownLabels = func(map[string]*storage.PrometheusMetrics_Group_Labels) []Label {
+		tb.metricsConfigMux.RLock()
+		defer tb.metricsConfigMux.RUnlock()
+		return tb.getters.Labels()
+	}
+	return tb
+}
+
+// ResetGetters replaces all label getters with the provided set.
+// Synchronized with IncrementCounter via metricsConfigMux.
+func (tracker *TrackerBase[F]) ResetGetters(getters LazyLabelGetters[F]) {
+	tracker.metricsConfigMux.Lock()
+	defer tracker.metricsConfigMux.Unlock()
+	tracker.getters = getters
 }
 
 // NewConfiguration does not apply the configuration.
 func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
-	current := tracker.getConfiguration()
+	current, _ := tracker.getConfiguration()
 	if current == nil {
 		current = &Configuration{}
 	}
@@ -202,6 +234,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		toAdd:          toAdd,
 		toDelete:       toDelete,
 		period:         time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		enabled:        cfg.GetEnabled(),
 	}, nil
 }
 
@@ -213,12 +246,15 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if !cfg.isEnabled() {
-			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
+		if (!cfg.isEnabled() && tracker.isCounter()) || (!cfg.isGatheringEnabled() && !tracker.isCounter()) {
+			log.Infof("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
 		}
 		tracker.unregisterMetrics(cfg.toDelete)
+	}
+	if len(cfg.toAdd) > 0 {
+		log.Infof("Configuring %s metrics: %v", tracker.description, cfg.toAdd)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
 	// Note: aggregators are recreated lazily in getGatherer() when config
@@ -253,12 +289,26 @@ func (tracker *TrackerBase[F]) registerMetrics(cfg *Configuration, metrics []Met
 
 func (tracker *TrackerBase[F]) registerMetric(gatherer *gatherer[F], cfg *Configuration, metric MetricName) {
 	help := formatMetricHelp(tracker.description, cfg, metric)
+	labels := labelsAsStrings(cfg.metrics[metric])
 
-	if err := gatherer.registry.RegisterMetric(
-		string(metric),
-		help,
-		labelsAsStrings(cfg.metrics[metric]),
-	); err != nil {
+	var err error
+	if tracker.isCounter() {
+		// Counter tracker: real-time increments.
+		err = gatherer.registry.RegisterCounter(
+			string(metric),
+			help,
+			labels,
+		)
+	} else {
+		// Gauge tracker: periodic gathering.
+		err = gatherer.registry.RegisterMetric(
+			string(metric),
+			help,
+			labels,
+		)
+	}
+
+	if err != nil {
 		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
@@ -303,10 +353,10 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 	return help.String()
 }
 
-func (tracker *TrackerBase[F]) getConfiguration() *Configuration {
+func (tracker *TrackerBase[F]) getConfiguration() (*Configuration, LazyLabelGetters[F]) {
 	tracker.metricsConfigMux.RLock()
 	defer tracker.metricsConfigMux.RUnlock()
-	return tracker.config
+	return tracker.config, tracker.getters
 }
 
 // setConfiguration updates the tracker configuration and returns the previous
@@ -321,8 +371,8 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
-	cfg := tracker.getConfiguration()
-	if !cfg.isEnabled() {
+	cfg, _ := tracker.getConfiguration()
+	if !cfg.isGatheringEnabled() {
 		return
 	}
 	id := globalScopeID
@@ -363,6 +413,45 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 		// Central traits:
 		telemeter.WithTraits(tracker.makeProps(descriptionTitle)),
 		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+// IncrementCounter increments a counter metric with label values extracted from the finding.
+// This should only be called on counter trackers (created with nil generator).
+// If no configuration exists, the increment is a no-op.
+func (tracker *TrackerBase[F]) IncrementCounter(finding F) {
+	if !tracker.isCounter() {
+		// This is a gauge tracker, not a counter tracker
+		return
+	}
+
+	cfg, getters := tracker.getConfiguration()
+	if !cfg.isEnabled() {
+		return
+	}
+
+	aggregator := makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, getters)
+	aggregator.count(finding)
+	if len(aggregator.result) == 0 {
+		return
+	}
+
+	// Ensure the global gatherer exists (counter trackers are always global).
+	if _, exists := tracker.gatherers.Load(globalScopeID); !exists {
+		// Lazy-create the global gatherer and keep it marked as running
+		// to prevent cleanup (counter trackers are always active).
+		tracker.getGatherer(globalScopeID, cfg)
+	}
+
+	// Increment counters in the global gatherer.
+	tracker.gatherers.Range(func(_, g any) bool {
+		for metric, records := range aggregator.result {
+			gatherer := g.(*gatherer[F])
+			for _, rec := range records {
+				gatherer.registry.IncrementCounter(string(metric), rec.labels)
+			}
+		}
+		return true
+	})
 }
 
 func (tracker *TrackerBase[F]) makeProps(descriptionTitle string) map[string]any {

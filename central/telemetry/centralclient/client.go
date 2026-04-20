@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,12 +38,21 @@ var (
 	log           = logging.LoggerForModule()
 )
 
+const handlerName = "telemetry"
+
 // CentralClient adds Central specific features to the generic phonehome client.
 type CentralClient struct {
 	*phonehome.Client
 
+	interceptor       *requestinterceptor.RequestInterceptor
 	campaignMux       sync.RWMutex
 	telemetryCampaign clientprofile.RuleSet
+}
+
+// SetInterceptor stores the RequestInterceptor for dynamic handler
+// registration based on the telemetry enabled state.
+func (c *CentralClient) SetInterceptor(ri *requestinterceptor.RequestInterceptor) {
+	c.interceptor = ri
 }
 
 // noopClient returns a disabled client.
@@ -194,6 +204,9 @@ func (c *CentralClient) Disable() {
 		c.Gatherer().Stop()
 	}
 	c.Client.WithdrawConsent()
+	if c.interceptor != nil {
+		c.interceptor.Remove(handlerName)
+	}
 }
 
 // Enable telemetry collection: grant consent and confirm the initial client
@@ -203,6 +216,9 @@ func (c *CentralClient) Enable() {
 		return
 	}
 	c.Client.GrantConsent()
+	if c.interceptor != nil {
+		c.interceptor.Add(handlerName, c.GetRequestHandler())
+	}
 
 	c.Gatherer().Start(
 		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
