@@ -81,6 +81,9 @@ const (
 	// Status values for UpdaterStatus
 	StatusSuccess = "success"
 	StatusFailed  = "failed"
+
+	// Per-updater timeout prevents one slow updater from starving the rest.
+	updaterTimeout = 30 * time.Minute
 )
 
 var (
@@ -189,11 +192,13 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter
 	var status ExportStatus
 	for name, o := range bundles {
 		now := time.Now()
-		bundleCtx := zlog.ContextWithValues(ctx, "bundle", name)
+		bundleCtx, cancel := context.WithTimeout(ctx, updaterTimeout)
+		bundleCtx = zlog.ContextWithValues(bundleCtx, "bundle", name)
 		bundlePath := filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name))
 
 		w, err := zstdWriter(bundlePath)
 		if err != nil {
+			cancel()
 			zlog.Error(bundleCtx).Err(err).Msg("failed to create bundle output file")
 			status.Updaters = append(status.Updaters, UpdaterStatus{
 				Name:        name,
@@ -206,6 +211,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter
 
 		err = exporter.ExportBundle(bundleCtx, w, o)
 		closeErr := w.Close()
+		cancel()
 
 		// Prefer bundle error, but capture close error if bundle succeeded
 		if err == nil && closeErr != nil {
