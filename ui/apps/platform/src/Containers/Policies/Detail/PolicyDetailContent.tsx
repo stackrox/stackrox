@@ -5,7 +5,7 @@ import { Flex, Grid, Stack, Title } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import type { NotifierIntegration } from 'types/notifier.proto';
-import type { BasePolicy, ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 import PolicyScopeSection from './PolicyScopeSection';
@@ -13,7 +13,7 @@ import PolicyBehaviorSection from './PolicyBehaviorSection';
 import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils';
 
 type PolicyDetailContentProps = {
-    policy: BasePolicy;
+    policy: ClientPolicy;
     isReview?: boolean;
 };
 
@@ -30,12 +30,17 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
             });
     }, []);
 
-    const { enforcementActions, eventSource, exclusions, scope, lifecycleStages } = policy;
-    const clientPolicy = policy as ClientPolicy;
-    const hasWizardDeploymentScopes = (clientPolicy.excludedDeploymentScopes ?? []).some(
-        (d) => d.name || d.scope
-    );
-    const hasWizardImageNames = (clientPolicy.excludedImageNames ?? []).some((name) => name !== '');
+    const {
+        enforcementActions,
+        eventSource,
+        exclusions,
+        scope,
+        lifecycleStages,
+        excludedDeploymentScopes = [],
+        excludedImageNames = [],
+    } = policy;
+    const hasWizardDeploymentScopes = excludedDeploymentScopes.some((d) => d.name || d.scope);
+    const hasWizardImageNames = excludedImageNames.some((name) => name !== '');
     const showPolicyScopeSection =
         (scope?.length ?? 0) > 0 ||
         getExcludedDeployments(exclusions).length > 0 ||
@@ -77,8 +82,8 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                         <PolicyScopeSection
                             scope={scope}
                             exclusions={exclusions}
-                            excludedDeploymentScopes={clientPolicy.excludedDeploymentScopes}
-                            excludedImageNames={clientPolicy.excludedImageNames}
+                            excludedDeploymentScopes={excludedDeploymentScopes}
+                            excludedImageNames={excludedImageNames}
                         />
                     </Stack>
                 )}

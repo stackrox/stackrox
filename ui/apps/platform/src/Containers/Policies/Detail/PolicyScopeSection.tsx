@@ -22,17 +22,17 @@ function PolicyScopeSection({
 }: PolicyScopeSectionProps): ReactElement {
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
 
-    const fromExclusionsDeployments = getExcludedDeployments(exclusions);
+    const fromClientDeployments = excludedDeploymentScopes.filter((d) => d.name || d.scope);
     const excludedDeployments =
-        fromExclusionsDeployments.length !== 0
-            ? fromExclusionsDeployments
-            : excludedDeploymentScopes.filter((d) => d.name || d.scope);
+        fromClientDeployments.length !== 0
+            ? fromClientDeployments
+            : getExcludedDeployments(exclusions);
 
-    const fromExclusionsImageNames = getExcludedImageNames(exclusions);
+    const fromClientImageNames = excludedImageNames.filter((name) => name !== '');
     const imageExclusionNames =
-        fromExclusionsImageNames.length !== 0
-            ? fromExclusionsImageNames
-            : excludedImageNames.filter((name) => name !== '');
+        fromClientImageNames.length !== 0
+            ? fromClientImageNames
+            : getExcludedImageNames(exclusions);
 
     return (
         <>
