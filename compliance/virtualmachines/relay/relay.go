@@ -207,36 +207,27 @@ func (r *Relay) markAcked(resourceID string) {
 
 // handleIncomingReport processes an incoming report with rate limiting.
 func (r *Relay) handleIncomingReport(ctx context.Context, vmReport *v1.VMReport) {
-	indexReport := vmReport.GetIndexReport()
-	vsockID := indexReport.GetVsockCid()
-
+	vsockID := vmReport.GetIndexReport().GetVsockCid()
 	now := time.Now()
+
 	for _, ev := range r.payloadCache.Upsert(vsockID, vmReport, now) {
 		observePayloadEvictionMetrics(ev)
 	}
 	metrics.IndexReportCacheSlotsUsed.Set(float64(r.payloadCache.Len()))
 
-	// Always cache metadata for the latest report.
-	r.cacheReport(indexReport)
+	r.cacheReport(vsockID, now)
 
 	if !r.tryConsume(vsockID) {
-		// Rate limited: drop and rely on agent retrying later, but track ACK recency to aid diagnostics.
-		metadata := r.getCachedReportMetadata(vsockID)
-		if r.staleAckThreshold > 0 && (metadata == nil || metadata.lastAckedAt.IsZero() || time.Since(metadata.lastAckedAt) > r.staleAckThreshold) {
+		if r.staleAckThreshold > 0 && r.isACKStale(vsockID) {
 			metrics.ReportsRateLimited.WithLabelValues("stale_ack").Inc()
 			log.Warnf("Rate limited for VSOCK %s and last ACK is stale or missing (threshold=%s); dropping report", vsockID, r.staleAckThreshold)
 		} else {
 			metrics.ReportsRateLimited.WithLabelValues("normal").Inc()
-			if metadata != nil && !metadata.lastAckedAt.IsZero() {
-				log.Debugf("Rate limited for VSOCK %s; last ACK %s ago, dropping and relying on agent retry", vsockID, time.Since(metadata.lastAckedAt))
-			} else {
-				log.Debugf("Rate limited for VSOCK %s; dropping report and relying on agent retry", vsockID)
-			}
+			log.Debugf("Rate limited for VSOCK %s; dropping report and relying on agent retry", vsockID)
 		}
 		return
 	}
 
-	// Send the report (notify UMH and forward)
 	if err := r.reportSender.Send(ctx, vmReport); err != nil {
 		// Send NACK to yourself when sending fails.
 		r.umh.HandleNACK(vsockID)
@@ -247,10 +238,7 @@ func (r *Relay) handleIncomingReport(ctx context.Context, vmReport *v1.VMReport)
 }
 
 // cacheReport stores metadata in the cache, keyed by VSOCK ID.
-func (r *Relay) cacheReport(report *v1.IndexReport) {
-	vsockID := report.GetVsockCid()
-	now := time.Now()
-
+func (r *Relay) cacheReport(vsockID string, now time.Time) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -263,50 +251,35 @@ func (r *Relay) cacheReport(report *v1.IndexReport) {
 	}
 }
 
-// getCachedReportMetadata returns a copy of cached report metadata for the given VSOCK ID.
-func (r *Relay) getCachedReportMetadata(vsockID string) *cachedReportMetadata {
+// isACKStale reports whether the last ACK for vsockID is missing or older than staleAckThreshold.
+func (r *Relay) isACKStale(vsockID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	cached, ok := r.cache[vsockID]
-	if !ok {
-		return nil
+	if !ok || cached.lastAckedAt.IsZero() {
+		return true
 	}
-
-	return &cachedReportMetadata{
-		updatedAt:   cached.updatedAt,
-		lastAckedAt: cached.lastAckedAt,
-	}
+	return time.Since(cached.lastAckedAt) > r.staleAckThreshold
 }
 
 // tryConsume checks if we can send a report for this VSOCK ID (leaky bucket).
+// The caller must ensure the cache entry exists (e.g. via cacheReport).
 func (r *Relay) tryConsume(vsockID string) bool {
 	if r.maxReportsPerMinute <= 0 {
 		// Rate limiting disabled
 		return true
 	}
 
-	now := time.Now()
-	limiter := func() *rate.Limiter {
-		r.mu.Lock()
-		defer r.mu.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-		metadata, exists := r.cache[vsockID]
-		if !exists {
-			metadata = &cachedReportMetadata{
-				updatedAt: now,
-			}
-			r.cache[vsockID] = metadata
-		}
-		if metadata.limiter == nil {
-			// Create leaky bucket: rate = maxReportsPerMinute/60, burst = 1 (no bursts)
-			ratePerSecond := r.maxReportsPerMinute / 60.0
-			metadata.limiter = rate.NewLimiter(rate.Limit(ratePerSecond), 1)
-		}
-		return metadata.limiter
-	}()
-
-	return limiter.Allow()
+	metadata := r.cache[vsockID]
+	if metadata.limiter == nil {
+		ratePerSecond := r.maxReportsPerMinute / 60.0
+		metadata.limiter = rate.NewLimiter(rate.Limit(ratePerSecond), 1)
+	}
+	return metadata.limiter.Allow()
 }
 
 // sweepPayloadCache removes expired payload cache entries and updates cache metrics.
