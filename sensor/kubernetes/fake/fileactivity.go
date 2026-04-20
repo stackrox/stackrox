@@ -9,6 +9,7 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var fileActivityDirs = []string{
@@ -44,6 +45,8 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 		batchSize = 1
 	}
 
+	var nodeNames []string
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -59,8 +62,23 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 			continue
 		}
 
+		if len(nodeNames) == 0 {
+			nodeResp, err := w.fakeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			if err != nil {
+				log.Errorf("error listing nodes for file activity: %v", err)
+				continue
+			}
+			for _, node := range nodeResp.Items {
+				nodeNames = append(nodeNames, node.Name)
+			}
+			if len(nodeNames) == 0 {
+				continue
+			}
+		}
+
 		for range batchSize {
-			activity := w.generateFileActivity(paths)
+			hostname := nodeNames[rand.Intn(len(nodeNames))]
+			activity := w.generateFileActivity(paths, hostname)
 			if activity == nil {
 				continue
 			}
@@ -73,7 +91,7 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 	}
 }
 
-func (w *WorkloadManager) generateFileActivity(paths []string) *sensorAPI.FileActivity {
+func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) *sensorAPI.FileActivity {
 	containerID, ok := w.containerPool.randomElem()
 	if !ok {
 		return nil
@@ -101,7 +119,7 @@ func (w *WorkloadManager) generateFileActivity(paths []string) *sensorAPI.FileAc
 	activity := &sensorAPI.FileActivity{
 		Timestamp: now,
 		Process:   process,
-		Hostname:  "fake-workload",
+		Hostname:  hostname,
 	}
 
 	switch rand.Intn(6) {
