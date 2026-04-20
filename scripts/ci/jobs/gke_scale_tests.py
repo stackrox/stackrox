@@ -4,6 +4,7 @@
 Run the scale test in a GKE cluster
 """
 import os
+import scanner_v4_defaults
 from runners import ClusterTestRunner
 from clusters import GKECluster
 from pre_tests import PreSystemTests
@@ -15,10 +16,13 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["STORAGE"] = "pvc"
 os.environ["STORAGE_CLASS"] = "faster"
-os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
 os.environ["STORAGE_SIZE"] = "100"
 os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
+
+# Scanner V4
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = scanner_v4_defaults.VULN_BUNDLE_ALLOWLIST
 
 ClusterTestRunner(
     cluster=GKECluster("scale-test", machine_type="e2-standard-8"),

@@ -199,6 +199,8 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_TAILORED_PROFILES "${ROX_TAILORED_PROFILES:-true}"
+    ci_export ROX_SCANNER_V4 "true"
+    ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -370,6 +372,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_TAILORED_PROFILES'
     customize_envVars+=$'\n        value: "true"'
+    if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+        customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST'
+        customize_envVars+=$'\n        value: '"\"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}\""
+    fi
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
@@ -379,6 +385,10 @@ deploy_central_via_operator() {
 
     local scannerV4DbPersistenceYaml
     scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
+        customize_envVars+=$'\n        value: "vulnerability"'
+    fi
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -1186,16 +1196,29 @@ wait_for_ready_deployment() {
 wait_for_scanner_V4() {
     local namespace="$1"
     local max_seconds=${MAX_WAIT_SECONDS:-300}
+    local matcher_max_seconds="$max_seconds"
     info "Waiting for Scanner V4 to become ready..."
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
         # OCP Interop tests are run on minimal instances and will take longer
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
+        matcher_max_seconds="$max_seconds"
         info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
+    fi
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+        # Slowness or timeout may indicate that a low performance disk is used by
+        # the Scanner V4 DB PVC. If storage class is unset the cluster default
+        # storage class is used.
+        info "SCANNER_V4_DB_STORAGE_CLASS=${SCANNER_V4_DB_STORAGE_CLASS:-<unset>}"
+        info "Listing available storage classes:"
+        kubectl describe storageclasses 2>/dev/null || true
+
+        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-2400}
+        info "Waiting ${matcher_max_seconds}s for matcher vulnerability readiness..."
     fi
 
     wait_for_ready_deployment "$namespace" "scanner-v4-indexer" "$max_seconds"
-    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$max_seconds"
+    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$matcher_max_seconds"
 }
 
 # shellcheck disable=SC2120

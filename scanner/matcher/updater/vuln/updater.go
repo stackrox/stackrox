@@ -42,7 +42,7 @@ const (
 	defaultUpdateRetention = libvuln.DefaultUpdateRetention
 	defaultFullGCInterval  = 24 * time.Hour
 
-	defaultRetryMax   = 4
+	defaultRetryMax   = 12
 	defaultRetryDelay = 10 * time.Second
 )
 
@@ -338,7 +338,15 @@ func (u *Updater) Start() error {
 			}
 			zlog.Info(ctx).Msg("completed update")
 
-			timer.Reset(u.updateInterval + jitter())
+			// Skip jitter when vulns have never been loaded, so that a
+			// failed first attempt (e.g. Central not yet ready at startup)
+			// retries after the base interval rather than base+jitter
+			// (10-25 min), which can exceed the CI readiness timeout.
+			interval := u.updateInterval + jitter()
+			if !u.Initialized(ctx) {
+				interval = u.updateInterval
+			}
+			timer.Reset(interval)
 		}
 	}
 }
@@ -610,7 +618,7 @@ func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp ti
 		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
 		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		resp, err = u.client.Do(req)
-		if attempt < u.retryMax && isConnectionRefused(err) {
+		if attempt < u.retryMax && isRetryableDialError(err) {
 			zlog.Error(ctx).
 				Err(err).
 				Str("delay", u.retryDelay.String()).
@@ -633,9 +641,13 @@ func closeResponse(resp *http.Response) {
 	}
 }
 
-func isConnectionRefused(err error) bool {
+func isRetryableDialError(err error) bool {
 	var opErr *net.OpError
-	return errors.As(err, &opErr) && opErr.Op == "dial" && strings.Contains(opErr.Err.Error(), "connection refused")
+	if !errors.As(err, &opErr) || opErr.Op != "dial" {
+		return false
+	}
+	msg := opErr.Err.Error()
+	return strings.Contains(msg, "connection refused") || strings.Contains(msg, "i/o timeout")
 }
 
 // normalizeAllowlist trims whitespace from each entry and drops empty strings.
