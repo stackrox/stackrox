@@ -27,7 +27,7 @@ export function visitExceptionConfigWithPermissions(category, resourceToAccess) 
  * Sets the exception config to the expected default as defined in the requirements document.
  */
 export function resetExceptionConfig() {
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
         const config = {
             expiryOptions: {

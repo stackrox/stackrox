@@ -53,7 +53,7 @@ export function tryCreateCollection(
     embeddedCollectionIds = [],
     resourceSelectors = []
 ) {
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
 
         cy.request({
@@ -79,7 +79,7 @@ export function tryCreateCollection(
 
 // Cleanup an existing collection via API call
 export function tryDeleteCollection(collectionName) {
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
 
         cy.request({

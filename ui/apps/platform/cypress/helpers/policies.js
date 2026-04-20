@@ -170,7 +170,7 @@ export function importPolicyFromFixture(fileName, contentsInterceptor = (c) => c
 }
 
 export function deletePolicyIfExists(policyName) {
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
 
         cy.request({

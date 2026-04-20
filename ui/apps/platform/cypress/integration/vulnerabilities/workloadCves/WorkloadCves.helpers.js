@@ -341,7 +341,7 @@ export function verifyExceptionConfirmationDetails(params) {
  * Clean up any existing watched images via API
  */
 export function unwatchAllImages() {
-    cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
         const auth = { bearer: ROX_AUTH_TOKEN };
 
         cy.request({ url: '/v1/watchedimages', auth }).as('listWatchedImages');
