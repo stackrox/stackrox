@@ -74,10 +74,10 @@ find "$dir" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 | while IFS= r
             $expect_password_bare_value = 0;
         }
 
-        # "password:" with no inline value — next line has "value: <random>"
-        $expect_password_value_key = 1 if /^\s+password:\s*$/;
+        # "password:" or "adminPassword:" with no inline value — next line has "value: <random>"
+        $expect_password_value_key = 1 if /^\s+\w*[Pp]assword:\s*$/;
 
         # "password: |" — next line is the bare password string
-        $expect_password_bare_value = 1 if /^\s+password:\s*\|/;
+        $expect_password_bare_value = 1 if /^\s+\w*[Pp]assword:\s*\|/;
     ' "$file"
 done
