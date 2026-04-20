@@ -18,11 +18,11 @@ RUN echo "SUCCESS: Go version is compatible with go.mod"
 # Test that go mod tidy actually fails on incompatible versions
 # This validates we're not relying on behavior that silently changed
 RUN echo "Testing go mod tidy failure detection..."
-RUN go mod edit -go=1.200
+RUN go mod edit -go=1.200.0
 RUN if go mod tidy; then \
         echo "ERROR: go mod tidy succeeded with incompatible version"; \
         echo "Our assumption about go mod tidy behavior is broken!"; \
         exit 1; \
     else \
-        echo "SUCCESS: go mod tidy correctly failed with incompatible version"; \
+        echo "SUCCESS: go mod tidy correctly detects an incompatible Go version"; \
     fi
