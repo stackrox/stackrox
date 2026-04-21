@@ -74,7 +74,7 @@ if [[ "$ci_job" =~ e2e|upgrade ]] && [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]
         local target=${1:-}
         local repo=${2:-stackrox/roxie}
         local version=${3:-latest}
-        local asset=${4:-roxie-darwin-arm64}
+        local asset=${4:-roxie-linux-amd64}
         local asset_id
 
         if [[ $version != 'latest' ]]; then
