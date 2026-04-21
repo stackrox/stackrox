@@ -79,7 +79,8 @@ if [[ "$ci_job" =~ e2e|upgrade ]] && [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]
       -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
       -H "Accept:application/octet-stream"\
       "https://github.com/stackrox/roxie/releases/download/${USE_ROXIE_VERSION}/roxie-linux-amd64" \
-        && install -b --suffix=.old /tmp/roxie /usr/bin/ || true
+        && { install -b --suffix=.old /tmp/roxie /usr/local/bin/ \
+        || install -b --suffix=.old /tmp/roxie /usr/local/go/bin/; } || true
     roxie version \
       || { cp /usr/bin/roxie.old /usr/bin/roxie && roxie version || true; }
 fi
