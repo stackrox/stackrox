@@ -39,9 +39,9 @@ const (
 	testTimeout  = 120 * time.Second
 	testInterval = 5 * time.Second
 
-	// Test deployment images
+	// Test deployment images (must be prefetched - see tests/images-to-prefetch.txt)
 	testImageNginxLatest = "quay.io/rhacs-eng/qa-multi-arch-nginx:latest"
-	testImageBusybox     = "quay.io/rhacs-eng/qa-multi-arch:busybox-1-28"
+	testImageNginx120    = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.20.0"
 	testImageNginx121    = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"
 )
 
@@ -121,8 +121,8 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	t.Log("Sensor is degraded (connection disrupted)")
 
 	// Create deployment DURING disconnection (while offline)
-	deployment2 := "busybox-during"
-	require.NoError(t, createDeploymentViaAPI(t, testImageBusybox, deployment2, 1, testNamespace))
+	deployment2 := "nginx-during"
+	require.NoError(t, createDeploymentViaAPI(t, testImageNginx120, deployment2, 1, testNamespace))
 	t.Logf("Deployment '%s' created while sensor is offline", deployment2)
 
 	// Update docker secret DURING disconnection to trigger ResolveAllDeployments while offline
