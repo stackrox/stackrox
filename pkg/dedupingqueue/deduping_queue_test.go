@@ -127,12 +127,16 @@ func (s *uniQueueSuite) TestMergeablePreservesQueueOrder() {
 	stopSignal := concurrency.NewSignal()
 	defer stopSignal.Signal()
 
-	first := q.PullBlocking(&stopSignal).(*mergeableItem)
+	firstItem := q.PullBlocking(&stopSignal)
+	first, ok := firstItem.(*mergeableItem)
+	s.Require().True(ok)
 	s.Assert().Equal("a", first.id, "merged item should keep its original position")
 	s.Assert().True(first.flag1)
 	s.Assert().True(first.flag2)
 
-	second := q.PullBlocking(&stopSignal).(*mergeableItem)
+	secondItem := q.PullBlocking(&stopSignal)
+	second, ok := secondItem.(*mergeableItem)
+	s.Require().True(ok)
 	s.Assert().Equal("b", second.id)
 }
 
