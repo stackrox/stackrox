@@ -2319,6 +2319,33 @@
                 "id": 4,
                 "name": "auto_lock_process_baselines_config",
                 "type": "AutoLockProcessBaselinesConfig"
+              },
+              {
+                "id": 5,
+                "name": "process_indicators",
+                "type": "ProcessIndicatorsConfig"
+              }
+            ],
+            "messages": [
+              {
+                "name": "ProcessIndicatorsConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "no_persistence",
+                    "type": "bool"
+                  },
+                  {
+                    "id": 2,
+                    "name": "exclude_namespace_filter",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "exclude_openshift_ns",
+                    "type": "bool"
+                  }
+                ]
               }
             ]
           },

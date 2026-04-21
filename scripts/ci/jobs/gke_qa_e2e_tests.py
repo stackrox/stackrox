@@ -10,6 +10,7 @@ from clusters import GKECluster
 # set test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["USE_ROXIE_DEPLOY"] = "true"
+os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
 
 os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"

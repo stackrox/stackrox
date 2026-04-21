@@ -647,9 +647,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 		regStore.storeByHost[fakeNamespace] = registries.NewSet(regStore.factory)
 		wg := sync.WaitGroup{}
 		doneSignal := concurrency.NewSignal()
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for {
 				select {
 				case <-doneSignal.Done():
@@ -663,7 +661,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 					_, _ = regStore.GetGlobalRegistries(&storage.ImageName{})
 				}
 			}
-		}()
+		})
 		time.Sleep(10 * time.Millisecond)
 		regStore.Cleanup()
 		doneSignal.Signal()

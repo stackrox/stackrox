@@ -46,7 +46,7 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 	for _, namespace := range namespaces {
 		for i := 0; i < numDeploymentsPerNamespace; i++ {
 			depName := fmt.Sprintf("%s_%s_dep%d", namespace.GetClusterName(), namespace.GetName(), i)
-			image := testImage(depName)
+			image := testImage(depName, map[string]string{"app": "test"}, "docker.io")
 			deployment := testDeployment(depName, namespace, image)
 			deployments = append(deployments, deployment)
 			images = append(images, image)
@@ -76,13 +76,13 @@ func testWatchedImages(numImages int) []*storage.Image {
 	images := make([]*storage.Image, 0, numImages)
 	for i := 0; i < numImages; i++ {
 		imgNamePrefix := fmt.Sprintf("w%d", i)
-		image := testImage(imgNamePrefix)
+		image := testImage(imgNamePrefix, map[string]string{"app": "watch"}, "quay.io")
 		images = append(images, image)
 	}
 	return images
 }
 
-func testImage(prefix string) *storage.Image {
+func testImage(prefix string, labels map[string]string, registry string) *storage.Image {
 	t, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
 	nvdCvss := &storage.CVSSScore{
@@ -97,9 +97,14 @@ func testImage(prefix string) *storage.Image {
 		Id: fmt.Sprintf("%s_img", prefix),
 		Name: &storage.ImageName{
 			FullName: fmt.Sprintf("%s_img", prefix),
-			Registry: "docker.io",
+			Registry: registry,
 			Remote:   fmt.Sprintf("library/%s_img", prefix),
 			Tag:      "latest",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Labels: labels,
+			},
 		},
 		SetComponents: &storage.Image_Components{
 			Components: 1,
@@ -275,5 +280,26 @@ func testViewBasedReportSnapshot(query string, scopeRules []*storage.SimpleAcces
 			AccessScopeRules: scopeRules,
 		},
 	}
+	return snap
+}
+
+func testEntityScopeReportSnapshot(entityScope *storage.EntityScope, query string,
+	imageTypes []storage.VulnerabilityReportFilters_ImageType,
+	scopeRules []*storage.SimpleAccessScope_Rules) *storage.ReportSnapshot {
+	snap := fixtures.GetReportSnapshot()
+	filters := &storage.VulnerabilityReportFilters{
+		ImageTypes:       imageTypes,
+		AccessScopeRules: scopeRules,
+		Query:            query,
+	}
+	snap.Filter = &storage.ReportSnapshot_VulnReportFilters{
+		VulnReportFilters: filters,
+	}
+	snap.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_EntityScope{
+			EntityScope: entityScope,
+		},
+	}
+	snap.Collection = nil
 	return snap
 }

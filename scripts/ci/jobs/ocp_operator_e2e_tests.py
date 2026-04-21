@@ -11,6 +11,7 @@ from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+os.environ["KUBERNETES_PROVIDER"] = "ocp"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
