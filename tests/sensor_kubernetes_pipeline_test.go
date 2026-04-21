@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,7 +33,6 @@ import (
 const (
 	toxiproxyImage       = "ghcr.io/shopify/toxiproxy:2.5.0"
 	toxiproxyAPIPort     = 8474
-	toxiproxyProxyPort   = 8989
 	sensorNamespace      = "stackrox"
 	sensorDeploymentName = "sensor"
 
@@ -57,7 +58,7 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	k8sClient := createK8sClient(t)
 
 	// Configure sensor with toxiproxy sidecar and wait for pod to be ready
-	sensorPod, originalCentralEndpoint := configureSensorWithToxiproxy(ctx, t, k8sClient)
+	sensorPod, originalCentralEndpoint, centralUpstream := configureSensorWithToxiproxy(ctx, t, k8sClient)
 
 	// Cleanup: dump sensor logs then restore original deployment
 	t.Cleanup(func() {
@@ -71,7 +72,8 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 
 	// Connect to toxiproxy API and ensure "central" proxy exists
 	toxiproxyEndpoint := fmt.Sprintf("localhost:%d", localPort)
-	centralProxy := ensureToxiproxyCentralProxy(t, toxiproxyEndpoint, originalCentralEndpoint)
+	_, centralPort := parseCentralEndpoint(t, originalCentralEndpoint)
+	centralProxy := ensureToxiproxyCentralProxy(t, toxiproxyEndpoint, centralUpstream, centralPort)
 
 	// Wait for sensor to be healthy
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
@@ -252,11 +254,11 @@ func dumpSensorLogs(ctx context.Context, t *testing.T, k8sClient kubernetes.Inte
 	t.Logf("=== Sensor logs (last %d lines from %s) ===\n%s", tailLines, podName, string(logBytes))
 }
 
-// configureSensorWithToxiproxy patches the sensor deployment to add toxiproxy sidecar
-// and configure sensor to proxy Central connection through toxiproxy.
-// Waits for the sensor pod to be ready with both containers.
-// Returns the sensor pod and the original Central endpoint.
-func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface) (*corev1.Pod, string) {
+// configureSensorWithToxiproxy patches the sensor deployment to add toxiproxy sidecar.
+// Instead of changing ROX_CENTRAL_ENDPOINT, we use hostAliases to redirect the Central
+// hostname to 127.0.0.1 so that TLS hostname validation continues to work.
+// Returns the sensor pod, the original Central endpoint, and the Central upstream (ClusterIP:port).
+func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface) (*corev1.Pod, string, string) {
 	var deploy *appsv1.Deployment
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		d, err := k8sClient.AppsV1().Deployments(sensorNamespace).Get(ctx, sensorDeploymentName, metav1.GetOptions{})
@@ -264,7 +266,7 @@ func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient k
 		deploy = d
 	}, testTimeout, testInterval)
 
-	// Extract original central endpoint
+	// Extract original central endpoint (e.g. "central.stackrox:443")
 	var originalCentralEndpoint string
 	for _, container := range deploy.Spec.Template.Spec.Containers {
 		if container.Name == "sensor" {
@@ -278,45 +280,52 @@ func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient k
 	}
 	require.NotEmpty(t, originalCentralEndpoint, "ROX_CENTRAL_ENDPOINT not found")
 
-	// Add toxiproxy sidecar container
+	// Parse hostname and port from the central endpoint
+	centralHost, centralPort := parseCentralEndpoint(t, originalCentralEndpoint)
+
+	// Get the Central service ClusterIP so toxiproxy can forward to it directly
+	centralSvc, err := k8sClient.CoreV1().Services(sensorNamespace).Get(ctx, "central", metav1.GetOptions{})
+	require.NoError(t, err, "failed to get central service")
+	centralClusterIP := centralSvc.Spec.ClusterIP
+	require.NotEmpty(t, centralClusterIP, "central service has no ClusterIP")
+	t.Logf("Central service ClusterIP: %s, original endpoint: %s", centralClusterIP, originalCentralEndpoint)
+
+	// Add hostAlias to redirect the Central hostname to localhost.
+	// This way sensor still connects to "central.stackrox:443" (TLS validates)
+	// but traffic goes to 127.0.0.1 where toxiproxy listens.
+	deploy.Spec.Template.Spec.HostAliases = append(deploy.Spec.Template.Spec.HostAliases, corev1.HostAlias{
+		IP:        "127.0.0.1",
+		Hostnames: []string{centralHost},
+	})
+
+	// Add toxiproxy sidecar container listening on the Central port
 	toxiproxyContainer := corev1.Container{
 		Name:  "toxiproxy",
 		Image: toxiproxyImage,
 		Ports: []corev1.ContainerPort{
 			{ContainerPort: toxiproxyAPIPort, Name: "toxiproxy-api", Protocol: corev1.ProtocolTCP},
-			{ContainerPort: toxiproxyProxyPort, Name: "toxiproxy-proxy", Protocol: corev1.ProtocolTCP},
+			{ContainerPort: int32(centralPort), Name: "toxiproxy-proxy", Protocol: corev1.ProtocolTCP},
+		},
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Add: []corev1.Capability{"NET_BIND_SERVICE"},
+			},
 		},
 	}
+	deploy.Spec.Template.Spec.Containers = append(deploy.Spec.Template.Spec.Containers, toxiproxyContainer)
 
-	// Find sensor container and update env vars
+	// Add fast reconnection env vars (don't change ROX_CENTRAL_ENDPOINT)
 	for i := range deploy.Spec.Template.Spec.Containers {
 		if deploy.Spec.Template.Spec.Containers[i].Name == "sensor" {
-			// Replace or add env vars
-			envVars := []corev1.EnvVar{}
-			for _, env := range deploy.Spec.Template.Spec.Containers[i].Env {
-				if env.Name == "ROX_CENTRAL_ENDPOINT" {
-					// Replace with localhost endpoint
-					envVars = append(envVars, corev1.EnvVar{Name: "ROX_CENTRAL_ENDPOINT", Value: fmt.Sprintf("localhost:%d", toxiproxyProxyPort)})
-				} else {
-					envVars = append(envVars, env)
-				}
-			}
-			// Add new env vars for toxiproxy and fast reconnection
-			envVars = append(envVars,
-				corev1.EnvVar{Name: "ROX_CENTRAL_ENDPOINT_NO_PROXY", Value: originalCentralEndpoint},
-				corev1.EnvVar{Name: "ROX_CHAOS_PROFILE", Value: "none"},
+			deploy.Spec.Template.Spec.Containers[i].Env = append(deploy.Spec.Template.Spec.Containers[i].Env,
 				corev1.EnvVar{Name: "ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", Value: "1s"},
 				corev1.EnvVar{Name: "ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", Value: "2s"},
 			)
-			deploy.Spec.Template.Spec.Containers[i].Env = envVars
 			break
 		}
 	}
 
-	// Add toxiproxy container
-	deploy.Spec.Template.Spec.Containers = append(deploy.Spec.Template.Spec.Containers, toxiproxyContainer)
-
-	_, err := k8sClient.AppsV1().Deployments(sensorNamespace).Update(ctx, deploy, metav1.UpdateOptions{})
+	_, err = k8sClient.AppsV1().Deployments(sensorNamespace).Update(ctx, deploy, metav1.UpdateOptions{})
 	require.NoError(t, err, "failed to update sensor deployment")
 
 	// Wait for sensor pod to be ready with both containers
@@ -328,7 +337,6 @@ func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient k
 		require.NoErrorf(c, err, "failed to list sensor pods")
 		require.NotEmptyf(c, pods.Items, "no sensor pods found")
 
-		// Check if pod has both containers ready
 		pod := &pods.Items[0]
 		readyContainers := 0
 		for _, status := range pod.Status.ContainerStatuses {
@@ -341,12 +349,22 @@ func configureSensorWithToxiproxy(ctx context.Context, t *testing.T, k8sClient k
 	}, testTimeout, testInterval)
 
 	t.Logf("Sensor pod %s is ready with toxiproxy", sensorPod.Name)
-	return sensorPod, originalCentralEndpoint
+	centralUpstream := fmt.Sprintf("%s:%d", centralClusterIP, centralPort)
+	return sensorPod, originalCentralEndpoint, centralUpstream
 }
 
-// cleanupSensorToxiproxyConfig removes toxiproxy sidecar and restores original sensor configuration.
+// parseCentralEndpoint splits a central endpoint like "central.stackrox:443" into host and port.
+func parseCentralEndpoint(t *testing.T, endpoint string) (string, int) {
+	parts := strings.SplitN(endpoint, ":", 2)
+	require.Len(t, parts, 2, "invalid central endpoint format: %s", endpoint)
+	port, err := strconv.Atoi(parts[1])
+	require.NoError(t, err, "invalid port in central endpoint: %s", endpoint)
+	return parts[0], port
+}
+
+// cleanupSensorToxiproxyConfig removes toxiproxy sidecar, hostAliases, and retry env vars.
 // Waits for the sensor pod to be ready with restored configuration.
-func cleanupSensorToxiproxyConfig(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface, originalCentralEndpoint string) {
+func cleanupSensorToxiproxyConfig(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface, _ string) {
 	var deploy *appsv1.Deployment
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		d, err := k8sClient.AppsV1().Deployments(sensorNamespace).Get(ctx, sensorDeploymentName, metav1.GetOptions{})
@@ -363,17 +381,15 @@ func cleanupSensorToxiproxyConfig(ctx context.Context, t *testing.T, k8sClient k
 	}
 	deploy.Spec.Template.Spec.Containers = containers
 
-	// Restore original env vars
+	// Remove hostAliases
+	deploy.Spec.Template.Spec.HostAliases = nil
+
+	// Remove retry env vars
 	for i := range deploy.Spec.Template.Spec.Containers {
 		if deploy.Spec.Template.Spec.Containers[i].Name == "sensor" {
 			envVars := []corev1.EnvVar{}
 			for _, env := range deploy.Spec.Template.Spec.Containers[i].Env {
-				if env.Name == "ROX_CENTRAL_ENDPOINT" && env.Value == fmt.Sprintf("localhost:%d", toxiproxyProxyPort) {
-					// Restore original endpoint
-					envVars = append(envVars, corev1.EnvVar{Name: "ROX_CENTRAL_ENDPOINT", Value: originalCentralEndpoint})
-				} else if env.Name != "ROX_CENTRAL_ENDPOINT_NO_PROXY" &&
-					env.Name != "ROX_CHAOS_PROFILE" &&
-					env.Name != "ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL" &&
+				if env.Name != "ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL" &&
 					env.Name != "ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL" {
 					envVars = append(envVars, env)
 				}
@@ -394,7 +410,6 @@ func cleanupSensorToxiproxyConfig(ctx context.Context, t *testing.T, k8sClient k
 		require.NoErrorf(c, err, "failed to list sensor pods")
 		require.NotEmptyf(c, pods.Items, "no sensor pods found")
 
-		// Check if pod has only sensor container ready
 		pod := &pods.Items[0]
 		require.Equalf(c, 1, len(pod.Status.ContainerStatuses), "expected 1 container, got %d", len(pod.Status.ContainerStatuses))
 		require.Truef(c, pod.Status.ContainerStatuses[0].Ready, "sensor container not ready")
@@ -473,34 +488,25 @@ func setupPortForward(t *testing.T, pod *corev1.Pod, remotePort int32) (uint16, 
 	return localPort, cleanup
 }
 
-// ensureToxiproxyCentralProxy connects to toxiproxy API and returns the "central" proxy.
-// It waits for sensor to create the proxy during initialization (via ROX_CHAOS_PROFILE).
-// If sensor fails to create it (sidecar race condition), the test creates it as a fallback.
-func ensureToxiproxyCentralProxy(t *testing.T, toxiproxyEndpoint, centralEndpoint string) *toxiproxy.Proxy {
+// ensureToxiproxyCentralProxy creates the "central" proxy in toxiproxy.
+// The proxy listens on the Central port (so sensor's unmodified ROX_CENTRAL_ENDPOINT connects through it)
+// and forwards to the Central service ClusterIP.
+func ensureToxiproxyCentralProxy(t *testing.T, toxiproxyEndpoint, centralUpstream string, listenPort int) *toxiproxy.Proxy {
 	toxiproxyClient := toxiproxy.NewClient(fmt.Sprintf("http://%s", toxiproxyEndpoint))
 
-	deadline := time.After(testTimeout)
-	ticker := time.NewTicker(testInterval)
-	defer ticker.Stop()
-
-	for {
-		proxy, err := toxiproxyClient.Proxy("central")
-		if err == nil {
-			t.Logf("Toxiproxy 'central' proxy (created by sensor): %s -> %s", proxy.Listen, proxy.Upstream)
-			return proxy
+	var centralProxy *toxiproxy.Proxy
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		proxy, err := toxiproxyClient.CreateProxy("central", fmt.Sprintf("0.0.0.0:%d", listenPort), centralUpstream)
+		if err != nil {
+			// Proxy might already exist from a previous attempt
+			proxy, err = toxiproxyClient.Proxy("central")
 		}
+		require.NoErrorf(c, err, "failed to create/get central proxy")
+		centralProxy = proxy
+	}, testTimeout, testInterval)
 
-		select {
-		case <-deadline:
-			t.Log("Sensor did not create the central proxy, creating it manually")
-			proxy, err := toxiproxyClient.CreateProxy("central", fmt.Sprintf("0.0.0.0:%d", toxiproxyProxyPort), centralEndpoint)
-			require.NoError(t, err, "failed to create central proxy")
-			t.Logf("Toxiproxy 'central' proxy (created by test): %s -> %s", proxy.Listen, proxy.Upstream)
-			return proxy
-		case <-ticker.C:
-			t.Logf("Central proxy not ready yet: %v", err)
-		}
-	}
+	t.Logf("Toxiproxy 'central' proxy: %s -> %s", centralProxy.Listen, centralProxy.Upstream)
+	return centralProxy
 }
 
 // verifyDeploymentHasScannedImage verifies that a deployment has a scanned image
