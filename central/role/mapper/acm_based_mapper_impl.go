@@ -2,12 +2,14 @@ package mapper
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
+	"golang.org/x/oauth2"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/rest"
 )
@@ -54,8 +56,14 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	if len(tokens) == 0 || tokens[0] == "" {
 		return nil, nil
 	}
-	log.Info("ACM token ", tokens[0])
-	acmClient, err := rm.clientFactory(ctx, tokens[0])
+	log.Info("OAuth Token ", tokens[0])
+	var tokenData oauth2.Token
+	err := json.Unmarshal([]byte(tokens[0]), &tokenData)
+	if err != nil {
+		return nil, errox.InvalidArgs.CausedBy("user had no token data to pass on to ACM")
+	}
+	log.Info("ACM token ", tokenData.AccessToken)
+	acmClient, err := rm.clientFactory(ctx, tokenData.AccessToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to instantiate ACM client")
 	}
