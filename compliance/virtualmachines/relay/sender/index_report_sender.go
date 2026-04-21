@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -66,10 +65,10 @@ func (s *sensorIndexReportSender) Send(ctx context.Context, vmReport *v1.VMRepor
 		result = "failure"
 	}
 	duration := time.Since(start).Seconds()
-	metrics.VMIndexReportSendAttempts.With(prometheus.Labels{"result": result}).Inc()
-	metrics.VMIndexReportSendDurationSeconds.With(prometheus.Labels{"result": result}).Observe(duration)
+	metrics.VMIndexReportSendAttempts.WithLabelValues(result).Inc()
+	metrics.VMIndexReportSendDurationSeconds.WithLabelValues(result).Observe(duration)
 
-	metrics.IndexReportsSentToSensor.With(prometheus.Labels{"failed": strconv.FormatBool(err != nil)}).Inc()
+	metrics.IndexReportsSentToSensor.WithLabelValues(strconv.FormatBool(err != nil)).Inc()
 
 	return err
 }
