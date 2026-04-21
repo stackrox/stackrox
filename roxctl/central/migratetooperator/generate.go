@@ -1,6 +1,7 @@
 package migratetooperator
 
 import (
+	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/pointers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,5 +59,9 @@ func marshalCR(cr *platform.Central) ([]byte, error) {
 		Metadata:   map[string]string{"name": cr.Name},
 		Spec:       cr.Spec,
 	}
-	return yaml.Marshal(obj)
+	out, err := yaml.Marshal(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling to YAML")
+	}
+	return out, nil
 }

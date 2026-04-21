@@ -34,7 +34,7 @@ func detect(src source) (*detectedConfig, error) {
 func detectStorage(src source) (*storageConfig, error) {
 	dep, err := src.CentralDBDeployment()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "retrieving central-db Deployment")
 	}
 
 	var diskVolume *corev1.Volume
