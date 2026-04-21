@@ -84,8 +84,13 @@ if [[ "$ci_job" =~ e2e|upgrade ]] && [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]
     for bin_path in ${PATH//:/ }; do
         install -b /tmp/roxie "$bin_path"/roxie \
           || continue
+        installed_roxie="$bin_path"/roxie
         break
     done
+    if [[ $installed_roxie != "$(which roxie)" ]]; then
+        mkdir /tmp/roxie && export PATH=/tmp/roxie/:${PATH} || true
+        install -b /tmp/roxie "/tmp/roxie"/roxie || true
+    fi
     which roxie
     roxie version || true
 fi
