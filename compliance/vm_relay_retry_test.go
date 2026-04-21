@@ -58,6 +58,23 @@ func TestCreateVMRelayStreamWithRetry_CancellationStopsRetryPromptly(t *testing.
 	assert.LessOrEqual(t, attempts.Load(), int32(1), "should not retry after cancellation")
 }
 
+func TestCreateVMRelayStreamWithRetry_DeadlineExceededStopsRetryPromptly(t *testing.T) {
+	attempts := atomic.Int32{}
+	createStream := func() (*stream.VsockIndexReportStream, error) {
+		attempts.Add(1)
+		return nil, errors.New("vsock not available")
+	}
+
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	_, err := createVMRelayStreamWithRetry(ctx, createStream)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.LessOrEqual(t, attempts.Load(), int32(1), "should not retry after deadline exceeded")
+}
+
 func TestCreateVMRelayStreamWithRetry_SucceedsImmediately(t *testing.T) {
 	createStream := func() (*stream.VsockIndexReportStream, error) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
