@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker"
 	"github.com/stackrox/rox/pkg/sac/externalrolebroker/acmclient"
 	"golang.org/x/oauth2"
-	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/rest"
 )
 
@@ -47,11 +46,13 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	if ud.Attributes == nil || len(ud.Attributes["name"]) <= 0 || len(ud.Attributes["userid"]) <= 0 {
 		return nil, errox.InvalidArgs.CausedBy("user had no attribute from which to extract roles")
 	}
-	userForCtx := &user{
-		name:       ud.Attributes["name"][0],
-		identifier: ud.Attributes["userid"][0],
-		groups:     ud.Attributes["groups"],
-	}
+	/*
+		userForCtx := &user{
+			name:       ud.Attributes["name"][0],
+			identifier: ud.Attributes["userid"][0],
+			groups:     ud.Attributes["groups"],
+		}
+	*/
 	tokens := ud.Attributes["providerToken"]
 	if len(tokens) == 0 || tokens[0] == "" {
 		return nil, nil
@@ -67,9 +68,9 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to instantiate ACM client")
 	}
-	ctxForACM := request.WithUser(ctx, userForCtx)
-	log.Info("Querying ACM for user", userForCtx)
-	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctxForACM, acmClient)
+	//ctxForACM := request.WithUser(ctx, userForCtx)
+	//log.Info("Querying ACM for user", userForCtx)
+	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get resolved roles from ACM")
 	}
