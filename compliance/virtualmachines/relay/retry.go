@@ -2,7 +2,6 @@ package relay
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -117,17 +116,11 @@ func makeDefaultOperation(umh UnconfirmedMessageHandler) Operation {
 
 		reportSender := sender.New(sensorClient)
 
-		maxPerMinuteStr := env.VMRelayMaxReportsPerMinute.Setting()
-		maxPerMinute, err := strconv.ParseFloat(maxPerMinuteStr, 64)
-		if err != nil {
-			return errors.Wrapf(err, "parsing %s value %q", env.VMRelayMaxReportsPerMinute.EnvVar(), maxPerMinuteStr)
-		}
-
 		vmRelay := New(
 			reportStream,
 			reportSender,
 			umh,
-			maxPerMinute,
+			env.VMRelayMaxReportsPerMinute.FloatSetting(),
 			env.VMRelayStaleAckThreshold.DurationSetting(),
 		)
 		return vmRelay.Run(ctx)
