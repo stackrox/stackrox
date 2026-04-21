@@ -78,7 +78,7 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	return roles, nil
 }
 
-func defaultACMClientFactory(ctx context.Context, token string) (externalrolebroker.ACMClient, error) {
+func defaultACMClientFactory(_ context.Context, token string) (externalrolebroker.ACMClient, error) {
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load k8s config")
