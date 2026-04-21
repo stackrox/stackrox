@@ -36,7 +36,7 @@ compliance-v2-tests:
 .PHONY: vm-scanning-unit-tests
 vm-scanning-unit-tests:
 	@echo "+ $@"
-	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v ./vmhelpers 2>&1 | tee test.log'
+	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v ./vmhelpers ./testmetrics 2>&1 | tee test.log'
 	@$(MAKE) report JUNIT_OUT=vm-scanning-unit-tests-results
 
 .PHONY: vm-scanning-tests
