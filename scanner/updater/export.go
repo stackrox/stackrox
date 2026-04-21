@@ -279,7 +279,7 @@ func writeStatusFile(outputDir string, status *ExportStatus) error {
 		return fmt.Errorf("marshal status: %w", err)
 	}
 	if err := os.WriteFile(statusPath, data, 0644); err != nil {
-		os.Remove(statusPath)
+		_ = os.Remove(statusPath)
 		return fmt.Errorf("write status file: %w", err)
 	}
 	return nil
