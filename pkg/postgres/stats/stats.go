@@ -107,6 +107,32 @@ type PGAnalyzeStats struct {
 	Error        string
 }
 
+// GetPGAnalyzeStats returns a tuple struct that wraps the results from the query to pg_stat_user_tables.
+// pg_stat_user_tables is used instead of pg_stat_all_tables because external database instances
+// may not grant access to pg_stat_all_tables.
+func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyzeStats {
+	var analyzeStats PGAnalyzeStats
+	rows, err := db.Query(ctx, "SELECT relname, last_autoanalyze, last_analyze, last_autovacuum, last_vacuum FROM pg_stat_user_tables ORDER BY relname LIMIT $1", limit)
+	if err != nil {
+		analyzeStats.Error = err.Error()
+		return &analyzeStats
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var analyzeStat PGAnalyzeStat
+		if err := rows.Scan(&analyzeStat.TableName, &analyzeStat.LastAutoAnalyze, &analyzeStat.LastAnalyze, &analyzeStat.LastAutoVacuum, &analyzeStat.LastVacuum); err != nil {
+			analyzeStats.Error = errors.Wrap(err, "error scanning rows from pg_stat_user_tables").Error()
+			return &analyzeStats
+		}
+		analyzeStats.AnalyzeStats = append(analyzeStats.AnalyzeStats, &analyzeStat)
+	}
+	if err := rows.Err(); err != nil {
+		analyzeStats.Error = err.Error()
+	}
+	return &analyzeStats
+}
+
 // PGStatActivity is the data model for a single row in pg_stat_activity
 type PGStatActivity struct {
 	DatabaseName    *string
@@ -165,30 +191,4 @@ func GetPGStatActivities(ctx context.Context, db postgres.DB, limit int) *PGStat
 		activities.Error = err.Error()
 	}
 	return &activities
-}
-
-// GetPGAnalyzeStats returns a tuple struct that wraps the results from the query to pg_stat_user_tables.
-// pg_stat_user_tables is used instead of pg_stat_all_tables because external database instances
-// may not grant access to pg_stat_all_tables.
-func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyzeStats {
-	var analyzeStats PGAnalyzeStats
-	rows, err := db.Query(ctx, "SELECT relname, last_autoanalyze, last_analyze, last_autovacuum, last_vacuum FROM pg_stat_user_tables ORDER BY relname LIMIT $1", limit)
-	if err != nil {
-		analyzeStats.Error = err.Error()
-		return &analyzeStats
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var analyzeStat PGAnalyzeStat
-		if err := rows.Scan(&analyzeStat.TableName, &analyzeStat.LastAutoAnalyze, &analyzeStat.LastAnalyze, &analyzeStat.LastAutoVacuum, &analyzeStat.LastVacuum); err != nil {
-			analyzeStats.Error = errors.Wrap(err, "error scanning rows from pg_stat_user_tables").Error()
-			return &analyzeStats
-		}
-		analyzeStats.AnalyzeStats = append(analyzeStats.AnalyzeStats, &analyzeStat)
-	}
-	if err := rows.Err(); err != nil {
-		analyzeStats.Error = err.Error()
-	}
-	return &analyzeStats
 }
