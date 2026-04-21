@@ -50,6 +50,8 @@ class Constants {
     static final int STACKROX_ANNOTATION_TRUNCATION_LENGTH = 254
     static final String CORE_IMAGE_INTEGRATION_NAME = "core quay"
     static final String SPLUNK_TEST_NAMESPACE = "qa-splunk"
+    static final String FACT_CONTAINER = "fact"
+    static final String COLLECTOR_DS = "collector"
 
     /*
         StackRox Product Feature Flags
