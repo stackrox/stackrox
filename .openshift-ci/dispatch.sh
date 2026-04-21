@@ -70,29 +70,47 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
 fi
 
 if [[ "$ci_job" =~ e2e|upgrade ]] && [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]]; then
-    if [[ ${USE_ROXIE_VERSION:-latest} == 'latest' ]]; then
-        USE_ROXIE_VERSION="$(curl -s -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
-          "https://api.github.com/repos/stackrox/roxie/releases/latest" | jq -r '.tag_name')"
-    fi
-    info "Installing roxie release ${USE_ROXIE_VERSION} ..."
-    curl -L -o /tmp/roxie \
-      -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN:-}" \
-      -H "Accept:application/octet-stream"\
-      "https://github.com/stackrox/roxie/releases/download/${USE_ROXIE_VERSION}/roxie-linux-amd64" \
-      || true
-    file /tmp/roxie || true
-    echo "$PATH"
+    function gh_download_release() {
+        local target=${1:-}
+        local repo=${2:-stackrox/roxie}
+        local version=${3:-latest}
+        local asset=${4:-roxie-darwin-arm64}
+        local asset_id
+
+        if [[ $version != 'latest' ]]; then
+            version="tags/${version}"
+        fi
+
+        if [[ -z $target ]]; then
+            target="-o /tmp/${asset}"
+        else
+            target="-o $target"
+        fi
+
+        asset_id="$(curl -sS \
+            -H "Authorization: Bearer ${RHACS_BOT_GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "https://api.github.com/repos/${repo}/releases/${version}" \
+          | jq -r ".assets[]|select(.name==\"${asset}\")|.id")"
+        curl "-sSL" -H "Authorization: Bearer ${RHACS_BOT_GITHUB_TOKEN}" \
+            -H 'Accept: application/octet-stream' \
+            $target \
+            "https://api.github.com/repos/${repo}/releases/assets/${asset_id}"
+    }
+    info "Installing roxie release ${USE_ROXIE_VERSION:=latest} ..."
+    gh_download_release /tmp/roxie stackrox/roxie "${USE_ROXIE_VERSION}" \
+        && type /tmp/roxie \
+        || true
+    echo "Trying to install into each path in PATH(${PATH})"
     for bin_path in ${PATH//:/ }; do
         install -b /tmp/roxie "$bin_path"/roxie \
           || continue
-        installed_roxie="$bin_path"/roxie
+        echo "roxie binary installed at ${bin_path}/roxie"
         break
     done
-    if [[ $installed_roxie != "$(which roxie)" ]]; then
-        mkdir /tmp/roxie && export PATH=/tmp/roxie/:${PATH} || true
-        install -b /tmp/roxie "/tmp/roxie"/roxie || true
-    fi
-    which roxie
+    printf "which roxie? "
+    which roxie || true
     roxie version || true
 fi
 
