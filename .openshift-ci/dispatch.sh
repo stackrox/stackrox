@@ -75,11 +75,12 @@ if [[ "$ci_job" =~ e2e|upgrade ]] && [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]
           "https://api.github.com/repos/stackrox/roxie/releases/latest" | jq -r '.tag_name')"
     fi
     info "Installing roxie release ${USE_ROXIE_VERSION} ..."
-    curl -o /tmp/roxie \
+    curl -L -o /tmp/roxie \
       -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN:-}" \
       -H "Accept:application/octet-stream"\
       "https://github.com/stackrox/roxie/releases/download/${USE_ROXIE_VERSION}/roxie-linux-amd64" \
       || true
+    file /tmp/roxie || true
     echo "$PATH"
     for bin_path in ${PATH//:/ }; do
         install -b /tmp/roxie "$bin_path"/roxie \
