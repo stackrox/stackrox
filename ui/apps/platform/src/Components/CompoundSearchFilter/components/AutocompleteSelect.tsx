@@ -18,7 +18,11 @@ import { SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import {
+    formatKeyValue,
+    getRequestQueryStringForSearchFilter,
+    isKeyValueSearchTerm,
+} from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 
@@ -113,7 +117,11 @@ function AutocompleteSelect({
         []
     );
 
-    const autocompleteSearchString = `${searchTerm}:${filterValue ? `r/${filterValue}` : ''}`;
+    let autocompleteFilterValue = filterValue ? `r/${filterValue}` : '';
+    if (filterValue && isKeyValueSearchTerm(searchTerm)) {
+        autocompleteFilterValue = formatKeyValue(filterValue, (v) => `r/${v}`).join(',');
+    }
+    const autocompleteSearchString = `${searchTerm}:${autocompleteFilterValue}`;
 
     const searchContext = {
         ...searchFilter,
