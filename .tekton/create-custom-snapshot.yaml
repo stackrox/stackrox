@@ -183,6 +183,12 @@ spec:
             echo -n "The result is: "
             echo -n "${result}" | tee "$(results.SHOULD_REALLY_WORK.path)"
 
+            echo
+            echo 'body is:'
+            cat << EOF
+              {{ cel: body }}
+            EOF
+
     - name: clone-repository
       params:
       - name: url
