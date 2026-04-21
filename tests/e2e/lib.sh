@@ -12,6 +12,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=lib-yaml.sh
+source "$TEST_ROOT/tests/e2e/lib-yaml.sh"
 
 export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
@@ -85,34 +87,25 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
-# YAML Manipulation Helpers
-
-merge_yaml() {
-    local input="$1"
-    local tmpfile; tmpfile="$(mktemp)"
-
-    yq eval-all '(select(fi == 0) // {}) * select(fi == 1)' "$input" <(cat) > "$tmpfile"
-    cat "$tmpfile" > "$input"
-    rm -f "$tmpfile"
-}
-
-patch_yaml() {
-    local input="$1"
-    local patch="$2"
-
-    yq -i eval "$patch" "$input"
-}
-
-# TODO: Make namespaces configurable.
+# Deploy StackRox using roxie.
+#
+# This is the modern way of deploying StackRox for tests.
+# This function expects two arguments:
+# 1) Namespace to deploy into (required)
+# 2) Path to a 'roxie override file' (optional)
+#
+# The override file is a YAML file with two top-level keys: 'central' and 'securedCluster',
+# which correspond to the central and sensor components respectively.
+# Expected under each key is an overlay for a central or a secured cluster custom resource.
 #
 # Uses from environment:
 #   * FEATURE_FLAGS_OVERRIDES
 deploy_stackrox_with_roxie() {
-    echo "╔═════════════════════════════════╗"
-    echo "║                                 ║"
-    echo "║  Deploying StackRox with roxie  ║"
-    echo "║                                 ║"
-    echo "╚═════════════════════════════════╝"
+    info "╔═════════════════════════════════╗"
+    info "║                                 ║"
+    info "║  Deploying StackRox with roxie  ║"
+    info "║                                 ║"
+    info "╚═════════════════════════════════╝"
 
     local namespace="$1"
     info "Deploying into namespace ${namespace}"
@@ -129,7 +122,6 @@ deploy_stackrox_with_roxie() {
     info "Determining feature flags for deployment"
     local feature_flags
     feature_flags="$(feature_flags_for_deployment "$feature_flags_overrides")"
-    log_feature_flags "$feature_flags"
 
     info "Creating admin password"
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
@@ -138,6 +130,15 @@ deploy_stackrox_with_roxie() {
     # Workaround bug in roxie
     patch_yaml "$override_file" '.central.spec.scanner.scannerComponent = "Enabled"'
     patch_yaml "$override_file" '.securedCluster.spec.scanner.scannerComponent = "AutoSense"'
+
+    # Print out the override file in use for transparency.
+    # This does not contain secrets.
+    info "Override configuration for roxie deployment:"
+    info "------------------------------------"
+    while IFS="" read -r line; do # IFS="" for preserving indentation in the output.
+        info "${line}"
+    done < <(yq eval --prettyPrint "$override_file")
+    info "------------------------------------"
 
     # Replaces deploy_stackrox steps:
     # - deploy_stackrox_operator (implicit)
@@ -184,15 +185,20 @@ deploy_stackrox_with_roxie() {
 
     wait_for_collectors_to_be_operational stackrox
 
+    # This will be rendered obsolete once --early-readiness=false is properly implemented in roxie.
+    if retrying_kubectl </dev/null -n "$namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "$namespace"
+    fi
+
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
     rm -f "$override_file"
 
-    echo "╔═════════════════════╗"
-    echo "║                     ║"
-    echo "║  StackRox deployed  ║"
-    echo "║                     ║"
-    echo "╚═════════════════════╝"
+    info "╔═════════════════════╗"
+    info "║                     ║"
+    info "║  StackRox deployed  ║"
+    info "║                     ║"
+    info "╚═════════════════════╝"
 }
 
 managed_by="stackrox-tests"
@@ -208,16 +214,32 @@ deploy_stackrox_with_roxie_compat() {
 
     if retrying_kubectl get ns "$namespace" </dev/null >/dev/null 2>&1; then
         # Deletes secrets created outside of roxie, e.g. default TLS secret for central.
-        retrying_kubectl -n "$namespace" delete secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait </dev/null
-        retrying_kubectl -n "$namespace" delete configmap declarative-configurations --wait </dev/null
-        retrying_kubectl -n "$namespace" delete configmap sensitive-declarative-configurations --wait </dev/null
+        retrying_kubectl -n "$namespace" delete --ignore-not-found=true secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait </dev/null
+        retrying_kubectl -n "$namespace" delete --ignore-not-found=true configmap declarative-configurations --wait </dev/null
+        retrying_kubectl -n "$namespace" delete --ignore-not-found=true configmap sensitive-declarative-configurations --wait </dev/null
     else
         retrying_kubectl create ns "${namespace}" </dev/null
     fi
 
-    handle_pod_security_policies
-
     local override_file; override_file="$(mktemp)"
+    roxie_override_from_environment_compat "$override_file"
+
+    deploy_stackrox_with_roxie "$namespace" "$override_file"
+    rm -f "$override_file"
+}
+
+# This function translates environment settings into a roxie override.
+# This is a compatibility function to allow using roxie with existing environment variable-based configuration for tests,
+# without needing to switch to the new override file approach immediately.
+roxie_override_from_environment_compat() {
+    local override_file="$1"
+
+    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+        info "Using Konflux-built downstream images for deployment."
+        patch_yaml "$override_file" '.roxie.useKonfluxImages = true'
+    fi
+
+    handle_pod_security_policies
 
     info "Handling TRUSTED_CA_FILE configuration"
     handle_trusted_ca_file "$override_file"
@@ -229,15 +251,46 @@ deploy_stackrox_with_roxie_compat() {
     handle_load_balancer_setting "$override_file"
 
     info "Determining custom central environment"
-    patch_yaml "$override_file" '.central.spec.customize.envVars = []'
-    custom_env_for_central | while read -r var_val; do
-        set_custom_env "$override_file" ".central.spec.customize.envVars" "$var_val"
+    {
+        env_with_default ROX_BASELINE_GENERATION_DURATION
+        env_with_default ROX_DEVELOPMENT_BUILD "true"
+        env_with_default ROX_NETWORK_BASELINE_OBSERVATION_PERIOD
+        env_with_default ROX_PROCESSES_LISTENING_ON_PORT "true"
+        env_with_default ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
+        env_with_default ROX_RISK_REPROCESSING_INTERVAL "15s"
+        env_with_default ROX_REGISTRY_RESPONSE_TIMEOUT "90s"
+        env_with_default ROX_REGISTRY_CLIENT_TIMEOUT "120s"
+        if [[ "${CGO_CHECKS:-}" == "true" ]]; then
+            env_with_default GOEXPERIMENT "cgocheck2"
+            env_with_default MUTEX_WATCHDOG_TIMEOUT_SECS "15"
+        fi
+    } | while read -r var_val; do
+        local name="${var_val%%=*}"
+        local value="${var_val#*=}"
+        set_custom_env "$override_file" "central" "$name" "$value"
+        ci_export "$name" "$value"
     done
 
-    info "Determining custom securedCluster environment"
-    patch_yaml "$override_file" '.securedCluster.spec.customize.envVars = []'
-    custom_env_for_secured_cluster | while read -r var_val; do
-        set_custom_env "$override_file" ".securedCluster.spec.customize.envVars" "$var_val"
+    info "Configuring custom securedCluster environment"
+    {
+        env_with_default ROX_NETFLOW_BATCHING "true"
+        env_with_default ROX_NETFLOW_CACHE_LIMITING "true"
+    } | while read -r var_val; do
+        local name="${var_val%%=*}"
+        local value="${var_val#*=}"
+        set_custom_env "$override_file" "securedCluster" "$name" "$value"
+        ci_export "$name" "$value"
+    done
+
+    info "Configuring custom securedCluster/collector environment"
+    {
+        env_with_default ROX_AFTERGLOW_PERIOD "15"
+        env_with_default ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
+    } | while read -r var_val; do
+        local name="${var_val%%=*}"
+        local value="${var_val#*=}"
+        set_overlay_env "$override_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
+        ci_export "$name" "$value"
     done
 
     info "Configuring scanner V4 component for deployment"
@@ -246,9 +299,6 @@ deploy_stackrox_with_roxie_compat() {
 
     info "Configuring declarative configurations"
     handle_declarative_configuration "$override_file"
-
-    deploy_stackrox_with_roxie "$namespace" "$override_file"
-    rm -f "$override_file"
 }
 
 check_for_roxie() {
@@ -296,25 +346,6 @@ export CLUSTER="${CLUSTER}"
 export API_HOSTNAME="${API_HOSTNAME}"
 export API_PORT="${API_PORT}"
 EOF
-}
-
-set_custom_env() {
-    local override_file="$1"
-    local path="$2"
-    local var_val="$3"
-    local name="${var_val%%=*}"
-    local value="${var_val#*=}"
-    info "  ${name}=${value}"
-    patch_yaml "$override_file" "${path} += {\"name\": \"${name}\", \"value\": \"${value}\"}"
-    ci_export "$name" "$value"
-}
-
-log_feature_flags() {
-    local feature_flags="$1"
-    info "Feature flags:"
-    echo "$feature_flags" | tr ',' '\n' | while read -r feature_flag; do
-        info "  $feature_flag"
-    done
 }
 
 handle_scanner_v4_setting() {
@@ -457,30 +488,7 @@ central:
 EOF
 }
 
-custom_env_for_central() {
-    # Configuration values (timeouts, durations, behavioral settings)
-    add_env ROX_BASELINE_GENERATION_DURATION
-    add_env ROX_DEVELOPMENT_BUILD "true"
-    add_env ROX_NETWORK_BASELINE_OBSERVATION_PERIOD
-    add_env ROX_PROCESSES_LISTENING_ON_PORT "true"
-    add_env ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    add_env ROX_RISK_REPROCESSING_INTERVAL "15s"
-    add_env ROX_REGISTRY_RESPONSE_TIMEOUT "90s"
-    add_env ROX_REGISTRY_CLIENT_TIMEOUT "120s"
-
-    if [[ "${CGO_CHECKS:-}" == "true" ]]; then
-        add_env GOEXPERIMENT "cgocheck2"
-        add_env MUTEX_WATCHDOG_TIMEOUT_SECS "15"
-    fi
-}
-
-custom_env_for_secured_cluster() {
-    # Configuration values (timeouts, durations, behavioral settings)
-    add_env ROX_AFTERGLOW_PERIOD "15"
-    add_env ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
-}
-
-add_env() {
+env_with_default() {
     local name="$1"
     local default_value="${2:-}"
     local value="${!name:-}"
