@@ -74,7 +74,7 @@ func (s *ManagerImplSuite) assertNameMapped(name string, expected bool, msgAndAr
 	s.Equal(expected, ok, msgAndArgs...)
 }
 
-func (s *ManagerImplSuite) invalidate(keys ...*central.InvalidateImageCache_ImageKey) {
+func (s *ManagerImplSuite) invalidate(keys ...*central.ImageKey) {
 	s.mgr.processImageCacheInvalidation(&sensor.AdmCtrlImageCacheInvalidation{
 		ImageKeys: keys,
 	})
@@ -135,7 +135,7 @@ func (s *ManagerImplSuite) TestInvalidateByImageID() {
 	s.addToImageCache("sha256:abc")
 	s.addNameMapping("nginx:latest", "sha256:abc")
 
-	s.invalidate(&central.InvalidateImageCache_ImageKey{
+	s.invalidate(&central.ImageKey{
 		ImageId:       "sha256:abc",
 		ImageFullName: "nginx:latest",
 	})
@@ -149,7 +149,7 @@ func (s *ManagerImplSuite) TestInvalidateByV2IDWhenFlattenEnabled() {
 	s.addToImageCache("v2-uuid")
 	s.addNameMapping("nginx:latest", "v2-uuid")
 
-	s.invalidate(&central.InvalidateImageCache_ImageKey{
+	s.invalidate(&central.ImageKey{
 		ImageId:       "sha256:abc",
 		ImageIdV2:     "v2-uuid",
 		ImageFullName: "nginx:latest",
@@ -164,7 +164,7 @@ func (s *ManagerImplSuite) TestFlattenEnabledV2EmptyFallsBack() {
 	s.mgr.state.Store(createTestState(true))
 	s.addToImageCache("sha256:abc")
 
-	s.invalidate(&central.InvalidateImageCache_ImageKey{
+	s.invalidate(&central.ImageKey{
 		ImageId:       "sha256:abc",
 		ImageIdV2:     "",
 		ImageFullName: "nginx:latest",
@@ -178,7 +178,7 @@ func (s *ManagerImplSuite) TestOnlyFullNameRemovesNameMappingOnly() {
 	s.addToImageCache("sha256:abc")
 	s.addNameMapping("nginx:latest", "sha256:abc")
 
-	s.invalidate(&central.InvalidateImageCache_ImageKey{
+	s.invalidate(&central.ImageKey{
 		ImageFullName: "nginx:latest",
 	})
 
@@ -191,7 +191,7 @@ func (s *ManagerImplSuite) TestOnlyImageIDRemovesCacheEntryOnly() {
 	s.addToImageCache("sha256:abc")
 	s.addNameMapping("nginx:latest", "sha256:abc")
 
-	s.invalidate(&central.InvalidateImageCache_ImageKey{
+	s.invalidate(&central.ImageKey{
 		ImageId: "sha256:abc",
 	})
 
@@ -207,8 +207,8 @@ func (s *ManagerImplSuite) TestMultipleKeysInOneMessage() {
 	s.addNameMapping("redis:7", "sha256:def")
 
 	s.invalidate(
-		&central.InvalidateImageCache_ImageKey{ImageId: "sha256:abc", ImageFullName: "nginx:latest"},
-		&central.InvalidateImageCache_ImageKey{ImageId: "sha256:def", ImageFullName: "redis:7"},
+		&central.ImageKey{ImageId: "sha256:abc", ImageFullName: "nginx:latest"},
+		&central.ImageKey{ImageId: "sha256:def", ImageFullName: "redis:7"},
 	)
 
 	s.assertCached("sha256:abc", false)
@@ -220,7 +220,7 @@ func (s *ManagerImplSuite) TestMultipleKeysInOneMessage() {
 func (s *ManagerImplSuite) TestNilStateDefaultsFlattenToFalse() {
 	s.addToImageCache("sha256:abc")
 
-	s.invalidate(&central.InvalidateImageCache_ImageKey{
+	s.invalidate(&central.ImageKey{
 		ImageId:   "sha256:abc",
 		ImageIdV2: "v2-uuid",
 	})

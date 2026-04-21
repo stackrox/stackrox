@@ -171,6 +171,9 @@ jobs:
       - name: Fetch UI deps
         run: make -C ui deps
 
+      - name: Cache ESLint results
+        uses: ./.github/actions/cache-eslint
+
       - name: make style-slim
         run: make style-slim
 
@@ -195,7 +198,7 @@ jobs:
 
     - name: Cache golangci-lint
       if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
@@ -204,7 +207,7 @@ jobs:
 
     - name: Restore golangci-lint analysis cache
       if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
-      uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache/restore@v5
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}

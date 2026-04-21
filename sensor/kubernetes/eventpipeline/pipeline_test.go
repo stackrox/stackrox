@@ -175,7 +175,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 					ReprocessDeployments: &central.ReprocessDeployments{},
 				},
 			}
-			s.detector.EXPECT().ProcessReprocessDeployments().Times(1).Do(func() {
+			s.detector.EXPECT().ProcessReprocessDeployments(gomock.Any()).Times(1).Do(func(_ *central.ReprocessDeployments) {
 				defer messageReceived.Done()
 			})
 
@@ -344,6 +344,27 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 			messageReceived.Wait()
 		})
 	}
+}
+
+func (s *eventPipelineSuite) Test_RefreshImageCacheTTL() {
+	msgFromCentral := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_RefreshImageCacheTtl{
+			RefreshImageCacheTtl: &central.RefreshImageCacheTTL{
+				ImageKeys: []*central.ImageKey{
+					{ImageId: "sha256:abc123"},
+				},
+			},
+		},
+	}
+	s.reprocessor.EXPECT().ProcessRefreshImageCacheTTL(gomock.Any()).Times(1).DoAndReturn(
+		func(req *central.RefreshImageCacheTTL) error {
+			protoassert.Equal(s.T(), msgFromCentral.GetRefreshImageCacheTtl(), req)
+			return nil
+		},
+	)
+
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
+	s.NoError(err)
 }
 
 func assertResourceEvent(t *testing.T, msg *component.ResourceEvent) {

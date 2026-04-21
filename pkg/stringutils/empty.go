@@ -1,5 +1,9 @@
 package stringutils
 
+import (
+	"slices"
+)
+
 // AllEmpty returns true if all the strings that are passed are empty
 func AllEmpty(strs ...string) bool {
 	for _, s := range strs {
@@ -45,9 +49,9 @@ func LastNonEmpty(strs ...string) string {
 	if len(strs) == 0 {
 		return ""
 	}
-	for i := len(strs) - 1; i >= 0; i-- {
-		if strs[i] != "" {
-			return strs[i]
+	for _, s := range slices.Backward(strs) {
+		if s != "" {
+			return s
 		}
 	}
 	return ""

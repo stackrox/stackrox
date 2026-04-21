@@ -145,6 +145,7 @@ func (m *Container) CloneVT() *Container {
 	r.Name = m.Name
 	r.LivenessProbe = m.LivenessProbe.CloneVT()
 	r.ReadinessProbe = m.ReadinessProbe.CloneVT()
+	r.Type = m.Type
 	if rhs := m.Volumes; rhs != nil {
 		tmpContainer := make([]*Volume, len(rhs))
 		for k, v := range rhs {
@@ -881,6 +882,9 @@ func (this *Container) EqualVT(that *Container) bool {
 		return false
 	}
 	if !this.ReadinessProbe.EqualVT(that.ReadinessProbe) {
+		return false
+	}
+	if this.Type != that.Type {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1980,6 +1984,11 @@ func (m *Container) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Type != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x68
 	}
 	if m.ReadinessProbe != nil {
 		size, err := m.ReadinessProbe.MarshalToSizedBufferVT(dAtA[:i])
@@ -3485,6 +3494,9 @@ func (m *Container) SizeVT() (n int) {
 	if m.ReadinessProbe != nil {
 		l = m.ReadinessProbe.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Type))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5754,6 +5766,25 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= ContainerType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10757,6 +10788,25 @@ func (m *Container) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= ContainerType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

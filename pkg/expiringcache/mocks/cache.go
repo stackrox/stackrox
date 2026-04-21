@@ -121,3 +121,17 @@ func (mr *MockCacheMockRecorder[K, V]) RemoveAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAll", reflect.TypeOf((*MockCache[K, V])(nil).RemoveAll))
 }
+
+// Touch mocks base method.
+func (m *MockCache[K, V]) Touch(key K) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Touch", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Touch indicates an expected call of Touch.
+func (mr *MockCacheMockRecorder[K, V]) Touch(key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Touch", reflect.TypeOf((*MockCache[K, V])(nil).Touch), key)
+}

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	reportStorage "github.com/stackrox/rox/central/complianceoperator/v2/report/store/postgres"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -196,23 +196,23 @@ func (s *complianceReportSnapshotDataStoreSuite) TestDeleteOrphaned() {
 	}
 	var reports []*storage.ComplianceOperatorReportSnapshotV2
 	for _, state := range runStates {
-		id, _ := uuid.NewUUID()
+		id := uuid.NewV4()
 		reports = append(reports, getTestReport(id.String(),
 			uuidScanConfigStub1,
 			getStatus(state, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL),
 			user))
-		id, _ = uuid.NewUUID()
+		id = uuid.NewV4()
 		reports = append(reports, getTestReport(id.String(),
 			uuidScanConfigStub1,
 			getStatus(state, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_DOWNLOAD),
 			user))
 	}
-	id, _ := uuid.NewUUID()
+	id := uuid.NewV4()
 	reports = append(reports, getTestReport(id.String(),
 		uuidScanConfigStub1,
 		getStatus(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL),
 		user))
-	id, _ = uuid.NewUUID()
+	id = uuid.NewV4()
 	reports = append(reports, getTestReport(id.String(),
 		uuidScanConfigStub1,
 		getStatus(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_DOWNLOAD),

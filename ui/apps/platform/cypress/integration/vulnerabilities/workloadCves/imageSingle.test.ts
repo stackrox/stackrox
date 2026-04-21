@@ -157,128 +157,141 @@ describe('Workload CVE Image Single page', () => {
     // see: https://issues.redhat.com/browse/ROX-24254
     //      https://github.com/stackrox/stackrox/pull/6156
     it('should display nested component data correctly when processed via apollo client', () => {
+        const isFlattenImageData = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA');
+        const imageRootKey = isFlattenImageData ? 'imageV2' : 'image';
+
         const opname = 'getCVEsForImage';
         const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
-        const body = {
-            data: {
-                image: {
-                    id: 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
-                    name: {
-                        registry: 'quay.io',
-                        remote: 'openshift-release-dev/ocp-v4.0-art-dev',
-                        tag: '',
-                        __typename: 'ImageName',
-                    },
-                    metadata: {
-                        v1: {
-                            layers: [
-                                {
-                                    instruction: 'ADD',
-                                    value: 'file:091e888311e2628528312ffc60e27702fe04b23f8e4c95b456c16a967cdd89e0 in /',
-                                    __typename: 'ImageLayer',
-                                },
-                            ],
-                            __typename: 'V1Metadata',
-                        },
-                        __typename: 'ImageMetadata',
-                    },
-                    __typename: 'Image',
-                    imageCVECountBySeverity: {
-                        unknown: {
-                            total: 0,
-                            fixable: 0,
-                            __typename: 'ResourceCountByFixability',
-                        },
-                        low: {
-                            total: 0,
-                            fixable: 0,
-                            __typename: 'ResourceCountByFixability',
-                        },
-                        moderate: {
-                            total: 1,
-                            fixable: 1,
-                            __typename: 'ResourceCountByFixability',
-                        },
-                        important: {
-                            total: 0,
-                            fixable: 0,
-                            __typename: 'ResourceCountByFixability',
-                        },
-                        critical: {
-                            total: 0,
-                            fixable: 0,
-                            __typename: 'ResourceCountByFixability',
-                        },
-                        __typename: 'ResourceCountByCVESeverity',
-                    },
-                    imageVulnerabilities: [
+
+        const imageData = {
+            id: isFlattenImageData
+                ? '4c657931-d333-5cb8-8f0d-7e3836525ec7'
+                : 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
+            ...(isFlattenImageData
+                ? {
+                      digest: 'sha256:010fec71f42f4b5e65f3f56f10af94a7c05c9c271a9bbc3026684ba170698cb5',
+                  }
+                : {}),
+            name: {
+                registry: 'quay.io',
+                remote: 'openshift-release-dev/ocp-v4.0-art-dev',
+                tag: '',
+                __typename: 'ImageName',
+            },
+            metadata: {
+                v1: {
+                    layers: [
                         {
-                            severity: 'MODERATE_VULNERABILITY_SEVERITY',
-                            cve: '[CYPRESS-MOCKED] CVE-2023-44487',
-                            summary: 'HTTP/2 Stream Cancellation Attack',
-                            cvss: 5.300000190734863,
-                            scoreVersion: 'V3',
-                            discoveredAtImage: '2024-04-03T19:44:55.837891332Z',
-                            pendingExceptionCount: 0,
-                            imageComponents: [
-                                {
-                                    name: 'golang.org/x/net',
-                                    version: 'v0.13.0',
-                                    location: 'usr/bin/cluster-samples-operator-watch',
-                                    source: 'GO',
-                                    layerIndex: 0,
-                                    imageVulnerabilities: [
-                                        {
-                                            vulnerabilityId: 'CVE-2023-44487#rhel:9',
-                                            severity: 'MODERATE_VULNERABILITY_SEVERITY',
-                                            fixedByVersion: '0.17.0',
-                                            pendingExceptionCount: 0,
-                                            __typename: 'ImageVulnerability',
-                                        },
-                                    ],
-                                    __typename: 'ImageComponent',
-                                },
-                                {
-                                    name: 'google.golang.org/grpc',
-                                    version: 'v1.54.0',
-                                    location: 'usr/bin/cluster-samples-operator-watch',
-                                    source: 'GO',
-                                    layerIndex: 0,
-                                    imageVulnerabilities: [
-                                        {
-                                            vulnerabilityId: 'CVE-2023-44487#rhel:9',
-                                            severity: 'MODERATE_VULNERABILITY_SEVERITY',
-                                            fixedByVersion: '1.56.3',
-                                            pendingExceptionCount: 0,
-                                            __typename: 'ImageVulnerability',
-                                        },
-                                    ],
-                                    __typename: 'ImageComponent',
-                                },
-                                {
-                                    name: 'openshift4/ose-cluster-samples-rhel9-operator',
-                                    version: 'v4.15.0-202401261531.p0.gd546ec2.assembly.stream',
-                                    location:
-                                        'root/buildinfo/Dockerfile-openshift-ose-cluster-samples-rhel9-operator-v4.15.0-202401261531.p0.gd546ec2.assembly.stream',
-                                    source: 'OS',
-                                    layerIndex: 0,
-                                    imageVulnerabilities: [
-                                        {
-                                            vulnerabilityId: 'CVE-2023-44487#rhel:9',
-                                            severity: 'MODERATE_VULNERABILITY_SEVERITY',
-                                            fixedByVersion:
-                                                'v4.15.0-202404031310.p0.gbf845b5.assembly.stream.el9',
-                                            pendingExceptionCount: 0,
-                                            __typename: 'ImageVulnerability',
-                                        },
-                                    ],
-                                    __typename: 'ImageComponent',
-                                },
-                            ],
-                            __typename: 'ImageVulnerability',
+                            instruction: 'ADD',
+                            value: 'file:091e888311e2628528312ffc60e27702fe04b23f8e4c95b456c16a967cdd89e0 in /',
+                            __typename: 'ImageLayer',
                         },
                     ],
+                    __typename: 'V1Metadata',
                 },
+                __typename: 'ImageMetadata',
+            },
+            __typename: isFlattenImageData ? 'ImageV2' : 'Image',
+            imageCVECountBySeverity: {
+                unknown: {
+                    total: 0,
+                    fixable: 0,
+                    __typename: 'ResourceCountByFixability',
+                },
+                low: {
+                    total: 0,
+                    fixable: 0,
+                    __typename: 'ResourceCountByFixability',
+                },
+                moderate: {
+                    total: 1,
+                    fixable: 1,
+                    __typename: 'ResourceCountByFixability',
+                },
+                important: {
+                    total: 0,
+                    fixable: 0,
+                    __typename: 'ResourceCountByFixability',
+                },
+                critical: {
+                    total: 0,
+                    fixable: 0,
+                    __typename: 'ResourceCountByFixability',
+                },
+                __typename: 'ResourceCountByCVESeverity',
+            },
+            imageVulnerabilities: [
+                {
+                    severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                    cve: '[CYPRESS-MOCKED] CVE-2023-44487',
+                    summary: 'HTTP/2 Stream Cancellation Attack',
+                    cvss: 5.300000190734863,
+                    scoreVersion: 'V3',
+                    discoveredAtImage: '2024-04-03T19:44:55.837891332Z',
+                    pendingExceptionCount: 0,
+                    imageComponents: [
+                        {
+                            name: 'golang.org/x/net',
+                            version: 'v0.13.0',
+                            location: 'usr/bin/cluster-samples-operator-watch',
+                            source: 'GO',
+                            layerIndex: 0,
+                            imageVulnerabilities: [
+                                {
+                                    vulnerabilityId: 'CVE-2023-44487#rhel:9',
+                                    severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                                    fixedByVersion: '0.17.0',
+                                    pendingExceptionCount: 0,
+                                    __typename: 'ImageVulnerability',
+                                },
+                            ],
+                            __typename: 'ImageComponent',
+                        },
+                        {
+                            name: 'google.golang.org/grpc',
+                            version: 'v1.54.0',
+                            location: 'usr/bin/cluster-samples-operator-watch',
+                            source: 'GO',
+                            layerIndex: 0,
+                            imageVulnerabilities: [
+                                {
+                                    vulnerabilityId: 'CVE-2023-44487#rhel:9',
+                                    severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                                    fixedByVersion: '1.56.3',
+                                    pendingExceptionCount: 0,
+                                    __typename: 'ImageVulnerability',
+                                },
+                            ],
+                            __typename: 'ImageComponent',
+                        },
+                        {
+                            name: 'openshift4/ose-cluster-samples-rhel9-operator',
+                            version: 'v4.15.0-202401261531.p0.gd546ec2.assembly.stream',
+                            location:
+                                'root/buildinfo/Dockerfile-openshift-ose-cluster-samples-rhel9-operator-v4.15.0-202401261531.p0.gd546ec2.assembly.stream',
+                            source: 'OS',
+                            layerIndex: 0,
+                            imageVulnerabilities: [
+                                {
+                                    vulnerabilityId: 'CVE-2023-44487#rhel:9',
+                                    severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                                    fixedByVersion:
+                                        'v4.15.0-202404031310.p0.gbf845b5.assembly.stream.el9',
+                                    pendingExceptionCount: 0,
+                                    __typename: 'ImageVulnerability',
+                                },
+                            ],
+                            __typename: 'ImageComponent',
+                        },
+                    ],
+                    __typename: 'ImageVulnerability',
+                },
+            ],
+        };
+
+        const body = {
+            data: {
+                [imageRootKey]: imageData,
             },
         };
 
@@ -295,7 +308,7 @@ describe('Workload CVE Image Single page', () => {
         cy.get(vulnSelectors.expandRowButton).click();
 
         const fixedInCellSelector = `table td[data-label="CVE fixed in"]`;
-        const components = body.data.image.imageVulnerabilities[0].imageComponents;
+        const components = imageData.imageVulnerabilities[0].imageComponents;
 
         components.forEach((component, index) => {
             cy.get(fixedInCellSelector)
@@ -306,6 +319,9 @@ describe('Workload CVE Image Single page', () => {
 
     // See case 03985920 and ROX-27344 for more details
     it('should receive consistent CVE counts when sorting and paginating the table', () => {
+        const isFlattenImageData = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA');
+        const imageRootKey = isFlattenImageData ? 'imageV2' : 'image';
+
         const opname = 'getCVEsForImage';
         const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
 
@@ -314,9 +330,9 @@ describe('Workload CVE Image Single page', () => {
         function createAssertion(initialCount: number, initialQuery: string) {
             return function (interception) {
                 expect(interception.request.body.variables.query).to.equal(initialQuery);
-                expect(interception.response.body.data.image.imageVulnerabilityCount).to.equal(
-                    initialCount
-                );
+                expect(
+                    interception.response.body.data[imageRootKey].imageVulnerabilityCount
+                ).to.equal(initialCount);
             };
         }
 
@@ -326,7 +342,7 @@ describe('Workload CVE Image Single page', () => {
             waitForRequests()
                 .then(({ request, response }) => ({
                     assertCveCountsUnchanged: createAssertion(
-                        response.body.data.image.imageVulnerabilityCount,
+                        response.body.data[imageRootKey].imageVulnerabilityCount,
                         request.body.variables.query
                     ),
                 }))

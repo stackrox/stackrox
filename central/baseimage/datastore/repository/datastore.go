@@ -33,6 +33,10 @@ type StatusUpdate struct {
 	LastPolledAt       *time.Time
 	LastFailureMessage *string
 	FailureCountOp     FailureCountOp
+
+	// OnlyIfStatus makes the update conditional: it only applies if the current
+	// status matches one of the specified values. If empty, the update is unconditional.
+	OnlyIfStatus []storage.BaseImageRepository_Status
 }
 
 // DataStore provides access to base image repositories.
@@ -62,7 +66,7 @@ type DataStore interface {
 	UpdateConfiguration(ctx context.Context, id string, update ConfigUpdate) (*storage.BaseImageRepository, error)
 
 	// UpdateStatus updates internal lifecycle fields of a repository.
-	// Returns (nil, nil) if the repository does not exist.
+	// Returns (nil, nil) if the repository does not exist or if conditions are not met.
 	UpdateStatus(ctx context.Context, id string, update StatusUpdate) (*storage.BaseImageRepository, error)
 }
 

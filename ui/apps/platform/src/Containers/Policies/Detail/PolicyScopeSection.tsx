@@ -21,7 +21,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
         <>
             {scope?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3">Scope inclusions</Title>
+                    <Title headingLevel="h3">Included resources</Title>
                     <Grid hasGutter md={12} xl={6}>
                         {scope.map((restriction, index) => (
                             // eslint-disable-next-line react/no-array-index-key
@@ -41,7 +41,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
             )}
             {excludedDeploymentScopes?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3">Scope exclusions</Title>
+                    <Title headingLevel="h3">Excluded resources</Title>
                     <Grid hasGutter md={12} xl={6}>
                         {excludedDeploymentScopes.map((excludedDeployment, index) => (
                             // eslint-disable-next-line react/no-array-index-key

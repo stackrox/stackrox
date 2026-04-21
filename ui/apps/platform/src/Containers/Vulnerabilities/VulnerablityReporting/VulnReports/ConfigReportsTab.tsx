@@ -25,6 +25,7 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
@@ -84,6 +85,11 @@ function ConfigReportsTab() {
 
     const isRouteEnabled = useIsRouteEnabled();
     const isCollectionsRouteEnabled = isRouteEnabled('collections');
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEnhancedFilteringEnabled = isFeatureFlagEnabled(
+        'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
+    );
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -179,7 +185,9 @@ function ConfigReportsTab() {
                     </Alert>
                 ))}
             </AlertGroup>
-            <PageTitle title="Vulnerability reporting - Report configurations" />
+            <PageTitle
+                title={`${isEnhancedFilteringEnabled ? 'Image vulnerability reports' : 'Vulnerability reporting'} - Report configurations`}
+            />
             <PageSection>
                 {runError && <Alert variant="danger" isInline title={runError} component="p" />}
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>

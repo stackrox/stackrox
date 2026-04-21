@@ -5,6 +5,7 @@ type ResultRow struct {
 	ClusterName  string
 	CheckName    string
 	Profile      string
+	ProfileType  string
 	ControlRef   string
 	Description  string
 	Status       string

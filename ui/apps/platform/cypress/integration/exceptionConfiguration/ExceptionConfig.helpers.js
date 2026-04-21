@@ -27,27 +27,29 @@ export function visitExceptionConfigWithPermissions(category, resourceToAccess) 
  * Sets the exception config to the expected default as defined in the requirements document.
  */
 export function resetExceptionConfig() {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
-    const config = {
-        expiryOptions: {
-            dayOptions: [
-                { numDays: 14, enabled: true },
-                { numDays: 30, enabled: true },
-                { numDays: 90, enabled: true },
-            ],
-            fixableCveOptions: {
-                allFixable: true,
-                anyFixable: true,
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
+        const config = {
+            expiryOptions: {
+                dayOptions: [
+                    { numDays: 14, enabled: true },
+                    { numDays: 30, enabled: true },
+                    { numDays: 90, enabled: true },
+                ],
+                fixableCveOptions: {
+                    allFixable: true,
+                    anyFixable: true,
+                },
+                customDate: false,
+                indefinite: false,
             },
-            customDate: false,
-            indefinite: false,
-        },
-    };
+        };
 
-    cy.request({
-        url: `/v1/config/private/exception/vulnerabilities`,
-        auth,
-        method: 'PUT',
-        body: { config },
+        cy.request({
+            url: `/v1/config/private/exception/vulnerabilities`,
+            auth,
+            method: 'PUT',
+            body: { config },
+        });
     });
 }

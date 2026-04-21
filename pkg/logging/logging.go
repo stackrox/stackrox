@@ -35,6 +35,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -185,12 +186,11 @@ func init() {
 
 	if buildinfo.ReleaseBuild {
 		config.DisableStacktrace = true
-		config.Sampling = &zap.SamplingConfig{
-			// The default sampling config assumes an interval of 1s.
-			Initial: int(math.Max(1, float64(maxLogLineQuotaPerInterval/logLineQuotaIntervalSecs))),
-			// Do not try to distill a representative sample and instead drop log messages.
-			Thereafter: 1,
-		}
+		// Sampling is applied via a shared sampler core (see sharedSampler below)
+		// in CreateLogger, NOT via per-logger config.Sampling. Each config.Sampling
+		// allocates a [7][4096]counter array (~450 KB). With 100+ loggers this
+		// totaled ~46 MB. A single shared sampler reduces this to ~450 KB total
+		// while preserving the same log-flood protection.
 	} else {
 		// Configures logging at the DPanic log-level to panic.
 		config.Development = true
@@ -350,8 +350,16 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	}
 	// Make zap build a logger with only the standard streams:
 	lc.OutputPaths = stdPaths
-	// And append the rotating files as a Tee core option:
-	logger, err := lc.Build(zap.AddCallerSkip(skip), zap.WrapCore(withRotatingCores(&lc, rotatingPaths)))
+	// Append rotating files as a Tee core, and wrap with the shared sampler
+	// for log-flood protection in release builds:
+	wrapOpts := []zap.Option{
+		zap.AddCallerSkip(skip),
+		zap.WrapCore(withRotatingCores(&lc, rotatingPaths)),
+	}
+	if buildinfo.ReleaseBuild {
+		wrapOpts = append(wrapOpts, zap.WrapCore(withSharedSampler))
+	}
+	logger, err := lc.Build(wrapOpts...)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to instantiate logger"))
 	}
@@ -385,6 +393,20 @@ func withRotatingCores(lc *zap.Config, rotatingPaths []string) func(c zapcore.Co
 	return func(c zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(append(cores, c)...)
 	}
+}
+
+// withSharedSampler wraps a core with a single shared sampler for log-flood
+// protection. All loggers share this one sampler instead of each getting their
+// own via config.Sampling. This reduces memory from ~46 MB (100+ loggers ×
+// 450 KB counter array each) to ~450 KB total.
+//
+// The sampling parameters match the original per-logger config:
+//   - tick: 1 second sampling window
+//   - first: allow the first N messages per key per tick (from MAX_LOG_LINE_QUOTA)
+//   - thereafter: log every 1st message after the initial burst
+func withSharedSampler(c zapcore.Core) zapcore.Core {
+	first := int(math.Max(1, float64(maxLogLineQuotaPerInterval/logLineQuotaIntervalSecs)))
+	return zapcore.NewSamplerWithOptions(c, time.Second, first, 1)
 }
 
 func getEncoderForConfig(lc *zap.Config) zapcore.Encoder {

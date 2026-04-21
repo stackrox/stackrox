@@ -140,6 +140,7 @@ var (
 		{
 			Name:           "ocp4-cis",
 			ProfileVersion: "1.7.0",
+			OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 		},
 	}
 	remediations = []*storage.ComplianceOperatorRemediationV2{
@@ -477,6 +478,7 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 		Rationale:    fmt.Sprintf("rationale-%s-%s", clusterID, check),
 		Instructions: fmt.Sprintf("instructions-%s-%s", clusterID, check),
 		Profile:      fmt.Sprintf("profile-%s-%s", clusterID, check),
+		ProfileType:  fmt.Sprintf("profiletype-%s-%s", clusterID, check),
 		ControlRef:   fmt.Sprintf("control-%s-%s", clusterID, check),
 		Remediation:  fmt.Sprintf("remediation=%s-%s", clusterID, check),
 	}
@@ -553,9 +555,11 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 		expProfiles, _ := tcase.expectedProfiles()
 		if len(expProfiles) < 1 {
 			assert.Equal(t, DATA_NOT_AVAILABLE, row.Profile)
+			assert.Equal(t, DATA_NOT_AVAILABLE, row.ProfileType)
 		} else {
 			require.Len(t, expProfiles, 1)
 			assert.Equal(t, fmt.Sprintf("%s %s", expProfiles[0].GetName(), expProfiles[0].GetProfileVersion()), row.Profile)
+			assert.Equal(t, operatorKindToHumanReadable(expProfiles[0].GetOperatorKind()), row.ProfileType)
 		}
 	}
 	if tcase.expectedRemediations != nil {

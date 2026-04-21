@@ -5,7 +5,6 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )

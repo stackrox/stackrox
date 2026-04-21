@@ -50,6 +50,10 @@ the value of `UI_START_TARGET`: `https://8.8.8.8:443`.
 
 ### Linting
 
+The `npm run lint` command uses ESLint with `--cache --cache-strategy content`. This caches lint results per file based on content hashes, so subsequent runs only re-lint changed files. The cache file (`.eslintcache`) is gitignored. If you need a clean lint run (e.g. after modifying custom rules in `eslint-plugins/`), delete `.eslintcache` and re-run.
+
+In CI, the `.eslintcache` file is persisted between runs via the `cache-eslint` GitHub Action (`.github/actions/cache-eslint/`). The cache is saved on master merges and restored on PR runs. The cache key includes hashes of `package-lock.json` and `eslint-plugins/**`, so dependency upgrades or custom rule changes automatically bust the cache.
+
 If **stackrox/ui** is your workspace root folder, you can create or edit stackrox/ui/.vscode/settings.json file to add the following properties:
 
 ```json

@@ -59,6 +59,11 @@ function PolicyCriteriaFieldInput({
             // value.value is always a string for 'text' type descriptors
             const validationError = descriptor.validate?.(String(value.value));
             const showError = Boolean(validationError);
+            const warningMessage = !showError ? descriptor.warn?.(String(value.value)) : undefined;
+            const showWarning = Boolean(warningMessage);
+
+            const feedbackVariant = showError ? 'error' : showWarning ? 'warning' : 'default';
+            const feedbackMessage = validationError ?? warningMessage ?? descriptor.helperText;
 
             return (
                 <Flex grow={{ default: 'grow' }}>
@@ -70,13 +75,13 @@ function PolicyCriteriaFieldInput({
                         onChange={(_event, val) => handleChangeValue(val)}
                         data-testid="policy-criteria-value-text-input"
                         placeholder={descriptor.placeholder || ''}
-                        validated={showError ? 'error' : 'default'}
+                        validated={feedbackVariant}
                     />
-                    {(descriptor.helperText || showError) && (
+                    {feedbackMessage && (
                         <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem variant={showError ? 'error' : 'default'}>
-                                    {showError ? validationError : descriptor.helperText}
+                            <HelperText isLiveRegion={showError || showWarning}>
+                                <HelperTextItem variant={feedbackVariant}>
+                                    {feedbackMessage}
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>

@@ -315,6 +315,10 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 7
+              },
+              {
+                "name": "NODE",
+                "integer": 8
               }
             ]
           },
@@ -2315,6 +2319,33 @@
                 "id": 4,
                 "name": "auto_lock_process_baselines_config",
                 "type": "AutoLockProcessBaselinesConfig"
+              },
+              {
+                "id": 5,
+                "name": "process_indicators",
+                "type": "ProcessIndicatorsConfig"
+              }
+            ],
+            "messages": [
+              {
+                "name": "ProcessIndicatorsConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "no_persistence",
+                    "type": "bool"
+                  },
+                  {
+                    "id": 2,
+                    "name": "exclude_namespace_filter",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "exclude_openshift_ns",
+                    "type": "bool"
+                  }
+                ]
               }
             ]
           },
@@ -7239,6 +7270,18 @@
       "def": {
         "enums": [
           {
+            "name": "ContainerType",
+            "enum_fields": [
+              {
+                "name": "REGULAR"
+              },
+              {
+                "name": "INIT",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "Volume.MountPropagation",
             "enum_fields": [
               {
@@ -7617,6 +7660,11 @@
                 "id": 12,
                 "name": "readiness_probe",
                 "type": "ReadinessProbe"
+              },
+              {
+                "id": 13,
+                "name": "type",
+                "type": "ContainerType"
               }
             ],
             "reserved_ids": [
@@ -18203,6 +18251,11 @@
                 "name": "oneof_two_int",
                 "type": "int64",
                 "oneof_parent": "oneof_two"
+              },
+              {
+                "id": 19,
+                "name": "optional_uuid",
+                "type": "string"
               }
             ],
             "maps": [

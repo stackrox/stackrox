@@ -84,8 +84,9 @@ func populateListAlertEntityInfoForNode(listAlert *storage.ListAlert, alert *sto
 		},
 	}
 	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-		ClusterName: alert.GetClusterName(),
-		ClusterId:   alert.GetClusterId(),
+		ClusterName:  alert.GetClusterName(),
+		ClusterId:    alert.GetClusterId(),
+		ResourceType: storage.ListAlert_NODE,
 	}
 }
 

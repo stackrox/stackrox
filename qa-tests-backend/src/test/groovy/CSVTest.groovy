@@ -134,6 +134,19 @@ class CSVTest extends BaseSpecification {
         return "CVE Type:IMAGE_CVE+"
     }
 
+    def getTestImageId() {
+        return flattenImageDataEnabled ? TEST_IMAGE_V2_ID : TEST_IMAGE_SHA
+    }
+
+    def getDeploymentUid() {
+        return CVE_DEPLOYMENT.deploymentUid
+    }
+
+    def getFixableCvesInImageQuery() {
+        def imageFilter = flattenImageDataEnabled ? "Image ID" : "Image Sha"
+        return "${imageFilter}:${getTestImageId()}+Fixable:true"
+    }
+
     Map<String, Object> payload(String id) {
         def pagination = new Pagination(0, 0, new SortOption("cvss", true))
         return [
@@ -227,10 +240,9 @@ class CSVTest extends BaseSpecification {
         where:
         "Data is"
 
-        description                        | id                           | query
-        "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
-                "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
+        description                        | id                 | query
+        "FIXABLE_CVES_IN_IMAGE_QUERY"      | getTestImageId()   | getFixableCvesInImageQuery()
+        "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | getDeploymentUid() | "Deployment ID:${getDeploymentUid()}+Fixable:true"
     }
 
     @EqualsAndHashCode(includeFields = true)
