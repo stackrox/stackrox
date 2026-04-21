@@ -26,32 +26,34 @@ func newDirSource(dir string) (*dirSource, error) {
 }
 
 func (s *dirSource) CentralDBDeployment() (*appsv1.Deployment, error) {
-	centralDir := filepath.Join(s.dir, "central")
-	entries, err := os.ReadDir(centralDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "reading directory %q", centralDir)
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
-			continue
+	var found *appsv1.Deployment
+	err := filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || (!strings.HasSuffix(d.Name(), ".yaml") && !strings.HasSuffix(d.Name(), ".yml")) {
+			return err
 		}
-		data, err := os.ReadFile(filepath.Join(centralDir, entry.Name()))
+		data, err := os.ReadFile(path)
 		if err != nil {
-			return nil, errors.Wrapf(err, "reading file %q", entry.Name())
+			return errors.Wrapf(err, "reading %q", path)
 		}
-
 		for _, doc := range splitYAMLDocuments(data) {
 			var dep appsv1.Deployment
 			if err := yaml.Unmarshal(doc, &dep); err != nil {
 				continue
 			}
 			if dep.Kind == "Deployment" && dep.Name == "central-db" {
-				return &dep, nil
+				found = &dep
+				return filepath.SkipAll
 			}
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.Errorf("central-db Deployment not found in %q", centralDir)
+	if found == nil {
+		return nil, errors.Errorf("central-db Deployment not found in %q", s.dir)
+	}
+	return found, nil
 }
 
 func splitYAMLDocuments(data []byte) [][]byte {
