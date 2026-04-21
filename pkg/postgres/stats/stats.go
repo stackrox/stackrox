@@ -2,6 +2,7 @@ package stats
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -133,6 +134,13 @@ func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyz
 	return &analyzeStats
 }
 
+var literalRedactor = regexp.MustCompile(`'(?:[^']|'')*'`)
+
+// redactQueryLiterals replaces SQL string literals with $? to avoid leaking sensitive values.
+func redactQueryLiterals(query string) string {
+	return literalRedactor.ReplaceAllString(query, "$?")
+}
+
 // PGStatActivity is the data model for a single row in pg_stat_activity
 type PGStatActivity struct {
 	DatabaseName    *string
@@ -184,6 +192,10 @@ func GetPGStatActivities(ctx context.Context, db postgres.DB, limit int) *PGStat
 		); err != nil {
 			activities.Error = errors.Wrap(err, "error scanning rows from pg_stat_activity").Error()
 			return &activities
+		}
+		if a.Query != nil {
+			redacted := redactQueryLiterals(*a.Query)
+			a.Query = &redacted
 		}
 		activities.Activities = append(activities.Activities, &a)
 	}
