@@ -291,6 +291,34 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 				}
 			}
 		case <-timer.C:
+			// Log what Central has for this deployment
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			finalList, err := service.ListDeployments(ctx, &v1.RawQuery{Query: qb.Query()})
+			cancel()
+			if err != nil {
+				t.Logf("Failed to query Central for diagnostics: %v", err)
+			} else if len(finalList.GetDeployments()) == 0 {
+				t.Logf("Deployment %q NOT found in Central at all", deploymentName)
+			} else {
+				deps, err := retrieveDeployments(service, finalList.GetDeployments())
+				if err != nil {
+					t.Logf("Failed to retrieve deployment from Central: %v", err)
+				} else {
+					for _, d := range deps {
+						t.Logf("Central deployment %q (id=%s, ns=%s):", d.GetName(), d.GetId(), d.GetNamespace())
+						t.Logf("  Containers: %d", len(d.GetContainers()))
+						for i, c := range d.GetContainers() {
+							img := c.GetImage()
+							t.Logf("  Container[%d] %q:", i, c.GetName())
+							t.Logf("    image.name.full_name=%q", img.GetName().GetFullName())
+							t.Logf("    image.id=%q", img.GetId())
+							t.Logf("    image.not_pullable=%v", img.GetNotPullable())
+							t.Logf("    image.is_cluster_local=%v", img.GetIsClusterLocal())
+						}
+					}
+				}
+			}
+
 			logPodStatusForDeployment(t, deploymentName, "")
 			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
 		}
