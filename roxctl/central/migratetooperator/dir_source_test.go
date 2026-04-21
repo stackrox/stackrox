@@ -143,6 +143,25 @@ func TestDirSource_YmlExtension(t *testing.T) {
 	assert.Equal(t, "central-db", dep.Name)
 }
 
+func TestNewDirSource_NonexistentPath(t *testing.T) {
+	base := t.TempDir()
+	src, err := newDirSource(filepath.Join(base, "does-not-exist"))
+	require.Error(t, err)
+	assert.Nil(t, src)
+	assert.Contains(t, err.Error(), "accessing directory")
+}
+
+func TestNewDirSource_NonDirectoryPath(t *testing.T) {
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "not-a-directory")
+	require.NoError(t, os.WriteFile(filePath, []byte("not a directory"), 0644))
+
+	src, err := newDirSource(filePath)
+	require.Error(t, err)
+	assert.Nil(t, src)
+	assert.Contains(t, err.Error(), "is not a directory")
+}
+
 func TestDirSource_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 

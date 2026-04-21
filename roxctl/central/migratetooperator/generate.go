@@ -18,30 +18,28 @@ func generateCR(config *detectedConfig) *platform.Central {
 		},
 	}
 
+	db := &platform.CentralDBSpec{}
 	switch config.Storage.Type {
 	case storagePVC:
-		cr.Spec.Central = &platform.CentralComponentSpec{
-			DB: &platform.CentralDBSpec{
-				Persistence: &platform.DBPersistence{
-					PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-						ClaimName: pointers.String(config.Storage.PVCName),
-					},
-				},
+		// Only claimName is set. Size and storageClassName are intentionally
+		// omitted: the PVC already exists on the cluster, and the operator
+		// rejects these fields for pre-existing ("BYO") PVCs.
+		db.Persistence = &platform.DBPersistence{
+			PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+				ClaimName: pointers.String(config.Storage.PVCName),
 			},
 		}
 	case storageHostPath:
-		db := &platform.CentralDBSpec{
-			Persistence: &platform.DBPersistence{
-				HostPath: &platform.HostPathSpec{
-					Path: pointers.String(config.Storage.HostPath),
-				},
+		db.Persistence = &platform.DBPersistence{
+			HostPath: &platform.HostPathSpec{
+				Path: pointers.String(config.Storage.HostPath),
 			},
 		}
-		if len(config.Storage.NodeSelector) > 0 {
-			db.NodeSelector = config.Storage.NodeSelector
-		}
-		cr.Spec.Central = &platform.CentralComponentSpec{DB: db}
 	}
+	if len(config.Storage.NodeSelector) > 0 {
+		db.NodeSelector = config.Storage.NodeSelector
+	}
+	cr.Spec.Central = &platform.CentralComponentSpec{DB: db}
 
 	return cr
 }

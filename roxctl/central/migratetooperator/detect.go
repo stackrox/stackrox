@@ -48,23 +48,24 @@ func detectStorage(src source) (*storageConfig, error) {
 		return nil, errors.New("central-db Deployment has no volume named \"disk\"")
 	}
 
-	if pvc := diskVolume.PersistentVolumeClaim; pvc != nil {
-		return &storageConfig{
+	var cfg *storageConfig
+	switch {
+	case diskVolume.PersistentVolumeClaim != nil:
+		cfg = &storageConfig{
 			Type:    storagePVC,
-			PVCName: pvc.ClaimName,
-		}, nil
-	}
-
-	if hp := diskVolume.HostPath; hp != nil {
-		cfg := &storageConfig{
+			PVCName: diskVolume.PersistentVolumeClaim.ClaimName,
+		}
+	case diskVolume.HostPath != nil:
+		cfg = &storageConfig{
 			Type:     storageHostPath,
-			HostPath: hp.Path,
+			HostPath: diskVolume.HostPath.Path,
 		}
-		if ns := dep.Spec.Template.Spec.NodeSelector; len(ns) > 0 {
-			cfg.NodeSelector = ns
-		}
-		return cfg, nil
+	default:
+		return nil, errors.New("central-db Deployment \"disk\" volume is neither a PVC nor a hostPath")
 	}
 
-	return nil, errors.New("central-db Deployment \"disk\" volume is neither a PVC nor a hostPath")
+	if ns := dep.Spec.Template.Spec.NodeSelector; len(ns) > 0 {
+		cfg.NodeSelector = ns
+	}
+	return cfg, nil
 }
