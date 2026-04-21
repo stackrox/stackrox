@@ -70,19 +70,24 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
 fi
 
 if [[ "$ci_job" =~ e2e|upgrade ]] && [[ "${USE_ROXIE_DEPLOY:-true}" != 'false' ]]; then
-    info 'Installing latest roxie release...'
     if [[ ${USE_ROXIE_VERSION:-latest} == 'latest' ]]; then
         USE_ROXIE_VERSION="$(curl -s -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
           "https://api.github.com/repos/stackrox/roxie/releases/latest" | jq -r '.tag_name')"
     fi
+    info "Installing roxie release ${USE_ROXIE_VERSION} ..."
     curl -o /tmp/roxie \
-      -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
+      -H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN:-}" \
       -H "Accept:application/octet-stream"\
       "https://github.com/stackrox/roxie/releases/download/${USE_ROXIE_VERSION}/roxie-linux-amd64" \
-        && { install -b --suffix=.old /tmp/roxie /usr/local/bin/ \
-        || install -b --suffix=.old /tmp/roxie /usr/local/go/bin/; } || true
-    roxie version \
-      || { cp /usr/bin/roxie.old /usr/bin/roxie && roxie version || true; }
+      || true
+    echo "$PATH"
+    for bin_path in ${PATH//:/ }; do
+        install -b /tmp/roxie "$bin_path"/roxie \
+          || continue
+        break
+    done
+    which roxie
+    roxie version || true
 fi
 
 "${job_script}" "$@" &
