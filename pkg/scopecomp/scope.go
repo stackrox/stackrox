@@ -191,11 +191,16 @@ func (c *CompiledScope) MatchesAuditEvent(ctx context.Context, auditEvent *stora
 	if !c.MatchesClusterLabels(ctx, auditEvent.GetObject().GetClusterId()) {
 		return false
 	}
-	if !c.MatchesNamespace(auditEvent.GetObject().GetNamespace()) {
-		return false
-	}
-	if !c.MatchesNamespaceLabels(ctx, auditEvent.GetObject().GetClusterId(), auditEvent.GetObject().GetNamespace()) {
-		return false
+	// Namespace matching is only applied for namespace-scoped resources.
+	// Cluster-scoped resources (e.g. clusterroles) have an empty namespace
+	// and should not be filtered out by namespace-based matchers.
+	if ns := auditEvent.GetObject().GetNamespace(); ns != "" {
+		if !c.MatchesNamespace(ns) {
+			return false
+		}
+		if !c.MatchesNamespaceLabels(ctx, auditEvent.GetObject().GetClusterId(), ns) {
+			return false
+		}
 	}
 	return true
 }

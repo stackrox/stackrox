@@ -485,6 +485,65 @@ func TestMatchesAuditEventWithLabels(t *testing.T) {
 			},
 			result: true,
 		},
+		"cluster-scoped resource with namespace_label scope still fires": {
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			result: true,
+		},
+		"cluster-scoped resource with namespace scope still fires": {
+			scope: &storage.Scope{
+				Namespace: "some-namespace",
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			result: true,
+		},
+		"cluster-scoped resource with cluster_label scope respects labels": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			clusterLabels: map[string]string{"env": "prod"},
+			result:        true,
+		},
+		"cluster-scoped resource with cluster_label mismatch does not fire": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			clusterLabels: map[string]string{"env": "dev"},
+			result:        false,
+		},
 	}
 	for name, test := range subtests {
 		t.Run(name, func(_ *testing.T) {
