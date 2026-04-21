@@ -404,6 +404,19 @@ func (s *RunnerTestSuite) TestOverrideIgnoredWhenSeqNumExceedsCurrent() {
 	s.Equal(3, seqNum)
 }
 
+func (s *RunnerTestSuite) TestSeedsInitialRowWhenTableEmpty() {
+	_, err := s.db.Exec(s.ctx, "DELETE FROM "+schema.BackgroundMigrationVersionsTableName)
+	s.Require().NoError(err)
+
+	runner := s.newRunner(&doneRolloutChecker{}, 0)
+	requireStoppedWithin(s.T(), runner, testTimeout)
+
+	seqNum, overrideTag, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(0, seqNum)
+	s.Equal("", overrideTag)
+}
+
 func (s *RunnerTestSuite) TestOverrideIgnoredWithoutSeqNum() {
 	_, err := s.db.Exec(s.ctx,
 		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")

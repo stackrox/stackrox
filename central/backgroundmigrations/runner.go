@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -201,9 +202,20 @@ func (r *Runner) readState(ctx context.Context) (int, string, error) {
 	var seqNum int32
 	var overrideTag string
 	if err := row.Scan(&seqNum, &overrideTag); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			if err := r.seedInitialRow(ctx); err != nil {
+				return 0, "", errors.Wrap(err, "seeding initial row")
+			}
+			return 0, "", nil
+		}
 		return 0, "", err
 	}
 	return int(seqNum), overrideTag, nil
+}
+
+func (r *Runner) seedInitialRow(ctx context.Context) error {
+	_, err := r.db.Exec(ctx, "INSERT INTO "+schema.BackgroundMigrationVersionsTableName+" (seqnum, override_tag) VALUES (0, '')")
+	return err
 }
 
 func (r *Runner) writeSeqNum(ctx context.Context, seqNum int) error {
