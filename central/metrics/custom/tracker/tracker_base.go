@@ -194,7 +194,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
-// an error. It also schedules gatherers refresh if metrics have changed.
+// an error.
 func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
@@ -209,11 +209,9 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
-	if len(cfg.toAdd) != 0 || len(cfg.toDelete) != 0 {
-		tracker.Refresh()
-	}
-	// Note: aggregators are recreated lazily in getGatherer() when config
-	// changes, to avoid race conditions with running gatherers.
+	// Aggregators are recreated and gather is forced lazily in
+	// getGatherer() when config changes, to avoid race conditions with
+	// running gatherers.
 }
 
 // retry f() until either it returns true, or maxAttempts is reached with
@@ -234,15 +232,10 @@ func retry(f func() bool, d time.Duration, maxAttempts int) bool {
 
 // Refresh shifts the last gathering time of every gatherer back by period+1.
 func (tracker *TrackerBase[F]) Refresh() {
-	cfg := tracker.getConfiguration()
-	if cfg == nil {
-		return
-	}
-
 	const maxAttempts = 5
 	tracker.gatherers.Range(func(userID, gv any) bool {
 		g := gv.(*gatherer[F])
-		if !retry(func() bool { return g.shift(-(cfg.period + 1)) }, time.Minute, maxAttempts) {
+		if !retry(g.resetLastGather, time.Minute, maxAttempts) {
 			log.Warnf("Failed to refresh a gatherer of the %s tracker after %d retries",
 				tracker.metricPrefix, maxAttempts)
 		}
@@ -436,20 +429,20 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		if !gr.trySetRunning() {
 			return nil
 		}
-		// Recreate aggregator if config has changed since last run.
+		// Recreate aggregator and force immediate gather if config has changed.
 		if gr.config != cfg {
 			gr.aggregator = makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
 			gr.config = cfg
+			gr.lastGather = time.Time{}
 		}
 	}
 	return gr
 }
 
-// shift the last gathering timestamp by duration d.
-func (g *gatherer[F]) shift(d time.Duration) bool {
+func (g *gatherer[F]) resetLastGather() bool {
 	ok := g.trySetRunning()
 	if ok {
-		g.lastGather = g.lastGather.Add(d)
+		g.lastGather = time.Time{}
 		g.running.Store(false)
 	}
 	return ok
