@@ -195,6 +195,11 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Create CLI stub files
+        if: |
+          !(needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli'))
         run: |
           cat > stub.txt << 'EOF'
           This is a placeholder file. CLI binaries were not built for this PR build.
