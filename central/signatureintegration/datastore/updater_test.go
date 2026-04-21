@@ -184,6 +184,89 @@ func TestUpdateAllowsDuplicateOutputFileNames_LastWriteWins(t *testing.T) {
 	require.Equal(t, pem, string(content))
 }
 
+func TestUpdateFailsOnEmptyManifest(t *testing.T) {
+	targetDir := t.TempDir()
+	manifest := manifest{Keys: []manifestKey{}}
+	manifestBody, err := json.Marshal(manifest)
+	require.NoError(t, err)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(manifestBody)
+	}))
+	defer server.Close()
+
+	u := newTestUpdater(t, server.URL+"/manifest.json", targetDir)
+	require.Error(t, u.update())
+}
+
+func TestUpdateFailsOnInvalidManifestJSON(t *testing.T) {
+	targetDir := t.TempDir()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("not json"))
+	}))
+	defer server.Close()
+
+	u := newTestUpdater(t, server.URL+"/manifest.json", targetDir)
+	require.Error(t, u.update())
+}
+
+func TestUpdateFailsOnManifestHTTPError(t *testing.T) {
+	targetDir := t.TempDir()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	u := newTestUpdater(t, server.URL+"/manifest.json", targetDir)
+	require.Error(t, u.update())
+}
+
+func TestReplaceDirectoryContentsIsAtomic(t *testing.T) {
+	targetDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(targetDir, "old.txt"), []byte("old"), 0o600))
+
+	sourceDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(sourceDir, "new.txt"), []byte("new"), 0o600))
+
+	require.NoError(t, replaceDirectoryContents(targetDir, sourceDir))
+
+	content, err := os.ReadFile(filepath.Join(targetDir, "new.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "new", string(content))
+
+	_, err = os.Stat(filepath.Join(targetDir, "old.txt"))
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestStartStopLifecycle(t *testing.T) {
+	pem := validPEM(t)
+	targetDir := t.TempDir()
+	manifest := manifest{
+		Keys: []manifestKey{{Name: "key.pub", URL: "key.pub"}},
+	}
+	manifestBody, err := json.Marshal(manifest)
+	require.NoError(t, err)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manifest.json":
+			_, _ = w.Write(manifestBody)
+		case "/key.pub":
+			_, _ = w.Write([]byte(pem))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	u := newTestUpdater(t, server.URL+"/manifest.json", targetDir)
+	u.Start()
+	u.Start() // second call should be no-op (sync.Once)
+	u.Stop()
+}
+
 func TestUpdateFailsWhenNoFilesCanBeDownloaded(t *testing.T) {
 	targetDir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(targetDir, "existing.pub"), []byte("existing"), 0o600))
