@@ -10,12 +10,13 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-comment: "/konflux-retest create-custom-snapshot"
     # Unlike other pipelines, this one is enabled for all PRs. See the description of determine-actual-build task.
-    # The condition for a label is to make sure the konflux-build label addition activates this pipeline, same as others.
+    # The condition for action == "labeled" is to make sure the label changes activate this pipeline, so that we don't
+    # miss the addition and the removal of the `konflux-build` label.
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
       (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
       (event == "pull_request" && body.action != "ready_for_review") ||
-      (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+      (has(body.action) && body.action == "labeled")
     # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
