@@ -48,7 +48,7 @@ func (s *dirSource) CentralDBDeployment() (*appsv1.Deployment, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "walking directory tree")
 	}
 	if found == nil {
 		return nil, errors.Errorf("central-db Deployment not found in %q", s.dir)
