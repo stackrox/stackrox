@@ -39,12 +39,14 @@ func (s *ManagerImplSuite) SetupSuite() {
 		imageCache:               cache,
 		imageNameToImageCacheKey: nameCache,
 		imageFetchGroup:          coalescer.New[*storage.Image](),
+		imageCacheGen:            newImageGenTracker(),
 	}
 }
 
 func (s *ManagerImplSuite) SetupTest() {
 	s.mgr.imageCache.Purge()
 	s.mgr.imageNameToImageCacheKey.Purge()
+	s.mgr.imageCacheGen.Clear(s.T())
 	s.mgr.clusterLabels.Store(nil)
 
 	depStore := resources.NewDeploymentStore(nil)
