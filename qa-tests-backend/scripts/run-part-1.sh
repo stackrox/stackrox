@@ -51,6 +51,9 @@ config_part_1() {
     if [[ "$use_roxie_deploy" == "true" ]]; then
         info "Using roxie-based config_part_1 for qa-tests-backend"
         info "Roxie version: $(roxie version)"
+        if pr_has_label test-konflux-images; then
+            export USE_KONFLUX_IMAGES="true"
+        fi
         deploy_stackrox_with_roxie_compat
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     else
