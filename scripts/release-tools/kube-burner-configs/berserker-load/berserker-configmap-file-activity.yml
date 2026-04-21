@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.JobName}}-berserker-file-activity-config
+data:
+  workload.ber: |
+    machine {
+      profile("bpf");
+    }
+
+    main (workers = 2, duration = 10) {
+      open(random_path("/tmp/data"));
+    } : exp {
+      rate = 10.0;  // 10 operations per second
+    }
