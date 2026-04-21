@@ -123,11 +123,6 @@ func (e *claircoreUpdaterRunner) ExportBundle(ctx context.Context, w io.Writer, 
 	return nil
 }
 
-// NewBundleExporter creates a new production bundle exporter with the given HTTP client.
-func NewBundleExporter(httpClient *http.Client) BundleExporter {
-	return &claircoreUpdaterRunner{httpClient: httpClient}
-}
-
 // NewDefaultBundleExporter creates a new production bundle exporter with rate-limited HTTP client.
 // Rate limit is ~16 requests/second by default, configurable via STACKROX_SCANNER_V4_UPDATER_INTERVAL.
 func NewDefaultBundleExporter() BundleExporter {
@@ -153,7 +148,7 @@ func NewDefaultBundleExporter() BundleExporter {
 		},
 	}
 
-	return NewBundleExporter(httpClient)
+	return &claircoreUpdaterRunner{httpClient: httpClient}
 }
 
 type ExportOptions struct {
