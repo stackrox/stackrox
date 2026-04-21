@@ -8,6 +8,7 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -41,7 +43,11 @@ func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) 
 		return nil, false, err
 	}
 
-	return d.storage.Get(ctx, id)
+	integration, found, err := d.storage.Get(ctx, id)
+	if err != nil || !found {
+		return integration, found, err
+	}
+	return d.decorateRedHatIntegration(integration), true, nil
 }
 
 func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error) {
@@ -53,7 +59,7 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 	walkFn := func() error {
 		integrations = integrations[:0]
 		return d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
-			integrations = append(integrations, integration)
+			integrations = append(integrations, d.decorateRedHatIntegration(integration))
 			return nil
 		})
 	}
@@ -61,6 +67,46 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 		return nil, err
 	}
 	return integrations, nil
+}
+
+// decorateRedHatIntegration augments the default Red Hat signature integration with any additional
+// public keys found in the runtime directory. Non-Red Hat integrations are returned unchanged.
+// The integration proto is cloned before mutation so the stored copy is never modified.
+func (d *datastoreImpl) decorateRedHatIntegration(integration *storage.SignatureIntegration) *storage.SignatureIntegration {
+	if integration.GetId() != signatures.DefaultRedHatSignatureIntegration.GetId() {
+		return integration
+	}
+
+	runtimeDir := env.RedHatSigningKeysRuntimeDir.Setting()
+	additionalKeys, err := loadKeysFromDir(runtimeDir)
+	if err != nil {
+		log.Warnf("Failed to load Red Hat signing keys from %q: %v", runtimeDir, err)
+		return integration
+	}
+	if len(additionalKeys) == 0 {
+		return integration
+	}
+
+	// Build a set of PEM values already present so we can deduplicate.
+	existing := getPublicKeyPEMSet(integration)
+
+	var newKeys []*storage.CosignPublicKeyVerification_PublicKey
+	for _, k := range additionalKeys {
+		if !existing.Contains(k.GetPublicKeyPemEnc()) {
+			newKeys = append(newKeys, k)
+		}
+	}
+	if len(newKeys) == 0 {
+		return integration
+	}
+
+	// Clone before mutating to avoid touching the cached/stored proto.
+	cloned := integration.CloneVT()
+	if cloned.Cosign == nil {
+		cloned.Cosign = &storage.CosignPublicKeyVerification{}
+	}
+	cloned.Cosign.PublicKeys = append(cloned.Cosign.PublicKeys, newKeys...)
+	return cloned
 }
 
 func (d *datastoreImpl) CountSignatureIntegrations(ctx context.Context) (int, error) {
