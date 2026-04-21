@@ -170,7 +170,11 @@ spec:
             assert_boolean has_konflux_build_label_as_issue
 
             result="false"
-            if [[ "${is_pull_request}" != "true" || "${is_matching_target_branch}" == "true" || "${is_matching_source_branch}" == "true" || "${has_konflux_build_label_as_pr}" == "true" || "${has_konflux_build_label_as_issue}" == "true" ]]; then
+            if [[ "${is_pull_request}" != "true" || \
+                "${is_matching_target_branch}" == "true" || \
+                "${is_matching_source_branch}" == "true" || \
+                "${has_konflux_build_label_as_pr}" == "true" || \
+                "${has_konflux_build_label_as_issue}" == "true" ]]; then
               result="true"
             fi
             echo -n "The result is: "
