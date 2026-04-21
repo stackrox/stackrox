@@ -109,25 +109,25 @@ type PGAnalyzeStats struct {
 
 // PGStatActivity is the data model for a single row in pg_stat_activity
 type PGStatActivity struct {
-	DatabaseName    *string    `json:"DatabaseName,omitempty"`
-	PID             int32      `json:"PID"`
-	UserName        *string    `json:"UserName,omitempty"`
-	ApplicationName *string    `json:"ApplicationName,omitempty"`
-	BackendStart    *time.Time `json:"BackendStart,omitempty"`
-	XactStart       *time.Time `json:"XactStart,omitempty"`
-	QueryStart      *time.Time `json:"QueryStart,omitempty"`
-	StateChange     *time.Time `json:"StateChange,omitempty"`
-	WaitEventType   *string    `json:"WaitEventType,omitempty"`
-	WaitEvent       *string    `json:"WaitEvent,omitempty"`
-	State           *string    `json:"State,omitempty"`
-	BackendType     *string    `json:"BackendType,omitempty"`
-	Query           *string    `json:"Query,omitempty"`
+	DatabaseName    *string
+	PID             int32
+	UserName        *string
+	ApplicationName *string
+	BackendStart    *time.Time
+	XactStart       *time.Time
+	QueryStart      *time.Time
+	StateChange     *time.Time
+	WaitEventType   *string
+	WaitEvent       *string
+	State           *string
+	BackendType     *string
+	Query           *string
 }
 
 // PGStatActivities is a wrapper around PGStatActivity
 type PGStatActivities struct {
-	Activities []*PGStatActivity `json:"Activities"`
-	Error      string            `json:"Error,omitempty"`
+	Activities []*PGStatActivity
+	Error      string
 }
 
 // GetPGStatActivities returns an activities struct that wraps the results from the query to pg_stat_activity
