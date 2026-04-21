@@ -137,17 +137,35 @@ func (c *Compliance) Start() {
 		if features.VirtualMachines.Enabled() {
 			log.Infof("Virtual machine relay enabled")
 
-			reportStream, err := stream.New()
-			if err != nil {
-				log.Errorf("Error creating report stream: %v", err)
-				return
+			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+			eb := backoff.NewExponentialBackOff()
+			eb.MaxElapsedTime = 0
+
+			operation := func() error {
+				reportStream, err := stream.New()
+				if err != nil {
+					return err
+				}
+
+				reportSender := sender.New(sensorClient)
+				vmRelay := relay.New(reportStream, reportSender)
+				if err := vmRelay.Run(ctx); err != nil {
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+						return backoff.Permanent(err)
+					}
+					return err
+				}
+
+				return nil
 			}
 
-			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-			reportSender := sender.New(sensorClient)
-
-			vmRelay := relay.New(reportStream, reportSender)
-			if err := vmRelay.Run(ctx); err != nil {
+			err := backoff.RetryNotify(operation, backoff.WithContext(eb, ctx), func(err error, t time.Duration) {
+				if ctx.Err() != nil {
+					return
+				}
+				log.Errorf("Virtual machine relay failed: %v; will retry in %0.2f seconds", err, t.Seconds())
+			})
+			if err != nil && ctx.Err() == nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				log.Errorf("Error running virtual machine relay: %v", err)
 			}
 		}
