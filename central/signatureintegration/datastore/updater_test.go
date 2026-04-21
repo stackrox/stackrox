@@ -21,7 +21,7 @@ func validPEM(t *testing.T) string {
 
 func newTestUpdater(t *testing.T, manifestURL, targetDir string) *updater {
 	t.Helper()
-	u, err := newUpdater(&http.Client{Timeout: 5 * time.Second}, manifestURL, targetDir, time.Second)
+	u, err := newUpdater(&http.Client{Timeout: 5 * time.Second}, manifestURL, targetDir, time.Second, nil)
 	require.NoError(t, err)
 	return u
 }
@@ -108,7 +108,7 @@ func TestUpdateDownloadsAllFiles(t *testing.T) {
 }
 
 func TestNewUpdaterRequiresClient(t *testing.T) {
-	_, err := newUpdater(nil, "https://example.com/manifest.json", t.TempDir(), time.Second)
+	_, err := newUpdater(nil, "https://example.com/manifest.json", t.TempDir(), time.Second, nil)
 	require.Error(t, err)
 }
 
@@ -304,9 +304,72 @@ func TestUpdateFailsWhenNoFilesCanBeDownloaded(t *testing.T) {
 }
 
 func TestNewUpdaterRejectsZeroInterval(t *testing.T) {
-	_, err := newUpdater(&http.Client{}, "https://example.com/manifest.json", t.TempDir(), 0)
+	_, err := newUpdater(&http.Client{}, "https://example.com/manifest.json", t.TempDir(), 0, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "interval must be positive")
+}
+
+func TestDoUpdate_OnSuccessCalledOnSuccess(t *testing.T) {
+	pem := validPEM(t)
+	targetDir := t.TempDir()
+
+	manifest := manifest{
+		Keys: []manifestKey{{Name: "key.pub", URL: "key.pub"}},
+	}
+	manifestBody, err := json.Marshal(manifest)
+	require.NoError(t, err)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manifest.json":
+			_, _ = w.Write(manifestBody)
+		case "/key.pub":
+			_, _ = w.Write([]byte(pem))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	called := make(chan struct{}, 1)
+	u, err := newUpdater(
+		&http.Client{Timeout: 5 * time.Second},
+		server.URL+"/manifest.json",
+		targetDir,
+		time.Second,
+		func() { called <- struct{}{} },
+	)
+	require.NoError(t, err)
+
+	u.doUpdate()
+
+	select {
+	case <-called:
+		// expected
+	default:
+		t.Fatal("onSuccess was not called after a successful update")
+	}
+}
+
+func TestDoUpdate_OnSuccessNotCalledOnFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	called := false
+	u, err := newUpdater(
+		&http.Client{Timeout: 5 * time.Second},
+		server.URL+"/manifest.json",
+		t.TempDir(),
+		time.Second,
+		func() { called = true },
+	)
+	require.NoError(t, err)
+
+	u.doUpdate()
+
+	require.False(t, called, "onSuccess must not be called when the update fails")
 }
 
 func TestResolveKeyRefsRejectsEmptyName(t *testing.T) {

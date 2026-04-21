@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"bytes"
 	"encoding/pem"
 	"os"
 	"path/filepath"
@@ -40,22 +41,26 @@ func loadKeysFromDir(dir string) ([]*storage.CosignPublicKeyVerification_PublicK
 			continue
 		}
 
-		block, rest := pem.Decode(contents)
+		// Trim trailing whitespace so files ending with \n\n are accepted.
+		trimmed := bytes.TrimRight(contents, " \t\r\n")
+		block, rest := pem.Decode(trimmed)
 		if !signatures.IsValidPublicKeyPEMBlock(block, rest) {
 			log.Warnf("Skipping Red Hat signing key file %q: not a valid PEM-encoded public key", fullPath)
 			continue
 		}
 
-		pemStr := string(contents)
-		if _, dup := seen[pemStr]; dup {
+		// Re-encode to canonical PEM form: normalises whitespace and strips any
+		// non-PEM content (e.g. GPG-style headers) that preceded the PEM block.
+		canonical := string(pem.EncodeToMemory(block))
+		if _, dup := seen[canonical]; dup {
 			log.Debugf("Skipping duplicate Red Hat signing key in file %q", fullPath)
 			continue
 		}
-		seen[pemStr] = struct{}{}
+		seen[canonical] = struct{}{}
 
 		keys = append(keys, &storage.CosignPublicKeyVerification_PublicKey{
 			Name:            name,
-			PublicKeyPemEnc: pemStr,
+			PublicKeyPemEnc: canonical,
 		})
 	}
 

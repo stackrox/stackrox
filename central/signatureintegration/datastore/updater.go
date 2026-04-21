@@ -37,11 +37,12 @@ type updater struct {
 	interval    time.Duration
 	manifestURL string
 	targetDir   string
+	onSuccess   func()
 	once        sync.Once
 	stopSig     concurrency.Signal
 }
 
-func newUpdater(client *http.Client, manifestURL, targetDir string, interval time.Duration) (*updater, error) {
+func newUpdater(client *http.Client, manifestURL, targetDir string, interval time.Duration, onSuccess func()) (*updater, error) {
 	if client == nil {
 		return nil, errors.New("http client must be provided")
 	}
@@ -54,6 +55,7 @@ func newUpdater(client *http.Client, manifestURL, targetDir string, interval tim
 		interval:    interval,
 		manifestURL: manifestURL,
 		targetDir:   targetDir,
+		onSuccess:   onSuccess,
 		stopSig:     concurrency.NewSignal(),
 	}, nil
 }
@@ -89,6 +91,10 @@ func (u *updater) runForever() {
 func (u *updater) doUpdate() {
 	if err := u.update(); err != nil {
 		log.Errorf("Failed to download Red Hat key files from manifest %q into %q: %v", u.manifestURL, u.targetDir, err)
+		return
+	}
+	if u.onSuccess != nil {
+		u.onSuccess()
 	}
 }
 

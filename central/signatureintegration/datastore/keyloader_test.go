@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"encoding/pem"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,7 +40,8 @@ func TestLoadKeysFromDir_SingleValidPEMFile(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, keys, 1)
 	require.Equal(t, "key.pub", keys[0].GetName())
-	require.Equal(t, validPublicKeyPEM, keys[0].GetPublicKeyPemEnc())
+	// pem.EncodeToMemory always appends a trailing newline.
+	require.Equal(t, validPublicKeyPEM+"\n", keys[0].GetPublicKeyPemEnc())
 }
 
 func TestLoadKeysFromDir_MultipleValidPEMFiles(t *testing.T) {
@@ -68,7 +70,8 @@ func TestLoadKeysFromDir_DuplicatePEMContent(t *testing.T) {
 	keys, err := loadKeysFromDir(dir)
 	require.NoError(t, err)
 	require.Len(t, keys, 1)
-	require.Equal(t, validPublicKeyPEM, keys[0].GetPublicKeyPemEnc())
+	// pem.EncodeToMemory always appends a trailing newline.
+	require.Equal(t, validPublicKeyPEM+"\n", keys[0].GetPublicKeyPemEnc())
 }
 
 func TestLoadKeysFromDir_InvalidFileSkipped(t *testing.T) {
@@ -101,4 +104,55 @@ func TestLoadKeysFromDir_SubdirectoriesIgnored(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, keys, 1)
 	require.Equal(t, "key.pub", keys[0].GetName())
+}
+
+func TestLoadKeysFromDir_TrailingWhitespaceAccepted(t *testing.T) {
+	dir := t.TempDir()
+	// File ends with double newline — was previously rejected with misleading warning.
+	writePEMFile(t, dir, "key.pub", validPublicKeyPEM+"\n\n")
+
+	keys, err := loadKeysFromDir(dir)
+	require.NoError(t, err)
+	require.Len(t, keys, 1, "trailing whitespace must not cause the key to be rejected")
+}
+
+func TestLoadKeysFromDir_DuplicateWithTrailingWhitespaceDeduplicated(t *testing.T) {
+	dir := t.TempDir()
+	// Two files: one with and one without trailing newlines — same underlying key.
+	writePEMFile(t, dir, "key-a.pub", validPublicKeyPEM)
+	writePEMFile(t, dir, "key-b.pub", validPublicKeyPEM+"\n\n")
+
+	keys, err := loadKeysFromDir(dir)
+	require.NoError(t, err)
+	require.Len(t, keys, 1, "whitespace-differing duplicates must be deduplicated")
+}
+
+func TestLoadKeysFromDir_GPGStyleHeaderStripped(t *testing.T) {
+	dir := t.TempDir()
+	// Simulate a file with GPG-style metadata lines before the PEM block.
+	gpgStyleContent := "Red Hat Release Key (release-key-3)\nVersion: GnuPG v1\n\n" + validPublicKeyPEM
+	writePEMFile(t, dir, "key.pub", gpgStyleContent)
+
+	keys, err := loadKeysFromDir(dir)
+	require.NoError(t, err)
+	require.Len(t, keys, 1, "GPG-style header before PEM block must be accepted")
+
+	// The stored PEM must be canonical — no leading GPG header.
+	require.Equal(t, validPublicKeyPEM+"\n", keys[0].GetPublicKeyPemEnc(),
+		"stored PEM must be stripped of GPG-style headers")
+}
+
+func TestLoadKeysFromDir_StoredPEMIsCanonical(t *testing.T) {
+	dir := t.TempDir()
+	writePEMFile(t, dir, "key.pub", validPublicKeyPEM)
+
+	keys, err := loadKeysFromDir(dir)
+	require.NoError(t, err)
+	require.Len(t, keys, 1)
+
+	// The stored value must equal pem.EncodeToMemory of the decoded block.
+	block, _ := pem.Decode([]byte(validPublicKeyPEM))
+	require.NotNil(t, block)
+	require.Equal(t, string(pem.EncodeToMemory(block)), keys[0].GetPublicKeyPemEnc(),
+		"stored PEM must be in canonical pem.EncodeToMemory form")
 }
