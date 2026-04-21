@@ -18,8 +18,8 @@ func TestUniQueue(t *testing.T) {
 }
 
 func (s *uniQueueSuite) TestPushPull() {
-	items := []*testItem{{1}, {2}, {1}, {3}}
-	expectedItems := []*testItem{{1}, {2}, {3}}
+	items := []*testItem{{value: 1}, {value: 2}, {value: 1}, {value: 3}}
+	expectedItems := []*testItem{{value: 1}, {value: 2}, {value: 3}}
 	q := NewDedupingQueue[string]()
 	for _, i := range items {
 		q.Push(i)
@@ -103,8 +103,8 @@ func (s *uniQueueSuite) TestMergeableThreeWayMerge() {
 
 func (s *uniQueueSuite) TestNonMergeableItemsReplaceOnDuplicate() {
 	q := NewDedupingQueue[string]()
-	q.Push(&testItem{value: 1})
-	q.Push(&testItem{value: 1})
+	q.Push(&testItem{value: 1, payload: "first"})
+	q.Push(&testItem{value: 1, payload: "second"})
 
 	s.Assert().Equal(1, q.queue.Len(), "duplicate key should result in one item")
 
@@ -113,7 +113,7 @@ func (s *uniQueueSuite) TestNonMergeableItemsReplaceOnDuplicate() {
 	item := q.PullBlocking(&stopSignal)
 	pulled, ok := item.(*testItem)
 	s.Require().True(ok)
-	s.Assert().Equal(1, pulled.value, "non-mergeable item should be replaced, not merged")
+	s.Assert().Equal("second", pulled.payload, "new item should replace the old one")
 }
 
 func (s *uniQueueSuite) TestMergeablePreservesQueueOrder() {
@@ -137,7 +137,8 @@ func (s *uniQueueSuite) TestMergeablePreservesQueueOrder() {
 }
 
 type testItem struct {
-	value int
+	value   int
+	payload string
 }
 
 func (i *testItem) GetDedupeKey() string {
