@@ -2,12 +2,14 @@ package datastore
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -30,12 +32,33 @@ func upsertDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationS
 	utils.Should(errors.Wrap(err, "upserting default Red Hat signature integration"))
 }
 
+func startRedHatSigningKeyUpdater() {
+	manifestURL := env.RedHatSigningKeyManifestURL.Setting()
+	if manifestURL == "" {
+		log.Info("Red Hat signing key manifest URL not configured, skipping key updater")
+		return
+	}
+
+	u, err := newUpdater(
+		&http.Client{},
+		manifestURL,
+		env.RedHatSigningKeysRuntimeDir.Setting(),
+		env.RedHatSigningKeyUpdateInterval.DurationSetting(),
+	)
+	if err != nil {
+		utils.Should(errors.Wrap(err, "creating Red Hat signing key updater"))
+		return
+	}
+	u.Start()
+}
+
 // Singleton returns the sole instance of the DataStore service.
 func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
 		upsertDefaultRedHatSignatureIntegration(storage)
 		instance = New(storage, policyDataStore.Singleton())
+		startRedHatSigningKeyUpdater()
 	})
 	return instance
 }
