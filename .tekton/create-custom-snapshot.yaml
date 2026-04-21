@@ -163,9 +163,11 @@ spec:
             is_matching_source_branch='{{ cel: source_branch.matches("(konflux|renovate|appstudio|rhtap)") }}'
             assert_boolean is_matching_source_branch "source_branch: {{ source_branch }}"
 
+            # The label will be findable this way for pull request events.
             has_konflux_build_label_as_pr='{{ cel: has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build") }}'
             assert_boolean has_konflux_build_label_as_pr
 
+            # The label will be findable this way for /test comments and alike.
             has_konflux_build_label_as_issue='{{ cel: has(body.issue) && has(body.issue.labels) && body.issue.labels.exists(l, l.name == "konflux-build") }}'
             assert_boolean has_konflux_build_label_as_issue
 
