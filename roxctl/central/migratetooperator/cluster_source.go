@@ -2,6 +2,7 @@ package migratetooperator
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -38,7 +39,10 @@ func newClusterSource(namespace string) (*clusterSource, error) {
 }
 
 func (s *clusterSource) CentralDBDeployment() (*appsv1.Deployment, error) {
-	dep, err := s.client.AppsV1().Deployments(s.namespace).Get(context.Background(), "central-db", metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	dep, err := s.client.AppsV1().Deployments(s.namespace).Get(ctx, "central-db", metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting central-db Deployment in namespace %q", s.namespace)
 	}
