@@ -166,6 +166,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("consolePlugin", t.getConsolePluginValues(ctx))
 
+	v.AddChild("processIndicators", getProcessIndicatorsValues(sc.Spec.ProcessIndicators))
+
 	return v.Build()
 }
 
@@ -579,4 +581,36 @@ func (t Translator) isConsolePluginAPIAvailable(ctx context.Context) (bool, erro
 		return false, errors.Wrap(err, "listing ConsolePlugin resources")
 	}
 	return true, nil
+}
+
+func getProcessIndicatorsValues(processIndicators *platform.ProcessIndicatorsSpec) *translation.ValuesBuilder {
+	if processIndicators == nil {
+		return nil
+	}
+	cv := translation.NewValuesBuilder()
+
+	if processIndicators.Persistence != nil {
+		// Note that we reverse the logic here: SecuredClusterCR comes with the
+		// field Persistence, while the ProcessIndicatorsConfig has
+		// "no_persistence" field. The reason is that there is no way to
+		// specify default values for protobuf, thus we need to stick with a
+		// false as a default for booleans, hence "no_persistence" at the
+		// config level. But at the CRD level as a user interface it's easier
+		// to operate with a positive meaning, thus SecuredClusterCR has
+		// Persistence. It's somewhat tricky, but below is the only place where
+		// it might be relevant.
+		cv.SetBoolValue("noPersistence",
+			*processIndicators.Persistence == platform.ProcessIndicatorConfigDisabled)
+	}
+
+	if processIndicators.ExcludeOpenshiftNs != nil {
+		cv.SetBoolValue("excludeOpenshiftNs",
+			*processIndicators.ExcludeOpenshiftNs == platform.ProcessIndicatorConfigEnabled)
+	}
+
+	if processIndicators.ExcludeNamespaceFilter != nil && *processIndicators.ExcludeNamespaceFilter != "" {
+		cv.SetStringValue("excludeNamespaceFilter", *processIndicators.ExcludeNamespaceFilter)
+	}
+
+	return &cv
 }

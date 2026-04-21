@@ -1168,6 +1168,11 @@ spec:
         path: network
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: ProcessIndicators per-namespace filtering configuration.
+        displayName: ProcessIndicators
+        path: processIndicators
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: 'Deprecated field. This field will be removed in a future release.
 
           Miscellaneous settings.'
@@ -1503,6 +1508,27 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:Enabled
         - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: 'Whether to persist individual process indicators.
+
+          The default is: Enabled.'
+        displayName: Persistence
+        path: processIndicators.persistence
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: 'Whether to persist process indicators originating from openshift
+          namespaces.
+
+          The default is: Disabled.'
+        displayName: Exclude Openshift Ns
+        path: processIndicators.excludeOpenshiftNs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: A regex specifying to not persist process indicators from specified
+          namespaces.
+        displayName: Exclude Namespace Filter
+        path: processIndicators.excludeNamespaceFilter
       - description: 'If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here
 

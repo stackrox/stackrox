@@ -1002,6 +1002,30 @@ spec:
                     - Disabled
                     type: string
                 type: object
+              processIndicators:
+                description: ProcessIndicators per-namespace filtering configuration.
+                properties:
+                  excludeNamespaceFilter:
+                    description: A regex specifying to not persist process indicators
+                      from specified namespaces.
+                    type: string
+                  excludeOpenshiftNs:
+                    description: |-
+                      Whether to persist process indicators originating from openshift namespaces.
+                      The default is: Disabled.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                  persistence:
+                    description: |-
+                      Whether to persist individual process indicators.
+                      The default is: Enabled.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
               registryOverride:
                 description: Set this parameter to override the default registry in
                   images. For example, nginx:latest -> <registry override>/library/nginx:latest
