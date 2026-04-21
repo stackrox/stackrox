@@ -97,19 +97,35 @@ type BundleExporter interface {
 	ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error
 }
 
-// clairCoreBundleExporter is the production implementation using ClairCore.
-type clairCoreBundleExporter struct {
+// claircoreUpdaterRunner is the production implementation that runs ClairCore updaters.
+type claircoreUpdaterRunner struct {
 	httpClient *http.Client
 }
 
-// ExportBundle implements BundleExporter using the ClairCore bundle function.
-func (e *clairCoreBundleExporter) ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
-	return bundle(ctx, e.httpClient, w, opts)
+// ExportBundle runs ClairCore updaters and writes the results to the given writer.
+func (e *claircoreUpdaterRunner) ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+	jsonStore, err := jsonblob.New()
+	if err != nil {
+		return err
+	}
+	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), e.httpClient, opts...)
+	if err != nil {
+		return fmt.Errorf("new manager: %w", err)
+	}
+	err = mgr.Run(ctx)
+	if err != nil {
+		return fmt.Errorf("run: %w", err)
+	}
+	err = jsonStore.Store(w)
+	if err != nil {
+		return fmt.Errorf("json store: %w", err)
+	}
+	return nil
 }
 
 // NewBundleExporter creates a new production bundle exporter with the given HTTP client.
 func NewBundleExporter(httpClient *http.Client) BundleExporter {
-	return &clairCoreBundleExporter{httpClient: httpClient}
+	return &claircoreUpdaterRunner{httpClient: httpClient}
 }
 
 // NewDefaultBundleExporter creates a new production bundle exporter with rate-limited HTTP client.
@@ -387,26 +403,6 @@ func zstdWriter(filename string) (io.WriteCloser, error) {
 		return nil, err
 	}
 	return w, nil
-}
-
-func bundle(ctx context.Context, client *http.Client, w io.Writer, opts []updates.ManagerOption) error {
-	jsonStore, err := jsonblob.New()
-	if err != nil {
-		return err
-	}
-	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), client, opts...)
-	if err != nil {
-		return fmt.Errorf("new manager: %w", err)
-	}
-	err = mgr.Run(ctx)
-	if err != nil {
-		return fmt.Errorf("run: %w", err)
-	}
-	err = jsonStore.Store(w)
-	if err != nil {
-		return fmt.Errorf("json store: %w", err)
-	}
-	return nil
 }
 
 type rateLimitedTransport struct {
