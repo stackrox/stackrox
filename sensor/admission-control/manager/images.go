@@ -17,10 +17,6 @@ import (
 	admission "k8s.io/api/admission/v1"
 )
 
-const (
-	imageCacheTTL = 30 * time.Minute
-)
-
 type imageCacheEntry struct {
 	*storage.Image
 	timestamp time.Time
@@ -79,7 +75,7 @@ func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe 
 		emit(observeCacheMiss)
 		return nil
 	}
-	if time.Since(cachedImg.timestamp) > imageCacheTTL {
+	if time.Since(cachedImg.timestamp) > m.imageCacheTTL {
 		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
 		// imageCache entry TTL-expired. Same reasoning as above: only tag-only refs
 		// have a name→key mapping to invalidate.
