@@ -220,6 +220,40 @@ func TestExport_PartialFailure(t *testing.T) {
 	}
 }
 
+func TestExport_AllSuccess(t *testing.T) {
+	tmpDir := t.TempDir()
+	ctx := context.Background()
+
+	exporter := &testBundleExporter{
+		exportFunc: func(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+			_, err := w.Write([]byte(`{"test":"data"}`))
+			return err
+		},
+	}
+
+	opts := &ExportOptions{ManualVulnURL: ""}
+
+	err := Export(ctx, tmpDir, opts, exporter)
+	require.NoError(t, err)
+
+	status := readStatusFile(t, tmpDir)
+	sc, fc := status.Counts()
+	assert.Equal(t, 13, sc)
+	assert.Equal(t, 0, fc)
+	assert.False(t, status.HasFailures())
+}
+
+func TestWriteStatusFile_InvalidPath(t *testing.T) {
+	status := &ExportStatus{
+		Updaters: []UpdaterStatus{
+			{Name: "alpine", Status: StatusSuccess},
+		},
+	}
+
+	err := writeStatusFile("/nonexistent/path", status)
+	require.Error(t, err)
+}
+
 func TestExport_AllFailed(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()
