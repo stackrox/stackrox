@@ -46,7 +46,7 @@ func (s *ManagerImplSuite) SetupSuite() {
 func (s *ManagerImplSuite) SetupTest() {
 	s.mgr.imageCache.Purge()
 	s.mgr.imageNameToImageCacheKey.Purge()
-	s.mgr.imageCacheGen.Clear()
+	s.mgr.imageCacheGen.Clear(s.T())
 	s.mgr.clusterLabels.Store(nil)
 
 	depStore := resources.NewDeploymentStore(nil)

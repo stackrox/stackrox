@@ -45,7 +45,7 @@ func (s *ImageCacheTestSuite) SetupSuite() {
 func (s *ImageCacheTestSuite) SetupTest() {
 	s.manager.imageCache.Purge()
 	s.manager.imageNameToImageCacheKey.Purge()
-	s.manager.imageCacheGen.Clear()
+	s.manager.imageCacheGen.Clear(s.T())
 	s.manager.state.Store(nil)
 }
 
@@ -320,8 +320,8 @@ func (s *ImageCacheTestSuite) TestProcessImageInvalidation_IncrementsGeneration(
 		ImageId: "sha256:abc", ImageFullName: "docker.io/library/nginx:1.25",
 	})
 
-	s.Equal(uint64(1), s.manager.imageCacheGen.Get("sha256:abc"))
-	s.Equal(uint64(1), s.manager.imageCacheGen.Get("docker.io/library/nginx:1.25"))
+	s.Equal(uint64(1), s.manager.imageCacheGen.Get(s.T(), "sha256:abc"))
+	s.Equal(uint64(1), s.manager.imageCacheGen.Get(s.T(), "docker.io/library/nginx:1.25"))
 }
 
 func (s *ImageCacheTestSuite) TestProcessImageInvalidation_MultipleKeys() {
@@ -372,7 +372,7 @@ func (s *ImageCacheTestSuite) TestGenerationCounter() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			s.manager.imageCache.Purge()
-			s.manager.imageCacheGen.Clear()
+			s.manager.imageCacheGen.Clear(s.T())
 
 			gen, cacheVer := s.manager.imageCacheGen.Snapshot("sha256:abc")
 			tt.mutate()
@@ -390,9 +390,9 @@ func (s *ImageCacheTestSuite) TestClearImageCacheGen() {
 	s.manager.imageCacheGen.Inc("sha256:b")
 	s.manager.imageCacheGen.UpdateCacheVersion("v1")
 
-	s.manager.imageCacheGen.Clear()
+	s.manager.imageCacheGen.Clear(s.T())
 
-	s.Equal(uint64(0), s.manager.imageCacheGen.Get("sha256:a"))
-	s.Equal(uint64(0), s.manager.imageCacheGen.Get("sha256:b"))
+	s.Equal(uint64(0), s.manager.imageCacheGen.Get(s.T(), "sha256:a"))
+	s.Equal(uint64(0), s.manager.imageCacheGen.Get(s.T(), "sha256:b"))
 	s.Equal("", s.manager.imageCacheGen.CacheVersion())
 }

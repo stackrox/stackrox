@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -97,7 +98,7 @@ const (
 // imageGenTracker tracks per-key generation counters to prevent stale in-flight
 // fetches from re-caching data after an invalidation or full purge.
 type imageGenTracker struct {
-	mu           sync.Mutex
+	mu           sync.RWMutex
 	gen          map[string]uint64
 	cacheVersion string
 }
@@ -108,15 +109,15 @@ func newImageGenTracker() *imageGenTracker {
 
 // Snapshot captures the per-key generation and CacheVersion before a fetch.
 func (t *imageGenTracker) Snapshot(key string) (gen uint64, cacheVersion string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.gen[key], t.cacheVersion
 }
 
 // Changed returns true if the generation or CacheVersion moved since the snapshot.
 func (t *imageGenTracker) Changed(key string, gen uint64, cacheVersion string) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.gen[key] != gen || t.cacheVersion != cacheVersion
 }
 
@@ -129,8 +130,8 @@ func (t *imageGenTracker) Inc(key string) {
 
 // CacheVersion returns the current cache version.
 func (t *imageGenTracker) CacheVersion() string {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.cacheVersion
 }
 
@@ -142,15 +143,15 @@ func (t *imageGenTracker) UpdateCacheVersion(v string) {
 	clear(t.gen)
 }
 
-// Get returns the per-key generation counter (for testing).
-func (t *imageGenTracker) Get(key string) uint64 {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+// Get returns the per-key generation counter (for testing only).
+func (t *imageGenTracker) Get(_ testing.TB, key string) uint64 {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.gen[key]
 }
 
-// Clear resets all per-key counters and the cache version (for testing).
-func (t *imageGenTracker) Clear() {
+// Clear resets all per-key counters and the cache version (for testing only).
+func (t *imageGenTracker) Clear(_ testing.TB) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.cacheVersion = ""
@@ -470,9 +471,12 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	if newSettings.GetCacheVersion() != m.imageCacheGen.CacheVersion() {
 		log.Infof("CacheVersion changed (%s -> %s): purging image cache and resetting gen counters",
 			m.imageCacheGen.CacheVersion(), newSettings.GetCacheVersion())
+		// UpdateCacheVersion must precede Purge so that any in-flight fetch that
+		// snapshotted the old cacheVersion sees the mismatch in Changed() and
+		// discards its result instead of re-caching stale data.
+		m.imageCacheGen.UpdateCacheVersion(newSettings.GetCacheVersion())
 		m.imageCache.Purge()
 		m.imageNameToImageCacheKey.Purge()
-		m.imageCacheGen.UpdateCacheVersion(newSettings.GetCacheVersion())
 	}
 
 	m.state.Store(newState)
