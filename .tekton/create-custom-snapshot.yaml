@@ -120,7 +120,6 @@ spec:
     - name: post-metric-start
       taskRef: *post-bigquery-metrics-ref
 
-    # TODO: event_type=on-comment and the rest
     - name: determine-actual-build
       taskSpec:
         description: |
