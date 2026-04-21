@@ -18,8 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-const defaultUpdateInterval = 4 * time.Hour
-
 type manifest struct {
 	Keys []manifestKey `json:"keys"`
 }
@@ -48,7 +46,7 @@ func newUpdater(client *http.Client, manifestURL, targetDir string, interval tim
 		return nil, errors.New("http client must be provided")
 	}
 	if interval <= 0 {
-		interval = defaultUpdateInterval
+		return nil, errors.New("update interval must be positive")
 	}
 
 	return &updater{
@@ -95,12 +93,12 @@ func (u *updater) doUpdate() {
 }
 
 func (u *updater) update() error {
-	manifest, err := u.downloadManifest(u.manifestURL)
+	mf, err := u.downloadManifest(u.manifestURL)
 	if err != nil {
 		return errors.Wrapf(err, "downloading manifest from URL %q", u.manifestURL)
 	}
 
-	keyRefs, err := resolveKeyRefsFromManifest(u.manifestURL, manifest)
+	keyRefs, err := resolveKeyRefsFromManifest(u.manifestURL, mf)
 	if err != nil {
 		return errors.Wrap(err, "resolving key references from manifest")
 	}
@@ -115,60 +113,73 @@ func (u *updater) update() error {
 		_ = os.RemoveAll(stagingDir)
 	}()
 
-	if err := u.downloadKeys(keyRefs, stagingDir); err != nil {
+	n, err := u.downloadKeys(keyRefs, stagingDir)
+	if err != nil {
 		return errors.Wrap(err, "downloading keys to staging")
 	}
 	if err := replaceDirectoryContents(u.targetDir, stagingDir); err != nil {
 		return errors.Wrapf(err, "replacing target directory %q contents", u.targetDir)
 	}
 
+	log.Infof("Successfully updated Red Hat signing keys from %q: %d keys written to %q", u.manifestURL, n, u.targetDir)
 	return nil
 }
 
 // resolveKeyRefsFromManifest resolves the key references from a manifest.
-func resolveKeyRefsFromManifest(manifestURL string, manifest manifest) ([]keyRef, error) {
-	if len(manifest.Keys) == 0 {
+func resolveKeyRefsFromManifest(manifestURL string, mf manifest) ([]keyRef, error) {
+	if len(mf.Keys) == 0 {
 		return nil, errors.Errorf("manifest at %q does not contain any files", manifestURL)
 	}
 
-	keyRefs := make([]keyRef, 0, len(manifest.Keys))
-	for _, key := range manifest.Keys {
+	keyRefs := make([]keyRef, 0, len(mf.Keys))
+	for _, key := range mf.Keys {
+		name := strings.TrimSpace(key.Name)
+		if name == "" {
+			return nil, errors.New("manifest entry has empty name")
+		}
+		if strings.ContainsAny(name, "/\\") {
+			return nil, errors.Errorf("manifest entry name %q contains path separator", name)
+		}
 		resolvedURL, err := resolveKeyURL(manifestURL, key.URL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "resolving URL %q", key.URL)
 		}
 		keyRefs = append(keyRefs, keyRef{
-			name: key.Name,
+			name: name,
 			url:  resolvedURL,
 		})
 	}
 	return keyRefs, nil
 }
 
-func (u *updater) downloadKeys(keys []keyRef, stagingDir string) error {
+func (u *updater) downloadKeys(keys []keyRef, stagingDir string) (int, error) {
 	successes := 0
 	failures := 0
 
+	cleanStagingDir := filepath.Clean(stagingDir) + string(os.PathSeparator)
 	for _, key := range keys {
 		destination := filepath.Join(stagingDir, key.name)
+		if !strings.HasPrefix(filepath.Clean(destination)+string(os.PathSeparator), cleanStagingDir) {
+			failures++
+			log.Warnf("Skipping manifest entry %q (URL %q): resolved path escapes staging directory", key.name, key.url)
+			continue
+		}
 		if err := u.downloadFile(key.url, destination); err != nil {
 			failures++
-			log.Warnf("Skipping manifest entry %q: %v", key.url, err)
+			log.Warnf("Skipping manifest entry %q (URL %q): %v", key.name, key.url, err)
 			continue
 		}
 		successes++
 	}
 
 	if successes == 0 {
-		return errors.New("failed to download any keys")
+		return 0, errors.New("failed to download any keys")
 	}
 	if failures > 0 {
-		log.Warnf("Downloaded %d keys to staging %q, skipped %d entries", successes, stagingDir, failures)
-	} else {
-		log.Debugf("Downloaded %d keys to staging %q", successes, stagingDir)
+		log.Warnf("Downloaded %d keys, skipped %d entries", successes, failures)
 	}
 
-	return nil
+	return successes, nil
 }
 
 func (u *updater) downloadFile(url string, destination string) error {
@@ -177,7 +188,7 @@ func (u *updater) downloadFile(url string, destination string) error {
 		return errors.Wrapf(err, "failed to download file from URL %q", url)
 	}
 
-	if err := os.WriteFile(destination, contents, 0o600); err != nil {
+	if err := os.WriteFile(destination, contents, 0o644); err != nil {
 		_ = os.Remove(destination)
 		return errors.Wrapf(err, "failed to write file %q", destination)
 	}
@@ -198,11 +209,14 @@ func replaceDirectoryContents(targetDir, sourceDir string) error {
 		return errors.Wrap(err, "moving staged directory into target")
 	}
 	if err := os.RemoveAll(backupDir); err != nil {
-		return errors.Wrap(err, "removing backup directory")
+		log.Warnf("Failed to remove backup directory %q: %v", backupDir, err)
 	}
 
 	return nil
 }
+
+// maxResponseBodySize is the maximum size of a response body (manifest or key file) we will read.
+const maxResponseBodySize = 5 * 1024 * 1024 // 5 MB
 
 func (u *updater) downloadBytes(rawURL string) ([]byte, error) {
 	reqCtx, cancel := u.newRequestContext()
@@ -223,32 +237,22 @@ func (u *updater) downloadBytes(rawURL string) ([]byte, error) {
 		return nil, errors.Errorf("HTTP %d for %q", resp.StatusCode, rawURL)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodySize+1))
 	if err != nil {
 		return nil, errors.Wrap(err, "reading response body")
+	}
+	if len(body) > maxResponseBodySize {
+		return nil, errors.Errorf("response body from %q exceeds maximum size of %d bytes", rawURL, maxResponseBodySize)
 	}
 
 	return body, nil
 }
 
+const requestTimeout = 60 * time.Second
+
 func (u *updater) newRequestContext() (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	select {
-	case <-u.stopSig.Done():
-		cancel()
-		return ctx, cancel
-	default:
-	}
-
-	go func() {
-		select {
-		case <-u.stopSig.Done():
-			cancel()
-		case <-ctx.Done():
-		}
-	}()
-
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	concurrency.CancelContextOnSignal(ctx, cancel, &u.stopSig)
 	return ctx, cancel
 }
 
@@ -296,6 +300,9 @@ func resolveKeyURL(manifestURL, keyURL string) (string, error) {
 	parsed, err := url.Parse(resolved)
 	if err != nil {
 		return "", errors.Wrap(err, "parsing resolved URL")
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", errors.Errorf("unsupported URL scheme %q in %s", parsed.Scheme, resolved)
 	}
 	if strings.HasSuffix(parsed.Path, "/") || parsed.Path == "" {
 		return "", errors.Errorf("URL must point to a file, not a directory: %s", resolved)
