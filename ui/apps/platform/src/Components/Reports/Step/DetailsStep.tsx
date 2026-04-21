@@ -1,15 +1,59 @@
 import type { ReactElement } from 'react';
-import { Divider, Flex, PageSection, Title } from '@patternfly/react-core';
+import { Flex, Form, PageSection, TextArea, TextInput, Title } from '@patternfly/react-core';
+import type { FormikProps } from 'formik';
 
-// import type { DetailsType } from '../reports.types';
+import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 
-function DetailsStep(): ReactElement {
+import type { DetailsType, ReportPageAction } from '../reports.types';
+
+export type DetailsStepProps = {
+    formik: FormikProps<DetailsType>;
+    pageAction: ReportPageAction;
+};
+
+function DetailsStep({ formik, pageAction }: DetailsStepProps): ReactElement {
     return (
         <PageSection>
-            <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                 <Title headingLevel="h2">Details</Title>
-                <Divider component="div" />
-                {/* TODO Form includes name and description */}
+                <Form>
+                    <FormLabelGroup
+                        label="Name"
+                        isRequired
+                        fieldId="name"
+                        errors={formik.errors}
+                        touched={formik.touched}
+                    >
+                        <TextInput
+                            type="text"
+                            id="name"
+                            name="name"
+                            value={formik.values.name}
+                            isDisabled={pageAction === 'edit'}
+                            isRequired
+                            validated={
+                                formik.errors?.name && formik.touched?.name ? 'error' : 'default'
+                            }
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Description"
+                        fieldId="description"
+                        errors={formik.errors}
+                        touched={formik.touched}
+                    >
+                        <TextArea
+                            type="text"
+                            id="description"
+                            name="description"
+                            value={formik.values.description}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                        />
+                    </FormLabelGroup>
+                </Form>
             </Flex>
         </PageSection>
     );
