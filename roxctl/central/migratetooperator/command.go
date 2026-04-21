@@ -56,18 +56,26 @@ func (cmd *command) run() error {
 		return errors.Wrap(err, "marshalling Central CR")
 	}
 
-	var w io.Writer = os.Stdout
+	var w io.Writer = cmd.env.InputOutput().Out()
+	var f *os.File
 	if cmd.output != "" {
-		f, err := os.Create(cmd.output)
+		f, err = os.Create(cmd.output)
 		if err != nil {
 			return errors.Wrap(err, "creating output file")
 		}
-		defer f.Close()
 		w = f
 	}
 
 	if _, err := w.Write(out); err != nil {
+		if f != nil {
+			_ = f.Close()
+		}
 		return errors.Wrap(err, "writing output")
+	}
+	if f != nil {
+		if err := f.Close(); err != nil {
+			return errors.Wrap(err, "closing output file")
+		}
 	}
 	return nil
 }
