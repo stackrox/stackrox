@@ -31,9 +31,9 @@ seamlessly take over management of the deployment.`,
 			return cmd.run()
 		}),
 	}
-	c.Flags().StringVar(&cmd.fromDir, "from-dir", "", "Path to directory containing roxctl-generated manifests")
-	c.Flags().StringVarP(&cmd.namespace, "namespace", "n", "", "Kubernetes namespace of the running Central deployment")
-	c.Flags().StringVarP(&cmd.output, "output", "o", "", "Path to write the generated Central CR YAML (default: stdout)")
+	c.Flags().StringVar(&cmd.fromDir, "from-dir", "", "Path to directory containing roxctl-generated manifests.")
+	c.Flags().StringVarP(&cmd.namespace, "namespace", "n", "", "Kubernetes namespace of the running Central deployment.")
+	c.Flags().StringVarP(&cmd.output, "output", "o", "", "Path to write the generated Central CR YAML (default: stdout).")
 	c.MarkFlagsMutuallyExclusive("from-dir", "namespace")
 	return c
 }
