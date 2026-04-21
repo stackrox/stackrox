@@ -514,8 +514,7 @@ func (s *serviceImpl) GetVMCVEDetail(ctx context.Context, request *v2.GetVMCVEDe
 	}, nil
 }
 
-// ListVMCVEAffectedVMs returns VMs affected by a specific CVE.
-// TODO(ROX-34181): Replace with a SQL view to enable proper pagination.
+// ListVMCVEAffectedVMs returns VMs affected by a specific CVE with pagination.
 func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.ListVMCVEAffectedVMsRequest) (*v2.ListVMCVEAffectedVMsResponse, error) {
 	if request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cve_id must be specified")
@@ -529,65 +528,36 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 		searchQuery,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
 
-	// Get all CVE records matching this CVE identifier to find affected VMs.
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, searchQuery)
+	countQuery := searchQuery.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := s.cveView.CountAffectedVMs(ctx, countQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build per-VM aggregation: for each VM, pick the highest severity CVE record.
-	type vmCVEInfo struct {
-		severity       v2.VulnerabilitySeverity
-		isFixable      bool
-		cvss           float32
-		componentCount int
-	}
-	vmMap := make(map[string]*vmCVEInfo)
-	for _, cve := range cves {
-		info, ok := vmMap[cve.GetVmV2Id()]
-		if !ok {
-			info = &vmCVEInfo{}
-			vmMap[cve.GetVmV2Id()] = info
-		}
-		info.componentCount++
-		severity := v2.VulnerabilitySeverity(cve.GetSeverity())
-		if severity > info.severity {
-			info.severity = severity
-			info.cvss = cve.GetPreferredCvss()
-		}
-		if cve.GetIsFixable() {
-			info.isFixable = true
-		}
-	}
-
-	vmIDs := make([]string, 0, len(vmMap))
-	for id := range vmMap {
-		vmIDs = append(vmIDs, id)
-	}
-
-	vms, _, err := s.vmDS.GetManyVirtualMachines(ctx, vmIDs)
+	affectedVMs, err := s.cveView.GetAffectedVMs(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	rows := make([]*v2.VMCVEAffectedVMRow, 0, len(vms))
-	for _, vm := range vms {
-		info := vmMap[vm.GetId()]
+	rows := make([]*v2.VMCVEAffectedVMRow, 0, len(affectedVMs))
+	for _, vm := range affectedVMs {
 		rows = append(rows, &v2.VMCVEAffectedVMRow{
-			VmId:                   vm.GetId(),
-			VmName:                 vm.GetName(),
-			Severity:               info.severity,
-			IsFixable:              info.isFixable,
-			Cvss:                   info.cvss,
-			GuestOs:                vm.GetGuestOs(),
-			AffectedComponentCount: int32(info.componentCount),
+			VmId:                   vm.GetVMID(),
+			VmName:                 vm.GetVMName(),
+			Severity:               v2.VulnerabilitySeverity(vm.GetMaxSeverity()),
+			IsFixable:              vm.GetIsFixable(),
+			Cvss:                   vm.GetMaxCVSS(),
+			GuestOs:                vm.GetGuestOS(),
+			AffectedComponentCount: int32(vm.GetAffectedComponentCount()),
 		})
 	}
 
 	return &v2.ListVMCVEAffectedVMsResponse{
 		Vms:        rows,
-		TotalCount: int32(len(rows)),
+		TotalCount: int32(totalCount),
 	}, nil
 }
 
