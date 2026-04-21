@@ -59,8 +59,9 @@ func TestSensorKubernetesPipeline_ConnectionResilience(t *testing.T) {
 	// Configure sensor with toxiproxy sidecar and wait for pod to be ready
 	sensorPod, originalCentralEndpoint := configureSensorWithToxiproxy(ctx, t, k8sClient)
 
-	// Cleanup: restore original deployment on test completion
+	// Cleanup: dump sensor logs then restore original deployment
 	t.Cleanup(func() {
+		dumpSensorLogs(ctx, t, k8sClient, sensorPod.Name)
 		cleanupSensorToxiproxyConfig(ctx, t, k8sClient, originalCentralEndpoint)
 	})
 
@@ -234,6 +235,21 @@ func bounceSensorPod(ctx context.Context, t *testing.T, k8sClient kubernetes.Int
 		}
 	}, testTimeout, testInterval)
 	t.Log("New sensor pod is ready")
+}
+
+// dumpSensorLogs dumps the last 200 lines of sensor container logs from the given pod.
+func dumpSensorLogs(ctx context.Context, t *testing.T, k8sClient kubernetes.Interface, podName string) {
+	tailLines := int64(200)
+	req := k8sClient.CoreV1().Pods(sensorNamespace).GetLogs(podName, &corev1.PodLogOptions{
+		Container: "sensor",
+		TailLines: &tailLines,
+	})
+	logBytes, err := req.DoRaw(ctx)
+	if err != nil {
+		t.Logf("Failed to get sensor logs: %v", err)
+		return
+	}
+	t.Logf("=== Sensor logs (last %d lines from %s) ===\n%s", tailLines, podName, string(logBytes))
 }
 
 // configureSensorWithToxiproxy patches the sensor deployment to add toxiproxy sidecar
