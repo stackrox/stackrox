@@ -1,7 +1,9 @@
 # roxctl central generate - Master Options List
 
 This document lists every CLI option discovered across all four modes of
-`roxctl central generate`, noting which modes each option is available in.
+`roxctl central generate`, noting which modes each option is available in,
+how each option affects the generated kubectl manifests, and a `kubectl get`
+command to infer from a running cluster whether the option was used.
 
 Modes:
 - **OS-PVC**: `roxctl central generate openshift pvc`
@@ -11,11 +13,11 @@ Modes:
 
 ## Storage-specific options (PVC only)
 
-| Option | Default | OS-PVC | OS-HP | K8S-PVC | K8S-HP | Description |
-|--------|---------|--------|-------|---------|--------|-------------|
-| `--db-name` | `central-db` | Y | - | Y | - | External volume name for Central DB |
-| `--db-size` | `100` | Y | - | Y | - | External volume size in Gi for Central DB |
-| `--db-storage-class` | *(none)* | Y | - | Y | - | Storage class name for Central DB |
+| Option | Default | OS-PVC | OS-HP | K8S-PVC | K8S-HP |
+|--------|---------|--------|-------|---------|--------|
+| `--db-name` | `central-db` | Y | - | Y | - |
+| `--db-size` | `100` | Y | - | Y | - |
+| `--db-storage-class` | *(none)* | Y | - | Y | - |
 
 ### `--db-name`
 
@@ -24,7 +26,7 @@ Changes PVC name in `central/01-central-11-db-pvc.yaml` and the corresponding
 Impact identical across OS-PVC and K8S-PVC.
 
 ```
-kubectl get pvc central-db -n stackrox -o jsonpath='{.metadata.name}'
+kubectl get pvc -n stackrox -o jsonpath='{.items[*].metadata.name}'
 ```
 
 ### `--db-size`
@@ -47,11 +49,11 @@ kubectl get pvc central-db -n stackrox -o jsonpath='{.spec.storageClassName}'
 
 ## Storage-specific options (hostpath only)
 
-| Option | Default | OS-PVC | OS-HP | K8S-PVC | K8S-HP | Description |
-|--------|---------|--------|-------|---------|--------|-------------|
-| `--db-hostpath` | `/var/lib/stackrox-central` | - | Y | - | Y | Path on the host |
-| `--db-node-selector-key` | *(none)* | - | Y | - | Y | Node selector key (e.g. kubernetes.io/hostname) |
-| `--db-node-selector-value` | *(none)* | - | Y | - | Y | Node selector value |
+| Option | Default | OS-PVC | OS-HP | K8S-PVC | K8S-HP |
+|--------|---------|--------|-------|---------|--------|
+| `--db-hostpath` | `/var/lib/stackrox-central` | - | Y | - | Y |
+| `--db-node-selector-key` | *(none)* | - | Y | - | Y |
+| `--db-node-selector-value` | *(none)* | - | Y | - | Y |
 
 ### `--db-hostpath`
 
@@ -74,10 +76,10 @@ kubectl get deployment central-db -n stackrox -o jsonpath='{.spec.template.spec.
 
 ## OpenShift-specific options
 
-| Option | Default | OS-PVC | OS-HP | K8S-PVC | K8S-HP | Description |
-|--------|---------|--------|-------|---------|--------|-------------|
-| `--openshift-monitoring` | `auto` | Y | Y | - | - | Integration with OpenShift 4 monitoring |
-| `--openshift-version` | `0` | Y | Y | - | - | The OpenShift major version (3 or 4) to deploy on |
+| Option | Default | OS-PVC | OS-HP | K8S-PVC | K8S-HP |
+|--------|---------|--------|-------|---------|--------|
+| `--openshift-monitoring` | `auto` | Y | Y | - | - |
+| `--openshift-version` | `0` | Y | Y | - | - |
 
 ### `--openshift-monitoring`
 
@@ -117,25 +119,188 @@ kubectl get configmap injected-cabundle-stackrox-central-services -n stackrox 2>
 
 ## Global options (available in all modes)
 
+### `--main-image`
+
+Default: derived from `--image-defaults`. Changes the Central and config-controller
+container images in their Deployments. Also changes the registry prefix for scanner-v4
+images and the setup script registry URL. Wide blast radius.
+
+Files affected: `central/01-central-13-deployment.yaml`, `central/02-config-controller-02-deployment.yaml`,
+`central/scripts/setup.sh`, `scanner/scripts/setup.sh`,
+`scanner-v4/02-scanner-v4-07-{db,indexer,matcher}-deployment.yaml`.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment central -n stackrox -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+### `--central-db-image`
+
+Default: derived from `--image-defaults`. Changes both container images (init + main)
+in the central-db Deployment (`central/01-central-12-central-db.yaml`). Clean, targeted.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment central-db -n stackrox -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+### `--scanner-image`
+
+Default: derived from `--image-defaults`. Changes scanner container image in
+`scanner/02-scanner-06-deployment.yaml`. Also changes the image pull secret name
+from `stackrox` to `stackrox-scanner` and registry URL in `scanner/scripts/setup.sh`.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment scanner -n stackrox -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+### `--scanner-db-image`
+
+Default: derived from `--image-defaults`. Changes scanner-db container images (init + main)
+in `scanner/02-scanner-06-deployment.yaml`. Clean, targeted — does not affect setup scripts.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment scanner-db -n stackrox -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+### `--scanner-v4-image`
+
+Default: derived from `--image-defaults`. Changes scanner-v4 indexer and matcher images in
+`scanner-v4/02-scanner-v4-07-{indexer,matcher}-deployment.yaml`.
+
+**Note:** Only the image name+tag portion is used; the provided registry is silently
+discarded and replaced with the default registry prefix. This is inconsistent with
+`--main-image`, `--central-db-image`, `--scanner-image`, and `--scanner-db-image`.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment scanner-v4-indexer -n stackrox -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+### `--scanner-v4-db-image`
+
+Default: derived from `--image-defaults`. Changes scanner-v4-db container images (init + main)
+in `scanner-v4/02-scanner-v4-07-db-deployment.yaml`.
+
+**Note:** Same registry-discarding behavior as `--scanner-v4-image`.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment scanner-v4-db -n stackrox -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+### `--image-defaults`
+
+Default: `rhacs`. When set to `opensource`, switches all images from
+`registry.redhat.io/advanced-cluster-security/rhacs-*-rhel8` to
+`quay.io/stackrox-io/*` and updates setup script registry URLs.
+Affects every deployment file and both setup scripts.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deploy -n stackrox -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.template.spec.containers[*]}{.image}{" "}{end}{"\n"}{end}'
+```
+
+### `--lb-type`
+
+Default: `none`. Controls how Central is exposed externally by adding
+`central/01-central-15-exposure.yaml`:
+- `lb`: Adds a `LoadBalancer` Service named `central-loadbalancer` (port 443, externalTrafficPolicy: Local)
+- `np`: Adds a `NodePort` Service named `central-loadbalancer` (port 443, with GCP app-protocol annotations)
+- `route` (OpenShift only): Adds two OpenShift Routes — `central` (passthrough TLS with redirect) and `central-mtls` (host: central.stackrox)
+- `none`: No exposure file added (default)
+
+Impact identical across applicable modes.
+
+```
+kubectl get svc central-loadbalancer -n stackrox -o jsonpath='{.spec.type}' 2>/dev/null || kubectl get route central -n stackrox 2>/dev/null
+```
+
+### `--plaintext-endpoints`
+
+Default: none. Adds `ROX_PLAINTEXT_ENDPOINTS` env var with the specified value to
+7 containers across 6 Deployments: central, config-controller, scanner (both containers),
+scanner-v4-db, scanner-v4-indexer, scanner-v4-matcher. No new files.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment central -n stackrox -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_PLAINTEXT_ENDPOINTS")].value}'
+```
+
+### `--istio-support`
+
+Default: none. Appends Istio `DestinationRule` resources (apiVersion `networking.istio.io/v1alpha3`)
+to 5 service YAML files. Each rule disables Istio mTLS for the service's ports since
+StackRox uses its own mTLS. Affected files:
+- `central/01-central-14-service.yaml`
+- `scanner/02-scanner-07-service.yaml` (2 rules: scanner + scanner-db)
+- `scanner-v4/02-scanner-v4-08-{db,indexer,matcher}-service.yaml`
+
+Impact identical across all 4 modes.
+
+```
+kubectl get destinationrules -n stackrox
+```
+
+### `--declarative-config-config-maps`
+
+Default: `[]`. Adds a read-only volumeMount at
+`/run/stackrox.io/declarative-configuration/<name>` and a corresponding
+configMap volume (optional: true) to the Central Deployment
+(`central/01-central-13-deployment.yaml`). No new files.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment central -n stackrox -o jsonpath='{.spec.template.spec.volumes[?(@.configMap.name=="<name>")]}'
+```
+
+### `--declarative-config-secrets`
+
+Default: `[]`. Same as `--declarative-config-config-maps` but mounts a Secret
+volume instead of a ConfigMap. Adds volumeMount + secret volume (optional: true)
+to Central Deployment. No new files.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get deployment central -n stackrox -o jsonpath='{.spec.template.spec.volumes[?(@.secret.secretName=="<name>")]}'
+```
+
+### `--default-tls-cert` / `--default-tls-key`
+
+These must be specified together. Adds a new file
+`central/01-central-06-default-tls-cert-secret.yaml` containing a `kubernetes.io/tls`
+Secret named `central-default-tls-cert` with the provided cert and key.
+No changes to existing files.
+
+Impact identical across all 4 modes.
+
+```
+kubectl get secret central-default-tls-cert -n stackrox
+```
+
 ### `--disable-admin-password`
 
 Default: `false`. Adds a `central.adminPassword.value` entry to the generated-values
 secret (`central/99-generated-values-secret.yaml`). The `password` file is empty.
-No other manifest structural changes. Impact identical across all 4 modes.
+No other manifest structural changes.
+
+Impact identical across all 4 modes.
 
 ```
 kubectl get secret -n stackrox -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep stackrox-generated
 ```
-Then inspect the generated-values secret for a `central.adminPassword` key.
-
-### `--password`
-
-Default: autogenerated. Only affects the password value, not manifest structure.
-After stripping randomness, produces identical output to the baseline.
-**No structural impact on manifests.** Impact identical across all 4 modes.
-
-No `kubectl get` command — the password cannot be inferred from the cluster
-(it's stored as a bcrypt hash in the `central-htpasswd` secret).
 
 ### `--enable-pod-security-policies`
 
@@ -171,39 +336,15 @@ all 4 modes.
 kubectl get deployment central -n stackrox -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_OFFLINE_MODE")].value}'
 ```
 
-### `--direct-grpc`
-
-Default: `false`. **No impact on generated manifests.** This is a client-side
-flag controlling how roxctl connects to Central. Impact identical (zero) across
-all 4 modes.
-
-### Remaining global options — not yet tested
-
-| Option | Default | Description | Notes |
-|--------|---------|-------------|-------|
-| `--ca` | *(none)* | Path to a custom CA certificate to use (PEM format) | |
-| `--central-db-image` | *(none)* | The central-db image to use | |
-| `--declarative-config-config-maps` | `[]` | List of config maps to add as declarative configuration mounts in central | |
-| `--declarative-config-secrets` | `[]` | List of secrets to add as declarative configuration mounts in central | |
-| `--default-tls-cert` | *(none)* | PEM cert bundle file | |
-| `--default-tls-key` | *(none)* | PEM private key file | |
-| `--image-defaults` | `rhacs` | Default container images settings (rhacs, opensource) | |
-| `--istio-support` | *(none)* | Generate deployment files supporting the given Istio version | K8S modes add "(kubectl output format only)" |
-| `--lb-type` | `none` | The method of exposing Central | OpenShift: route, lb, np, none. K8S: lb, np, none |
-| `-i`, `--main-image` | *(none)* | The main image to use | |
-| `--plaintext-endpoints` | *(none)* | The ports or endpoints to use for plaintext exposure; comma-separated list | |
-| `--scanner-db-image` | *(none)* | The scanner-db image to use | |
-| `--scanner-image` | *(none)* | The scanner image to use | |
-| `--scanner-v4-db-image` | *(none)* | The scanner-v4-db image to use | |
-| `--scanner-v4-image` | *(none)* | The scanner-v4 image to use | |
-
 ## Options with no impact on generated manifests
 
-These options are client-side only or control output format, not manifest content.
+These options are client-side only, control output format, or only affect
+randomized values (passwords, certs) without changing manifest structure.
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--backup-bundle` | *(none)* | Path to backup bundle (not tested — requires actual bundle) |
+| Option | Default | Reason |
+|--------|---------|--------|
+| `--backup-bundle` | *(none)* | Not tested — requires actual backup bundle file |
+| `--ca` | *(none)* | Client-side TLS trust option — silently ignored by `central generate` |
 | `--direct-grpc` | `false` | Client-side gRPC connection mode |
 | `-e`, `--endpoint` | `localhost:8443` | Client connection endpoint |
 | `--force-http1` | `false` | Client connection option |
@@ -213,7 +354,7 @@ These options are client-side only or control output format, not manifest conten
 | `--no-color` | `false` | Output color formatting |
 | `--output-dir` | *(none)* | Output directory path |
 | `--output-format` | `kubectl` | Changes output format entirely (not tested — we only use kubectl) |
-| `--password` | *(autogenerated)* | Only affects password value, not manifest structure |
+| `-p`, `--password` | *(autogenerated)* | Only affects password value, not manifest structure |
 | `--plaintext` | `false` | Client connection option |
 | `-s`, `--server-name` | *(none)* | Client TLS SNI |
 | `--token-file` | *(none)* | Client authentication |
