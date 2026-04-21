@@ -62,7 +62,7 @@ require (
 	github.com/google/go-containerregistry v0.21.4
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.21.0
+	github.com/googleapis/gax-go/v2 v2.22.0
 	github.com/gorilla/schema v1.4.1
 	github.com/grafana/pyroscope-go v1.2.8
 	github.com/graph-gophers/graphql-go v1.5.0
