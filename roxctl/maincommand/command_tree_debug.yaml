@@ -990,6 +990,25 @@ central:
         - plaintext
         - server-name
         - use-current-k8s-context
+  migrate-to-operator:
+    LOCAL_FLAGS:
+      - from-dir
+      - namespace
+      - output
+    INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   userpki:
     INHERITED_FLAGS:
       - ca
