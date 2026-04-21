@@ -33,7 +33,7 @@ function ExclusionScopeCard({
     }));
 
     return (
-        <PolicyScopeCardBase title="Exclusion scope" onDelete={onDelete}>
+        <PolicyScopeCardBase title="Exclusion" onDelete={onDelete}>
             <Form>
                 <FormGroup label="Cluster">
                     <Flex direction={{ default: 'column' }}>
