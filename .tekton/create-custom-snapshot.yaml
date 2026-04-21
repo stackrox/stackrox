@@ -181,13 +181,6 @@ spec:
             fi
             echo -n "The result is: "
             echo -n "${result}" | tee "$(results.SHOULD_REALLY_WORK.path)"
-            echo
-
-            echo '-----------'
-            echo 'full body, for diagnostics if anything fails:'
-            cat <<EOF
-              {{ cel: body }}
-            EOF
 
     - name: clone-repository
       params:
