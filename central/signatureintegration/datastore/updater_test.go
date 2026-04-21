@@ -2,10 +2,12 @@ package datastore
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,16 +42,20 @@ func TestResolveKeyURL(t *testing.T) {
 		{"https://example.com/keys/manifest.json", "https://example.com/keys/", "", true},
 		{"https://example.com/keys/manifest.json", "keys/", "", true},
 		{"://invalid", "key.pub", "", true},
+		{"https://example.com/keys/manifest.json", "file:///etc/shadow", "", true},
+		{"https://example.com/keys/manifest.json", "gopher://evil.com/key", "", true},
 	}
 
 	for _, tt := range tests {
-		got, err := resolveKeyURL(tt.manifestURL, tt.keyURL)
-		if tt.wantErr {
-			require.Errorf(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
-			continue
-		}
-		require.NoErrorf(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
-		require.Equalf(t, tt.want, got, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+		t.Run(fmt.Sprintf("%s_%s", tt.manifestURL, tt.keyURL), func(t *testing.T) {
+			got, err := resolveKeyURL(tt.manifestURL, tt.keyURL)
+			if tt.wantErr {
+				require.Errorf(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+				return
+			}
+			require.NoErrorf(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+			require.Equalf(t, tt.want, got, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+		})
 	}
 }
 
@@ -295,4 +301,41 @@ func TestUpdateFailsWhenNoFilesCanBeDownloaded(t *testing.T) {
 	existing, err := os.ReadFile(filepath.Join(targetDir, "existing.pub"))
 	require.NoError(t, err)
 	require.Equal(t, "existing", string(existing))
+}
+
+func TestNewUpdaterRejectsZeroInterval(t *testing.T) {
+	_, err := newUpdater(&http.Client{}, "https://example.com/manifest.json", t.TempDir(), 0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "interval must be positive")
+}
+
+func TestResolveKeyRefsRejectsEmptyName(t *testing.T) {
+	_, err := resolveKeyRefsFromManifest("https://example.com/manifest.json", manifest{
+		Keys: []manifestKey{{Name: "", URL: "key.pub"}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "empty name")
+}
+
+func TestResolveKeyRefsRejectsPathSeparatorInName(t *testing.T) {
+	_, err := resolveKeyRefsFromManifest("https://example.com/manifest.json", manifest{
+		Keys: []manifestKey{{Name: "../etc/evil", URL: "key.pub"}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "path separator")
+}
+
+func TestDownloadBytesRejectsOversizedResponse(t *testing.T) {
+	// Serve a response that exceeds maxResponseBodySize.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		// Write maxResponseBodySize + 100 bytes.
+		_, _ = w.Write([]byte(strings.Repeat("x", maxResponseBodySize+100)))
+	}))
+	defer server.Close()
+
+	u := newTestUpdater(t, server.URL+"/manifest.json", t.TempDir())
+	_, err := u.downloadBytes(server.URL + "/big-file")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "exceeds maximum size")
 }

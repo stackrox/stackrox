@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -17,8 +19,10 @@ import (
 )
 
 var (
-	once     sync.Once
-	instance DataStore
+	once           sync.Once
+	instance       DataStore
+	keyUpdater     *updater
+	keyUpdaterLock sync.Mutex
 )
 
 func upsertDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
@@ -40,7 +44,10 @@ func startRedHatSigningKeyUpdater() {
 	}
 
 	u, err := newUpdater(
-		&http.Client{},
+		&http.Client{
+			Timeout:   30 * time.Second,
+			Transport: proxy.RoundTripper(),
+		},
 		manifestURL,
 		env.RedHatSigningKeysRuntimeDir.Setting(),
 		env.RedHatSigningKeyUpdateInterval.DurationSetting(),
@@ -49,7 +56,23 @@ func startRedHatSigningKeyUpdater() {
 		utils.Should(errors.Wrap(err, "creating Red Hat signing key updater"))
 		return
 	}
+
+	keyUpdaterLock.Lock()
+	keyUpdater = u
+	keyUpdaterLock.Unlock()
+
 	u.Start()
+}
+
+// StopRedHatSigningKeyUpdater stops the background key updater if running.
+func StopRedHatSigningKeyUpdater() {
+	keyUpdaterLock.Lock()
+	u := keyUpdater
+	keyUpdaterLock.Unlock()
+
+	if u != nil {
+		u.Stop()
+	}
 }
 
 // Singleton returns the sole instance of the DataStore service.
