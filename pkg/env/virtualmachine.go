@@ -54,8 +54,8 @@ var (
 	// that the relay will forward to Sensor. Uses leaky bucket (no bursts).
 	// Supports fractional values for finer control (e.g., 0.5 = 1 report every 2 minutes).
 	// Set to "0" to disable rate limiting.
-	// Default: "1.0" report per minute per VM
-	VMRelayMaxReportsPerMinute = RegisterSetting("ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE", WithDefault("1.0"))
+	// Default: 1.0 report per minute per VM
+	VMRelayMaxReportsPerMinute = RegisterFloatSetting("ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE", 1.0).WithMinimum(0.0)
 
 	// VMRelayStaleAckThreshold defines how long since the last ACK before considering it stale.
 	// If rate limited and ACK is stale, the report is dropped (not sent to Sensor).

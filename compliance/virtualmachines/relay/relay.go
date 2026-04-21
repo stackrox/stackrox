@@ -137,6 +137,9 @@ func (r *Relay) Run(ctx context.Context) error {
 			r.handleIncomingReport(ctx, vmReport)
 		case resourceID, ok := <-r.umh.RetryCommand():
 			if !ok {
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
 				return errors.New("UMH retry command channel closed")
 			}
 			log.Infof("UMH retry for resource %s; no payload cache available, skipping resend", resourceID)
@@ -165,7 +168,12 @@ func (r *Relay) markAcked(resourceID string) {
 
 // handleIncomingReport processes an incoming report with rate limiting.
 func (r *Relay) handleIncomingReport(ctx context.Context, vmReport *v1.VMReport) {
-	vsockID := vmReport.GetIndexReport().GetVsockCid()
+	indexReport := vmReport.GetIndexReport()
+	if indexReport == nil || indexReport.GetVsockCid() == "" {
+		log.Warn("Received VM report without a valid vsock CID; dropping")
+		return
+	}
+	vsockID := indexReport.GetVsockCid()
 	now := time.Now()
 
 	r.cacheReport(vsockID, now)
