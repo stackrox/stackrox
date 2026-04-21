@@ -139,6 +139,9 @@ func (s *VMScanningSuite) SetupSuite() {
 	s.logf("VM scanning setup: verify cluster KVM readiness")
 	mustVerifyClusterKVMReady(t, s.ctx, s.k8sClient)
 
+	s.logf("VM scanning setup: ensure compliance metrics are exposed")
+	s.ensureComplianceMetricsExposed()
+
 	// VM_SCAN_NAMESPACE pins the test namespace for local development and re-runs:
 	// VMs survive across invocations so you can iterate on later test stages without
 	// waiting for full VM provisioning each time.
