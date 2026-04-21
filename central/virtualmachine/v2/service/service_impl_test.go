@@ -691,12 +691,6 @@ func TestListVMs(t *testing.T) {
 		State: storage.VirtualMachineV2_RUNNING,
 	}
 
-	cve1 := &storage.VirtualMachineCVEV2{
-		Id: "cve-uuid-1", VmV2Id: "vm-1",
-		Severity:  storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		IsFixable: true,
-	}
-
 	comp1 := &storage.VirtualMachineComponentV2{
 		Id: "comp-1", VmScanId: "scan-1", Name: "openssl", Version: "1.1.1",
 	}
@@ -719,7 +713,9 @@ func TestListVMs(t *testing.T) {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(1, nil)
 				mockVM.EXPECT().SearchRawVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{vm1}, nil)
-				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				mockView.EXPECT().CountBySeverityPerVM(ctx, gomock.Any()).Return([]vmcve.VMSeverityCounts{
+					&vmSeverityCountsMock{vmID: "vm-1", critical: 1, fixableCritical: 1},
+				}, nil)
 				mockComp.EXPECT().SearchRawVMComponents(ctx, gomock.Any()).Return([]*storage.VirtualMachineComponentV2{comp1, compUnscanned}, nil)
 				mockScan.EXPECT().GetBatch(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{scan1}, nil)
 			},
@@ -737,6 +733,7 @@ func TestListVMs(t *testing.T) {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(0, nil)
 				mockVM.EXPECT().SearchRawVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{}, nil)
+				mockView.EXPECT().CountBySeverityPerVM(ctx, gomock.Any()).Return(nil, nil)
 			},
 			expectedCount: 0,
 		},
@@ -793,7 +790,32 @@ type mockCveCore struct {
 	discovered *time.Time
 }
 
-func (m *mockCveCore) GetCVE() string      { return m.cve }
+func (m *mockCveCore) GetCVE() string { return m.cve }
+
+type vmSeverityCountsMock struct {
+	vmID                        string
+	critical, fixableCritical   int
+	important, fixableImportant int
+	moderate, fixableModerate   int
+	low, fixableLow             int
+	unknown, fixableUnknown     int
+}
+
+func (m *vmSeverityCountsMock) GetVMID() string { return m.vmID }
+func (m *vmSeverityCountsMock) GetSeverityCounts() commonViews.ResourceCountByCVESeverity {
+	return &commonViews.ResourceCountByImageCVESeverity{
+		CriticalSeverityCount:         m.critical,
+		FixableCriticalSeverityCount:  m.fixableCritical,
+		ImportantSeverityCount:        m.important,
+		FixableImportantSeverityCount: m.fixableImportant,
+		ModerateSeverityCount:         m.moderate,
+		FixableModerateSeverityCount:  m.fixableModerate,
+		LowSeverityCount:              m.low,
+		FixableLowSeverityCount:       m.fixableLow,
+		UnknownSeverityCount:          m.unknown,
+		FixableUnknownSeverityCount:   m.fixableUnknown,
+	}
+}
 func (m *mockCveCore) GetCVEIDs() []string { return m.cveIDs }
 func (m *mockCveCore) GetVMsBySeverity() commonViews.ResourceCountByCVESeverity {
 	return &commonViews.ResourceCountByImageCVESeverity{}
