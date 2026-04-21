@@ -234,7 +234,6 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter
 			continue
 		}
 
-		// Success
 		zlog.Info(bundleCtx).Msg("bundle export completed successfully")
 		status.Updaters = append(status.Updaters, UpdaterStatus{
 			Name:        name,
