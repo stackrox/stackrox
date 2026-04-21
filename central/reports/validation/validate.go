@@ -175,7 +175,7 @@ func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) err
 		return v.validateCollectionScope(ref.CollectionScope)
 	case *apiV2.ResourceScope_EntityScope:
 		if !features.VulnerabilityReportsEnhancedFiltering.Enabled() {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection as resource scope")
 		}
 		return validateEntityScope(ref.EntityScope)
 	default:
@@ -220,7 +220,7 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule: %s", rule.GetEntity())
 		}
 		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
-			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule for %s with an unset field", rule.GetEntity())
+			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
 		}
 		// Cluster annotation is not indexed and therefore unsupported.
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
@@ -229,7 +229,7 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 		key := entityFieldKey{entity: rule.GetEntity(), field: rule.GetField()}
 		if !seen.Add(key) {
 			return errors.Wrapf(errox.InvalidArgs,
-				"Duplicate (entity, field) pair in entity scope rules: entity=%v field=%v", rule.GetEntity(), rule.GetField())
+				"One rule per (entity, field) pair in entity scope rules is expected. Duplicate (entity, field) pair found: entity=%v field=%v. ", rule.GetEntity(), rule.GetField())
 		}
 		if len(rule.GetValues()) == 0 {
 			return errors.Wrapf(errox.InvalidArgs,
