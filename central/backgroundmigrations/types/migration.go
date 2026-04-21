@@ -1,4 +1,4 @@
-package backgroundmigrations
+package types
 
 import (
 	"context"

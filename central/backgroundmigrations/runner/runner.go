@@ -1,4 +1,4 @@
-package backgroundmigrations
+package runner
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/backgroundmigrations"
+	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dblock"
@@ -54,7 +56,7 @@ func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 		db:             db,
 		rolloutChecker: rolloutChecker,
 		stopper:        concurrency.NewStopper(),
-		targetSeqNum:   CurrentBgMigrationSeqNum,
+		targetSeqNum:   backgroundmigrations.CurrentBgMigrationSeqNum,
 		retryInterval:  retryInterval,
 	}
 }
@@ -175,7 +177,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			return ctx.Err()
 		}
 
-		migration, ok := Get(seqNum)
+		migration, ok := migrations.Get(seqNum)
 		if !ok {
 			return errors.Errorf("no migration found starting at %d", seqNum)
 		}

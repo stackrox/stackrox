@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package backgroundmigrations
+package runner
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
+	"github.com/stackrox/rox/central/backgroundmigrations/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
@@ -81,8 +83,8 @@ func (s *RunnerTestSuite) SetupSuite() {
 }
 
 func (s *RunnerTestSuite) SetupTest() {
-	resetRegistry()
-	// Reset the version row to seq 0, empty override tag.
+	migrations.ResetRegistryForTesting()
+
 	_, err := s.db.Exec(s.ctx,
 		"DELETE FROM "+schema.BackgroundMigrationVersionsTableName)
 	s.Require().NoError(err)
@@ -144,15 +146,15 @@ func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
 	s.Require().NoError(err)
 
 	ran := []int{}
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
 	})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 1); return nil },
 	})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 2, VersionAfterSeqNum: 3, Description: "m2",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
 	})
@@ -169,7 +171,7 @@ func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
 
 func (s *RunnerTestSuite) TestRetriesOnMigrationError() {
 	callCount := 0
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "fails-then-succeeds",
 		Run: func(_ context.Context, _ postgres.DB) error {
 			callCount++
@@ -187,7 +189,7 @@ func (s *RunnerTestSuite) TestRetriesOnMigrationError() {
 }
 
 func (s *RunnerTestSuite) TestRetryStopsOnShutdown() {
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "always-fails",
 		Run: func(_ context.Context, _ postgres.DB) error { return errors.New("permanent failure") },
 	})
@@ -211,7 +213,7 @@ func (s *RunnerTestSuite) TestRetryStopsOnShutdown() {
 }
 
 func (s *RunnerTestSuite) TestMigrationRespectsContext() {
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "ctx-aware",
 		Run: func(ctx context.Context, _ postgres.DB) error { return ctx.Err() },
 	})
@@ -219,7 +221,7 @@ func (s *RunnerTestSuite) TestMigrationRespectsContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	m, ok := Get(0)
+	m, ok := migrations.Get(0)
 	require.True(s.T(), ok)
 	err := m.Run(ctx, nil)
 	assert.ErrorIs(s.T(), err, context.Canceled)
@@ -263,7 +265,7 @@ func (s *RunnerTestSuite) TestLockReleasedAfterMigrations() {
 
 func (s *RunnerTestSuite) TestStopCancelsRunningMigration() {
 	migrationStarted := make(chan struct{})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "long-running",
 		Run: func(ctx context.Context, _ postgres.DB) error {
 			close(migrationStarted)
@@ -302,15 +304,15 @@ func (s *RunnerTestSuite) TestOverrideAppliesWithNewTag() {
 	s.Require().NoError(err)
 
 	ran := []int{}
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
 	})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 1); return nil },
 	})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 2, VersionAfterSeqNum: 3, Description: "m2",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
 	})
@@ -351,15 +353,15 @@ func (s *RunnerTestSuite) TestOverrideRerunsWithNewTag() {
 	s.Require().NoError(err)
 
 	ran := []int{}
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
 	})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 1); return nil },
 	})
-	MustRegister(BackgroundMigration{
+	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 2, VersionAfterSeqNum: 3, Description: "m2",
 		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
 	})
