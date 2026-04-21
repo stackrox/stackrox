@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"testing/synctest"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -86,6 +88,8 @@ type raceTestCase struct {
 }
 
 func TestResolverRaceScenarios(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
 	cases := map[string]raceTestCase{
 		// Central sends UpdatedImage while a K8s deployment update is in-flight.
 		// The K8s dispatcher already stored the new wrap (isBuilt=false) but the
@@ -279,12 +283,14 @@ func TestResolverRaceScenarios(t *testing.T) {
 		}
 		for _, ffEnabled := range ffStates {
 			t.Run(fmt.Sprintf("%s/ff=%t", name, ffEnabled), func(t *testing.T) {
-				t.Setenv(features.SensorAggregateDeploymentReferenceOptimization.EnvVar(),
-					fmt.Sprintf("%t", ffEnabled))
-				env := newRaceTestEnv(t)
-				for _, step := range tc.steps {
-					step(env)
-				}
+				synctest.Test(t, func(t *testing.T) {
+					t.Setenv(features.SensorAggregateDeploymentReferenceOptimization.EnvVar(),
+						fmt.Sprintf("%t", ffEnabled))
+					env := newRaceTestEnv(t)
+					for _, step := range tc.steps {
+						step(env)
+					}
+				})
 			})
 		}
 	}
@@ -591,6 +597,7 @@ func expectNoForwardMessageSent() func(*raceTestEnv) {
 
 // expectQueueEmpty asserts that the DedupingQueue has no remaining items.
 // Verifies that the merge collapsed multiple refs into one.
+// Uses synctest.Wait to confirm PullBlocking is durably blocked (queue empty).
 func expectQueueEmpty() func(*raceTestEnv) {
 	return func(env *raceTestEnv) {
 		env.t.Helper()
@@ -598,9 +605,14 @@ func expectQueueEmpty() func(*raceTestEnv) {
 			return
 		}
 		stop := concurrency.NewSignal()
+		var pulled bool
+		go func() {
+			env.resolver.deploymentRefQueue.PullBlocking(&stop)
+			pulled = true
+		}()
+		synctest.Wait()
+		assert.False(env.t, pulled, "expected queue to be empty after merge, but an item was pulled")
 		stop.Signal()
-		item := env.resolver.deploymentRefQueue.PullBlocking(&stop)
-		assert.Nil(env.t, item, "expected queue to be empty after merge")
 	}
 }
 
