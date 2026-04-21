@@ -309,6 +309,7 @@ func TestNewUpdaterRejectsZeroInterval(t *testing.T) {
 	require.Contains(t, err.Error(), "interval must be positive")
 }
 
+
 func TestResolveKeyRefsRejectsEmptyName(t *testing.T) {
 	_, err := resolveKeyRefsFromManifest("https://example.com/manifest.json", manifest{
 		Keys: []manifestKey{{Name: "", URL: "key.pub"}},

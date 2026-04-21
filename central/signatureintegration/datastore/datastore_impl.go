@@ -40,7 +40,6 @@ func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) 
 	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
-
 	return d.storage.Get(ctx, id)
 }
 
