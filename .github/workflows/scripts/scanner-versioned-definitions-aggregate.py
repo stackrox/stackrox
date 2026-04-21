@@ -142,10 +142,16 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
             print("No bundles found in GCS")
             return 1
 
+        # Download status.json if available
+        status_result = gsutil_copy(f"{gcs_bundles}/status.json", f"{tmppath}/status.json")
+        has_status = status_result.returncode == 0
+
         print(f"Creating {output_zip} with {len(bundles)} bundles")
         with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zf:
             for bundle in bundles:
                 zf.write(bundle, bundle.name)
+            if has_status:
+                zf.write(tmppath / "status.json", "status.json")
 
     if args.dry_run:
         print(f"Dry run: would upload {output_zip} to {gcs_dest}/")
