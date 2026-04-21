@@ -68,6 +68,12 @@ func TestVMIndexACKResourceID(t *testing.T) {
 			vsockCID: "100",
 			expected: "100",
 		},
+		{
+			name:     "returns empty string when both vm id and cid are missing",
+			vmID:     "",
+			vsockCID: "",
+			expected: "",
+		},
 	}
 
 	for _, tc := range testCases {
