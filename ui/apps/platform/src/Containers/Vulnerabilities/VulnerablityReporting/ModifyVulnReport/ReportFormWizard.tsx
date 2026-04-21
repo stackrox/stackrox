@@ -56,7 +56,6 @@ function ReportFormWizard({ formik, onSave, isSaving }: ReportFormWizardProps) {
                 <WizardStep
                     name={wizardStepNames[0]}
                     id={wizardStepNames[0]}
-                    key={wizardStepNames[0]}
                     body={{ hasNoPadding: true }}
                     footer={{
                         isNextDisabled: isStepDisabled(wizardStepNames[1]),
@@ -68,7 +67,6 @@ function ReportFormWizard({ formik, onSave, isSaving }: ReportFormWizardProps) {
                 <WizardStep
                     name={wizardStepNames[1]}
                     id={wizardStepNames[1]}
-                    key={wizardStepNames[1]}
                     body={{ hasNoPadding: true }}
                     isDisabled={isStepDisabled(wizardStepNames[1])}
                     footer={{
@@ -81,7 +79,6 @@ function ReportFormWizard({ formik, onSave, isSaving }: ReportFormWizardProps) {
                 <WizardStep
                     name={wizardStepNames[2]}
                     id={wizardStepNames[2]}
-                    key={wizardStepNames[2]}
                     body={{ hasNoPadding: true }}
                     isDisabled={isStepDisabled(wizardStepNames[2])}
                     footer={{

@@ -26,12 +26,19 @@ quay.io/rhacs-eng/qa-multi-arch:latest@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe4
 quay.io/rhacs-eng/qa-multi-arch:mongodb
 quay.io/rhacs-eng/qa-multi-arch:nginx
 quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad
-quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.12
+quay.io/rhacs-eng/qa-multi-arch:nginx-1.12@sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+
+# gcr.io images (filtered out on non-GKE clusters by scripts/ci/lib.sh:image_prefetcher_start_set)
+us.gcr.io/acs-san-stackroxci/qa-multi-arch:nginx-1.12
+us.gcr.io/acs-san-stackroxci/qa/registry-image:0.3
+
+quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3
+quay.io/rhacs-eng/qa-multi-arch:nginx-3.21-1
 quay.io/rhacs-eng/qa-multi-arch:nginx-latest
 quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2
 quay.io/rhacs-eng/qa-multi-arch:perl-5-32-1
@@ -46,9 +53,7 @@ quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:64483f3496c1373bfd55348e886
 quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:1f1a2d56de1d604801a9671f301190704c25d604a416f59e03c04f5c6ffee0d6
 quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.2
 quay.io/rhacs-eng/qa:alpine-3.16.0
-quay.io/rhacs-eng/qa:ansibleplaybookbundle--gluster-s3object-apb--481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c
 quay.io/rhacs-eng/qa:apache-dns
-quay.io/rhacs-eng/qa:barchart--dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a
 quay.io/rhacs-eng/qa:berserker-1.0-48-g9efc750d7e
 quay.io/rhacs-eng/qa:busybox
 quay.io/rhacs-eng/qa:busybox-1-30
@@ -61,8 +66,7 @@ quay.io/rhacs-eng/qa:nginx-1-9
 quay.io/rhacs-eng/qa:nginx-unprivileged
 quay.io/rhacs-eng/qa:oci-manifest
 quay.io/rhacs-eng/qa:registry-image-0-3
-quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2
-quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5
+quay.io/rhacs-eng/qa:splunk-ta-test-latest
 quay.io/rhacs-eng/qa:ssl-terminator
 quay.io/rhacs-eng/qa:struts-app
 quay.io/rhacs-eng/qa:syslog_server_1_0

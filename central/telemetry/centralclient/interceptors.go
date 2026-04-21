@@ -8,13 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-const (
-	// The header is set by the RHACS ServiceNow integration.
-	// See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
-	snowIntegrationHeader = "Rh-Servicenow-Integration"
-
-	userAgentHeaderKey = "User-Agent"
-)
+const userAgentHeaderKey = "User-Agent"
 
 var (
 	ignoredPaths = glob.Pattern("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
@@ -34,8 +28,8 @@ var (
 				// ServiceNow default User-Agent includes "ServiceNow", but
 				// customers are free to change it.
 				// See https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1511513.
-				userAgentHeaderKey:    "*ServiceNow*",
-				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
+				userAgentHeaderKey: "*ServiceNow*",
+				"Rh-*":             phonehome.NoHeaderOrAnyValue,
 			},
 		},
 		// Capture requests from GitHub action user agents.
@@ -55,8 +49,11 @@ var (
 	}
 )
 
-// apiPathsCampaign constructs an API paths campaign from the apiWhiteList
-// environment variable.
+// apiPathsCampaign constructs an APICallCampaignCriterion from the apiWhiteList
+// setting when that setting is non-empty.
+// The criterion matches requests whose path fits the provided glob pattern and
+// requires only the presence (or any value) of a User-Agent header.
+// Returns nil when the apiWhiteList setting is empty.
 func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
@@ -69,8 +66,10 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	return nil
 }
 
-// userAgentsCampaign constructs an User-Agent campaign from the userAgentsList
-// environment variable.
+// userAgentsCampaign constructs an APICallCampaignCriterion that matches the
+// "User-Agent" header against the glob pattern defined by the userAgentsList
+// setting.
+// If the setting is empty, it returns nil.
 func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := userAgentsList.Setting(); pattern != "" {
 		return phonehome.HeaderPattern(userAgentHeaderKey, glob.Pattern("{"+pattern+"}"))

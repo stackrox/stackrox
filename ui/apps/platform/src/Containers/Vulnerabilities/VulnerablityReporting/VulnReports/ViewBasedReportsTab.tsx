@@ -13,6 +13,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import { toggleItemInArray } from 'utils/arrayUtils';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -71,6 +72,11 @@ function ViewBasedReportsTab() {
         'false',
         'true',
     ]);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEnhancedFilteringEnabled = isFeatureFlagEnabled(
+        'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
+    );
 
     const reportJobStatusFilters = useMemo(() => {
         return ensureStringArray(searchFilter['Report Job Status']);
@@ -146,7 +152,9 @@ function ViewBasedReportsTab() {
 
     return (
         <>
-            <PageTitle title="Vulnerability reporting - View-based reports" />
+            <PageTitle
+                title={`${isEnhancedFilteringEnabled ? 'Image vulnerability reports' : 'Vulnerability reporting'} - View-based reports`}
+            />
             <PageSection>
                 <Content component="p">
                     Check job status and download view-based reports in CSV format. Requests are

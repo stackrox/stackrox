@@ -134,8 +134,8 @@ func TestEnricherV2Flow(t *testing.T) {
 				requestedScan:     false,
 			}),
 			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanSucceeded,
+				ImageUpdated: false,
+				ScanResult:   ScanReused,
 			},
 			expectedBaseImageCalls: 1,
 		},

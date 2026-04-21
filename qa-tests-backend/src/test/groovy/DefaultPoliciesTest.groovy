@@ -181,7 +181,9 @@ class DefaultPoliciesTest extends BaseSpecification {
                 componentCount="9[1-9]"
                 break
             default:
-                componentCount="1(6[6-9]|7[0-5])"
+                // Scanner V4 detects components at a more granular level than StackRox Scanner, in one example:
+                // V2: ~175 components  vs.  V4: ~284 components.
+                componentCount = scannerV4Enabled ? "2[5-9][0-9]" : "1(6[6-9]|7[0-5])"
                 break
         }
     }
@@ -457,10 +459,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "Port 80 is exposed in the cluster"  | null | []
 
         "Image Vulnerabilities"           | 4.0f     | null |
-                // This makes sure it has at least 100 CVEs.
+                // StackRox Scanner reports 100+ CVEs between Low and Critical.
+                // Scanner V4 reports fewer CVEs (~78) and a different minimum
+                // severity (Moderate in this case). Using \\d{2,} and \\w+ to accept both outcomes.
                 "Image \"" + STRUTS_IMAGE + "\\\"" +
-                     " contains \\d{3,} CVEs with severities ranging between " +
-                     "Low and Critical" | []
+                     " contains \\d{2,} CVEs with severities ranging between " +
+                     "\\w+ and \\w+" | []
 
         "Service Configuration"           | 2.0f     |
                 "No capabilities were dropped" | null | []

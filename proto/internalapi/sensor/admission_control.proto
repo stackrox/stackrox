@@ -52,5 +52,5 @@ message AdmCtrlUpdateResourceRequest {
 // from Sensor to the admission controller. Instead of purging the entire
 // image cache, only the specified entries are removed.
 message AdmCtrlImageCacheInvalidation {
-  repeated central.InvalidateImageCache.ImageKey image_keys = 1;
+  repeated central.ImageKey image_keys = 1;
 }

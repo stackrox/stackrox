@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -10,7 +10,7 @@ import {
     TabTitleText,
     Tabs,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
@@ -22,15 +22,17 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import usePermissions from 'hooks/usePermissions';
 import type { VulnerabilityState } from 'types/cve.proto';
+import { wrapInQuotes } from 'utils/searchUtils';
 
 import DeploymentPageHeader, { deploymentMetadataFragment } from './DeploymentPageHeader';
 import type { DeploymentMetadata } from './DeploymentPageHeader';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
+import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
@@ -49,6 +51,7 @@ export type DeploymentPageProps = {
 };
 
 function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: DeploymentPageProps) {
+    const navigate = useNavigate();
     const { deploymentId } = useParams() as { deploymentId: string };
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -82,21 +85,13 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
             viewContext === 'Inactive images');
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const onReportSelect = (_value: string | number | undefined) => {
-        setIsCreateViewBasedReportModalOpen(true);
+    // Create a scoped search filter that includes the deployment ID filter plus any applied search filters.
+    const deploymentScopedSearchFilterForReport = {
+        ...baseSearchFilter,
+        'Deployment ID': [wrapInQuotes(deploymentId)], // exact match instead of regex match
+        ...querySearchFilter,
+        'Vulnerability State': [vulnerabilityState],
     };
-
-    const getDeploymentQueryForReport = useCallback(() => {
-        // Create a scoped query that includes the deployment ID filter plus any applied search filters
-        const deploymentScopedFilter = { 'Deployment ID': [deploymentId] };
-        const combinedFilter = {
-            ...baseSearchFilter,
-            ...deploymentScopedFilter,
-            ...querySearchFilter,
-        };
-        return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
-    }, [deploymentId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
     return (
         <>
@@ -165,7 +160,18 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                     setSearchFilter={setSearchFilter}
                                     additionalToolbarItems={
                                         isViewBasedReportsEnabled && (
-                                            <CreateReportDropdown onSelect={onReportSelect} />
+                                            <CreateReportDropdown
+                                                onSelectExportReportAsCSV={() => {
+                                                    setIsCreateViewBasedReportModalOpen(true);
+                                                }}
+                                                onSelectCreateScheduledReport={() => {
+                                                    navigate(
+                                                        createScheduledReportForImageVulnerabilitiesURL(
+                                                            deploymentScopedSearchFilterForReport
+                                                        )
+                                                    );
+                                                }}
+                                            />
                                         )
                                     }
                                 />
@@ -190,7 +196,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                 <CreateViewBasedReportModal
                     isOpen={isCreateViewBasedReportModalOpen}
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
-                    query={getDeploymentQueryForReport()}
+                    query={getRegexScopedQueryString(deploymentScopedSearchFilterForReport)}
                     areaOfConcern={viewContext}
                 />
             )}

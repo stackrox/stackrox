@@ -48,3 +48,5 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=admission-control
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=collector
 # Please keep the above lists in sync with secured-cluster-cr-assert.yaml
+- command: retry-kubectl.sh describe pv
+- command: retry-kubectl.sh describe pvc -n $NAMESPACE

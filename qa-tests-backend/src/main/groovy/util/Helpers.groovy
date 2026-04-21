@@ -2,7 +2,10 @@ package util
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
+
+import com.github.f4b6a3.uuid.UuidCreator
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -30,7 +33,7 @@ class Helpers {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
-            } catch (Exception | PowerAssertionError | SpockAssertionError t) {
+            } catch (Exception | AssertionError | PowerAssertionError | SpockAssertionError t) {
                 log.debug("Caught exception. Retrying in ${pauseSecs}s (attempt ${i} of ${retries}): " + t)
             }
             sleep pauseSecs * 1000
@@ -192,6 +195,23 @@ class Helpers {
                  " QA_TEST_DEBUG_LOGS: ${Env.QA_TEST_DEBUG_LOGS}]")
 
         return false
+    }
+
+    // Mirrors Go's pkg/uuid.NewV5FromNonUUIDs: SHA-256 the namespace string to derive
+    // a UUID namespace, then produce a standard UUIDv5 (SHA-1) from that namespace and name.
+    static String newV5FromNonUUIDs(String ns, String name) {
+        byte[] sha256 = MessageDigest.getInstance("SHA-256").digest(ns.getBytes("UTF-8"))
+        UUID nsUUID = UuidCreator.fromBytes(Arrays.copyOf(sha256, 16))
+        return UuidCreator.getNameBasedSha1(nsUUID, name).toString()
+    }
+
+    // Mirrors Go's pkg/images/utils.NewImageV2ID: generates a deterministic UUIDv5
+    // from the image full name and digest.
+    static String generateImageV2ID(String fullName, String digest) {
+        if (!fullName || !digest) {
+            return ""
+        }
+        return newV5FromNonUUIDs(fullName, digest)
     }
 
     private static final Set<String> VOLATILE_ANNOTATIONS_TO_IGNORE = [

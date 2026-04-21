@@ -96,3 +96,56 @@ func TestExpiringCache(t *testing.T) {
 
 	mockCtrl.Finish()
 }
+
+func TestTouch(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	clock := mocks.NewMockClock(mockCtrl)
+
+	ec := NewExpiringCacheWithClock[string, string](clock, 10*time.Second)
+
+	t0 := time.Time{}
+
+	// Add key1 at t=0. (addNoLock calls Now() once)
+	clock.EXPECT().Now().Return(t0)
+	ec.Add("key1", "value1")
+
+	// Touch non-existent key returns false. (cleanNoLock calls Now() once, no addNoLock)
+	clock.EXPECT().Now().Return(t0)
+	assert.False(t, ec.Touch("no-such-key"))
+
+	// Touch existing key returns true. (cleanNoLock + addNoLock = 2 Now() calls)
+	clock.EXPECT().Now().Return(t0).Times(2)
+	assert.True(t, ec.Touch("key1"))
+
+	// Verify value is preserved.
+	clock.EXPECT().Now().Return(t0)
+	v, ok := ec.Get("key1")
+	assert.True(t, ok)
+	assert.Equal(t, "value1", v)
+
+	// Advance to t=9s — Touch to reset TTL. (2 Now() calls)
+	t9 := t0.Add(9 * time.Second)
+	clock.EXPECT().Now().Return(t9).Times(2)
+	assert.True(t, ec.Touch("key1"))
+
+	// At t=15s (>10s from original add, but <10s from touch at t=9s) the
+	// entry should still be alive because Touch reset the TTL.
+	t15 := t0.Add(15 * time.Second)
+	clock.EXPECT().Now().Return(t15)
+	v, ok = ec.Get("key1")
+	assert.True(t, ok, "entry should survive past original TTL after Touch")
+	assert.Equal(t, "value1", v)
+
+	// At t=20s (>10s from touch at t=9s) the entry should be expired.
+	t20 := t0.Add(20 * time.Second)
+	clock.EXPECT().Now().Return(t20)
+	v, ok = ec.Get("key1")
+	assert.False(t, ok, "entry should expire after TTL from last Touch")
+	assert.Empty(t, v)
+
+	// Touch on expired key returns false. (1 Now() call, no addNoLock)
+	clock.EXPECT().Now().Return(t20)
+	assert.False(t, ec.Touch("key1"))
+
+	mockCtrl.Finish()
+}

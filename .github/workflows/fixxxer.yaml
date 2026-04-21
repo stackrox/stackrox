@@ -17,7 +17,7 @@ jobs:
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
 
     - name: Fetch PR metadata
@@ -58,7 +58,7 @@ jobs:
         STEPS_CONTEXT: ${{ toJson(steps) }}
       run: echo "$STEPS_CONTEXT" | jq .
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         ref: ${{ steps.pr-metadata.outputs.branch }}
         fetch-depth: 0
@@ -73,7 +73,7 @@ jobs:
 
     - run: ./scripts/fixxxer.sh
 
-    - uses: ad-m/github-push-action@v1.0.0
+    - uses: ad-m/github-push-action@4cc74773234f74829a8c21bc4d69dd4be9cfa599 # ratchet:ad-m/github-push-action@v1.1.0
       with:
         branch: ${{ steps.pr-metadata.outputs.branch }}
         github_token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

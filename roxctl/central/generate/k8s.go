@@ -168,11 +168,9 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		clusterType := storage.ClusterType_OPENSHIFT4_CLUSTER
 		switch openshiftVersion {
 		case 0:
-		case 3:
-			clusterType = storage.ClusterType_OPENSHIFT_CLUSTER
 		case 4:
 		default:
-			return 0, errors.Errorf("invalid OpenShift version %d, supported values are '3' and '4'", openshiftVersion)
+			return 0, errox.InvalidArgs.Newf("invalid OpenShift version %d, only '4' is currently supported", openshiftVersion)
 		}
 		return clusterType, nil
 	})
@@ -185,7 +183,7 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 	validFormats := []string{"kubectl", "helm", "helm-values"}
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s).", strings.Join(validFormats, ", ")), "central")
 
-	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "The OpenShift major version (3 or 4) to deploy on.")
+	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "The OpenShift major version to deploy on (currently only 4 is supported).")
 	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "Integration with OpenShift 4 monitoring.", "auto", "central")
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(

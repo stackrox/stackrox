@@ -157,6 +157,26 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 			},
 		},
 		{
+			desc: "No profiles match filter",
+			query: &apiV2.ClustersProfileSummaryRequest{
+				ClusterIds: []string{fixtureconsts.Cluster1},
+				Query:      &apiV2.RawQuery{Query: "Compliance Profile Name:nonexistent"},
+			},
+			expectedErr:  nil,
+			expectedResp: []*apiV2.ComplianceProfileSummary{},
+			found:        true,
+			setMocks: func() {
+				profileQuery, _ := search.ParseQuery("Compliance Profile Name:nonexistent", search.MatchAllIfEmpty())
+				paginated.FillPaginationV2(profileQuery, nil, maxPaginationLimit)
+				profileQuery.Pagination.SortOptions = []*apiV1.QuerySortOption{
+					{
+						Field: search.ComplianceOperatorProfileName.String(),
+					},
+				}
+				s.profileDatastore.EXPECT().GetProfilesNames(gomock.Any(), profileQuery, []string{fixtureconsts.Cluster1}).Return(nil, nil).Times(1)
+			},
+		},
+		{
 			desc:        "Query with cluster 1",
 			query:       &apiV2.ClustersProfileSummaryRequest{ClusterIds: []string{fixtureconsts.Cluster1}},
 			expectedErr: nil,

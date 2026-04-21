@@ -165,6 +165,7 @@ linters:
         - policy\.NewErr.*
         - retry\.MakeRetryable
         - retry\.WithRetry
+        - sensor\.DiagnoseConnectionFailure
         - status\.Error
         - utils\.Should
     modernize:

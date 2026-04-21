@@ -48,6 +48,7 @@ message SplunkViolation {
       K8S_EVENT = 2;
       PROCESS_EVENT = 3;
       NETWORK_FLOW = 4;
+      FILE_ACCESS = 5;
     }
     ViolationType violation_type = 4;
 
@@ -143,4 +144,32 @@ message SplunkViolation {
   PolicyInfo policy_info = 5;
   // extra details for network violation
   storage.Alert.Violation.NetworkFlowInfo network_flow_info = 6;
+  // extra details for file access violation
+  FileAccessInfo file_access_info = 7;
+
+  // From storage.FileAccess — extra details for file access violations.
+  message FileAccessInfo {
+    // Container-relative path (e.g. /tmp/etc/passwd when /etc is mounted to /tmp/etc)
+    string effective_path = 1;
+    // Host path (e.g. /etc/passwd)
+    string actual_path = 2;
+    // Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE"
+    string operation = 3;
+
+    // For RENAME operations, the destination paths
+    string moved_effective_path = 4;
+    string moved_actual_path = 5;
+
+    // File metadata
+    google.protobuf.UInt32Value file_uid = 6;
+    google.protobuf.UInt32Value file_gid = 7;
+    google.protobuf.UInt32Value file_mode = 8;
+    string file_username = 9;
+    string file_group = 10;
+
+    // Node where the file activity occurred. Present on all file access violations.
+    // For deployment-level violations, deployment context is in SplunkViolation.DeploymentInfo.
+    // For node-level violations (no container/deployment), hostname is the primary location identifier.
+    string hostname = 11;
+  }
 }

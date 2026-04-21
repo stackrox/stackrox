@@ -519,6 +519,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resources: Resources",
 		"secrets: [EmbeddedSecret]!",
 		"securityContext: SecurityContext",
+		"type: ContainerType!",
 		"volumes: [Volume]!",
 	}))
 	utils.Must(builder.AddType("ContainerConfig", []string{
@@ -564,6 +565,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerType(0)))
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
@@ -607,7 +609,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"admissionControllerConfig: AdmissionControllerConfig",
 		"autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig",
 		"disableAuditLogs: Boolean!",
+		"processIndicators: DynamicClusterConfig_ProcessIndicatorsConfig",
 		"registryOverride: String!",
+	}))
+	utils.Must(builder.AddType("DynamicClusterConfig_ProcessIndicatorsConfig", []string{
+		"excludeNamespaceFilter: String!",
+		"excludeOpenshiftNs: Boolean!",
+		"noPersistence: Boolean!",
 	}))
 	utils.Must(builder.AddType("EPSS", []string{
 		"epssPercentile: Float!",
@@ -6494,6 +6502,11 @@ func (resolver *containerResolver) SecurityContext(ctx context.Context) (*securi
 	return resolver.root.wrapSecurityContext(value, true, nil)
 }
 
+func (resolver *containerResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 func (resolver *containerResolver) Volumes(ctx context.Context) ([]*volumeResolver, error) {
 	value := resolver.data.GetVolumes()
 	return resolver.root.wrapVolumes(value, nil)
@@ -6932,6 +6945,24 @@ func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) strin
 	return value
 }
 
+func toContainerType(value *string) storage.ContainerType {
+	if value != nil {
+		return storage.ContainerType(storage.ContainerType_value[*value])
+	}
+	return storage.ContainerType(0)
+}
+
+func toContainerTypes(values *[]string) []storage.ContainerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ContainerType, len(*values))
+	for i, v := range *values {
+		output[i] = toContainerType(&v)
+	}
+	return output
+}
+
 type cosignSignatureResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7365,8 +7396,70 @@ func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Conte
 	return value
 }
 
+func (resolver *dynamicClusterConfigResolver) ProcessIndicators(ctx context.Context) (*dynamicClusterConfig_ProcessIndicatorsConfigResolver, error) {
+	value := resolver.data.GetProcessIndicators()
+	return resolver.root.wrapDynamicClusterConfig_ProcessIndicatorsConfig(value, true, nil)
+}
+
 func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Context) string {
 	value := resolver.data.GetRegistryOverride()
+	return value
+}
+
+type dynamicClusterConfig_ProcessIndicatorsConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.DynamicClusterConfig_ProcessIndicatorsConfig
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_ProcessIndicatorsConfig(value *storage.DynamicClusterConfig_ProcessIndicatorsConfig, ok bool, err error) (*dynamicClusterConfig_ProcessIndicatorsConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &dynamicClusterConfig_ProcessIndicatorsConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_ProcessIndicatorsConfigs(values []*storage.DynamicClusterConfig_ProcessIndicatorsConfig, err error) ([]*dynamicClusterConfig_ProcessIndicatorsConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*dynamicClusterConfig_ProcessIndicatorsConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &dynamicClusterConfig_ProcessIndicatorsConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_ProcessIndicatorsConfigWithContext(ctx context.Context, value *storage.DynamicClusterConfig_ProcessIndicatorsConfig, ok bool, err error) (*dynamicClusterConfig_ProcessIndicatorsConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &dynamicClusterConfig_ProcessIndicatorsConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig_ProcessIndicatorsConfigsWithContext(ctx context.Context, values []*storage.DynamicClusterConfig_ProcessIndicatorsConfig, err error) ([]*dynamicClusterConfig_ProcessIndicatorsConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*dynamicClusterConfig_ProcessIndicatorsConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &dynamicClusterConfig_ProcessIndicatorsConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *dynamicClusterConfig_ProcessIndicatorsConfigResolver) ExcludeNamespaceFilter(ctx context.Context) string {
+	value := resolver.data.GetExcludeNamespaceFilter()
+	return value
+}
+
+func (resolver *dynamicClusterConfig_ProcessIndicatorsConfigResolver) ExcludeOpenshiftNs(ctx context.Context) bool {
+	value := resolver.data.GetExcludeOpenshiftNs()
+	return value
+}
+
+func (resolver *dynamicClusterConfig_ProcessIndicatorsConfigResolver) NoPersistence(ctx context.Context) bool {
+	value := resolver.data.GetNoPersistence()
 	return value
 }
 

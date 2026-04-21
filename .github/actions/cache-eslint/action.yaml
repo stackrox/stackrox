@@ -1,0 +1,20 @@
+name: Cache ESLint Results
+description: Cache ESLint results to speed up linting on subsequent runs
+runs:
+  using: composite
+  steps:
+    - name: Cache ESLint (save)
+      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache@v5
+      with:
+        path: ui/apps/platform/.eslintcache
+        key: eslint-v1-${{ github.job }}-${{ hashFiles('ui/apps/platform/package-lock.json', 'ui/apps/platform/eslint.config.js', 'ui/apps/platform/eslint-plugins/**') }}-${{ github.sha }}
+        restore-keys: eslint-v1-${{ github.job }}-${{ hashFiles('ui/apps/platform/package-lock.json', 'ui/apps/platform/eslint.config.js', 'ui/apps/platform/eslint-plugins/**') }}-
+
+    - name: Cache ESLint (restore)
+      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
+      uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache/restore@v5
+      with:
+        path: ui/apps/platform/.eslintcache
+        key: eslint-v1-${{ github.job }}-${{ hashFiles('ui/apps/platform/package-lock.json', 'ui/apps/platform/eslint.config.js', 'ui/apps/platform/eslint-plugins/**') }}-${{ github.sha }}
+        restore-keys: eslint-v1-${{ github.job }}-${{ hashFiles('ui/apps/platform/package-lock.json', 'ui/apps/platform/eslint.config.js', 'ui/apps/platform/eslint-plugins/**') }}-

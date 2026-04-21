@@ -59,7 +59,7 @@ func RoxPassword(t testutils.T) string {
 	}
 
 	pwFromFileBytes, err := os.ReadFile(filepath.Join(testutils.GetTestWorkspaceDir(t), defaultPasswordPath))
-	require.NoErrorf(t, err, "no password set via %s, and could not read password file")
+	require.NoErrorf(t, err, "no password set via %s, and could not read password file", env.PasswordEnv.EnvVar())
 
 	return strings.TrimSpace(string(pwFromFileBytes))
 }

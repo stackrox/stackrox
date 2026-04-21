@@ -694,20 +694,28 @@ image_prefetcher_start_set() {
     local manifest
     manifest=$(mktemp)
 
-    case "${ORCHESTRATOR_FLAVOR}" in
-    k8s)
+    local kubelet_image_creds
+    case "${KUBERNETES_PROVIDER}" in
+    gke)
         flavor=vanilla
+        kubelet_image_creds=GKE
         ;;
-    openshift)
+    eks|aks)
+        flavor=vanilla
+        kubelet_image_creds="" # i.e. disabled
+        ;;
+    ocp)
         flavor=ocp
+        kubelet_image_creds="" # i.e. disabled
         ;;
     *)
-        die "unsupported ORCHESTRATOR: ${ORCHESTRATOR_FLAVOR}"
+        die "unsupported KUBERNETES_PROVIDER: ${KUBERNETES_PROVIDER}"
         ;;
     esac
 
     # daemonset, etc
     ${image_prefetcher_deploy_bin} \
+        --use-kubelet-image-credential-integration="${kubelet_image_creds}" \
         --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
@@ -719,6 +727,16 @@ image_prefetcher_start_set() {
     local image_list
     image_list=$(mktemp)
     populate_prefetcher_image_list "$name" "${image_list}"
+
+    # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
+    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
+        local filtered_image_list
+        filtered_image_list=$(mktemp)
+        info "Filtering out *.gcr.io images for non-GKE cluster"
+        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${filtered_image_list}" || true
+        mv "${filtered_image_list}" "${image_list}"
+    fi
+
     echo "---" >> "$manifest"
     kubectl create --dry-run=client -o yaml configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
 

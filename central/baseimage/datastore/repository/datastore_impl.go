@@ -173,6 +173,10 @@ func (d *datastoreImpl) UpdateStatus(ctx context.Context, id string, update Stat
 			return nil
 		}
 
+		if len(update.OnlyIfStatus) > 0 && !statusMatches(existing.GetStatus(), update.OnlyIfStatus) {
+			return nil
+		}
+
 		existing.Status = update.Status
 		if update.LastPolledAt != nil {
 			existing.LastPolledAt = timestamppb.New(*update.LastPolledAt)
@@ -208,4 +212,13 @@ func (d *datastoreImpl) DeleteRepository(ctx context.Context, id string) error {
 	return d.withWriteLock(id, func() error {
 		return d.store.Delete(ctx, id)
 	})
+}
+
+func statusMatches(current storage.BaseImageRepository_Status, allowed []storage.BaseImageRepository_Status) bool {
+	for _, s := range allowed {
+		if current == s {
+			return true
+		}
+	}
+	return false
 }
