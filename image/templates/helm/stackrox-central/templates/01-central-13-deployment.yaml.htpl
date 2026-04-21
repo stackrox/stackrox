@@ -206,6 +206,8 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
+        - name: redhat-signing-keys
+          mountPath: /var/lib/stackrox/signature-keys
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -295,6 +297,12 @@ spec:
         secret:
           secretName: central-monitoring-tls
       {{- end }}
+      # Runtime directory for Red Hat signing keys downloaded by the updater.
+      # For disconnected deployments, replace this emptyDir with a ConfigMap or
+      # PVC containing your organisation's PEM key files; Central will load them
+      # at startup regardless of whether the manifest-URL updater is configured.
+      - name: redhat-signing-keys
+        emptyDir: {}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
