@@ -94,11 +94,8 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Central sends UpdatedImage while a K8s deployment update is in-flight.
 		// The K8s dispatcher already stored the new wrap (isBuilt=false) but the
 		// resolver hasn't processed the deployment's own ref yet. The Central ref
-		// reaches the resolver first.
-		// FF disabled: resolveDeployment returns false but msg is sent unconditionally
-		//   with ReprocessDeployments → PASSES.
-		// FF enabled: resolveDeployment returns false and the conditional send in
-		//   runPullAndResolve drops the msg → FAILS (bug).
+		// reaches the resolver first. resolveDeployment returns false, but the
+		// ReprocessDeployments data must still be sent.
 		"central UpdatedImage arrives while deployment is being rebuilt": {
 			testFFDisabled: true,
 			steps: []func(*raceTestEnv){
@@ -122,8 +119,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		},
 
 		// Full resolve path with forceDetection=true but BuildDeploymentWithDependencies
-		// fails. The reprocess data was already added to the event but the conditional
-		// send drops it.
+		// fails. The reprocess data must still be sent despite the build error.
 		"forceDetection ref with build error preserves reprocess data": {
 			testFFDisabled: true,
 			steps: []func(*raceTestEnv){
@@ -268,6 +264,20 @@ func TestResolverRaceScenarios(t *testing.T) {
 				givenDeploymentResolvable("deploy-1"),
 				pushFullResolveRef("deploy-1"),
 				pushSkipResolvingRef("deploy-1"),
+				resolveNextItem(),
+				expectDetectionSent("deploy-1"),
+				expectReprocessSent("deploy-1"),
+				expectQueueEmpty(),
+			},
+		},
+		// Same as "merge: both refs in queue bypass isBuilt guard" but the Central
+		// ref arrives first. The K8s ref merges into it, flipping skipResolving to
+		// false. Verifies the isBuilt guard is bypassed regardless of push order.
+		"merge: both refs in queue bypass isBuilt guard when k8s event comes after": {
+			steps: []func(*raceTestEnv){
+				givenDeploymentResolvable("deploy-1"),
+				pushSkipResolvingRef("deploy-1"),
+				pushFullResolveRef("deploy-1"),
 				resolveNextItem(),
 				expectDetectionSent("deploy-1"),
 				expectReprocessSent("deploy-1"),
