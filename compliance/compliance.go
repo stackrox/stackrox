@@ -51,6 +51,15 @@ type Compliance struct {
 	umhNodeIndex       node.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
+
+	vmRelayStreamFactory  func() (relay.IndexReportStream, error)
+	vmRelaySenderFactory  func(sensor.VirtualMachineIndexReportServiceClient) sender.IndexReportSender
+	vmRelayFactory        func(relay.IndexReportStream, sender.IndexReportSender) vmRelayRunner
+	vmRelayBackOffFactory func() backoff.BackOff
+}
+
+type vmRelayRunner interface {
+	Run(ctx context.Context) error
 }
 
 // NewComplianceApp constructs the Compliance app object
@@ -138,33 +147,7 @@ func (c *Compliance) Start() {
 			log.Infof("Virtual machine relay enabled")
 
 			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-			eb := backoff.NewExponentialBackOff()
-			eb.MaxElapsedTime = 0
-
-			operation := func() error {
-				reportStream, err := stream.New()
-				if err != nil {
-					return err
-				}
-
-				reportSender := sender.New(sensorClient)
-				vmRelay := relay.New(reportStream, reportSender)
-				if err := vmRelay.Run(ctx); err != nil {
-					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-						return backoff.Permanent(err)
-					}
-					return err
-				}
-
-				return nil
-			}
-
-			err := backoff.RetryNotify(operation, backoff.WithContext(eb, ctx), func(err error, t time.Duration) {
-				if ctx.Err() != nil {
-					return
-				}
-				log.Errorf("Virtual machine relay failed: %v; will retry in %0.2f seconds", err, t.Seconds())
-			})
+			err := c.runVMRelayWithRetry(ctx, sensorClient)
 			if err != nil && ctx.Err() == nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				log.Errorf("Error running virtual machine relay: %v", err)
 			}
@@ -184,6 +167,64 @@ func (c *Compliance) Start() {
 
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
+}
+
+func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+	operation := func() error {
+		reportStream, err := c.newVMRelayStream()
+		if err != nil {
+			return err
+		}
+
+		reportSender := c.newVMRelaySender(sensorClient)
+		vmRelay := c.newVMRelay(reportStream, reportSender)
+		if err := vmRelay.Run(ctx); err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return backoff.Permanent(err)
+			}
+			return err
+		}
+
+		return nil
+	}
+
+	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), func(err error, t time.Duration) {
+		if ctx.Err() != nil {
+			return
+		}
+		log.Errorf("Virtual machine relay failed: %v; will retry in %0.2f seconds", err, t.Seconds())
+	})
+}
+
+func (c *Compliance) newVMRelayStream() (relay.IndexReportStream, error) {
+	if c.vmRelayStreamFactory != nil {
+		return c.vmRelayStreamFactory()
+	}
+	return stream.New()
+}
+
+func (c *Compliance) newVMRelaySender(sensorClient sensor.VirtualMachineIndexReportServiceClient) sender.IndexReportSender {
+	if c.vmRelaySenderFactory != nil {
+		return c.vmRelaySenderFactory(sensorClient)
+	}
+	return sender.New(sensorClient)
+}
+
+func (c *Compliance) newVMRelay(reportStream relay.IndexReportStream, reportSender sender.IndexReportSender) vmRelayRunner {
+	if c.vmRelayFactory != nil {
+		return c.vmRelayFactory(reportStream, reportSender)
+	}
+	return relay.New(reportStream, reportSender)
+}
+
+func (c *Compliance) newVMRelayBackOff() backoff.BackOff {
+	if c.vmRelayBackOffFactory != nil {
+		return c.vmRelayBackOffFactory()
+	}
+
+	eb := backoff.NewExponentialBackOff()
+	eb.MaxElapsedTime = 0
+	return eb
 }
 
 func (c *Compliance) createIndexMsg(report *v4.IndexReport, nodeName string) *sensor.MsgFromCompliance {
