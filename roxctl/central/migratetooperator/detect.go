@@ -1,0 +1,70 @@
+package migratetooperator
+
+import (
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+)
+
+type storageType int
+
+const (
+	storagePVC storageType = iota
+	storageHostPath
+)
+
+type storageConfig struct {
+	Type         storageType
+	PVCName      string
+	HostPath     string
+	NodeSelector map[string]string
+}
+
+type detectedConfig struct {
+	Storage storageConfig
+}
+
+func detect(src source) (*detectedConfig, error) {
+	storage, err := detectStorage(src)
+	if err != nil {
+		return nil, err
+	}
+	return &detectedConfig{Storage: *storage}, nil
+}
+
+func detectStorage(src source) (*storageConfig, error) {
+	dep, err := src.CentralDBDeployment()
+	if err != nil {
+		return nil, err
+	}
+
+	var diskVolume *corev1.Volume
+	for i := range dep.Spec.Template.Spec.Volumes {
+		if dep.Spec.Template.Spec.Volumes[i].Name == "disk" {
+			diskVolume = &dep.Spec.Template.Spec.Volumes[i]
+			break
+		}
+	}
+	if diskVolume == nil {
+		return nil, errors.New("central-db Deployment has no volume named \"disk\"")
+	}
+
+	if pvc := diskVolume.PersistentVolumeClaim; pvc != nil {
+		return &storageConfig{
+			Type:    storagePVC,
+			PVCName: pvc.ClaimName,
+		}, nil
+	}
+
+	if hp := diskVolume.HostPath; hp != nil {
+		cfg := &storageConfig{
+			Type:     storageHostPath,
+			HostPath: hp.Path,
+		}
+		if ns := dep.Spec.Template.Spec.NodeSelector; len(ns) > 0 {
+			cfg.NodeSelector = ns
+		}
+		return cfg, nil
+	}
+
+	return nil, errors.New("central-db Deployment \"disk\" volume is neither a PVC nor a hostPath")
+}
