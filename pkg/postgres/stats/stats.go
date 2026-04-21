@@ -107,6 +107,66 @@ type PGAnalyzeStats struct {
 	Error        string
 }
 
+// PGStatActivity is the data model for a single row in pg_stat_activity
+type PGStatActivity struct {
+	DatabaseName    *string    `json:"DatabaseName,omitempty"`
+	PID             int32      `json:"PID"`
+	UserName        *string    `json:"UserName,omitempty"`
+	ApplicationName *string    `json:"ApplicationName,omitempty"`
+	BackendStart    *time.Time `json:"BackendStart,omitempty"`
+	XactStart       *time.Time `json:"XactStart,omitempty"`
+	QueryStart      *time.Time `json:"QueryStart,omitempty"`
+	StateChange     *time.Time `json:"StateChange,omitempty"`
+	WaitEventType   *string    `json:"WaitEventType,omitempty"`
+	WaitEvent       *string    `json:"WaitEvent,omitempty"`
+	State           *string    `json:"State,omitempty"`
+	BackendType     *string    `json:"BackendType,omitempty"`
+	Query           *string    `json:"Query,omitempty"`
+}
+
+// PGStatActivities is a wrapper around PGStatActivity
+type PGStatActivities struct {
+	Activities []*PGStatActivity `json:"Activities"`
+	Error      string            `json:"Error,omitempty"`
+}
+
+// GetPGStatActivities returns an activities struct that wraps the results from the query to pg_stat_activity
+func GetPGStatActivities(ctx context.Context, db postgres.DB, limit int) *PGStatActivities {
+	var activities PGStatActivities
+	rows, err := db.Query(ctx,
+		`SELECT datname, pid, usename, application_name,
+			backend_start, xact_start, query_start, state_change,
+			wait_event_type, wait_event, state, backend_type,
+			substr(query, 1, 1000)
+		FROM pg_stat_activity
+		WHERE state IS NOT NULL
+		ORDER BY query_start ASC NULLS LAST
+		LIMIT $1`, limit)
+	if err != nil {
+		activities.Error = err.Error()
+		return &activities
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var a PGStatActivity
+		if err := rows.Scan(
+			&a.DatabaseName, &a.PID, &a.UserName, &a.ApplicationName,
+			&a.BackendStart, &a.XactStart, &a.QueryStart, &a.StateChange,
+			&a.WaitEventType, &a.WaitEvent, &a.State, &a.BackendType,
+			&a.Query,
+		); err != nil {
+			activities.Error = errors.Wrap(err, "error scanning rows from pg_stat_activity").Error()
+			return &activities
+		}
+		activities.Activities = append(activities.Activities, &a)
+	}
+	if err := rows.Err(); err != nil {
+		activities.Error = err.Error()
+	}
+	return &activities
+}
+
 // GetPGAnalyzeStats returns a tuple struct that wraps the results from the query to pg_stat_user_tables.
 // pg_stat_user_tables is used instead of pg_stat_all_tables because external database instances
 // may not grant access to pg_stat_all_tables.
