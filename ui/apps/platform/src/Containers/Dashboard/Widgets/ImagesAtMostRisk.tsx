@@ -12,11 +12,13 @@ import {
 import isEqual from 'lodash/isEqual';
 
 import { vulnManagementImagesPath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import ImagesAtMostRiskTable from './ImagesAtMostRiskTable';
@@ -67,13 +69,22 @@ export const imagesAtMostRiskQuery = gql`
 `;
 
 // If no resource scope is applied and the user selects "Active images" only, we
-// can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active
-function getQueryVariables(searchFilter: SearchFilter, statusOption: ImageStatusOption) {
-    const query =
-        statusOption === 'Active' && !isResourceScoped(searchFilter)
-            ? 'Namespace:*'
-            : getRequestQueryStringForSearchFilter(searchFilter);
-    return { query };
+// can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active.
+// When deployment soft-deletion is enabled, also filter by active deployment state
+// to exclude images whose only deployments have been deleted.
+function getQueryVariables(
+    searchFilter: SearchFilter,
+    statusOption: ImageStatusOption,
+    isDeploymentSoftDeletionEnabled: boolean
+) {
+    const baseQuery = getRequestQueryStringForSearchFilter(searchFilter);
+    if (statusOption === 'Active' && !isResourceScoped(searchFilter)) {
+        const activeImageQuery = baseQuery ? `${baseQuery}+Namespace:*` : 'Namespace:*';
+        return {
+            query: withActiveDeploymentQuery(activeImageQuery, isDeploymentSoftDeletionEnabled),
+        };
+    }
+    return { query: baseQuery };
 }
 
 const fieldIdPrefix = 'images-at-most-risk';
@@ -93,6 +104,8 @@ const defaultConfig: Config = {
 function ImagesAtMostRisk() {
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const [config, updateConfig] = useWidgetConfig<Config>(
         'ImagesAtMostRisk',
@@ -101,7 +114,7 @@ function ImagesAtMostRisk() {
     );
     const { cveStatus, imageStatus } = config;
 
-    const variables = getQueryVariables(searchFilter, imageStatus);
+    const variables = getQueryVariables(searchFilter, imageStatus, isDeploymentSoftDeletionEnabled);
     const { data, previousData, loading, error } = useQuery<ImageData>(imagesAtMostRiskQuery, {
         variables,
     });

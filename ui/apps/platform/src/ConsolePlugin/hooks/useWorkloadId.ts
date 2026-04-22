@@ -1,8 +1,10 @@
 import { useCallback } from 'react';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import { listDeployments } from 'services/DeploymentsService';
 import type { ApiSortOption, SearchFilter } from 'types/search';
+import { withActiveDeploymentFilter } from 'utils/deploymentUtils';
 
 type UseWorkloadIdResult = {
     id: string | undefined;
@@ -17,12 +19,18 @@ export function useWorkloadId({
     ns: string | undefined;
     name: string | undefined;
 }): UseWorkloadIdResult {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const deploymentIdQuery = useCallback(() => {
-        // Quote search values to ensure exact match instead of prefix match
-        const searchFilter: SearchFilter = { Namespace: `"${ns}"`, Deployment: `"${name}"` };
+        // Quote search values to ensure exact match instead of prefix match.
+        const searchFilter: SearchFilter = withActiveDeploymentFilter(
+            { Namespace: `"${ns}"`, Deployment: `"${name}"` },
+            isDeploymentSoftDeletionEnabled
+        );
         const sortOption: ApiSortOption = { field: 'Deployment', reversed: false };
         return listDeployments(searchFilter, sortOption, 1, 1);
-    }, [ns, name]);
+    }, [ns, name, isDeploymentSoftDeletionEnabled]);
 
     const { data, isLoading, error } = useRestQuery(deploymentIdQuery);
     const id = data?.[0]?.id;
