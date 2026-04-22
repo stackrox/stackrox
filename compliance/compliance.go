@@ -181,15 +181,14 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 		return err
 	}
 
-	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), func(err error, t time.Duration) {
+	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), func(err error, _ time.Duration) {
 		if ctx.Err() != nil {
 			return
 		}
 		logging.GetRateLimitedLogger().WarnL(
 			vmRelayRetryRateLimitKey,
-			"Virtual machine relay failed: %v; will retry in %0.2f seconds",
+			"Virtual machine relay failed: %v",
 			err,
-			t.Seconds(),
 		)
 	})
 }
