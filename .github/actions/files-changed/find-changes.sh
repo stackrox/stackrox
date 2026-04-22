@@ -1,29 +1,34 @@
 #!/usr/bin/env bash
 
 set -eo pipefail
+shopt -s extglob
 
 declare -A filters="$1"
 base=${2:-$(git rev-parse origin/master)}
 sha=${3:-$(git rev-parse HEAD)}
 
 if [[ -z "${filters[*]}" ]]; then
-  echo 'No filters provided. Please re-try with filters set like "( ["ui"]="ui/**" ["gha"]=".github/**" )"' >&2
+  echo 'No filters provided. Please re-try with filters set like:' >&2
+  echo '  ( ["ui"]="ui/*" ["go"]="*.go go.mod go.sum" )' >&2
   exit 1
 fi
 
 echo "# Find changes..." >&2
-changes=$(git diff --name-only "${base}...${sha}" \
+mapfile -t changes < <(git diff --name-only "${base}...${sha}" \
   | tee >(cat >&2))
 
 echo "# Match filters..." >&2
-IFS=$'\n'
 declare -A matches
 for k in "${!filters[@]}"; do
-  exp="${filters[$k]}"
-  for line in ${changes}; do
-    if [[ $line == $exp ]]; then
-      matches["$k"]="${matches[$k]:-}${matches[$k]:+ }${line}"
-    fi
+  read -ra exps <<< "${filters[$k]}"
+  for line in "${changes[@]}"; do
+    for exp in "${exps[@]}"; do
+      # shellcheck disable=SC2053
+      if [[ $line == $exp ]]; then
+        matches["$k"]=1
+        break 2
+      fi
+    done
   done
 done
 

@@ -17,7 +17,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matches: ${{ github.event_name == 'push' && 'go ui shell openshift-ci' || steps.changes.outputs.matches }}
+    steps:
+    - name: Checkout
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Detect changed files
+      if: github.event_name == 'pull_request'
+      id: changes
+      uses: ./.github/actions/files-changed
+      with:
+        filters: >
+          (
+            ["go"]="*.go go.mod go.sum Makefile make/*"
+            ["ui"]="ui/*"
+            ["shell"]="scripts/* deploy/* *.sh"
+            ["openshift-ci"]=".openshift-ci/*"
+          )
+
   go:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +126,8 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     strategy:
       fail-fast: false
       matrix:
@@ -177,6 +204,8 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -225,6 +254,8 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'ui')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -262,6 +293,8 @@ jobs:
         directory: 'ui/apps/platform/test-results/reports'
 
   ui-component:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'ui')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -306,6 +339,8 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -351,6 +386,8 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'shell')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -388,6 +425,8 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'openshift-ci')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -405,7 +444,11 @@ jobs:
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
 
+  # TODO: This is an integration test (Kind cluster, image pulls) — consider
+  # moving to a separate workflow.
   sensor-integration-tests:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     env:
       KUBECONFIG: "/tmp/kubeconfig"
       # Stable version ldflags for test caching (see go job comment).
@@ -500,6 +543,7 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
+      - detect-changes
       - go
       - go-bench
       - go-postgres

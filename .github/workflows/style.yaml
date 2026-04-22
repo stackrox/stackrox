@@ -19,7 +19,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matches: ${{ github.event_name == 'push' && 'go ui shell gha openshift-ci versions' || steps.changes.outputs.matches }}
+    steps:
+    - name: Checkout
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Detect changed files
+      if: github.event_name == 'pull_request'
+      id: changes
+      uses: ./.github/actions/files-changed
+      with:
+        filters: >
+          (
+            ["go"]="*.go go.mod go.sum Makefile make/*"
+            ["ui"]="ui/*"
+            ["shell"]="scripts/* deploy/* *.sh"
+            ["gha"]=".github/*"
+            ["openshift-ci"]=".openshift-ci/*"
+            ["versions"]="COLLECTOR_VERSION FACT_VERSION SCANNER_VERSION"
+          )
+
   check-generated-files:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -61,6 +88,7 @@ jobs:
       run: scripts/ci/jobs/check-generated.sh
 
   misc-checks:
+    needs: detect-changes
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -115,6 +143,11 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    needs: detect-changes
+    if: >-
+      contains(needs.detect-changes.outputs.matches, 'go') ||
+      contains(needs.detect-changes.outputs.matches, 'ui') ||
+      contains(needs.detect-changes.outputs.matches, 'shell')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -178,6 +211,8 @@ jobs:
         run: make style-slim
 
   golangci-lint:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'go')
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
@@ -228,6 +263,8 @@ jobs:
       run: make golangci-lint-cache-status
 
   check-dependent-images-exist:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'versions')
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
@@ -281,6 +318,8 @@ jobs:
             rhacs-eng/release-scanner-db-slim:${{ env.scanner_tag }}-fast
 
   github-actions-lint:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'gha')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -296,6 +335,8 @@ jobs:
         shell: bash
 
   github-actions-shellcheck:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'gha')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -306,6 +347,8 @@ jobs:
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'openshift-ci')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -340,6 +383,7 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
+      - detect-changes
       - check-generated-files
       - misc-checks
       - style-check

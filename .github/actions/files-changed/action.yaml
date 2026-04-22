@@ -1,8 +1,14 @@
 name: Match files changed
-description: Compare files changed with path filters. Output named matches.
+description: >
+  Compare files changed between base and head with named glob filters.
+  Each filter maps a label to one or more space-separated bash glob patterns.
+  Output is a space-separated string of matched labels.
 inputs:
   filters:
-    description: 'string of associative array glob matches like ( ["ui"]="ui/**" ["gha"]=".github/**" )'
+    description: >
+      Bash associative array of label=glob(s) pairs.
+      Example: ( ["ui"]="ui/*" ["go"]="*.go go.mod go.sum" ["gha"]=".github/*" )
+      Multiple globs per label are space-separated.
     required: true
   base:
     description: 'base sha to compare with'
@@ -14,7 +20,7 @@ inputs:
     default: ${{ github.event.pull_request.head.sha }}
 outputs:
   matches:
-    description: "string of matched filter names"
+    description: "space-separated string of matched filter labels"
     value: ${{ steps.compare.outputs.matches }}
 runs:
   using: composite
