@@ -32,7 +32,7 @@ jobs:
       id: changes
       uses: ./.github/actions/files-changed
       with:
-        filters: '( ["operator"]="operator/** config-controller/**" )'
+        filters: '{ "operator": ["operator/**", "config-controller/**"] }'
 
   check-crd-compatibility:
     needs: detect-changes

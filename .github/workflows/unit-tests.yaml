@@ -32,13 +32,13 @@ jobs:
       id: changes
       uses: ./.github/actions/files-changed
       with:
-        filters: >
-          (
-            ["go"]="**/*.go go.mod go.sum Makefile make/**"
-            ["ui"]="ui/**"
-            ["shell"]="scripts/** deploy/** **/*.sh"
-            ["openshift-ci"]=".openshift-ci/**"
-          )
+        filters: |
+          {
+            "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**"],
+            "ui": ["ui/**"],
+            "shell": ["scripts/**", "deploy/**", "**/*.sh"],
+            "openshift-ci": [".openshift-ci/**"]
+          }
 
   go:
     needs: detect-changes

@@ -34,15 +34,15 @@ jobs:
       id: changes
       uses: ./.github/actions/files-changed
       with:
-        filters: >
-          (
-            ["go"]="**/*.go go.mod go.sum Makefile make/**"
-            ["ui"]="ui/**"
-            ["shell"]="scripts/** deploy/** **/*.sh"
-            ["gha"]=".github/**"
-            ["openshift-ci"]=".openshift-ci/**"
-            ["versions"]="COLLECTOR_VERSION FACT_VERSION SCANNER_VERSION"
-          )
+        filters: |
+          {
+            "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**"],
+            "ui": ["ui/**"],
+            "shell": ["scripts/**", "deploy/**", "**/*.sh"],
+            "gha": [".github/**"],
+            "openshift-ci": [".openshift-ci/**"],
+            "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
+          }
 
   check-generated-files:
     needs: detect-changes

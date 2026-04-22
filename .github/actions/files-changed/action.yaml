@@ -1,16 +1,14 @@
 name: Match files changed
 description: >
-  Compare files changed between base and head with named glob filters.
-  Each filter maps a label to one or more space-separated pathspec patterns
-  using .gitignore-style glob semantics (** for recursive, * for single segment).
+  Compare files changed between base and head with named path filters.
+  Each filter maps a label to a list of pathspec patterns using
+  .gitignore-style glob semantics (* for single segment, ** for recursive).
   Output is a space-separated string of matched labels.
 inputs:
   filters:
     description: >
-      Bash associative array of label=pathspec(s) pairs.
-      Example: ( ["ui"]="ui/**" ["go"]="**/*.go go.mod go.sum" ["gha"]=".github/**" )
-      Multiple pathspecs per label are space-separated.
-      Uses .gitignore-style globs: * matches within a segment, ** matches across segments.
+      JSON object mapping labels to arrays of pathspec patterns.
+      Example: { "ui": ["ui/**"], "go": ["**/*.go", "go.mod"] }
     required: true
   base:
     description: 'base sha to compare with'
@@ -37,17 +35,9 @@ runs:
       run: |
         set -eo pipefail
 
-        input="$(echo "${FILTERS}" | tr '\n' ' ' | sed 's/  */ /g; s/ *$//')"
-        declare -A filters="${input}"
-
-        if [[ -z "${filters[*]}" ]]; then
-          echo "::error::No filters provided. Example: ( [\"ui\"]=\"ui/**\" [\"go\"]=\"**/*.go\" )" >&2
-          exit 1
-        fi
-
         matched=()
-        for k in "${!filters[@]}"; do
-          read -ra pathspecs <<< "${filters[$k]}"
+        for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
+          mapfile -t pathspecs < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
           globs=()
           for p in "${pathspecs[@]}"; do
             globs+=(":(glob)${p}")
