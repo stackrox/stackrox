@@ -11,15 +11,23 @@ import (
 )
 
 type fakeSource struct {
-	deployment *appsv1.Deployment
-	err        error
+	centralDep   *appsv1.Deployment
+	centralDBDep *appsv1.Deployment
+	err          error
+}
+
+func (f *fakeSource) CentralDeployment() (*appsv1.Deployment, error) {
+	if f.centralDep == nil && f.err == nil {
+		return makeCentralDeployment(nil), nil
+	}
+	return f.centralDep, f.err
 }
 
 func (f *fakeSource) CentralDBDeployment() (*appsv1.Deployment, error) {
-	return f.deployment, f.err
+	return f.centralDBDep, f.err
 }
 
-func centralDBDeployment(volumes []corev1.Volume, nodeSelector map[string]string) *appsv1.Deployment {
+func makeCentralDBDeployment(volumes []corev1.Volume, nodeSelector map[string]string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: "central-db"},
 		Spec: appsv1.DeploymentSpec{
@@ -27,6 +35,22 @@ func centralDBDeployment(volumes []corev1.Volume, nodeSelector map[string]string
 				Spec: corev1.PodSpec{
 					Volumes:      volumes,
 					NodeSelector: nodeSelector,
+				},
+			},
+		},
+	}
+}
+
+func makeCentralDeployment(envVars []corev1.EnvVar) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "central"},
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name: "central",
+						Env:  envVars,
+					}},
 				},
 			},
 		},
@@ -92,7 +116,7 @@ func TestDetectStorage(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			src := &fakeSource{deployment: centralDBDeployment(tt.volumes, tt.nodeSelector)}
+			src := &fakeSource{centralDBDep: makeCentralDBDeployment(tt.volumes, tt.nodeSelector)}
 			config, err := detect(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, config.Storage)
@@ -120,10 +144,63 @@ func TestDetectStorageErrors(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			src := &fakeSource{deployment: centralDBDeployment(tt.volumes, nil)}
+			src := &fakeSource{centralDBDep: makeCentralDBDeployment(tt.volumes, nil)}
 			_, err := detect(src)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.errMsg)
+		})
+	}
+}
+
+func TestDetectMonitoring(t *testing.T) {
+	tests := map[string]struct {
+		envVars           []corev1.EnvVar
+		expectIsOpenShift bool
+		expectMonitoring  bool
+	}{
+		"openshift with monitoring enabled": {
+			envVars: []corev1.EnvVar{
+				{Name: "ROX_ENABLE_OPENSHIFT_AUTH", Value: "true"},
+				{Name: "ROX_ENABLE_SECURE_METRICS", Value: "true"},
+			},
+			expectIsOpenShift: true,
+			expectMonitoring:  true,
+		},
+		"openshift with monitoring disabled": {
+			envVars: []corev1.EnvVar{
+				{Name: "ROX_ENABLE_OPENSHIFT_AUTH", Value: "true"},
+			},
+			expectIsOpenShift: true,
+			expectMonitoring:  false,
+		},
+		"k8s (no openshift env vars)": {
+			envVars:           nil,
+			expectIsOpenShift: false,
+			expectMonitoring:  false,
+		},
+		"k8s with other env vars": {
+			envVars: []corev1.EnvVar{
+				{Name: "ROX_OFFLINE_MODE", Value: "false"},
+			},
+			expectIsOpenShift: false,
+			expectMonitoring:  false,
+		},
+	}
+
+	pvcVolume := []corev1.Volume{{
+		Name:         "disk",
+		VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "central-db"}},
+	}}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			src := &fakeSource{
+				centralDep:   makeCentralDeployment(tt.envVars),
+				centralDBDep: makeCentralDBDeployment(pvcVolume, nil),
+			}
+			config, err := detect(src)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectIsOpenShift, config.Monitoring.IsOpenShift)
+			assert.Equal(t, tt.expectMonitoring, config.Monitoring.OpenShiftMonitoringEnabled)
 		})
 	}
 }

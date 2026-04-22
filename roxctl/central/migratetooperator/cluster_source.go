@@ -38,13 +38,21 @@ func newClusterSource(namespace string) (*clusterSource, error) {
 	return &clusterSource{client: client, namespace: namespace}, nil
 }
 
+func (s *clusterSource) CentralDeployment() (*appsv1.Deployment, error) {
+	return s.getDeployment("central")
+}
+
 func (s *clusterSource) CentralDBDeployment() (*appsv1.Deployment, error) {
+	return s.getDeployment("central-db")
+}
+
+func (s *clusterSource) getDeployment(name string) (*appsv1.Deployment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	dep, err := s.client.AppsV1().Deployments(s.namespace).Get(ctx, "central-db", metav1.GetOptions{})
+	dep, err := s.client.AppsV1().Deployments(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting central-db Deployment in namespace %q", s.namespace)
+		return nil, errors.Wrapf(err, "getting %s Deployment in namespace %q", name, s.namespace)
 	}
 	return dep, nil
 }

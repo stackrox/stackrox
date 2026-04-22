@@ -2,6 +2,7 @@ package migratetooperator
 
 import (
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -19,8 +20,14 @@ type storageConfig struct {
 	NodeSelector map[string]string
 }
 
+type monitoringConfig struct {
+	IsOpenShift                bool
+	OpenShiftMonitoringEnabled bool
+}
+
 type detectedConfig struct {
-	Storage storageConfig
+	Storage    storageConfig
+	Monitoring monitoringConfig
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -28,7 +35,11 @@ func detect(src source) (*detectedConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &detectedConfig{Storage: *storage}, nil
+	monitoring, err := detectMonitoring(src)
+	if err != nil {
+		return nil, err
+	}
+	return &detectedConfig{Storage: *storage, Monitoring: *monitoring}, nil
 }
 
 func detectStorage(src source) (*storageConfig, error) {
@@ -68,4 +79,27 @@ func detectStorage(src source) (*storageConfig, error) {
 		cfg.NodeSelector = ns
 	}
 	return cfg, nil
+}
+
+func detectMonitoring(src source) (*monitoringConfig, error) {
+	dep, err := src.CentralDeployment()
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving central Deployment")
+	}
+	isOpenShift := hasEnvVar(dep, "ROX_ENABLE_OPENSHIFT_AUTH")
+	return &monitoringConfig{
+		IsOpenShift:                isOpenShift,
+		OpenShiftMonitoringEnabled: isOpenShift && hasEnvVar(dep, "ROX_ENABLE_SECURE_METRICS"),
+	}, nil
+}
+
+func hasEnvVar(dep *appsv1.Deployment, name string) bool {
+	for _, c := range dep.Spec.Template.Spec.Containers {
+		for _, env := range c.Env {
+			if env.Name == name {
+				return true
+			}
+		}
+	}
+	return false
 }
