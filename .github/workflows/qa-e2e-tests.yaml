@@ -48,6 +48,10 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Get tag
+        run: |
+          echo "tag=$(make --quiet --no-print-directory tag)" >> "$GITHUB_ENV"
+
       - name: Create GKE cluster
         uses: stackrox/actions/infra/create-cluster@v1
         with:
