@@ -279,7 +279,7 @@ func (s *serviceImplTestSuite) TestIssueSecondaryCALeafCert() {
 		s.Require().NotNil(cert.Leaf)
 
 		validity := cert.Leaf.NotAfter.Sub(cert.Leaf.NotBefore)
-		s.Less(validity, 3*24*time.Hour, "secondary leaf cert should have short validity (<=2 days)")
+		s.Less(validity, 4*time.Hour, "secondary leaf cert should have short validity (<=3 hours)")
 	})
 }
 

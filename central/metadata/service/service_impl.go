@@ -152,7 +152,7 @@ func issueSecondaryCALeafCert(certProvider CertificateProvider) (tls.Certificate
 		return tls.Certificate{}, errors.Wrap(err, "failed to load secondary CA for signing")
 	}
 
-	issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject, mtls.WithValidityExpiringInDays())
+	issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject, mtls.WithValidityExpiringInHours())
 	if issueErr != nil {
 		return tls.Certificate{}, errors.Wrap(issueErr, "failed to issue leaf certificate from secondary CA")
 	}
