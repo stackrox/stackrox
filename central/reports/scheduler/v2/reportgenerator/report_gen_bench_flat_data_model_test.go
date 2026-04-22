@@ -257,6 +257,8 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		expectedRowCount := 1000
 		reportSnap := testEntityScopeReportSnapshot(entityScope, "CVSS:>=7.0", allImageTypes, scopeRules)
 
+		b.ReportAllocs()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			reportData, err := reportGenerator.getReportDataSQF(reportSnap, nil, sinceStartDate)
 			require.NoError(b, err)
@@ -284,6 +286,8 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		expectedRowCount := 700
 		reportSnap := testEntityScopeReportSnapshot(entityScope, "EPSS Probability:>=0.5", allImageTypes, scopeRules)
 
+		b.ReportAllocs()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			reportData, err := reportGenerator.getReportDataSQF(reportSnap, nil, sinceStartDate)
 			require.NoError(b, err)
@@ -311,6 +315,8 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		expectedRowCount := 1500
 		reportSnap := testEntityScopeReportSnapshot(entityScope, "CVSS:>=7.0", allImageTypes, scopeRules)
 
+		b.ReportAllocs()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			reportData, err := reportGenerator.getReportDataSQF(reportSnap, nil, sinceStartDate)
 			require.NoError(b, err)
