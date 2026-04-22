@@ -6,7 +6,11 @@ import type {
 } from 'services/ReportsService.types';
 import type { SearchFilter } from 'types/search';
 import type { SearchFieldLabel } from 'types/searchOptions';
-import { isQuotedString, searchValueAsArray } from 'utils/searchUtils';
+import {
+    getValueByCaseInsensitiveKey,
+    isQuotedString,
+    searchValueAsArray,
+} from 'utils/searchUtils';
 
 type EntityScopeSearchFieldLabelForCluster = Extract<
     SearchFieldLabel,
@@ -107,7 +111,10 @@ function getEntityScopeRulesFromSearchFilter(
     const rules: EntityScopeRule[] = [];
 
     Object.entries(searchFilter).forEach(([searchFieldLabel, searchFieldValue]) => {
-        const ruleWithoutValues = searchFieldLabelMap[searchFieldLabel];
+        const ruleWithoutValues = getValueByCaseInsensitiveKey(
+            searchFieldLabelMap,
+            searchFieldLabel
+        );
         const searchFieldValues = searchValueAsArray(searchFieldValue);
 
         if (ruleWithoutValues && searchFieldValues.length !== 0) {
