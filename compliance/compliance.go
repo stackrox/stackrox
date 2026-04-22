@@ -209,7 +209,7 @@ func (c *Compliance) newVMRelayBackOff() backoff.BackOff {
 
 func defaultVMRelayBackOff() backoff.BackOff {
 	eb := backoff.NewExponentialBackOff()
-	eb.MaxInterval = 30 * time.Second
+	eb.MaxInterval = 5 * time.Minute
 	eb.MaxElapsedTime = 0
 	return eb
 }
