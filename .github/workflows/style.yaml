@@ -19,30 +19,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Separate job so that dependent jobs are skipped entirely on
+  # PRs where their component's files haven't changed.
   detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      matches: ${{ steps.changes.outputs.matches }}
-    steps:
-    - name: Checkout
-      if: github.event_name == 'pull_request'
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        sparse-checkout: .github/actions/files-changed
-    - name: Detect changed files
-      if: github.event_name == 'pull_request'
-      id: changes
-      uses: ./.github/actions/files-changed
-      with:
-        filters: |
-          {
-            "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**"],
-            "ui": ["ui/**"],
-            "shell": ["scripts/**", "deploy/**", "**/*.sh"],
-            "gha": [".github/**"],
-            "openshift-ci": [".openshift-ci/**"],
-            "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
-          }
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      filters: |
+        {
+          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**"],
+          "ui": ["ui/**"],
+          "shell": ["scripts/**", "deploy/**", "**/*.sh"],
+          "gha": [".github/**"],
+          "openshift-ci": [".openshift-ci/**"],
+          "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
+        }
 
   check-generated-files:
     needs: detect-changes
