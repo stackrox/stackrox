@@ -198,6 +198,38 @@ class TestAggregate(unittest.TestCase):
         self.assertTrue((self.output / "vulnerabilities.zip").exists())
         self.assertFalse((self.bucket / "dev" / "vulnerabilities.zip").exists())
 
+    def test_partial_failure_preserves_last_known_good(self):
+        # First upload: all succeed
+        # (already done in setUp)
+
+        # Second upload: alpine fails
+        (self.bundles / "alpine.json.zst").unlink()
+        create_status_json(self.bundles / "status.json", [
+            {"name": "alpine", "status": "failed", "error": "timeout", "last_attempt": "2026-04-22T00:00:00Z"},
+            {"name": "nvd", "status": "success", "last_attempt": "2026-04-22T00:00:00Z"},
+            {"name": "photon", "status": "success", "last_attempt": "2026-04-22T00:00:00Z"},
+        ])
+        run_script(
+            "--backend", "local", "--bucket", str(self.bucket),
+            "upload", "--local-dir", str(self.bundles), "--version", "dev",
+        )
+
+        # Aggregate should include all 3 bundles (alpine from first upload)
+        result = self._aggregate()
+        self.assertEqual(result.returncode, 0)
+
+        with zipfile.ZipFile(self.output / "vulnerabilities.zip") as zf:
+            names = zf.namelist()
+            self.assertIn("alpine.json.zst", names, "last-known-good alpine should be in zip")
+            self.assertIn("nvd.json.zst", names)
+            self.assertIn("photon.json.zst", names)
+            self.assertIn("status.json", names)
+
+            status = json.loads(zf.read("status.json"))
+            alpine = next(u for u in status["updaters"] if u["name"] == "alpine")
+            self.assertEqual(alpine["status"], "failed")
+            self.assertIn("last_successful_update", alpine)
+
     def test_no_bundles_fails(self):
         empty_bucket = self.root / "empty-bucket"
         empty_bucket.mkdir()
