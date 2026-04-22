@@ -85,6 +85,10 @@ class SignatureIntegrationService extends BaseService {
         return ""
     }
 
+    static List<SignatureIntegrationOuterClass.SignatureIntegration> listSignatureIntegrations() {
+        return getSignatureIntegrationClient().listSignatureIntegrations(EMPTY).getIntegrationsList()
+    }
+
     static Boolean deleteSignatureIntegration(String integrationId) {
         try {
             getSignatureIntegrationClient().deleteSignatureIntegration(getResourceByID(integrationId))
