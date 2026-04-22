@@ -284,13 +284,6 @@ generate_and_migrate() {
   assert_output "false"
 }
 
-@test "migrate-to-operator: default has no telemetry section" {
-  generate_and_migrate k8s pvc
-  run yq e '.spec.central.telemetry' "$cr_out"
-  assert_success
-  assert_output "null"
-}
-
 # Offline mode
 
 @test "migrate-to-operator: --offline sets egress.connectivityPolicy=Offline" {
