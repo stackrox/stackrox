@@ -1,19 +1,20 @@
-import { useLocation } from 'react-router-dom-v5-compat';
 import { NavList } from '@patternfly/react-core';
 
 import { riskFullViewPath, riskPlatformViewPath, riskUserWorkloadsViewPath } from 'routePaths';
-import { hasSearchKeyValue } from 'utils/searchUtils';
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import {
+    fullWorkflowView,
+    platformWorkflowView,
+    userWorkloadWorkflowView,
+} from 'Components/FilteredWorkflowViewSelector/types';
 import NavigationItem from 'Containers/MainPage/Navigation/NavigationItem';
 
 function RiskSubnav() {
-    const location = useLocation();
-    const search = location.search ?? '';
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
-    const isUserWorkloadsActive =
-        hasSearchKeyValue(search, 'filteredWorkflowView', 'Applications view') ||
-        hasSearchKeyValue(search, 'filteredWorkflowView', null);
-    const isPlatformActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
-    const isFullViewActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
+    const isUserWorkloadsActive = filteredWorkflowView === userWorkloadWorkflowView;
+    const isPlatformActive = filteredWorkflowView === platformWorkflowView;
+    const isFullViewActive = filteredWorkflowView === fullWorkflowView;
 
     return (
         <NavList>
