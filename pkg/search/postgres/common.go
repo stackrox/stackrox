@@ -591,8 +591,8 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 
 // composePostTransforms returns a PostTransform that runs both a and b on the
 // same input and merges their deduplicated []string results. Both transforms
-// return interface{}, but for map fields (labels, annotations) the concrete
-// type is []string.
+// return interface{}, but for map fields (labels, annotations) and array fields
+// the concrete type is []string.
 func composePostTransforms(a, b func(interface{}) interface{}) func(interface{}) interface{} {
 	return func(v interface{}) interface{} {
 		aResult := a(v)
