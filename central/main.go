@@ -1020,7 +1020,6 @@ func waitForTerminationSignal() {
 	log.Infof("Caught %s signal", sig)
 
 	stoppables := []stoppableWithName{
-		{backgroundmigrations.Singleton(), "background migrations"},
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "garbage collector"},
@@ -1050,6 +1049,11 @@ func waitForTerminationSignal() {
 	if features.PlatformComponents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
+	}
+
+	if features.BackgroundMigration.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{backgroundmigrations.Singleton(), "background migrations"})
 	}
 
 	var wg sync.WaitGroup

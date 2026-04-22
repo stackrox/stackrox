@@ -11,7 +11,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-// You must import a migration in ../../runner/all.go for this to be exececuted
+// You must import a migration in ../../runner/all.go for this to be executed
 func init() {
 	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum:     0,

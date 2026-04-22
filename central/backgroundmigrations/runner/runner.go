@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -22,6 +23,8 @@ var (
 	once     sync.Once
 	instance *Runner
 )
+
+var log = logging.LoggerForModule()
 
 // Singleton returns the singleton Runner instance.
 func Singleton() *Runner {
@@ -45,7 +48,7 @@ type Runner struct {
 	db             postgres.DB
 	rolloutChecker RolloutChecker
 	stopper        concurrency.Stopper
-	started        bool
+	started        atomic.Bool
 	targetSeqNum   int
 	retryInterval  time.Duration
 }
@@ -63,14 +66,14 @@ func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 
 // Start launches the background migration goroutine.
 func (r *Runner) Start() {
-	r.started = true
+	r.started.Swap(true)
 	go r.run()
 }
 
 // Stop requests graceful shutdown and waits for the runner to finish.
 func (r *Runner) Stop() {
 	r.stopper.Client().Stop()
-	if r.started {
+	if r.started.Load() {
 		_ = r.stopper.Client().Stopped().Wait()
 	}
 }
@@ -140,8 +143,6 @@ func (r *Runner) acquireLock(ctx context.Context) (func(), error) {
 }
 
 func (r *Runner) runMigrations(ctx context.Context) error {
-	log := logging.LoggerForModule()
-
 	dbSeqNum, dbOverrideTag, err := r.readState(ctx)
 	if err != nil {
 		return errors.Wrap(err, "reading current state")
@@ -158,11 +159,9 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 
 	if !shouldOverride && dbOverrideTag != "" {
 		// reset old override tags if it exists
-		if dbOverrideTag != "" {
-			log.Infof("override env var removed, clearing stale override tag %q from DB", dbOverrideTag)
-			if err := r.writeOverrideTag(ctx, ""); err != nil {
-				return errors.Wrap(err, "clearing override tag")
-			}
+		log.Infof("override env var removed, clearing stale override tag %q from DB", dbOverrideTag)
+		if err := r.writeOverrideTag(ctx, ""); err != nil {
+			return errors.Wrap(err, "clearing override tag")
 		}
 	}
 
@@ -246,17 +245,17 @@ func (r *Runner) writeState(ctx context.Context, seqNum int, overrideTag string)
 
 // checkSeqNumOverrideConfig checks env configuration for sequence number overrides and applies them.
 // returns the configuration and whether it needs to be applied
-func (r *Runner) checkSeqNumOverrideConfig(currSeqNum int, dbOverrideTag string) (seqNum int, tag string, apply bool) {
+func (r *Runner) checkSeqNumOverrideConfig(currSeqNum int, dbOverrideTag string) (seqNum int, tag string, shouldOverride bool) {
 	seqNum = env.BackgroundMigrationOverrideSeqNum.IntegerSetting()
 	tag = env.BackgroundMigrationOverrideTag.Setting()
 
 	if seqNum < 0 || tag == "" || tag == dbOverrideTag {
-		return
+		return seqNum, tag, shouldOverride
 	}
 
 	if seqNum >= currSeqNum {
-		log.Errorf("override background seq num %d is greater or equal current seq num %d, ignoring override", seqNum, currSeqNum)
-		return
+		log.Infof("override background seq num %d is greater or equal current seq num %d, ignoring override", seqNum, currSeqNum)
+		return seqNum, tag, shouldOverride
 	}
 
 	return seqNum, tag, true

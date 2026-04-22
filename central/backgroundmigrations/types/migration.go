@@ -7,7 +7,7 @@ import (
 )
 
 // BackgroundMigration defines a long-running migration that runs in Central after startup.
-// Examples for long running migration use cases: Backfilling a collumn from serialized values, Index Creation
+// Examples for long running migration use cases: Backfilling a column from serialized values, Index Creation
 type BackgroundMigration struct {
 	// StartingSeqNum is the seqnum before this migration runs.
 	StartingSeqNum int

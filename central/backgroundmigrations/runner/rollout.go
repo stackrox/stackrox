@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -13,8 +12,6 @@ import (
 )
 
 const deploymentName = "central"
-
-var log = logging.LoggerForModule()
 
 // RolloutChecker checks whether the Central deployment rollout is complete.
 type RolloutChecker interface {
