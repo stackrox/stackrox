@@ -13,6 +13,7 @@ import (
 type fakeSource struct {
 	centralDep   *appsv1.Deployment
 	centralDBDep *appsv1.Deployment
+	resources    map[string]map[string]interface{}
 	err          error
 }
 
@@ -25,6 +26,18 @@ func (f *fakeSource) CentralDeployment() (*appsv1.Deployment, error) {
 
 func (f *fakeSource) CentralDBDeployment() (*appsv1.Deployment, error) {
 	return f.centralDBDep, f.err
+}
+
+func (f *fakeSource) ResourceByKindAndName(kind, name string) (bool, map[string]interface{}, error) {
+	if f.resources == nil {
+		return false, nil, nil
+	}
+	key := kind + "/" + name
+	data, ok := f.resources[key]
+	if !ok {
+		return false, nil, nil
+	}
+	return true, data, nil
 }
 
 func makeCentralDBDeployment(volumes []corev1.Volume, nodeSelector map[string]string) *appsv1.Deployment {
@@ -187,10 +200,7 @@ func TestDetectMonitoring(t *testing.T) {
 		},
 	}
 
-	pvcVolume := []corev1.Volume{{
-		Name:         "disk",
-		VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "central-db"}},
-	}}
+	pvcVolume := defaultPVCVolume()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			src := &fakeSource{
@@ -203,4 +213,65 @@ func TestDetectMonitoring(t *testing.T) {
 			assert.Equal(t, tt.expectMonitoring, config.Monitoring.OpenShiftMonitoringEnabled)
 		})
 	}
+}
+
+func TestDetectExposure(t *testing.T) {
+	tests := map[string]struct {
+		resources     map[string]map[string]interface{}
+		expectedLB    bool
+		expectedNP    bool
+		expectedRoute bool
+	}{
+		"no exposure": {
+			resources: nil,
+		},
+		"load balancer": {
+			resources: map[string]map[string]interface{}{
+				"Service/central-loadbalancer": {"spec": map[string]interface{}{"type": "LoadBalancer"}},
+			},
+			expectedLB: true,
+		},
+		"node port": {
+			resources: map[string]map[string]interface{}{
+				"Service/central-loadbalancer": {"spec": map[string]interface{}{"type": "NodePort"}},
+			},
+			expectedNP: true,
+		},
+		"route": {
+			resources: map[string]map[string]interface{}{
+				"Route/central": {"spec": map[string]interface{}{}},
+			},
+			expectedRoute: true,
+		},
+		"load balancer and route": {
+			resources: map[string]map[string]interface{}{
+				"Service/central-loadbalancer": {"spec": map[string]interface{}{"type": "LoadBalancer"}},
+				"Route/central":                {"spec": map[string]interface{}{}},
+			},
+			expectedLB:    true,
+			expectedRoute: true,
+		},
+	}
+
+	pvcVolume := defaultPVCVolume()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			src := &fakeSource{
+				centralDBDep: makeCentralDBDeployment(pvcVolume, nil),
+				resources:    tt.resources,
+			}
+			config, err := detect(src)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedLB, config.Exposure.LoadBalancerEnabled)
+			assert.Equal(t, tt.expectedNP, config.Exposure.NodePortEnabled)
+			assert.Equal(t, tt.expectedRoute, config.Exposure.RouteEnabled)
+		})
+	}
+}
+
+func defaultPVCVolume() []corev1.Volume {
+	return []corev1.Volume{{
+		Name:         "disk",
+		VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "central-db"}},
+	}}
 }

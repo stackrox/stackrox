@@ -42,6 +42,21 @@ func generateCR(config *detectedConfig) *platform.Central {
 	}
 	cr.Spec.Central = &platform.CentralComponentSpec{DB: db}
 
+	exp := config.Exposure
+	if exp.LoadBalancerEnabled || exp.NodePortEnabled || exp.RouteEnabled {
+		exposure := &platform.Exposure{}
+		if exp.LoadBalancerEnabled {
+			exposure.LoadBalancer = &platform.ExposureLoadBalancer{Enabled: pointers.Bool(true)}
+		}
+		if exp.NodePortEnabled {
+			exposure.NodePort = &platform.ExposureNodePort{Enabled: pointers.Bool(true)}
+		}
+		if exp.RouteEnabled {
+			exposure.Route = &platform.ExposureRoute{Enabled: pointers.Bool(true)}
+		}
+		cr.Spec.Central.Exposure = exposure
+	}
+
 	if config.Monitoring.IsOpenShift && !config.Monitoring.OpenShiftMonitoringEnabled {
 		cr.Spec.Monitoring = &platform.GlobalMonitoring{
 			OpenShiftMonitoring: &platform.OpenShiftMonitoring{

@@ -101,3 +101,47 @@ func TestGenerateCR_K8sOmitsMonitoring(t *testing.T) {
 
 	assert.Nil(t, cr.Spec.Monitoring)
 }
+
+func TestGenerateCR_ExposureLoadBalancer(t *testing.T) {
+	config := &detectedConfig{
+		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
+		Exposure: exposureConfig{LoadBalancerEnabled: true},
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Central.Exposure)
+	require.NotNil(t, cr.Spec.Central.Exposure.LoadBalancer)
+	assert.True(t, *cr.Spec.Central.Exposure.LoadBalancer.Enabled)
+	assert.Nil(t, cr.Spec.Central.Exposure.NodePort)
+	assert.Nil(t, cr.Spec.Central.Exposure.Route)
+}
+
+func TestGenerateCR_ExposureRoute(t *testing.T) {
+	config := &detectedConfig{
+		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
+		Exposure: exposureConfig{RouteEnabled: true},
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Central.Exposure)
+	require.NotNil(t, cr.Spec.Central.Exposure.Route)
+	assert.True(t, *cr.Spec.Central.Exposure.Route.Enabled)
+}
+
+func TestGenerateCR_ExposureNone(t *testing.T) {
+	config := &detectedConfig{
+		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	}
+	cr := generateCR(config)
+	assert.Nil(t, cr.Spec.Central.Exposure)
+}
+
+func TestGenerateCR_ExposureMultiple(t *testing.T) {
+	config := &detectedConfig{
+		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
+		Exposure: exposureConfig{LoadBalancerEnabled: true, RouteEnabled: true},
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Central.Exposure)
+	assert.True(t, *cr.Spec.Central.Exposure.LoadBalancer.Enabled)
+	assert.True(t, *cr.Spec.Central.Exposure.Route.Enabled)
+	assert.Nil(t, cr.Spec.Central.Exposure.NodePort)
+}
