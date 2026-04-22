@@ -133,6 +133,6 @@ export function getEntityScopeRulesFromSearchFilterForCluster(searchFilter: Sear
  * Return initial entity scope rules for corresponding search fields
  * when user creates either violation or image vulnerability report configuration from results page.
  */
-export function getEntityScopeRulesFromSearchFilterForCWorkload(searchFilter: SearchFilter) {
+export function getEntityScopeRulesFromSearchFilterForWorkload(searchFilter: SearchFilter) {
     return getEntityScopeRulesFromSearchFilter(searchFilter, searchFieldLabelMapForWorkload);
 }
