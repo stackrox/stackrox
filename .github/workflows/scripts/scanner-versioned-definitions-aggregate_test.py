@@ -64,7 +64,7 @@ class TestUpload(unittest.TestCase):
 
     def test_uploads_bundles_and_status(self):
         result = self._upload()
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
         dest = self.bucket / "dev" / "bundles"
         self.assertTrue((dest / "alpine.json.zst").exists())
@@ -169,7 +169,7 @@ class TestAggregate(unittest.TestCase):
 
     def test_creates_zip_with_bundles(self):
         result = self._aggregate()
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
         zip_path = self.output / "vulnerabilities.zip"
         self.assertTrue(zip_path.exists())
@@ -194,7 +194,7 @@ class TestAggregate(unittest.TestCase):
 
     def test_dry_run_does_not_upload(self):
         result = self._aggregate("--dry-run")
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.output / "vulnerabilities.zip").exists())
         self.assertFalse((self.bucket / "dev" / "vulnerabilities.zip").exists())
 
@@ -216,7 +216,7 @@ class TestAggregate(unittest.TestCase):
 
         # Aggregate should include all 3 bundles (alpine from first upload)
         result = self._aggregate()
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
         with zipfile.ZipFile(self.output / "vulnerabilities.zip") as zf:
             names = zf.namelist()
