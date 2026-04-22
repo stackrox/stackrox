@@ -664,14 +664,14 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 
 	detail := storagetov2.VirtualMachineV2ToDetail(vm)
 
-	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable) but the
-	// search framework has no field label for scan ID, so we sort by scan_time which
-	// has a btree index.
+	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable),
+	// so sorting by the primary key is equivalent to sorting by time and avoids
+	// a separate index scan.
 	scanQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
 	scanQuery.Pagination = &v1.QueryPagination{
 		Limit: 1,
 		SortOptions: []*v1.QuerySortOption{
-			{Field: search.VirtualMachineScanTime.String(), Reversed: true},
+			{Field: search.VirtualMachineScanID.String(), Reversed: true},
 		},
 	}
 	scans, err := s.scanDS.SearchRawVMScans(ctx, scanQuery)

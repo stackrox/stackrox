@@ -2,8 +2,8 @@ buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.11-20250718181942-e
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.11-20250718181942-e35f9b667443.1/go.mod h1:1Znr6gmYBhbxWUPRrrVnSLXQsz8bvFVw1HHJq2bI3VQ=
 buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-20250109164928-1da0de137947.1 h1:HwzzCRS4ZrEm1++rzSDxHnO0DOjiT1b8I/24e8a4exY=
 buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-20250109164928-1da0de137947.1/go.mod h1:8PRKXhgNes29Tjrnv8KdZzg3I1QceOkzibW1QK7EXv0=
-buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1 h1:PMmTMyvHScV9Mn8wc6ASge9uRcHy0jtqPd+fM35LmsQ=
-buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1/go.mod h1:tvtbpgaVXZX4g6Pn+AnzFycuRK3MOz5HJfEGeEllXYM=
+buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1 h1:s6hzCXtND/ICdGPTMGk7C+/BFlr2Jg5GyH0NKf4XGXg=
+buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1/go.mod h1:tvtbpgaVXZX4g6Pn+AnzFycuRK3MOz5HJfEGeEllXYM=
 buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260126144947-819582968857.2 h1:XPrWCd9ydEo5Ofv1aNJVJaxndMXLQjRO9vVzsJG3jL8=
 buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260126144947-819582968857.2/go.mod h1:mpsjeEaxOYPIJV2cz4IagLghZufRvx+NPVtInjEeoQ8=
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1 h1:Yreby6Ypa58wdQUEm9Fnc5g8n/jP487Dq3aK5yBYwfk=
@@ -12,8 +12,8 @@ buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1/go.mod h1:nWVKKRA29zdt4uvkjka3i/y4mkrswyWwiu0TbdX0zts=
 buf.build/go/app v0.2.1-0.20260407195847-833f8f978cda h1:eysSyjrJtkxU1A/9+Kv+1Mwq9K6BYBw+STIOVsZ256Y=
 buf.build/go/app v0.2.1-0.20260407195847-833f8f978cda/go.mod h1:V32mBaPWsfq6REAeZvvs/rQl7ZCl9Dn7eW1BBrmH0GQ=
-buf.build/go/bufplugin v0.9.0 h1:ktZJNP3If7ldcWVqh46XKeiYJVPxHQxCfjzVQDzZ/lo=
-buf.build/go/bufplugin v0.9.0/go.mod h1:Z0CxA3sKQ6EPz/Os4kJJneeRO6CjPeidtP1ABh5jPPY=
+buf.build/go/bufplugin v0.10.0 h1:vZBX0mq9as5UIBug8U+/DkGRaHNlM/HVOw59O8fvOIU=
+buf.build/go/bufplugin v0.10.0/go.mod h1:ax7obVurKDH1I2nR4pFTS+TE6K3kZhTmwDCN2YgdV8I=
 buf.build/go/bufprivateusage v0.1.0 h1:SzCoCcmzS3zyXHEXHeSQhGI7OTkgtljoknLzsUz9Gg4=
 buf.build/go/bufprivateusage v0.1.0/go.mod h1:GlCCJ3VVF7EqqU0CoRmo1FzAwwaKymEWSr+ty69xU5w=
 buf.build/go/interrupt v1.1.0 h1:olBuhgv9Sav4/9pkSLoxgiOsZDgM5VhRhvRpn3DL0lE=
@@ -42,10 +42,10 @@ github.com/bmatcuk/doublestar/v4 v4.10.0 h1:zU9WiOla1YA122oLM6i4EXvGW62DvKZVxIe6
 github.com/bmatcuk/doublestar/v4 v4.10.0/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
 github.com/brianvoe/gofakeit/v6 v6.28.0 h1:Xib46XXuQfmlLS2EXRuJpqcw8St6qSZz75OUo0tgAW4=
 github.com/brianvoe/gofakeit/v6 v6.28.0/go.mod h1:Xj58BMSnFqcn/fAQeSK+/PLtC5kSb7FJIq4JyGa8vEs=
-github.com/bufbuild/buf v1.68.1 h1:+6uBl5SJhZ3YbHSJ6p1ws/uKxC2SLD+97VObeLKfp6A=
-github.com/bufbuild/buf v1.68.1/go.mod h1:V/TNu6qoHCwVbAVM9rj3LcPCiJwNg0g8HBXW041eD34=
-github.com/bufbuild/protocompile v0.14.2-0.20260414204819-0b1a6cd46bcb h1:jdS2S8gfhRe0KGzvVbysqIsobREx4dDq9e1hppy4a6A=
-github.com/bufbuild/protocompile v0.14.2-0.20260414204819-0b1a6cd46bcb/go.mod h1:DhgqsRznX/F0sGkUYtTQJRP+q8xMReQRQ3qr+n1opWU=
+github.com/bufbuild/buf v1.68.3 h1:U8f009iPe+EbfTJESvV4X3AhtDcnz5E+qx8s0VJ7ftY=
+github.com/bufbuild/buf v1.68.3/go.mod h1:SGGqxFHsQbw9Q1hThZVvNnwI1KjbA18hmkl0sQPrtUs=
+github.com/bufbuild/protocompile v0.14.2-0.20260420203553-9e5399662822 h1:up+abu92N9MCFYo1IWnrA+mb4HdPCvuc9+vCMo6n7oU=
+github.com/bufbuild/protocompile v0.14.2-0.20260420203553-9e5399662822/go.mod h1:DhgqsRznX/F0sGkUYtTQJRP+q8xMReQRQ3qr+n1opWU=
 github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b h1:b7wvo9ZhjLzCp7tGbOUMvgtYTnd33zGSAmMxcdxMnhQ=
 github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -69,8 +69,8 @@ github.com/docker/cli v29.4.0+incompatible h1:+IjXULMetlvWJiuSI0Nbor36lcJ5BTcVpU
 github.com/docker/cli v29.4.0+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/docker-credential-helpers v0.9.5 h1:EFNN8DHvaiK8zVqFA2DT6BjXE0GzfLOZ38ggPTKePkY=
 github.com/docker/docker-credential-helpers v0.9.5/go.mod h1:v1S+hepowrQXITkEfw6o4+BMbGot02wiKpzWhGUZK6c=
-github.com/docker/go-connections v0.6.0 h1:LlMG9azAe1TqfR7sO+NJttz1gy6KO7VJBh+pMmjSD94=
-github.com/docker/go-connections v0.6.0/go.mod h1:AahvXYshr6JgfUJGdDCs2b5EZG/vmaMAntpSFH5BFKE=
+github.com/docker/go-connections v0.7.0 h1:6SsRfJddP22WMrCkj19x9WKjEDTB+ahsdiGYf0mN39c=
+github.com/docker/go-connections v0.7.0/go.mod h1:no1qkHdjq7kLMGUXYAduOhYPSJxxvgWBh7ogVvptn3Q=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/favadi/protoc-go-inject-tag v1.4.0 h1:K3KXxbgRw5WT4f43LbglARGz/8jVsDOS7uMjG4oNvXY=

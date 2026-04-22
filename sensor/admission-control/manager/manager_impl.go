@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -172,6 +173,7 @@ type manager struct {
 	// Bounded by imageNameCacheSize to prevent unbounded growth during long-lived Sensor sessions.
 	imageNameToImageCacheKey *lru.Cache[string, string]
 	imageNameCacheEnabled    bool
+	imageCacheTTL            time.Duration
 	imageFetchGroup          *coalescer.Coalescer[*storage.Image]
 
 	depClient               sensor.DeploymentServiceClient
@@ -221,6 +223,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageNameCacheEnabled
 		imageCache:               cache,
 		imageNameToImageCacheKey: nameCache,
 		imageNameCacheEnabled:    imageNameCacheEnabled,
+		imageCacheTTL:            env.AdmissionControlImageCacheTTL.DurationSetting(),
 		imageFetchGroup:          coalescer.New[*storage.Image](),
 		imageCacheGen:            newImageGenTracker(),
 
