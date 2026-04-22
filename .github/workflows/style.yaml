@@ -79,7 +79,6 @@ jobs:
       run: scripts/ci/jobs/check-generated.sh
 
   misc-checks:
-    needs: detect-changes
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
