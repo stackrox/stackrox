@@ -121,7 +121,16 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
+          set -euo pipefail
+
+          echo "ORCHESTRATOR_FLAVOR=$ORCHESTRATOR_FLAVOR"
+          echo "KUBECONFIG=$KUBECONFIG"
+          echo "Current directory: $(pwd)"
+
+          # Source the script which will set ROOT and source dependencies
           source qa-tests-backend/scripts/run-part-1.sh
+
+          # Now call config_part_1 which should have all dependencies loaded
           config_part_1
 
       - name: Execute test group
