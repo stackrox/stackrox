@@ -84,6 +84,8 @@ jobs:
           install_components: "gke-gcloud-auth-plugin"
 
       - name: Wait for cluster and get kubeconfig
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
           infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts
@@ -174,4 +176,6 @@ jobs:
 
       - name: Delete cluster
         if: always()
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: infractl delete "${CLUSTER_NAME}"
