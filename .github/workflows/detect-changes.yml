@@ -50,7 +50,7 @@ jobs:
             exit 0
           fi
 
-          mapfile -t files <<< "${gh_output}"
+          mapfile -t files < <(echo -n "${gh_output}")
           echo "Changed files (${#files[@]}):" >&2
           printf '  %s\n' "${files[@]}" >&2
 
