@@ -52,15 +52,11 @@ type Compliance struct {
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
 
-	vmRelayStreamFactory  func() (relay.IndexReportStream, error)
-	vmRelaySenderFactory  func(sensor.VirtualMachineIndexReportServiceClient) sender.IndexReportSender
-	vmRelayFactory        func(relay.IndexReportStream, sender.IndexReportSender) vmRelayRunner
+	vmRelayOperation      vmRelayOperation
 	vmRelayBackOffFactory func() backoff.BackOff
 }
 
-type vmRelayRunner interface {
-	Run(ctx context.Context) error
-}
+type vmRelayOperation func(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
@@ -71,6 +67,10 @@ func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeI
 		nodeIndexer:      nodeIndexer,
 		umhNodeInventory: umhNodeInv,
 		umhNodeIndex:     umhNodeIndex,
+		vmRelayOperation: defaultVMRelayOperation,
+		vmRelayBackOffFactory: func() backoff.BackOff {
+			return defaultVMRelayBackOff()
+		},
 	}
 }
 
@@ -143,14 +143,15 @@ func (c *Compliance) Start() {
 	// sensor and accelerates initial development.
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
-		if features.VirtualMachines.Enabled() {
-			log.Infof("Virtual machine relay enabled")
+		if !features.VirtualMachines.Enabled() {
+			return
+		}
+		log.Infof("Virtual machine relay enabled")
 
-			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-			err := c.runVMRelayWithRetry(ctx, sensorClient)
-			if err != nil && ctx.Err() == nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-				log.Errorf("Error running virtual machine relay: %v", err)
-			}
+		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+		err := c.runVMRelayWithRetry(ctx, sensorClient)
+		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			log.Errorf("Error running virtual machine relay: %v", err)
 		}
 	}(ctx)
 
@@ -171,21 +172,11 @@ func (c *Compliance) Start() {
 
 func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	operation := func() error {
-		reportStream, err := c.newVMRelayStream()
-		if err != nil {
-			return err
+		err := c.newVMRelayOperation()(ctx, sensorClient)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return backoff.Permanent(err)
 		}
-
-		reportSender := c.newVMRelaySender(sensorClient)
-		vmRelay := c.newVMRelay(reportStream, reportSender)
-		if err := vmRelay.Run(ctx); err != nil {
-			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-				return backoff.Permanent(err)
-			}
-			return err
-		}
-
-		return nil
+		return err
 	}
 
 	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), func(err error, t time.Duration) {
@@ -196,35 +187,36 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 	})
 }
 
-func (c *Compliance) newVMRelayStream() (relay.IndexReportStream, error) {
-	if c.vmRelayStreamFactory != nil {
-		return c.vmRelayStreamFactory()
+func (c *Compliance) newVMRelayOperation() vmRelayOperation {
+	if c.vmRelayOperation != nil {
+		return c.vmRelayOperation
 	}
-	return stream.New()
-}
-
-func (c *Compliance) newVMRelaySender(sensorClient sensor.VirtualMachineIndexReportServiceClient) sender.IndexReportSender {
-	if c.vmRelaySenderFactory != nil {
-		return c.vmRelaySenderFactory(sensorClient)
-	}
-	return sender.New(sensorClient)
-}
-
-func (c *Compliance) newVMRelay(reportStream relay.IndexReportStream, reportSender sender.IndexReportSender) vmRelayRunner {
-	if c.vmRelayFactory != nil {
-		return c.vmRelayFactory(reportStream, reportSender)
-	}
-	return relay.New(reportStream, reportSender)
+	return defaultVMRelayOperation
 }
 
 func (c *Compliance) newVMRelayBackOff() backoff.BackOff {
 	if c.vmRelayBackOffFactory != nil {
 		return c.vmRelayBackOffFactory()
 	}
+	return defaultVMRelayBackOff()
+}
 
+func defaultVMRelayBackOff() backoff.BackOff {
 	eb := backoff.NewExponentialBackOff()
+	eb.MaxInterval = 30 * time.Second
 	eb.MaxElapsedTime = 0
 	return eb
+}
+
+func defaultVMRelayOperation(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+	reportStream, err := stream.New()
+	if err != nil {
+		return err
+	}
+
+	reportSender := sender.New(sensorClient)
+	vmRelay := relay.New(reportStream, reportSender)
+	return vmRelay.Run(ctx)
 }
 
 func (c *Compliance) createIndexMsg(report *v4.IndexReport, nodeName string) *sensor.MsgFromCompliance {
