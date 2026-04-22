@@ -74,6 +74,7 @@ type gatherer[F Finding] struct {
 	http.Handler
 	lastGather time.Time
 	running    atomic.Bool
+	refreshing atomic.Bool
 	registry   metrics.CustomRegistry
 	aggregator *aggregator[F]
 	config     *Configuration
@@ -214,31 +215,10 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	// running gatherers.
 }
 
-// retry f() until either it returns true, or maxAttempts is reached with
-// exponentially increasing retry period. Returns true if f() returned true, or
-// false otherwise.
-func retry(f func() bool, d time.Duration, maxAttempts int) bool {
-	for attempt := range maxAttempts {
-		if attempt > 0 {
-			time.Sleep(d)
-			d = d * 2
-		}
-		if f() {
-			return true
-		}
-	}
-	return false
-}
-
-// Refresh shifts the last gathering time of every gatherer back by period+1.
+// Refresh marks all gatherers for re-gathering on the next scrape request.
 func (tracker *TrackerBase[F]) Refresh() {
-	const maxAttempts = 5
-	tracker.gatherers.Range(func(userID, gv any) bool {
-		g := gv.(*gatherer[F])
-		if !retry(g.resetLastGather, time.Minute, maxAttempts) {
-			log.Warnf("Failed to refresh a gatherer of the %s tracker after %d retries",
-				tracker.metricPrefix, maxAttempts)
-		}
+	tracker.gatherers.Range(func(_, gv any) bool {
+		gv.(*gatherer[F]).refreshing.Store(true)
 		return true
 	})
 }
@@ -361,7 +341,7 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
-	if time.Since(gatherer.lastGather) < cfg.period {
+	if !gatherer.refreshing.Swap(false) && time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	begin := time.Now()
@@ -433,19 +413,10 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		if gr.config != cfg {
 			gr.aggregator = makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
 			gr.config = cfg
-			gr.lastGather = time.Time{}
+			gr.refreshing.Store(true)
 		}
 	}
 	return gr
-}
-
-func (g *gatherer[F]) resetLastGather() bool {
-	ok := g.trySetRunning()
-	if ok {
-		g.lastGather = time.Time{}
-		g.running.Store(false)
-	}
-	return ok
 }
 
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't

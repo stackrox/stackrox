@@ -122,8 +122,12 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	}
 
 	cluster.Status.UpgradeStatus = upgradeStatus
-	defer refresh.RefreshTracker(metrics.Health)
-	return ds.clusterStorage.Upsert(ctx, cluster)
+
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err != nil {
+		refresh.RefreshTracker(metrics.Health)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
@@ -144,8 +148,11 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	}
 
 	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
-	defer refresh.RefreshTracker(metrics.Expiry)
-	return ds.clusterStorage.Upsert(ctx, cluster)
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err != nil {
+		refresh.RefreshTracker(metrics.Expiry)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
@@ -162,8 +169,11 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 
-	defer refresh.RefreshTracker(metrics.Health)
-	return ds.clusterStorage.Upsert(ctx, cluster)
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err != nil {
+		refresh.RefreshTracker(metrics.Health)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) buildCache(ctx context.Context) error {
