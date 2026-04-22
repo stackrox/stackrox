@@ -83,8 +83,11 @@ func newRaceTestEnv(t *testing.T) *raceTestEnv {
 }
 
 type raceTestCase struct {
-	steps          []func(*raceTestEnv)
-	testFFDisabled bool
+	steps []func(*raceTestEnv)
+	// requiresDeduperQueue skips the FF-disabled run. Set this for tests that
+	// push refs directly to the DedupingQueue (e.g. merge scenarios), since
+	// the queue does not exist when the optimization FF is off.
+	requiresDeduperQueue bool
 }
 
 func TestResolverRaceScenarios(t *testing.T) {
@@ -97,7 +100,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// reaches the resolver first. resolveDeployment returns false, but the
 		// ReprocessDeployments data must still be sent.
 		"central UpdatedImage arrives while deployment is being rebuilt": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentNotBuilt("deploy-1"),
 				dispatchCentralUpdatedImage("deploy-1"),
@@ -109,7 +112,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Same scenario but the deployment was completely removed from the store
 		// between the event being queued and resolved.
 		"forceDetection ref for a deleted deployment preserves reprocess data": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentNotFound("deploy-1"),
 				dispatchCentralUpdatedImage("deploy-1"),
@@ -121,7 +124,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Full resolve path with forceDetection=true but BuildDeploymentWithDependencies
 		// fails. The reprocess data must still be sent despite the build error.
 		"forceDetection ref with build error preserves reprocess data": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentBuildError("deploy-1"),
 				dispatchForceDetectionEvent("deploy-1"),
@@ -133,7 +136,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Happy path: skipResolving when the deployment is fully built.
 		// GetBuiltDeployment returns (d, true), detection succeeds.
 		"skipResolving with isBuilt=true succeeds": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentBuilt("deploy-1"),
 				dispatchCentralUpdatedImage("deploy-1"),
@@ -146,7 +149,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Happy path: full resolve for a new deployment.
 		// BuildDeploymentWithDependencies returns newObject=true.
 		"full resolve of new deployment triggers detection": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				dispatchK8sDeploymentEvent("deploy-1"),
@@ -161,7 +164,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// resolveNextItem does nothing because resolveDeployment returns false and
 		// ReprocessDeployments is empty.
 		"full resolve with no changes sends only original msg": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentUnchanged("deploy-1"),
 				dispatchK8sDeploymentEvent("deploy-1"),
@@ -174,7 +177,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Normal ordering: K8s ref is resolved first (builds deployment, sets isBuilt=true).
 		// Then the Central ref arrives and the skipResolving path succeeds.
 		"K8s ref resolved before central ref — no race": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				dispatchK8sDeploymentEvent("deploy-1"),
@@ -191,7 +194,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Verifies that RBAC permissions and service exposure are carried
 		// to the output in ForwardMessages and DetectorMessages.
 		"full resolve carries dependency data to output": {
-			testFFDisabled: true,
+
 			steps: []func(*raceTestEnv){
 				givenDeploymentWithDependencies("deploy-1",
 					storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
@@ -214,6 +217,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Merged result: skipResolving=false, forceDetection=true → full resolve
 		// with forced detection. Only one item in the queue.
 		"merge: central then K8s ref collapses to full resolve with forceDetection": {
+			requiresDeduperQueue: true,
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				pushSkipResolvingRef("deploy-1"),
@@ -229,6 +233,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Merge: same as above but K8s ref is pushed first.
 		// Verifies that push order doesn't affect the merged result.
 		"merge: K8s then central ref collapses to full resolve with forceDetection": {
+			requiresDeduperQueue: true,
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				pushFullResolveRef("deploy-1"),
@@ -244,6 +249,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// Merge: two K8s refs for the same deployment. Flags don't change
 		// (both skipResolving=false, forceDetection=false). Only one resolve happens.
 		"merge: two K8s refs dedup to single resolve": {
+			requiresDeduperQueue: true,
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				pushFullResolveRef("deploy-1"),
@@ -260,6 +266,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// forceDetection=true. The full resolve path bypasses the isBuilt guard
 		// entirely.
 		"merge: both refs in queue bypass isBuilt guard": {
+			requiresDeduperQueue: true,
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				pushFullResolveRef("deploy-1"),
@@ -274,6 +281,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 		// ref arrives first. The K8s ref merges into it, flipping skipResolving to
 		// false. Verifies the isBuilt guard is bypassed regardless of push order.
 		"merge: both refs in queue bypass isBuilt guard when k8s event comes after": {
+			requiresDeduperQueue: true,
 			steps: []func(*raceTestEnv){
 				givenDeploymentResolvable("deploy-1"),
 				pushSkipResolvingRef("deploy-1"),
@@ -288,7 +296,7 @@ func TestResolverRaceScenarios(t *testing.T) {
 
 	for name, tc := range cases {
 		ffStates := []bool{true}
-		if tc.testFFDisabled {
+		if !tc.requiresDeduperQueue {
 			ffStates = append(ffStates, false)
 		}
 		for _, ffEnabled := range ffStates {
