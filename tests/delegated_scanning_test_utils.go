@@ -669,7 +669,7 @@ func (d *deleScanTestUtils) waitForBuildComplete(ctx context.Context, c buildv1c
 func (d *deleScanTestUtils) DisableMCONodeDrain(t *testing.T, ctx context.Context) error {
 	crFound, err := d.applyMachineConfiguration(t, ctx)
 	if err != nil {
-		logf(t, "Error occured disabling node drain via machineconfigurations: %v", err)
+		logf(t, "Error occurred disabling node drain via machineconfigurations: %v", err)
 	}
 	if crFound && err == nil {
 		// The machine configuration was successfully applied, short-circuit.
