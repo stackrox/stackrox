@@ -205,7 +205,7 @@ def main():
     parser.add_argument("--bucket", default=DEFAULT_BUCKET, help="Storage bucket path")
     parser.add_argument("--backend", choices=["gcs", "local"], default="gcs",
                         help="Storage backend (default: gcs)")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
 
     upload_parser = subparsers.add_parser("upload", help="Upload individual bundles")
     upload_parser.add_argument("--local-dir", required=True, help="Directory with bundles")
@@ -222,6 +222,9 @@ def main():
         return cmd_upload(args)
     elif args.command == "aggregate":
         return cmd_aggregate(args)
+    else:
+        parser.print_help()
+        return 1
 
 
 if __name__ == "__main__":
