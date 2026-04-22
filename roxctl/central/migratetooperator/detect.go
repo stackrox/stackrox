@@ -32,10 +32,11 @@ type exposureConfig struct {
 }
 
 type detectedConfig struct {
-	Storage     storageConfig
-	Monitoring  monitoringConfig
-	Exposure    exposureConfig
-	OfflineMode bool
+	Storage           storageConfig
+	Monitoring        monitoringConfig
+	Exposure          exposureConfig
+	OfflineMode       bool
+	TelemetryDisabled bool
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -53,10 +54,11 @@ func detect(src source) (*detectedConfig, error) {
 	}
 
 	return &detectedConfig{
-		Storage:     *storage,
-		Monitoring:  detectMonitoring(centralDep),
-		Exposure:    *exposure,
-		OfflineMode: envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
+		Storage:           *storage,
+		Monitoring:        detectMonitoring(centralDep),
+		Exposure:          *exposure,
+		OfflineMode:       envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
+		TelemetryDisabled: envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
 	}, nil
 }
 
