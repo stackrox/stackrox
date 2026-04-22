@@ -44,6 +44,15 @@ jobs:
           echo "Changed files (${#files[@]}):" >&2
           printf '  %s\n' "${files[@]}" >&2
 
+          # GitHub API caps at 3000 files per PR. If we hit that,
+          # assume everything changed so no jobs are skipped.
+          if [[ ${#files[@]} -ge 3000 ]]; then
+            echo "::warning::PR has 3000+ changed files, matching all filters" >&2
+            all_keys=$(echo "${FILTERS}" | jq -r 'keys[]' | tr '\n' ' ')
+            echo "matches=${all_keys}" | tee -a "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
           matched=()
           for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
             mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
