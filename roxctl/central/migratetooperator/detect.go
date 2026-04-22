@@ -25,9 +25,16 @@ type monitoringConfig struct {
 	OpenShiftMonitoringEnabled bool
 }
 
+type exposureConfig struct {
+	LoadBalancerEnabled bool
+	NodePortEnabled     bool
+	RouteEnabled        bool
+}
+
 type detectedConfig struct {
 	Storage    storageConfig
 	Monitoring monitoringConfig
+	Exposure   exposureConfig
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -39,7 +46,11 @@ func detect(src source) (*detectedConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &detectedConfig{Storage: *storage, Monitoring: *monitoring}, nil
+	exposure, err := detectExposure(src)
+	if err != nil {
+		return nil, err
+	}
+	return &detectedConfig{Storage: *storage, Monitoring: *monitoring, Exposure: *exposure}, nil
 }
 
 func detectStorage(src source) (*storageConfig, error) {
@@ -91,6 +102,33 @@ func detectMonitoring(src source) (*monitoringConfig, error) {
 		IsOpenShift:                isOpenShift,
 		OpenShiftMonitoringEnabled: isOpenShift && hasEnvVar(dep, "ROX_ENABLE_SECURE_METRICS"),
 	}, nil
+}
+
+func detectExposure(src source) (*exposureConfig, error) {
+	cfg := &exposureConfig{}
+
+	found, data, err := src.ResourceByKindAndName("Service", "central-loadbalancer")
+	if err != nil {
+		return nil, errors.Wrap(err, "checking for central-loadbalancer Service")
+	}
+	if found {
+		spec, _ := data["spec"].(map[string]interface{})
+		svcType, _ := spec["type"].(string)
+		switch svcType {
+		case "LoadBalancer":
+			cfg.LoadBalancerEnabled = true
+		case "NodePort":
+			cfg.NodePortEnabled = true
+		}
+	}
+
+	routeFound, _, err := src.ResourceByKindAndName("Route", "central")
+	if err != nil {
+		return nil, errors.Wrap(err, "checking for central Route")
+	}
+	cfg.RouteEnabled = routeFound
+
+	return cfg, nil
 }
 
 func hasEnvVar(dep *appsv1.Deployment, name string) bool {

@@ -64,6 +64,40 @@ func (s *dirSource) findDeployment(name string) (*appsv1.Deployment, error) {
 	return found, nil
 }
 
+func (s *dirSource) ResourceByKindAndName(kind, name string) (bool, map[string]interface{}, error) {
+	var found map[string]interface{}
+	err := filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || (!strings.HasSuffix(d.Name(), ".yaml") && !strings.HasSuffix(d.Name(), ".yml")) {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return errors.Wrapf(err, "reading %q", path)
+		}
+		for _, doc := range splitYAMLDocuments(data) {
+			var obj map[string]interface{}
+			if err := yaml.Unmarshal(doc, &obj); err != nil {
+				continue
+			}
+			objKind, _ := obj["kind"].(string)
+			meta, _ := obj["metadata"].(map[string]interface{})
+			objName, _ := meta["name"].(string)
+			if objKind == kind && objName == name {
+				found = obj
+				return filepath.SkipAll
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return false, nil, errors.Wrap(err, "walking directory tree")
+	}
+	if found == nil {
+		return false, nil, nil
+	}
+	return true, found, nil
+}
+
 func splitYAMLDocuments(data []byte) [][]byte {
 	var docs [][]byte
 	for _, part := range strings.Split(string(data), "\n---") {
