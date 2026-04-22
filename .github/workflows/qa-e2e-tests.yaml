@@ -115,6 +115,25 @@ jobs:
           from pre_tests import PreSystemTests
           PreSystemTests().run()
 
+      - name: Deploy StackRox
+        env:
+          MAIN_IMAGE_TAG: ${{ env.tag }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          source scripts/ci/lib.sh
+          source scripts/ci/sensor-wait.sh
+          source tests/e2e/lib.sh
+
+          export_test_environment
+          setup_deployment_env false false
+          setup_default_TLS_certs "deploy/${ORCHESTRATOR_FLAVOR}/default_TLS_certs"
+
+          deploy_stackrox "deploy/${ORCHESTRATOR_FLAVOR}/client_TLS_certs"
+
+          wait_for_api
+          export_central_basic_auth_creds
+
       - name: Execute test group
         if: |
           github.event_name != 'pull_request' ||
