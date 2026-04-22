@@ -43,6 +43,7 @@ type detectedConfig struct {
 	DeclarativeConfigMaps []string
 	DeclarativeSecrets    []string
 	PlaintextEndpoints    string
+	CustomImages          bool
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -78,6 +79,7 @@ func detect(src source) (*detectedConfig, error) {
 		DeclarativeConfigMaps: declConfigMaps,
 		DeclarativeSecrets:    declSecrets,
 		PlaintextEndpoints:    envVarValue(centralDep, "ROX_PLAINTEXT_ENDPOINTS"),
+		CustomImages:          detectCustomImages(centralDep),
 	}, nil
 }
 
@@ -186,6 +188,30 @@ func hasEnvVar(dep *appsv1.Deployment, name string) bool {
 			if env.Name == name {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+var defaultImageRegistries = []string{
+	"registry.redhat.io/advanced-cluster-security/",
+	"quay.io/stackrox-io/",
+	"quay.io/rhacs-eng/",
+}
+
+func detectCustomImages(dep *appsv1.Deployment) bool {
+	for _, c := range dep.Spec.Template.Spec.Containers {
+		if !isDefaultImage(c.Image) {
+			return true
+		}
+	}
+	return false
+}
+
+func isDefaultImage(image string) bool {
+	for _, prefix := range defaultImageRegistries {
+		if strings.HasPrefix(image, prefix) {
+			return true
 		}
 	}
 	return false

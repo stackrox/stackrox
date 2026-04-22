@@ -49,6 +49,12 @@ func (cmd *command) run() error {
 		return errors.Wrap(err, "detecting configuration")
 	}
 
+	if config.CustomImages {
+		cmd.env.Logger().WarnfLn("Detected non-default container images. " +
+			"The operator does not support image overrides in the Central CR. " +
+			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
+	}
+
 	cr := generateCR(config)
 
 	out, err := marshalCR(cr)

@@ -304,6 +304,44 @@ func TestDetectDeclarativeConfig_None(t *testing.T) {
 	assert.Empty(t, secrets)
 }
 
+func TestDetectCustomImages(t *testing.T) {
+	tests := map[string]struct {
+		image    string
+		expected bool
+	}{
+		"rhacs default": {
+			image:    "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:4.10.1",
+			expected: false,
+		},
+		"opensource default": {
+			image:    "quay.io/stackrox-io/main:4.10.1",
+			expected: false,
+		},
+		"dev default": {
+			image:    "quay.io/rhacs-eng/main:4.10.1",
+			expected: false,
+		},
+		"custom registry": {
+			image:    "my-registry.example.com/main:4.10.1",
+			expected: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			dep := &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Image: tt.image}},
+						},
+					},
+				},
+			}
+			assert.Equal(t, tt.expected, detectCustomImages(dep))
+		})
+	}
+}
+
 func defaultPVCVolume() []corev1.Volume {
 	return []corev1.Volume{{
 		Name:         "disk",
