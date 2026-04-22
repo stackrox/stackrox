@@ -39,14 +39,14 @@ DEFAULT_BUCKET = "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 class GCSBackend:
     """Storage backend using gsutil for Google Cloud Storage."""
 
-    def copy(self, src, dest) -> bool:
+    def copy(self, src, dest):
         result = subprocess.run(
             ["gsutil", "cp", str(src), str(dest)],
             capture_output=True, text=True,
         )
         return result.returncode == 0
 
-    def copy_many(self, srcs, dest) -> bool:
+    def copy_many(self, srcs, dest):
         result = subprocess.run(
             ["gsutil", "-m", "cp", *[str(s) for s in srcs], str(dest)],
             capture_output=True, text=True,
@@ -57,7 +57,7 @@ class GCSBackend:
 class LocalBackend:
     """Storage backend using local filesystem (for testing)."""
 
-    def copy(self, src, dest) -> bool:
+    def copy(self, src, dest):
         src, dest = Path(str(src)), Path(str(dest))
         if not src.exists():
             return False
@@ -70,7 +70,7 @@ class LocalBackend:
         shutil.copy2(src, dest)
         return True
 
-    def copy_many(self, srcs, dest) -> bool:
+    def copy_many(self, srcs, dest):
         dest = Path(str(dest).rstrip("/"))
         dest.mkdir(parents=True, exist_ok=True)
         for src in srcs:
@@ -83,7 +83,7 @@ class LocalBackend:
         return True
 
 
-def download_previous_status(backend, bucket: str, version: str) -> dict | None:
+def download_previous_status(backend, bucket, version):
     """Download previous status.json, return None if not found."""
     status_path = f"{bucket}/{version}/bundles/status.json"
 
@@ -96,7 +96,7 @@ def download_previous_status(backend, bucket: str, version: str) -> dict | None:
             return None
 
 
-def enrich_status_with_timestamps(status_file: Path, backend, bucket: str, version: str):
+def enrich_status_with_timestamps(status_file, backend, bucket, version):
     """Add last_successful_update timestamps to status.json."""
     with open(status_file) as f:
         status = json.load(f)
@@ -117,7 +117,7 @@ def enrich_status_with_timestamps(status_file: Path, backend, bucket: str, versi
         json.dump(status, f, indent=2)
 
 
-def cmd_upload(args: argparse.Namespace) -> int:
+def cmd_upload(args):
     """Upload individual bundles (overwrites existing)."""
     local_dir = Path(args.local_dir)
     bucket = args.bucket
@@ -151,7 +151,7 @@ def cmd_upload(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_aggregate(args: argparse.Namespace) -> int:
+def cmd_aggregate(args):
     """Download all bundles, create final zip, and upload."""
     version = args.version
     output_dir = Path(args.output_dir)

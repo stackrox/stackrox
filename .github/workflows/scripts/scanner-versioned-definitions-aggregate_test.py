@@ -11,7 +11,7 @@ from pathlib import Path
 SCRIPT = Path(__file__).parent / "scanner-versioned-definitions-aggregate.py"
 
 
-def create_fake_bundle(path: Path):
+def create_fake_bundle(path):
     """Create a minimal valid .json.zst file."""
     subprocess.run(
         ["zstd", "-o", str(path)],
@@ -21,13 +21,13 @@ def create_fake_bundle(path: Path):
     )
 
 
-def create_status_json(path: Path, updaters: list[dict]):
+def create_status_json(path, updaters):
     """Create a status.json file."""
     with open(path, "w") as f:
         json.dump({"updaters": updaters}, f)
 
 
-def run_script(*args) -> subprocess.CompletedProcess:
+def run_script(*args):
     return subprocess.run(
         ["python3", str(SCRIPT), *args],
         capture_output=True, text=True,

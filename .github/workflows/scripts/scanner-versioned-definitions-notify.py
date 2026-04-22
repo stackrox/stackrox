@@ -22,25 +22,25 @@ from pathlib import Path
 GCS_BUCKET = "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 
 
-def gsutil_copy(src, dest) -> subprocess.CompletedProcess:
+def gsutil_copy(src, dest):
     """Copy a file from GCS."""
     return subprocess.run(["gsutil", "cp", src, dest], capture_output=True, text=True)
 
 
-def gsutil_exists(path: str) -> bool:
+def gsutil_exists(path):
     """Check if a GCS path exists."""
     result = subprocess.run(["gsutil", "-q", "stat", path], capture_output=True)
     return result.returncode == 0
 
 
-def get_failed_updaters(status_path: Path) -> list[str]:
+def get_failed_updaters(status_path):
     """Extract failed updater names from status.json."""
     with open(status_path) as f:
         status = json.load(f)
     return [u["name"] for u in status.get("updaters", []) if u.get("status") == "failed"]
 
 
-def check_partial_failures(versions: list[str]) -> dict[str, list[str]]:
+def check_partial_failures(versions):
     """Check each version stream for partial failures. Returns {version: [failed_updaters]}."""
     failures = {}
 
@@ -65,7 +65,7 @@ def check_partial_failures(versions: list[str]) -> dict[str, list[str]]:
     return failures
 
 
-def send_slack_message(webhook_url: str, message: str) -> bool:
+def send_slack_message(webhook_url, message):
     """Send a message to Slack."""
     data = json.dumps({"text": message}).encode("utf-8")
     req = urllib.request.Request(
