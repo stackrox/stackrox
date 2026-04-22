@@ -472,7 +472,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMatcherNotInitializedError() {
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(errors.Wrap(
-			status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: initial load for the vulnerability store is in progress"),
+			status.Error(codes.FailedPrecondition, "the matcher is not initialized: initial load for the vulnerability store is in progress"),
 			"getting scan for VM",
 		))
 
