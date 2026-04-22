@@ -355,7 +355,7 @@ export function getCompoundSearchFilterLabelDescriptions(
     attributes: CompoundSearchFilterAttribute[],
     searchFilter: SearchFilter,
     isGlobalPredicate: IsGlobalPredicate = isGlobalPredicateFalse // for certain values in AdvancedFilterToolbar.tsx file
-) {
+): CompoundSearchFilterLabelDescription[] {
     const labelGroupDescriptions: CompoundSearchFilterLabelDescription[] = [];
 
     attributes.forEach((attribute) => {
