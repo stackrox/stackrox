@@ -15,6 +15,7 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
+	relaymetrics "github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -64,15 +65,13 @@ type vmRelayOperation func(ctx context.Context, sensorClient sensor.VirtualMachi
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
 	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider: nnp,
-		nodeScanner:      scanner,
-		nodeIndexer:      nodeIndexer,
-		umhNodeInventory: umhNodeInv,
-		umhNodeIndex:     umhNodeIndex,
-		vmRelayOperation: defaultVMRelayOperation,
-		vmRelayBackOffFactory: func() backoff.BackOff {
-			return defaultVMRelayBackOff()
-		},
+		nodeNameProvider:      nnp,
+		nodeScanner:           scanner,
+		nodeIndexer:           nodeIndexer,
+		umhNodeInventory:      umhNodeInv,
+		umhNodeIndex:          umhNodeIndex,
+		vmRelayOperation:      defaultVMRelayOperation,
+		vmRelayBackOffFactory: defaultVMRelayBackOff,
 	}
 }
 
@@ -172,6 +171,10 @@ func (c *Compliance) Start() {
 	log.Info("Successfully closed Sensor communication")
 }
 
+// runVMRelayWithRetry retries the VM relay operation with exponential backoff.
+// The primary retry target is vsock listener bind failures (e.g. KubeVirt not yet installed).
+// Once the listener is up and relay.Run enters its long-lived accept/send loop, that loop only
+// exits on context cancellation, which is treated as a permanent (non-retryable) error.
 func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	operation := func() error {
 		err := c.newVMRelayOperation()(ctx, sensorClient)
@@ -181,6 +184,7 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 		return err
 	}
 	notification := func(err error, _ time.Duration) {
+		relaymetrics.RetryAttempts.Inc()
 		if ctx.Err() != nil {
 			return
 		}
@@ -207,6 +211,8 @@ func (c *Compliance) newVMRelayBackOff() backoff.BackOff {
 	return defaultVMRelayBackOff()
 }
 
+// defaultVMRelayBackOff returns an exponential backoff that retries indefinitely (MaxElapsedTime=0)
+// until the parent context is cancelled at shutdown. The interval is capped at 5 minutes.
 func defaultVMRelayBackOff() backoff.BackOff {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 5 * time.Minute
@@ -215,6 +221,9 @@ func defaultVMRelayBackOff() backoff.BackOff {
 }
 
 func defaultVMRelayOperation(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	reportStream, err := stream.New()
 	if err != nil {
 		return err

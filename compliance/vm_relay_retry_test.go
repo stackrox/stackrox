@@ -22,19 +22,24 @@ func TestRunVMRelayWithRetry(t *testing.T) {
 		expectedErr                error
 		expectedOperationAttempts  int32
 	}{
-		"should retry when operation initially fails": {
+		"should retry once then succeed": {
 			operationErrors: []error{errors.New("vsock not available"), nil},
 			backOffFactory: func() backoff.BackOff {
 				return backoff.NewConstantBackOff(0)
 			},
 			expectedOperationAttempts: 2,
 		},
-		"should retry when injected operation returns non-context error": {
-			operationErrors: []error{errors.New("relay failed"), nil},
+		"should retry through multiple consecutive failures": {
+			operationErrors: []error{
+				errors.New("vsock not available"),
+				errors.New("vsock not available"),
+				errors.New("vsock not available"),
+				nil,
+			},
 			backOffFactory: func() backoff.BackOff {
 				return backoff.NewConstantBackOff(0)
 			},
-			expectedOperationAttempts: 2,
+			expectedOperationAttempts: 4,
 		},
 		"should stop without retrying when relay run returns context canceled": {
 			operationErrors: []error{context.Canceled},
