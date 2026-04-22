@@ -14,7 +14,26 @@ on:
     - synchronize
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matches: ${{ github.event_name == 'push' && 'scanner' || steps.changes.outputs.matches }}
+    steps:
+    - name: Checkout
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Detect changed files
+      if: github.event_name == 'pull_request'
+      id: changes
+      uses: ./.github/actions/files-changed
+      with:
+        filters: '( ["scanner"]="scanner/* go.mod go.sum" )'
+
   db-integration-tests:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.matches, 'scanner')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
