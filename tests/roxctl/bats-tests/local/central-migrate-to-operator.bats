@@ -215,6 +215,25 @@ generate_and_migrate() {
   assert_output "true"
 }
 
+# Plaintext endpoints
+
+@test "migrate-to-operator: --plaintext-endpoints=8080 sets customize.envVars" {
+  generate_and_migrate k8s pvc --plaintext-endpoints=8080
+  run yq e '.spec.customize.envVars[0].name' "$cr_out"
+  assert_success
+  assert_output "ROX_PLAINTEXT_ENDPOINTS"
+  run yq e '.spec.customize.envVars[0].value' "$cr_out"
+  assert_success
+  assert_output "8080"
+}
+
+@test "migrate-to-operator: default has no customize section" {
+  generate_and_migrate k8s pvc
+  run yq e '.spec.customize' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
 # Declarative config
 
 @test "migrate-to-operator: --declarative-config-config-maps sets declarativeConfiguration.configMaps" {

@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/pointers"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -86,6 +87,16 @@ func generateCR(config *detectedConfig) *platform.Central {
 		cr.Spec.Central.Telemetry = &platform.Telemetry{
 			Enabled: pointers.Bool(false),
 		}
+	}
+
+	if config.PlaintextEndpoints != "" {
+		if cr.Spec.Customize == nil {
+			cr.Spec.Customize = &platform.CustomizeSpec{}
+		}
+		cr.Spec.Customize.EnvVars = append(cr.Spec.Customize.EnvVars, corev1.EnvVar{
+			Name:  "ROX_PLAINTEXT_ENDPOINTS",
+			Value: config.PlaintextEndpoints,
+		})
 	}
 
 	if config.OfflineMode {

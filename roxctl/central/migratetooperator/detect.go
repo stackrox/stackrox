@@ -42,6 +42,7 @@ type detectedConfig struct {
 	DefaultTLSSecretName  string
 	DeclarativeConfigMaps []string
 	DeclarativeSecrets    []string
+	PlaintextEndpoints    string
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -76,6 +77,7 @@ func detect(src source) (*detectedConfig, error) {
 		DefaultTLSSecretName:  defaultTLSSecretName,
 		DeclarativeConfigMaps: declConfigMaps,
 		DeclarativeSecrets:    declSecrets,
+		PlaintextEndpoints:    envVarValue(centralDep, "ROX_PLAINTEXT_ENDPOINTS"),
 	}, nil
 }
 

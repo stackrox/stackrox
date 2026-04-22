@@ -223,3 +223,23 @@ func TestGenerateCR_NoDeclarativeConfig(t *testing.T) {
 	cr := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.DeclarativeConfiguration)
 }
+
+func TestGenerateCR_PlaintextEndpoints(t *testing.T) {
+	config := &detectedConfig{
+		Storage:            storageConfig{Type: storagePVC, PVCName: "central-db"},
+		PlaintextEndpoints: "8080,grpc@8081",
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Customize)
+	require.Len(t, cr.Spec.Customize.EnvVars, 1)
+	assert.Equal(t, "ROX_PLAINTEXT_ENDPOINTS", cr.Spec.Customize.EnvVars[0].Name)
+	assert.Equal(t, "8080,grpc@8081", cr.Spec.Customize.EnvVars[0].Value)
+}
+
+func TestGenerateCR_NoPlaintextEndpoints(t *testing.T) {
+	config := &detectedConfig{
+		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	}
+	cr := generateCR(config)
+	assert.Nil(t, cr.Spec.Customize)
+}
