@@ -8,6 +8,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import { VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -27,6 +28,8 @@ const VulnMgmtEntityDeployment = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
         query getDeployment($id: ID!, $policyQuery: String, $scopeQuery: String) {
@@ -94,7 +97,12 @@ const VulnMgmtEntityDeployment = ({
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                entityContext,
+                isDeploymentSoftDeletionEnabled
+            ),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: queryService.objectToWhereClause({

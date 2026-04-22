@@ -6,6 +6,7 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
     VULN_CVE_DETAIL_FRAGMENT,
     IMAGE_CVE_DETAIL_FRAGMENT,
@@ -62,6 +63,8 @@ function getCVETypeFromStack(worklowStateStack) {
 
 const VulnMgmtEntityCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const worklowStateStack = workflowState.getStateStack();
     const cveType = getCVETypeFromStack(worklowStateStack) || entityTypes.IMAGE_CVE;
     const queryName = queryNameMap[cveType];
@@ -107,7 +110,12 @@ const VulnMgmtEntityCve = ({ entityId, entityListType, search, entityContext, so
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                entityContext,
+                isDeploymentSoftDeletionEnabled
+            ),
             ...vulMgmtPolicyQuery,
             scopeQuery: getScopeQuery(fullEntityContext),
         },
