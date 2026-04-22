@@ -17,6 +17,9 @@ export type CompoundSearchFilterDescriptionListGroupsProps = {
     searchFilter: SearchFilter;
 };
 
+// For maximum composability and reusability:
+// Render description list groups instead of description list.
+// If rules array is empty, caller is reponsible for conditional rendering, like a warning alert.
 function CompoundSearchFilterDescriptionListGroups({
     attributes,
     searchFilter,
