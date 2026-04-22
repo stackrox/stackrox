@@ -65,6 +65,12 @@ func generateCR(config *detectedConfig) *platform.Central {
 		}
 	}
 
+	if config.TelemetryDisabled {
+		cr.Spec.Central.Telemetry = &platform.Telemetry{
+			Enabled: pointers.Bool(false),
+		}
+	}
+
 	if config.OfflineMode {
 		cr.Spec.Egress = &platform.Egress{
 			ConnectivityPolicy: platform.ConnectivityOffline.Pointer(),

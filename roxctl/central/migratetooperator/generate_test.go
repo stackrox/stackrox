@@ -165,3 +165,21 @@ func TestGenerateCR_OnlineMode(t *testing.T) {
 	cr := generateCR(config)
 	assert.Nil(t, cr.Spec.Egress)
 }
+
+func TestGenerateCR_TelemetryDisabled(t *testing.T) {
+	config := &detectedConfig{
+		Storage:           storageConfig{Type: storagePVC, PVCName: "central-db"},
+		TelemetryDisabled: true,
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Central.Telemetry)
+	assert.False(t, *cr.Spec.Central.Telemetry.Enabled)
+}
+
+func TestGenerateCR_TelemetryDefault(t *testing.T) {
+	config := &detectedConfig{
+		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	}
+	cr := generateCR(config)
+	assert.Nil(t, cr.Spec.Central.Telemetry)
+}
