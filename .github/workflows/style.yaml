@@ -22,7 +22,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      matches: ${{ github.event_name == 'push' && 'go ui shell gha openshift-ci versions' || steps.changes.outputs.matches }}
+      matches: ${{ steps.changes.outputs.matches }}
     steps:
     - name: Checkout
       if: github.event_name == 'pull_request'
@@ -46,7 +46,7 @@ jobs:
 
   check-generated-files:
     needs: detect-changes
-    if: contains(needs.detect-changes.outputs.matches, 'go')
+    if: github.event_name == 'push' || contains(needs.detect-changes.outputs.matches, 'go')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -145,6 +145,7 @@ jobs:
   style-check:
     needs: detect-changes
     if: >-
+      github.event_name == 'push' ||
       contains(needs.detect-changes.outputs.matches, 'go') ||
       contains(needs.detect-changes.outputs.matches, 'ui') ||
       contains(needs.detect-changes.outputs.matches, 'shell')
@@ -212,7 +213,7 @@ jobs:
 
   golangci-lint:
     needs: detect-changes
-    if: contains(needs.detect-changes.outputs.matches, 'go')
+    if: github.event_name == 'push' || contains(needs.detect-changes.outputs.matches, 'go')
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
@@ -264,7 +265,7 @@ jobs:
 
   check-dependent-images-exist:
     needs: detect-changes
-    if: contains(needs.detect-changes.outputs.matches, 'versions')
+    if: github.event_name == 'push' || contains(needs.detect-changes.outputs.matches, 'versions')
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
@@ -319,7 +320,7 @@ jobs:
 
   github-actions-lint:
     needs: detect-changes
-    if: contains(needs.detect-changes.outputs.matches, 'gha')
+    if: github.event_name == 'push' || contains(needs.detect-changes.outputs.matches, 'gha')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -336,7 +337,7 @@ jobs:
 
   github-actions-shellcheck:
     needs: detect-changes
-    if: contains(needs.detect-changes.outputs.matches, 'gha')
+    if: github.event_name == 'push' || contains(needs.detect-changes.outputs.matches, 'gha')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -348,7 +349,7 @@ jobs:
 
   openshift-ci-lint:
     needs: detect-changes
-    if: contains(needs.detect-changes.outputs.matches, 'openshift-ci')
+    if: github.event_name == 'push' || contains(needs.detect-changes.outputs.matches, 'openshift-ci')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
