@@ -13,8 +13,10 @@ import searchContext from 'Containers/searchContext';
 import { deploymentSortFields } from 'constants/sortFields';
 import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { DEPLOYMENTS_QUERY } from 'queries/deployment';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
@@ -188,13 +190,18 @@ const ConfigManagementListDeployments = ({
     const location = useLocation();
     const match = useWorkflowMatch();
     const searchParam = useContext(searchContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const autoFocusSearchInput = !selectedRowId;
 
     const tableColumns = buildTableColumns(match, location, entityContext);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } =
         queryService.getQueryBasedOnSearchContext(query, searchParam);
-    const queryText = queryService.objectToWhereClause({ ...restQuery });
+    const queryText = withActiveDeploymentQuery(
+        queryService.objectToWhereClause({ ...restQuery }),
+        isDeploymentSoftDeletionEnabled
+    );
     const variables = queryText ? { query: queryText } : null;
 
     function createTableRowsFilteredByPolicyStatus(items) {
