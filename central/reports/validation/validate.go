@@ -235,10 +235,10 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 			return errors.Wrapf(errox.InvalidArgs,
 				"provide at least one matching value for entity=%v field=%v rule", rule.GetEntity(), rule.GetField())
 		}
-		if rule.GetField() == apiV2.ScopeField_FIELD_LABEL {
+		if rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
 			for _, rv := range rule.GetValues() {
 				if !strings.Contains(rv.GetValue(), "=") {
-					return errors.Wrap(errox.InvalidArgs, "Label values must be in 'key=value' format")
+					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
 				}
 			}
 		}

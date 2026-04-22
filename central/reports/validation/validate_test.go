@@ -108,6 +108,19 @@ func TestValidateEntityScope(t *testing.T) {
 			expectError: true,
 			errContains: "Annotation",
 		},
+		"annotation value missing equals sign": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_ANNOTATION, exactValue("noequalssign")),
+			),
+			expectError: true,
+			errContains: "key=value",
+		},
+		"annotation value with equals sign is valid": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_ANNOTATION, exactValue("k=v")),
+			),
+			expectError: false,
+		},
 		"deployment regex on name is valid": {
 			scope: makeEntityScope(
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_NAME, regexValue("front.*")),
