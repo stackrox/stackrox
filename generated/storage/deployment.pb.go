@@ -378,7 +378,7 @@ type Deployment struct {
 	// deleted. `nil` if the workload exists.
 	Deleted *timestamppb.Timestamp `protobuf:"bytes,36,opt,name=deleted,proto3" json:"deleted,omitempty" search:"Deleted,hidden" hash:"ignore"` // @gotags: search:"Deleted,hidden" hash:"ignore"
 	// `state` indicates the current status of the deployment workload.
-	State         DeploymentState `protobuf:"varint,37,opt,name=state,proto3,enum=storage.DeploymentState" json:"state,omitempty" search:"Deployment State"` // @gotags: search:"Deployment State";
+	State         DeploymentState `protobuf:"varint,37,opt,name=state,proto3,enum=storage.DeploymentState" json:"state,omitempty" search:"Deployment State"` // @gotags: search:"Deployment State"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1720,7 +1720,7 @@ type ListDeployment struct {
 	// deleted. `nil` if the workload exists.
 	Deleted *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=deleted,proto3" json:"deleted,omitempty"`
 	// `state` indicates the current status of the deployment workload.
-	State         DeploymentState `protobuf:"varint,10,opt,name=state,proto3,enum=storage.DeploymentState" json:"state,omitempty" search:"Deployment State"` // @gotags: search:"Deployment State"
+	State         DeploymentState `protobuf:"varint,10,opt,name=state,proto3,enum=storage.DeploymentState" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
