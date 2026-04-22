@@ -479,6 +479,54 @@ func TestPopulateImageMetadataWithInitContainers(t *testing.T) {
 	assert.Equal(t, "sha256:def456", wrap.GetDeployment().GetContainers()[2].GetImage().GetId())
 }
 
+func TestPopulateImageMetadataWithInitContainerStatuses(t *testing.T) {
+	// Verifies that init container image digests are populated from
+	// pod.Status.InitContainerStatuses.
+	wrap := deploymentWrap{
+		Deployment: &storage.Deployment{},
+	}
+
+	initImg, err := imageUtils.GenerateImageFromString("docker.io/library/busybox:latest")
+	require.NoError(t, err)
+	nginxImg, err := imageUtils.GenerateImageFromString("docker.io/library/nginx:latest")
+	require.NoError(t, err)
+
+	wrap.Containers = []*storage.Container{
+		{Name: "init-setup", Image: initImg, Type: storage.ContainerType_INIT},
+		{Name: "nginx", Image: nginxImg},
+	}
+
+	pod := &v1.Pod{
+		Spec: v1.PodSpec{
+			InitContainers: []v1.Container{
+				{Name: "init-setup", Image: "docker.io/library/busybox:latest"},
+			},
+			Containers: []v1.Container{
+				{Name: "nginx", Image: "docker.io/library/nginx:latest"},
+			},
+		},
+		Status: v1.PodStatus{
+			InitContainerStatuses: []v1.ContainerStatus{
+				{
+					Name:    "init-setup",
+					ImageID: "docker-pullable://docker.io/library/busybox@sha256:initdigest123",
+				},
+			},
+			ContainerStatuses: []v1.ContainerStatus{
+				{
+					Name:    "nginx",
+					ImageID: "docker-pullable://docker.io/library/nginx@sha256:abc123",
+				},
+			},
+		},
+	}
+
+	wrap.populateImageMetadata(nil, pod)
+
+	assert.Equal(t, "sha256:initdigest123", wrap.GetDeployment().GetContainers()[0].GetImage().GetId())
+	assert.Equal(t, "sha256:abc123", wrap.GetDeployment().GetContainers()[1].GetImage().GetId())
+}
+
 func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, true)
 	type wrapContainer struct {

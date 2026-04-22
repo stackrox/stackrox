@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -326,12 +328,20 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
 		// Build a map from container name to pod spec container for name-based lookup.
-		specContainersByName := make(map[string]v1.Container, len(p.Spec.Containers))
+		specContainersByName := make(map[string]v1.Container, len(p.Spec.Containers)+len(p.Spec.InitContainers))
 		for _, sc := range p.Spec.Containers {
 			specContainersByName[sc.Name] = sc
 		}
+		for _, sc := range p.Spec.InitContainers {
+			specContainersByName[sc.Name] = sc
+		}
 
-		for _, c := range p.Status.ContainerStatuses {
+		// Process both regular and init container statuses.
+		allStatuses := make([]v1.ContainerStatus, 0, len(p.Status.ContainerStatuses)+len(p.Status.InitContainerStatuses))
+		allStatuses = append(allStatuses, p.Status.ContainerStatuses...)
+		allStatuses = append(allStatuses, p.Status.InitContainerStatuses...)
+
+		for _, c := range allStatuses {
 			deployContainer, found := containersByName[c.Name]
 			if !found {
 				log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), p.GetName())
@@ -481,13 +491,28 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
+	dep := w.GetDeployment().CloneVT()
+	if !centralcaps.Has(centralsensor.InitContainerSupport) {
+		dep.Containers = filterRegularContainers(dep.GetContainers())
+	}
+
 	return &central.SensorEvent{
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.GetDeployment().CloneVT(),
+			Deployment: dep,
 		},
 	}
+}
+
+func filterRegularContainers(containers []*storage.Container) []*storage.Container {
+	regular := make([]*storage.Container, 0, len(containers))
+	for _, c := range containers {
+		if c.GetType() == storage.ContainerType_REGULAR {
+			regular = append(regular, c)
+		}
+	}
+	return regular
 }
 
 // anyNonHostPort is derived from `filterHostExposure(...)`. Therefore, if `filterHostExposure(...)` is updated,
