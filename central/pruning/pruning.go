@@ -201,6 +201,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		return
 	}
 	log.Info("[Pruning] Starting a garbage collection cycle")
+	if features.DeploymentSoftDeletion.Enabled() {
+		g.collectDeletedDeployments(pvtConfig)
+	}
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
@@ -627,6 +630,41 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 	wg.Wait()
 
 	log.Info("[Network Flow pruning] Completed")
+}
+
+func (g *garbageCollectorImpl) collectDeletedDeployments(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), "DeletedDeployments")
+	retentionConfig := config.GetResourceRetentionConfig()
+	if retentionConfig == nil {
+		retentionConfig = &storage.ResourceRetentionConfig{
+			DeploymentDurationDays: configDatastore.DefaultResourceRetention,
+		}
+	}
+	if retentionConfig.GetDeploymentDurationDays() == 0 {
+		log.Info("[Deployment Pruning] pruning of deleted deployments is disabled.")
+		return
+	}
+	retentionDays := int64(retentionConfig.GetDeploymentDurationDays())
+
+	// Find and remove soft-deleted deployments past the retention window.
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.DeploymentState, storage.DeploymentState_STATE_DELETED.String()).
+			ProtoQuery(),
+		search.NewQueryBuilder().
+			AddDays(search.Deleted, retentionDays).
+			ProtoQuery(),
+	)
+
+	pruneCtxWithTimeout, cancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
+	defer cancel()
+
+	count, err := g.deployments.PurgeDeployments(pruneCtxWithTimeout, q)
+	if err != nil {
+		log.Errorf("[Deployment Pruning] error purging expired deployments: %v", err)
+		return
+	}
+	log.Infof("[Deployment Pruning] pruned %d expired soft-deleted deployments.", count)
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
