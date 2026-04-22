@@ -118,6 +118,11 @@ network:
   enableNetworkPolicies: true
 
 enableOpenShiftMonitoring: false
+
+processIndicators:
+  noPersistence: false
+  excludeOpenshiftNs: false
+  excludeNamespaceFilter: ""
 ---
 sensor:
   exposeMonitoring: {{ ._rox.exposeMonitoring }}
