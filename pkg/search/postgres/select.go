@@ -310,6 +310,12 @@ func RunSelectDirectFn(ctx context.Context, db postgres.DB, schema *walker.Schem
 	if cfg == nil {
 		return errors.New("DirectScanConfig must not be nil")
 	}
+	if cfg.ScanDests == nil {
+		return errors.New("DirectScanConfig.ScanDests must not be nil")
+	}
+	if cfg.OnRow == nil {
+		return errors.New("DirectScanConfig.OnRow must not be nil")
+	}
 	var builtQuery *query
 	defer func() {
 		if r := recover(); r != nil {
