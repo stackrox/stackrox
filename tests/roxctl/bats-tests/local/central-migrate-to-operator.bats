@@ -152,6 +152,36 @@ generate_and_migrate() {
   assert_output "stackrox-central-services"
 }
 
+# OpenShift monitoring
+
+@test "migrate-to-operator: openshift pvc default has no monitoring section" {
+  generate_and_migrate openshift pvc
+  run yq e '.spec.monitoring' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
+@test "migrate-to-operator: openshift pvc --openshift-monitoring=false sets monitoring.openshift.enabled=false" {
+  generate_and_migrate openshift pvc --openshift-monitoring=false
+  run yq e '.spec.monitoring.openshift.enabled' "$cr_out"
+  assert_success
+  assert_output "false"
+}
+
+@test "migrate-to-operator: openshift hostpath --openshift-monitoring=false sets monitoring.openshift.enabled=false" {
+  generate_and_migrate openshift hostpath --openshift-monitoring=false
+  run yq e '.spec.monitoring.openshift.enabled' "$cr_out"
+  assert_success
+  assert_output "false"
+}
+
+@test "migrate-to-operator: k8s pvc omits monitoring section entirely" {
+  generate_and_migrate k8s pvc
+  run yq e '.spec.monitoring' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
 # Error cases
 
 @test "migrate-to-operator: fails without --from-dir or --namespace" {

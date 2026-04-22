@@ -7,6 +7,10 @@ import (
 // source provides access to Kubernetes resources from either a directory
 // of YAML manifests or a live cluster.
 type source interface {
+	// CentralDeployment returns the central Deployment.
+	// It returns a non-nil error if the deployment is not found or cannot be retrieved.
+	CentralDeployment() (*appsv1.Deployment, error)
+
 	// CentralDBDeployment returns the central-db Deployment.
 	// It returns a non-nil error if the deployment is not found or cannot be retrieved.
 	CentralDBDeployment() (*appsv1.Deployment, error)

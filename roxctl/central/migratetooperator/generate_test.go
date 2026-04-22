@@ -65,3 +65,39 @@ func TestGenerateCR_HostPathWithoutNodeSelector(t *testing.T) {
 	assert.Equal(t, "/var/lib/stackrox-central", *cr.Spec.Central.DB.Persistence.HostPath.Path)
 	assert.Empty(t, cr.Spec.Central.DB.NodeSelector)
 }
+
+func TestGenerateCR_OpenShiftMonitoringEnabled(t *testing.T) {
+	config := &detectedConfig{
+		Storage:    storageConfig{Type: storagePVC, PVCName: "central-db"},
+		Monitoring: monitoringConfig{IsOpenShift: true, OpenShiftMonitoringEnabled: true},
+	}
+
+	cr := generateCR(config)
+
+	assert.Nil(t, cr.Spec.Monitoring)
+}
+
+func TestGenerateCR_OpenShiftMonitoringDisabled(t *testing.T) {
+	config := &detectedConfig{
+		Storage:    storageConfig{Type: storagePVC, PVCName: "central-db"},
+		Monitoring: monitoringConfig{IsOpenShift: true, OpenShiftMonitoringEnabled: false},
+	}
+
+	cr := generateCR(config)
+
+	require.NotNil(t, cr.Spec.Monitoring)
+	require.NotNil(t, cr.Spec.Monitoring.OpenShiftMonitoring)
+	require.NotNil(t, cr.Spec.Monitoring.OpenShiftMonitoring.Enabled)
+	assert.False(t, *cr.Spec.Monitoring.OpenShiftMonitoring.Enabled)
+}
+
+func TestGenerateCR_K8sOmitsMonitoring(t *testing.T) {
+	config := &detectedConfig{
+		Storage:    storageConfig{Type: storagePVC, PVCName: "central-db"},
+		Monitoring: monitoringConfig{IsOpenShift: false, OpenShiftMonitoringEnabled: false},
+	}
+
+	cr := generateCR(config)
+
+	assert.Nil(t, cr.Spec.Monitoring)
+}

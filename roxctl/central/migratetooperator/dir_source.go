@@ -25,7 +25,15 @@ func newDirSource(dir string) (*dirSource, error) {
 	return &dirSource{dir: dir}, nil
 }
 
+func (s *dirSource) CentralDeployment() (*appsv1.Deployment, error) {
+	return s.findDeployment("central")
+}
+
 func (s *dirSource) CentralDBDeployment() (*appsv1.Deployment, error) {
+	return s.findDeployment("central-db")
+}
+
+func (s *dirSource) findDeployment(name string) (*appsv1.Deployment, error) {
 	var found *appsv1.Deployment
 	err := filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || (!strings.HasSuffix(d.Name(), ".yaml") && !strings.HasSuffix(d.Name(), ".yml")) {
@@ -40,7 +48,7 @@ func (s *dirSource) CentralDBDeployment() (*appsv1.Deployment, error) {
 			if err := yaml.Unmarshal(doc, &dep); err != nil {
 				continue
 			}
-			if dep.Kind == "Deployment" && dep.Name == "central-db" {
+			if dep.Kind == "Deployment" && dep.Name == name {
 				found = &dep
 				return filepath.SkipAll
 			}
@@ -51,7 +59,7 @@ func (s *dirSource) CentralDBDeployment() (*appsv1.Deployment, error) {
 		return nil, errors.Wrap(err, "walking directory tree")
 	}
 	if found == nil {
-		return nil, errors.Errorf("central-db Deployment not found in %q", s.dir)
+		return nil, errors.Errorf("%s Deployment not found in %q", name, s.dir)
 	}
 	return found, nil
 }
