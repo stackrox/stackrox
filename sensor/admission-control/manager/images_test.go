@@ -37,6 +37,7 @@ func (s *ImageCacheTestSuite) SetupSuite() {
 		imageCache:               cache,
 		imageNameToImageCacheKey: nameCache,
 		imageNameCacheEnabled:    true,
+		imageCacheTTL:            4 * time.Hour,
 		imageFetchGroup:          coalescer.New[*storage.Image](),
 		imageCacheGen:            newImageGenTracker(),
 	}

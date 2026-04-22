@@ -38,6 +38,7 @@ func (s *ManagerImplSuite) SetupSuite() {
 	s.mgr = &manager{
 		imageCache:               cache,
 		imageNameToImageCacheKey: nameCache,
+		imageCacheTTL:            4 * time.Hour,
 		imageFetchGroup:          coalescer.New[*storage.Image](),
 		imageCacheGen:            newImageGenTracker(),
 	}
