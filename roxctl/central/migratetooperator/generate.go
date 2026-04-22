@@ -65,6 +65,12 @@ func generateCR(config *detectedConfig) *platform.Central {
 		}
 	}
 
+	if config.OfflineMode {
+		cr.Spec.Egress = &platform.Egress{
+			ConnectivityPolicy: platform.ConnectivityOffline.Pointer(),
+		}
+	}
+
 	return cr
 }
 
