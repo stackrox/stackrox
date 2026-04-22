@@ -1,8 +1,8 @@
 name: Match files changed
 description: >
-  Compare files changed between base and head with named path filters.
-  Each filter maps a label to a list of pathspec patterns using
-  .gitignore-style glob semantics (* for single segment, ** for recursive).
+  Compare files changed in a PR with named path filters using the GitHub API.
+  No checkout required. Each filter maps a label to a list of pathspec patterns
+  using .gitignore-style glob semantics (* for single segment, ** for recursive).
   Output is a space-separated string of matched labels.
 inputs:
   filters:
@@ -10,14 +10,10 @@ inputs:
       JSON object mapping labels to arrays of pathspec patterns.
       Example: { "ui": ["ui/**"], "go": ["**/*.go", "go.mod"] }
     required: true
-  base:
-    description: 'base sha to compare with'
+  token:
+    description: 'GitHub token for API access'
     required: false
-    default: ${{ github.event.pull_request.base.sha }}
-  sha:
-    description: 'sha to compare'
-    required: false
-    default: ${{ github.event.pull_request.head.sha }}
+    default: ${{ github.token }}
 outputs:
   matches:
     description: "space-separated string of matched filter labels"
@@ -30,19 +26,40 @@ runs:
       shell: bash
       env:
         FILTERS: ${{ inputs.filters }}
-        BASE: ${{ inputs.base }}
-        SHA: ${{ inputs.sha }}
+        GH_TOKEN: ${{ inputs.token }}
+        GH_REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         set -eo pipefail
 
+        glob_to_regex() {
+          local regex="${1//\./\\.}"
+          regex="${regex//\*\*/@@GLOBSTAR@@}"
+          regex="${regex//\*/[^/]*}"
+          regex="${regex//@@GLOBSTAR@@\//(.+/)?}"
+          regex="${regex//\/@@GLOBSTAR@@//.+}"
+          regex="${regex//@@GLOBSTAR@@/.+}"
+          echo "^${regex}$"
+        }
+
+        mapfile -t files < <(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')
+        echo "Changed files (${#files[@]}):" >&2
+        printf '  %s\n' "${files[@]}" >&2
+
         matched=()
         for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
-          mapfile -t pathspecs < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
-          globs=()
-          for p in "${pathspecs[@]}"; do
-            globs+=(":(glob)${p}")
+          mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
+          found=false
+          for p in "${patterns[@]}"; do
+            regex=$(glob_to_regex "$p")
+            for f in "${files[@]}"; do
+              if [[ $f =~ $regex ]]; then
+                found=true
+                break 2
+              fi
+            done
           done
-          if [[ -n "$(git diff --name-only "${BASE}...${SHA}" -- "${globs[@]}")" ]]; then
+          if $found; then
             echo "${k}: matched" >&2
             matched+=("${k}")
           else
