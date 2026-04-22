@@ -32,11 +32,12 @@ type exposureConfig struct {
 }
 
 type detectedConfig struct {
-	Storage           storageConfig
-	Monitoring        monitoringConfig
-	Exposure          exposureConfig
-	OfflineMode       bool
-	TelemetryDisabled bool
+	Storage              storageConfig
+	Monitoring           monitoringConfig
+	Exposure             exposureConfig
+	OfflineMode          bool
+	TelemetryDisabled    bool
+	DefaultTLSSecretName string
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -53,12 +54,20 @@ func detect(src source) (*detectedConfig, error) {
 		return nil, err
 	}
 
+	var defaultTLSSecretName string
+	if found, _, tlsErr := src.ResourceByKindAndName("Secret", "central-default-tls-cert"); tlsErr != nil {
+		return nil, errors.Wrap(tlsErr, "checking for default TLS cert Secret")
+	} else if found {
+		defaultTLSSecretName = "central-default-tls-cert"
+	}
+
 	return &detectedConfig{
-		Storage:           *storage,
-		Monitoring:        detectMonitoring(centralDep),
-		Exposure:          *exposure,
-		OfflineMode:       envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
-		TelemetryDisabled: envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
+		Storage:              *storage,
+		Monitoring:           detectMonitoring(centralDep),
+		Exposure:             *exposure,
+		OfflineMode:          envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
+		TelemetryDisabled:    envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
+		DefaultTLSSecretName: defaultTLSSecretName,
 	}, nil
 }
 

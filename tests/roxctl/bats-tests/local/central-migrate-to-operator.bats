@@ -14,10 +14,13 @@ setup_file() {
 setup() {
   out_dir="$(mktemp -d -u)"
   cr_out="$(mktemp -u).yaml"
+  test_certs_dir="$(mktemp -d)"
+  openssl ecparam -genkey -name prime256v1 -out "$test_certs_dir/tls-key.pem" 2>/dev/null
+  openssl req -new -x509 -key "$test_certs_dir/tls-key.pem" -out "$test_certs_dir/tls-cert.pem" -days 1 -subj "/CN=test" 2>/dev/null
 }
 
 teardown() {
-  rm -rf "$out_dir" "$cr_out"
+  rm -rf "$out_dir" "$cr_out" "$test_certs_dir"
 }
 
 generate_and_migrate() {
@@ -210,6 +213,24 @@ generate_and_migrate() {
   run yq e '.spec.central.exposure.route.enabled' "$cr_out"
   assert_success
   assert_output "true"
+}
+
+# Default TLS cert
+
+@test "migrate-to-operator: --default-tls-cert/key sets defaultTLSSecret" {
+  generate_and_migrate k8s pvc \
+    --default-tls-cert="$test_certs_dir/tls-cert.pem" \
+    --default-tls-key="$test_certs_dir/tls-key.pem"
+  run yq e '.spec.central.defaultTLSSecret.name' "$cr_out"
+  assert_success
+  assert_output "central-default-tls-cert"
+}
+
+@test "migrate-to-operator: default has no defaultTLSSecret" {
+  generate_and_migrate k8s pvc
+  run yq e '.spec.central.defaultTLSSecret' "$cr_out"
+  assert_success
+  assert_output "null"
 }
 
 # Telemetry
