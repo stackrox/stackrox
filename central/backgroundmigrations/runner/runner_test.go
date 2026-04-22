@@ -419,6 +419,21 @@ func (s *RunnerTestSuite) TestSeedsInitialRowWhenTableEmpty() {
 	s.Equal("", overrideTag)
 }
 
+func (s *RunnerTestSuite) TestOverrideTagClearedWhenEnvRemoved() {
+	// DB has a stale override tag from a previous run, but env vars are not set.
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3, override_tag = 'ROX-123'")
+	s.Require().NoError(err)
+
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
+
+	seqNum, overrideTag, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
+	s.Equal("", overrideTag)
+}
+
 func (s *RunnerTestSuite) TestOverrideIgnoredWithoutSeqNum() {
 	_, err := s.db.Exec(s.ctx,
 		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")

@@ -110,7 +110,6 @@ func (r *Runner) runOnce(ctx context.Context) error {
 		return errors.Wrap(err, "rollout check")
 	}
 	if !done {
-		log.Infof("rollout not yet complete, will retry")
 		return errors.New("rollout not yet complete")
 	}
 
@@ -155,6 +154,16 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			return errors.Wrap(err, "writing override state")
 		}
 		dbSeqNum = overrideSeqNum
+	}
+
+	if !shouldOverride && dbOverrideTag != "" {
+		// reset old override tags if it exists
+		if dbOverrideTag != "" {
+			log.Infof("override env var removed, clearing stale override tag %q from DB", dbOverrideTag)
+			if err := r.writeOverrideTag(ctx, ""); err != nil {
+				return errors.Wrap(err, "clearing override tag")
+			}
+		}
 	}
 
 	if dbSeqNum > r.targetSeqNum {
@@ -222,6 +231,11 @@ func (r *Runner) seedInitialRow(ctx context.Context) error {
 
 func (r *Runner) writeSeqNum(ctx context.Context, seqNum int) error {
 	_, err := r.db.Exec(ctx, "UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = $1", int32(seqNum))
+	return err
+}
+
+func (r *Runner) writeOverrideTag(ctx context.Context, overrideTag string) error {
+	_, err := r.db.Exec(ctx, "UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET override_tag = $1", overrideTag)
 	return err
 }
 

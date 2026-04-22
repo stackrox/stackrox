@@ -1,4 +1,4 @@
-package m000tom001
+package example
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 var log = logging.LoggerForModule()
 
+// You must import a migration in ../../runner/all.go for this to be exececuted
 func init() {
 	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum:     0,
