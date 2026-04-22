@@ -378,14 +378,19 @@ jobs:
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
-    - name: Test aggregate script (e2e with real bundles)
+    - name: Test aggregate script (e2e with GCS test bucket)
       run: |
+        test_version="test-${{ github.event.pull_request.number }}"
+        test_bucket="gs://scanner-v4-test/vulnerability-bundles"
+
         python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py \
-          --backend local --bucket /tmp/test-bucket \
-          upload --local-dir bundles --version test
+          --backend gcs --bucket "$test_bucket" \
+          upload --local-dir bundles --version "$test_version"
+
         python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py \
-          --backend local --bucket /tmp/test-bucket \
-          aggregate --version test --output-dir /tmp/test-output
+          --backend gcs --bucket "$test_bucket" \
+          aggregate --version "$test_version" --output-dir /tmp/test-output
+
         echo "Zip contents:"
         unzip -l /tmp/test-output/vulnerabilities.zip
 
