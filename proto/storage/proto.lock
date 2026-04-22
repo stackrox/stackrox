@@ -5740,6 +5740,11 @@
                 "id": 9,
                 "name": "metrics",
                 "type": "PrometheusMetrics"
+              },
+              {
+                "id": 10,
+                "name": "resource_retention_config",
+                "type": "ResourceRetentionConfig"
               }
             ]
           },
@@ -5868,6 +5873,16 @@
                 "id": 1,
                 "name": "retention_duration_days",
                 "type": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "ResourceRetentionConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "deployment_duration_days",
+                "type": "int32"
               }
             ]
           },
