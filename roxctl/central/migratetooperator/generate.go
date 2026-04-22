@@ -71,6 +71,17 @@ func generateCR(config *detectedConfig) *platform.Central {
 		}
 	}
 
+	if len(config.DeclarativeConfigMaps) > 0 || len(config.DeclarativeSecrets) > 0 {
+		dc := &platform.DeclarativeConfiguration{}
+		for _, name := range config.DeclarativeConfigMaps {
+			dc.ConfigMaps = append(dc.ConfigMaps, platform.LocalConfigMapReference{Name: name})
+		}
+		for _, name := range config.DeclarativeSecrets {
+			dc.Secrets = append(dc.Secrets, platform.LocalSecretReference{Name: name})
+		}
+		cr.Spec.Central.DeclarativeConfiguration = dc
+	}
+
 	if config.TelemetryDisabled {
 		cr.Spec.Central.Telemetry = &platform.Telemetry{
 			Enabled: pointers.Bool(false),

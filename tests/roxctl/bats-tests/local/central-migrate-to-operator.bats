@@ -215,6 +215,29 @@ generate_and_migrate() {
   assert_output "true"
 }
 
+# Declarative config
+
+@test "migrate-to-operator: --declarative-config-config-maps sets declarativeConfiguration.configMaps" {
+  generate_and_migrate k8s pvc --declarative-config-config-maps=my-config
+  run yq e '.spec.central.declarativeConfiguration.configMaps[0].name' "$cr_out"
+  assert_success
+  assert_output "my-config"
+}
+
+@test "migrate-to-operator: --declarative-config-secrets sets declarativeConfiguration.secrets" {
+  generate_and_migrate k8s pvc --declarative-config-secrets=my-secret
+  run yq e '.spec.central.declarativeConfiguration.secrets[0].name' "$cr_out"
+  assert_success
+  assert_output "my-secret"
+}
+
+@test "migrate-to-operator: default has no declarativeConfiguration" {
+  generate_and_migrate k8s pvc
+  run yq e '.spec.central.declarativeConfiguration' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
 # Default TLS cert
 
 @test "migrate-to-operator: --default-tls-cert/key sets defaultTLSSecret" {

@@ -201,3 +201,25 @@ func TestGenerateCR_NoDefaultTLSSecret(t *testing.T) {
 	cr := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.DefaultTLSSecret)
 }
+
+func TestGenerateCR_DeclarativeConfig(t *testing.T) {
+	config := &detectedConfig{
+		Storage:               storageConfig{Type: storagePVC, PVCName: "central-db"},
+		DeclarativeConfigMaps: []string{"my-cm"},
+		DeclarativeSecrets:    []string{"my-secret"},
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Central.DeclarativeConfiguration)
+	require.Len(t, cr.Spec.Central.DeclarativeConfiguration.ConfigMaps, 1)
+	assert.Equal(t, "my-cm", cr.Spec.Central.DeclarativeConfiguration.ConfigMaps[0].Name)
+	require.Len(t, cr.Spec.Central.DeclarativeConfiguration.Secrets, 1)
+	assert.Equal(t, "my-secret", cr.Spec.Central.DeclarativeConfiguration.Secrets[0].Name)
+}
+
+func TestGenerateCR_NoDeclarativeConfig(t *testing.T) {
+	config := &detectedConfig{
+		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	}
+	cr := generateCR(config)
+	assert.Nil(t, cr.Spec.Central.DeclarativeConfiguration)
+}
