@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -459,6 +461,37 @@ func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
 	suite.Equal(vmID, ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonEnrichmentFailed, ack.GetReason())
+}
+
+func (suite *PipelineTestSuite) TestRun_NACKOnMatcherNotInitializedError() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
+	vmID := "vm-matcher-not-initialized"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(errors.Wrap(
+			status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: initial load for the vulnerability store is in progress"),
+			"getting scan for VM",
+		))
+
+	injector := &mockInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+	suite.Error(err)
+
+	suite.Require().Len(injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	suite.Require().NotNil(ack)
+	suite.Equal(central.SensorACK_NACK, ack.GetAction())
+	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(centralsensor.SensorACKReasonMatcherNotReady, ack.GetReason())
 }
 
 func (suite *PipelineTestSuite) TestRun_NACKOnMissingClusterID() {
