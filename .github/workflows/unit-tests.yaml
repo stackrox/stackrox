@@ -543,7 +543,6 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - detect-changes
       - go
       - go-bench
       - go-postgres

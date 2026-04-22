@@ -383,7 +383,6 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - detect-changes
       - check-generated-files
       - misc-checks
       - style-check
