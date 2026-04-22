@@ -24,12 +24,12 @@ GCS_BUCKET = "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 
 def gsutil_copy(src, dest):
     """Copy a file from GCS."""
-    return subprocess.run(["gsutil", "cp", src, dest], capture_output=True, text=True)
+    return subprocess.run(["gsutil", "cp", src, dest], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
 def gsutil_exists(path):
     """Check if a GCS path exists."""
-    result = subprocess.run(["gsutil", "-q", "stat", path], capture_output=True)
+    result = subprocess.run(["gsutil", "-q", "stat", path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return result.returncode == 0
 
 

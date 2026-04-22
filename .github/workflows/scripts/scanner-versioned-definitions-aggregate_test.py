@@ -16,7 +16,7 @@ def create_fake_bundle(path):
     subprocess.run(
         ["zstd", "-o", str(path)],
         input=b'{"test":"data"}',
-        capture_output=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         check=True,
     )
 
@@ -30,7 +30,7 @@ def create_status_json(path, updaters):
 def run_script(*args):
     return subprocess.run(
         ["python3", str(SCRIPT), *args],
-        capture_output=True, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
     )
 
 
@@ -91,7 +91,8 @@ class TestUpload(unittest.TestCase):
             first_status = json.load(f)
         alpine_ts = next(u for u in first_status["updaters"] if u["name"] == "alpine")["last_successful_update"]
 
-        # Second upload: alpine now fails
+        # Second upload: alpine fails (Go code would delete the bundle)
+        (self.bundles / "alpine.json.zst").unlink()
         create_status_json(self.bundles / "status.json", [
             {"name": "alpine", "status": "failed", "error": "timeout", "last_attempt": "2026-04-22T00:00:00Z"},
             {"name": "nvd", "status": "success", "last_attempt": "2026-04-22T00:00:00Z"},
@@ -104,6 +105,13 @@ class TestUpload(unittest.TestCase):
 
         alpine = next(u for u in second_status["updaters"] if u["name"] == "alpine")
         self.assertEqual(alpine["last_successful_update"], alpine_ts)
+
+        # The old alpine bundle should still be in the bucket (last known good)
+        # but it should NOT have been overwritten by the second upload
+        dest = self.bucket / "dev" / "bundles"
+        self.assertTrue((dest / "alpine.json.zst").exists(), "last-known-good bundle should persist")
+        self.assertTrue((dest / "nvd.json.zst").exists())
+        self.assertTrue((dest / "photon.json.zst").exists())
 
     def test_missing_dir_fails(self):
         result = run_script(
