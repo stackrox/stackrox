@@ -187,7 +187,7 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 		}
 		logging.GetRateLimitedLogger().WarnL(
 			vmRelayRetryRateLimitKey,
-			"Virtual machine relay failed: %v",
+			"VM relay failed: %v",
 			err,
 		)
 	})

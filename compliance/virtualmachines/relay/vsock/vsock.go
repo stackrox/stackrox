@@ -7,7 +7,6 @@ import (
 	"net"
 
 	"github.com/mdlayher/vsock"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 )
 
@@ -35,9 +34,6 @@ func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 // KubeVirt not installed). The caller receives the error; there is no retry at this layer.
 func NewListener() (net.Listener, error) {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
-	listener, err := vsock.ListenContextID(vsock.Host, uint32(port), nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "listening on vsock port %d", port)
-	}
-	return listener, nil
+	//nolint:wrapcheck // The returned error is already pretty detailed: "listen vsock host(2):818: <reason>"
+	return vsock.ListenContextID(vsock.Host, uint32(port), nil)
 }
