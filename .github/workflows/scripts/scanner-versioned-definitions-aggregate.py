@@ -42,14 +42,14 @@ class GCSBackend:
     def copy(self, src, dest):
         result = subprocess.run(
             ["gsutil", "cp", str(src), str(dest)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
         )
         return result.returncode == 0
 
     def copy_many(self, srcs, dest):
         result = subprocess.run(
             ["gsutil", "-m", "cp", *[str(s) for s in srcs], str(dest)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
         )
         return result.returncode == 0
 

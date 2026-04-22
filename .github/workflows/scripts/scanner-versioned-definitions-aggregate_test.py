@@ -30,7 +30,7 @@ def create_status_json(path, updaters):
 def run_script(*args):
     return subprocess.run(
         ["python3", str(SCRIPT), *args],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
     )
 
 
