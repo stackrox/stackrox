@@ -74,7 +74,7 @@ function SecureClusterPage(): ReactElement {
                 <Alert
                     variant="info"
                     isInline
-                    title="You can use one cluster registration secret to secure multiple clusters."
+                    title="You can use a single cluster registration secret to register multiple clusters."
                     component="p"
                 />
             </PageSection>
