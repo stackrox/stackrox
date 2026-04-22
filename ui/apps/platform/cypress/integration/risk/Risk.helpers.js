@@ -8,7 +8,7 @@ import { visit } from '../../helpers/visit';
 
 // visit
 
-const riskURL = '/main/risk';
+const riskURL = '/main/risk?filteredWorkflowView=Platform view';
 
 export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
 export const deploymentscountAlias = 'deploymentscount';

@@ -87,7 +87,7 @@ describe('Risk', () => {
             ).then((stackroxDeps) => {
                 const stackroxCount = stackroxDeps.length;
 
-                visitRiskDeploymentsWithSearchQuery(`?s[${nsOption}]=${nsValue}`);
+                visitRiskDeploymentsWithSearchQuery(`&s[${nsOption}]=${nsValue}`);
 
                 // Negative assertion:
                 cy.get(searchPlaceholderSelector).should('not.exist');
@@ -119,7 +119,7 @@ describe('Risk', () => {
                 const staticCount = staticDeps.length;
 
                 visitRiskDeploymentsWithSearchQuery(
-                    `?s[${nsOption}]=${nsValue}&s[${deployOption}]=${deployValue}`
+                    `&s[${nsOption}]=${nsValue}&s[${deployOption}]=${deployValue}`
                 );
 
                 // Negative assertion:

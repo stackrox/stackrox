@@ -49,8 +49,13 @@ function RiskTablePage() {
             categories: [searchCategories.DEPLOYMENT],
         },
     };
-    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
+    const { data: searchData } = useQuery<{
+        searchOptions: string[];
+    }>(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = searchData?.searchOptions ?? [];
+    const filteredOptions = searchOptions.filter(
+        (option) => option !== 'Platform Component' && option !== 'Orchestrator Component'
+    );
 
     const autoCompleteCategory = searchCategories.DEPLOYMENT;
 
@@ -68,7 +73,7 @@ function RiskTablePage() {
                     <SearchFilterInput
                         className=""
                         searchFilter={urlSearch.searchFilter}
-                        searchOptions={searchOptions}
+                        searchOptions={filteredOptions}
                         searchCategory={autoCompleteCategory}
                         placeholder="Filter deployments"
                         handleChangeSearchFilter={(newSearchFilter) => {
