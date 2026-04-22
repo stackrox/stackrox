@@ -182,6 +182,36 @@ generate_and_migrate() {
   assert_output "null"
 }
 
+# Exposure / lb-type
+
+@test "migrate-to-operator: default has no exposure section" {
+  generate_and_migrate k8s pvc
+  run yq e '.spec.central.exposure' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
+@test "migrate-to-operator: --lb-type=lb sets exposure.loadBalancer.enabled=true" {
+  generate_and_migrate k8s pvc --lb-type=lb
+  run yq e '.spec.central.exposure.loadBalancer.enabled' "$cr_out"
+  assert_success
+  assert_output "true"
+}
+
+@test "migrate-to-operator: --lb-type=np sets exposure.nodePort.enabled=true" {
+  generate_and_migrate k8s pvc --lb-type=np
+  run yq e '.spec.central.exposure.nodePort.enabled' "$cr_out"
+  assert_success
+  assert_output "true"
+}
+
+@test "migrate-to-operator: --lb-type=route sets exposure.route.enabled=true" {
+  generate_and_migrate openshift pvc --lb-type=route
+  run yq e '.spec.central.exposure.route.enabled' "$cr_out"
+  assert_success
+  assert_output "true"
+}
+
 # Error cases
 
 @test "migrate-to-operator: fails without --from-dir or --namespace" {

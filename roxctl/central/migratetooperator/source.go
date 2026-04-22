@@ -14,4 +14,9 @@ type source interface {
 	// CentralDBDeployment returns the central-db Deployment.
 	// It returns a non-nil error if the deployment is not found or cannot be retrieved.
 	CentralDBDeployment() (*appsv1.Deployment, error)
+
+	// ResourceByKindAndName looks for a resource by kind and metadata.name.
+	// Returns (true, data) if found, (false, nil) if not found.
+	// The data map contains the raw parsed YAML for further inspection.
+	ResourceByKindAndName(kind, name string) (bool, map[string]interface{}, error)
 }
