@@ -18,6 +18,7 @@ import spock.lang.Unroll
 
 @Unroll
 @Tag("BAT")
+@Tag("Parallel")
 //ROX-20525 Disable test for ppc64le and s390x until Fix is availble
 //@Tag("PZ")
 class CSVTest extends BaseSpecification {

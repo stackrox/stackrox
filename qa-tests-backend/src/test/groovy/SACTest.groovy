@@ -44,6 +44,7 @@ import spock.lang.Unroll
 
 @Tag("BAT")
 @Tag("PZ")
+@Tag("Parallel")
 class SACTest extends BaseSpecification {
     static final private String IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2@$IMAGE_SHA"
     static final private String IMAGE_SHA = "sha256:ad9a0ffaf09f6631f0f6a11f20a981e72a4b2a0c79a9b5429af1ee5709b7d69e"

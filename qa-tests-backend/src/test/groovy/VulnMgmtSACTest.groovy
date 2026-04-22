@@ -18,6 +18,7 @@ import spock.lang.Unroll
 @Retry(count = 3)
 @Tag("Begin")
 @Tag("PZ")
+@Tag("Parallel")
 class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"
 
