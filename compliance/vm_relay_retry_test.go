@@ -29,7 +29,7 @@ func TestRunVMRelayWithRetry(t *testing.T) {
 			},
 			expectedOperationAttempts: 2,
 		},
-		"should retry when relay run fails": {
+		"should retry when injected operation returns non-context error": {
 			operationErrors: []error{errors.New("relay failed"), nil},
 			backOffFactory: func() backoff.BackOff {
 				return backoff.NewConstantBackOff(0)

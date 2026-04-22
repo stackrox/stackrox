@@ -40,6 +40,8 @@ const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
 	// Compliance handles exactly one node, so a single constant suffices.
 	nodeResourceID = "this-node"
+
+	vmRelayRetryRateLimitKey = "vm-relay-retry"
 )
 
 // Compliance represents the Compliance app
@@ -183,7 +185,12 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 		if ctx.Err() != nil {
 			return
 		}
-		log.Errorf("Virtual machine relay failed: %v; will retry in %0.2f seconds", err, t.Seconds())
+		logging.GetRateLimitedLogger().WarnL(
+			vmRelayRetryRateLimitKey,
+			"Virtual machine relay failed: %v; will retry in %0.2f seconds",
+			err,
+			t.Seconds(),
+		)
 	})
 }
 

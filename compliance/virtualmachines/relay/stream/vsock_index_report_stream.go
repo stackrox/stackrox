@@ -50,15 +50,6 @@ func New() (*VsockIndexReportStream, error) {
 	return newWithListener(listener), nil
 }
 
-// NewWithListener creates a VsockIndexReportStream with the given listener.
-// For testing only; use New() in production.
-func NewWithListener(listener net.Listener) (*VsockIndexReportStream, error) {
-	if listener == nil {
-		return nil, errors.New("listener is nil")
-	}
-	return newWithListener(listener), nil
-}
-
 func newWithListener(listener net.Listener) *VsockIndexReportStream {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
