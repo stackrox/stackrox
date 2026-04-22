@@ -42,6 +42,14 @@ func generateCR(config *detectedConfig) *platform.Central {
 	}
 	cr.Spec.Central = &platform.CentralComponentSpec{DB: db}
 
+	if config.Monitoring.IsOpenShift && !config.Monitoring.OpenShiftMonitoringEnabled {
+		cr.Spec.Monitoring = &platform.GlobalMonitoring{
+			OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+				Enabled: pointers.Bool(false),
+			},
+		}
+	}
+
 	return cr
 }
 

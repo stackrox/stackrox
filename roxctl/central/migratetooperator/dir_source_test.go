@@ -22,6 +22,20 @@ spec:
           claimName: my-pvc
 `
 
+const centralDeploymentYAML = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        env:
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+`
+
 const hostPathDeploymentYAML = `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -160,6 +174,18 @@ func TestNewDirSource_NonDirectoryPath(t *testing.T) {
 	require.Error(t, err)
 	assert.Nil(t, src)
 	assert.Contains(t, err.Error(), "is not a directory")
+}
+
+func TestDirSource_CentralDeployment(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "central.yaml"), []byte(centralDeploymentYAML), 0644))
+
+	src, err := newDirSource(dir)
+	require.NoError(t, err)
+
+	dep, err := src.CentralDeployment()
+	require.NoError(t, err)
+	assert.Equal(t, "central", dep.Name)
 }
 
 func TestDirSource_EmptyDir(t *testing.T) {
