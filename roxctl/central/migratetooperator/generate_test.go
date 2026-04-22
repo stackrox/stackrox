@@ -3,6 +3,7 @@ package migratetooperator
 import (
 	"testing"
 
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/yaml"
@@ -144,4 +145,23 @@ func TestGenerateCR_ExposureMultiple(t *testing.T) {
 	assert.True(t, *cr.Spec.Central.Exposure.LoadBalancer.Enabled)
 	assert.True(t, *cr.Spec.Central.Exposure.Route.Enabled)
 	assert.Nil(t, cr.Spec.Central.Exposure.NodePort)
+}
+
+func TestGenerateCR_OfflineMode(t *testing.T) {
+	config := &detectedConfig{
+		Storage:     storageConfig{Type: storagePVC, PVCName: "central-db"},
+		OfflineMode: true,
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Egress)
+	require.NotNil(t, cr.Spec.Egress.ConnectivityPolicy)
+	assert.Equal(t, platform.ConnectivityOffline, *cr.Spec.Egress.ConnectivityPolicy)
+}
+
+func TestGenerateCR_OnlineMode(t *testing.T) {
+	config := &detectedConfig{
+		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	}
+	cr := generateCR(config)
+	assert.Nil(t, cr.Spec.Egress)
 }
