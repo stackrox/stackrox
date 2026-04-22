@@ -34,6 +34,6 @@ func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 // KubeVirt not installed). The caller receives the error; there is no retry at this layer.
 func NewListener() (net.Listener, error) {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
-	//nolint:wrapcheck // The returned error is already pretty detailed: "listen vsock host(2):818: <reason>"
+	// Not wrapping as the returned error is already pretty detailed: "listen vsock host(2):818: <reason>"
 	return vsock.ListenContextID(vsock.Host, uint32(port), nil)
 }
