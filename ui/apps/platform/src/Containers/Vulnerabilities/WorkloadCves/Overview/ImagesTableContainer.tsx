@@ -5,6 +5,7 @@ import type useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import type { SearchFilter } from 'types/search';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
@@ -13,6 +14,7 @@ import type { ImageOverviewTableProps } from '../Tables/ImageOverviewTable';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
@@ -47,6 +49,8 @@ function ImagesTableContainer({
     imageTableColumnOverrides,
 }: ImagesTableContainerProps) {
     const { sortOption, getSortParams } = sort;
+    const { viewContext } = useWorkloadCveViewContext();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { error, loading, data } = useImages({
         query: workloadCvesScopedQueryString,
@@ -54,10 +58,21 @@ function ImagesTableContainer({
         sortOption,
     });
 
+    // When viewing inactive images with soft deletion enabled, exclude images that
+    // still have active deployments. This handles an edge case where an image is
+    // associated with both active and deleted deployments: the server-side query
+    // returns the image (because the deleted deployment row passes the filter), but
+    // it should not appear in the inactive tab.
+    const isInactiveWithSoftDeletion =
+        viewContext === 'Inactive images' && isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+    const images = isInactiveWithSoftDeletion
+        ? data?.images.filter((image) => image.activeDeploymentCount === 0)
+        : data?.images;
+
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: data?.images,
+        data: images,
         searchFilter,
     });
 

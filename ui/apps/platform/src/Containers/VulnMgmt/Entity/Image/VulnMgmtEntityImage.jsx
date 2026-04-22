@@ -6,6 +6,7 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import {
     VULN_CVE_ONLY_FRAGMENT,
@@ -29,6 +30,8 @@ const VulnMgmtEntityImage = ({
     refreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
         query getImage($id: ID!, $query: String, $scopeQuery: String) {
@@ -109,7 +112,12 @@ const VulnMgmtEntityImage = ({
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                undefined,
+                isDeploymentSoftDeletionEnabled
+            ),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(fullEntityContext),

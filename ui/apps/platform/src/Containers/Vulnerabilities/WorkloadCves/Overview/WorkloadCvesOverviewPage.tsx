@@ -156,12 +156,20 @@ function WorkloadCvesOverviewPage() {
     const { searchFilter: urlSearchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
     const isFirstRender = useIsFirstRender();
 
+    // Visible deployment state default for views that filter by deployment state.
+    // Unlike baseSearchFilter (hidden context), this appears as a filter chip in the UI.
+    const deploymentStateDefault: SearchFilter =
+        isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION') &&
+        (viewContext === 'User workloads' || viewContext === 'Platform')
+            ? { 'Deployment State': ['DEPLOYMENT_STATE_ACTIVE'] }
+            : {};
+
     // If this is the first render of the page, and no other filters are applied, use the default filters
     // as the search filters to apply on the first run of the query. This will only happen once, and on a
     // subsequent render the default filters will be synced with the URL params and page state, if needed.
     const shouldSyncDefaultFilters = isFirstRender && isEmpty(urlSearchFilter) && isViewingWithCves;
     const searchFilter = shouldSyncDefaultFilters
-        ? localStorageValue.preferences.defaultFilters
+        ? { ...localStorageValue.preferences.defaultFilters, ...deploymentStateDefault }
         : urlSearchFilter;
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -240,7 +248,10 @@ function WorkloadCvesOverviewPage() {
     }
 
     function applyDefaultFilters() {
-        setSearchFilter(localStorageValue.preferences.defaultFilters);
+        setSearchFilter({
+            ...localStorageValue.preferences.defaultFilters,
+            ...deploymentStateDefault,
+        });
     }
 
     // Track the current entity tab when the page is initially visited.

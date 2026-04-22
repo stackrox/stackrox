@@ -27,6 +27,7 @@ import {
     ID,
     Label,
     Name,
+    State,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
@@ -90,7 +91,7 @@ export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
 export const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',
     searchCategory: 'DEPLOYMENTS',
-    attributes: [Annotation, ContainerType, ID, Label, Name],
+    attributes: [Annotation, ContainerType, ID, Label, Name, State],
 };
 
 export const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {

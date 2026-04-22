@@ -72,6 +72,10 @@ export type PrometheusMetrics = {
     nodeVulnerabilities?: PrometheusMetricsGroup | null;
 };
 
+export type ResourceRetentionConfig = {
+    deploymentDurationDays: number; // int32
+};
+
 export type PrivateConfig = {
     alertConfig: AlertRetentionConfig;
     imageRetentionDurationDays: number; // int32
@@ -79,6 +83,7 @@ export type PrivateConfig = {
     decommissionedClusterRetention: DecommissionedClusterRetentionConfig;
     reportRetentionConfig: ReportRetentionConfig;
     administrationEventsConfig: AdministrationEventsConfig;
+    resourceRetentionConfig?: ResourceRetentionConfig;
     metrics?: PrometheusMetrics | null;
 };
 

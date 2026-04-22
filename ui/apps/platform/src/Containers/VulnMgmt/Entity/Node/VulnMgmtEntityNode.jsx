@@ -7,6 +7,7 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtNodeOverview from './VulnMgmtNodeOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -26,6 +27,8 @@ const VulnMgmtEntityNode = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
         query getNode($id: ID!) {
@@ -89,7 +92,12 @@ const VulnMgmtEntityNode = ({
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                entityContext,
+                isDeploymentSoftDeletionEnabled
+            ),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: queryService.objectToWhereClause({

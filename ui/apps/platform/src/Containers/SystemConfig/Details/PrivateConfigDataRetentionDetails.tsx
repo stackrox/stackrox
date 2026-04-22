@@ -15,10 +15,12 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+
 import type { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 type DataRetentionValueProps = {
     value: number | undefined;
@@ -55,6 +57,9 @@ const PrivateConfigDataRetentionDetails = ({
     isClustersRoutePathRendered,
     privateConfig,
 }: PrivateConfigDataRetentionDetailsProps): ReactElement => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     return (
         <Grid hasGutter md={6}>
             <GridItem>
@@ -129,6 +134,22 @@ const PrivateConfigDataRetentionDetails = ({
                     </CardBody>
                 </Card>
             </GridItem>
+            {isDeploymentSoftDeletionEnabled && (
+                <GridItem>
+                    <Card>
+                        <CardTitle>Deleted deployments</CardTitle>
+                        <CardBody>
+                            <DataRetentionValue
+                                value={
+                                    privateConfig?.resourceRetentionConfig
+                                        ?.deploymentDurationDays
+                                }
+                                suffix="day"
+                            />
+                        </CardBody>
+                    </Card>
+                </GridItem>
+            )}
             <GridItem>
                 <Card>
                     <CardTitle>Expired vulnerability requests</CardTitle>

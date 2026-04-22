@@ -16,6 +16,8 @@ import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import ImageResourceTable, { imageResourcesFragment } from './ImageResourceTable';
 import type { ImageResources } from './ImageResourceTable';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
@@ -27,7 +29,7 @@ export type DeploymentPageResourcesProps = {
 
 const deploymentResourcesQuery = gql`
     ${imageResourcesFragment}
-    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {
+    query getDeploymentResources($id: ID!, $query: String, $activeDeploymentQuery: String, $pagination: Pagination) {
         deployment(id: $id) {
             id
             ...ImageResources
@@ -37,6 +39,8 @@ const deploymentResourcesQuery = gql`
 
 function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageResourcesProps) {
     const { baseSearchFilter } = useWorkloadCveViewContext();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: ['Image'],
@@ -46,13 +50,15 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
 
     const imageTableToggle = useSelectToggle(true);
 
+    const query = getRequestQueryStringForSearchFilter(baseSearchFilter);
     const { data, previousData, loading, error } = useQuery<
         { deployment: ImageResources | null },
-        { id: string; query: string; pagination: PaginationParam }
+        { id: string; query: string; activeDeploymentQuery: string; pagination: PaginationParam }
     >(deploymentResourcesQuery, {
         variables: {
             id: deploymentId,
-            query: getRequestQueryStringForSearchFilter(baseSearchFilter),
+            query,
+            activeDeploymentQuery: withActiveDeploymentQuery(query, isSoftDeletionEnabled),
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
