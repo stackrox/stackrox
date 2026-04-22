@@ -428,6 +428,57 @@ func TestPopulateImageMetadata(t *testing.T) {
 	}
 }
 
+func TestPopulateImageMetadataWithInitContainers(t *testing.T) {
+	// Simulates a deployment with init containers in deployment.Containers that do not
+	// appear in pod.Status.ContainerStatuses. Name-based matching should skip the init
+	// containers and correctly assign digests to the regular containers.
+	wrap := deploymentWrap{
+		Deployment: &storage.Deployment{},
+	}
+
+	initImg, err := imageUtils.GenerateImageFromString("docker.io/library/busybox:latest")
+	require.NoError(t, err)
+	nginxImg, err := imageUtils.GenerateImageFromString("docker.io/library/nginx:latest")
+	require.NoError(t, err)
+	redisImg, err := imageUtils.GenerateImageFromString("docker.io/library/redis:latest")
+	require.NoError(t, err)
+
+	wrap.Containers = []*storage.Container{
+		{Name: "init-setup", Image: initImg},
+		{Name: "nginx", Image: nginxImg},
+		{Name: "redis", Image: redisImg},
+	}
+
+	pod := &v1.Pod{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{Name: "nginx", Image: "docker.io/library/nginx:latest"},
+				{Name: "redis", Image: "docker.io/library/redis:latest"},
+			},
+		},
+		Status: v1.PodStatus{
+			ContainerStatuses: []v1.ContainerStatus{
+				{
+					Name:    "nginx",
+					ImageID: "docker-pullable://docker.io/library/nginx@sha256:abc123",
+				},
+				{
+					Name:    "redis",
+					ImageID: "docker-pullable://docker.io/library/redis@sha256:def456",
+				},
+			},
+		},
+	}
+
+	wrap.populateImageMetadata(nil, pod)
+
+	// Init container should have no digest (not in pod status).
+	assert.Empty(t, wrap.GetDeployment().GetContainers()[0].GetImage().GetId())
+	// Regular containers should have correct digests matched by name.
+	assert.Equal(t, "sha256:abc123", wrap.GetDeployment().GetContainers()[1].GetImage().GetId())
+	assert.Equal(t, "sha256:def456", wrap.GetDeployment().GetContainers()[2].GetImage().GetId())
+}
+
 func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, true)
 	type wrapContainer struct {
