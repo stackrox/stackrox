@@ -56,7 +56,7 @@ run_ui_e2e_tests() {
         export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
     fi
 
-    make -C ui test-e2e || touch FAIL
+    make -C ui test-e2e-parallel || touch FAIL
 
     store_test_results "ui/test-results/reports/cypress/integration/." "cy-reps"
 

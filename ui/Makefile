@@ -50,6 +50,11 @@ test-e2e: deps $(SOURCES)
 # Uncomment this once the plugin is installed via the operator in CI
 # npm run test-e2e:ocp
 
+.PHONY: test-e2e-parallel
+test-e2e-parallel: deps $(SOURCES)
+	@echo "+ $@"
+	npm run test-e2e-parallel
+
 .PHONY: clean
 clean:
 	@echo "+ $@"
