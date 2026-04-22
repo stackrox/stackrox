@@ -27,7 +27,7 @@ jobs:
     with:
       filters: |
         {
-          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**"],
+          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
           "ui": ["ui/**"],
           "shell": ["scripts/**", "deploy/**", "**/*.sh"],
           "gha": [".github/**"],
