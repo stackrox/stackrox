@@ -1,5 +1,7 @@
 ## Table of Contents
 
+[![gitcgr](https://gitcgr.com/badge/stackrox/stackrox.svg)](https://gitcgr.com/stackrox/stackrox)
+
 - [StackRox Kubernetes Security Platform](#stackrox-kubernetes-security-platform)
     - [Table of Contents](#table-of-contents)
     - [Community](#community)
