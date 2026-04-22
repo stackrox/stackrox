@@ -46,6 +46,7 @@ func startRedHatSigningKeyDirWatcher(siStore store.SignatureIntegrationStore) {
 		Interval: env.RedHatSigningKeyWatchInterval.DurationSetting(),
 		Force:    true, // start even before the updater creates the directory
 	}
-	// Errors are unreachable with Force=true, but discard defensively.
-	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), targetDir, handler, opts)
+	if err := k8scfgwatch.WatchConfigMountDir(context.Background(), targetDir, handler, opts); err != nil {
+		log.Errorf("Failed to start Red Hat signing key directory watcher for %q: %v", targetDir, err)
+	}
 }

@@ -71,7 +71,7 @@ func upsertRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
 	utils.Should(errors.Wrap(siStore.Upsert(ctx, integration), "upserting Red Hat signature integration"))
 }
 
-func startRedHatSigningKeyUpdater(siStore store.SignatureIntegrationStore) {
+func startRedHatSigningKeyUpdater() {
 	manifestURL := env.RedHatSigningKeyManifestURL.Setting()
 	if manifestURL == "" {
 		log.Info("Red Hat signing key manifest URL not configured, skipping key updater")
@@ -117,7 +117,7 @@ func Singleton() DataStore {
 		upsertRedHatSignatureIntegration(storage)
 		instance = New(storage, policyDataStore.Singleton())
 		startRedHatSigningKeyDirWatcher(storage)
-		startRedHatSigningKeyUpdater(storage)
+		startRedHatSigningKeyUpdater()
 	})
 	return instance
 }

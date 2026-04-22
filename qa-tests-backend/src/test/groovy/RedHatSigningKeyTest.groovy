@@ -33,6 +33,8 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
 -----END PUBLIC KEY-----"""
 
     // Directory inside the Central container where downloaded signing keys live.
+    // Must match the default value of the Go env var ROX_REDHAT_SIGNING_KEYS_RUNTIME_DIR
+    // (env.RedHatSigningKeysRuntimeDir) so that the watcher and this test target the same path.
     static final private String KEY_DIR = "/var/lib/stackrox/signature-keys/redhat"
 
     // Name of the injected test key file.
