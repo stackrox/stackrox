@@ -65,6 +65,12 @@ func generateCR(config *detectedConfig) *platform.Central {
 		}
 	}
 
+	if config.DefaultTLSSecretName != "" {
+		cr.Spec.Central.DefaultTLSSecret = &platform.LocalSecretReference{
+			Name: config.DefaultTLSSecretName,
+		}
+	}
+
 	if config.TelemetryDisabled {
 		cr.Spec.Central.Telemetry = &platform.Telemetry{
 			Enabled: pointers.Bool(false),

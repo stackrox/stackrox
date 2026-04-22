@@ -183,3 +183,21 @@ func TestGenerateCR_TelemetryDefault(t *testing.T) {
 	cr := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.Telemetry)
 }
+
+func TestGenerateCR_DefaultTLSSecret(t *testing.T) {
+	config := &detectedConfig{
+		Storage:              storageConfig{Type: storagePVC, PVCName: "central-db"},
+		DefaultTLSSecretName: "central-default-tls-cert",
+	}
+	cr := generateCR(config)
+	require.NotNil(t, cr.Spec.Central.DefaultTLSSecret)
+	assert.Equal(t, "central-default-tls-cert", cr.Spec.Central.DefaultTLSSecret.Name)
+}
+
+func TestGenerateCR_NoDefaultTLSSecret(t *testing.T) {
+	config := &detectedConfig{
+		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	}
+	cr := generateCR(config)
+	assert.Nil(t, cr.Spec.Central.DefaultTLSSecret)
+}
