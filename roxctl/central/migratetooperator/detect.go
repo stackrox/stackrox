@@ -1,6 +1,8 @@
 package migratetooperator
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,12 +34,14 @@ type exposureConfig struct {
 }
 
 type detectedConfig struct {
-	Storage              storageConfig
-	Monitoring           monitoringConfig
-	Exposure             exposureConfig
-	OfflineMode          bool
-	TelemetryDisabled    bool
-	DefaultTLSSecretName string
+	Storage               storageConfig
+	Monitoring            monitoringConfig
+	Exposure              exposureConfig
+	OfflineMode           bool
+	TelemetryDisabled     bool
+	DefaultTLSSecretName  string
+	DeclarativeConfigMaps []string
+	DeclarativeSecrets    []string
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -61,13 +65,17 @@ func detect(src source) (*detectedConfig, error) {
 		defaultTLSSecretName = "central-default-tls-cert"
 	}
 
+	declConfigMaps, declSecrets := detectDeclarativeConfig(centralDep)
+
 	return &detectedConfig{
-		Storage:              *storage,
-		Monitoring:           detectMonitoring(centralDep),
-		Exposure:             *exposure,
-		OfflineMode:          envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
-		TelemetryDisabled:    envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
-		DefaultTLSSecretName: defaultTLSSecretName,
+		Storage:               *storage,
+		Monitoring:            detectMonitoring(centralDep),
+		Exposure:              *exposure,
+		OfflineMode:           envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
+		TelemetryDisabled:     envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
+		DefaultTLSSecretName:  defaultTLSSecretName,
+		DeclarativeConfigMaps: declConfigMaps,
+		DeclarativeSecrets:    declSecrets,
 	}, nil
 }
 
@@ -143,6 +151,31 @@ func detectExposure(src source) (*exposureConfig, error) {
 	cfg.RouteEnabled = routeFound
 
 	return cfg, nil
+}
+
+const declarativeConfigMountPrefix = "/run/stackrox.io/declarative-configuration/"
+
+func detectDeclarativeConfig(dep *appsv1.Deployment) (configMaps []string, secrets []string) {
+	declVolumes := make(map[string]bool)
+	for _, c := range dep.Spec.Template.Spec.Containers {
+		for _, vm := range c.VolumeMounts {
+			if strings.HasPrefix(vm.MountPath, declarativeConfigMountPrefix) {
+				declVolumes[vm.Name] = true
+			}
+		}
+	}
+	for _, v := range dep.Spec.Template.Spec.Volumes {
+		if !declVolumes[v.Name] {
+			continue
+		}
+		if v.ConfigMap != nil {
+			configMaps = append(configMaps, v.ConfigMap.Name)
+		}
+		if v.Secret != nil {
+			secrets = append(secrets, v.Secret.SecretName)
+		}
+	}
+	return configMaps, secrets
 }
 
 func hasEnvVar(dep *appsv1.Deployment, name string) bool {

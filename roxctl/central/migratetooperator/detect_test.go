@@ -269,6 +269,41 @@ func TestDetectExposure(t *testing.T) {
 	}
 }
 
+func TestDetectDeclarativeConfig(t *testing.T) {
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "central"},
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name: "central",
+						VolumeMounts: []corev1.VolumeMount{
+							{Name: "my-cm", MountPath: "/run/stackrox.io/declarative-configuration/my-cm"},
+							{Name: "my-secret", MountPath: "/run/stackrox.io/declarative-configuration/my-secret"},
+							{Name: "other", MountPath: "/etc/other"},
+						},
+					}},
+					Volumes: []corev1.Volume{
+						{Name: "my-cm", VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "my-cm"}}}},
+						{Name: "my-secret", VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: "my-secret"}}},
+						{Name: "other", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
+					},
+				},
+			},
+		},
+	}
+	cms, secrets := detectDeclarativeConfig(dep)
+	assert.Equal(t, []string{"my-cm"}, cms)
+	assert.Equal(t, []string{"my-secret"}, secrets)
+}
+
+func TestDetectDeclarativeConfig_None(t *testing.T) {
+	dep := makeCentralDeployment(nil)
+	cms, secrets := detectDeclarativeConfig(dep)
+	assert.Empty(t, cms)
+	assert.Empty(t, secrets)
+}
+
 func defaultPVCVolume() []corev1.Volume {
 	return []corev1.Volume{{
 		Name:         "disk",
