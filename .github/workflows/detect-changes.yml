@@ -10,6 +10,8 @@ on:
         required: true
     outputs:
       matches:
+        # Consumed via contains(matches, 'label') — avoid label names
+        # where one is a substring of another (e.g., 'go' and 'go-ui').
         description: "space-separated string of matched filter labels"
         value: ${{ jobs.detect.outputs.matches }}
 
@@ -40,15 +42,20 @@ jobs:
             echo "^${regex}$"
           }
 
-          mapfile -t files < <(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')
+          all_keys=$(echo "${FILTERS}" | jq -r 'keys[]' | tr '\n' ' ')
+
+          if ! gh_output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
+            echo "::warning::GitHub API call failed, matching all filters" >&2
+            echo "matches=${all_keys}" | tee -a "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          mapfile -t files <<< "${gh_output}"
           echo "Changed files (${#files[@]}):" >&2
           printf '  %s\n' "${files[@]}" >&2
 
-          # GitHub API caps at 3000 files per PR. If we hit that,
-          # assume everything changed so no jobs are skipped.
           if [[ ${#files[@]} -ge 3000 ]]; then
             echo "::warning::PR has 3000+ changed files, matching all filters" >&2
-            all_keys=$(echo "${FILTERS}" | jq -r 'keys[]' | tr '\n' ' ')
             echo "matches=${all_keys}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
