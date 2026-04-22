@@ -28,7 +28,11 @@ runs:
     - name: Compare list of files changed with filters
       id: compare
       shell: bash
+      env:
+        FILTERS: ${{ inputs.filters }}
+        BASE: ${{ inputs.base }}
+        SHA: ${{ inputs.sha }}
       run: |
         set -eo pipefail
-        "${{ github.action_path }}/find-changes.sh" '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha }}' \
+        bash "${GITHUB_ACTION_PATH}/find-changes.sh" "${FILTERS}" "${BASE}" "${SHA}" \
           | tee -a "${GITHUB_OUTPUT}"
