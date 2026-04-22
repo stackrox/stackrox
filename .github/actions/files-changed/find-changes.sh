@@ -3,7 +3,9 @@
 set -eo pipefail
 shopt -s extglob
 
-declare -A filters="$1"
+# Collapse whitespace — declare -A fails with multi-line or trailing-space values.
+input="$(echo "$1" | tr '\n' ' ' | sed 's/  */ /g; s/ *$//')"
+declare -A filters="$input"
 base=${2:-$(git rev-parse origin/master)}
 sha=${3:-$(git rev-parse HEAD)}
 
