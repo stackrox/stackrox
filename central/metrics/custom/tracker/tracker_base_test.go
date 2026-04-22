@@ -769,8 +769,7 @@ func TestTrackerBase_Refresh(t *testing.T) {
 	tracker.setConfiguration(cfg)
 	g := tracker.getGatherer("test-id", cfg)
 	g.running.Store(false)
-	assert.True(t, g.lastGather.IsZero())
-	g.lastGather = time.Now()
+	assert.False(t, g.refreshing.Load())
 	tracker.Refresh()
-	assert.True(t, g.lastGather.IsZero())
+	assert.True(t, g.refreshing.Load())
 }
