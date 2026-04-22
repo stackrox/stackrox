@@ -34,10 +34,10 @@ jobs:
       with:
         filters: >
           (
-            ["go"]="*.go go.mod go.sum Makefile make/*"
-            ["ui"]="ui/*"
-            ["shell"]="scripts/* deploy/* *.sh"
-            ["openshift-ci"]=".openshift-ci/*"
+            ["go"]="**/*.go go.mod go.sum Makefile make/**"
+            ["ui"]="ui/**"
+            ["shell"]="scripts/** deploy/** **/*.sh"
+            ["openshift-ci"]=".openshift-ci/**"
           )
 
   go:

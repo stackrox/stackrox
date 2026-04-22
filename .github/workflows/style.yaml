@@ -36,11 +36,11 @@ jobs:
       with:
         filters: >
           (
-            ["go"]="*.go go.mod go.sum Makefile make/*"
-            ["ui"]="ui/*"
-            ["shell"]="scripts/* deploy/* *.sh"
-            ["gha"]=".github/*"
-            ["openshift-ci"]=".openshift-ci/*"
+            ["go"]="**/*.go go.mod go.sum Makefile make/**"
+            ["ui"]="ui/**"
+            ["shell"]="scripts/** deploy/** **/*.sh"
+            ["gha"]=".github/**"
+            ["openshift-ci"]=".openshift-ci/**"
             ["versions"]="COLLECTOR_VERSION FACT_VERSION SCANNER_VERSION"
           )
 

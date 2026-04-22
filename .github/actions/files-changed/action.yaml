@@ -1,14 +1,16 @@
 name: Match files changed
 description: >
   Compare files changed between base and head with named glob filters.
-  Each filter maps a label to one or more space-separated bash glob patterns.
+  Each filter maps a label to one or more space-separated pathspec patterns
+  using .gitignore-style glob semantics (** for recursive, * for single segment).
   Output is a space-separated string of matched labels.
 inputs:
   filters:
     description: >
-      Bash associative array of label=glob(s) pairs.
-      Example: ( ["ui"]="ui/*" ["go"]="*.go go.mod go.sum" ["gha"]=".github/*" )
-      Multiple globs per label are space-separated.
+      Bash associative array of label=pathspec(s) pairs.
+      Example: ( ["ui"]="ui/**" ["go"]="**/*.go go.mod go.sum" ["gha"]=".github/**" )
+      Multiple pathspecs per label are space-separated.
+      Uses .gitignore-style globs: * matches within a segment, ** matches across segments.
     required: true
   base:
     description: 'base sha to compare with'
@@ -34,5 +36,28 @@ runs:
         SHA: ${{ inputs.sha }}
       run: |
         set -eo pipefail
-        bash "${GITHUB_ACTION_PATH}/find-changes.sh" "${FILTERS}" "${BASE}" "${SHA}" \
-          | tee -a "${GITHUB_OUTPUT}"
+
+        input="$(echo "${FILTERS}" | tr '\n' ' ' | sed 's/  */ /g; s/ *$//')"
+        declare -A filters="${input}"
+
+        if [[ -z "${filters[*]}" ]]; then
+          echo "::error::No filters provided. Example: ( [\"ui\"]=\"ui/**\" [\"go\"]=\"**/*.go\" )" >&2
+          exit 1
+        fi
+
+        matched=()
+        for k in "${!filters[@]}"; do
+          read -ra pathspecs <<< "${filters[$k]}"
+          globs=()
+          for p in "${pathspecs[@]}"; do
+            globs+=(":(glob)${p}")
+          done
+          if [[ -n "$(git diff --name-only "${BASE}...${SHA}" -- "${globs[@]}")" ]]; then
+            echo "${k}: matched" >&2
+            matched+=("${k}")
+          else
+            echo "${k}: no match" >&2
+          fi
+        done
+
+        echo "matches=${matched[*]}" | tee -a "${GITHUB_OUTPUT}"
