@@ -180,8 +180,7 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 		}
 		return err
 	}
-
-	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), func(err error, _ time.Duration) {
+	notification := func(err error, _ time.Duration) {
 		if ctx.Err() != nil {
 			return
 		}
@@ -190,7 +189,8 @@ func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient senso
 			"VM relay failed: %v",
 			err,
 		)
-	})
+	}
+	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), notification)
 }
 
 func (c *Compliance) newVMRelayOperation() vmRelayOperation {
