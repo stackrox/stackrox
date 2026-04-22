@@ -84,6 +84,7 @@ jobs:
           install_components: "gke-gcloud-auth-plugin"
 
       - name: Wait for cluster and get kubeconfig
+        timeout-minutes: 10
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
@@ -119,7 +120,7 @@ jobs:
           github.event_name != 'pull_request' ||
           contains(github.event.pull_request.labels.*.name, 'ci-all-qa-tests') ||
           !github.event.pull_request.draft ||
-          matrix.test-group == 'testBAT'
+          matrix.test-group != 'testRest'
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -129,7 +130,9 @@ jobs:
           LOAD_BALANCER: lb
         run: |
           echo "Running test group: ${{ matrix.test-group }}"
-          make -C qa-tests-backend ${{ matrix.test-group }}
+          cd qa-tests-backend
+          make compile
+          ./gradlew ${{ matrix.test-group }}
 
       - name: Collect artifacts
         if: always()
