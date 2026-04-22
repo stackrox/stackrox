@@ -65,7 +65,7 @@ message Deployment {
   google.protobuf.Timestamp deleted = 36; // @gotags: search:"Deleted,hidden" hash:"ignore"
 
   // `state` indicates the current status of the deployment workload.
-  DeploymentState state = 37; // @gotags: search:"Deployment State";
+  DeploymentState state = 37; // @gotags: search:"Deployment State"
 }
 
 // Next tag: 13
@@ -305,5 +305,5 @@ message ListDeployment {
   // deleted. `nil` if the workload exists.
   google.protobuf.Timestamp deleted = 9;
   // `state` indicates the current status of the deployment workload.
-  DeploymentState state = 10; // @gotags: search:"Deployment State"
+  DeploymentState state = 10;
 }
