@@ -354,6 +354,9 @@ jobs:
         name: nvd
         path: .
 
+    - name: Test aggregate script (unit tests)
+      run: python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate_test.py
+
     - name: Build updater
       run: |
         echo "Building updater for pull request ${{ env.PR_NAME }}..."
@@ -374,6 +377,17 @@ jobs:
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
+
+    - name: Test aggregate script (e2e with real bundles)
+      run: |
+        python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py \
+          --backend local --bucket /tmp/test-bucket \
+          upload --local-dir bundles --version test
+        python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py \
+          --backend local --bucket /tmp/test-bucket \
+          aggregate --version test --output-dir /tmp/test-output
+        echo "Zip contents:"
+        unzip -l /tmp/test-output/vulnerabilities.zip
 
     # PR owner is responsible for verifying vulnerability bundles are generated
     - name: Upload PR vulnerabilities
