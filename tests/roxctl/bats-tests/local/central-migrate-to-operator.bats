@@ -212,6 +212,22 @@ generate_and_migrate() {
   assert_output "true"
 }
 
+# Offline mode
+
+@test "migrate-to-operator: --offline sets egress.connectivityPolicy=Offline" {
+  generate_and_migrate k8s pvc --offline
+  run yq e '.spec.egress.connectivityPolicy' "$cr_out"
+  assert_success
+  assert_output "Offline"
+}
+
+@test "migrate-to-operator: default has no egress section" {
+  generate_and_migrate k8s pvc
+  run yq e '.spec.egress' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
 # Error cases
 
 @test "migrate-to-operator: fails without --from-dir or --namespace" {

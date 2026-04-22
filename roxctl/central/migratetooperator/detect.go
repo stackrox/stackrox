@@ -32,9 +32,10 @@ type exposureConfig struct {
 }
 
 type detectedConfig struct {
-	Storage    storageConfig
-	Monitoring monitoringConfig
-	Exposure   exposureConfig
+	Storage     storageConfig
+	Monitoring  monitoringConfig
+	Exposure    exposureConfig
+	OfflineMode bool
 }
 
 func detect(src source) (*detectedConfig, error) {
@@ -42,15 +43,21 @@ func detect(src source) (*detectedConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	monitoring, err := detectMonitoring(src)
+	centralDep, err := src.CentralDeployment()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "retrieving central Deployment")
 	}
 	exposure, err := detectExposure(src)
 	if err != nil {
 		return nil, err
 	}
-	return &detectedConfig{Storage: *storage, Monitoring: *monitoring, Exposure: *exposure}, nil
+
+	return &detectedConfig{
+		Storage:     *storage,
+		Monitoring:  detectMonitoring(centralDep),
+		Exposure:    *exposure,
+		OfflineMode: envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
+	}, nil
 }
 
 func detectStorage(src source) (*storageConfig, error) {
@@ -92,16 +99,12 @@ func detectStorage(src source) (*storageConfig, error) {
 	return cfg, nil
 }
 
-func detectMonitoring(src source) (*monitoringConfig, error) {
-	dep, err := src.CentralDeployment()
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving central Deployment")
-	}
+func detectMonitoring(dep *appsv1.Deployment) monitoringConfig {
 	isOpenShift := hasEnvVar(dep, "ROX_ENABLE_OPENSHIFT_AUTH")
-	return &monitoringConfig{
+	return monitoringConfig{
 		IsOpenShift:                isOpenShift,
 		OpenShiftMonitoringEnabled: isOpenShift && hasEnvVar(dep, "ROX_ENABLE_SECURE_METRICS"),
-	}, nil
+	}
 }
 
 func detectExposure(src source) (*exposureConfig, error) {
@@ -140,4 +143,15 @@ func hasEnvVar(dep *appsv1.Deployment, name string) bool {
 		}
 	}
 	return false
+}
+
+func envVarValue(dep *appsv1.Deployment, name string) string {
+	for _, c := range dep.Spec.Template.Spec.Containers {
+		for _, env := range c.Env {
+			if env.Name == name {
+				return env.Value
+			}
+		}
+	}
+	return ""
 }
