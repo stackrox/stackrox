@@ -519,9 +519,7 @@ const SystemConfigForm = ({
                                         values.privateConfig.decommissionedClusterRetention
                                             .ignoreClusterLabels
                                     }
-                                    hasAction
                                     handleChangeLabels={handleChangeLabels}
-                                    isValueRequired
                                 />
                             </FormGroup>
                         </GridItem>
