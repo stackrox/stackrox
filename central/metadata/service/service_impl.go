@@ -86,7 +86,7 @@ type defaultCertificateProvider struct{}
 
 func startPrimaryLeafCertWatcher() {
 	primaryLeafCertWatcherOnce.Do(func() {
-		certwatch.WatchCertDir(mtls.CertsPrefix, tlsconfig.LoadInternalCertificateFromDirectory, func(cert *tls.Certificate) {
+		certwatch.WatchCertDir("internal service", mtls.CertsPrefix, tlsconfig.LoadInternalCertificateFromDirectory, func(cert *tls.Certificate) {
 			if cert != nil {
 				watchedPrimaryLeafCert.Store(cert)
 			}
