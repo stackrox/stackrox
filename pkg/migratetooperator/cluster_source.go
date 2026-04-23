@@ -60,32 +60,32 @@ func (s *clusterSource) Deployment(name string) (*appsv1.Deployment, error) {
 	return dep, nil
 }
 
-func (s *clusterSource) Service(name string) (*corev1.Service, bool, error) {
+func (s *clusterSource) Service(name string) (*corev1.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	svc, err := s.typed.CoreV1().Services(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return nil, false, nil
+			return nil, nil
 		}
-		return nil, false, errors.Wrapf(err, "getting Service %q in namespace %q", name, s.namespace)
+		return nil, errors.Wrapf(err, "getting Service %q in namespace %q", name, s.namespace)
 	}
-	return svc, true, nil
+	return svc, nil
 }
 
-func (s *clusterSource) Secret(name string) (bool, error) {
+func (s *clusterSource) Secret(name string) (*corev1.Secret, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := s.typed.CoreV1().Secrets(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	secret, err := s.typed.CoreV1().Secrets(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return false, nil
+			return nil, nil
 		}
-		return false, errors.Wrapf(err, "getting Secret %q in namespace %q", name, s.namespace)
+		return nil, errors.Wrapf(err, "getting Secret %q in namespace %q", name, s.namespace)
 	}
-	return true, nil
+	return secret, nil
 }
 
 var routeGVR = schema.GroupVersionResource{Group: "route.openshift.io", Version: "v1", Resource: "routes"}

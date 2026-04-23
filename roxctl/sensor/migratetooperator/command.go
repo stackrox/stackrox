@@ -9,17 +9,15 @@ import (
 	"sigs.k8s.io/yaml"
 
 	migrate "github.com/stackrox/rox/pkg/migratetooperator"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 type command struct {
-	env         environment.Environment
-	fromDir     string
-	namespace   string
-	clusterName string
-	output      string
+	env       environment.Environment
+	fromDir   string
+	namespace string
+	output    string
 }
 
 // Command defines the sensor migrate-to-operator command.
@@ -38,10 +36,8 @@ seamlessly take over management of the deployment.`,
 	}
 	c.Flags().StringVar(&cmd.fromDir, "from-dir", "", "Path to directory containing sensor manifests.")
 	c.Flags().StringVarP(&cmd.namespace, "namespace", "n", "", "Kubernetes namespace of the running sensor deployment.")
-	c.Flags().StringVar(&cmd.clusterName, "cluster-name", "", "Name of the secured cluster (required).")
 	c.Flags().StringVarP(&cmd.output, "output", "o", "", "Path to write the generated SecuredCluster CR YAML (default: stdout).")
 	c.MarkFlagsMutuallyExclusive("from-dir", "namespace")
-	utils.Must(c.MarkFlagRequired("cluster-name"))
 	return c
 }
 
@@ -51,7 +47,7 @@ func (cmd *command) run() error {
 		return err
 	}
 
-	cr, warnings, err := migrate.TransformToSecuredCluster(src, cmd.clusterName)
+	cr, warnings, err := migrate.TransformToSecuredCluster(src)
 	if err != nil {
 		return errors.Wrap(err, "detecting configuration")
 	}
