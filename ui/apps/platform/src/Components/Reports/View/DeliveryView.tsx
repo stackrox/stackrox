@@ -27,6 +27,7 @@ function DeliveryView({
     horizontalTermWidthModifier,
     values,
 }: DeliveryViewProps): ReactElement {
+    /* eslint-disable react/no-array-index-key */
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <FlexItem>
@@ -48,8 +49,11 @@ function DeliveryView({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsLg' }}
                                 >
-                                    {values.notifiers.map((notifier) => (
-                                        <NotifierConfigurationDescriptionList notifier={notifier} />
+                                    {values.notifiers.map((notifier, index) => (
+                                        <NotifierConfigurationDescriptionList
+                                            key={index}
+                                            notifier={notifier}
+                                        />
                                     ))}
                                 </Flex>
                             )}
@@ -65,6 +69,7 @@ function DeliveryView({
             </FlexItem>
         </Flex>
     );
+    /* eslint-enable react/no-array-index-key */
 }
 
 export default DeliveryView;
