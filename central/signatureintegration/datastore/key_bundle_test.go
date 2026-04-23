@@ -61,8 +61,8 @@ func TestParseKeyBundle(t *testing.T) {
 			input:   `{"keys": [{"name": "bad-key", "pem": "not-a-pem"}]}`,
 			wantErr: "invalid PEM-encoded public key",
 		},
-		"wrong PEM type": {
-			input:   `{"keys": [{"name": "bad-key", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`, //nolint:gosec // G101: test data, not real credentials
+		"wrong PEM type": { //nolint:gosec // G101: test data, not real credentials
+			input: `{"keys": [{"name": "bad-key", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
 			wantErr: "invalid PEM-encoded public key",
 		},
 		"valid + invalid key rejects entire bundle": {
