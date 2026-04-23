@@ -410,17 +410,14 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*datastore.ControlResult{}, nil
 			},
 		},
-		// Exercises the happy path where a profile name matches a benchmark regex and
-		// GetControlsByRulesAndBenchmarks (mocked) returns controls. In production, whether
-		// controls are actually found depends on rule annotations containing a matching standard.
 		"profile matching benchmark regex resolves controls": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
 					{
-						Name:           "custom-stig",
-						ProfileVersion: "1.0.0",
-						OperatorKind:   storage.ComplianceOperatorProfileV2_TAILORED_PROFILE,
+						Name:           "ocp4-cis",
+						ProfileVersion: "1.4.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 					},
 				}, nil
 			},
