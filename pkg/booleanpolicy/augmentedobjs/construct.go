@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -28,6 +29,9 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
 func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
+	// Filter before both ConstructDeployment and findMatchingContainerIdxForProcess
+	// so the index lookup matches the filtered container list.
+	deployment, images = filterInitContainers(deployment, images)
 	obj, err := ConstructDeployment(deployment, images, applied)
 	if err != nil {
 		return nil, err
@@ -217,6 +221,7 @@ func ConstructDeploymentWithNetworkFlowInfo(
 // It assumes that the given images are in the same order as the containers specified within the given deployment.
 // If there's a mismatch in the amount of containers on the deployment and the given images, an error will be returned.
 func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, error) {
+	deployment, images = filterInitContainers(deployment, images)
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
 		return nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
@@ -261,6 +266,28 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	}
 
 	return obj, nil
+}
+
+// filterInitContainers returns a filtered deployment and image slice with init containers removed.
+// Temporary for 4.11 tech preview — remove in 5.0 when policy UX supports init containers.
+func filterInitContainers(deployment *storage.Deployment, images []*storage.Image) (*storage.Deployment, []*storage.Image) {
+	if !features.InitContainerSupport.Enabled() {
+		return deployment, images
+	}
+
+	filtered := deployment.CloneVT()
+	filtered.Containers = nil
+	var filteredImages []*storage.Image
+	for i, c := range deployment.GetContainers() {
+		if c.GetType() == storage.ContainerType_INIT {
+			continue
+		}
+		filtered.Containers = append(filtered.Containers, c)
+		if i < len(images) {
+			filteredImages = append(filteredImages, images[i])
+		}
+	}
+	return filtered, filteredImages
 }
 
 // ConstructImage constructs the augmented image object.
