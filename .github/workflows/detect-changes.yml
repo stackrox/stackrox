@@ -48,6 +48,15 @@ jobs:
 
           all_keys=$(echo "${FILTERS}" | jq -c 'to_entries | map({(.key): true}) | add')
 
+          if [[ -z "${PR_NUMBER}" ]]; then
+            echo "Not a PR, matching all filters" >&2
+            {
+              echo "any=true"
+              echo "changed=${all_keys}"
+            } | tee -a "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
           if ! gh_output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
             echo "::warning::GitHub API call failed, matching all filters" >&2
             {

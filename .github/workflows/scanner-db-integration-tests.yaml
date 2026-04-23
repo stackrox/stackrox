@@ -17,14 +17,13 @@ jobs:
   # Separate job so that dependent jobs are skipped entirely on
   # PRs where their component's files haven't changed.
   detect-changes:
-    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/detect-changes.yml
     with:
       filters: '{ "scanner": ["scanner/**", "go.mod", "go.sum"] }'
 
   db-integration-tests:
     needs: detect-changes
-    if: github.event_name == 'push' || needs.detect-changes.outputs.any
+    if: needs.detect-changes.outputs.any
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
