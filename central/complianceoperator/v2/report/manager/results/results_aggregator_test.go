@@ -365,7 +365,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*datastore.ControlResult{}, nil
 			},
 		},
-		"tailored profile has no control reference": {
+		"profile without benchmark mapping has no control reference": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
@@ -386,7 +386,31 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
 		},
-		"tailored profile matching benchmark regex resolves controls": {
+		"profile with benchmark but no matching controls has no control reference": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "ocp4-e8",
+						ProfileVersion: "1.0.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return []*datastore.ControlResult{}, nil
+			},
+		},
+		"profile matching benchmark regex resolves controls": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
