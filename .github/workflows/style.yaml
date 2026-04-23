@@ -352,10 +352,10 @@ jobs:
         run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: pycodestyle
-        run: make -C .openshift_ci style
+        run: make -C .openshift-ci style
 
       - name: Pylint
-        run: make -C .openshift_ci lint
+        run: make -C .openshift-ci lint
 
   slack-on-style-failure:
     env:

@@ -432,7 +432,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: OpenShift CI Wrapper Unit Tests
-        run: make -C .openshift_ci test
+        run: make -C .openshift-ci test
 
   # TODO: This is an integration test (Kind cluster, image pulls) — consider
   # moving to a separate workflow.
