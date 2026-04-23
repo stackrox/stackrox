@@ -141,7 +141,7 @@ make_artifacts_help() {
     local browser_job_url="$browser_url/$WORKFLOW_SUBDIR/$JOB_SUBDIR"
 
     local help_file
-    if is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI || is_GITHUB_ACTIONS; then
         require_environment "ARTIFACT_DIR"
         help_file="$ARTIFACT_DIR/howto-locate-other-artifacts-summary.html"
 
