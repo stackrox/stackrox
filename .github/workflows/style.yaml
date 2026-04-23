@@ -130,7 +130,9 @@ jobs:
       contains(needs.detect-changes.outputs.files, '.go$') ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '.sh$') ||
-      contains(needs.detect-changes.outputs.files, '^proto/')
+      contains(needs.detect-changes.outputs.files, '^proto/') ||
+      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
+      contains(needs.detect-changes.outputs.files, '^make/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

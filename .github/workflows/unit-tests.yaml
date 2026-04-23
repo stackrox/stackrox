@@ -120,7 +120,9 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '.go$') ||
       contains(needs.detect-changes.outputs.files, '^go.mod$') ||
-      contains(needs.detect-changes.outputs.files, '^go.sum$')
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
+      contains(needs.detect-changes.outputs.files, '^make/')
     strategy:
       fail-fast: false
       matrix:
@@ -202,7 +204,9 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '.go$') ||
       contains(needs.detect-changes.outputs.files, '^go.mod$') ||
-      contains(needs.detect-changes.outputs.files, '^go.sum$')
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
+      contains(needs.detect-changes.outputs.files, '^make/')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
