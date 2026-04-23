@@ -375,7 +375,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
 	}
 
-	if validImportRoot == "roxctl" || validImportRoot == "pkg" {
+	if validImportRoot == "pkg" {
 		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
 		if isTestFile {
 			allowedPackages = appendPackageWithChildren(allowedPackages, "tools/generate-helpers/pg-table-bindings")
