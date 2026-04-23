@@ -57,7 +57,7 @@ func TestDirSource_PVCInSubdir(t *testing.T) {
 	require.NoError(t, os.MkdirAll(centralDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(centralDir, "01-central-12-central-db.yaml"), []byte(pvcDeploymentYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDBDeployment()
@@ -72,7 +72,7 @@ func TestDirSource_PVCInRoot(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "deployment.yaml"), []byte(pvcDeploymentYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDBDeployment()
@@ -87,7 +87,7 @@ func TestDirSource_DeepNesting(t *testing.T) {
 	require.NoError(t, os.MkdirAll(nested, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(nested, "db.yaml"), []byte(pvcDeploymentYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDBDeployment()
@@ -99,7 +99,7 @@ func TestDirSource_HostPathWithNodeSelector(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "db.yaml"), []byte(hostPathDeploymentYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDBDeployment()
@@ -120,7 +120,7 @@ metadata:
 ` + pvcDeploymentYAML
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "bundle.yaml"), []byte(multiDocYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDBDeployment()
@@ -137,7 +137,7 @@ metadata:
 `
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "deployment.yaml"), []byte(otherYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	_, err = src.CentralDBDeployment()
@@ -149,7 +149,7 @@ func TestDirSource_YmlExtension(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "deployment.yml"), []byte(pvcDeploymentYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDBDeployment()
@@ -159,7 +159,7 @@ func TestDirSource_YmlExtension(t *testing.T) {
 
 func TestNewDirSource_NonexistentPath(t *testing.T) {
 	base := t.TempDir()
-	src, err := newDirSource(filepath.Join(base, "does-not-exist"))
+	src, err := NewDirSource(filepath.Join(base, "does-not-exist"))
 	require.Error(t, err)
 	assert.Nil(t, src)
 	assert.Contains(t, err.Error(), "accessing directory")
@@ -170,7 +170,7 @@ func TestNewDirSource_NonDirectoryPath(t *testing.T) {
 	filePath := filepath.Join(dir, "not-a-directory")
 	require.NoError(t, os.WriteFile(filePath, []byte("not a directory"), 0644))
 
-	src, err := newDirSource(filePath)
+	src, err := NewDirSource(filePath)
 	require.Error(t, err)
 	assert.Nil(t, src)
 	assert.Contains(t, err.Error(), "is not a directory")
@@ -180,7 +180,7 @@ func TestDirSource_CentralDeployment(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "central.yaml"), []byte(centralDeploymentYAML), 0644))
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	dep, err := src.CentralDeployment()
@@ -191,7 +191,7 @@ func TestDirSource_CentralDeployment(t *testing.T) {
 func TestDirSource_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 
-	src, err := newDirSource(dir)
+	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
 	_, err = src.CentralDBDeployment()
