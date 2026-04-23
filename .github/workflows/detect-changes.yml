@@ -14,8 +14,9 @@ on:
         value: ${{ jobs.detect.outputs.any }}
       changed:
         description: >
-          JSON object with true for each matched label, {} if none.
-          Use fromJSON(changed).label for exact key checks.
+          JSON object with true/false per filter key.
+          Jobs check: fromJSON(changed)[github.job] != false
+          Missing keys default to run (safe if filter is forgotten).
         value: ${{ jobs.detect.outputs.changed }}
 
 jobs:
@@ -79,7 +80,7 @@ jobs:
             exit 0
           fi
 
-          matched=()
+          declare -A results
           for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
             mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
             found=false
@@ -92,19 +93,15 @@ jobs:
                 fi
               done
             done
-            if $found; then
-              echo "${k}: matched" >&2
-              matched+=("${k}")
-            else
-              echo "${k}: no match" >&2
-            fi
+            results["$k"]=$found
+            echo "${k}: ${found}" >&2
           done
 
-          if [[ ${#matched[@]} -gt 0 ]]; then
-            result=$(printf '%s\n' "${matched[@]}" | jq -Rsc 'split("\n") | map(select(. != "")) | map({(.) : true}) | add')
-            echo "any=true" | tee -a "${GITHUB_OUTPUT}"
-          else
-            result='{}'
-            echo "any=" | tee -a "${GITHUB_OUTPUT}"
-          fi
+          result=$(for k in "${!results[@]}"; do echo "${k} ${results[$k]}"; done \
+            | jq -Rsc 'split("\n") | map(select(. != "")) | map(split(" ") | {(.[0]): (.[1] == "true")}) | add')
+          any=""
+          for v in "${results[@]}"; do
+            if $v; then any=true; break; fi
+          done
+          echo "any=${any}" | tee -a "${GITHUB_OUTPUT}"
           echo "changed=${result}" | tee -a "${GITHUB_OUTPUT}"
