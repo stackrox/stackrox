@@ -397,7 +397,6 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 }
 
 // GetVMCVEComponents returns components affected by a specific CVE on a specific VM.
-// TODO(ROX-34165): Simplify with a SQL view joining CVEs and components.
 func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMCVEComponentsRequest) (*v2.GetVMCVEComponentsResponse, error) {
 	if request.GetVmId() == "" || request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "vm_id and cve_id must be specified")
@@ -408,43 +407,26 @@ func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMC
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
 
-	// Get CVEs matching the CVE ID to find the associated component IDs.
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	componentIDSet := make(map[string]struct{}, len(cves))
-	cveByComponent := make(map[string]*v2.Advisory, len(cves))
-	fixedByComponent := make(map[string]string, len(cves))
-	for _, cve := range cves {
-		componentIDSet[cve.GetVmComponentId()] = struct{}{}
-		if cve.GetAdvisory() != nil {
-			cveByComponent[cve.GetVmComponentId()] = &v2.Advisory{
-				Name: cve.GetAdvisory().GetName(),
-				Link: cve.GetAdvisory().GetLink(),
-			}
-		}
-		fixedByComponent[cve.GetVmComponentId()] = cve.GetFixedBy()
-	}
-
-	componentIDs := make([]string, 0, len(componentIDSet))
-	for id := range componentIDSet {
-		componentIDs = append(componentIDs, id)
-	}
-	components, err := s.componentDS.GetBatch(ctx, componentIDs)
+	components, err := s.cveView.GetCVEComponents(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
 	rows := make([]*v2.VMCVEComponentRow, 0, len(components))
 	for _, comp := range components {
+		var advisory *v2.Advisory
+		if comp.GetAdvisoryName() != "" {
+			advisory = &v2.Advisory{
+				Name: comp.GetAdvisoryName(),
+				Link: comp.GetAdvisoryLink(),
+			}
+		}
 		rows = append(rows, &v2.VMCVEComponentRow{
-			ComponentName:    comp.GetName(),
-			ComponentVersion: comp.GetVersion(),
-			Source:           v2.SourceType(comp.GetSource()),
-			FixedBy:          fixedByComponent[comp.GetId()],
-			Advisory:         cveByComponent[comp.GetId()],
+			ComponentName:    comp.GetComponentName(),
+			ComponentVersion: comp.GetComponentVersion(),
+			Source:           v2.SourceType(comp.GetComponentSource()),
+			FixedBy:          comp.GetFixedBy(),
+			Advisory:         advisory,
 		})
 	}
 

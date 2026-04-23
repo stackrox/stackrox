@@ -168,6 +168,31 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string) *v1.Qu
 	return cloned
 }
 
+func (v *vmCVECoreViewImpl) GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error) {
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.Component).Proto(),
+		search.NewQuerySelect(search.ComponentVersion).Proto(),
+		search.NewQuerySelect(search.ComponentSource).Proto(),
+		search.NewQuerySelect(search.FixedBy).Proto(),
+		search.NewQuerySelect(search.AdvisoryName).Proto(),
+		search.NewQuerySelect(search.AdvisoryLink).Proto(),
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	var ret []CVEComponentCore
+	err := pgSearch.RunSelectRequestForSchemaFn[cveComponentResponse](queryCtx, v.db, v.schema, cloned, func(r *cveComponentResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 func (v *vmCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
 	var cveIDsToFilter []string
 
