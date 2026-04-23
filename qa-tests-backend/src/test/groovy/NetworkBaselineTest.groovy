@@ -472,8 +472,9 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaseline = evaluateWithRetry(30, 4) {
             def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            assert externalBaseline.totalAnomalous + externalBaseline.totalBaseline != 0 :
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
+            assert externalBaseline.totalBaseline >= 3 :
+                    "Expected at least 3 baseline peers for deployment ${deploymentUid}, " +
+                    "got ${externalBaseline.totalBaseline}. Baseline is ${externalBaseline}"
             return externalBaseline
         }
 
@@ -533,8 +534,10 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaselineAfter = evaluateWithRetry(30, 4) {
             def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            assert externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline != 0 :
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaselineAfter}"
+            assert externalBaselineAfter.totalAnomalous == 2 && externalBaselineAfter.totalBaseline == 1 :
+                    "Expected 2 anomalous + 1 baseline for deployment ${deploymentUid}, " +
+                    "got ${externalBaselineAfter.totalAnomalous} anomalous + " +
+                    "${externalBaselineAfter.totalBaseline} baseline. Baseline is ${externalBaselineAfter}"
             return externalBaselineAfter
         }
 
