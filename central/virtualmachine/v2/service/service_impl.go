@@ -119,8 +119,9 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 	items := make([]*v2.VMListItem, 0, len(vms))
 	for _, vm := range vms {
 		item := storagetov2.VirtualMachineV2ToListItem(vm)
-		item.CveSeverityCounts = severityByVM[vm.GetId()]
-		if item.CveSeverityCounts == nil {
+		if counts, ok := severityByVM[vm.GetId()]; ok {
+			item.CveSeverityCounts = counts
+		} else {
 			item.CveSeverityCounts = &v2.VulnCountBySeverity{}
 		}
 		item.ComponentScanCount = componentCountsByVM[vm.GetId()]
@@ -203,9 +204,8 @@ func (s *serviceImpl) GetVMDashboardCounts(ctx context.Context, request *v2.VMDa
 }
 
 // batchComponentScanCounts fetches all components for the given VM IDs in one query
-// and counts total vs scanned per VM in memory.
-// TODO(ROX-34084): Evaluate whether a SQL view with GROUP BY vm_v2_id would
-// be more efficient than in-memory aggregation for large result sets.
+// and counts total vs scanned per VM in memory. The component Notes field is not
+// search-indexed, so SQL-level aggregation of scanned vs unscanned is not possible.
 func (s *serviceImpl) batchComponentScanCounts(ctx context.Context, vmIDs []string) (map[string]*v2.ComponentScanCount, error) {
 	result := make(map[string]*v2.ComponentScanCount, len(vmIDs))
 	for _, id := range vmIDs {
