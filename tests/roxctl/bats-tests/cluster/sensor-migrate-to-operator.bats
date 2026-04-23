@@ -42,3 +42,51 @@ cleanup_cluster() {
   assert_output "$cluster_name"
   cleanup_cluster
 }
+
+@test "sensor migrate-to-operator: default central endpoint is omitted" {
+  generate_bundle_and_migrate
+  run yq e '.spec.centralEndpoint' "$cr_out"
+  assert_success
+  assert_output "null"
+  cleanup_cluster
+}
+
+@test "sensor migrate-to-operator: custom central endpoint" {
+  generate_bundle_and_migrate --central=my-central.example.com:443
+  run yq e '.spec.centralEndpoint' "$cr_out"
+  assert_success
+  assert_output "my-central.example.com:443"
+  cleanup_cluster
+}
+
+@test "sensor migrate-to-operator: enforcement disabled" {
+  generate_bundle_and_migrate --admission-controller-enforcement=false
+  run yq e '.spec.admissionControl.enforcement' "$cr_out"
+  assert_success
+  assert_output "Disabled"
+  cleanup_cluster
+}
+
+@test "sensor migrate-to-operator: failure policy fail" {
+  generate_bundle_and_migrate --admission-controller-fail-on-error
+  run yq e '.spec.admissionControl.failurePolicy' "$cr_out"
+  assert_success
+  assert_output "Fail"
+  cleanup_cluster
+}
+
+@test "sensor migrate-to-operator: collection none" {
+  generate_bundle_and_migrate --collection-method=none
+  run yq e '.spec.perNode.collector.collection' "$cr_out"
+  assert_success
+  assert_output "NoCollection"
+  cleanup_cluster
+}
+
+@test "sensor migrate-to-operator: tolerations disabled" {
+  generate_bundle_and_migrate --disable-tolerations
+  run yq e '.spec.perNode.taintToleration' "$cr_out"
+  assert_success
+  assert_output "AvoidTaints"
+  cleanup_cluster
+}
