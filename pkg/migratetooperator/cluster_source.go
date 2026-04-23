@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -102,4 +103,29 @@ func (s *clusterSource) Route(name string) (bool, error) {
 		return false, errors.Wrapf(err, "getting Route %q in namespace %q", name, s.namespace)
 	}
 	return true, nil
+}
+
+func (s *clusterSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	ds, err := s.typed.AppsV1().DaemonSets(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting DaemonSet %q in namespace %q", name, s.namespace)
+	}
+	return ds, nil
+}
+
+func (s *clusterSource) ValidatingWebhookConfiguration(name string) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	vwc, err := s.typed.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "getting ValidatingWebhookConfiguration %q", name)
+	}
+	return vwc, nil
 }

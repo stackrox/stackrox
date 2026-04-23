@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/pointers"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -13,10 +15,64 @@ import (
 // generates a SecuredCluster custom resource. It returns the CR and a list of
 // warnings for the caller to emit.
 func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, error) {
+	config, err := detectSecuredCluster(src)
+	if err != nil {
+		return nil, nil, err
+	}
+	cr, warnings := generateSecuredCluster(config)
+	return cr, warnings, nil
+}
+
+type securedClusterConfig struct {
+	clusterName         string
+	centralEndpoint     string
+	enforcementDisabled bool
+	failurePolicyFail   bool
+	collectionNone      bool
+	tolerationsDisabled bool
+	customImages        bool
+}
+
+func detectSecuredCluster(src Source) (*securedClusterConfig, error) {
 	clusterName, err := detectClusterName(src)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "detecting cluster name")
+		return nil, errors.Wrap(err, "detecting cluster name")
 	}
+
+	sensorDep, err := src.Deployment("sensor")
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving sensor Deployment")
+	}
+
+	centralEndpoint := envVarValue(sensorDep, "ROX_CENTRAL_ENDPOINT")
+
+	vwc, err := src.ValidatingWebhookConfiguration("stackrox")
+	if err != nil {
+		return nil, errors.Wrap(err, "checking for admission controller webhooks")
+	}
+	enforcementDisabled := !hasWebhook(vwc, "policyeval.stackrox.io")
+	failurePolicyFail := hasFailurePolicyFail(vwc)
+
+	collectorDS, err := src.DaemonSet("collector")
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving collector DaemonSet")
+	}
+	collectionNone := !hasContainer(collectorDS, "collector")
+	tolerationsDisabled := len(collectorDS.Spec.Template.Spec.Tolerations) == 0
+
+	return &securedClusterConfig{
+		clusterName:         clusterName,
+		centralEndpoint:     centralEndpoint,
+		enforcementDisabled: enforcementDisabled,
+		failurePolicyFail:   failurePolicyFail,
+		collectionNone:      collectionNone,
+		tolerationsDisabled: tolerationsDisabled,
+		customImages:        detectCustomImages(sensorDep),
+	}, nil
+}
+
+func generateSecuredCluster(config *securedClusterConfig) (*platform.SecuredCluster, []string) {
+	var warnings []string
 
 	cr := &platform.SecuredCluster{
 		TypeMeta: metav1.TypeMeta{
@@ -27,10 +83,55 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 			Name: "stackrox-secured-cluster-services",
 		},
 		Spec: platform.SecuredClusterSpec{
-			ClusterName: pointers.String(clusterName),
+			ClusterName: pointers.String(config.clusterName),
 		},
 	}
-	return cr, nil, nil
+
+	if config.centralEndpoint != "" && config.centralEndpoint != "central.stackrox:443" {
+		cr.Spec.CentralEndpoint = pointers.String(config.centralEndpoint)
+	}
+
+	if config.enforcementDisabled || config.failurePolicyFail {
+		ac := &platform.AdmissionControlComponentSpec{}
+		if config.enforcementDisabled {
+			ac.Enforcement = (*platform.PolicyEnforcement)(pointers.String(string(platform.PolicyEnforcementDisabled)))
+		}
+		if config.failurePolicyFail {
+			ac.FailurePolicy = (*platform.FailurePolicy)(pointers.String(string(platform.FailurePolicyFail)))
+		}
+		cr.Spec.AdmissionControl = ac
+	}
+
+	if config.collectionNone || config.tolerationsDisabled {
+		perNode := &platform.PerNodeSpec{}
+		if config.collectionNone {
+			perNode.Collector = &platform.CollectorContainerSpec{
+				Collection: (*platform.CollectionMethod)(pointers.String(string(platform.CollectionNone))),
+			}
+		}
+		if config.tolerationsDisabled {
+			perNode.TaintToleration = (*platform.TaintTolerationPolicy)(pointers.String(string(platform.TaintAvoid)))
+		}
+		cr.Spec.PerNode = perNode
+	}
+
+	if config.customImages {
+		warnings = append(warnings, "Detected non-default container images. "+
+			"The operator does not support image overrides in the SecuredCluster CR. "+
+			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
+	}
+
+	// TODO: The following options are stored as server-side cluster configuration
+	// in Central and are not reflected in the generated sensor manifests:
+	//   - --admission-controller-disable-bypass → spec.admissionControl.bypass
+	//   - --auto-lock-process-baselines → spec.processBaselines.autoLock
+	//   - --disable-audit-logs → spec.auditLogs.collection
+	// To detect these, the tool would need to query the Central API
+	// (e.g. GET /v1/clusters/<id>) to read the cluster's runtime configuration.
+	// This could be implemented for the --namespace (live cluster) mode by
+	// reading the cluster config from the API using the same credentials.
+
+	return cr, warnings
 }
 
 func detectClusterName(src Source) (string, error) {
@@ -52,4 +153,37 @@ func detectClusterName(src Source) (string, error) {
 		return "", errors.New("cluster name is empty in Secret \"helm-effective-cluster-name\"")
 	}
 	return name, nil
+}
+
+func hasWebhook(vwc *admissionv1.ValidatingWebhookConfiguration, name string) bool {
+	if vwc == nil {
+		return false
+	}
+	for _, wh := range vwc.Webhooks {
+		if wh.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasFailurePolicyFail(vwc *admissionv1.ValidatingWebhookConfiguration) bool {
+	if vwc == nil {
+		return false
+	}
+	for _, wh := range vwc.Webhooks {
+		if wh.FailurePolicy != nil && *wh.FailurePolicy == admissionv1.Fail {
+			return true
+		}
+	}
+	return false
+}
+
+func hasContainer(ds *appsv1.DaemonSet, name string) bool {
+	for _, c := range ds.Spec.Template.Spec.Containers {
+		if c.Name == name {
+			return true
+		}
+	}
+	return false
 }
