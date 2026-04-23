@@ -179,7 +179,10 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 						Categories:  []string(categories),
 					},
 					EnforcementAction: storage.EnforcementAction(enforcementAction.Int32),
-					EnforcementCount:  enforcementCount.Int32,
+				}
+
+				if storage.ViolationState(state.Int32) == storage.ViolationState_ACTIVE {
+					la.EnforcementCount = enforcementCount.Int32
 				}
 
 				if violationTime.Valid {
@@ -718,7 +721,10 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 						Categories:  []string(categories),
 					},
 					EnforcementAction: storage.EnforcementAction(enforcementAction.Int32),
-					EnforcementCount:  enforcementCount.Int32,
+				}
+
+				if storage.ViolationState(state.Int32) == storage.ViolationState_ACTIVE {
+					la.EnforcementCount = enforcementCount.Int32
 				}
 
 				if violationTime.Valid {
