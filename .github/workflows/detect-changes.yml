@@ -9,18 +9,19 @@ on:
         type: string
         required: true
     outputs:
-      unchanged:
+      changed:
         description: >
-          JSON object with true for jobs whose files are unchanged.
-          Jobs check: ! fromJSON(unchanged)[github.job]
-          Missing keys default to run (safe if filter is forgotten).
-        value: ${{ jobs.detect.outputs.unchanged }}
+          JSON object: true/false per filter key. Missing keys
+          evaluate as null which is != false, so jobs whose filter
+          key is missing will run (safe default on key drift).
+          Usage: fromJSON(changed)[github.job] != false
+        value: ${{ jobs.detect.outputs.changed }}
 
 jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      unchanged: ${{ steps.compare.outputs.unchanged }}
+      changed: ${{ steps.compare.outputs.changed }}
     steps:
       - name: Compare list of files changed with filters
         id: compare
@@ -43,15 +44,17 @@ jobs:
             echo "^${regex}$"
           }
 
+          all_true=$(echo "${FILTERS}" | jq -c 'to_entries | map({(.key): true}) | add')
+
           if [[ -z "${PR_NUMBER}" ]]; then
-            echo "Not a PR, nothing unchanged" >&2
-            echo "unchanged={}" | tee -a "${GITHUB_OUTPUT}"
+            echo "Not a PR, all changed" >&2
+            echo "changed=${all_true}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
           if ! gh_output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
-            echo "::warning::GitHub API call failed, nothing unchanged" >&2
-            echo "unchanged={}" | tee -a "${GITHUB_OUTPUT}"
+            echo "::warning::GitHub API call failed, assuming all changed" >&2
+            echo "changed=${all_true}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -60,12 +63,12 @@ jobs:
           printf '  %s\n' "${files[@]}" >&2
 
           if [[ ${#files[@]} -ge 3000 ]]; then
-            echo "::warning::PR has 3000+ changed files, nothing unchanged" >&2
-            echo "unchanged={}" | tee -a "${GITHUB_OUTPUT}"
+            echo "::warning::PR has 3000+ changed files, assuming all changed" >&2
+            echo "changed=${all_true}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
-          unchanged=()
+          declare -A results
           for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
             mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
             found=false
@@ -78,17 +81,10 @@ jobs:
                 fi
               done
             done
-            if $found; then
-              echo "${k}: changed" >&2
-            else
-              echo "${k}: unchanged" >&2
-              unchanged+=("${k}")
-            fi
+            results["$k"]=$found
+            echo "${k}: ${found}" >&2
           done
 
-          if [[ ${#unchanged[@]} -gt 0 ]]; then
-            result=$(printf '%s\n' "${unchanged[@]}" | jq -Rsc 'split("\n") | map(select(. != "")) | map({(.): true}) | add')
-          else
-            result='{}'
-          fi
-          echo "unchanged=${result}" | tee -a "${GITHUB_OUTPUT}"
+          result=$(for k in "${!results[@]}"; do echo "${k} ${results[$k]}"; done \
+            | jq -Rsc 'split("\n") | map(select(. != "")) | map(split(" ") | {(.[0]): (.[1] == "true")}) | add')
+          echo "changed=${result}" | tee -a "${GITHUB_OUTPUT}"
