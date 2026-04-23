@@ -55,6 +55,7 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         integration.cosign.publicKeysList.every { it.name && it.publicKeyPemEnc }
     }
 
+    @Tag("BAT")
     def "Watcher picks up key bundle file written to Central pod"() {
         given:
         "A key bundle JSON with two test keys"
@@ -96,6 +97,7 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
                 ["sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json"] as String[])
     }
 
+    @Tag("BAT")
     def "Updater downloads key bundle from remote HTTP server"() {
         given:
         "An nginx pod serving a key bundle JSON in the stackrox namespace"
