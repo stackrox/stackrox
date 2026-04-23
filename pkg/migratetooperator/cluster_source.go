@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,6 +24,7 @@ type clusterSource struct {
 	namespace string
 }
 
+// NewClusterSource creates a Source that reads resources from a live Kubernetes cluster.
 func NewClusterSource(namespace string) (*clusterSource, error) {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	if err != nil {
@@ -47,47 +49,57 @@ func NewClusterSource(namespace string) (*clusterSource, error) {
 	return &clusterSource{typed: typedClient, dynamic: dynamicClient, namespace: namespace}, nil
 }
 
-func (s *clusterSource) CentralDeployment() (*appsv1.Deployment, error) {
-	return s.getDeployment("central")
-}
-
-func (s *clusterSource) CentralDBDeployment() (*appsv1.Deployment, error) {
-	return s.getDeployment("central-db")
-}
-
-func (s *clusterSource) getDeployment(name string) (*appsv1.Deployment, error) {
+func (s *clusterSource) Deployment(name string) (*appsv1.Deployment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	dep, err := s.typed.AppsV1().Deployments(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting %s Deployment in namespace %q", name, s.namespace)
+		return nil, errors.Wrapf(err, "getting Deployment %q in namespace %q", name, s.namespace)
 	}
 	return dep, nil
 }
 
-var kindToGVR = map[string]schema.GroupVersionResource{
-	"Service": {Group: "", Version: "v1", Resource: "services"},
-	"Secret":  {Group: "", Version: "v1", Resource: "secrets"},
-	"Route":   {Group: "route.openshift.io", Version: "v1", Resource: "routes"},
-}
-
-func (s *clusterSource) ResourceByKindAndName(kind, name string) (bool, map[string]interface{}, error) {
-	gvr, ok := kindToGVR[kind]
-	if !ok {
-		return false, nil, errors.Errorf("unsupported resource kind %q", kind)
-	}
-
+func (s *clusterSource) Service(name string) (*corev1.Service, bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	obj, err := s.dynamic.Resource(gvr).Namespace(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	svc, err := s.typed.CoreV1().Services(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return false, nil, nil
+			return nil, false, nil
 		}
-		return false, nil, errors.Wrapf(err, "getting %s %q in namespace %q", kind, name, s.namespace)
+		return nil, false, errors.Wrapf(err, "getting Service %q in namespace %q", name, s.namespace)
 	}
+	return svc, true, nil
+}
 
-	return true, obj.Object, nil
+func (s *clusterSource) Secret(name string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := s.typed.CoreV1().Secrets(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "getting Secret %q in namespace %q", name, s.namespace)
+	}
+	return true, nil
+}
+
+var routeGVR = schema.GroupVersionResource{Group: "route.openshift.io", Version: "v1", Resource: "routes"}
+
+func (s *clusterSource) Route(name string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := s.dynamic.Resource(routeGVR).Namespace(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "getting Route %q in namespace %q", name, s.namespace)
+	}
+	return true, nil
 }

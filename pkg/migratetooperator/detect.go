@@ -51,7 +51,7 @@ func detect(src Source) (*detectedConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	centralDep, err := src.CentralDeployment()
+	centralDep, err := src.Deployment("central")
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving central Deployment")
 	}
@@ -61,7 +61,7 @@ func detect(src Source) (*detectedConfig, error) {
 	}
 
 	var defaultTLSSecretName string
-	if found, _, tlsErr := src.ResourceByKindAndName("Secret", "central-default-tls-cert"); tlsErr != nil {
+	if found, tlsErr := src.Secret("central-default-tls-cert"); tlsErr != nil {
 		return nil, errors.Wrap(tlsErr, "checking for default TLS cert Secret")
 	} else if found {
 		defaultTLSSecretName = "central-default-tls-cert"
@@ -84,7 +84,7 @@ func detect(src Source) (*detectedConfig, error) {
 }
 
 func detectStorage(src Source) (*storageConfig, error) {
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving central-db Deployment")
 	}
@@ -133,22 +133,20 @@ func detectMonitoring(dep *appsv1.Deployment) monitoringConfig {
 func detectExposure(src Source) (*exposureConfig, error) {
 	cfg := &exposureConfig{}
 
-	found, data, err := src.ResourceByKindAndName("Service", "central-loadbalancer")
+	svc, found, err := src.Service("central-loadbalancer")
 	if err != nil {
 		return nil, errors.Wrap(err, "checking for central-loadbalancer Service")
 	}
 	if found {
-		spec, _ := data["spec"].(map[string]interface{})
-		svcType, _ := spec["type"].(string)
-		switch svcType {
-		case "LoadBalancer":
+		switch svc.Spec.Type {
+		case corev1.ServiceTypeLoadBalancer:
 			cfg.LoadBalancerEnabled = true
-		case "NodePort":
+		case corev1.ServiceTypeNodePort:
 			cfg.NodePortEnabled = true
 		}
 	}
 
-	routeFound, _, err := src.ResourceByKindAndName("Route", "central")
+	routeFound, err := src.Route("central")
 	if err != nil {
 		return nil, errors.Wrap(err, "checking for central Route")
 	}
