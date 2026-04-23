@@ -5,6 +5,8 @@ on:
       filters:
         description: >
           JSON object mapping labels to arrays of pathspec patterns.
+          Keys must be valid GHA expression identifiers (a-z, 0-9, _)
+          since they are accessed via fromJSON(changed).key.
           Example: { "ui": ["ui/**"], "go": ["**/*.go", "go.mod"] }
         type: string
         required: true

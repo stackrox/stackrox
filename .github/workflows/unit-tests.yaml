@@ -28,7 +28,7 @@ jobs:
           "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
           "ui": ["ui/**"],
           "shell": ["scripts/**", "deploy/**", "**/*.sh"],
-          "openshift-ci": [".openshift-ci/**"]
+          "openshift_ci": [".openshift_ci/**"]
         }
 
   go:
@@ -415,9 +415,9 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'shell-test-output'
 
-  openshift-ci-unit-tests:
+  openshift_ci-unit-tests:
     needs: detect-changes
-    if: github.event_name == 'push' || fromJSON(needs.detect-changes.outputs.changed).openshift-ci
+    if: github.event_name == 'push' || fromJSON(needs.detect-changes.outputs.changed).openshift_ci
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -433,7 +433,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: OpenShift CI Wrapper Unit Tests
-        run: make -C .openshift-ci test
+        run: make -C .openshift_ci test
 
   # TODO: This is an integration test (Kind cluster, image pulls) — consider
   # moving to a separate workflow.
@@ -538,7 +538,7 @@ jobs:
       - go-bench
       - go-postgres
       - local-roxctl-tests
-      - openshift-ci-unit-tests
+      - openshift_ci-unit-tests
       - sensor-integration-tests
       - shell-unit-tests
       - ui

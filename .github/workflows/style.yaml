@@ -31,7 +31,7 @@ jobs:
           "ui": ["ui/**"],
           "shell": ["scripts/**", "deploy/**", "**/*.sh"],
           "gha": [".github/**"],
-          "openshift-ci": [".openshift-ci/**"],
+          "openshift_ci": [".openshift_ci/**"],
           "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
         }
 
@@ -172,7 +172,7 @@ jobs:
 
       - name: Install pycodestyle
         run: |
-          python3 -m pip install -r .openshift-ci/dev-requirements.txt
+          python3 -m pip install -r .openshift_ci/dev-requirements.txt
 
       - name: Verify tools
         run: |
@@ -337,9 +337,9 @@ jobs:
       - name: Check scripts with shellcheck
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
-  openshift-ci-lint:
+  openshift_ci-lint:
     needs: detect-changes
-    if: github.event_name == 'push' || fromJSON(needs.detect-changes.outputs.changed).openshift-ci
+    if: github.event_name == 'push' || fromJSON(needs.detect-changes.outputs.changed).openshift_ci
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -353,13 +353,13 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Install Python linters
-        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
+        run: python3 -m pip install -r .openshift_ci/dev-requirements.txt
 
       - name: pycodestyle
-        run: make -C .openshift-ci style
+        run: make -C .openshift_ci style
 
       - name: Pylint
-        run: make -C .openshift-ci lint
+        run: make -C .openshift_ci lint
 
   slack-on-style-failure:
     env:
@@ -381,7 +381,7 @@ jobs:
       - check-dependent-images-exist
       - github-actions-lint
       - github-actions-shellcheck
-      - openshift-ci-lint
+      - openshift_ci-lint
     permissions:
       actions: read
     steps:
