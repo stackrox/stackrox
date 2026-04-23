@@ -1395,15 +1395,6 @@
           "type": "string",
           "format": "date-time"
         },
-        "includeNvdCvss": {
-          "type": "boolean"
-        },
-        "includeEpssProbability": {
-          "type": "boolean"
-        },
-        "includeAdvisory": {
-          "type": "boolean"
-        },
         "query": {
           "type": "string",
           "title": "Filters related to image, cve etc for non-collection-based scopes"

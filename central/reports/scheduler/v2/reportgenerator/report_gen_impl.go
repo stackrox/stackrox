@@ -147,7 +147,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName(), req.ReportSnapshot)
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName())
 	if err != nil {
 		return err
 	}
