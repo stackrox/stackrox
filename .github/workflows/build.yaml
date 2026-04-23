@@ -153,7 +153,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
         with:
           node-version-file: ui/package.json
 
@@ -195,6 +195,11 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Create CLI stub files
+        if: |
+          !(needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli'))
         run: |
           cat > stub.txt << 'EOF'
           This is a placeholder file. CLI binaries were not built for this PR build.
@@ -382,7 +387,7 @@ jobs:
         cache: false
 
     - name: Set up Node.js
-      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
       with:
         node-version-file: ui/package.json
 
@@ -451,7 +456,8 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   build-and-push-main:
-    runs-on: ubuntu-latest
+    # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -530,7 +536,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
@@ -779,7 +785,7 @@ jobs:
         message-path: build-comment.md
 
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
@@ -857,7 +863,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable
