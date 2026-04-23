@@ -146,6 +146,9 @@ jobs:
           # Deploy StackRox (sets ROX_USERNAME, ROX_ADMIN_PASSWORD, etc.)
           config_part_1
 
+          # Mask the admin password in GitHub Actions logs
+          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+
           # Wait for cluster to be registered in Central
           echo "Waiting for cluster 'remote' to be registered in Central..."
           scripts/ci/cluster-registration-wait.sh remote stackrox 120
