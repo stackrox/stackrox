@@ -290,8 +290,16 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.SensitiveFileActivity.Enabled() {
 		activityChan := make(chan *sensorInternal.FileActivity)
 		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
-		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
+		var fsOpts []filesystemService.Option
+		if cfg.fileActivityServiceAuthFuncOverride != nil && cfg.localSensor {
+			fsOpts = append(fsOpts, filesystemService.WithAuthFuncOverride(cfg.fileActivityServiceAuthFuncOverride))
+		}
+		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan, fsOpts...)
 		apiServices = append(apiServices, fileSystemService)
+
+		if cfg.workloadManager != nil {
+			cfg.workloadManager.SetFileActivityChannel(activityChan)
+		}
 	}
 
 	if features.VirtualMachines.Enabled() {

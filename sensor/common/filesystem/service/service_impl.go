@@ -20,13 +20,26 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// Option function for the file activity service.
+type Option func(*serviceImpl)
+
+// WithAuthFuncOverride sets a custom auth function override.
+func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
+	return func(srv *serviceImpl) {
+		srv.authFuncOverride = overrideFn
+	}
+}
+
 // NewService creates a new streaming service with the fact agent. It should only be called once.
-func NewService(pipeline *pipeline.Pipeline, activityChan chan *sensorAPI.FileActivity) Service {
+func NewService(pipeline *pipeline.Pipeline, activityChan chan *sensorAPI.FileActivity, opts ...Option) Service {
 	srv := &serviceImpl{
 		pipeline:     pipeline,
 		activityChan: activityChan,
 		stoppers:     set.NewSet[concurrency.Stopper](),
 		stopping:     false,
+	}
+	for _, opt := range opts {
+		opt(srv)
 	}
 
 	return srv
@@ -34,11 +47,12 @@ func NewService(pipeline *pipeline.Pipeline, activityChan chan *sensorAPI.FileAc
 
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
-	pipeline     *pipeline.Pipeline
-	activityChan chan *sensorAPI.FileActivity
-	stoppers     set.Set[concurrency.Stopper]
-	stopperLock  sync.Mutex
-	stopping     bool
+	pipeline         *pipeline.Pipeline
+	activityChan     chan *sensorAPI.FileActivity
+	stoppers         set.Set[concurrency.Stopper]
+	stopperLock      sync.Mutex
+	stopping         bool
+	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
 func (s *serviceImpl) Stop() {
@@ -76,6 +90,9 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 }
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	if s.authFuncOverride != nil {
+		return s.authFuncOverride(ctx, fullMethodName)
+	}
 	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "file activity authorization for  %q", fullMethodName)
 }
 

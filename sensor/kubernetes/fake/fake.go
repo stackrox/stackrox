@@ -13,6 +13,7 @@ import (
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
+	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
@@ -162,6 +163,7 @@ type WorkloadManager struct {
 	networkManager       manager.Manager
 	vmIndexReportHandler index.Handler
 	vmStore              *vmStore.VirtualMachineStore
+	fileActivityChan     chan *sensorInternal.FileActivity
 
 	// VM readiness coordinator
 	vmPrerequisitesReady *vmReadiness
@@ -329,6 +331,11 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.processes = processPipeline
 	w.networkManager = networkManager
 	w.servicesInitialized.Signal()
+}
+
+// SetFileActivityChannel sets the channel for injecting file activity events into the pipeline
+func (w *WorkloadManager) SetFileActivityChannel(ch chan *sensorInternal.FileActivity) {
+	w.fileActivityChan = ch
 }
 
 // SetVMIndexReportHandler sets the handler that will accept VM index reports
@@ -534,6 +541,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	w.wg.Add(1)
 	go w.manageFlows(w.shutdownCtx)
+
+	if w.workload.FileActivityWorkload.ActivityInterval > 0 {
+		w.wg.Add(1)
+		go w.manageFileActivity(w.shutdownCtx)
+	}
 
 	// Start VirtualMachine/VirtualMachineInstance workload if configured.
 	// This unified workload handles both informer events AND index reports.
