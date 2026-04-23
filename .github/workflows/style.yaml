@@ -27,11 +27,7 @@ jobs:
       filters: |
         {
           "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
-          "ui": ["ui/**"],
-          "shell": ["scripts/**", "deploy/**", "**/*.sh"],
           "style": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**", "ui/**", "scripts/**", "deploy/**", "**/*.sh"],
-          "gha": [".github/**"],
-          "openshift_ci": [".openshift-ci/**"],
           "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
         }
 
@@ -306,7 +302,7 @@ jobs:
 
   github-actions-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).gha != false
+    if: fromJSON(needs.detect-changes.outputs.changed)['.github/**'] != false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -323,7 +319,7 @@ jobs:
 
   github-actions-shellcheck:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).gha != false
+    if: fromJSON(needs.detect-changes.outputs.changed)['.github/**'] != false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -335,7 +331,7 @@ jobs:
 
   openshift-ci-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).openshift_ci != false
+    if: fromJSON(needs.detect-changes.outputs.changed)['.openshift-ci/**'] != false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

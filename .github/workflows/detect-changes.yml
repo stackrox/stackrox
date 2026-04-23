@@ -1,31 +1,41 @@
 name: Detect changed files
 
-# Checks which files changed in a PR and reports per-filter results.
-# All filter keys default to true (changed) and are only set to false
-# after confirming no matching files changed. This means:
+# Auto-detects which directories, file extensions, and root files
+# changed in a PR. Output keys use gitignore-style patterns:
+#   "ui/**": true          — files changed under ui/
+#   "**/*.go": true        — .go files changed somewhere
+#   "go.mod": true         — root file changed
+#
+# Optional filters input adds composite keys for complex patterns:
+#   { "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**"] }
+#
+# All keys default to true. A key is set to false only when the PR
+# is confirmed to NOT contain matching changes. This means:
 #   - Push events (no PR): all true, every job runs.
 #   - API failure or 3000+ files: all true, every job runs.
-#   - Missing key (e.g. job renamed): null != false → true, job runs.
-# Jobs use: if: fromJSON(needs.detect-changes.outputs.changed).key != false
-# The != false is required so that missing keys (null) default to run.
+#   - Missing key: null != false → runs (safe default).
+#
+# Simple:  if: fromJSON(needs.detect-changes.outputs.changed)['ui/**'] != false
+# Complex: if: fromJSON(needs.detect-changes.outputs.changed).go != false
 
 on:
   workflow_call:
     inputs:
       filters:
         description: >
-          JSON object mapping labels to arrays of .gitignore-style
-          pathspec patterns (* = single segment, ** = recursive).
-          Labels are shared across jobs via fromJSON(changed).label.
-          Example: { "go": ["**/*.go", "go.mod"], "ui": ["ui/**"] }
+          Optional JSON object mapping composite labels to arrays of
+          pathspec patterns for complex multi-pattern checks.
+          Example: { "go": ["**/*.go", "go.mod", "Makefile", "make/**"] }
         type: string
-        required: true
+        required: false
+        default: '{}'
     outputs:
       changed:
         description: >
-          JSON object with true/false per filter key. Keys default
-          to true and are set to false only when confirmed unchanged.
-          Check with: fromJSON(changed).key != false
+          JSON object with true/false per key. Auto-generated keys
+          for directories, extensions, and root files, plus any
+          composite keys from filters input.
+          Check with: fromJSON(changed)['key'] != false
         value: ${{ jobs.detect.outputs.changed }}
 
 jobs:
@@ -34,7 +44,7 @@ jobs:
     outputs:
       changed: ${{ steps.compare.outputs.changed }}
     steps:
-      - name: Compare list of files changed with filters
+      - name: Detect changed files
         id: compare
         shell: bash
         env:
@@ -55,18 +65,15 @@ jobs:
             echo "^${regex}$"
           }
 
-          # Default: all keys true (assume changed, must run).
-          all_true=$(echo "${FILTERS}" | jq -c 'to_entries | map({(.key): true}) | add')
-
           if [[ -z "${PR_NUMBER}" ]]; then
-            echo "Not a PR, all changed" >&2
-            echo "changed=${all_true}" | tee -a "${GITHUB_OUTPUT}"
+            echo "Not a PR, reporting all changed" >&2
+            echo "changed={}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
           if ! gh_output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
-            echo "::warning::GitHub API call failed, assuming all changed" >&2
-            echo "changed=${all_true}" | tee -a "${GITHUB_OUTPUT}"
+            echo "::warning::GitHub API call failed, reporting all changed" >&2
+            echo "changed={}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -75,18 +82,30 @@ jobs:
           printf '  %s\n' "${files[@]}" >&2
 
           if [[ ${#files[@]} -ge 3000 ]]; then
-            echo "::warning::PR has 3000+ changed files, assuming all changed" >&2
-            echo "changed=${all_true}" | tee -a "${GITHUB_OUTPUT}"
+            echo "::warning::PR has 3000+ changed files, reporting all changed" >&2
+            echo "changed={}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
-          # Start with all true, set to false only when confirmed unchanged.
-          declare -A results
-          for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
-            results["$k"]=true
+          declare -A keys
+
+          # Auto-detect: directories, extensions, root files.
+          for f in "${files[@]}"; do
+            if [[ "$f" == */* ]]; then
+              keys["${f%%/*}/**"]=true
+            fi
+            if [[ "$f" == *.* ]]; then
+              keys["**/*.${f##*.}"]=true
+            fi
+            if [[ "$f" != */* ]]; then
+              keys["$f"]=true
+            fi
           done
 
+          # Composite filters: match each filter's patterns against
+          # changed files. Default true, set false only if no match.
           for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
+            keys["$k"]=true
             mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
             found=false
             for p in "${patterns[@]}"; do
@@ -99,11 +118,20 @@ jobs:
               done
             done
             if ! $found; then
-              results["$k"]=false
+              keys["$k"]=false
             fi
-            echo "${k}: ${results[$k]}" >&2
           done
 
-          result=$(for k in "${!results[@]}"; do echo "${k} ${results[$k]}"; done \
-            | jq -Rsc 'split("\n") | map(select(. != "")) | map(split(" ") | {(.[0]): (.[1] == "true")}) | add')
+          echo "Detected keys:" >&2
+          for k in $(echo "${!keys[@]}" | tr ' ' '\n' | sort); do
+            echo "  ${k}: ${keys[$k]}" >&2
+          done
+
+          result=$(for k in "${!keys[@]}"; do
+            if [[ "${keys[$k]}" == "true" ]]; then
+              echo "${k} true"
+            else
+              echo "${k} false"
+            fi
+          done | jq -Rsc 'split("\n") | map(select(. != "")) | map(split(" ") | {(.[0]): (.[1] == "true")}) | add // {}')
           echo "changed=${result}" | tee -a "${GITHUB_OUTPUT}"
