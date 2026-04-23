@@ -33,6 +33,8 @@
 - Central TLS cert loaders: `central/tlsconfig/tlsconfig.go` — `loadInternalCertificateFromFiles()`, `MaybeGetDefaultTLSCertificateFromDirectory()`
 - TLS challenge endpoint: `central/metadata/service/service_impl.go`
 - Cert issuance for Secured Clusters: `central/securedclustercertgen/certificates.go`
+- CentralHello cert bundle: `central/sensor/service/service_impl.go` — Central proactively issues certs and includes them in the CentralHello handshake message. Used by the CRS registration flow; typically ignored by Sensor during normal reconnects.
+- Legacy manual cert download (UI/API): `central/certgen/` — generates YAML files for users to `kubectl apply`
 - CA rotation logic: `operator/internal/central/carotation/rotation.go`
 - Operator TLS reconciliation: `operator/internal/central/extensions/reconcile_tls.go`
 - Sensor cert init (one-time copy at startup): `sensor/kubernetes/certinit/init_tls_certs.go`
@@ -68,6 +70,18 @@
 2. **Outbound client connections** (`clientconn.TLSConfig`) — reads leaf from disk per connection, trust pool from `mtls.CACert()`.
 3. **TLS challenge endpoint** (`central/metadata/service`) — reads primary leaf via `sync.Once`, issues secondary leaf via `sync.Once`, reads CA via `mtls.CACert()`.
 
+## Certificate management — who manages what
+
+- **Central side**: the Operator manages all TLS secrets, creates the CA,
+  issues leaf certs, renews them at half validity, and handles CA rotation.
+- **Secured Cluster side**: Sensor requests new certs from Central via the
+  cert refresh API and writes them to local Kubernetes secrets. During CA
+  rotation, Sensor and the Operator work together: Sensor writes both CAs
+  (learned from Central) into a CA bundle ConfigMap (`tls-ca-bundle`), and the
+  Operator watches it to update the `caBundle` field on the admission
+  controller's `ValidatingWebhookConfiguration`. This is why full CA rotation
+  requires the Operator on the Secured Cluster side.
+
 ## CA rotation
 
 - Operator-only feature (since 4.9). Phases: AddSecondary (year 3), PromoteSecondary (year 4), DeleteSecondary (year 5).
@@ -84,7 +98,7 @@
 
 - Can connect to a rotated Central (Sensor discovers new CA via TLSChallenge).
 - Cannot restart pods on CA change (no Operator).
-- Cannot update ValidatingWebhookConfiguration caBundle (main blocker for full Helm CA rotation).
+- Cannot update ValidatingWebhookConfiguration caBundle (no Operator to watch the CA bundle ConfigMap).
 
 ## TLS challenge endpoint (/v1/tls-challenge)
 
