@@ -543,13 +543,13 @@ arches:
     name: libacl
     evr: 2.2.53-3.el8
     sourcerpm: acl-2.2.53-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libarchive-3.3.3-6.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libarchive-3.3.3-7.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 347032
-    checksum: sha256:27ad5c21d4de008be6dcfd0e4264495ed568663057ce5a317ca1017b330d67e7
+    size: 347288
+    checksum: sha256:9fd3794306509d4382513e83a4997de402bf9bd330520e32e618b3adc838899b
     name: libarchive
-    evr: 3.3.3-6.el8_10
-    sourcerpm: libarchive-3.3.3-6.el8_10.src.rpm
+    evr: 3.3.3-7.el8_10
+    sourcerpm: libarchive-3.3.3-7.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libattr-2.4.48-3.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 27360
@@ -1513,12 +1513,12 @@ arches:
     checksum: sha256:b9f52264ad5dc5068e423d0c7f64717e76ba1b4eb68942e7e6124ca3149a72ac
     name: krb5
     evr: 1.18.2-32.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-6.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-7.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 6570714
-    checksum: sha256:411f2b5c7c8b0465e3d4c6dd1e91c6db56ed564f54ac3e100114cb9a86b0fcab
+    size: 6573792
+    checksum: sha256:f88f2c1dcd64f94d2363370026a7d7963cd4f51ed56c441a79bcad5b60d015f4
     name: libarchive
-    evr: 3.3.3-6.el8_10
+    evr: 3.3.3-7.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 208927
@@ -1916,10 +1916,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/aefdf41460558b8e65ccfe28dc88976061968b5f57e3b21723c1c50d089317e5-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/56b201c603294b27c1e779dbaec898b433d9c2702998867293d5e7f16a2f6e20-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 787301
-    checksum: sha256:aefdf41460558b8e65ccfe28dc88976061968b5f57e3b21723c1c50d089317e5
+    checksum: sha256:56b201c603294b27c1e779dbaec898b433d9c2702998867293d5e7f16a2f6e20
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-11.el8_10.ppc64le.rpm
@@ -2461,13 +2461,13 @@ arches:
     name: libacl
     evr: 2.2.53-3.el8
     sourcerpm: acl-2.2.53-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libarchive-3.3.3-6.el8_10.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libarchive-3.3.3-7.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 420752
-    checksum: sha256:3aa9daf34945b0133c7fd8d87965826b25e033025e4d48ffeb74dbb58df29287
+    size: 420916
+    checksum: sha256:7dbaf708f30d735d45353d730af4410cac01bfcf208f443922091cdc1123367c
     name: libarchive
-    evr: 3.3.3-6.el8_10
-    sourcerpm: libarchive-3.3.3-6.el8_10.src.rpm
+    evr: 3.3.3-7.el8_10
+    sourcerpm: libarchive-3.3.3-7.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libattr-2.4.48-3.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 28248
@@ -3438,12 +3438,12 @@ arches:
     checksum: sha256:b9f52264ad5dc5068e423d0c7f64717e76ba1b4eb68942e7e6124ca3149a72ac
     name: krb5
     evr: 1.18.2-32.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-6.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-7.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 6570714
-    checksum: sha256:411f2b5c7c8b0465e3d4c6dd1e91c6db56ed564f54ac3e100114cb9a86b0fcab
+    size: 6573792
+    checksum: sha256:f88f2c1dcd64f94d2363370026a7d7963cd4f51ed56c441a79bcad5b60d015f4
     name: libarchive
-    evr: 3.3.3-6.el8_10
+    evr: 3.3.3-7.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 208927
@@ -3847,10 +3847,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/025ab42a8347ae870a8605d27924f640a7f19820980e0565b15c2ffd927408da-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/84f3c00c25bcace0e4c673a9a80c51ceb1a9e935d26235d31b31fbbdd28fe47b-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 782667
-    checksum: sha256:025ab42a8347ae870a8605d27924f640a7f19820980e0565b15c2ffd927408da
+    checksum: sha256:84f3c00c25bcace0e4c673a9a80c51ceb1a9e935d26235d31b31fbbdd28fe47b
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-11.el8_10.s390x.rpm
@@ -4378,13 +4378,13 @@ arches:
     name: libacl
     evr: 2.2.53-3.el8
     sourcerpm: acl-2.2.53-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libarchive-3.3.3-6.el8_10.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libarchive-3.3.3-7.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 351552
-    checksum: sha256:49d820bd623c6eb8465d785b110c0989fd280bb598f46c0b511deed2a5746cf9
+    size: 351768
+    checksum: sha256:d4081ae94112a77781edab529c6ef55cdffaeae2d105b481965ff0bd12be6d70
     name: libarchive
-    evr: 3.3.3-6.el8_10
-    sourcerpm: libarchive-3.3.3-6.el8_10.src.rpm
+    evr: 3.3.3-7.el8_10
+    sourcerpm: libarchive-3.3.3-7.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libattr-2.4.48-3.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 27136
@@ -5575,12 +5575,12 @@ arches:
     checksum: sha256:b9f52264ad5dc5068e423d0c7f64717e76ba1b4eb68942e7e6124ca3149a72ac
     name: krb5
     evr: 1.18.2-32.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-6.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-7.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 6570714
-    checksum: sha256:411f2b5c7c8b0465e3d4c6dd1e91c6db56ed564f54ac3e100114cb9a86b0fcab
+    size: 6573792
+    checksum: sha256:f88f2c1dcd64f94d2363370026a7d7963cd4f51ed56c441a79bcad5b60d015f4
     name: libarchive
-    evr: 3.3.3-6.el8_10
+    evr: 3.3.3-7.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 208927
@@ -6134,10 +6134,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/99e4d5095f61fb2f1e2363c13a0d5a41413c43faaef42cef1fd482c0dea36634-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/1530f7a1bb8ab02e7af0a54e3e432a4da3140bf06abd8991baa632e5d860c85c-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 783474
-    checksum: sha256:99e4d5095f61fb2f1e2363c13a0d5a41413c43faaef42cef1fd482c0dea36634
+    checksum: sha256:1530f7a1bb8ab02e7af0a54e3e432a4da3140bf06abd8991baa632e5d860c85c
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-11.el8_10.x86_64.rpm
@@ -6679,13 +6679,13 @@ arches:
     name: libacl
     evr: 2.2.53-3.el8
     sourcerpm: acl-2.2.53-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libarchive-3.3.3-6.el8_10.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libarchive-3.3.3-7.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 367776
-    checksum: sha256:d9896589fde144ea8a2eb6e489862bdbd99a02489c2519f10428e029ff68dcb9
+    size: 367896
+    checksum: sha256:d3bd32a9639ad70826818df0ddb7fbdce47c42e2059049d045ef3602edc1f5f3
     name: libarchive
-    evr: 3.3.3-6.el8_10
-    sourcerpm: libarchive-3.3.3-6.el8_10.src.rpm
+    evr: 3.3.3-7.el8_10
+    sourcerpm: libarchive-3.3.3-7.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libattr-2.4.48-3.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 27572
@@ -7649,12 +7649,12 @@ arches:
     checksum: sha256:b9f52264ad5dc5068e423d0c7f64717e76ba1b4eb68942e7e6124ca3149a72ac
     name: krb5
     evr: 1.18.2-32.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-6.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libarchive-3.3.3-7.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 6570714
-    checksum: sha256:411f2b5c7c8b0465e3d4c6dd1e91c6db56ed564f54ac3e100114cb9a86b0fcab
+    size: 6573792
+    checksum: sha256:f88f2c1dcd64f94d2363370026a7d7963cd4f51ed56c441a79bcad5b60d015f4
     name: libarchive
-    evr: 3.3.3-6.el8_10
+    evr: 3.3.3-7.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 208927
@@ -8052,7 +8052,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/65cbfdc2d801225c0da00bb7dfcf877045d01dd7444a902991f1bd53fbd09112-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/d074834729cf127d3162b833a5f63aa9bec94c0dc9a7e933181ca87af9ca0424-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 809528
-    checksum: sha256:65cbfdc2d801225c0da00bb7dfcf877045d01dd7444a902991f1bd53fbd09112
+    checksum: sha256:d074834729cf127d3162b833a5f63aa9bec94c0dc9a7e933181ca87af9ca0424
