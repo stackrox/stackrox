@@ -23,6 +23,12 @@ jobs:
     uses: ./.github/workflows/detect-changes.yml
 
   check-generated-files:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -118,6 +124,15 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^ui/') ||
+      contains(needs.detect-changes.outputs.files, '.sh$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/') ||
+      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
+      contains(needs.detect-changes.outputs.files, '^make/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -181,6 +196,12 @@ jobs:
         run: make style-slim
 
   golangci-lint:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$')
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
