@@ -15,9 +15,6 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
-	relaymetrics "github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,8 +38,6 @@ const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
 	// Compliance handles exactly one node, so a single constant suffices.
 	nodeResourceID = "this-node"
-
-	vmRelayRetryRateLimitKey = "vm-relay-retry"
 )
 
 // Compliance represents the Compliance app
@@ -54,24 +49,17 @@ type Compliance struct {
 	umhNodeIndex       node.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
-
-	vmRelayOperation      vmRelayOperation
-	vmRelayBackOffFactory func() backoff.BackOff
 }
-
-type vmRelayOperation func(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
 	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider:      nnp,
-		nodeScanner:           scanner,
-		nodeIndexer:           nodeIndexer,
-		umhNodeInventory:      umhNodeInv,
-		umhNodeIndex:          umhNodeIndex,
-		vmRelayOperation:      defaultVMRelayOperation,
-		vmRelayBackOffFactory: defaultVMRelayBackOff,
+		nodeNameProvider: nnp,
+		nodeScanner:      scanner,
+		nodeIndexer:      nodeIndexer,
+		umhNodeInventory: umhNodeInv,
+		umhNodeIndex:     umhNodeIndex,
 	}
 }
 
@@ -150,7 +138,7 @@ func (c *Compliance) Start() {
 		log.Infof("Virtual machine relay enabled")
 
 		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-		err := c.runVMRelayWithRetry(ctx, sensorClient)
+		err := relay.RunWithRetry(ctx, sensorClient)
 		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 			log.Errorf("Error running virtual machine relay: %v", err)
 		}
@@ -169,69 +157,6 @@ func (c *Compliance) Start() {
 
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
-}
-
-// runVMRelayWithRetry retries the VM relay operation with exponential backoff.
-// The primary retry target is vsock listener bind failures (e.g. KubeVirt not yet installed).
-// Once the listener is up and relay.Run enters its long-lived accept/send loop, that loop only
-// exits on context cancellation, which is treated as a permanent (non-retryable) error.
-func (c *Compliance) runVMRelayWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	operation := func() error {
-		err := c.newVMRelayOperation()(ctx, sensorClient)
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return backoff.Permanent(err)
-		}
-		return err
-	}
-	notification := func(err error, _ time.Duration) {
-		relaymetrics.RetryAttempts.Inc()
-		if ctx.Err() != nil {
-			return
-		}
-		logging.GetRateLimitedLogger().WarnL(
-			vmRelayRetryRateLimitKey,
-			"VM relay failed: %v",
-			err,
-		)
-	}
-	return backoff.RetryNotify(operation, backoff.WithContext(c.newVMRelayBackOff(), ctx), notification)
-}
-
-func (c *Compliance) newVMRelayOperation() vmRelayOperation {
-	if c.vmRelayOperation != nil {
-		return c.vmRelayOperation
-	}
-	return defaultVMRelayOperation
-}
-
-func (c *Compliance) newVMRelayBackOff() backoff.BackOff {
-	if c.vmRelayBackOffFactory != nil {
-		return c.vmRelayBackOffFactory()
-	}
-	return defaultVMRelayBackOff()
-}
-
-// defaultVMRelayBackOff returns an exponential backoff that retries indefinitely (MaxElapsedTime=0)
-// until the parent context is cancelled at shutdown. The interval is capped at 5 minutes.
-func defaultVMRelayBackOff() backoff.BackOff {
-	eb := backoff.NewExponentialBackOff()
-	eb.MaxInterval = 5 * time.Minute
-	eb.MaxElapsedTime = 0
-	return eb
-}
-
-func defaultVMRelayOperation(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	reportStream, err := stream.New()
-	if err != nil {
-		return err
-	}
-
-	reportSender := sender.New(sensorClient)
-	vmRelay := relay.New(reportStream, reportSender)
-	return vmRelay.Run(ctx)
 }
 
 func (c *Compliance) createIndexMsg(report *v4.IndexReport, nodeName string) *sensor.MsgFromCompliance {

@@ -226,19 +226,28 @@ func validateReportedVsockCID(vmReport *v1.VMReport, connVsockCID uint32) error 
 	return nil
 }
 
-func (p *VsockIndexReportStream) stop() {
+// Close stops the listener and releases associated resources. It is safe to
+// call multiple times. Normal shutdown goes through context cancellation (which
+// calls Close internally); this method exists for explicit cleanup when context
+// plumbing is unavailable, e.g. between retries.
+func (p *VsockIndexReportStream) Close() error {
 	p.listenerMu.Lock()
 	defer p.listenerMu.Unlock()
 
 	if p.listener == nil {
-		return
+		return nil
 	}
 
+	err := p.listener.Close()
+	p.listener = nil
+	return err
+}
+
+func (p *VsockIndexReportStream) stop() {
 	log.Info("Stopping index report stream")
-	if err := p.listener.Close(); err != nil {
+	if err := p.Close(); err != nil {
 		log.Errorf("Error closing listener: %v", err)
 	}
-	p.listener = nil
 }
 
 func (p *VsockIndexReportStream) acquireSemaphore(parentCtx context.Context) error {
