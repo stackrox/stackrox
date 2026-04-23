@@ -1,7 +1,6 @@
 {
-	"image":"quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3",
-	"containerEnv":{
-		"CI":"true"
+	"build":{
+		"dockerfile":"Dockerfile"
 	},
 	"remoteEnv":{
 		"PATH":"${containerEnv:PATH}:/workspaces/stackrox/.gotools/bin/"
@@ -9,8 +8,14 @@
 	"forwardPorts":[
 		"db:5432"
 	],
-	"postCreateCommand":"git config --global --add safe.directory /workspaces/stackrox && make dev deps",
+	"postCreateCommand":"git config --global --add safe.directory /workspaces/stackrox && claude mcp add -s user --transport http atlassian https://mcp.atlassian.com/v1/mcp && make dev deps",
 	"customizations":{
+		"paude":{
+			"create":{
+				"allowed-domains":["default","golang","nodejs","redhat.atlassian.net","mcp.atlassian.com","cf.mcp.atlassian.com"]
+			},
+			"secretEnv": ["JIRA_API_TOKEN"]
+		},
 		"vscode":{
 			"extensions":[
 				"golang.go",
