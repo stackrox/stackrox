@@ -47,7 +47,7 @@ func (cmd *command) run() error {
 		return err
 	}
 
-	cr, warnings, err := migrate.Transform(src)
+	cr, warnings, err := migrate.TransformToCentral(src)
 	if err != nil {
 		return errors.Wrap(err, "detecting configuration")
 	}

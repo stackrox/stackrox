@@ -46,7 +46,7 @@ type detectedConfig struct {
 	CustomImages          bool
 }
 
-func detect(src Source) (*detectedConfig, error) {
+func detectCentral(src Source) (*detectedConfig, error) {
 	storage, err := detectStorage(src)
 	if err != nil {
 		return nil, err

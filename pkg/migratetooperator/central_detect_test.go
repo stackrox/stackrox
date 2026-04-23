@@ -135,7 +135,7 @@ func TestDetectStorage(t *testing.T) {
 			src := &fakeSource{deployments: map[string]*appsv1.Deployment{
 				"central-db": makeCentralDBDeployment(tt.volumes, tt.nodeSelector),
 			}}
-			config, err := detect(src)
+			config, err := detectCentral(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, config.Storage)
 		})
@@ -165,7 +165,7 @@ func TestDetectStorageErrors(t *testing.T) {
 			src := &fakeSource{deployments: map[string]*appsv1.Deployment{
 				"central-db": makeCentralDBDeployment(tt.volumes, nil),
 			}}
-			_, err := detect(src)
+			_, err := detectCentral(src)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.errMsg)
 		})
@@ -207,7 +207,7 @@ func TestDetectMonitoring(t *testing.T) {
 			src := &fakeSource{deployments: map[string]*appsv1.Deployment{
 				"central": makeCentralDeployment(tt.envVars),
 			}}
-			config, err := detect(src)
+			config, err := detectCentral(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectIsOpenShift, config.Monitoring.IsOpenShift)
 			assert.Equal(t, tt.expectMonitoring, config.Monitoring.OpenShiftMonitoringEnabled)
@@ -253,7 +253,7 @@ func TestDetectExposure(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			src := &fakeSource{services: tt.services, routes: tt.routes}
-			config, err := detect(src)
+			config, err := detectCentral(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedLB, config.Exposure.LoadBalancerEnabled)
 			assert.Equal(t, tt.expectedNP, config.Exposure.NodePortEnabled)
