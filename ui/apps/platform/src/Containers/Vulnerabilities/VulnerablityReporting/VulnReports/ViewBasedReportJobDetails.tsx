@@ -11,8 +11,8 @@ import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import CompoundSearchFilterDescriptionListGroups from 'Components/CompoundSearchFilter/components/CompoundSearchFilterDescriptionListGroups';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 import {
-    attributesSeparateFromConfigForViewBasedReport,
-    configForViewBasedReport,
+    attributesSeparateFromConfigForImageVulnerabilityReport,
+    searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport,
 } from '../../searchFilterConfig';
 
 export type ViewBasedReportJobDetailsProps = {
@@ -26,8 +26,14 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
     const searchFilter = getSearchFilterFromSearchString(query);
 
     // Render separate attributes (more likely to be specified) preceding config.
-    const attributesFromConfig = configForViewBasedReport.flatMap(({ attributes }) => attributes);
-    const attributes = [...attributesSeparateFromConfigForViewBasedReport, ...attributesFromConfig];
+    const attributesFromConfig =
+        searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport.flatMap(
+            ({ attributes }) => attributes
+        );
+    const attributes = [
+        ...attributesSeparateFromConfigForImageVulnerabilityReport,
+        ...attributesFromConfig,
+    ];
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
