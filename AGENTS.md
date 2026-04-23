@@ -197,4 +197,24 @@ When working on specific areas, refer to these detailed guides:
 - Integration tests in `/qa-tests-backend/` use Groovy/Spock framework
 - Tests marked with `//go:build sql_integration` require database connectivity
 
+# TDD Development Rules
+
+## Core Workflow (Red-Green-Refactor)
+YOU MUST follow these steps in order for every feature or bug fix:
+
+1. **RED Phase**:
+   - Write a failing test that reproduces the bug or defines the new feature.
+   - Run the test and confirm it FAILS.
+   - **DO NOT** write any implementation code during this phase.
+2. **GREEN Phase**:
+   - Write the MINIMAL code required to make the tests pass.
+   - Run tests until they are 100% successful.
+3. **REFACTOR Phase**:
+   - Clean up the code (remove duplication, improve naming).
+   - Run tests again to ensure the "Green" state remains intact.
+
+## Testing Guidelines
+- **Framework**: Use [e.g., Vitest/Pytest/Jest].
+- **Naming**: Tests should follow the pattern `feature.test.ts` or `test_feature.py`.
+- **Approval**: Pause and ask for user confirmation after the RED phase before proceeding to GREEN.
 
