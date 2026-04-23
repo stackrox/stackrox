@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	DATA_NOT_AVAILABLE = "Data Not Available"
-	NO_REMEDIATION     = "No Remediation Available"
+	DATA_NOT_AVAILABLE    = "Data Not Available"
+	CONTROL_NOT_APPLICABLE = "N/A"
+	NO_REMEDIATION        = "No Remediation Available"
 )
 
 var (
@@ -196,20 +197,20 @@ func (g *Aggregator) getControlsInfo(ctx context.Context, checkResult *storage.C
 	rules, err := g.complianceRuleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, checkResult.GetRuleRefId()).ProtoQuery())
 	if err != nil {
 		log.Errorf("Unable to retrieve compliance rule for result %q", checkResult.GetCheckName())
-		return DATA_NOT_AVAILABLE, err
+		return CONTROL_NOT_APPLICABLE, err
 	}
 	if len(rules) != 1 {
 		// A check result of a cluster maps to a single rule of that same cluster so there should only be 1.
 		log.Errorf("Unable to process compliance rule for result %q", checkResult.GetCheckName())
-		return DATA_NOT_AVAILABLE, nil
+		return CONTROL_NOT_APPLICABLE, nil
 	}
 	controls, err := utils.GetControlsForScanResults(ctx, g.complianceRuleDS, []string{rules[0].GetName()}, profileName)
 	if err != nil {
 		log.Errorf("Unable to retrieve controls for result %q.Error %s", checkResult.GetCheckName(), err)
-		return DATA_NOT_AVAILABLE, err
+		return CONTROL_NOT_APPLICABLE, err
 	}
 	if len(controls) == 0 {
-		return DATA_NOT_AVAILABLE, nil
+		return CONTROL_NOT_APPLICABLE, nil
 	}
 	controlsList := make([]string, 0, len(controls))
 	for _, ctrl := range controls {
