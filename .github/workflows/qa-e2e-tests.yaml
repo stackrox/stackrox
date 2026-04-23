@@ -143,6 +143,7 @@ jobs:
           # Source the script which will set ROOT and source dependencies
           source qa-tests-backend/scripts/run-part-1.sh
 
+          echo "::group::Deploy StackRox"
           # Deploy StackRox (sets ROX_USERNAME, ROX_ADMIN_PASSWORD, etc.)
           config_part_1
 
@@ -152,12 +153,15 @@ jobs:
           # Wait for cluster to be registered in Central
           echo "Waiting for cluster 'remote' to be registered in Central..."
           scripts/ci/cluster-registration-wait.sh remote stackrox 120
+          echo "::endgroup::"
 
+          echo "::group::Execute test group: ${{ matrix.test-group }}"
           # Execute test group (must be in same step to preserve environment)
           echo "Running test group: ${{ matrix.test-group }}"
           cd qa-tests-backend
           make compile
           ./gradlew ${{ matrix.test-group }}
+          echo "::endgroup::"
 
       - name: Collect artifacts
         if: always()
