@@ -546,7 +546,7 @@ func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 
 // SecuredClusterStatus defines the observed state of SecuredCluster
 type SecuredClusterStatus struct {
-	Conditions      []StackRoxCondition `json:"conditions"`
+	Conditions      []StackRoxCondition `json:"conditions,omitempty"`
 	DeployedRelease *StackRoxRelease    `json:"deployedRelease,omitempty"`
 
 	// The deployed version of the product.
