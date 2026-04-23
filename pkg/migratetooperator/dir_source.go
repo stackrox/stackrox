@@ -46,7 +46,7 @@ func (s *dirSource) Deployment(name string) (*appsv1.Deployment, error) {
 	return found, nil
 }
 
-func (s *dirSource) Service(name string) (*corev1.Service, bool, error) {
+func (s *dirSource) Service(name string) (*corev1.Service, error) {
 	var found *corev1.Service
 	if err := s.walkYAML(func(doc []byte) bool {
 		var svc corev1.Service
@@ -56,16 +56,30 @@ func (s *dirSource) Service(name string) (*corev1.Service, bool, error) {
 		}
 		return false
 	}); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if found == nil {
-		return nil, false, nil
+		return nil, nil
 	}
-	return found, true, nil
+	return found, nil
 }
 
-func (s *dirSource) Secret(name string) (bool, error) {
-	return s.resourceExists("Secret", name)
+func (s *dirSource) Secret(name string) (*corev1.Secret, error) {
+	var found *corev1.Secret
+	if err := s.walkYAML(func(doc []byte) bool {
+		var secret corev1.Secret
+		if err := yaml.Unmarshal(doc, &secret); err == nil && secret.Kind == "Secret" && secret.Name == name {
+			found = &secret
+			return true
+		}
+		return false
+	}); err != nil {
+		return nil, err
+	}
+	if found == nil {
+		return nil, nil
+	}
+	return found, nil
 }
 
 func (s *dirSource) Route(name string) (bool, error) {

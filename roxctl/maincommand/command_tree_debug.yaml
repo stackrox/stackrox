@@ -2204,7 +2204,6 @@ sensor:
       - use-current-k8s-context
   migrate-to-operator:
     LOCAL_FLAGS:
-      - cluster-name
       - from-dir
       - namespace
       - output
