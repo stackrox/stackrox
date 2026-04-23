@@ -53,7 +53,7 @@ export function viewFirstRiskDeployment() {
     return cy.get('tbody tr:first td[data-label="Name"]').then(($td) => {
         const deploymentName = $td.text().trim();
 
-        cy.wrap($td).find('a').click();
+        cy.get('tbody tr:first td[data-label="Name"] a').click();
         cy.get(`h1:contains("${deploymentName}")`);
 
         return cy.wrap(deploymentName);
