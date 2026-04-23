@@ -26,18 +26,18 @@ jobs:
     with:
       filters: |
         {
-          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
-          "ui": ["ui/**"],
-          "shell": ["scripts/**", "deploy/**", "**/*.sh"],
-          "style": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**", "ui/**", "scripts/**", "deploy/**", "**/*.sh"],
-          "gha": [".github/**"],
-          "openshift_ci": [".openshift_ci/**"],
-          "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
+          "check-generated-files":       ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "style-check":                 ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**", "ui/**", "scripts/**", "deploy/**", "**/*.sh"],
+          "golangci-lint":               ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "check-dependent-images-exist": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"],
+          "github-actions-lint":         [".github/**"],
+          "github-actions-shellcheck":   [".github/**"],
+          "openshift-ci-lint":           [".openshift-ci/**"]
         }
 
   check-generated-files:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -134,7 +134,7 @@ jobs:
 
   style-check:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).style
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -168,7 +168,7 @@ jobs:
 
       - name: Install pycodestyle
         run: |
-          python3 -m pip install -r .openshift_ci/dev-requirements.txt
+          python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: Verify tools
         run: |
@@ -199,7 +199,7 @@ jobs:
 
   golangci-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
@@ -251,7 +251,7 @@ jobs:
 
   check-dependent-images-exist:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).versions
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
@@ -306,7 +306,7 @@ jobs:
 
   github-actions-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).gha
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -323,7 +323,7 @@ jobs:
 
   github-actions-shellcheck:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).gha
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -333,9 +333,9 @@ jobs:
       - name: Check scripts with shellcheck
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
-  openshift_ci-lint:
+  openshift-ci-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).openshift_ci
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -349,7 +349,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Install Python linters
-        run: python3 -m pip install -r .openshift_ci/dev-requirements.txt
+        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: pycodestyle
         run: make -C .openshift_ci style
@@ -377,7 +377,7 @@ jobs:
       - check-dependent-images-exist
       - github-actions-lint
       - github-actions-shellcheck
-      - openshift_ci-lint
+      - openshift-ci-lint
     permissions:
       actions: read
     steps:

@@ -19,11 +19,11 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
     with:
-      filters: '{ "scanner": ["scanner/**", "go.mod", "go.sum"] }'
+      filters: '{ "db-integration-tests": ["scanner/**", "go.mod", "go.sum"] }'
 
   db-integration-tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.any
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3

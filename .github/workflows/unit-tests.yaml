@@ -24,15 +24,20 @@ jobs:
     with:
       filters: |
         {
-          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
-          "ui": ["ui/**"],
-          "shell": ["scripts/**", "deploy/**", "**/*.sh"],
-          "openshift_ci": [".openshift_ci/**"]
+          "go":                        ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "go-postgres":               ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "go-bench":                  ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "local-roxctl-tests":        ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "sensor-integration-tests":  ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "ui":                        ["ui/**"],
+          "ui-component":              ["ui/**"],
+          "shell-unit-tests":          ["scripts/**", "deploy/**", "**/*.sh"],
+          "openshift-ci-unit-tests":   [".openshift-ci/**"]
         }
 
   go:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     strategy:
       fail-fast: false
       matrix:
@@ -117,7 +122,7 @@ jobs:
 
   go-postgres:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     strategy:
       fail-fast: false
       matrix:
@@ -195,7 +200,7 @@ jobs:
 
   go-bench:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -245,7 +250,7 @@ jobs:
 
   ui:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).ui
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -284,7 +289,7 @@ jobs:
 
   ui-component:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).ui
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -330,7 +335,7 @@ jobs:
 
   local-roxctl-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -377,7 +382,7 @@ jobs:
 
   shell-unit-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).shell
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -414,9 +419,9 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'shell-test-output'
 
-  openshift_ci-unit-tests:
+  openshift-ci-unit-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).openshift_ci
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -438,7 +443,7 @@ jobs:
   # moving to a separate workflow.
   sensor-integration-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go
+    if: fromJSON(needs.detect-changes.outputs.changed)[github.job]
     env:
       KUBECONFIG: "/tmp/kubeconfig"
       # Stable version ldflags for test caching (see go job comment).
@@ -537,7 +542,7 @@ jobs:
       - go-bench
       - go-postgres
       - local-roxctl-tests
-      - openshift_ci-unit-tests
+      - openshift-ci-unit-tests
       - sensor-integration-tests
       - shell-unit-tests
       - ui
