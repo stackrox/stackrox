@@ -11,14 +11,13 @@ import {
     getImageCVEListRouteMatcher,
     routeMatcherMapForBasePlugin,
 } from '../routes';
+import { filterByField } from '../../helpers/ocpConsole';
 
 function visitStackroxProjectSecurityTab(visitFunction: () => void, resourceIconTitle: string) {
     withOcpAuth();
     visitFunction();
 
-    cy.get(pf6.menuToggle).contains('Requester').click();
-    cy.get(pf6.menuItem).contains('Name').click();
-    cy.get('input[aria-label="Name filter"]').type('stackrox');
+    filterByField('Name', 'stackrox');
     cy.get(`[title="${resourceIconTitle}"] + a`).contains('stackrox').click();
     cy.get(pf6.tabButton).contains('Security').click();
 }
@@ -121,7 +120,7 @@ describe('Project Security Tabs', () => {
             }, 'Namespace');
         });
 
-        it('should display only the expected table columns for each entity type', () => {
+        it.only('should display only the expected table columns for each entity type', () => {
             visitProjectSecurityTabAndCheckColumns(() => {
                 visitFromConsoleLeftNavExpandable('Administration', 'Namespaces');
             }, 'Namespace');

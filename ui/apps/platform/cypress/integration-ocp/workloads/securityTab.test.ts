@@ -1,6 +1,6 @@
 import { visitFromConsoleLeftNavExpandable } from '../../helpers/nav';
 import { withOcpAuth } from '../../helpers/ocpAuth';
-import { selectProject } from '../../helpers/ocpConsole';
+import { filterByField, selectProject } from '../../helpers/ocpConsole';
 import { interceptAndWatchRequests } from '../../helpers/request';
 import pf6 from '../../selectors/pf6';
 import {
@@ -23,7 +23,7 @@ describe('Workloads - Security tab', () => {
             visitFromConsoleLeftNavExpandable('Workloads', 'Deployments');
             selectProject('stackrox');
 
-            cy.get('input[aria-label="Name filter"]').type('central-db');
+            filterByField('Name', 'central-db');
             cy.get('[title="Deployment"] + a').contains('central-db').click();
             cy.get(pf6.tabButton).contains('Security').click();
 
