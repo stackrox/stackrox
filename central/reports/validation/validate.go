@@ -381,7 +381,7 @@ func generateReportSnapshot(
 	}
 
 	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
-		snapshot.ResourceScope = config.GetResourceScope()
+		snapshot.ResourceScope = config.GetResourceScope().CloneVT()
 	}
 
 	reportFilters := config.GetVulnReportFilters().CloneVT()
