@@ -30,6 +30,7 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^Makefile$') ||
       contains(needs.detect-changes.outputs.files, '^make/') ||
       contains(needs.detect-changes.outputs.files, '^proto/') ||
+      contains(needs.detect-changes.outputs.files, '^generated/') ||
       contains(needs.detect-changes.outputs.files, '^operator/') ||
       contains(needs.detect-changes.outputs.files, '^config-controller/')
     strategy:
