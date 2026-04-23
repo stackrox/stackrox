@@ -434,6 +434,54 @@ func (s *RunnerTestSuite) TestOverrideTagClearedWhenEnvRemoved() {
 	s.Equal("", overrideTag)
 }
 
+func (s *RunnerTestSuite) TestOverrideNotReappliedOnRestart() {
+	// Simulates the restart loop bug: env vars are still set, tag matches DB.
+	// First run applies the override and re-runs migrations (expected).
+	// Second run should NOT re-run migrations because the tag already matches.
+	ran := []int{}
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
+	})
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 1); return nil },
+	})
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 2, VersionAfterSeqNum: 3, Description: "m2",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
+	})
+
+	_, err := s.db.Exec(s.ctx,
+		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")
+	s.Require().NoError(err)
+
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
+	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
+
+	// First run: override applies, migrations re-run.
+	runner1 := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner1, testTimeout)
+	s.Equal([]int{0, 1, 2}, ran)
+
+	seqNum, overrideTag, err := runner1.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
+	s.Equal("ROX-123", overrideTag, "override tag must be preserved after first run")
+
+	// Second run (simulating restart): env vars still set, tag matches DB.
+	// Migrations must NOT re-run.
+	ran = []int{}
+	runner2 := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner2, testTimeout)
+	s.Empty(ran, "migrations must not re-run when override tag already matches")
+
+	seqNum, overrideTag, err = runner2.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
+	s.Equal("ROX-123", overrideTag, "override tag must remain after second run")
+}
+
 func (s *RunnerTestSuite) TestOverrideIgnoredWithoutSeqNum() {
 	_, err := s.db.Exec(s.ctx,
 		"UPDATE "+schema.BackgroundMigrationVersionsTableName+" SET seqnum = 3")

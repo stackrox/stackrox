@@ -80,7 +80,7 @@ func (r *Runner) Stop() {
 
 func (r *Runner) run() {
 	defer r.stopper.Flow().ReportStopped()
-	log := logging.LoggerForModule()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
@@ -157,7 +157,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		dbSeqNum = overrideSeqNum
 	}
 
-	if !shouldOverride && dbOverrideTag != "" {
+	if !shouldOverride && dbOverrideTag != "" && overrideTag == "" {
 		// reset old override tags if it exists
 		log.Infof("override env var removed, clearing stale override tag %q from DB", dbOverrideTag)
 		if err := r.writeOverrideTag(ctx, ""); err != nil {
