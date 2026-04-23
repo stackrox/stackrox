@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,6 +85,39 @@ func (s *dirSource) Secret(name string) (*corev1.Secret, error) {
 
 func (s *dirSource) Route(name string) (bool, error) {
 	return s.resourceExists("Route", name)
+}
+
+func (s *dirSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
+	var found *appsv1.DaemonSet
+	if err := s.walkYAML(func(doc []byte) bool {
+		var ds appsv1.DaemonSet
+		if err := yaml.Unmarshal(doc, &ds); err == nil && ds.Kind == "DaemonSet" && ds.Name == name {
+			found = &ds
+			return true
+		}
+		return false
+	}); err != nil {
+		return nil, err
+	}
+	if found == nil {
+		return nil, errors.Errorf("DaemonSet %q not found in %q", name, s.dir)
+	}
+	return found, nil
+}
+
+func (s *dirSource) ValidatingWebhookConfiguration(name string) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	var found *admissionv1.ValidatingWebhookConfiguration
+	if err := s.walkYAML(func(doc []byte) bool {
+		var vwc admissionv1.ValidatingWebhookConfiguration
+		if err := yaml.Unmarshal(doc, &vwc); err == nil && vwc.Kind == "ValidatingWebhookConfiguration" && vwc.Name == name {
+			found = &vwc
+			return true
+		}
+		return false
+	}); err != nil {
+		return nil, err
+	}
+	return found, nil
 }
 
 func (s *dirSource) resourceExists(kind, name string) (bool, error) {

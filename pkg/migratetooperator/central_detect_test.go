@@ -3,8 +3,10 @@ package migratetooperator
 import (
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,6 +14,7 @@ import (
 
 type fakeSource struct {
 	deployments map[string]*appsv1.Deployment
+	daemonSets  map[string]*appsv1.DaemonSet
 	services    map[string]*corev1.Service
 	secrets     map[string]bool
 	routes      map[string]bool
@@ -46,6 +49,21 @@ func (f *fakeSource) Route(name string) (bool, error) {
 		return false, nil
 	}
 	return f.routes[name], nil
+}
+
+func (f *fakeSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
+	if f.daemonSets == nil {
+		return nil, errors.Errorf("DaemonSet %q not found", name)
+	}
+	ds, ok := f.daemonSets[name]
+	if !ok {
+		return nil, errors.Errorf("DaemonSet %q not found", name)
+	}
+	return ds, nil
+}
+
+func (f *fakeSource) ValidatingWebhookConfiguration(_ string) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	return nil, nil
 }
 
 func defaultDeployments() map[string]*appsv1.Deployment {
