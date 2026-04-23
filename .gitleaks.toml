@@ -6,4 +6,5 @@
     '''\/testdata.*\.key$''',
     # Ignore MIGRATION directory (generated roxctl output with dummy certs/keys).
     '''MIGRATION\/''',
+    '''MIGRATION-SC\/''',
   ]
