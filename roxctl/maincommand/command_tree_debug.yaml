@@ -2202,6 +2202,28 @@ sensor:
       - server-name
       - token-file
       - use-current-k8s-context
+  migrate-to-operator:
+    LOCAL_FLAGS:
+      - cluster-name
+      - from-dir
+      - namespace
+      - output
+    INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - retry-timeout
+      - server-name
+      - timeout
+      - token-file
+      - use-current-k8s-context
 version:
   PERSISTENT_FLAGS:
     - json
