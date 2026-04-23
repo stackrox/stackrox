@@ -146,6 +146,10 @@ jobs:
           # Deploy StackRox (sets ROX_USERNAME, ROX_ADMIN_PASSWORD, etc.)
           config_part_1
 
+          # Wait for cluster to be registered in Central
+          echo "Waiting for cluster 'remote' to be registered in Central..."
+          scripts/ci/cluster-registration-wait.sh remote stackrox 120
+
           # Execute test group (must be in same step to preserve environment)
           echo "Running test group: ${{ matrix.test-group }}"
           cd qa-tests-backend
