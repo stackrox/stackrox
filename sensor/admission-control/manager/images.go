@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -223,6 +224,13 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
 
 	for idx, container := range deployment.GetContainers() {
+		// Skip scanning init container images when the feature flag is enabled.
+		// Policy evaluation (ROX-34026) filters them out anyway, so scanning
+		// would just add latency to the webhook hot path for no benefit.
+		if features.InitContainerSupport.Enabled() && container.GetType() == storage.ContainerType_INIT {
+			images[idx] = types.ToImage(container.GetImage())
+			continue
+		}
 		image := container.GetImage()
 		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image, s, true)
