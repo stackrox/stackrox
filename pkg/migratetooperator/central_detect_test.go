@@ -27,19 +27,18 @@ func (f *fakeSource) Deployment(name string) (*appsv1.Deployment, error) {
 	return nil, assert.AnError
 }
 
-func (f *fakeSource) Service(name string) (*corev1.Service, bool, error) {
+func (f *fakeSource) Service(name string) (*corev1.Service, error) {
 	if f.services == nil {
-		return nil, false, nil
+		return nil, nil
 	}
-	svc, ok := f.services[name]
-	return svc, ok, nil
+	return f.services[name], nil
 }
 
-func (f *fakeSource) Secret(name string) (bool, error) {
-	if f.secrets == nil {
-		return false, nil
+func (f *fakeSource) Secret(name string) (*corev1.Secret, error) {
+	if f.secrets == nil || !f.secrets[name] {
+		return nil, nil
 	}
-	return f.secrets[name], nil
+	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name}}, nil
 }
 
 func (f *fakeSource) Route(name string) (bool, error) {

@@ -61,9 +61,9 @@ func detectCentral(src Source) (*detectedConfig, error) {
 	}
 
 	var defaultTLSSecretName string
-	if found, tlsErr := src.Secret("central-default-tls-cert"); tlsErr != nil {
+	if tlsSecret, tlsErr := src.Secret("central-default-tls-cert"); tlsErr != nil {
 		return nil, errors.Wrap(tlsErr, "checking for default TLS cert Secret")
-	} else if found {
+	} else if tlsSecret != nil {
 		defaultTLSSecretName = "central-default-tls-cert"
 	}
 
@@ -133,11 +133,11 @@ func detectMonitoring(dep *appsv1.Deployment) monitoringConfig {
 func detectExposure(src Source) (*exposureConfig, error) {
 	cfg := &exposureConfig{}
 
-	svc, found, err := src.Service("central-loadbalancer")
+	svc, err := src.Service("central-loadbalancer")
 	if err != nil {
 		return nil, errors.Wrap(err, "checking for central-loadbalancer Service")
 	}
-	if found {
+	if svc != nil {
 		switch svc.Spec.Type {
 		case corev1.ServiceTypeLoadBalancer:
 			cfg.LoadBalancerEnabled = true
