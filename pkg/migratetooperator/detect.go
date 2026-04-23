@@ -46,7 +46,7 @@ type detectedConfig struct {
 	CustomImages          bool
 }
 
-func detect(src source) (*detectedConfig, error) {
+func detect(src Source) (*detectedConfig, error) {
 	storage, err := detectStorage(src)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func detect(src source) (*detectedConfig, error) {
 	}, nil
 }
 
-func detectStorage(src source) (*storageConfig, error) {
+func detectStorage(src Source) (*storageConfig, error) {
 	dep, err := src.CentralDBDeployment()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving central-db Deployment")
@@ -130,7 +130,7 @@ func detectMonitoring(dep *appsv1.Deployment) monitoringConfig {
 	}
 }
 
-func detectExposure(src source) (*exposureConfig, error) {
+func detectExposure(src Source) (*exposureConfig, error) {
 	cfg := &exposureConfig{}
 
 	found, data, err := src.ResourceByKindAndName("Service", "central-loadbalancer")

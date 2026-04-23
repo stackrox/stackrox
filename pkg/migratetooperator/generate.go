@@ -1,15 +1,26 @@
 package migratetooperator
 
 import (
-	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/pointers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
-func generateCR(config *detectedConfig) *platform.Central {
+// Transform detects the configuration from the given source and generates a Central
+// custom resource. It returns the CR and a list of warnings for the caller to emit.
+func Transform(src Source) (*platform.Central, []string, error) {
+	config, err := detect(src)
+	if err != nil {
+		return nil, nil, err
+	}
+	cr, warnings := generateCR(config)
+	return cr, warnings, nil
+}
+
+func generateCR(config *detectedConfig) (*platform.Central, []string) {
+	var warnings []string
+
 	cr := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "platform.stackrox.io/v1alpha1",
@@ -105,26 +116,11 @@ func generateCR(config *detectedConfig) *platform.Central {
 		}
 	}
 
-	return cr
-}
+	if config.CustomImages {
+		warnings = append(warnings, "Detected non-default container images. "+
+			"The operator does not support image overrides in the Central CR. "+
+			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
+	}
 
-// marshalCR serializes only the spec portion of the Central CR, avoiding
-// empty status fields that the operator types include.
-func marshalCR(cr *platform.Central) ([]byte, error) {
-	obj := struct {
-		APIVersion string               `json:"apiVersion"`
-		Kind       string               `json:"kind"`
-		Metadata   map[string]string    `json:"metadata"`
-		Spec       platform.CentralSpec `json:"spec"`
-	}{
-		APIVersion: cr.APIVersion,
-		Kind:       cr.Kind,
-		Metadata:   map[string]string{"name": cr.Name},
-		Spec:       cr.Spec,
-	}
-	out, err := yaml.Marshal(obj)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling to YAML")
-	}
-	return out, nil
+	return cr, warnings
 }

@@ -6,6 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
+
+	migrate "github.com/stackrox/rox/pkg/migratetooperator"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -44,20 +47,16 @@ func (cmd *command) run() error {
 		return err
 	}
 
-	config, err := detect(src)
+	cr, warnings, err := migrate.Transform(src)
 	if err != nil {
 		return errors.Wrap(err, "detecting configuration")
 	}
 
-	if config.CustomImages {
-		cmd.env.Logger().WarnfLn("Detected non-default container images. " +
-			"The operator does not support image overrides in the Central CR. " +
-			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
+	for _, w := range warnings {
+		cmd.env.Logger().WarnfLn(w)
 	}
 
-	cr := generateCR(config)
-
-	out, err := marshalCR(cr)
+	out, err := yaml.Marshal(cr)
 	if err != nil {
 		return errors.Wrap(err, "marshalling Central CR")
 	}
@@ -86,12 +85,14 @@ func (cmd *command) run() error {
 	return nil
 }
 
-func (cmd *command) createSource() (source, error) {
+func (cmd *command) createSource() (migrate.Source, error) {
 	switch {
 	case cmd.fromDir != "":
-		return newDirSource(cmd.fromDir)
+		src, err := migrate.NewDirSource(cmd.fromDir)
+		return src, errors.Wrap(err, "reading manifests from directory")
 	case cmd.namespace != "":
-		return newClusterSource(cmd.namespace)
+		src, err := migrate.NewClusterSource(cmd.namespace)
+		return src, errors.Wrap(err, "connecting to cluster")
 	default:
 		return nil, errors.New("either --from-dir or --namespace must be specified")
 	}

@@ -23,7 +23,7 @@ type clusterSource struct {
 	namespace string
 }
 
-func newClusterSource(namespace string) (*clusterSource, error) {
+func NewClusterSource(namespace string) (*clusterSource, error) {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading kubeconfig")
