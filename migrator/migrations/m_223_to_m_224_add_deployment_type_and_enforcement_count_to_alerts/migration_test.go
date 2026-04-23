@@ -174,7 +174,7 @@ func (s *migrationTestSuite) TestMigration() {
 	err = dbs.PostgresDB.QueryRow(s.ctx,
 		`SELECT COALESCE(enforcementcount, 0) FROM alerts WHERE id = $1`, alertIDs["resolved-enforced"]).Scan(&enfCount)
 	s.Require().NoError(err)
-	s.Equal(int32(0), enfCount, "resolved alert should have enforcement_count=0")
+	s.Equal(int32(1), enfCount, "resolved alert with enforcement should have enforcement_count=1")
 
 	// No enforcement: should be 0.
 	err = dbs.PostgresDB.QueryRow(s.ctx,

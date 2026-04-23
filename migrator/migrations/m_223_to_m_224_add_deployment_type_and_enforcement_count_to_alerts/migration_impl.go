@@ -37,7 +37,7 @@ func migrate(database *types.Databases) error {
 		return errors.Wrap(err, "backfilling orphaned deployment_type")
 	}
 
-	// Step 4: Backfill enforcement_count for active alerts with enforcement.
+	// Step 4: Backfill enforcement_count for all alerts with enforcement.
 	// This requires deserializing the blob to compute the count, then
 	// re-serializing to keep columns and blob consistent.
 	if err := backfillEnforcementCount(ctx, database.PostgresDB); err != nil {
@@ -178,7 +178,7 @@ func batchUpdateDeploymentType(db postgres.DB, ctx context.Context, ids []string
 	return results.Close()
 }
 
-// backfillEnforcementCount computes and stores enforcement_count for active
+// backfillEnforcementCount computes and stores enforcement_count for all
 // alerts with enforcement. This is a small subset of the total alert population.
 // Both the column and the serialized blob are updated to maintain consistency.
 func backfillEnforcementCount(ctx context.Context, db postgres.DB) error {
@@ -212,23 +212,20 @@ func backfillEnforcementCount(ctx context.Context, db postgres.DB) error {
 }
 
 func processEnforcementBatch(db postgres.DB, ctx context.Context, lastID string) (count int, newLastID string, err error) {
-	// Only active alerts with enforcement can have enforcement_count > 0.
 	var rows pgx.Rows
 	if lastID == "" {
 		rows, err = db.Query(ctx,
 			`SELECT id, serialized FROM alerts
-			WHERE state = $1
-			  AND enforcement_action != 0
-			ORDER BY id LIMIT $2`,
-			storage.ViolationState_ACTIVE, batchSize)
+			WHERE enforcement_action != 0
+			ORDER BY id LIMIT $1`,
+			batchSize)
 	} else {
 		rows, err = db.Query(ctx,
 			`SELECT id, serialized FROM alerts
-			WHERE state = $1
-			  AND enforcement_action != 0
-			  AND id > $2
-			ORDER BY id LIMIT $3`,
-			storage.ViolationState_ACTIVE, lastID, batchSize)
+			WHERE enforcement_action != 0
+			  AND id > $1
+			ORDER BY id LIMIT $2`,
+			lastID, batchSize)
 	}
 	if err != nil {
 		return 0, "", errors.Wrap(err, "querying enforced alerts")
