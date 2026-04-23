@@ -60,7 +60,7 @@ func TestDirSource_PVCInSubdir(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	require.NoError(t, err)
 	assert.Equal(t, "central-db", dep.Name)
 	require.Len(t, dep.Spec.Template.Spec.Volumes, 1)
@@ -75,7 +75,7 @@ func TestDirSource_PVCInRoot(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	require.NoError(t, err)
 	assert.Equal(t, "central-db", dep.Name)
 	assert.Equal(t, "my-pvc", dep.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
@@ -90,7 +90,7 @@ func TestDirSource_DeepNesting(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	require.NoError(t, err)
 	assert.Equal(t, "central-db", dep.Name)
 }
@@ -102,7 +102,7 @@ func TestDirSource_HostPathWithNodeSelector(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	require.NoError(t, err)
 	assert.Equal(t, "central-db", dep.Name)
 	assert.Equal(t, map[string]string{"kubernetes.io/hostname": "worker-1"}, dep.Spec.Template.Spec.NodeSelector)
@@ -123,7 +123,7 @@ metadata:
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	require.NoError(t, err)
 	assert.Equal(t, "central-db", dep.Name)
 }
@@ -140,7 +140,7 @@ metadata:
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	_, err = src.CentralDBDeployment()
+	_, err = src.Deployment("central-db")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -152,7 +152,7 @@ func TestDirSource_YmlExtension(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDBDeployment()
+	dep, err := src.Deployment("central-db")
 	require.NoError(t, err)
 	assert.Equal(t, "central-db", dep.Name)
 }
@@ -176,14 +176,14 @@ func TestNewDirSource_NonDirectoryPath(t *testing.T) {
 	assert.Contains(t, err.Error(), "is not a directory")
 }
 
-func TestDirSource_CentralDeployment(t *testing.T) {
+func TestDirSource_Deployment(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "central.yaml"), []byte(centralDeploymentYAML), 0644))
 
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	dep, err := src.CentralDeployment()
+	dep, err := src.Deployment("central")
 	require.NoError(t, err)
 	assert.Equal(t, "central", dep.Name)
 }
@@ -194,7 +194,7 @@ func TestDirSource_EmptyDir(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	_, err = src.CentralDBDeployment()
+	_, err = src.Deployment("central-db")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
