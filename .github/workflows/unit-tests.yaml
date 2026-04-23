@@ -231,7 +231,8 @@ jobs:
     needs: detect-changes
     if: >-
       !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/')
+      contains(needs.detect-changes.outputs.files, '^ui/') ||
+      contains(needs.detect-changes.outputs.files, '^Makefile$')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -272,7 +273,8 @@ jobs:
     needs: detect-changes
     if: >-
       !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/')
+      contains(needs.detect-changes.outputs.files, '^ui/') ||
+      contains(needs.detect-changes.outputs.files, '^Makefile$')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
