@@ -399,6 +399,25 @@ func TestSafeChannel_WriteBlockedThenWaitableTriggered(t *testing.T) {
 	})
 }
 
+func TestSafeChannel_ContextCancelledBeforeCreation(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		ch := NewChannel[int](5, ctx)
+		synctest.Wait()
+
+		assert.ErrorIs(t, ch.Write(1), ErrWaitableTriggered)
+		assert.ErrorIs(t, ch.TryWrite(1), ErrWaitableTriggered)
+
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be closed")
+		assert.Equal(t, 0, val)
+	})
+}
+
 func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 

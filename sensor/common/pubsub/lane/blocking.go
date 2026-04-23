@@ -140,7 +140,7 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 func (l *blockingLane) Stop() {
 	l.stopper.Client().Stop()
 	// Wait for the run() goroutine to fully exit.
-	// The channel will be closed automatically when the waitable is done.
+	// The channel will be closed automatically when the stop request signal triggers.
 	<-l.stopper.Client().Stopped().Done()
 	l.Lane.Stop()
 }
