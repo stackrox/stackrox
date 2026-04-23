@@ -4,17 +4,17 @@ on:
     inputs:
       filters:
         description: >
-          JSON object mapping job names to arrays of pathspec patterns.
+          JSON object mapping labels to arrays of pathspec patterns.
           Example: { "ui": ["ui/**"], "go": ["**/*.go", "go.mod"] }
         type: string
         required: true
     outputs:
       changed:
         description: >
-          JSON object: true/false per filter key. Missing keys
-          evaluate as null which is != false, so jobs whose filter
-          key is missing will run (safe default on key drift).
-          Usage: fromJSON(changed)[github.job] != false
+          JSON object: true/false per filter key indicating whether
+          matching files changed. Default is true (assume changed)
+          so jobs run unless confirmed unchanged.
+          Usage: fromJSON(changed).key != false
         value: ${{ jobs.detect.outputs.changed }}
 
 jobs:
@@ -44,6 +44,7 @@ jobs:
             echo "^${regex}$"
           }
 
+          # Default: all keys true (assume changed, must run).
           all_true=$(echo "${FILTERS}" | jq -c 'to_entries | map({(.key): true}) | add')
 
           if [[ -z "${PR_NUMBER}" ]]; then
@@ -68,7 +69,12 @@ jobs:
             exit 0
           fi
 
+          # Start with all true, set to false only when confirmed unchanged.
           declare -A results
+          for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
+            results["$k"]=true
+          done
+
           for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
             mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
             found=false
@@ -81,8 +87,10 @@ jobs:
                 fi
               done
             done
-            results["$k"]=$found
-            echo "${k}: ${found}" >&2
+            if ! $found; then
+              results["$k"]=false
+            fi
+            echo "${k}: ${results[$k]}" >&2
           done
 
           result=$(for k in "${!results[@]}"; do echo "${k} ${results[$k]}"; done \
