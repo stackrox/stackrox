@@ -1,6 +1,9 @@
 package migratetooperator
 
 import (
+	"bufio"
+	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 )
 
@@ -147,7 +151,11 @@ func (s *dirSource) walkYAML(match func(doc []byte) bool) error {
 		if err != nil {
 			return errors.Wrapf(err, "reading %q", path)
 		}
-		for _, doc := range splitYAMLDocuments(data) {
+		docs, splitErr := splitYAMLDocuments(data)
+		if splitErr != nil {
+			return errors.Wrapf(splitErr, "parsing YAML in %q", path)
+		}
+		for _, doc := range docs {
 			if match(doc) {
 				return filepath.SkipAll
 			}
@@ -156,13 +164,20 @@ func (s *dirSource) walkYAML(match func(doc []byte) bool) error {
 	}), "walking directory tree")
 }
 
-func splitYAMLDocuments(data []byte) [][]byte {
+func splitYAMLDocuments(data []byte) ([][]byte, error) {
 	var docs [][]byte
-	for _, part := range strings.Split(string(data), "\n---") {
-		trimmed := strings.TrimSpace(part)
-		if trimmed != "" {
-			docs = append(docs, []byte(trimmed))
+	reader := utilyaml.NewYAMLReader(bufio.NewReader(bytes.NewReader(data)))
+	for {
+		doc, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(string(doc)) != "" {
+			docs = append(docs, doc)
 		}
 	}
-	return docs
+	return docs, nil
 }
