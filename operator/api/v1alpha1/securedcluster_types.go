@@ -111,6 +111,10 @@ type SecuredClusterSpec struct {
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
+
+	// Per-namespace filtering configuration for process indicators.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=ProcessIndicators,order=17,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	ProcessIndicators *ProcessIndicatorsSpec `json:"processIndicators,omitempty"`
 }
 
 // ProcessBaselinesAutoLockMode is a type for values of spec.processBaselineAutoLockMode.
@@ -502,6 +506,39 @@ const (
 // Pointer returns the pointer of the policy.
 func (l LocalScannerV4ComponentPolicy) Pointer() *LocalScannerV4ComponentPolicy {
 	return &l
+}
+
+// ProcessIndicatorsSpec defines per-namespace filtering configuration for Process Indicators.
+type ProcessIndicatorsSpec struct {
+	// Whether to persist individual process indicators.
+	// The default is: Enabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	Persistence *ProcessIndicatorConfigSwitch `json:"persistence,omitempty"`
+
+	// Whether to persist process indicators originating from openshift namespaces.
+	// The default is: Disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	ExcludeOpenshiftNs *ProcessIndicatorConfigSwitch `json:"excludeOpenshiftNs,omitempty"`
+
+	// A regex specifying namespaces whose process indicators should not be persisted.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	ExcludeNamespaceRegex *string `json:"excludeNamespaceRegex,omitempty"`
+}
+
+// ProcessIndicatorConfigSwitch is a type for following config knobs:
+// * spec.processIndicators.persistence
+// * spec.processIndicators.excludeOpenshiftNs
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type ProcessIndicatorConfigSwitch string
+
+const (
+	ProcessIndicatorConfigEnabled  ProcessIndicatorConfigSwitch = "Enabled"
+	ProcessIndicatorConfigDisabled ProcessIndicatorConfigSwitch = "Disabled"
+)
+
+// Pointer returns the given config value as a pointer, needed in k8s resource structs.
+func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
+	return &v
 }
 
 // -------------------------------------------------------------
