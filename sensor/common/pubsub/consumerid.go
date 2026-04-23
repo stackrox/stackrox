@@ -7,16 +7,18 @@ const (
 	DefaultConsumer
 	ResolverConsumer
 	EnrichedProcessConsumer
+	FileActivityEnrichedProcessConsumer
 	UnenrichedProcessConsumer
 )
 
 var (
 	consumerToString = map[ConsumerID]string{
-		NoConsumers:               "NoConsumers",
-		DefaultConsumer:           "Default",
-		ResolverConsumer:          "Resolver",
-		EnrichedProcessConsumer:   "EnrichedProcess",
-		UnenrichedProcessConsumer: "UnenrichedProcess",
+		NoConsumers:                         "NoConsumers",
+		DefaultConsumer:                     "Default",
+		ResolverConsumer:                    "Resolver",
+		EnrichedProcessConsumer:             "EnrichedProcess",
+		FileActivityEnrichedProcessConsumer: "FileActivityEnrichedProcess",
+		UnenrichedProcessConsumer:           "UnenrichedProcess",
 	}
 )
 

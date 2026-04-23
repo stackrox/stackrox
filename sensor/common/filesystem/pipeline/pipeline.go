@@ -74,7 +74,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
 		if err := pubSubDispatcher.RegisterConsumerToLane(
-			pubsub.EnrichedProcessConsumer,
+			pubsub.FileActivityEnrichedProcessConsumer,
 			pubsub.EnrichedProcessIndicatorTopic,
 			pubsub.EnrichedProcessIndicatorLane,
 			p.processEnrichedIndicator,
