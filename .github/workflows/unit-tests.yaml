@@ -342,7 +342,8 @@ jobs:
       contains(needs.detect-changes.outputs.files, '.go$') ||
       contains(needs.detect-changes.outputs.files, '^go.mod$') ||
       contains(needs.detect-changes.outputs.files, '^go.sum$') ||
-      contains(needs.detect-changes.outputs.files, '^scripts/')
+      contains(needs.detect-changes.outputs.files, '^scripts/') ||
+      contains(needs.detect-changes.outputs.files, '^tests/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
