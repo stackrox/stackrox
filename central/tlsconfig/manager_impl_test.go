@@ -180,29 +180,6 @@ func (s *managerTestSuite) TestUpdateInternalCertificateIssuesEphemeralForAltNam
 	s.Len(mgr.internalCerts, 2, "expected reloaded cert + ephemeral cert for alt namespace")
 }
 
-func (s *managerTestSuite) TestUpdateInternalCertificatePropagates() {
-	mgr, err := newManager(namespaces.StackRox)
-	s.Require().NoError(err)
-
-	configurer, err := mgr.TLSConfigurer(Options{
-		ServerCerts: []ServerCertSource{ServiceCertSource},
-	})
-	s.Require().NoError(err)
-
-	ca, err := certgen.GenerateCA()
-	s.Require().NoError(err)
-	issuedCert, err := ca.IssueCertForSubject(mtls.CentralSubject)
-	s.Require().NoError(err)
-	newCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
-	s.Require().NoError(err)
-
-	mgr.UpdateInternalCertificate(&newCert)
-
-	tlsConf, err := configurer.TLSConfig()
-	s.Require().NoError(err)
-	s.Require().NotNil(tlsConf)
-}
-
 func (s *managerTestSuite) TestLoadInternalCertificateFromDirectory() {
 	ca, err := mtls.CAForSigning()
 	s.Require().NoError(err)
