@@ -29,6 +29,7 @@ jobs:
           "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
           "ui": ["ui/**"],
           "shell": ["scripts/**", "deploy/**", "**/*.sh"],
+          "style": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**", "ui/**", "scripts/**", "deploy/**", "**/*.sh"],
           "gha": [".github/**"],
           "openshift_ci": [".openshift_ci/**"],
           "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
@@ -133,10 +134,7 @@ jobs:
 
   style-check:
     needs: detect-changes
-    if: >-
-      fromJSON(needs.detect-changes.outputs.changed).go ||
-      fromJSON(needs.detect-changes.outputs.changed).ui ||
-      fromJSON(needs.detect-changes.outputs.changed).shell
+    if: fromJSON(needs.detect-changes.outputs.changed).style
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
