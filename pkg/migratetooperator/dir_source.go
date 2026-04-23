@@ -7,6 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -14,6 +16,7 @@ type dirSource struct {
 	dir string
 }
 
+// NewDirSource creates a Source that reads resources from YAML files in a directory tree.
 func NewDirSource(dir string) (*dirSource, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
@@ -25,48 +28,70 @@ func NewDirSource(dir string) (*dirSource, error) {
 	return &dirSource{dir: dir}, nil
 }
 
-func (s *dirSource) CentralDeployment() (*appsv1.Deployment, error) {
-	return s.findDeployment("central")
-}
-
-func (s *dirSource) CentralDBDeployment() (*appsv1.Deployment, error) {
-	return s.findDeployment("central-db")
-}
-
-func (s *dirSource) findDeployment(name string) (*appsv1.Deployment, error) {
+func (s *dirSource) Deployment(name string) (*appsv1.Deployment, error) {
 	var found *appsv1.Deployment
-	err := filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
-		if err != nil || d.IsDir() || (!strings.HasSuffix(d.Name(), ".yaml") && !strings.HasSuffix(d.Name(), ".yml")) {
-			return err
+	if err := s.walkYAML(func(doc []byte) bool {
+		var dep appsv1.Deployment
+		if err := yaml.Unmarshal(doc, &dep); err == nil && dep.Kind == "Deployment" && dep.Name == name {
+			found = &dep
+			return true
 		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return errors.Wrapf(err, "reading %q", path)
-		}
-		for _, doc := range splitYAMLDocuments(data) {
-			var dep appsv1.Deployment
-			if err := yaml.Unmarshal(doc, &dep); err != nil {
-				continue
-			}
-			if dep.Kind == "Deployment" && dep.Name == name {
-				found = &dep
-				return filepath.SkipAll
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "walking directory tree")
+		return false
+	}); err != nil {
+		return nil, err
 	}
 	if found == nil {
-		return nil, errors.Errorf("%s Deployment not found in %q", name, s.dir)
+		return nil, errors.Errorf("Deployment %q not found in %q", name, s.dir)
 	}
 	return found, nil
 }
 
-func (s *dirSource) ResourceByKindAndName(kind, name string) (bool, map[string]interface{}, error) {
-	var found map[string]interface{}
-	err := filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
+func (s *dirSource) Service(name string) (*corev1.Service, bool, error) {
+	var found *corev1.Service
+	if err := s.walkYAML(func(doc []byte) bool {
+		var svc corev1.Service
+		if err := yaml.Unmarshal(doc, &svc); err == nil && svc.Kind == "Service" && svc.Name == name {
+			found = &svc
+			return true
+		}
+		return false
+	}); err != nil {
+		return nil, false, err
+	}
+	if found == nil {
+		return nil, false, nil
+	}
+	return found, true, nil
+}
+
+func (s *dirSource) Secret(name string) (bool, error) {
+	return s.resourceExists("Secret", name)
+}
+
+func (s *dirSource) Route(name string) (bool, error) {
+	return s.resourceExists("Route", name)
+}
+
+func (s *dirSource) resourceExists(kind, name string) (bool, error) {
+	found := false
+	if err := s.walkYAML(func(doc []byte) bool {
+		var meta struct {
+			metav1.TypeMeta   `json:",inline"`
+			metav1.ObjectMeta `json:"metadata"`
+		}
+		if err := yaml.Unmarshal(doc, &meta); err == nil && meta.Kind == kind && meta.Name == name {
+			found = true
+			return true
+		}
+		return false
+	}); err != nil {
+		return false, err
+	}
+	return found, nil
+}
+
+func (s *dirSource) walkYAML(match func(doc []byte) bool) error {
+	return errors.Wrap(filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || (!strings.HasSuffix(d.Name(), ".yaml") && !strings.HasSuffix(d.Name(), ".yml")) {
 			return err
 		}
@@ -75,27 +100,12 @@ func (s *dirSource) ResourceByKindAndName(kind, name string) (bool, map[string]i
 			return errors.Wrapf(err, "reading %q", path)
 		}
 		for _, doc := range splitYAMLDocuments(data) {
-			var obj map[string]interface{}
-			if err := yaml.Unmarshal(doc, &obj); err != nil {
-				continue
-			}
-			objKind, _ := obj["kind"].(string)
-			meta, _ := obj["metadata"].(map[string]interface{})
-			objName, _ := meta["name"].(string)
-			if objKind == kind && objName == name {
-				found = obj
+			if match(doc) {
 				return filepath.SkipAll
 			}
 		}
 		return nil
-	})
-	if err != nil {
-		return false, nil, errors.Wrap(err, "walking directory tree")
-	}
-	if found == nil {
-		return false, nil, nil
-	}
-	return true, found, nil
+	}), "walking directory tree")
 }
 
 func splitYAMLDocuments(data []byte) [][]byte {

@@ -11,33 +11,49 @@ import (
 )
 
 type fakeSource struct {
-	centralDep   *appsv1.Deployment
-	centralDBDep *appsv1.Deployment
-	resources    map[string]map[string]interface{}
-	err          error
+	deployments map[string]*appsv1.Deployment
+	services    map[string]*corev1.Service
+	secrets     map[string]bool
+	routes      map[string]bool
 }
 
-func (f *fakeSource) CentralDeployment() (*appsv1.Deployment, error) {
-	if f.centralDep == nil && f.err == nil {
-		return makeCentralDeployment(nil), nil
+func (f *fakeSource) Deployment(name string) (*appsv1.Deployment, error) {
+	if dep, ok := f.deployments[name]; ok {
+		return dep, nil
 	}
-	return f.centralDep, f.err
+	if dep := defaultDeployments()[name]; dep != nil {
+		return dep, nil
+	}
+	return nil, assert.AnError
 }
 
-func (f *fakeSource) CentralDBDeployment() (*appsv1.Deployment, error) {
-	return f.centralDBDep, f.err
+func (f *fakeSource) Service(name string) (*corev1.Service, bool, error) {
+	if f.services == nil {
+		return nil, false, nil
+	}
+	svc, ok := f.services[name]
+	return svc, ok, nil
 }
 
-func (f *fakeSource) ResourceByKindAndName(kind, name string) (bool, map[string]interface{}, error) {
-	if f.resources == nil {
-		return false, nil, nil
+func (f *fakeSource) Secret(name string) (bool, error) {
+	if f.secrets == nil {
+		return false, nil
 	}
-	key := kind + "/" + name
-	data, ok := f.resources[key]
-	if !ok {
-		return false, nil, nil
+	return f.secrets[name], nil
+}
+
+func (f *fakeSource) Route(name string) (bool, error) {
+	if f.routes == nil {
+		return false, nil
 	}
-	return true, data, nil
+	return f.routes[name], nil
+}
+
+func defaultDeployments() map[string]*appsv1.Deployment {
+	return map[string]*appsv1.Deployment{
+		"central":    makeCentralDeployment(nil),
+		"central-db": makeCentralDBDeployment(defaultPVCVolume(), nil),
+	}
 }
 
 func makeCentralDBDeployment(volumes []corev1.Volume, nodeSelector map[string]string) *appsv1.Deployment {
@@ -80,9 +96,7 @@ func TestDetectStorage(t *testing.T) {
 			volumes: []corev1.Volume{{
 				Name: "disk",
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: "central-db",
-					},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "central-db"},
 				},
 			}},
 			expected: storageConfig{Type: storagePVC, PVCName: "central-db"},
@@ -91,37 +105,26 @@ func TestDetectStorage(t *testing.T) {
 			volumes: []corev1.Volume{{
 				Name: "disk",
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: "my-custom-db",
-					},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "my-custom-db"},
 				},
 			}},
 			expected: storageConfig{Type: storagePVC, PVCName: "my-custom-db"},
 		},
 		"hostPath with default path": {
 			volumes: []corev1.Volume{{
-				Name: "disk",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/lib/stackrox-central",
-					},
-				},
+				Name:         "disk",
+				VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/var/lib/stackrox-central"}},
 			}},
 			expected: storageConfig{Type: storageHostPath, HostPath: "/var/lib/stackrox-central"},
 		},
 		"hostPath with custom path and nodeSelector": {
 			volumes: []corev1.Volume{{
-				Name: "disk",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/data/stackrox",
-					},
-				},
+				Name:         "disk",
+				VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/data/stackrox"}},
 			}},
 			nodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
 			expected: storageConfig{
-				Type:         storageHostPath,
-				HostPath:     "/data/stackrox",
+				Type: storageHostPath, HostPath: "/data/stackrox",
 				NodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
 			},
 		},
@@ -129,7 +132,9 @@ func TestDetectStorage(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			src := &fakeSource{centralDBDep: makeCentralDBDeployment(tt.volumes, tt.nodeSelector)}
+			src := &fakeSource{deployments: map[string]*appsv1.Deployment{
+				"central-db": makeCentralDBDeployment(tt.volumes, tt.nodeSelector),
+			}}
 			config, err := detect(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, config.Storage)
@@ -157,7 +162,9 @@ func TestDetectStorageErrors(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			src := &fakeSource{centralDBDep: makeCentralDBDeployment(tt.volumes, nil)}
+			src := &fakeSource{deployments: map[string]*appsv1.Deployment{
+				"central-db": makeCentralDBDeployment(tt.volumes, nil),
+			}}
 			_, err := detect(src)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.errMsg)
@@ -180,33 +187,26 @@ func TestDetectMonitoring(t *testing.T) {
 			expectMonitoring:  true,
 		},
 		"openshift with monitoring disabled": {
-			envVars: []corev1.EnvVar{
-				{Name: "ROX_ENABLE_OPENSHIFT_AUTH", Value: "true"},
-			},
+			envVars:           []corev1.EnvVar{{Name: "ROX_ENABLE_OPENSHIFT_AUTH", Value: "true"}},
 			expectIsOpenShift: true,
 			expectMonitoring:  false,
 		},
 		"k8s (no openshift env vars)": {
-			envVars:           nil,
 			expectIsOpenShift: false,
 			expectMonitoring:  false,
 		},
 		"k8s with other env vars": {
-			envVars: []corev1.EnvVar{
-				{Name: "ROX_OFFLINE_MODE", Value: "false"},
-			},
+			envVars:           []corev1.EnvVar{{Name: "ROX_OFFLINE_MODE", Value: "false"}},
 			expectIsOpenShift: false,
 			expectMonitoring:  false,
 		},
 	}
 
-	pvcVolume := defaultPVCVolume()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			src := &fakeSource{
-				centralDep:   makeCentralDeployment(tt.envVars),
-				centralDBDep: makeCentralDBDeployment(pvcVolume, nil),
-			}
+			src := &fakeSource{deployments: map[string]*appsv1.Deployment{
+				"central": makeCentralDeployment(tt.envVars),
+			}}
 			config, err := detect(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectIsOpenShift, config.Monitoring.IsOpenShift)
@@ -217,49 +217,42 @@ func TestDetectMonitoring(t *testing.T) {
 
 func TestDetectExposure(t *testing.T) {
 	tests := map[string]struct {
-		resources     map[string]map[string]interface{}
+		services      map[string]*corev1.Service
+		routes        map[string]bool
 		expectedLB    bool
 		expectedNP    bool
 		expectedRoute bool
 	}{
-		"no exposure": {
-			resources: nil,
-		},
+		"no exposure": {},
 		"load balancer": {
-			resources: map[string]map[string]interface{}{
-				"Service/central-loadbalancer": {"spec": map[string]interface{}{"type": "LoadBalancer"}},
+			services: map[string]*corev1.Service{
+				"central-loadbalancer": {Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer}},
 			},
 			expectedLB: true,
 		},
 		"node port": {
-			resources: map[string]map[string]interface{}{
-				"Service/central-loadbalancer": {"spec": map[string]interface{}{"type": "NodePort"}},
+			services: map[string]*corev1.Service{
+				"central-loadbalancer": {Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeNodePort}},
 			},
 			expectedNP: true,
 		},
 		"route": {
-			resources: map[string]map[string]interface{}{
-				"Route/central": {"spec": map[string]interface{}{}},
-			},
+			routes:        map[string]bool{"central": true},
 			expectedRoute: true,
 		},
 		"load balancer and route": {
-			resources: map[string]map[string]interface{}{
-				"Service/central-loadbalancer": {"spec": map[string]interface{}{"type": "LoadBalancer"}},
-				"Route/central":                {"spec": map[string]interface{}{}},
+			services: map[string]*corev1.Service{
+				"central-loadbalancer": {Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer}},
 			},
+			routes:        map[string]bool{"central": true},
 			expectedLB:    true,
 			expectedRoute: true,
 		},
 	}
 
-	pvcVolume := defaultPVCVolume()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			src := &fakeSource{
-				centralDBDep: makeCentralDBDeployment(pvcVolume, nil),
-				resources:    tt.resources,
-			}
+			src := &fakeSource{services: tt.services, routes: tt.routes}
 			config, err := detect(src)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedLB, config.Exposure.LoadBalancerEnabled)
@@ -309,31 +302,17 @@ func TestDetectCustomImages(t *testing.T) {
 		image    string
 		expected bool
 	}{
-		"rhacs default": {
-			image:    "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:4.10.1",
-			expected: false,
-		},
-		"opensource default": {
-			image:    "quay.io/stackrox-io/main:4.10.1",
-			expected: false,
-		},
-		"dev default": {
-			image:    "quay.io/rhacs-eng/main:4.10.1",
-			expected: false,
-		},
-		"custom registry": {
-			image:    "my-registry.example.com/main:4.10.1",
-			expected: true,
-		},
+		"rhacs default":   {image: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:4.10.1", expected: false},
+		"opensource":      {image: "quay.io/stackrox-io/main:4.10.1", expected: false},
+		"dev default":     {image: "quay.io/rhacs-eng/main:4.10.1", expected: false},
+		"custom registry": {image: "my-registry.example.com/main:4.10.1", expected: true},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			dep := &appsv1.Deployment{
 				Spec: appsv1.DeploymentSpec{
 					Template: corev1.PodTemplateSpec{
-						Spec: corev1.PodSpec{
-							Containers: []corev1.Container{{Image: tt.image}},
-						},
+						Spec: corev1.PodSpec{Containers: []corev1.Container{{Image: tt.image}}},
 					},
 				},
 			}
