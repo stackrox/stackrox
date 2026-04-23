@@ -32,6 +32,7 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       ORCHESTRATOR_FLAVOR: k8s
       CLUSTER: K8S
+      POD_SECURITY_POLICIES: "false"
       GCP_IMAGE_TYPE: cos_containerd
       OUTPUT_FORMAT: helm
       ROX_RISK_REPROCESSING_INTERVAL: 15s
