@@ -17,7 +17,7 @@ func TestGenerateCR_PVC(t *testing.T) {
 		},
 	}
 
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 
 	assert.Equal(t, "platform.stackrox.io/v1alpha1", cr.APIVersion)
 	assert.Equal(t, "Central", cr.Kind)
@@ -44,7 +44,7 @@ func TestGenerateCR_HostPath(t *testing.T) {
 		},
 	}
 
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 
 	require.NotNil(t, cr.Spec.Central.DB.Persistence.HostPath)
 	assert.Equal(t, "/data/stackrox", *cr.Spec.Central.DB.Persistence.HostPath.Path)
@@ -60,7 +60,7 @@ func TestGenerateCR_HostPathWithoutNodeSelector(t *testing.T) {
 		},
 	}
 
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 
 	require.NotNil(t, cr.Spec.Central.DB.Persistence.HostPath)
 	assert.Equal(t, "/var/lib/stackrox-central", *cr.Spec.Central.DB.Persistence.HostPath.Path)
@@ -73,7 +73,7 @@ func TestGenerateCR_OpenShiftMonitoringEnabled(t *testing.T) {
 		Monitoring: monitoringConfig{IsOpenShift: true, OpenShiftMonitoringEnabled: true},
 	}
 
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 
 	assert.Nil(t, cr.Spec.Monitoring)
 }
@@ -84,7 +84,7 @@ func TestGenerateCR_OpenShiftMonitoringDisabled(t *testing.T) {
 		Monitoring: monitoringConfig{IsOpenShift: true, OpenShiftMonitoringEnabled: false},
 	}
 
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 
 	require.NotNil(t, cr.Spec.Monitoring)
 	require.NotNil(t, cr.Spec.Monitoring.OpenShiftMonitoring)
@@ -98,7 +98,7 @@ func TestGenerateCR_K8sOmitsMonitoring(t *testing.T) {
 		Monitoring: monitoringConfig{IsOpenShift: false, OpenShiftMonitoringEnabled: false},
 	}
 
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 
 	assert.Nil(t, cr.Spec.Monitoring)
 }
@@ -108,7 +108,7 @@ func TestGenerateCR_ExposureLoadBalancer(t *testing.T) {
 		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
 		Exposure: exposureConfig{LoadBalancerEnabled: true},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Central.Exposure)
 	require.NotNil(t, cr.Spec.Central.Exposure.LoadBalancer)
 	assert.True(t, *cr.Spec.Central.Exposure.LoadBalancer.Enabled)
@@ -121,7 +121,7 @@ func TestGenerateCR_ExposureRoute(t *testing.T) {
 		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
 		Exposure: exposureConfig{RouteEnabled: true},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Central.Exposure)
 	require.NotNil(t, cr.Spec.Central.Exposure.Route)
 	assert.True(t, *cr.Spec.Central.Exposure.Route.Enabled)
@@ -131,7 +131,7 @@ func TestGenerateCR_ExposureNone(t *testing.T) {
 	config := &detectedConfig{
 		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.Exposure)
 }
 
@@ -140,7 +140,7 @@ func TestGenerateCR_ExposureMultiple(t *testing.T) {
 		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
 		Exposure: exposureConfig{LoadBalancerEnabled: true, RouteEnabled: true},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Central.Exposure)
 	assert.True(t, *cr.Spec.Central.Exposure.LoadBalancer.Enabled)
 	assert.True(t, *cr.Spec.Central.Exposure.Route.Enabled)
@@ -152,7 +152,7 @@ func TestGenerateCR_OfflineMode(t *testing.T) {
 		Storage:     storageConfig{Type: storagePVC, PVCName: "central-db"},
 		OfflineMode: true,
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Egress)
 	require.NotNil(t, cr.Spec.Egress.ConnectivityPolicy)
 	assert.Equal(t, platform.ConnectivityOffline, *cr.Spec.Egress.ConnectivityPolicy)
@@ -162,7 +162,7 @@ func TestGenerateCR_OnlineMode(t *testing.T) {
 	config := &detectedConfig{
 		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	assert.Nil(t, cr.Spec.Egress)
 }
 
@@ -171,7 +171,7 @@ func TestGenerateCR_TelemetryDisabled(t *testing.T) {
 		Storage:           storageConfig{Type: storagePVC, PVCName: "central-db"},
 		TelemetryDisabled: true,
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Central.Telemetry)
 	assert.False(t, *cr.Spec.Central.Telemetry.Enabled)
 }
@@ -180,7 +180,7 @@ func TestGenerateCR_TelemetryDefault(t *testing.T) {
 	config := &detectedConfig{
 		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.Telemetry)
 }
 
@@ -189,7 +189,7 @@ func TestGenerateCR_DefaultTLSSecret(t *testing.T) {
 		Storage:              storageConfig{Type: storagePVC, PVCName: "central-db"},
 		DefaultTLSSecretName: "central-default-tls-cert",
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Central.DefaultTLSSecret)
 	assert.Equal(t, "central-default-tls-cert", cr.Spec.Central.DefaultTLSSecret.Name)
 }
@@ -198,7 +198,7 @@ func TestGenerateCR_NoDefaultTLSSecret(t *testing.T) {
 	config := &detectedConfig{
 		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.DefaultTLSSecret)
 }
 
@@ -208,7 +208,7 @@ func TestGenerateCR_DeclarativeConfig(t *testing.T) {
 		DeclarativeConfigMaps: []string{"my-cm"},
 		DeclarativeSecrets:    []string{"my-secret"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Central.DeclarativeConfiguration)
 	require.Len(t, cr.Spec.Central.DeclarativeConfiguration.ConfigMaps, 1)
 	assert.Equal(t, "my-cm", cr.Spec.Central.DeclarativeConfiguration.ConfigMaps[0].Name)
@@ -220,7 +220,7 @@ func TestGenerateCR_NoDeclarativeConfig(t *testing.T) {
 	config := &detectedConfig{
 		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	assert.Nil(t, cr.Spec.Central.DeclarativeConfiguration)
 }
 
@@ -229,7 +229,7 @@ func TestGenerateCR_PlaintextEndpoints(t *testing.T) {
 		Storage:            storageConfig{Type: storagePVC, PVCName: "central-db"},
 		PlaintextEndpoints: "8080,grpc@8081",
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	require.NotNil(t, cr.Spec.Customize)
 	require.Len(t, cr.Spec.Customize.EnvVars, 1)
 	assert.Equal(t, "ROX_PLAINTEXT_ENDPOINTS", cr.Spec.Customize.EnvVars[0].Name)
@@ -240,6 +240,6 @@ func TestGenerateCR_NoPlaintextEndpoints(t *testing.T) {
 	config := &detectedConfig{
 		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
 	}
-	cr := generateCR(config)
+	cr, _ := generateCR(config)
 	assert.Nil(t, cr.Spec.Customize)
 }

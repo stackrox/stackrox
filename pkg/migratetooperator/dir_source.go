@@ -14,7 +14,7 @@ type dirSource struct {
 	dir string
 }
 
-func newDirSource(dir string) (*dirSource, error) {
+func NewDirSource(dir string) (*dirSource, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "accessing directory %q", dir)
