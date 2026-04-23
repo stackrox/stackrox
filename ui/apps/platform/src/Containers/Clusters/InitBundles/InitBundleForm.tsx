@@ -188,7 +188,8 @@ function InitBundleForm(): ReactElement {
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem>
-                                        You can use a single init bundle to register multiple clusters.
+                                        You can use a single init bundle to register multiple
+                                        clusters.
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
