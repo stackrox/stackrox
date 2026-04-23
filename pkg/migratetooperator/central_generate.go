@@ -9,16 +9,16 @@ import (
 
 // Transform detects the configuration from the given source and generates a Central
 // custom resource. It returns the CR and a list of warnings for the caller to emit.
-func Transform(src Source) (*platform.Central, []string, error) {
-	config, err := detect(src)
+func TransformToCentral(src Source) (*platform.Central, []string, error) {
+	config, err := detectCentral(src)
 	if err != nil {
 		return nil, nil, err
 	}
-	cr, warnings := generateCR(config)
+	cr, warnings := generateCentral(config)
 	return cr, warnings, nil
 }
 
-func generateCR(config *detectedConfig) (*platform.Central, []string) {
+func generateCentral(config *detectedConfig) (*platform.Central, []string) {
 	var warnings []string
 
 	cr := &platform.Central{
