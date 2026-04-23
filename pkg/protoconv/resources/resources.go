@@ -294,8 +294,12 @@ func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	allK8sContainers := make([]v1.Container, 0, len(podSpec.InitContainers)+len(podSpec.Containers))
-	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.InitContainers)+len(podSpec.Containers))
+	containerCount := len(podSpec.Containers)
+	if features.InitContainerSupport.Enabled() {
+		containerCount += len(podSpec.InitContainers)
+	}
+	allK8sContainers := make([]v1.Container, 0, containerCount)
+	w.Deployment.Containers = make([]*storage.Container, 0, containerCount)
 
 	if features.InitContainerSupport.Enabled() {
 		for _, c := range podSpec.InitContainers {

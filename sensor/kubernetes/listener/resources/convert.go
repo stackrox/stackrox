@@ -328,18 +328,29 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
 		// Build a map from container name to pod spec container for name-based lookup.
-		specContainersByName := make(map[string]v1.Container, len(p.Spec.Containers)+len(p.Spec.InitContainers))
+		mapSize := len(p.Spec.Containers)
+		statusCount := len(p.Status.ContainerStatuses)
+		if features.InitContainerSupport.Enabled() {
+			mapSize += len(p.Spec.InitContainers)
+			statusCount += len(p.Status.InitContainerStatuses)
+		}
+
+		specContainersByName := make(map[string]v1.Container, mapSize)
 		for _, sc := range p.Spec.Containers {
 			specContainersByName[sc.Name] = sc
 		}
-		for _, sc := range p.Spec.InitContainers {
-			specContainersByName[sc.Name] = sc
+		if features.InitContainerSupport.Enabled() {
+			for _, sc := range p.Spec.InitContainers {
+				specContainersByName[sc.Name] = sc
+			}
 		}
 
 		// Process both regular and init container statuses.
-		allStatuses := make([]v1.ContainerStatus, 0, len(p.Status.ContainerStatuses)+len(p.Status.InitContainerStatuses))
+		allStatuses := make([]v1.ContainerStatus, 0, statusCount)
 		allStatuses = append(allStatuses, p.Status.ContainerStatuses...)
-		allStatuses = append(allStatuses, p.Status.InitContainerStatuses...)
+		if features.InitContainerSupport.Enabled() {
+			allStatuses = append(allStatuses, p.Status.InitContainerStatuses...)
+		}
 
 		for _, c := range allStatuses {
 			deployContainer, found := containersByName[c.Name]
