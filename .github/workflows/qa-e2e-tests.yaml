@@ -24,7 +24,7 @@ jobs:
           - "testBegin testParallel"
           - "testBAT"
           - "testRest"
-          - "sensor-bounce-test"
+          - "testSensorBounce testSensorBounceNext"
 
     env:
       CLUSTER_NAME: e2e-${{ github.run_id }}-${{ github.run_attempt }}-${{ strategy.job-index }}
