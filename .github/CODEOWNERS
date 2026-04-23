@@ -55,9 +55,13 @@ image/templates/**               @stackrox/install
 operator/**                      @stackrox/install
 pkg/crs/**                       @stackrox/install
 pkg/helm/**                      @stackrox/install
+pkg/migratetooperator/**         @stackrox/install
 sensor/kubernetes/certrefresh/** @stackrox/install @stackrox/sensor-ecosystem
 sensor/kubernetes/crs/**         @stackrox/install @stackrox/sensor-ecosystem
 roxctl/central/crs/**            @stackrox/install @stackrox/sensor-ecosystem
+# Also the e2e tests for legacy-to-operator migration commands in roxctl:
+tests/roxctl/bats-tests/cluster/sensor-migrate-to-operator.bats  @stackrox/install
+tests/roxctl/bats-tests/local/central-migrate-to-operator.bats   @stackrox/install
 
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
