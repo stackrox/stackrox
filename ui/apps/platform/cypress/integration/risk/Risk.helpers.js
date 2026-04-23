@@ -8,7 +8,7 @@ import { visit } from '../../helpers/visit';
 
 // visit
 
-const riskURL = '/main/risk?filteredWorkflowView=Platform view';
+const basePath = '/main/risk';
 
 export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
 export const deploymentscountAlias = 'deploymentscount';
@@ -29,14 +29,22 @@ const routeMatcherMap = {
     },
 };
 
-export function visitRiskDeployments() {
-    visit(riskURL, routeMatcherMap);
+function getRiskURL(filteredWorkflowView, search = '') {
+    if (filteredWorkflowView) {
+        return `${basePath}?filteredWorkflowView=${filteredWorkflowView}&${search}}`;
+    }
+    return `${basePath}?${search}`;
+}
+
+export function visitRiskDeployments(filteredWorkflowView) {
+    visit(getRiskURL(filteredWorkflowView), routeMatcherMap);
 
     cy.get('h1:contains("Risk")');
 }
 
-export function visitRiskDeploymentsWithSearchQuery(search) {
-    visit(`${riskURL}${search}`, routeMatcherMap);
+export function visitRiskDeploymentsWithSearchQuery(filteredWorkflowView, search) {
+    const riskURL = getRiskURL(filteredWorkflowView, search);
+    visit(riskURL, routeMatcherMap);
 
     cy.get('h1:contains("Risk")');
 }

@@ -33,14 +33,14 @@ describe('Risk', () => {
         });
 
         it('should open detail page for deployment', () => {
-            visitRiskDeployments();
+            visitRiskDeployments('Platform view');
             viewRiskDeploymentByName('collector');
         });
 
         // TODO add relevant tests for error messages in PatternFly
 
         it('should open the detail page to view risk indicators, deployment details, and process discovery tabs', () => {
-            visitRiskDeployments();
+            visitRiskDeployments('Platform view');
             viewRiskDeploymentByName('collector');
 
             cy.get('[role="tab"]:contains("Risk indicators")');
@@ -49,7 +49,7 @@ describe('Risk', () => {
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
-            visitRiskDeployments();
+            visitRiskDeployments('Platform view');
             viewRiskDeploymentByName('collector');
 
             clickTab('Deployment details');
@@ -61,7 +61,7 @@ describe('Risk', () => {
 
     describe('with actual API', () => {
         it('should navigate to network page with selected deployment', () => {
-            visitRiskDeployments();
+            visitRiskDeployments('Platform view');
             viewRiskDeploymentByName('collector');
             viewRiskDeploymentInNetworkGraph('collector');
         });
@@ -78,7 +78,7 @@ describe('Risk', () => {
         });
 
         it('should have a single URL search param key/value pair in its search bar', () => {
-            visitRiskDeployments();
+            visitRiskDeployments('Platform view');
 
             const nsOption = 'Namespace';
             const nsValue = 'stackrox';
@@ -87,7 +87,7 @@ describe('Risk', () => {
             ).then((stackroxDeps) => {
                 const stackroxCount = stackroxDeps.length;
 
-                visitRiskDeploymentsWithSearchQuery(`&s[${nsOption}]=${nsValue}`);
+                visitRiskDeploymentsWithSearchQuery('Platform view', `s[${nsOption}]=${nsValue}`);
 
                 // Negative assertion:
                 cy.get(searchPlaceholderSelector).should('not.exist');
@@ -107,7 +107,7 @@ describe('Risk', () => {
         });
 
         it('should have multiple URL search param key/value pairs in its search bar', () => {
-            visitRiskDeployments();
+            visitRiskDeployments('Platform view');
 
             const nsOption = 'Namespace';
             const nsValue = 'stackrox';
@@ -119,7 +119,8 @@ describe('Risk', () => {
                 const staticCount = staticDeps.length;
 
                 visitRiskDeploymentsWithSearchQuery(
-                    `&s[${nsOption}]=${nsValue}&s[${deployOption}]=${deployValue}`
+                    'Platform view',
+                    `s[${nsOption}]=${nsValue}&s[${deployOption}]=${deployValue}`
                 );
 
                 // Negative assertion:
