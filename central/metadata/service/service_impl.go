@@ -53,15 +53,14 @@ var (
 		},
 	})
 
-	// watchedPrimaryLeafCert holds the latest primary leaf certificate, updated by a file watcher.
-	watchedPrimaryLeafCert     atomic.Pointer[tls.Certificate]
-	primaryLeafCertWatcherOnce sync.Once
+	primaryLeafCert     atomic.Pointer[tls.Certificate]
+	primaryLeafCertOnce sync.Once
 
-	// cachedSecondaryLeafCert holds a short-lived leaf cert signed by the secondary CA,
+	// secondaryCALeafCert holds a short-lived leaf cert signed by the secondary CA,
 	// used only to sign TLSChallenge responses for Sensors that trust the secondary CA.
 	// Re-issued automatically when it nears expiry.
-	cachedSecondaryLeafCert     atomic.Pointer[tls.Certificate]
-	secondaryLeafCertIssueMu    sync.Mutex
+	secondaryCALeafCert         atomic.Pointer[tls.Certificate]
+	secondaryCALeafCertIssueMu  sync.Mutex
 	secondaryLeafCertRenewalBuf = 1 * time.Hour
 )
 
@@ -85,10 +84,10 @@ type CertificateProvider interface {
 type defaultCertificateProvider struct{}
 
 func startPrimaryLeafCertWatcher() {
-	primaryLeafCertWatcherOnce.Do(func() {
+	primaryLeafCertOnce.Do(func() {
 		certwatch.WatchCertDir("internal service", mtls.CertsPrefix, tlsconfig.LoadInternalCertificateFromDirectory, func(cert *tls.Certificate) {
 			if cert != nil {
-				watchedPrimaryLeafCert.Store(cert)
+				primaryLeafCert.Store(cert)
 			}
 		}, certwatch.WithVerify(false))
 	})
@@ -100,7 +99,7 @@ func (p *defaultCertificateProvider) GetPrimaryCACert() (*x509.Certificate, []by
 
 func (p *defaultCertificateProvider) GetPrimaryLeafCert() (tls.Certificate, error) {
 	startPrimaryLeafCertWatcher()
-	if cert := watchedPrimaryLeafCert.Load(); cert != nil {
+	if cert := primaryLeafCert.Load(); cert != nil {
 		return *cert, nil
 	}
 	return mtls.LeafCertificateFromFile()
@@ -115,7 +114,7 @@ func (p *defaultCertificateProvider) GetSecondaryCACert() (*x509.Certificate, []
 }
 
 func loadSecondaryLeafCertIfValid() *tls.Certificate {
-	cert := cachedSecondaryLeafCert.Load()
+	cert := secondaryCALeafCert.Load()
 	if cert != nil && cert.Leaf != nil &&
 		time.Now().Add(secondaryLeafCertRenewalBuf).Before(cert.Leaf.NotAfter) {
 		return cert
@@ -131,8 +130,8 @@ func (p *defaultCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, er
 }
 
 func (p *defaultCertificateProvider) issueAndCacheSecondaryLeafCert() (tls.Certificate, error) {
-	secondaryLeafCertIssueMu.Lock()
-	defer secondaryLeafCertIssueMu.Unlock()
+	secondaryCALeafCertIssueMu.Lock()
+	defer secondaryCALeafCertIssueMu.Unlock()
 
 	if cert := loadSecondaryLeafCertIfValid(); cert != nil {
 		return *cert, nil
@@ -142,7 +141,7 @@ func (p *defaultCertificateProvider) issueAndCacheSecondaryLeafCert() (tls.Certi
 	if err != nil {
 		return tls.Certificate{}, err
 	}
-	cachedSecondaryLeafCert.Store(&leafCert)
+	secondaryCALeafCert.Store(&leafCert)
 	return leafCert, nil
 }
 

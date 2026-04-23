@@ -285,7 +285,7 @@ func (s *serviceImplTestSuite) TestIssueSecondaryCALeafCert() {
 
 func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 	s.Run("returns nil when no cert is cached", func() {
-		cachedSecondaryLeafCert.Store(nil)
+		secondaryCALeafCert.Store(nil)
 		s.Nil(loadSecondaryLeafCertIfValid())
 	})
 
@@ -298,9 +298,9 @@ func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 		cert, err := issueSecondaryCALeafCert(mockProvider)
 		s.Require().NoError(err)
 
-		cachedSecondaryLeafCert.Store(&cert)
+		secondaryCALeafCert.Store(&cert)
 		s.NotNil(loadSecondaryLeafCertIfValid())
-		cachedSecondaryLeafCert.Store(nil)
+		secondaryCALeafCert.Store(nil)
 	})
 
 	s.Run("returns nil when cert is expired", func() {
@@ -309,9 +309,9 @@ func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 				NotAfter: time.Now().Add(-1 * time.Hour),
 			},
 		}
-		cachedSecondaryLeafCert.Store(expiredCert)
+		secondaryCALeafCert.Store(expiredCert)
 		s.Nil(loadSecondaryLeafCertIfValid())
-		cachedSecondaryLeafCert.Store(nil)
+		secondaryCALeafCert.Store(nil)
 	})
 
 	s.Run("returns nil when cert is within renewal buffer", func() {
@@ -320,9 +320,9 @@ func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 				NotAfter: time.Now().Add(30 * time.Minute),
 			},
 		}
-		cachedSecondaryLeafCert.Store(nearExpiryCert)
+		secondaryCALeafCert.Store(nearExpiryCert)
 		s.Nil(loadSecondaryLeafCertIfValid(), "cert expiring within renewal buffer should trigger re-issue")
-		cachedSecondaryLeafCert.Store(nil)
+		secondaryCALeafCert.Store(nil)
 	})
 }
 
