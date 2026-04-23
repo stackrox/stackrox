@@ -19,8 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Separate job so that dependent jobs are skipped entirely on
-  # PRs where their component's files haven't changed.
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
@@ -255,9 +253,7 @@ jobs:
     needs: detect-changes
     if: >-
       !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^COLLECTOR_VERSION$') ||
-      contains(needs.detect-changes.outputs.files, '^FACT_VERSION$') ||
-      contains(needs.detect-changes.outputs.files, '^SCANNER_VERSION$')
+      contains(needs.detect-changes.outputs.files, 'VERSION$')
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.

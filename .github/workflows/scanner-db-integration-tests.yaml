@@ -14,8 +14,6 @@ on:
     - synchronize
 
 jobs:
-  # Separate job so that dependent jobs are skipped entirely on
-  # PRs where their component's files haven't changed.
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 

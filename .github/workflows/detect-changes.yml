@@ -55,8 +55,10 @@ jobs:
             exit 0
           fi
 
-          {
-            echo "files<<EOF"
-            printf '^%s$\n' "${files[@]}"
-            echo "EOF"
-          } >> "${GITHUB_OUTPUT}"
+          if [[ ${#files[@]} -gt 0 ]]; then
+            {
+              echo "files<<EOF"
+              printf '^%s$\n' "${files[@]}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          fi
