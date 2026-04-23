@@ -21,7 +21,7 @@ spock-bom = { module = "org.spockframework:spock-bom", version = "2.4-groovy-5.0
 spock-core = { module = "org.spockframework:spock-core" }
 spock-junit4 = { module = "org.spockframework:spock-junit4" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "6.0.0" }
-snakeyaml = { module = "org.yaml:snakeyaml", version = "2.5" }
+snakeyaml = { module = "org.yaml:snakeyaml", version = "2.6" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.32" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
