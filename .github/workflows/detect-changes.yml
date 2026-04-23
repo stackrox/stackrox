@@ -1,20 +1,31 @@
 name: Detect changed files
+
+# Checks which files changed in a PR and reports per-filter results.
+# All filter keys default to true (changed) and are only set to false
+# after confirming no matching files changed. This means:
+#   - Push events (no PR): all true, every job runs.
+#   - API failure or 3000+ files: all true, every job runs.
+#   - Missing key (e.g. job renamed): null != false → true, job runs.
+# Jobs use: if: fromJSON(needs.detect-changes.outputs.changed).key != false
+# The != false is required so that missing keys (null) default to run.
+
 on:
   workflow_call:
     inputs:
       filters:
         description: >
-          JSON object mapping labels to arrays of pathspec patterns.
-          Example: { "ui": ["ui/**"], "go": ["**/*.go", "go.mod"] }
+          JSON object mapping labels to arrays of .gitignore-style
+          pathspec patterns (* = single segment, ** = recursive).
+          Labels are shared across jobs via fromJSON(changed).label.
+          Example: { "go": ["**/*.go", "go.mod"], "ui": ["ui/**"] }
         type: string
         required: true
     outputs:
       changed:
         description: >
-          JSON object: true/false per filter key indicating whether
-          matching files changed. Default is true (assume changed)
-          so jobs run unless confirmed unchanged.
-          Usage: fromJSON(changed).key != false
+          JSON object with true/false per filter key. Keys default
+          to true and are set to false only when confirmed unchanged.
+          Check with: fromJSON(changed).key != false
         value: ${{ jobs.detect.outputs.changed }}
 
 jobs:
