@@ -241,6 +241,11 @@ class BaseSpecification extends Specification {
     def setupSpec() {
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
+
+        if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
+            println("::group::${this.class.getSimpleName()}")
+        }
+
         log.info("Starting testsuite")
 
         testSpecStartTimeMillis = System.currentTimeMillis()
@@ -333,6 +338,10 @@ class BaseSpecification extends Specification {
         if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
             log.info("Checking if cluster is healthy after test")
             waitForClusterHealthy()
+        }
+
+        if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
+            println("::endgroup::")
         }
 
         MDC.remove("specification")
