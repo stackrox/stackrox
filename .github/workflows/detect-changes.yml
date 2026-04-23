@@ -4,27 +4,23 @@ on:
     inputs:
       filters:
         description: >
-          JSON object mapping labels to arrays of pathspec patterns.
+          JSON object mapping job names to arrays of pathspec patterns.
           Example: { "ui": ["ui/**"], "go": ["**/*.go", "go.mod"] }
         type: string
         required: true
     outputs:
-      any:
-        description: "'true' if any filter matched, empty string otherwise"
-        value: ${{ jobs.detect.outputs.any }}
-      changed:
+      unchanged:
         description: >
-          JSON object with true/false per filter key.
-          Jobs check: fromJSON(changed)[github.job] != false
+          JSON object with true for jobs whose files are unchanged.
+          Jobs check: ! fromJSON(unchanged)[github.job]
           Missing keys default to run (safe if filter is forgotten).
-        value: ${{ jobs.detect.outputs.changed }}
+        value: ${{ jobs.detect.outputs.unchanged }}
 
 jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      any: ${{ steps.compare.outputs.any }}
-      changed: ${{ steps.compare.outputs.changed }}
+      unchanged: ${{ steps.compare.outputs.unchanged }}
     steps:
       - name: Compare list of files changed with filters
         id: compare
@@ -47,23 +43,15 @@ jobs:
             echo "^${regex}$"
           }
 
-          all_keys=$(echo "${FILTERS}" | jq -c 'to_entries | map({(.key): true}) | add')
-
           if [[ -z "${PR_NUMBER}" ]]; then
-            echo "Not a PR, matching all filters" >&2
-            {
-              echo "any=true"
-              echo "changed=${all_keys}"
-            } | tee -a "${GITHUB_OUTPUT}"
+            echo "Not a PR, nothing unchanged" >&2
+            echo "unchanged={}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
           if ! gh_output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
-            echo "::warning::GitHub API call failed, matching all filters" >&2
-            {
-              echo "any=true"
-              echo "changed=${all_keys}"
-            } | tee -a "${GITHUB_OUTPUT}"
+            echo "::warning::GitHub API call failed, nothing unchanged" >&2
+            echo "unchanged={}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -72,15 +60,12 @@ jobs:
           printf '  %s\n' "${files[@]}" >&2
 
           if [[ ${#files[@]} -ge 3000 ]]; then
-            echo "::warning::PR has 3000+ changed files, matching all filters" >&2
-            {
-              echo "any=true"
-              echo "changed=${all_keys}"
-            } | tee -a "${GITHUB_OUTPUT}"
+            echo "::warning::PR has 3000+ changed files, nothing unchanged" >&2
+            echo "unchanged={}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
 
-          declare -A results
+          unchanged=()
           for k in $(echo "${FILTERS}" | jq -r 'keys[]'); do
             mapfile -t patterns < <(echo "${FILTERS}" | jq -r --arg k "$k" '.[$k][]')
             found=false
@@ -93,15 +78,17 @@ jobs:
                 fi
               done
             done
-            results["$k"]=$found
-            echo "${k}: ${found}" >&2
+            if $found; then
+              echo "${k}: changed" >&2
+            else
+              echo "${k}: unchanged" >&2
+              unchanged+=("${k}")
+            fi
           done
 
-          result=$(for k in "${!results[@]}"; do echo "${k} ${results[$k]}"; done \
-            | jq -Rsc 'split("\n") | map(select(. != "")) | map(split(" ") | {(.[0]): (.[1] == "true")}) | add')
-          any=""
-          for v in "${results[@]}"; do
-            if $v; then any=true; break; fi
-          done
-          echo "any=${any}" | tee -a "${GITHUB_OUTPUT}"
-          echo "changed=${result}" | tee -a "${GITHUB_OUTPUT}"
+          if [[ ${#unchanged[@]} -gt 0 ]]; then
+            result=$(printf '%s\n' "${unchanged[@]}" | jq -Rsc 'split("\n") | map(select(. != "")) | map({(.): true}) | add')
+          else
+            result='{}'
+          fi
+          echo "unchanged=${result}" | tee -a "${GITHUB_OUTPUT}"
