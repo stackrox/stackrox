@@ -25,7 +25,6 @@ metadata:
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator-index
     pipelines.appstudio.openshift.io/type: build
   name: operator-index-on-push
   namespace: rh-acs-tenant
@@ -45,10 +44,6 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
-  - name: extra-labels
-    value:
-    # X.Y in the cpe label must be adjusted for every version stream.
-    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el9"
   - name: bundle-image-repo
     value: quay.io/rhacs-eng/release-operator-bundle
 

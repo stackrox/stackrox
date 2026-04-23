@@ -26,20 +26,6 @@ spec:
         value: task
       resolver: bundles
 
-  - name: show-sbom
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-image-index.results.IMAGE_URL)
-    taskRef:
-      params:
-      - name: name
-        value: show-sbom
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:beb0616db051952b4b861dd8c3e00fa1c0eccbd926feddf71194d3bb3ace9ce7
-      - name: kind
-        value: task
-      resolver: bundles
-
   - name: post-metric-end
     params:
     - name: AGGREGATE_TASKS_STATUS
@@ -99,7 +85,6 @@ spec:
       on the cluster: https://konflux.pages.redhat.com/docs/users/getting-started/multi-platform-builds.html
     name: build-platforms
     type: array
-
   - name: bundle-image-repo
     description: Repository where the operator bundle image is pushed.
     type: string
@@ -239,8 +224,91 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).index-build
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
-    taskRef:
-      name: build-operator-index
+    taskSpec:
+      description: >-
+        Builds operator index (catalog) using opm tool. This task generates the index YAML
+        and Dockerfile which are then used by buildah to create multi-platform images.
+      params:
+      - name: BUNDLE_IMAGE
+        description: The operator bundle image to include in the index
+        type: string
+      - name: INDEX_IMAGE
+        description: The target index image name
+        type: string
+      - name: SOURCE_ARTIFACT
+        description: The Trusted Artifact URI pointing to the application source code.
+        type: string
+      - name: ociStorage
+        description: The OCI repository where the index build artifacts will be stored temporarily.
+        type: string
+      - name: ociArtifactExpiresAfter
+        description: Expiration time for the OCI artifacts.
+        type: string
+        default: "1d"
+      results:
+      - name: SOURCE_ARTIFACT
+        description: The Trusted Artifact URI pointing to the index build directory with Dockerfile and YAML.
+        type: string
+      stepTemplate:
+        volumeMounts:
+        - mountPath: /var/workdir
+          name: workdir
+      steps:
+      - name: use-trusted-artifact
+        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+        args:
+        - use
+        - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+      - name: build-index-content
+        image: registry.access.redhat.com/ubi9/go-toolset:1.25
+        workingDir: /var/workdir/source/operator
+        securityContext:
+          runAsUser: 0
+        env:
+        - name: BUNDLE_IMAGE
+          value: $(params.BUNDLE_IMAGE)
+        - name: INDEX_IMAGE
+          value: $(params.INDEX_IMAGE)
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+
+          echo "Building operator index for bundle: ${BUNDLE_IMAGE}"
+          echo "Target index image: ${INDEX_IMAGE}"
+
+          # Pre-install yq to avoid version lookup issues in CI
+          # The build script checks if YQ is set and skips fetch_yq if it is
+          YQ_VERSION="4.52.5"
+          YQ_PATH="./bin/yq-${YQ_VERSION}"
+          if [[ ! -f "${YQ_PATH}" ]]; then
+            mkdir -p ./bin
+            curl -sL "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64" -o "${YQ_PATH}"
+            chmod +x "${YQ_PATH}"
+          fi
+          export YQ="${YQ_PATH}"
+
+          # Use the existing build script to generate index content
+          ./hack/build-index-image.sh \
+            --index-tag "${INDEX_IMAGE}" \
+            --bundle-tag "${BUNDLE_IMAGE}" \
+            --single-bundle \
+            --skip-build \
+            --base-dir "."
+
+          echo "Index content generated successfully"
+      - name: create-trusted-artifact
+        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+        args:
+        - create
+        - --store
+        - $(params.ociStorage)
+        - $(results.SOURCE_ARTIFACT.path)=/var/workdir/source/operator/build/index
+        env:
+        - name: IMAGE_EXPIRES_AFTER
+          value: $(params.ociArtifactExpiresAfter)
+      volumes:
+      - name: workdir
+        emptyDir: {}
 
   - name: build-images
     runAfter:
