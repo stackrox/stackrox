@@ -26,6 +26,11 @@ deploy_default_psp() {
 get_ECR_docker_pull_password() {
     info "Get AWS ECR Docker Pull Password"
 
+    if [[ -z "${AWS_ECR_REGISTRY_REGION:-}" ]]; then
+        info "AWS_ECR_REGISTRY_REGION not set, skipping ECR password retrieval"
+        return 0
+    fi
+
     aws --version
     local pass
     pass="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
