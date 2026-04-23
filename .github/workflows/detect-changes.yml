@@ -1,16 +1,15 @@
 name: Detect changed files
 
-# Outputs the list of files changed in a PR as a newline-separated
-# string. Each job does its own matching with contains(), startsWith(),
-# or endsWith() directly in its if: condition.
+# Outputs the list of files changed in a PR, one per line, wrapped
+# with ^ and $ anchors (e.g. ^ui/src/App.tsx$). Jobs match with
+# contains() using anchors for precise substring matching:
+#   '^scripts/'  — root directory (won't match nested scripts/)
+#   '.go$'       — file extension (won't match .gotmpl)
+#   '^go.mod$'   — exact root file
 #
 # Empty output (push events, API failure, 3000+ files) is falsy,
-# so jobs use: !needs.detect-changes.outputs.files || contains(...)
+# so jobs prefix with: !needs.detect-changes.outputs.files ||
 # to default to "run" when the file list is unavailable.
-#
-# Examples:
-#   if: !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '.go')
-#   if: !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, 'ui/')
 
 on:
   workflow_call:
@@ -58,6 +57,6 @@ jobs:
 
           {
             echo "files<<EOF"
-            printf '%s\n' "${files[@]}"
+            printf '^%s$\n' "${files[@]}"
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
