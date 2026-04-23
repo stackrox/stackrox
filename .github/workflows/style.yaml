@@ -23,17 +23,14 @@ jobs:
   # PRs where their component's files haven't changed.
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
-    with:
-      filters: |
-        {
-          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
-          "style": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**", "ui/**", "scripts/**", "deploy/**", "**/*.sh"],
-          "versions": ["COLLECTOR_VERSION", "FACT_VERSION", "SCANNER_VERSION"]
-        }
 
   check-generated-files:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'proto/')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -130,7 +127,12 @@ jobs:
 
   style-check:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).style != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'ui/') ||
+      contains(needs.detect-changes.outputs.files, '.sh') ||
+      contains(needs.detect-changes.outputs.files, 'proto/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -195,7 +197,11 @@ jobs:
 
   golangci-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'go.sum')
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
@@ -247,7 +253,11 @@ jobs:
 
   check-dependent-images-exist:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).versions != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, 'COLLECTOR_VERSION') ||
+      contains(needs.detect-changes.outputs.files, 'FACT_VERSION') ||
+      contains(needs.detect-changes.outputs.files, 'SCANNER_VERSION')
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
@@ -302,7 +312,8 @@ jobs:
 
   github-actions-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['.github/**'] != false
+    if: >-
+      !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '.github/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -319,7 +330,8 @@ jobs:
 
   github-actions-shellcheck:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['.github/**'] != false
+    if: >-
+      !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '.github/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -331,7 +343,8 @@ jobs:
 
   openshift-ci-lint:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['.openshift-ci/**'] != false
+    if: >-
+      !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '.openshift-ci/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

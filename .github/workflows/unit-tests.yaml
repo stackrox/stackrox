@@ -21,17 +21,18 @@ jobs:
   # PRs where their component's files haven't changed.
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
-    with:
-      filters: |
-        {
-          "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"]
-        }
 
   go:
     needs: detect-changes
     if: >-
-      fromJSON(needs.detect-changes.outputs.changed).go != false ||
-      fromJSON(needs.detect-changes.outputs.changed)['operator/**'] != false
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'go.sum') ||
+      contains(needs.detect-changes.outputs.files, 'Makefile') ||
+      contains(needs.detect-changes.outputs.files, 'make/') ||
+      contains(needs.detect-changes.outputs.files, 'proto/') ||
+      contains(needs.detect-changes.outputs.files, 'operator/')
     strategy:
       fail-fast: false
       matrix:
@@ -116,7 +117,11 @@ jobs:
 
   go-postgres:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'go.sum')
     strategy:
       fail-fast: false
       matrix:
@@ -194,7 +199,11 @@ jobs:
 
   go-bench:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'go.sum')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -244,7 +253,8 @@ jobs:
 
   ui:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['ui/**'] != false
+    if: >-
+      !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, 'ui/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -283,7 +293,8 @@ jobs:
 
   ui-component:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['ui/**'] != false
+    if: >-
+      !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, 'ui/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -330,8 +341,11 @@ jobs:
   local-roxctl-tests:
     needs: detect-changes
     if: >-
-      fromJSON(needs.detect-changes.outputs.changed).go != false ||
-      fromJSON(needs.detect-changes.outputs.changed)['**/*.sh'] != false
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'go.sum') ||
+      contains(needs.detect-changes.outputs.files, 'scripts/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -378,7 +392,11 @@ jobs:
 
   shell-unit-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['**/*.sh'] != false
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.sh') ||
+      contains(needs.detect-changes.outputs.files, 'scripts/') ||
+      contains(needs.detect-changes.outputs.files, 'deploy/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -417,7 +435,8 @@ jobs:
 
   openshift-ci-unit-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed)['.openshift-ci/**'] != false
+    if: >-
+      !needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '.openshift-ci/')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -438,9 +457,12 @@ jobs:
   sensor-integration-tests:
     needs: detect-changes
     if: >-
-      fromJSON(needs.detect-changes.outputs.changed).go != false ||
-      fromJSON(needs.detect-changes.outputs.changed)['sensor/**'] != false ||
-      fromJSON(needs.detect-changes.outputs.changed)['**/*.sh'] != false
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go') ||
+      contains(needs.detect-changes.outputs.files, 'go.mod') ||
+      contains(needs.detect-changes.outputs.files, 'go.sum') ||
+      contains(needs.detect-changes.outputs.files, 'sensor/') ||
+      contains(needs.detect-changes.outputs.files, 'scripts/')
     env:
       KUBECONFIG: "/tmp/kubeconfig"
       # Stable version ldflags for test caching (see go job comment).
