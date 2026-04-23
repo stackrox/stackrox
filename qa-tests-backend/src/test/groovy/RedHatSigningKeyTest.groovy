@@ -67,7 +67,8 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         "The bundle file is written into the Central pod at the watcher path"
         def writeCmd = ["sh", "-c",
                 "mkdir -p /tmp/redhat-signing-keys && " +
-                "cat > /tmp/redhat-signing-keys/bundle.json << 'BUNDLE_EOF'\n${bundleJson}\nBUNDLE_EOF"] as String[]
+                "cat > /tmp/redhat-signing-keys/bundle.json << 'BUNDLE_EOF'\n${bundleJson}\nBUNDLE_EOF",
+        ] as String[]
         assert orchestrator.execInContainerByPodName(
                 centralPodName, Constants.STACKROX_NAMESPACE, writeCmd)
 
@@ -81,7 +82,7 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
             if (integration.cosign.publicKeysCount != 2) {
                 return false
             }
-            def keyNames = integration.cosign.publicKeysList.collect { it.name }.sort()
+            def keyNames = (integration.cosign.publicKeysList*.name).sort()
             return keyNames == ["test-key-1", "test-key-2"]
         }
 
