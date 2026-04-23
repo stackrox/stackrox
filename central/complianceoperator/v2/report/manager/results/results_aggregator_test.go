@@ -365,7 +365,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*datastore.ControlResult{}, nil
 			},
 		},
-		"profile without benchmark mapping has no control reference": {
+		"profile without benchmark mapping renders control reference as N/A": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
@@ -386,7 +386,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
 		},
-		"profile with benchmark but no matching controls has no control reference": {
+		"profile with benchmark but no matching controls renders control reference as N/A": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
@@ -648,11 +648,11 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	}
 	expRules, _ := tcase.expectedRules()
 	if len(expRules) != 1 {
-		assert.Equal(t, CONTROL_NOT_APPLICABLE, row.ControlRef)
+		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
 		return
 	}
 	if tcase.expectedBenchmarks == nil {
-		assert.Equal(t, CONTROL_NOT_APPLICABLE, row.ControlRef)
+		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
 		return
 	}
 	expBench, _ := tcase.expectedBenchmarks()
