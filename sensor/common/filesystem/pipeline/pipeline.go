@@ -257,6 +257,12 @@ func (p *Pipeline) popBufferedActivity(key string) []*sensorAPI.FileActivity {
 }
 
 func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		return nil
+	default:
+	}
+
 	enrichedEvent, ok := event.(*processsignal.EnrichedProcessIndicatorEvent)
 	if !ok {
 		log.Errorf("File system pipeline received unexpected event type: %T", event)
@@ -272,9 +278,11 @@ func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 	buffered := p.popBufferedActivity(key)
 	for _, fs := range buffered {
 		access := p.translateWithIndicator(fs, indicator)
-		if access != nil {
-			p.detector.ProcessFileAccess(enrichedEvent.Context, access)
+		if access == nil {
+			detectorMetrics.DetectorFileAccessDroppedCount.Inc()
+			continue
 		}
+		p.detector.ProcessFileAccess(enrichedEvent.Context, access)
 	}
 
 	return nil
@@ -320,9 +328,12 @@ func (p *Pipeline) processFileActivity(fs *sensorAPI.FileActivity) {
 		processsignal.PopulateIndicatorFromContainer(indicator, metadata)
 	}
 
-	if access := p.translateWithIndicator(fs, indicator); access != nil {
-		p.detector.ProcessFileAccess(p.msgCtx, access)
+	access := p.translateWithIndicator(fs, indicator)
+	if access == nil {
+		detectorMetrics.DetectorFileAccessDroppedCount.Inc()
+		return
 	}
+	p.detector.ProcessFileAccess(p.msgCtx, access)
 }
 
 func (p *Pipeline) cleanupExpiredBuffers() {
@@ -345,18 +356,15 @@ func (p *Pipeline) pruneExpiredBuffers() {
 	defer p.activityMutex.Unlock()
 
 	now := time.Now()
-	expiredKeys := make([]string, 0)
+	pruned := 0
 
 	for key, entry := range p.bufferedActivity {
 		if now.Sub(entry.timestamp) > bufferedActivityTTL {
-			expiredKeys = append(expiredKeys, key)
 			p.totalBufferedActivity -= len(entry.activities)
 			metrics.IncrementFileActivityBufferDropsBy(len(entry.activities))
+			delete(p.bufferedActivity, key)
+			pruned++
 		}
-	}
-
-	for _, key := range expiredKeys {
-		delete(p.bufferedActivity, key)
 	}
 
 	if p.totalBufferedActivity < 0 {
@@ -364,15 +372,14 @@ func (p *Pipeline) pruneExpiredBuffers() {
 		p.totalBufferedActivity = 0
 	}
 
-	if len(expiredKeys) > 0 {
-		log.Debugf("Pruned %d expired file activity buffers (TTL: %v)", len(expiredKeys), bufferedActivityTTL)
+	if pruned > 0 {
+		log.Debugf("Pruned %d expired file activity buffers (TTL: %v)", pruned, bufferedActivityTTL)
 		metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
 	}
 }
 
 func (p *Pipeline) run() {
 	defer p.wg.Done()
-	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-p.stopper.Flow().StopRequested():

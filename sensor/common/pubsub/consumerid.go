@@ -7,8 +7,8 @@ const (
 	DefaultConsumer
 	ResolverConsumer
 	EnrichedProcessConsumer
-	FileActivityEnrichedProcessConsumer
 	UnenrichedProcessConsumer
+	FileActivityEnrichedProcessConsumer
 )
 
 var (
