@@ -25,6 +25,8 @@ jobs:
       filters: |
         {
           "go": ["**/*.go", "go.mod", "go.sum", "Makefile", "make/**", "proto/**"],
+          "operator": ["operator/**"],
+          "sensor": ["sensor/**"],
           "ui": ["ui/**"],
           "shell": ["scripts/**", "deploy/**", "**/*.sh"],
           "openshift_ci": [".openshift-ci/**"]
@@ -32,7 +34,7 @@ jobs:
 
   go:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: fromJSON(needs.detect-changes.outputs.changed).go != false || fromJSON(needs.detect-changes.outputs.changed).operator != false
     strategy:
       fail-fast: false
       matrix:
@@ -330,7 +332,9 @@ jobs:
 
   local-roxctl-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: >-
+      fromJSON(needs.detect-changes.outputs.changed).go != false ||
+      fromJSON(needs.detect-changes.outputs.changed).shell != false
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -438,7 +442,10 @@ jobs:
   # moving to a separate workflow.
   sensor-integration-tests:
     needs: detect-changes
-    if: fromJSON(needs.detect-changes.outputs.changed).go != false
+    if: >-
+      fromJSON(needs.detect-changes.outputs.changed).go != false ||
+      fromJSON(needs.detect-changes.outputs.changed).sensor != false ||
+      fromJSON(needs.detect-changes.outputs.changed).shell != false
     env:
       KUBECONFIG: "/tmp/kubeconfig"
       # Stable version ldflags for test caching (see go job comment).
