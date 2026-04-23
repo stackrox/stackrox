@@ -435,8 +435,6 @@ jobs:
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
 
-  # TODO: This is an integration test (Kind cluster, image pulls) — consider
-  # moving to a separate workflow.
   sensor-integration-tests:
     needs: detect-changes
     if: >-
