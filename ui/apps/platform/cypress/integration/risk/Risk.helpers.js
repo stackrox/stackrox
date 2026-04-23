@@ -31,7 +31,7 @@ const routeMatcherMap = {
 
 function getRiskURL(filteredWorkflowView, search = '') {
     if (filteredWorkflowView) {
-        return `${basePath}?filteredWorkflowView=${filteredWorkflowView}&${search}}`;
+        return `${basePath}?filteredWorkflowView=${filteredWorkflowView}&${search}`;
     }
     return `${basePath}?${search}`;
 }
@@ -49,24 +49,15 @@ export function visitRiskDeploymentsWithSearchQuery(filteredWorkflowView, search
     cy.get('h1:contains("Risk")');
 }
 
-export function viewRiskDeploymentByName(deploymentName) {
-    // Assume location is risk deployments table.
-    const routeMatcherMapForDeployment = {
-        'deploymentswithrisk/id': {
-            method: 'GET',
-            url: '/v1/deploymentswithrisk/*',
-        },
-    };
+export function viewFirstRiskDeployment() {
+    return cy.get('tbody tr:first td[data-label="Name"]').then(($td) => {
+        const deploymentName = $td.text().trim();
 
-    interactAndWaitForResponses(() => {
-        cy.get(
-            `tbody tr:has('td[data-label="Namespace"]:contains("stackrox")') td[data-label="Name"]`
-        )
-            .contains(new RegExp(`^${deploymentName}$`))
-            .click();
-    }, routeMatcherMapForDeployment);
+        cy.wrap($td).find('a').click();
+        cy.get(`h1:contains("${deploymentName}")`);
 
-    cy.get(`h1:contains("${deploymentName}")`);
+        return cy.wrap(deploymentName);
+    });
 }
 
 export function viewRiskDeploymentInNetworkGraph(deploymentName) {
