@@ -290,19 +290,15 @@ func TestGetVMCVEComponents(t *testing.T) {
 			},
 			expectedError: "vm_id and cve_id must be specified",
 		},
-		"successful with components": {
+		"view error": {
 			request: &v2.GetVMCVEComponentsRequest{
 				VmId:  "vm-1",
 				CveId: "CVE-2024-1234",
 			},
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
-				mockView.EXPECT().GetCVEComponents(ctx, gomock.Any()).Return([]vmcve.CVEComponentCore{
-					&cveComponentMock{
-						name: "openssl", version: "1.1.1", source: int32(storage.SourceType_OS),
-						fixedBy: "1.2.3", advisoryName: "RHSA-2024:1234", advisoryLink: "https://access.redhat.com",
-					},
-				}, nil)
+				mockView.EXPECT().GetCVEComponents(ctx, gomock.Any()).Return(nil, errors.New("view error"))
 			},
+			expectedError: "view error",
 		},
 	}
 
@@ -335,16 +331,59 @@ func TestGetVMCVEComponents(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
-				require.Len(t, result.GetComponents(), 1)
-				row := result.GetComponents()[0]
-				assert.Equal(t, "openssl", row.GetComponentName())
-				assert.Equal(t, "1.1.1", row.GetComponentVersion())
-				assert.Equal(t, v2.SourceType_OS, row.GetSource())
-				assert.Equal(t, "1.2.3", row.GetFixedBy())
-				assert.Equal(t, "RHSA-2024:1234", row.GetAdvisory().GetName())
+				require.NotEmpty(t, result.GetComponents())
 			}
 		})
 	}
+
+	// Verify specific field values for the success case.
+	t.Run("successful with components - field values", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockView := cveViewMocks.NewMockCveView(ctrl)
+		comp := cveViewMocks.NewMockCVEComponentCore(ctrl)
+		comp.EXPECT().GetComponentName().Return("openssl").AnyTimes()
+		comp.EXPECT().GetComponentVersion().Return("1.1.1").AnyTimes()
+		comp.EXPECT().GetComponentSource().Return(int32(storage.SourceType_OS)).AnyTimes()
+		comp.EXPECT().GetFixedBy().Return("1.2.3").AnyTimes()
+		comp.EXPECT().GetAdvisoryName().Return("RHSA-2024:1234").AnyTimes()
+		comp.EXPECT().GetAdvisoryLink().Return("https://access.redhat.com").AnyTimes()
+		mockView.EXPECT().GetCVEComponents(ctx, gomock.Any()).Return([]vmcve.CVEComponentCore{comp}, nil)
+
+		svc := &serviceImpl{cveView: mockView}
+		result, err := svc.GetVMCVEComponents(ctx, &v2.GetVMCVEComponentsRequest{VmId: "vm-1", CveId: "CVE-2024-1234"})
+		require.NoError(t, err)
+		require.Len(t, result.GetComponents(), 1)
+		row := result.GetComponents()[0]
+		assert.Equal(t, "openssl", row.GetComponentName())
+		assert.Equal(t, "1.1.1", row.GetComponentVersion())
+		assert.Equal(t, v2.SourceType_OS, row.GetSource())
+		assert.Equal(t, "1.2.3", row.GetFixedBy())
+		assert.Equal(t, "RHSA-2024:1234", row.GetAdvisory().GetName())
+	})
+
+	// Verify nil advisory when advisory name is empty.
+	t.Run("nil advisory when empty", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockView := cveViewMocks.NewMockCveView(ctrl)
+		comp := cveViewMocks.NewMockCVEComponentCore(ctrl)
+		comp.EXPECT().GetComponentName().Return("curl").AnyTimes()
+		comp.EXPECT().GetComponentVersion().Return("7.0").AnyTimes()
+		comp.EXPECT().GetComponentSource().Return(int32(storage.SourceType_OS)).AnyTimes()
+		comp.EXPECT().GetFixedBy().Return("").AnyTimes()
+		comp.EXPECT().GetAdvisoryName().Return("").AnyTimes()
+		comp.EXPECT().GetAdvisoryLink().Return("").AnyTimes()
+		mockView.EXPECT().GetCVEComponents(ctx, gomock.Any()).Return([]vmcve.CVEComponentCore{comp}, nil)
+
+		svc := &serviceImpl{cveView: mockView}
+		result, err := svc.GetVMCVEComponents(ctx, &v2.GetVMCVEComponentsRequest{VmId: "vm-1", CveId: "CVE-2024-5678"})
+		require.NoError(t, err)
+		require.Len(t, result.GetComponents(), 1)
+		assert.Nil(t, result.GetComponents()[0].GetAdvisory())
+	})
 }
 
 func TestListVMComponents(t *testing.T) {
@@ -742,18 +781,6 @@ func TestListVMs(t *testing.T) {
 		})
 	}
 }
-
-type cveComponentMock struct {
-	name, version, fixedBy, advisoryName, advisoryLink string
-	source                                             int32
-}
-
-func (c *cveComponentMock) GetComponentName() string    { return c.name }
-func (c *cveComponentMock) GetComponentVersion() string { return c.version }
-func (c *cveComponentMock) GetComponentSource() int32   { return c.source }
-func (c *cveComponentMock) GetFixedBy() string          { return c.fixedBy }
-func (c *cveComponentMock) GetAdvisoryName() string     { return c.advisoryName }
-func (c *cveComponentMock) GetAdvisoryLink() string     { return c.advisoryLink }
 
 // mockCveCore implements vmcve.CveCore for testing ListVMCVEs.
 type mockCveCore struct {
