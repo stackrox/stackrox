@@ -19,6 +19,7 @@ setup() {
 }
 
 teardown() {
+  delete_cluster "$cluster_name" 2>/dev/null || true
   rm -rf "$out_dir" "$cr_out"
 }
 
@@ -31,16 +32,11 @@ generate_bundle_and_migrate() {
   assert_success
 }
 
-cleanup_cluster() {
-  delete_cluster "$cluster_name"
-}
-
 @test "sensor migrate-to-operator: cluster name is detected from manifests" {
   generate_bundle_and_migrate
   run yq e '.spec.clusterName' "$cr_out"
   assert_success
   assert_output "$cluster_name"
-  cleanup_cluster
 }
 
 @test "sensor migrate-to-operator: default central endpoint is omitted" {
@@ -48,7 +44,6 @@ cleanup_cluster() {
   run yq e '.spec.centralEndpoint' "$cr_out"
   assert_success
   assert_output "null"
-  cleanup_cluster
 }
 
 @test "sensor migrate-to-operator: custom central endpoint" {
@@ -56,7 +51,6 @@ cleanup_cluster() {
   run yq e '.spec.centralEndpoint' "$cr_out"
   assert_success
   assert_output "my-central.example.com:443"
-  cleanup_cluster
 }
 
 @test "sensor migrate-to-operator: enforcement disabled" {
@@ -64,7 +58,6 @@ cleanup_cluster() {
   run yq e '.spec.admissionControl.enforcement' "$cr_out"
   assert_success
   assert_output "Disabled"
-  cleanup_cluster
 }
 
 @test "sensor migrate-to-operator: failure policy fail" {
@@ -72,7 +65,6 @@ cleanup_cluster() {
   run yq e '.spec.admissionControl.failurePolicy' "$cr_out"
   assert_success
   assert_output "Fail"
-  cleanup_cluster
 }
 
 @test "sensor migrate-to-operator: collection none" {
@@ -80,7 +72,6 @@ cleanup_cluster() {
   run yq e '.spec.perNode.collector.collection' "$cr_out"
   assert_success
   assert_output "NoCollection"
-  cleanup_cluster
 }
 
 @test "sensor migrate-to-operator: tolerations disabled" {
@@ -88,5 +79,4 @@ cleanup_cluster() {
   run yq e '.spec.perNode.taintToleration' "$cr_out"
   assert_success
   assert_output "AvoidTaints"
-  cleanup_cluster
 }

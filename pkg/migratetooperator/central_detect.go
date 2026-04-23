@@ -123,10 +123,10 @@ func detectStorage(src Source) (*storageConfig, error) {
 }
 
 func detectMonitoring(dep *appsv1.Deployment) monitoringConfig {
-	isOpenShift := hasEnvVar(dep, "ROX_ENABLE_OPENSHIFT_AUTH")
+	isOpenShift := envVarIsTrue(dep, "ROX_ENABLE_OPENSHIFT_AUTH")
 	return monitoringConfig{
 		IsOpenShift:                isOpenShift,
-		OpenShiftMonitoringEnabled: isOpenShift && hasEnvVar(dep, "ROX_ENABLE_SECURE_METRICS"),
+		OpenShiftMonitoringEnabled: isOpenShift && envVarIsTrue(dep, "ROX_ENABLE_SECURE_METRICS"),
 	}
 }
 
@@ -180,17 +180,6 @@ func detectDeclarativeConfig(dep *appsv1.Deployment) (configMaps []string, secre
 	return configMaps, secrets
 }
 
-func hasEnvVar(dep *appsv1.Deployment, name string) bool {
-	for _, c := range dep.Spec.Template.Spec.Containers {
-		for _, env := range c.Env {
-			if env.Name == name {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 var defaultImageRegistries = []string{
 	"registry.redhat.io/advanced-cluster-security/",
 	"quay.io/stackrox-io/",
@@ -213,6 +202,10 @@ func isDefaultImage(image string) bool {
 		}
 	}
 	return false
+}
+
+func envVarIsTrue(dep *appsv1.Deployment, name string) bool {
+	return strings.EqualFold(envVarValue(dep, name), "true")
 }
 
 func envVarValue(dep *appsv1.Deployment, name string) string {
