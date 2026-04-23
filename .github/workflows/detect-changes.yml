@@ -9,17 +9,17 @@ on:
         type: string
         required: true
     outputs:
-      matches:
-        # Consumed via contains(matches, 'label') — avoid label names
+      changed:
+        # Consumed via contains(changed, 'label') — avoid label names
         # where one is a substring of another (e.g., 'go' and 'go-ui').
         description: "space-separated string of matched filter labels"
-        value: ${{ jobs.detect.outputs.matches }}
+        value: ${{ jobs.detect.outputs.changed }}
 
 jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      matches: ${{ steps.compare.outputs.matches }}
+      changed: ${{ steps.compare.outputs.matches }}
     steps:
       - name: Compare list of files changed with filters
         id: compare
