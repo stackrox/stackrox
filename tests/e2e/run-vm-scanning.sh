@@ -28,7 +28,10 @@ test_vm_scanning_e2e() {
 
     deploy_optional_e2e_components
 
-    ensure_virtctl_binary
+    if ! ( ensure_virtctl_binary ); then
+        warn "Secure virtctl download failed. Falling back to insecure curl -k download path."
+        ensure_virtctl_binary_insecure
+    fi
 
     deploy_stackrox
 
