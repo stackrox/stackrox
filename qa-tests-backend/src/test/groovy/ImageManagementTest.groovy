@@ -14,7 +14,6 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
-@Tag("Parallel")
 @Tag("PZ")
 class ImageManagementTest extends BaseSpecification {
 
