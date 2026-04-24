@@ -117,6 +117,18 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				{Name: "node-a", Unschedulable: false, KVMCapacity: "1", Eligible: true},
 			},
 		},
+		"should skip unschedulable nodes in fallback scope": {
+			nodes: []*coreV1.Node{
+				makeNode("node-a", nil, true, "1"),
+				makeNode("node-b", nil, false, "1"),
+			},
+			wantUsable:   true,
+			wantScope:    kvmAllSchedulableNodeScope,
+			wantFallback: true,
+			wantChecked: []kvmPreflightNode{
+				{Name: "node-b", Unschedulable: false, KVMCapacity: "1", Eligible: true},
+			},
+		},
 	}
 
 	for name, tc := range tests {

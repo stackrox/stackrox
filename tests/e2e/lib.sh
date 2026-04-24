@@ -643,6 +643,11 @@ install_the_cnv_operator() {
         oc rollout status deploy/virt-operator -n openshift-cnv --timeout=300s
         wait_for_object_to_appear openshift-cnv ds/virt-handler 600
         oc rollout status ds/virt-handler -n openshift-cnv --timeout=600s
+        if ! oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv >/dev/null 2>&1; then
+            info "Creating missing HyperConverged CR..."
+            wait_for_service_endpoints openshift-cnv hco-webhook-service 300
+            oc apply -f "${ROOT}/tests/e2e/yaml/cnv-operator/hyperconverged.yaml"
+        fi
     fi
 
     # Ensure VSOCK feature gate via annotation on the HyperConverged CR.
