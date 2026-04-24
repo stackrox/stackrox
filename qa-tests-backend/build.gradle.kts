@@ -213,7 +213,7 @@ tasks.register<JavaExec>("runSampleScript") {
     dependsOn("classes")
     if (project.hasProperty("runScript")) {
         mainClass = "sampleScripts." + project.properties["runScript"]
-        classpath = sourceSets["main"].runtimeClasspath
+        classpath = extensions.getByType<SourceSetContainer>()["main"].runtimeClasspath
     }
 }
 
