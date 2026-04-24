@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -22,14 +24,22 @@ import (
 const (
 	// Hardcoded because registerDurationSetting in pkg/env is unexported.
 	// This is acceptable since adjusting these values requires a code change anyway.
-	defaultScanTimeout   = 20 * time.Minute
-	defaultDeleteTimeout = 5 * time.Minute
-	defaultGuestUser     = "cloud-user"
+	defaultScanTimeout      = 20 * time.Minute
+	defaultScanPollInterval = 10 * time.Second
+	defaultDeleteTimeout    = 5 * time.Minute
+	defaultGuestUser        = "cloud-user"
+
+	defaultRepo2CPEPrimaryURL  = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+	defaultRepo2CPEFallbackURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+	defaultRepo2CPEAttempts    = 3
 )
 
 var (
 	vmScanNamespacePrefix = env.RegisterSetting("VM_SCAN_NAMESPACE_PREFIX", env.WithDefault("vm-scan-e2e"))
 	vmScanSkipCleanup     = env.RegisterBooleanSetting("VM_SCAN_SKIP_CLEANUP", false)
+
+	repo2CPEPrimaryURL  = env.RegisterSetting("ROXAGENT_REPO2CPE_PRIMARY_URL", env.WithDefault(defaultRepo2CPEPrimaryURL))
+	repo2CPEFallbackURL = env.RegisterSetting("ROXAGENT_REPO2CPE_FALLBACK_URL", env.WithDefault(defaultRepo2CPEFallbackURL))
 )
 
 // vmSpec describes a VM to provision: container-disk image and guest SSH user.
@@ -40,16 +50,21 @@ type vmSpec struct {
 }
 
 type vmScanConfig struct {
-	Images              []string // container-disk images (from VM_IMAGES, comma-separated)
-	GuestUsers          []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
-	VirtctlPath         string
-	SSHPrivateKey       string // PEM-encoded private key content (not a file path)
-	SSHPublicKey        string // OpenSSH authorized_keys line (not a file path)
-	NamespacePrefix     string
-	ScanTimeout         time.Duration
-	DeleteTimeout       time.Duration
-	SkipCleanup         bool
-	ImagePullSecretPath string // Path to docker config JSON for private registries
+	Images                  []string // container-disk images (from VM_IMAGES, comma-separated)
+	GuestUsers              []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
+	VirtctlPath             string
+	RoxagentBinaryPath      string
+	Repo2CPEPrimaryURL      string
+	Repo2CPEFallbackURL     string
+	Repo2CPEPrimaryAttempts int
+	SSHPrivateKey           string // PEM-encoded private key content (not a file path)
+	SSHPublicKey            string // OpenSSH authorized_keys line (not a file path)
+	NamespacePrefix         string
+	ScanTimeout             time.Duration
+	ScanPollInterval        time.Duration
+	DeleteTimeout           time.Duration
+	SkipCleanup             bool
+	ImagePullSecretPath     string // Path to docker config JSON for private registries
 }
 
 func loadVMScanConfig() (*vmScanConfig, error) {
@@ -79,6 +94,13 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	if cfg.VirtctlPath, err = discoverVirtctlPath(); err != nil {
 		return nil, err
 	}
+	if cfg.RoxagentBinaryPath, err = discoverRoxagentBinaryPath(); err != nil {
+		return nil, err
+	}
+
+	cfg.Repo2CPEPrimaryURL = repo2CPEPrimaryURL.Setting()
+	cfg.Repo2CPEFallbackURL = repo2CPEFallbackURL.Setting()
+	cfg.Repo2CPEPrimaryAttempts = defaultRepo2CPEAttempts
 
 	cfg.SSHPrivateKey = os.Getenv("VM_SSH_PRIVATE_KEY")
 	cfg.SSHPublicKey = strings.TrimSpace(os.Getenv("VM_SSH_PUBLIC_KEY"))
@@ -102,6 +124,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 
 	cfg.NamespacePrefix = vmScanNamespacePrefix.Setting()
 	cfg.ScanTimeout = defaultScanTimeout
+	cfg.ScanPollInterval = defaultScanPollInterval
 	cfg.DeleteTimeout = defaultDeleteTimeout
 	cfg.SkipCleanup = vmScanSkipCleanup.BooleanSetting()
 	cfg.ImagePullSecretPath = strings.TrimSpace(os.Getenv("VM_IMAGE_PULL_SECRET_PATH"))
@@ -144,6 +167,29 @@ func discoverVirtctlPath() (string, error) {
 		return "", fmt.Errorf("VIRTCTL_PATH not set and virtctl not found on $PATH: %w", err)
 	}
 	return p, nil
+}
+
+// discoverRoxagentBinaryPath returns the ROXAGENT_BINARY_PATH env var if set,
+// otherwise probes the standard build output path relative to the repository root.
+func discoverRoxagentBinaryPath() (string, error) {
+	if v := strings.TrimSpace(os.Getenv("ROXAGENT_BINARY_PATH")); v != "" {
+		return v, nil
+	}
+	root := repoRoot()
+	candidate := filepath.Join(root, "bin", "linux_amd64", "roxagent")
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate, nil
+	}
+	return "", fmt.Errorf("ROXAGENT_BINARY_PATH not set and %s does not exist; run 'make roxagent_linux-amd64'", candidate)
+}
+
+// repoRoot returns the repository root by walking up from this source file.
+func repoRoot() string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return "."
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(file), ".."))
 }
 
 // generateEphemeralSSHKeypair creates a one-time ed25519 keypair and returns
