@@ -1657,7 +1657,7 @@ store_test_results() {
         return
     fi
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        >&2 echo "WARNING: ARTIFACT_DIR is not set, skipping store_test_results"
+        warn "ARTIFACT_DIR is not set, skipping store_test_results"
         return
     fi
 

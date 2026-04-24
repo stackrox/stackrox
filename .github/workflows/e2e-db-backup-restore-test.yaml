@@ -43,7 +43,6 @@ jobs:
         image: |
           rhacs-eng/main:${{ env.tag }}
           rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/roxctl:${{ env.tag }}
           rhacs-eng/scanner-v4:${{ env.tag }}
           rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
@@ -62,11 +61,6 @@ jobs:
       CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}-${{ github.run_attempt }}
       CI_JOB_NAME: gke-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports/
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     timeout-minutes: 60
     steps:
 
@@ -100,6 +94,8 @@ jobs:
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
+
+    - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
 
     - name: Build roxctl
       run: |
