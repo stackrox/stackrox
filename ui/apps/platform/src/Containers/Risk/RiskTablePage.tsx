@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { Flex, PageSection } from '@patternfly/react-core';
 
@@ -42,7 +43,17 @@ function RiskTablePage() {
     const urlSearch = useURLSearch();
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
-    const additionalContextFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
+    const additionalContextFilter = useMemo(
+        () => getFilteredWorkflowViewSearchFilter(filteredWorkflowView),
+        [filteredWorkflowView]
+    );
+    const mergedSearchFilter = useMemo(
+        () => ({
+            ...urlSearch.searchFilter,
+            ...additionalContextFilter,
+        }),
+        [urlSearch.searchFilter, additionalContextFilter]
+    );
 
     const searchQueryOptions = {
         variables: {
@@ -58,11 +69,6 @@ function RiskTablePage() {
     );
 
     const autoCompleteCategory = searchCategories.DEPLOYMENT;
-
-    const mergedSearchFilter: SearchFilter = {
-        ...urlSearch.searchFilter,
-        ...additionalContextFilter,
-    };
 
     return (
         <>
