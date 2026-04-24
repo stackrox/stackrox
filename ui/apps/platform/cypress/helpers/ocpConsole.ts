@@ -9,10 +9,19 @@ export function selectProject(project: string) {
 }
 
 export function filterByField(field: string, value: string) {
-    cy.get(`[data-ouia-component-id="DataViewFilters"] ${pf6.menuToggle}`).first().click();
-    cy.get(pf6.menuItem).contains(field).click();
-    // case insensitive search for the field + "filter" handles both 'Name filter' and 'Filter by name' forms
-    // that are used across console versions
-    cy.get(`input[aria-label*="${field}" i][aria-label*="filter" i]`).should('not.be.disabled');
-    cy.get(`input[aria-label*="${field}" i][aria-label*="filter" i]`).type(value);
+    // OCP 4.19 uses a PF6 Dropdown (data-test-id), 4.21+ uses a DataViewFilters MenuToggle (OUIA)
+    cy.get(
+        `[data-test-id="dropdown-button"], [data-ouia-component-id="DataViewFilters"] ${pf6.menuToggle}`
+    )
+        .first()
+        .click();
+    cy.contains('[data-test-id="dropdown-menu"], [role="menuitem"]', field).first().click();
+
+    // OCP 4.19 uses "Search by"  + field name, 4.21+ uses "Filter by" + field name
+    cy.get(`input[aria-label*="Search by ${field}" i], input[aria-label*="Filter by ${field}" i]`)
+        .first()
+        .should('not.be.disabled');
+    cy.get(`input[aria-label*="Search by ${field}" i], input[aria-label*="Filter by ${field}" i]`)
+        .first()
+        .type(value, { delay: 0 });
 }
