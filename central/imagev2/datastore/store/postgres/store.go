@@ -683,6 +683,99 @@ func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, imageID stri
 	return result, nil
 }
 
+const walkBatchSize = 100
+
+func (s *storeImpl) populateImages(ctx context.Context, tx *postgres.Tx, images []*storage.ImageV2) error {
+	ids := make([]string, 0, len(images))
+	for _, img := range images {
+		ids = append(ids, img.GetId())
+	}
+
+	componentsByImage, err := getImageComponentsBatchV2(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+
+	cvesByImage, err := getAllImageComponentCVEsBatchV2(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+
+	for _, image := range images {
+		imageID := image.GetId()
+		components := componentsByImage[imageID]
+		cvesByComponent := cvesByImage[imageID]
+
+		imageParts := common.ImagePartsV2{
+			Image:    image,
+			Children: make([]common.ComponentPartsV2, 0, len(components)),
+		}
+		for _, component := range components {
+			cves := cvesByComponent[component.GetId()]
+			cveParts := make([]common.CVEPartsV2, 0, len(cves))
+			for _, cve := range cves {
+				cveParts = append(cveParts, common.CVEPartsV2{CVEV2: cve})
+			}
+			imageParts.Children = append(imageParts.Children, common.ComponentPartsV2{
+				ComponentV2: component,
+				Children:    cveParts,
+			})
+		}
+		common.Merge(imageParts)
+	}
+	return nil
+}
+
+func getImageComponentsBatchV2(ctx context.Context, tx *postgres.Tx, imageIDs []string) (map[string][]*storage.ImageComponentV2, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentsV2")
+
+	rows, err := tx.Query(ctx,
+		"SELECT serialized FROM "+imageComponentsV2Table+" WHERE imageidv2 = ANY($1::text[])",
+		imageIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+	components, err := pgutils.ScanRows[storage.ImageComponentV2, *storage.ImageComponentV2](rows)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string][]*storage.ImageComponentV2, len(imageIDs))
+	for _, comp := range components {
+		imgID := comp.GetImageIdV2()
+		result[imgID] = append(result[imgID], comp)
+	}
+	return result, nil
+}
+
+func getAllImageComponentCVEsBatchV2(ctx context.Context, tx *postgres.Tx, imageIDs []string) (map[string]map[string][]*storage.ImageCVEV2, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
+
+	rows, err := tx.Query(ctx,
+		"SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageidv2 = ANY($1::text[])",
+		imageIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+	cves, err := pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]map[string][]*storage.ImageCVEV2, len(imageIDs))
+	for _, cve := range cves {
+		imgID := cve.GetImageIdV2()
+		compID := cve.GetComponentId()
+		if result[imgID] == nil {
+			result[imgID] = make(map[string][]*storage.ImageCVEV2)
+		}
+		result[imgID][compID] = append(result[imgID][compID], cve)
+	}
+	return result, nil
+}
+
 func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string, imageIDField string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
@@ -864,21 +957,37 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	}
 	defer postgres.FinishReadOnlyTransaction(tx)
 
-	callback := func(image *storage.ImageV2) error {
-		err := s.populateImage(ctx, tx, image)
-		if err != nil {
-			return errors.Wrap(err, "populate image")
+	batch := make([]*storage.ImageV2, 0, walkBatchSize)
+
+	processBatch := func() error {
+		if len(batch) == 0 {
+			return nil
 		}
-		if err := fn(image); err != nil {
-			return errors.Wrap(err, "failed to process image")
+		if err := s.populateImages(ctx, tx, batch); err != nil {
+			return errors.Wrap(err, "populate images")
+		}
+		for _, image := range batch {
+			if err := fn(image); err != nil {
+				return errors.Wrap(err, "failed to process image")
+			}
+		}
+		batch = batch[:0]
+		return nil
+	}
+
+	callback := func(image *storage.ImageV2) error {
+		batch = append(batch, image)
+		if len(batch) >= walkBatchSize {
+			return processBatch()
 		}
 		return nil
 	}
+
 	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
-	return nil
+	return processBatch()
 }
 
 func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
