@@ -15,8 +15,6 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -134,22 +132,15 @@ func (c *Compliance) Start() {
 	// sensor and accelerates initial development.
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
-		if features.VirtualMachines.Enabled() {
-			log.Infof("Virtual machine relay enabled")
+		if !features.VirtualMachines.Enabled() {
+			return
+		}
+		log.Infof("Virtual machine relay enabled")
 
-			reportStream, err := stream.New()
-			if err != nil {
-				log.Errorf("Error creating report stream: %v", err)
-				return
-			}
-
-			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-			reportSender := sender.New(sensorClient)
-
-			vmRelay := relay.New(reportStream, reportSender)
-			if err := vmRelay.Run(ctx); err != nil {
-				log.Errorf("Error running virtual machine relay: %v", err)
-			}
+		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+		err := relay.RunWithRetry(ctx, sensorClient)
+		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			log.Errorf("Error running virtual machine relay: %v", err)
 		}
 	}(ctx)
 
