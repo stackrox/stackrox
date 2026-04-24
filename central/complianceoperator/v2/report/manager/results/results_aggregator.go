@@ -20,7 +20,12 @@ import (
 
 const (
 	DATA_NOT_AVAILABLE = "Data Not Available"
-	NO_REMEDIATION     = "No Remediation Available"
+	// CONTROL_NOT_APPLICABLE is used when a control reference cannot be resolved for structural reasons
+	// (e.g. tailored profiles with no benchmark mapping, or profiles like E8 whose benchmark short name
+	// has no matching standard in rule annotations). DATA_NOT_AVAILABLE is used instead when the lookup
+	// fails due to errors or data-integrity issues.
+	CONTROL_NOT_APPLICABLE = "N/A"
+	NO_REMEDIATION         = "No Remediation Available"
 )
 
 var (
@@ -209,7 +214,7 @@ func (g *Aggregator) getControlsInfo(ctx context.Context, checkResult *storage.C
 		return DATA_NOT_AVAILABLE, err
 	}
 	if len(controls) == 0 {
-		return DATA_NOT_AVAILABLE, nil
+		return CONTROL_NOT_APPLICABLE, nil
 	}
 	controlsList := make([]string, 0, len(controls))
 	for _, ctrl := range controls {
