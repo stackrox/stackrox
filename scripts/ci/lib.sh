@@ -640,6 +640,14 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
+    *nongroovy-compatibility-tests)
+        image_prefetcher_start_set nongroovy-compatibility
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
+    *compatibility-tests)
+        image_prefetcher_start_set compatibility
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
     *-operator-e2e-tests)
         image_prefetcher_start_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
@@ -762,6 +770,9 @@ _image_prefetcher_prebuilt_await() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_await_set qa-nongroovy-e2e
+        ;;
+    *compatibility-tests)
+        image_prefetcher_await_set compatibility
         ;;
     *-operator-e2e-tests)
         image_prefetcher_await_set operator-e2e
