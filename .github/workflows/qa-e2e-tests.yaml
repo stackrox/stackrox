@@ -150,7 +150,8 @@ jobs:
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
           # Wait for cluster to be registered in Central
-          # Note: CLUSTER variable is set by config_part_1 (uppercased ORCHESTRATOR_FLAVOR)
+          # Cluster defaults to "remote" from deploy/common/env.sh if not explicitly set
+          CLUSTER="${CLUSTER:-remote}"
           echo "Waiting for cluster '${CLUSTER}' to be registered in Central..."
           if ! scripts/ci/cluster-registration-wait.sh "${CLUSTER}" stackrox 120; then
             echo "::group::Diagnostic logs - Sensor"
