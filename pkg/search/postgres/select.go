@@ -129,9 +129,8 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 
 // RunSelectRequestForSchemaFn executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
-func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) error {
+func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) (retErr error) {
 	var query *query
-	var err error
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
 	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
@@ -144,13 +143,14 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
 			debug.PrintStack()
-			err = fmt.Errorf("unexpected error running search request: %v", r)
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
 		}
 	}()
 
 	// Extract array fields from destination type T to automatically detect child table aggregation
 	arrayFields := getArrayFieldsFromType[T]()
 
+	var err error
 	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
 	if err != nil {
 		return err
@@ -278,6 +278,94 @@ func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgre
 			return err
 		}
 		if err := fn(&row); err != nil {
+			return err
+		}
+	}
+	return rows.Err()
+}
+
+// DirectScanConfig holds the configuration for direct pgx row scanning.
+// This bypasses scany's reflection-based scanning for hot paths where the
+// column layout is known at compile time.
+type DirectScanConfig struct {
+	// ScanDests returns scan destination pointers. Called once before iteration;
+	// the returned slice is reused for every row. The order must match the
+	// SELECT columns including any extra columns injected by the query builder
+	// (e.g. ORDER BY fields added via ExtraSelectedFieldPaths).
+	ScanDests func() []any
+
+	// OnRow is called after each row is scanned into the destinations
+	// returned by the prior ScanDests call.
+	OnRow func() error
+}
+
+// RunSelectDirectFn executes a select request using the standard query builder
+// for WHERE/ORDER BY/LIMIT/SAC, but scans rows directly with pgx rows.Scan
+// instead of scany. This avoids reflection overhead on hot paths.
+//
+// The arrayFields parameter indicates which selected fields are array columns
+// in the parent table (same semantics as RunSelectRequestForSchemaFn's
+// type-detected array fields). Pass nil if no array fields are selected.
+func RunSelectDirectFn(ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, arrayFields map[string]bool, cfg *DirectScanConfig) (retErr error) {
+	if cfg == nil {
+		return errors.New("DirectScanConfig must not be nil")
+	}
+	if cfg.ScanDests == nil {
+		return errors.New("DirectScanConfig.ScanDests must not be nil")
+	}
+	if cfg.OnRow == nil {
+		return errors.New("DirectScanConfig.OnRow must not be nil")
+	}
+	var builtQuery *query
+	defer func() {
+		if r := recover(); r != nil {
+			if builtQuery != nil {
+				log.Errorf("Query issue: %s: %v", builtQuery.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
+	builtQuery, err := standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
+	if err != nil {
+		return err
+	}
+	if builtQuery == nil {
+		return nil
+	}
+	return pgutils.Retry(ctx, func() error {
+		return retryableRunSelectDirectFn(ctx, db, builtQuery, cfg)
+	})
+}
+
+func retryableRunSelectDirectFn(ctx context.Context, db postgres.DB, q *query, cfg *DirectScanConfig) error {
+	if len(q.SelectedFields) == 0 {
+		return errors.New("select fields required for select query")
+	}
+
+	// Guard against the query builder injecting columns beyond what the caller expects.
+	expectedCols := len(q.SelectedFields) + len(q.ExtraSelectedFieldPaths())
+	dests := cfg.ScanDests()
+	if len(dests) != expectedCols {
+		return errors.Errorf("scan destination count %d does not match projected column count %d", len(dests), expectedCols)
+	}
+
+	queryStr := q.AsSQL()
+
+	rows, err := tracedQuery(ctx, db, queryStr, q.Data...)
+	if err != nil {
+		return errors.Wrapf(err, "error executing query %s", queryStr)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(dests...); err != nil {
+			return err
+		}
+		if err := cfg.OnRow(); err != nil {
 			return err
 		}
 	}

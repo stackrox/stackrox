@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/integration"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -99,20 +101,16 @@ func (s *serviceImpl) UpdateBaseImageTagPattern(ctx context.Context, req *v2.Upd
 		return nil, status.Errorf(codes.InvalidArgument, "invalid base image tag pattern: %v", err)
 	}
 
-	// First get the existing repository
-	existing, found, err := s.datastore.GetRepository(ctx, req.GetId())
+	_, err := s.datastore.UpdateConfiguration(ctx, req.GetId(), repository.ConfigUpdate{
+		TagPattern: pointers.String(req.GetBaseImageTagPattern()),
+	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get base image repository: %v", err)
-	}
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "base image repository with ID %q not found", req.GetId())
-	}
-
-	// Update the repository
-	existing.TagPattern = req.GetBaseImageTagPattern()
-
-	_, err = s.datastore.UpsertRepository(ctx, existing)
-	if err != nil {
+		if errors.Is(err, repository.ErrScanInProgress) {
+			return nil, errox.ResourceExhausted.Newf("base image repository with ID %q is currently being scanned and cannot be changed, try again later", req.GetId())
+		}
+		if errors.Is(err, errox.NotFound) {
+			return nil, errox.NotFound.Newf("base image repository with ID %q not found", req.GetId())
+		}
 		return nil, status.Errorf(codes.Internal, "failed to update base image repository: %v", err)
 	}
 
@@ -162,23 +160,22 @@ func convertStorageToAPI(repo *storage.BaseImageRepository) *v2.BaseImageReferen
 	}
 }
 
-// validateBaseImageRepository validate the provided base image repository path,
-// Returns an error if the repository path is malformed or no matching image integration is found.
+// validateBaseImageRepository returns an error when the repository path is malformed or no matching image integration exists.
 func (s *serviceImpl) validateBaseImageRepository(ctx context.Context, repoPath string) error {
 	imageName, ref, err := imgUtils.GenerateImageNameFromString(repoPath)
 	if err != nil {
 		return errox.InvalidArgs.Newf("invalid base image repository path '%s'", repoPath).CausedBy(err)
 	}
-	// Reject references that include tags - these should be in separate fields
+	// Reject references that include tags. These should be stored in a separate field.
 	if imageName.GetTag() != "" {
 		return errox.InvalidArgs.Newf("repository path '%s' must not include tag - please put tag in the tag pattern field", repoPath)
 	}
-	// Reject references that include digests
+	// Reject references that include digests.
 	if _, ok := ref.(reference.Digested); ok {
 		return errox.InvalidArgs.Newf("repository path '%s' must not include digest", repoPath)
 	}
 
-	// Check delegated registry config (only if feature is enabled).
+	// Check delegated registry config only if the feature is enabled.
 	var shouldDelegate bool
 	if features.DelegatedBaseImageScanning.Enabled() {
 		_, shouldDelegate, _ = s.delegator.GetDelegateClusterID(ctx, imageName)
@@ -195,12 +192,11 @@ func (s *serviceImpl) validateBaseImageRepository(ctx context.Context, repoPath 
 
 // isValidTagPattern checks if the given string is a valid [path.Match] glob pattern.
 func isValidTagPattern(tagPattern string) (bool, error) {
-	// Reject empty tag patterns, should use * instead
+	// Reject empty tag patterns. Use * to match all tags.
 	if tagPattern == "" {
 		return false, errox.InvalidArgs.New("tag pattern cannot be empty")
 	}
-	// Validate the pattern by attempting to match it against an empty string.
-	// If the pattern is malformed, path.Match will return an error.
+	// path.Match validates the pattern and returns an error for malformed input.
 	_, err := path.Match(tagPattern, "")
 	if err != nil {
 		return false, errox.InvalidArgs.CausedBy(fmt.Errorf("invalid tag pattern: %w", err))

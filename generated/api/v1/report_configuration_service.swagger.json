@@ -516,6 +516,67 @@
         }
       }
     },
+    "storageEntityField": {
+      "type": "string",
+      "enum": [
+        "FIELD_UNSET",
+        "FIELD_ID",
+        "FIELD_NAME",
+        "FIELD_LABEL",
+        "FIELD_ANNOTATION"
+      ],
+      "default": "FIELD_UNSET"
+    },
+    "storageEntityScope": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEntityScopeRule"
+          }
+        }
+      },
+      "title": "EntityScope is a new scoping method using ns,deployments,clusters filters introduced in 4.11"
+    },
+    "storageEntityScopeRule": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageEntityType"
+        },
+        "field": {
+          "$ref": "#/definitions/storageEntityField"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageRuleValue"
+          }
+        }
+      },
+      "title": "EntityScopeRule stores the filter as an entity field pair along with a list of values"
+    },
+    "storageEntityType": {
+      "type": "string",
+      "enum": [
+        "ENTITY_TYPE_UNSET",
+        "ENTITY_TYPE_DEPLOYMENT",
+        "ENTITY_TYPE_NAMESPACE",
+        "ENTITY_TYPE_CLUSTER"
+      ],
+      "default": "ENTITY_TYPE_UNSET"
+    },
+    "storageMatchType": {
+      "type": "string",
+      "enum": [
+        "EXACT",
+        "REGEX"
+      ],
+      "default": "EXACT"
+    },
     "storageNotifierConfiguration": {
       "type": "object",
       "properties": {
@@ -601,6 +662,20 @@
       "properties": {
         "collectionId": {
           "type": "string"
+        },
+        "entityScope": {
+          "$ref": "#/definitions/storageEntityScope"
+        }
+      }
+    },
+    "storageRuleValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/storageMatchType"
         }
       }
     },
@@ -699,6 +774,10 @@
         },
         "includeAdvisory": {
           "type": "boolean"
+        },
+        "query": {
+          "type": "string",
+          "title": "this field stores enhanced filters related to image, cve etc for non collection based scopes"
         }
       }
     },

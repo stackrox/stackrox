@@ -18,7 +18,13 @@ import {
     clusterPlatformTypeAttribute,
     clusterTypeAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
-import { Annotation, ID, Label, Name } from 'Components/CompoundSearchFilter/attributes/deployment';
+import {
+    Annotation,
+    ContainerType,
+    ID,
+    Label,
+    Name,
+} from 'Components/CompoundSearchFilter/attributes/deployment';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
@@ -81,7 +87,7 @@ export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
 export const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',
     searchCategory: 'DEPLOYMENTS',
-    attributes: [Annotation, ID, Label, Name],
+    attributes: [Annotation, ContainerType, ID, Label, Name],
 };
 
 export const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {
@@ -231,8 +237,8 @@ export const configForViewBasedReport = [
 ];
 
 export const attributeForPlatformComponent: SelectSearchFilterAttribute = {
-    displayName: 'View context', // corresponds to horizontal navigation
-    filterChipLabel: 'View context',
+    displayName: 'Area of concern', // corresponds to horizontal navigation
+    filterChipLabel: 'Area of concern',
     searchTerm: 'Platform Component',
     inputType: 'select',
     inputProps: {
@@ -260,7 +266,7 @@ export const attributeForVulnerabilityState: SelectSearchFilterAttribute = {
 
 export const attributesSeparateFromConfigForViewBasedReport = [
     attributeForPlatformComponent,
-    attributeForFixableInBackendAndViewBasedReport,
     attributeForVulnerabilityState,
     attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
+    attributeForFixableInBackendAndViewBasedReport,
 ];

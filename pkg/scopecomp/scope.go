@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/regexutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -95,35 +96,39 @@ func CompileScope(scope *storage.Scope, clusterLabelProvider ClusterLabelProvide
 	return cs, nil
 }
 
-// MatchesClusterLabels evaluates cluster label matchers against a deployment's cluster
-func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *storage.Deployment) bool {
+// MatchesClusterLabels evaluates cluster label matchers against a cluster's labels
+func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, clusterID string) bool {
 	if c.ClusterLabelKey == nil {
 		return true
 	}
+	// Unreachable: all CompileScope callers for inclusion scopes pass real
+	// providers, and exclusion scopes reject labels at validation time.
 	if c.clusterLabelProvider == nil {
-		log.Error("Cluster label matcher defined but provider is nil - failing closed")
+		utils.Should(errors.New("cluster label matcher defined but provider is nil"))
 		return false
 	}
-	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(ctx, deployment.GetClusterId())
+	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(ctx, clusterID)
 	if err != nil {
-		log.Errorf("Failed to fetch cluster labels for cluster %s: %v", deployment.GetClusterId(), err)
+		log.Errorf("Failed to fetch cluster labels for cluster %s: %v", clusterID, err)
 		return false
 	}
 	return c.MatchesLabels(c.ClusterLabelKey, c.ClusterLabelValue, clusterLabels)
 }
 
-// MatchesNamespaceLabels evaluates namespace label matchers against a deployment's namespace
-func (c *CompiledScope) MatchesNamespaceLabels(ctx context.Context, deployment *storage.Deployment) bool {
+// MatchesNamespaceLabels evaluates namespace label matchers against a namespace's labels
+func (c *CompiledScope) MatchesNamespaceLabels(ctx context.Context, clusterID string, namespace string) bool {
 	if c.NamespaceLabelKey == nil {
 		return true
 	}
+	// Unreachable: all CompileScope callers for inclusion scopes pass real
+	// providers, and exclusion scopes reject labels at validation time.
 	if c.namespaceLabelProvider == nil {
-		log.Error("Namespace label matcher defined but provider is nil - failing closed")
+		utils.Should(errors.New("namespace label matcher defined but provider is nil"))
 		return false
 	}
-	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(ctx, deployment.GetClusterId(), deployment.GetNamespace())
+	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(ctx, clusterID, namespace)
 	if err != nil {
-		log.Errorf("Failed to fetch namespace labels for namespace %s in cluster %s: %v", deployment.GetNamespace(), deployment.GetClusterId(), err)
+		log.Errorf("Failed to fetch namespace labels for namespace %s in cluster %s: %v", namespace, clusterID, err)
 		return false
 	}
 	return c.MatchesLabels(c.NamespaceLabelKey, c.NamespaceLabelValue, namespaceLabels)
@@ -137,13 +142,13 @@ func (c *CompiledScope) MatchesDeployment(ctx context.Context, deployment *stora
 	if !c.MatchesCluster(deployment.GetClusterId()) {
 		return false
 	}
-	if !c.MatchesClusterLabels(ctx, deployment) {
+	if !c.MatchesClusterLabels(ctx, deployment.GetClusterId()) {
 		return false
 	}
 	if !c.MatchesNamespace(deployment.GetNamespace()) {
 		return false
 	}
-	if !c.MatchesNamespaceLabels(ctx, deployment) {
+	if !c.MatchesNamespaceLabels(ctx, deployment.GetClusterId(), deployment.GetNamespace()) {
 		return false
 	}
 	if !c.MatchesLabels(c.LabelKey, c.LabelValue, deployment.GetLabels()) {
@@ -188,8 +193,19 @@ func (c *CompiledScope) MatchesAuditEvent(ctx context.Context, auditEvent *stora
 	if !c.MatchesCluster(auditEvent.GetObject().GetClusterId()) {
 		return false
 	}
-	if !c.MatchesNamespace(auditEvent.GetObject().GetNamespace()) {
+	if !c.MatchesClusterLabels(ctx, auditEvent.GetObject().GetClusterId()) {
 		return false
+	}
+	// Namespace matching is only applied for namespace-scoped resources.
+	// Cluster-scoped resources (e.g. clusterroles) have an empty namespace
+	// and should not be filtered out by namespace-based matchers.
+	if ns := auditEvent.GetObject().GetNamespace(); ns != "" {
+		if !c.MatchesNamespace(ns) {
+			return false
+		}
+		if !c.MatchesNamespaceLabels(ctx, auditEvent.GetObject().GetClusterId(), ns) {
+			return false
+		}
 	}
 	return true
 }

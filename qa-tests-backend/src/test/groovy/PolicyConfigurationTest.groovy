@@ -281,7 +281,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("Image Tag")
                                                 .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue("nginx-1.12").build())
+                                                        .setValue("nginx-2.0.3").build())
                                                 .build()
                                 ).build()
                         ).build()       | DEPLOYMENTNGINX | null | false
@@ -372,7 +372,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("CVE")
                                                 .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue("CVE-2017-18269")
+                                                        .setValue("CVE-2019-2201")
                                                         .build()).build()
                                 ).build()
                         ).build()  | DEPLOYMENTNGINX | null | true

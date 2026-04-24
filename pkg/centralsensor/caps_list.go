@@ -96,4 +96,13 @@ const (
 	// ComplianceV2TailoredProfiles identifies the capability of Central to handle
 	// tailored profile tracking and scan configurations referencing tailored profiles.
 	ComplianceV2TailoredProfiles = "ComplianceV2TailoredProfiles"
+
+	// TargetedImageCacheInvalidation identifies the capability to forward
+	// per-image cache invalidation keys to the admission controller instead of
+	// flushing the entire image cache.
+	TargetedImageCacheInvalidation SensorCapability = "TargetedImageCacheInvalidation"
+
+	// InitContainerSupport identifies the capability of Sensor to extract init containers from pod specs
+	// and of Central to handle init container data in deployments.
+	InitContainerSupport = "InitContainerSupport"
 )

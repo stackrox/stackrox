@@ -337,7 +337,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	} else {
 		delete(imageNoteSet, storage.ImageV2_MISSING_SCAN_DATA)
 	}
-	updated = updated || scanResult != ScanNotDone
+	updated = updated || (scanResult != ScanNotDone && scanResult != ScanReused)
 
 	didUpdateSignature, err := e.enrichWithSignature(ctx, enrichContext, imageV2)
 	errorList.AddError(err)
@@ -639,13 +639,8 @@ func (e *enricherV2Impl) useExistingSignatureVerificationData(imgV2 *storage.Ima
 
 func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext EnrichmentContext,
 	imageV2 *storage.ImageV2, useExistingScan bool) (ScanResult, error) {
-	// Short-circuit if we are using existing values.
-	// We need to have a distinction between existing image values set
-	// from database and existing values from the received image. Existing image values set by database indicate the
-	// ScanResult ScanSucceeded, whereas existing values on the image that have not been set from database indicate the
-	// ScanResult ScanNotDone.
 	if useExistingScan {
-		return ScanSucceeded, nil
+		return ScanReused, nil
 	}
 
 	// Attempt to short-circuit before checking scanners.

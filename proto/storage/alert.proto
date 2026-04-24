@@ -17,7 +17,7 @@ message Alert {
   message Deployment {
     string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
     string name = 2; // @gotags: search:"Deployment"
-    string type = 4;
+    string type = 4; // @gotags: search:"Deployment Type"
     string namespace = 5; // This field has to be duplicated in Alert for scope management and search.
     string namespace_id = 16; // This field has to be duplicated in Alert for scope management and search.
     map<string, string> labels = 7; // @gotags: sensorhash:"ignore"
@@ -167,6 +167,11 @@ message Alert {
 
   bool platform_component = 22; // @gotags: search:"Platform Component"
   EntityType entity_type = 23; // @gotags: search:"Entity Type"
+
+  // Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts
+  // this is the number of unique pods killed. For DEPLOY alerts with enforcement
+  // this is 1. Avoids deserializing the full alert blob for ListAlert queries.
+  int32 enforcement_count = 25; // @gotags: search:"Enforcement Count"
 }
 
 message ListAlert {
@@ -179,8 +184,8 @@ message ListAlert {
     ResourceType resource_type = 5;
   }
 
-  // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
-  // This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)
+  // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment and node as types
+  // This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)
   enum ResourceType {
     DEPLOYMENT = 0;
     SECRETS = 1;
@@ -190,6 +195,7 @@ message ListAlert {
     NETWORK_POLICIES = 5;
     SECURITY_CONTEXT_CONSTRAINTS = 6;
     EGRESS_FIREWALLS = 7;
+    NODE = 8;
   }
 
   message ResourceEntity {

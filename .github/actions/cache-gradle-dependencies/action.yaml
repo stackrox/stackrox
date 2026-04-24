@@ -4,7 +4,7 @@ runs:
   using: composite
   steps:
     - name: Cache Gradle Dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: |
           ~/.gradle/caches

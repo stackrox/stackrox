@@ -29,7 +29,8 @@ func allIntsZero(ints ...int) bool {
 }
 
 func (a *allCounts) AllZero() bool {
-	return allIntsZero(a.PodCount, a.ClusterCount, a.NodeCount, a.ViolationCount, a.DeploymentCount, a.SecretCount)
+	// Runtime violations persist for days due to retention policies, so we only check infrastructure cleanup
+	return allIntsZero(a.PodCount, a.ClusterCount, a.NodeCount, a.DeploymentCount, a.SecretCount)
 }
 
 type summaryCountsResp struct {

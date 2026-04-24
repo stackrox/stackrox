@@ -67,8 +67,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 		if fileContainsTestFunction {
 			for _, comment := range fileNode.Comments {
-				if strings.HasPrefix(comment.Text(), "//go:build") {
-					hasGoBuildDirective = true
+				for _, c := range comment.List {
+					if strings.HasPrefix(c.Text, "//go:build") {
+						hasGoBuildDirective = true
+					}
 				}
 			}
 			if !hasGoBuildDirective {

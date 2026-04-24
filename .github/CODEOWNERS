@@ -91,6 +91,7 @@ roxctl/central/crs/**            @stackrox/install @stackrox/sensor-ecosystem
 # Konflux maintainers for ACS review all changes related to the Konflux pipelines, Dockerfiles, etc.
 # Release engineers need to merge MintMaker PRs at the time of the release.
 # rhacs-bot needs an ability to auto-approve MintMaker PRs for automated task and security updates.
+# The list here should be kept in sync with the .github/labeler.yml configuration for the konflux-build label.
 **/konflux.*Dockerfile  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
 /.tekton/               @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
 rpms.*                  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot

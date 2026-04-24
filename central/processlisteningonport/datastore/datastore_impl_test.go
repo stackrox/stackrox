@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/rand"
 	"slices"
-	"sync"
 	"testing"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -1556,7 +1556,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Delete the indicator
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
-		suite.hasWriteCtx, idsToDelete))
+		suite.hasWriteCtx, idsToDelete, processIndicatorDataStore.RemovalReasonProcessFilter))
 
 	_, err := suite.datastore.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(suite.hasWriteCtx)
 	suite.NoError(err)
@@ -2380,12 +2380,10 @@ func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
 	// It is done async so that the UpsertMany in AddProcessListeningOnPort
 	// runs at the same time as PLOPs are deleted by pod
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		suite.NoError(suite.datastore.AddProcessListeningOnPort(
 			suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
-	}()
+	})
 
 	// The pods are deleted and all PLOPs are deleted by pod
 	for podUID := range podUids {
@@ -2696,7 +2694,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcess
 		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
-		suite.hasWriteCtx, indicatorIds))
+		suite.hasWriteCtx, indicatorIds, processIndicatorDataStore.RemovalReasonProcessFilter))
 
 	_, err := suite.datastore.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(suite.hasWriteCtx)
 	suite.NoError(err)
@@ -2834,9 +2832,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	totalPrunedCount := 0
 
 	var wgPrune sync.WaitGroup
-	wgPrune.Add(1)
-	go func() {
-		defer wgPrune.Done()
+	wgPrune.Go(func() {
 		for {
 			mutex.Lock()
 			stop := !running
@@ -2850,7 +2846,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			suite.NoError(err)
 			totalPrunedCount += int(prunedCount)
 		}
-	}()
+	})
 
 	wg.Wait()
 

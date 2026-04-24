@@ -14,7 +14,7 @@ runs:
   using: composite
   steps:
     - id: download-artifact-try1
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -22,14 +22,14 @@ runs:
       continue-on-error: true
     - id: download-artifact-try2
       if: steps.download-artifact-try1.outcome == 'failure'
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         pattern: ${{ inputs.pattern }}
       continue-on-error: true
     - if: steps.download-artifact-try2.outcome == 'failure'
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}

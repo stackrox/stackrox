@@ -9,8 +9,8 @@ export const imageScanMessages = {
         body: 'Check the registry connection.',
     },
     missingScanData: {
-        header: 'Failed to get the base OS information.',
-        body: 'The integrated scanner can’t find the OS, or the base OS is unidentifiable.',
+        header: 'Failed to get scan data.',
+        body: 'There may have been an error scanning the image. Check scanner integration and image accessibility.',
     },
     osUnavailable: {
         header: 'The scanner doesn’t provide OS information.',

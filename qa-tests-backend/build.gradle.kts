@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.picocontainer)
 
     implementation(libs.commons.codec)
+    implementation(libs.uuid.creator)
 
     implementation(projects.annotations)
 }

@@ -576,6 +576,9 @@
         },
         "readinessProbe": {
           "$ref": "#/definitions/storageReadinessProbe"
+        },
+        "type": {
+          "$ref": "#/definitions/storageContainerType"
         }
       }
     },
@@ -636,6 +639,14 @@
         }
       },
       "title": "Next tag: 13"
+    },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
     },
     "storageCosignSignature": {
       "type": "object",

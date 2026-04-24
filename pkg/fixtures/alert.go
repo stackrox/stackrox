@@ -375,6 +375,7 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
 	"clusterName": "prod cluster",
 	"enforcement": null,
+	"enforcementCount": 0,
 	"entityType": "UNSET",
 	"firstOccurred": null,
 	"lifecycleStage": "DEPLOY",

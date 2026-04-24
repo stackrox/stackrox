@@ -177,17 +177,17 @@ func (mr *MockDetectorMockRecorder) ProcessPolicySync(ctx, sync any) *gomock.Cal
 }
 
 // ProcessReprocessDeployments mocks base method.
-func (m *MockDetector) ProcessReprocessDeployments() error {
+func (m *MockDetector) ProcessReprocessDeployments(msg *central.ReprocessDeployments) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessReprocessDeployments")
+	ret := m.ctrl.Call(m, "ProcessReprocessDeployments", msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessReprocessDeployments indicates an expected call of ProcessReprocessDeployments.
-func (mr *MockDetectorMockRecorder) ProcessReprocessDeployments() *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessReprocessDeployments(msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReprocessDeployments", reflect.TypeOf((*MockDetector)(nil).ProcessReprocessDeployments))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReprocessDeployments", reflect.TypeOf((*MockDetector)(nil).ProcessReprocessDeployments), msg)
 }
 
 // ProcessUpdatedImage mocks base method.

@@ -122,11 +122,12 @@ func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clu
 			Rationale:    checkResult.GetRationale(),
 			Instructions: checkResult.GetInstructions(),
 		}
-		profileInfo, profileName, err := g.getProfileInfo(ctx, checkResult, clusterID)
+		profileInfo, profileName, profileType, err := g.getProfileInfo(ctx, checkResult, clusterID)
 		if err != nil {
 			return err
 		}
 		row.Profile = profileInfo
+		row.ProfileType = profileType
 		remediationInfo, err := g.getRemediationInfo(ctx, checkResult, clusterID)
 		if err != nil {
 			return err
@@ -143,19 +144,32 @@ func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clu
 	}
 }
 
-func (g *Aggregator) getProfileInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, string, error) {
+func (g *Aggregator) getProfileInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, string, string, error) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanRef, checkResult.GetScanRefId()).
 		ProtoQuery()
 	profiles, err := g.profileDS.SearchProfiles(ctx, q)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if len(profiles) < 1 {
 		log.Errorf("profile not found for cluster %s and check name %s", clusterID, checkResult.GetCheckName())
-		return DATA_NOT_AVAILABLE, "", nil
+		return DATA_NOT_AVAILABLE, "", DATA_NOT_AVAILABLE, nil
 	}
-	return fmt.Sprintf("%s %s", profiles[0].GetName(), profiles[0].GetProfileVersion()), profiles[0].GetName(), nil
+	profileInfo := fmt.Sprintf("%s %s", profiles[0].GetName(), profiles[0].GetProfileVersion())
+	profileType := operatorKindToHumanReadable(profiles[0].GetOperatorKind())
+	return profileInfo, profiles[0].GetName(), profileType, nil
+}
+
+func operatorKindToHumanReadable(kind storage.ComplianceOperatorProfileV2_OperatorKind) string {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return "Profile"
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return "Tailored Profile"
+	default:
+		return DATA_NOT_AVAILABLE
+	}
 }
 
 func (g *Aggregator) getRemediationInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, error) {

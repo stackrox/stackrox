@@ -24,7 +24,7 @@ import type { ExtendedPageAction } from 'utils/queryStringUtils';
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,
     POLICY_BEHAVIOR_ID,
-    POLICY_BEHAVIOR_SCOPE_ID,
+    POLICY_BEHAVIOR_RESOURCES_ID,
     POLICY_DEFINITION_DETAILS_ID,
     POLICY_DEFINITION_ID,
     POLICY_DEFINITION_LIFECYCLE_ID,
@@ -192,7 +192,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Details"
                                     id={POLICY_DEFINITION_DETAILS_ID}
-                                    key={POLICY_DEFINITION_DETAILS_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -204,7 +203,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Lifecycle"
                                     id={POLICY_DEFINITION_LIFECYCLE_ID}
-                                    key={POLICY_DEFINITION_LIFECYCLE_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -213,7 +211,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Rules"
                                     id={POLICY_DEFINITION_RULES_ID}
-                                    key={POLICY_DEFINITION_RULES_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -227,9 +224,8 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                             isExpandable
                             steps={[
                                 <WizardStep
-                                    name="Scope"
-                                    id={POLICY_BEHAVIOR_SCOPE_ID}
-                                    key={POLICY_BEHAVIOR_SCOPE_ID}
+                                    name="Resources"
+                                    id={POLICY_BEHAVIOR_RESOURCES_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
@@ -238,7 +234,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Actions"
                                     id={POLICY_BEHAVIOR_ACTIONS_ID}
-                                    key={POLICY_BEHAVIOR_ACTIONS_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >

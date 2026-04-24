@@ -355,3 +355,223 @@ func TestWithinScope(t *testing.T) {
 		assert.Equalf(t, test.result, cs.MatchesDeployment(context.Background(), test.deployment), "Failed test '%s'", test.name)
 	}
 }
+
+func TestMatchesAuditEventWithLabels(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.LabelBasedPolicyScoping, true)
+
+	subtests := map[string]struct {
+		scope           *storage.Scope
+		auditEvent      *storage.KubernetesEvent
+		clusterLabels   map[string]string
+		namespaceLabels map[string]string
+		result          bool
+	}{
+		"cluster label match": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "default",
+				},
+			},
+			clusterLabels: map[string]string{"env": "prod"},
+			result:        true,
+		},
+		"cluster label mismatch": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "default",
+				},
+			},
+			clusterLabels: map[string]string{"env": "dev"},
+			result:        false,
+		},
+		"namespace label match": {
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "test-backend",
+				},
+			},
+			namespaceLabels: map[string]string{"team": "backend"},
+			result:          true,
+		},
+		"namespace label mismatch": {
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "test-frontend",
+				},
+			},
+			namespaceLabels: map[string]string{"team": "frontend"},
+			result:          false,
+		},
+		"combined cluster and namespace label match": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "test-backend",
+				},
+			},
+			clusterLabels:   map[string]string{"env": "prod"},
+			namespaceLabels: map[string]string{"team": "backend"},
+			result:          true,
+		},
+		"cluster matches but namespace does not": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "test-frontend",
+				},
+			},
+			clusterLabels:   map[string]string{"env": "prod"},
+			namespaceLabels: map[string]string{"team": "frontend"},
+			result:          false,
+		},
+		"no label scope matches any audit event": {
+			scope: &storage.Scope{
+				Cluster:   "cluster1",
+				Namespace: "default",
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "default",
+				},
+			},
+			result: true,
+		},
+		"cluster-scoped resource with namespace_label scope still fires": {
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			result: true,
+		},
+		"cluster-scoped resource with namespace scope still fires": {
+			scope: &storage.Scope{
+				Namespace: "some-namespace",
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			result: true,
+		},
+		"cluster-scoped resource with cluster_label scope respects labels": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			clusterLabels: map[string]string{"env": "prod"},
+			result:        true,
+		},
+		"cluster-scoped resource with cluster_label mismatch does not fire": {
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			auditEvent: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					ClusterId: "cluster1",
+					Namespace: "",
+				},
+			},
+			clusterLabels: map[string]string{"env": "dev"},
+			result:        false,
+		},
+	}
+	for name, test := range subtests {
+		t.Run(name, func(_ *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			var clusterProvider ClusterLabelProvider
+			var namespaceProvider NamespaceLabelProvider
+			if test.clusterLabels != nil {
+				mockCluster := mocks.NewMockClusterLabelProvider(ctrl)
+				mockCluster.EXPECT().
+					GetClusterLabels(gomock.Any(), gomock.Eq(test.auditEvent.GetObject().GetClusterId())).
+					Return(test.clusterLabels, nil).
+					AnyTimes()
+				clusterProvider = mockCluster
+			}
+			if test.namespaceLabels != nil {
+				mockNamespace := mocks.NewMockNamespaceLabelProvider(ctrl)
+				mockNamespace.EXPECT().
+					GetNamespaceLabels(gomock.Any(), gomock.Eq(test.auditEvent.GetObject().GetClusterId()), gomock.Eq(test.auditEvent.GetObject().GetNamespace())).
+					Return(test.namespaceLabels, nil).
+					AnyTimes()
+				namespaceProvider = mockNamespace
+			}
+
+			cs, err := CompileScope(test.scope, clusterProvider, namespaceProvider)
+			require.NoError(t, err)
+			assert.Equalf(t, test.result, cs.MatchesAuditEvent(context.Background(), test.auditEvent), "Failed test '%s'", name)
+		})
+	}
+}

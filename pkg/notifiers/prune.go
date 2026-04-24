@@ -1,6 +1,7 @@
 package notifiers
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -61,8 +62,8 @@ func filterProcesses(processes []*storage.ProcessIndicator, maxSize int, currSiz
 		cleanProcessIndicator(p)
 	}
 
-	for i := len(processes) - 1; i >= 0; i-- {
-		data, err := jsonutil.MarshalToCompactString(processes[i])
+	for i, p := range slices.Backward(processes) {
+		data, err := jsonutil.MarshalToCompactString(p)
 		if err != nil {
 			log.Error(err)
 		}
@@ -78,8 +79,8 @@ func filterViolations(violations []*storage.Alert_Violation, maxSize int, currSi
 	if *currSize < maxSize {
 		return violations
 	}
-	for i := len(violations) - 1; i >= 0; i-- {
-		data, err := jsonutil.MarshalToCompactString(violations[i])
+	for i, v := range slices.Backward(violations) {
+		data, err := jsonutil.MarshalToCompactString(v)
 		if err != nil {
 			log.Error(err)
 		}

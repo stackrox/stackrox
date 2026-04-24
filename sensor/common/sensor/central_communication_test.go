@@ -120,6 +120,46 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	}
 }
 
+func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
+	testCases := map[string]struct {
+		recvMsg *central.MsgToSensor
+		recvErr error
+		wantMsg string
+	}{
+		"PermissionDenied error returns wrapped gRPC error": {
+			recvErr: status.Error(codes.PermissionDenied, "not authorized: no authorizer could authorize this request"),
+			wantMsg: "permission denied by central",
+		},
+		"Other gRPC error returns raw gRPC error": {
+			recvErr: status.Error(codes.Internal, "unexpected HTTP status code received from server"),
+			wantMsg: "unexpected HTTP status code",
+		},
+		"No error from Recv returns SensorHello not acknowledged": {
+			recvMsg: &central.MsgToSensor{},
+			recvErr: nil,
+			wantMsg: "central did not acknowledge SensorHello",
+		},
+	}
+
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			_, closeFn := c.createCentralCommunication(false)
+			defer closeFn()
+
+			// Return empty headers (no SensorHello key)
+			c.mockService.client.EXPECT().Header().Return(metadata.MD{}, nil)
+			// Probe Recv returns the test error
+			c.mockService.client.EXPECT().Recv().Return(tc.recvMsg, tc.recvErr)
+
+			comm := c.comm.(*centralCommunicationImpl)
+			err := comm.hello(c.mockService.client, &central.SensorHello{})
+
+			c.Require().Error(err)
+			c.Assert().Contains(err.Error(), tc.wantMsg)
+		})
+	}
+}
+
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	goleak.AssertNoGoroutineLeaks(c.T())
 

@@ -1,0 +1,56 @@
+{
+    "violations": [
+        {
+            "violationInfo": {
+                "violationId": "26c0771b-4274-5aaf-8f18-60b023458d20",
+                "violationMessage": "'/etc/passwd' opened (writable)",
+                "violationType": "FILE_ACCESS",
+                "violationTime": "2024-06-14T20:00:00Z"
+            },
+            "alertInfo": {
+                "alertId": "fa1eacce-0000-4000-a000-000000000001",
+                "lifecycleStage": "RUNTIME"
+            },
+            "processInfo": {
+                "processViolationId": "fa1eacce-0000-4000-f000-000000000006",
+                "processSignalId": "fa1eacce-0000-4000-f000-000000000007",
+                "processCreationTime": "2024-06-14T20:00:00Z",
+                "processName": "vi",
+                "processArgs": "/etc/passwd",
+                "execFilePath": "/usr/bin/vi",
+                "pid": 42,
+                "processUid": 0,
+                "processGid": 0
+            },
+            "deploymentInfo": {
+                "deploymentId": "fa1eacce-0000-4000-c000-000000000003",
+                "deploymentName": "nginx",
+                "deploymentType": "Deployment",
+                "deploymentNamespace": "default",
+                "clusterId": "fa1eacce-0000-4000-d000-000000000004"
+            },
+            "policyInfo": {
+                "policyId": "fa1eacce-0000-4000-b000-000000000002",
+                "policyName": "File Access: /etc/passwd",
+                "policyDescription": "Detect modifications to /etc/passwd",
+                "policyLifecycleStages": [
+                    "RUNTIME"
+                ],
+                "policySeverity": "HIGH_SEVERITY",
+                "policyVersion": "1.1"
+            },
+            "fileAccessInfo": {
+                "effectivePath": "/etc/passwd",
+                "actualPath": "/rootfs/etc/passwd",
+                "operation": "OPEN",
+                "fileUid": 0,
+                "fileGid": 0,
+                "fileMode": 420,
+                "fileUsername": "root",
+                "fileGroup": "root",
+                "hostname": "node-1"
+            }
+        }
+    ],
+    "newCheckpoint": "2024-06-26T22:00:00Z"
+}

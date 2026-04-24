@@ -14,7 +14,7 @@ option java_package = "io.stackrox.proto.storage";
 message VirtualMachineScanV2 {
   // UUIDv7 primary key -- time-sortable, encodes creation timestamp.
   // Finding the latest scan is ORDER BY id DESC LIMIT 1 without a separate timestamp index.
-  string id = 1; // @gotags: sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Virtual Machine Scan ID,hidden" sql:"pk,type(uuid)"
 
   // FK to VirtualMachineV2.id. CASCADE DELETE ensures scan cleanup when VM is removed.
   string vm_v2_id = 2; // @gotags: sql:"fk(VirtualMachineV2:id),type(uuid),index=btree"
