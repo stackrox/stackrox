@@ -27,7 +27,7 @@ This is especially useful for maintaining consistency across multiple release br
 2. **Confirms the plan**: Shows you what will happen before proceeding
 3. **For each branch**:
    - Fetches the latest from origin
-   - Creates a new child branch: `<username>/<target-branch>/bump_<dependency>_to_<version>`
+   - Creates a new child branch: `<username>/<target-branch>/bump-go-dep/<full-dependency-name>-<version>`
    - Applies the dependency update (updates all go.mod files)
    - Commits the changes
 4. **Returns to original branch**: Restores your working state
@@ -50,9 +50,9 @@ Proceed with creating these branches and applying updates?
 ```
 
 **Result**: Creates three branches:
-- `yann-brillouet/release-4.9/bump_api_to_v1.8.1`
-- `yann-brillouet/release-4.8/bump_api_to_v1.8.1`
-- `yann-brillouet/release-4.10/bump_api_to_v1.8.1`
+- `yann-brillouet/release-4.9/bump-go-dep/kubevirt-io-api-v1.8.1`
+- `yann-brillouet/release-4.8/bump-go-dep/kubevirt-io-api-v1.8.1`
+- `yann-brillouet/release-4.10/bump-go-dep/kubevirt-io-api-v1.8.1`
 
 Each branch contains the dependency update committed and ready to push.
 
@@ -75,23 +75,23 @@ Proceed?
 
 Branches are created with the following pattern:
 ```
-<username>/<target-branch>/bump_<dependency-name>_to_<version>
+<username>/<target-branch>/bump-go-dep/<full-dependency-name>-<version>
 ```
 
 Where:
 - `<username>`: Your git username, lowercased with spaces replaced by hyphens (e.g., `yann-brillouet`)
 - `<target-branch>`: The target branch name (e.g., `release-4.9`)
-- `<dependency-name>`: Last component of the package path (e.g., `api` from `kubevirt.io/api`)
+- `<full-dependency-name>`: Complete package path with all `/` and `.` replaced by `-` (e.g., `kubevirt-io-api` from `kubevirt.io/api`)
 - `<version>`: The target version (e.g., `v1.8.1`)
 
 ### Examples
 
 | Package | Target Branch | Resulting Branch Name |
 |---------|---------------|----------------------|
-| `kubevirt.io/api` | `master` | `yann-brillouet/master/bump_api_to_v1.8.1` |
-| `github.com/stretchr/testify` | `release-4.9` | `yann-brillouet/release-4.9/bump_testify_to_v1.9.0` |
-| `golang.org/x/crypto` | `release-4.8` | `yann-brillouet/release-4.8/bump_crypto_to_v0.17.0` |
-| `k8s.io/client-go` | `master` | `yann-brillouet/master/bump_client_go_to_v0.29.0` |
+| `kubevirt.io/api` | `master` | `yann-brillouet/master/bump-go-dep/kubevirt-io-api-v1.8.1` |
+| `github.com/stretchr/testify` | `release-4.9` | `yann-brillouet/release-4.9/bump-go-dep/github-com-stretchr-testify-v1.9.0` |
+| `golang.org/x/crypto` | `release-4.8` | `yann-brillouet/release-4.8/bump-go-dep/golang-org-x-crypto-v0.17.0` |
+| `k8s.io/client-go` | `master` | `yann-brillouet/master/bump-go-dep/k8s-io-client-go-v0.29.0` |
 
 ## Output
 
@@ -106,14 +106,14 @@ After completion, you'll receive:
 ### Push the branches
 
 ```bash
-git push -u origin yann-brillouet/release-4.9/bump_api_to_v1.8.1
-git push -u origin yann-brillouet/release-4.8/bump_api_to_v1.8.1
-git push -u origin yann-brillouet/release-4.10/bump_api_to_v1.8.1
+git push -u origin yann-brillouet/release-4.9/bump-go-dep/kubevirt-io-api-v1.8.1
+git push -u origin yann-brillouet/release-4.8/bump-go-dep/kubevirt-io-api-v1.8.1
+git push -u origin yann-brillouet/release-4.10/bump-go-dep/kubevirt-io-api-v1.8.1
 ```
 
 Or push all at once:
 ```bash
-git push -u origin 'yann-brillouet/*/bump_api_to_v1.8.1'
+git push -u origin 'yann-brillouet/*/bump-go-dep/kubevirt-io-api-v1.8.1'
 ```
 
 ### Create Pull Requests
@@ -121,7 +121,7 @@ git push -u origin 'yann-brillouet/*/bump_api_to_v1.8.1'
 Using `gh` CLI:
 ```bash
 gh pr create --base release-4.9 \
-  --head yann-brillouet/release-4.9/bump_api_to_v1.8.1 \
+  --head yann-brillouet/release-4.9/bump-go-dep/kubevirt-io-api-v1.8.1 \
   --title "chore(deps): update kubevirt.io/api to v1.8.1" \
   --body "Updates kubevirt.io/api to v1.8.1"
 ```

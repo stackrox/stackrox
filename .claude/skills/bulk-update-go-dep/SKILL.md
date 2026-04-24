@@ -42,9 +42,9 @@ Parse the user's response by splitting on commas and trimming whitespace.
 Show the user:
 - The dependency being updated: `<package>@<version>`
 - The target branches
-- The branch naming pattern that will be used: `<username>/<target-branch>/bump_<dependency-name>_to_<version>`
+- The branch naming pattern that will be used: `<username>/<target-branch>/bump-go-dep/<full-dependency-name>-<version>`
 
-Where `<dependency-name>` is the last component of the package path (e.g., `api` from `kubevirt.io/api`).
+Where `<full-dependency-name>` is the complete package path with slashes and dots replaced by hyphens (e.g., `kubevirt-io-api` from `kubevirt.io/api`).
 
 Use AskUserQuestion to confirm: "Proceed with creating these branches and applying updates? (yes/no)"
 
@@ -86,12 +86,13 @@ git pull origin <target-branch>
 #### d. Create child branch
 
 Generate the branch name:
-- Format: `<username>/<target-branch>/bump_<dependency-name>_to_<version>`
-- Example: `yann-brillouet/master/bump_api_to_v1.8.1`
+- Format: `<username>/<target-branch>/bump-go-dep/<full-dependency-name>-<version>`
+- Example: `yann-brillouet/master/bump-go-dep/kubevirt-io-api-v1.8.1`
 - Sanitize the dependency name by:
-  - Taking the last component after the last `/` or `.`
-  - Replacing any remaining `/` or `.` with `_`
+  - Using the full package path
+  - Replacing all `/` and `.` with `-`
   - Converting to lowercase
+  - Keeping the version as provided
 
 Create and checkout the new branch:
 ```bash
@@ -141,7 +142,7 @@ You should:
 4. Confirm the plan
 5. For each branch:
    - Fetch and checkout `master`
-   - Create `yann-brillouet/master/bump_api_to_v1.8.1`
+   - Create `yann-brillouet/master/bump-go-dep/kubevirt-io-api-v1.8.1`
    - Run `/update-go-dep kubevirt.io/api v1.8.1`
    - Repeat for `release-4.9` and `release-4.8`
 6. Return to original branch
@@ -157,18 +158,18 @@ You should:
 
 ## Branch Naming
 
-The branch name format is: `<username>/<target-branch>/bump_<dependency-name>_to_<version>`
+The branch name format is: `<username>/<target-branch>/bump-go-dep/<full-dependency-name>-<version>`
 
 **Sanitization rules**:
 - Username: lowercase, spaces → hyphens
-- Dependency name: take last component, replace `/` and `.` with `_`, lowercase
+- Dependency name: use full package path, replace all `/` and `.` with `-`, lowercase
 - Version: as provided (with or without `v` prefix)
 
 **Examples**:
-- `kubevirt.io/api` → `api`
-- `github.com/stretchr/testify` → `testify`
-- `golang.org/x/crypto` → `crypto`
-- `k8s.io/client-go` → `client_go`
+- `kubevirt.io/api` → `kubevirt-io-api`
+- `github.com/stretchr/testify` → `github-com-stretchr-testify`
+- `golang.org/x/crypto` → `golang-org-x-crypto`
+- `k8s.io/client-go` → `k8s-io-client-go`
 
 ## Notes
 
