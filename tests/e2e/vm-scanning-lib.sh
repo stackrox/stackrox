@@ -77,4 +77,3 @@ ensure_virtctl_binary() {
     chmod +x "${dest}/virtctl"
     info "virtctl installed at ${dest}/virtctl"
 }
-
