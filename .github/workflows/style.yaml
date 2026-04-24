@@ -37,6 +37,7 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^proto/') ||
       contains(needs.detect-changes.outputs.files, '^generated/') ||
       contains(needs.detect-changes.outputs.files, '^operator/') ||
+      contains(needs.detect-changes.outputs.files, '^config-controller/') ||
       contains(needs.detect-changes.outputs.files, '^scripts/')
     env:
       ARTIFACT_DIR: junit-reports/
