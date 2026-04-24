@@ -931,6 +931,12 @@ populate_prefetcher_image_list() {
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
+    nongroovy-compatibility)
+        cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
+        ;;
+    compatibility)
+        cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"
+        ;;
     *)
         die "ERROR: An unsupported image prefetcher target was requested: $name"
         ;;
