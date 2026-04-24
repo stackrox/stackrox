@@ -417,6 +417,10 @@ deploy_sensor() {
     ci_export ROX_AFTERGLOW_PERIOD "15"
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
+    # Per-namespace filtering tests expect to have one namespace configured
+    # without persistence.
+    ci_export ROX_PROCESS_INDICATORS_PER_NAMESPACE "true"
+
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else

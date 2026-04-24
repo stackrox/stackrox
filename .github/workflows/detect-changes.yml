@@ -3,7 +3,7 @@ name: Detect changed files
 # Outputs the list of files changed in a PR, one per line, wrapped
 # with ^ and $ anchors (e.g. ^ui/src/App.tsx$). Jobs match with
 # contains() using anchors for precise substring matching:
-#   '^scripts/'  — root directory (won't match nested scripts/)
+#   '^scripts/'  — full tree under a root directory
 #   '.go$'       — file extension (won't match .gotmpl)
 #   '^go.mod$'   — exact root file
 #
