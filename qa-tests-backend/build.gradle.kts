@@ -236,9 +236,10 @@ tasks.register<Test>("testDeploymentCheck") {
 }
 
 allprojects {
-    apply(plugin = "java")
-    java {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    plugins.withType<JavaPlugin> {
+        extensions.configure<JavaPluginExtension> {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
     }
 }
