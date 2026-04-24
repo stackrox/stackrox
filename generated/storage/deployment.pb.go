@@ -376,9 +376,9 @@ type Deployment struct {
 	PlatformComponent             bool            `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
 	// `deleted` is the time at which the underlying deployment workload was
 	// deleted. `nil` if the workload exists.
-	Deleted *timestamppb.Timestamp `protobuf:"bytes,36,opt,name=deleted,proto3" json:"deleted,omitempty" search:"Deleted,hidden" hash:"ignore"` // @gotags: search:"Deleted,hidden" hash:"ignore"
+	Deleted *timestamppb.Timestamp `protobuf:"bytes,36,opt,name=deleted,proto3" json:"deleted,omitempty" search:"Deleted,hidden" hash:"ignore" sql:"index=btree"` // @gotags: search:"Deleted,hidden" hash:"ignore" sql:"index=btree"
 	// `state` indicates the current status of the deployment workload.
-	State         DeploymentState `protobuf:"varint,37,opt,name=state,proto3,enum=storage.DeploymentState" json:"state,omitempty" search:"Deployment State"` // @gotags: search:"Deployment State"
+	State         DeploymentState `protobuf:"varint,37,opt,name=state,proto3,enum=storage.DeploymentState" json:"state,omitempty" search:"Deployment State,hidden"` // @gotags: search:"Deployment State,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
