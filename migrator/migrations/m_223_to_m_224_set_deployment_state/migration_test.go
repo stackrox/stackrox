@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_add_deleted_at_index_and_set_deployment_state/test/schema"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_set_deployment_state/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -64,7 +64,7 @@ func (s *migrationTestSuite) TestMigration() {
 	// Run migration to add deleted and state columns and backfill state.
 	s.Require().NoError(migration.Run(dbs))
 
-	// Verify all deployments now have state = 1 (STATE_ACTIVE).
+	// Verify all deployments now have state = 1 (STATE_ACTIVE) in the column.
 	var activeCount int
 	err := db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state = 1").Scan(&activeCount)
 	s.Require().NoError(err)
@@ -76,12 +76,17 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(err)
 	s.Equal(0, unspecifiedCount)
 
-	// Verify index exists on deleted.
-	var indexExists bool
-	err = db.QueryRow(s.ctx,
-		"SELECT EXISTS(SELECT 1 FROM pg_indexes WHERE tablename = 'deployments' AND indexname = 'deployments_deleted')").Scan(&indexExists)
-	s.Require().NoError(err)
-	s.True(indexExists, "index deployments_deleted should exist")
+	// Verify the serialized proto also has state = STATE_ACTIVE for all deployments.
+	for _, id := range deploymentIDs {
+		var serialized []byte
+		err = db.QueryRow(s.ctx, "SELECT serialized FROM deployments WHERE id = $1", id).Scan(&serialized)
+		s.Require().NoError(err)
+
+		dep := &storage.Deployment{}
+		err = dep.UnmarshalVT(serialized)
+		s.Require().NoError(err)
+		s.Equal(storage.DeploymentState_STATE_ACTIVE, dep.GetState(), "deployment %s serialized proto should have STATE_ACTIVE", id)
+	}
 
 	// Run migration again to verify idempotency.
 	s.Require().NoError(migration.Run(dbs))
@@ -90,4 +95,16 @@ func (s *migrationTestSuite) TestMigration() {
 	err = db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state = 1").Scan(&activeCount)
 	s.Require().NoError(err)
 	s.Equal(numDeployments, activeCount)
+
+	// Verify the serialized proto still has STATE_ACTIVE after idempotency check.
+	for _, id := range deploymentIDs {
+		var serialized []byte
+		err = db.QueryRow(s.ctx, "SELECT serialized FROM deployments WHERE id = $1", id).Scan(&serialized)
+		s.Require().NoError(err)
+
+		dep := &storage.Deployment{}
+		err = dep.UnmarshalVT(serialized)
+		s.Require().NoError(err)
+		s.Equal(storage.DeploymentState_STATE_ACTIVE, dep.GetState(), "deployment %s serialized proto should still have STATE_ACTIVE after second run", id)
+	}
 }
