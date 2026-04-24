@@ -177,6 +177,11 @@ jobs:
           # Mask the admin password in GitHub Actions logs
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
+          # Show pod status after successful deployment
+          echo "::group::Pod status after deployment"
+          kubectl -n stackrox get pods -o wide
+          echo "::endgroup::"
+
           # Export deployment env vars for next step
           {
             echo "ROX_USERNAME=${ROX_USERNAME}"
