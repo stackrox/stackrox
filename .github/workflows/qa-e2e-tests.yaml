@@ -151,9 +151,9 @@ jobs:
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
           # Wait for cluster to be registered in Central
-          # Increased timeout for GHA environment (slower than Prow CI)
-          echo "Waiting for cluster 'remote' to be registered in Central..."
-          if ! scripts/ci/cluster-registration-wait.sh remote stackrox 600; then
+          # Note: CLUSTER variable is set by config_part_1 (uppercased ORCHESTRATOR_FLAVOR)
+          echo "Waiting for cluster '${CLUSTER}' to be registered in Central..."
+          if ! scripts/ci/cluster-registration-wait.sh "${CLUSTER}" stackrox 120; then
             echo "::group::Diagnostic logs - Sensor"
             kubectl -n stackrox logs deployment/sensor --tail=100 || true
             echo "::endgroup::"
