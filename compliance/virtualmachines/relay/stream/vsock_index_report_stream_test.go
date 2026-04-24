@@ -3,11 +3,11 @@ package stream
 import (
 	"context"
 	"net"
-	"sync"
 	"testing"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/proto"
