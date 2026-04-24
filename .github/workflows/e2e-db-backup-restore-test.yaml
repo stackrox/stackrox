@@ -61,6 +61,7 @@ jobs:
       CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}-${{ github.run_attempt }}
       CI_JOB_NAME: gke-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports/
+      LOAD_BALANCER: lb
     timeout-minutes: 60
     steps:
 
@@ -131,7 +132,6 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        LOAD_BALANCER: lb
         ORCHESTRATOR_FLAVOR: k8s
       run: |
         source tests/e2e/lib.sh
@@ -140,6 +140,8 @@ jobs:
         export_test_environment
         setup_deployment_env false false
         deploy_stackrox
+        # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
+        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
     - name: Run post-test
