@@ -165,12 +165,11 @@ jobs:
             echo "ROX_USERNAME=${ROX_USERNAME}"
             echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}"
             echo "API_ENDPOINT=${API_ENDPOINT}"
-            echo "CLUSTER=${CLUSTER:-remote}"
           } >> "$GITHUB_ENV"
 
-          # Wait for cluster to be registered in Central
-          echo "Waiting for cluster '${CLUSTER:-remote}' to be registered in Central..."
-          if ! scripts/ci/cluster-registration-wait.sh "${CLUSTER:-remote}" stackrox 120; then
+          # Wait for cluster to be registered in Central (cluster name is "remote")
+          echo "Waiting for cluster 'remote' to be registered in Central..."
+          if ! scripts/ci/cluster-registration-wait.sh "remote" stackrox 120; then
             echo "::group::Diagnostic logs - Sensor"
             kubectl -n stackrox logs deployment/sensor --tail=100 || true
             echo "::endgroup::"
@@ -187,6 +186,7 @@ jobs:
           !github.event.pull_request.draft ||
           matrix.test-group != 'testRest'
         env:
+          CLUSTER: K8S  # Tests need CLUSTER as orchestrator type enum (K8S or OPENSHIFT)
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
           MAIN_IMAGE_TAG: ${{ env.tag }}
@@ -202,19 +202,23 @@ jobs:
           cd qa-tests-backend
           ./gradlew ${{ matrix.test-group }}
 
-      - name: Collect artifacts
+      - name: Collect pod logs
         if: always()
-        shell: python
-        env:
-          PYTHONUNBUFFERED: "1"
         run: |
-          import sys
-          sys.path.append('.openshift-ci')
-          from post_tests import PostClusterTest
-          PostClusterTest(collect_central_artifacts=True).run([
-            "/tmp/qa-tests-backend-logs",
-            "${{ env.ARTIFACT_DIR }}"
-          ])
+          set -euo pipefail
+
+          mkdir -p ${{ env.ARTIFACT_DIR }}/pod-logs
+
+          # Collect StackRox pod logs
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null || true); do
+            pod_name=$(basename "$pod")
+            echo "Collecting logs for $pod_name"
+            kubectl -n stackrox logs "$pod" --all-containers=true --tail=1000 > "${{ env.ARTIFACT_DIR }}/pod-logs/${pod_name}.log" 2>&1 || true
+          done
+
+          # Copy test results if they exist
+          cp -r qa-tests-backend/build/test-results/* ${{ env.ARTIFACT_DIR }}/ 2>/dev/null || true
+          cp -r qa-tests-backend/build/reports/* ${{ env.ARTIFACT_DIR }}/ 2>/dev/null || true
 
       - name: Final post-test
         if: always()
