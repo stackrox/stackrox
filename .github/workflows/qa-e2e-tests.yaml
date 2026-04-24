@@ -149,10 +149,6 @@ jobs:
 
           # Mask the admin password in GitHub Actions logs
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
-
-          # Wait for cluster to be registered in Central
-          echo "Waiting for cluster 'remote' to be registered in Central..."
-          scripts/ci/cluster-registration-wait.sh remote stackrox 120
           echo "::endgroup::"
 
           echo "::group::Execute test group: ${{ matrix.test-group }}"
