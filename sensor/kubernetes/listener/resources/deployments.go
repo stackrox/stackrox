@@ -319,8 +319,14 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 		// would clear the container image IDs (digests come from pod
 		// container statuses), losing the association to the image. The
 		// deployment's REMOVE event will handle the actual deletion.
-		if action == central.ResourceAction_REMOVE_RESOURCE && d.isOwnerBeingDeleted(owner.original) {
-			continue
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			if d.isOwnerBeingDeleted(owner.original) {
+				log.Infof("Skipping parent update for deployment %s/%s: deployment is being deleted, preserving image IDs",
+					owner.GetNamespace(), owner.GetName())
+				continue
+			}
+			log.Infof("Pod removed but deployment %s/%s is not being deleted (DeletionTimestamp not set), sending parent update",
+				owner.GetNamespace(), owner.GetName())
 		}
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
 		rootEvent.MergeResourceEvent(ev)
