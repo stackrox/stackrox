@@ -61,15 +61,15 @@ var SemaphoreAcquisitionFailures = prometheus.NewCounterVec(
 	[]string{"reason"},
 )
 
-// RetryAttempts counts how many times the VM relay operation was retried
-// after a failure (e.g. vsock bind unavailable). A sustained non-zero rate
-// indicates the relay cannot start and is waiting for vsock to become available.
+// RetryAttempts counts how many times the VM relay operation was retried after
+// a retriable failure. A sustained non-zero rate indicates the relay is
+// repeatedly failing and being restarted by the retry loop.
 var RetryAttempts = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "virtual_machine_relay_retry_attempts_total",
-		Help:      "Total number of VM relay retry attempts after failure of listening to vsock",
+		Help:      "Total number of VM relay retry attempts after retriable relay failures",
 	},
 )
 
