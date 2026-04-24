@@ -71,6 +71,9 @@ func (m *VulnerabilityReportFilters) CloneVT() *VulnerabilityReportFilters {
 	}
 	r := new(VulnerabilityReportFilters)
 	r.Fixability = m.Fixability
+	r.IncludeNvdCvss = m.IncludeNvdCvss
+	r.IncludeEpssProbability = m.IncludeEpssProbability
+	r.IncludeAdvisory = m.IncludeAdvisory
 	r.Query = m.Query
 	if rhs := m.Severities; rhs != nil {
 		tmpContainer := make([]VulnerabilityReportFilters_VulnerabilitySeverity, len(rhs))
@@ -844,6 +847,15 @@ func (this *VulnerabilityReportFilters) EqualVT(that *VulnerabilityReportFilters
 		if vx != vy {
 			return false
 		}
+	}
+	if this.IncludeNvdCvss != that.IncludeNvdCvss {
+		return false
+	}
+	if this.IncludeEpssProbability != that.IncludeEpssProbability {
+		return false
+	}
+	if this.IncludeAdvisory != that.IncludeAdvisory {
+		return false
 	}
 	if this.Query != that.Query {
 		return false
@@ -1995,6 +2007,36 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
 		i--
 		dAtA[i] = 0x62
+	}
+	if m.IncludeAdvisory {
+		i--
+		if m.IncludeAdvisory {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.IncludeEpssProbability {
+		i--
+		if m.IncludeEpssProbability {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.IncludeNvdCvss {
+		i--
+		if m.IncludeNvdCvss {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
 	}
 	if len(m.ImageTypes) > 0 {
 		var pksize2 int
@@ -3678,6 +3720,15 @@ func (m *VulnerabilityReportFilters) SizeVT() (n int) {
 	if vtmsg, ok := m.CvesSince.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
+	if m.IncludeNvdCvss {
+		n += 2
+	}
+	if m.IncludeEpssProbability {
+		n += 2
+	}
+	if m.IncludeAdvisory {
+		n += 2
+	}
 	l = len(m.Query)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -4898,6 +4949,66 @@ func (m *VulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 				m.CvesSince = &VulnerabilityReportFilters_SinceStartDate{SinceStartDate: v}
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeNvdCvss", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeNvdCvss = bool(v != 0)
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeEpssProbability", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeEpssProbability = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeAdvisory", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeAdvisory = bool(v != 0)
 		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
@@ -8843,6 +8954,66 @@ func (m *VulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.CvesSince = &VulnerabilityReportFilters_SinceStartDate{SinceStartDate: v}
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeNvdCvss", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeNvdCvss = bool(v != 0)
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeEpssProbability", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeEpssProbability = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeAdvisory", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeAdvisory = bool(v != 0)
 		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
