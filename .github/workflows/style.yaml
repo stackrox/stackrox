@@ -38,7 +38,8 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^generated/') ||
       contains(needs.detect-changes.outputs.files, '^operator/') ||
       contains(needs.detect-changes.outputs.files, '^config-controller/') ||
-      contains(needs.detect-changes.outputs.files, '^scripts/')
+      contains(needs.detect-changes.outputs.files, '^scripts/') ||
+      contains(needs.detect-changes.outputs.files, '^tools/')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -316,6 +317,24 @@ jobs:
             rhacs-eng/release-scanner-db:${{ env.scanner_tag }}-fast
             rhacs-eng/release-scanner-db-slim:${{ env.scanner_tag }}-fast
 
+  github-actions-pin-check:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '^.github/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: tools/linters/go.mod
+          cache: false
+      - name: Check action version pins
+        run: make github-actions-pin-check
+
   github-actions-lint:
     needs: detect-changes
     if: >-
@@ -393,6 +412,7 @@ jobs:
       - style-check
       - golangci-lint
       - check-dependent-images-exist
+      - github-actions-pin-check
       - github-actions-lint
       - github-actions-shellcheck
       - openshift-ci-lint
