@@ -16,8 +16,8 @@ spec:
         - name: {{.JobName}}-{{.Replica}}
       containers:
       - args:
-        - sleep
-        - infinity
+        - -f
+        - /etc/berserker/workload.ber
         image: quay.io/stackrox-io/berserker:1.0-88-gbc9a937d18
         resources:
           requests:
