@@ -73,6 +73,18 @@ jobs:
       - name: Build tools
         run: make roxctl_linux-amd64
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Generate proto and compile tests
+        run: |
+          make proto-generated-srcs
+          cd qa-tests-backend
+          make compile
+
       - uses: stackrox/actions/infra/install-infractl@v1
 
       - uses: google-github-actions/auth@v3
@@ -142,7 +154,6 @@ jobs:
           # Source the script which will set ROOT and source dependencies
           source qa-tests-backend/scripts/run-part-1.sh
 
-          echo "::group::Deploy StackRox"
           # Deploy StackRox (sets ROX_USERNAME, ROX_ADMIN_PASSWORD, etc.)
           config_part_1
 
@@ -151,7 +162,7 @@ jobs:
 
           # Wait for cluster to be registered in Central
           # Cluster defaults to "remote" from deploy/common/env.sh if not explicitly set
-          CLUSTER="${CLUSTER:-remote}"
+          export CLUSTER="${CLUSTER:-remote}"
           echo "Waiting for cluster '${CLUSTER}' to be registered in Central..."
           if ! scripts/ci/cluster-registration-wait.sh "${CLUSTER}" stackrox 120; then
             echo "::group::Diagnostic logs - Sensor"
@@ -162,15 +173,10 @@ jobs:
             echo "::endgroup::"
             exit 1
           fi
-          echo "::endgroup::"
 
-          echo "::group::Execute test group: ${{ matrix.test-group }}"
-          # Execute test group (must be in same step to preserve environment)
-          echo "Running test group: ${{ matrix.test-group }}"
+          # Execute test group (BaseSpecification.groovy handles GHA log grouping)
           cd qa-tests-backend
-          make compile
           ./gradlew ${{ matrix.test-group }}
-          echo "::endgroup::"
 
       - name: Collect artifacts
         if: always()
