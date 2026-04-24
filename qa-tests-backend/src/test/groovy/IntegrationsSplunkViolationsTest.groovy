@@ -129,7 +129,11 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         "StackRox violations are in Splunk with correct CIM field mappings"
         assert !alerts.isEmpty()
         log.info "Validating CIM mappings for alerts"
-        for (alert in alerts) {
+        // FILE_ACCESS violations may lack deploymentInfo (e.g. node-level events)
+        // and have their own CIM structure validated in the file access test
+        // (currently disabled pending ROX-31047).
+        def nonFileAccessAlerts = alerts.findAll { !isViolationOfType(it, "FILE_ACCESS") }
+        for (alert in nonFileAccessAlerts) {
             validateCimMappings(alert)
         }
     }
