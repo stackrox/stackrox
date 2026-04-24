@@ -149,6 +149,19 @@ jobs:
 
           # Mask the admin password in GitHub Actions logs
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+
+          # Wait for cluster to be registered in Central
+          # Increased timeout for GHA environment (slower than Prow CI)
+          echo "Waiting for cluster 'remote' to be registered in Central..."
+          if ! scripts/ci/cluster-registration-wait.sh remote stackrox 600; then
+            echo "::group::Diagnostic logs - Sensor"
+            kubectl -n stackrox logs deployment/sensor --tail=100 || true
+            echo "::endgroup::"
+            echo "::group::Diagnostic logs - Central"
+            kubectl -n stackrox logs deployment/central --tail=100 || true
+            echo "::endgroup::"
+            exit 1
+          fi
           echo "::endgroup::"
 
           echo "::group::Execute test group: ${{ matrix.test-group }}"
