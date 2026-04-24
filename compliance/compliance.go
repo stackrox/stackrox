@@ -95,10 +95,7 @@ func (c *Compliance) Start() {
 
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
-	// the anonymous go func will read from toSensorC and send it using the client
-	go func() {
-		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
-	}()
+	vmRelayConfigC := c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 
 	var wg concurrency.WaitGroup
 	wg.Add(3)
@@ -133,6 +130,9 @@ func (c *Compliance) Start() {
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
 		if !features.VirtualMachines.Enabled() {
+			return
+		}
+		if !waitForVMRelayEligibility(ctx, vmRelayConfigC) {
 			return
 		}
 		log.Infof("Virtual machine relay enabled")
@@ -283,36 +283,98 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 	return msg
 }
 
-func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
+func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) <-chan *sensor.MsgToCompliance_ScrapeConfig {
+	vmRelayConfigC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
+	go func() {
+		defer close(vmRelayConfigC)
+		for {
+			select {
+			case <-ctx.Done():
+				sig.Signal()
+				return
+			default:
+				// initializeStream must only be called once across all Compliance components,
+				// as multiple calls would overwrite associations on the Sensor side.
+				client, config, err := c.initializeStream(ctx, cli)
+				if err != nil {
+					if ctx.Err() != nil {
+						// continue and the <-ctx.Done() path should be taken next iteration
+						continue
+					}
+					log.Fatalf("Error initializing stream to sensor: %v", err)
+				}
+				// Best-effort publish of the latest config for relay startup without ever
+				// blocking stream management when no receiver is waiting.
+				publishLatestVMRelayConfig(vmRelayConfigC, config)
+				// A second Context is introduced for cancelling the goroutine if runRecv returns.
+				// runRecv only returns on errors, upon which the client will get reinitialized,
+				// orphaning manageSendToSensor in the process.
+				ctx2, cancelFn := context.WithCancel(ctx)
+				if toSensorC != nil {
+					go c.manageSendToSensor(ctx2, client, toSensorC)
+				}
+				if err := c.runRecv(ctx, client, config); err != nil {
+					log.Errorf("Error running recv: %v", err)
+				}
+				cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
+			}
+		}
+	}()
+	return vmRelayConfigC
+}
+
+// publishLatestVMRelayConfig publishes config without blocking and keeps at most
+// the latest scrape config in the channel buffer.
+func publishLatestVMRelayConfig(vmRelayConfigC chan *sensor.MsgToCompliance_ScrapeConfig, config *sensor.MsgToCompliance_ScrapeConfig) {
+	select {
+	case vmRelayConfigC <- config:
+		return
+	default:
+	}
+
+	// Channel is full: drop one stale item and try to publish the latest.
+	select {
+	case <-vmRelayConfigC:
+	default:
+	}
+	select {
+	case vmRelayConfigC <- config:
+	default:
+	}
+}
+
+// waitForVMRelayEligibility blocks until VM relay is eligible to start based on
+// scrape config updates. It returns false when the context is cancelled or when
+// the config channel closes before an eligible config is observed.
+func waitForVMRelayEligibility(ctx context.Context, vmRelayConfigC <-chan *sensor.MsgToCompliance_ScrapeConfig) bool {
 	for {
 		select {
 		case <-ctx.Done():
-			sig.Signal()
-			return
-		default:
-			// initializeStream must only be called once across all Compliance components,
-			// as multiple calls would overwrite associations on the Sensor side.
-			client, config, err := c.initializeStream(ctx, cli)
-			if err != nil {
-				if ctx.Err() != nil {
-					// continue and the <-ctx.Done() path should be taken next iteration
-					continue
-				}
-				log.Fatalf("Error initializing stream to sensor: %v", err)
+			return false
+		case config, ok := <-vmRelayConfigC:
+			if !ok {
+				return false
 			}
-			// A second Context is introduced for cancelling the goroutine if runRecv returns.
-			// runRecv only returns on errors, upon which the client will get reinitialized,
-			// orphaning manageSendToSensor in the process.
-			ctx2, cancelFn := context.WithCancel(ctx)
-			if toSensorC != nil {
-				go c.manageSendToSensor(ctx2, client, toSensorC)
+			if config == nil {
+				log.Info("Virtual machine relay starting without scrape config (safe fallback)")
+				return true
 			}
-			if err := c.runRecv(ctx, client, config); err != nil {
-				log.Errorf("Error running recv: %v", err)
+			if shouldRunVMRelay(config) {
+				return true
 			}
-			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
+			log.Infof("Virtual machine relay disabled on master node by default; set %s=true to enable it", env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
 		}
 	}
+}
+
+func shouldRunVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) bool {
+	if config == nil {
+		return true
+	}
+	if !config.GetIsMasterNode() {
+		return true
+	}
+	return env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting()
 }
 
 func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
