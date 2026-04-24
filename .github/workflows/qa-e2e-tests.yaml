@@ -198,6 +198,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Split API_ENDPOINT into API_HOSTNAME and API_PORT for tests
+          export API_HOSTNAME="${API_ENDPOINT%:*}"
+          export API_PORT="${API_ENDPOINT#*:}"
+
+          echo "API_HOSTNAME=${API_HOSTNAME}"
+          echo "API_PORT=${API_PORT}"
+
           # BaseSpecification.groovy handles GHA log grouping per test spec
           cd qa-tests-backend
           ./gradlew ${{ matrix.test-group }}
