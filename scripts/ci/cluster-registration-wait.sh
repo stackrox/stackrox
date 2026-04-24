@@ -14,14 +14,18 @@ CLUSTER_NAME="${1}"
 CENTRAL_NAMESPACE="${2:-stackrox}"
 MAX_WAIT="${3:-120}"
 
+# Use API_ENDPOINT if set, otherwise fall back to localhost:8000
+CENTRAL_API="${API_ENDPOINT:-localhost:8000}"
+
 echo "Waiting for cluster '${CLUSTER_NAME}' to be registered in Central (max ${MAX_WAIT}s)..."
+echo "Using Central API endpoint: ${CENTRAL_API}"
 
 start_time="$(date '+%s')"
 
 while true; do
     # Query Central API for clusters
     if response=$(curl -k -s -u "admin:${ROX_ADMIN_PASSWORD}" \
-        "https://localhost:8000/v1/clusters" 2>/dev/null); then
+        "https://${CENTRAL_API}/v1/clusters" 2>/dev/null); then
 
         # Check if our cluster name exists
         if echo "$response" | jq -e ".clusters[] | select(.name == \"${CLUSTER_NAME}\")" >/dev/null 2>&1; then
@@ -39,7 +43,7 @@ while true; do
     if (( elapsed > MAX_WAIT )); then
         echo "ERROR: Timed out waiting for cluster '${CLUSTER_NAME}' to register after ${MAX_WAIT}s"
         echo "Registered clusters:"
-        curl -k -s -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/clusters" 2>/dev/null | jq -r '.clusters[] | .name' || echo "Failed to get cluster list"
+        curl -k -s -u "admin:${ROX_ADMIN_PASSWORD}" "https://${CENTRAL_API}/v1/clusters" 2>/dev/null | jq -r '.clusters[] | .name' || echo "Failed to get cluster list"
         exit 1
     fi
 
