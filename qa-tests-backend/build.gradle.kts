@@ -15,7 +15,7 @@ codenarc {
 apply(from = "protobuf.gradle")
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
-project.sourceSets.forEach { sourceSet ->
+extensions.getByType<SourceSetContainer>().forEach { sourceSet ->
     sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
     sourceSet.java.setSrcDirs(emptyList<File>())
 }
@@ -237,7 +237,7 @@ tasks.register<Test>("testDeploymentCheck") {
 allprojects {
     apply(plugin = "java")
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
