@@ -77,7 +77,12 @@ func (s *migrationTestSuite) TestMigration() {
 				makeContainer("", "registry.example.com/img6:latest"),
 			)
 
-			allDeps := []*storage.Deployment{dep1, dep2, dep3, dep4}
+			// Deployment 5: container with image_id but empty full name — should NOT be migrated.
+			dep5 := makeDeployment("no-fullname",
+				makeContainer("sha256:"+strings.Repeat("e", 64), ""),
+			)
+
+			allDeps := []*storage.Deployment{dep1, dep2, dep3, dep4, dep5}
 
 			// Insert all deployments and their containers.
 			for _, dep := range allDeps {
@@ -101,14 +106,20 @@ func (s *migrationTestSuite) TestMigration() {
 
 			// dep2: container should NOT have image_idv2 (no image_id).
 			s.verifyContainerIDV2(dep2, 0, "")
+			s.verifyBlobIDV2(dep2)
 
-			// dep3: container should still have original image_idv2.
+			// dep3: container should still have original image_idv2 in column and blob.
 			s.verifyContainerIDV2(dep3, 0, existingIDV2)
+			s.verifyBlobIDV2(dep3)
 
 			// dep4: first container should have image_idv2, second should not.
 			s.verifyContainerIDV2(dep4, 0, expectedIDV2(dep4.GetContainers()[0]))
 			s.verifyContainerIDV2(dep4, 1, "")
 			s.verifyBlobIDV2(dep4)
+
+			// dep5: has image_id but no full name — should NOT have image_idv2.
+			s.verifyContainerIDV2(dep5, 0, "")
+			s.verifyBlobIDV2(dep5)
 
 			// --- Cleanup ---
 			for _, dep := range allDeps {

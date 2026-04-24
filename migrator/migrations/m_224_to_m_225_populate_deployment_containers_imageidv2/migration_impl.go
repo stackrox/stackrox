@@ -20,14 +20,25 @@ var (
 	batchSize = 5000
 )
 
+type batchResult struct {
+	updated int
+	lastID  string
+	errors  *multierror.Error
+}
+
 // migrate updates image_idv2 in both the deployments_containers column and the
 // deployments.serialized proto blob. Updating the blob is necessary because
 // the platform reprocessor reads the blob and upserts back — if the blob
 // doesn't have id_v2, the reprocessor clobbers the column value.
 func migrate(database *types.Databases) error {
 	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, schema.CreateTableDeploymentsStmt)
-	db := database.PostgresDB
 	ctx := database.DBCtx
+
+	conn, err := database.PostgresDB.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("acquiring connection: %w", err)
+	}
+	defer conn.Release()
 
 	updatedCount := 0
 	var upsertErrors *multierror.Error
@@ -36,16 +47,16 @@ func migrate(database *types.Databases) error {
 	// deployments consistently fail to update.
 	lastID := uuid.Nil.String()
 	for {
-		batchUpdated, newLastID, batchErrs, err := migrateBatch(ctx, db, lastID)
+		res, err := migrateBatch(ctx, conn, lastID)
 		if err != nil {
 			return err
 		}
-		upsertErrors = multierror.Append(upsertErrors, batchErrs)
-		if newLastID == "" {
+		upsertErrors = multierror.Append(upsertErrors, res.errors)
+		if res.lastID == "" {
 			break
 		}
-		lastID = newLastID
-		updatedCount += batchUpdated
+		lastID = res.lastID
+		updatedCount += res.updated
 	}
 
 	log.Infof("Populated image_idv2 for %d deployments", updatedCount)
@@ -60,13 +71,38 @@ type depRow struct {
 	serialized []byte
 }
 
-// migrateBatch processes one page of deployments starting after lastID.
-// Returns the number of deployments updated, the last deployment ID processed
-// (empty if no rows found), and any fatal error.
-func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, string, *multierror.Error, error) {
-	var upsertErrors *multierror.Error
+func migrateBatch(ctx context.Context, conn *postgres.Conn, lastID string) (batchResult, error) {
+	deps, err := fetchDeployments(ctx, conn, lastID)
+	if err != nil {
+		return batchResult{}, err
+	}
+	if len(deps) == 0 {
+		return batchResult{}, nil
+	}
 
-	rows, err := db.Query(ctx, `
+	batch, count, errs := buildBatchUpdates(deps)
+
+	if batch.Len() > 0 {
+		execErr, closeErr := sendBatch(ctx, conn, batch)
+		if execErr != nil {
+			errs = multierror.Append(errs, execErr)
+			// No deployments in batch would have been updated as the batch errored out
+			count = 0
+		}
+		if closeErr != nil {
+			return batchResult{}, closeErr
+		}
+	}
+
+	return batchResult{
+		updated: count,
+		lastID:  deps[len(deps)-1].id,
+		errors:  errs,
+	}, nil
+}
+
+func fetchDeployments(ctx context.Context, conn *postgres.Conn, lastID string) ([]depRow, error) {
+	rows, err := conn.Query(ctx, `
 		SELECT d.id, d.serialized
 		FROM deployments d
 		WHERE d.id > $2::uuid AND EXISTS (
@@ -79,7 +115,7 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, stri
 		ORDER BY d.id
 		LIMIT $1`, batchSize, lastID)
 	if err != nil {
-		return 0, "", upsertErrors, fmt.Errorf("querying deployments: %w", err)
+		return nil, fmt.Errorf("querying deployments: %w", err)
 	}
 	defer rows.Close()
 
@@ -87,33 +123,25 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, stri
 	for rows.Next() {
 		var d depRow
 		if err := rows.Scan(&d.id, &d.serialized); err != nil {
-			upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("scanning deployment row: %w", err))
-			continue
+			return nil, fmt.Errorf("scanning deployment row: %w", err)
 		}
 		deps = append(deps, d)
 	}
 	if err := rows.Err(); err != nil {
-		return 0, "", upsertErrors, fmt.Errorf("iterating deployment rows: %w", err)
+		return nil, fmt.Errorf("iterating deployment rows: %w", err)
 	}
+	return deps, nil
+}
 
-	if len(deps) == 0 {
-		return 0, "", upsertErrors, nil
-	}
-	newLastID := deps[len(deps)-1].id
-
-	conn, err := db.Acquire(ctx)
-	if err != nil {
-		return 0, "", upsertErrors, fmt.Errorf("acquiring connection: %w", err)
-	}
-	defer conn.Release()
-
+func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, *multierror.Error) {
+	var errs *multierror.Error
 	batch := &pgx.Batch{}
-	batchDeploymentCount := 0
+	count := 0
 
 	for _, dep := range deps {
 		d := &storage.Deployment{}
 		if err := d.UnmarshalVT(dep.serialized); err != nil {
-			upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err))
+			errs = multierror.Append(errs, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err))
 			continue
 		}
 
@@ -122,14 +150,13 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, stri
 		if blobChanged {
 			newSerialized, err := d.MarshalVT()
 			if err != nil {
-				upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("marshal deployment %s: %w", dep.id, err))
+				errs = multierror.Append(errs, fmt.Errorf("marshal deployment %s: %w", dep.id, err))
 				continue
 			}
 			batch.Queue("UPDATE deployments SET serialized = $1 WHERE id = $2",
 				newSerialized, pgutils.NilOrUUID(dep.id))
 		}
 
-		// Always update columns from proto values to ensure they match the blob.
 		for idx, container := range d.GetContainers() {
 			if idv2 := container.GetImage().GetIdV2(); idv2 != "" {
 				batch.Queue("UPDATE deployments_containers SET image_idv2 = $1 WHERE deployments_id = $2 AND idx = $3",
@@ -137,22 +164,25 @@ func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, stri
 			}
 		}
 
-		batchDeploymentCount++
+		count++
 	}
 
-	if batch.Len() > 0 {
-		results := conn.SendBatch(ctx, batch)
-		for i := 0; i < batch.Len(); i++ {
-			if _, err := results.Exec(); err != nil {
-				upsertErrors = multierror.Append(upsertErrors, fmt.Errorf("batch exec: %w", err))
-			}
-		}
-		if err := results.Close(); err != nil {
-			return 0, "", upsertErrors, fmt.Errorf("closing batch results: %w", err)
+	return batch, count, errs
+}
+
+func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) (execErr error, closeErr error) {
+	// SendBatch runs all queries in an implicit transaction. If any query fails, the entire batch is rolled back
+	results := conn.SendBatch(ctx, batch)
+	for i := 0; i < batch.Len(); i++ {
+		if _, err := results.Exec(); err != nil {
+			_ = results.Close()
+			return fmt.Errorf("batch exec statement %d: %w", i, err), nil
 		}
 	}
-
-	return batchDeploymentCount, newLastID, upsertErrors, nil
+	if err := results.Close(); err != nil {
+		return nil, fmt.Errorf("closing batch results: %w", err)
+	}
+	return nil, nil
 }
 
 // populateContainerImageIDV2s sets IdV2 on containers that have an image ID
