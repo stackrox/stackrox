@@ -195,6 +195,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
+	} else if d.isOwnerBeingDeleted(obj) {
+		// The deployment has a DeletionTimestamp, meaning it is about to be
+		// removed. Skip the update to avoid sending a deployment with empty
+		// image IDs to central — pods may already be terminated so the
+		// image digests cannot be resolved from container statuses. The
+		// subsequent REMOVE event will handle the actual deletion.
+		log.Infof("Skipping deployment update for %s/%s: deployment has DeletionTimestamp set",
+			deploymentWrap.GetNamespace(), deploymentWrap.GetName())
 	} else {
 		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 		// references up the chain, which will be used to trigger the actual deployment event and detection.
