@@ -8,33 +8,34 @@ import (
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/pubsub"
-	pubsubConfig "github.com/stackrox/rox/sensor/common/pubsub/config"
+	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 )
 
 func buildPubSubDispatcher() (common.PubSubDispatcher, error) {
-	laneType := pubsubConfig.LaneTypeConcurrent
-	consumerType := pubsubConfig.ConsumerTypeBuffered
+	laneType := lane.TypeConcurrent
+	consumerType := consumer.TypeBuffered
 	if !buildinfo.ReleaseBuild && !env.PubSubConcurrentLanes.BooleanSetting() {
-		laneType = pubsubConfig.LaneTypeBlocking
-		consumerType = pubsubConfig.ConsumerTypeDefault
+		laneType = lane.TypeBlocking
+		consumerType = consumer.TypeDefault
 	}
 
 	eventPipelineQueueSize := queue.ScaleSizeOnNonDefault(env.EventPipelineQueueSize)
 	processIndicatorBufferSize := queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize)
 
-	laneSpecs := []pubsubConfig.LaneSpec{
+	laneSpecs := []lane.Spec{
 		{ID: pubsub.KubernetesDispatcherEventLane, Type: laneType,
 			Size: pointers.Int(eventPipelineQueueSize)},
 		{ID: pubsub.FromCentralResolverEventLane, Type: laneType,
 			Size: pointers.Int(eventPipelineQueueSize)},
 		{ID: pubsub.EnrichedProcessIndicatorLane, Type: laneType,
-			Consumer: &pubsubConfig.ConsumerSpec{Type: consumerType, Size: pointers.Int(processIndicatorBufferSize)}},
+			Consumer: &consumer.Spec{Type: consumerType, Size: pointers.Int(processIndicatorBufferSize)}},
 		{ID: pubsub.UnenrichedProcessIndicatorLane, Type: laneType,
-			Consumer: &pubsubConfig.ConsumerSpec{Type: consumerType, Size: pointers.Int(processIndicatorBufferSize)}},
+			Consumer: &consumer.Spec{Type: consumerType, Size: pointers.Int(processIndicatorBufferSize)}},
 	}
 
-	laneConfigs, err := pubsubConfig.SpecsToConfigs(laneSpecs)
+	laneConfigs, err := lane.SpecsToConfigs(laneSpecs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create lane configurations")
 	}

@@ -1,10 +1,11 @@
-package config
+package lane
 
 import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,59 +14,11 @@ const (
 	testLaneID pubsub.LaneID = 999
 )
 
-func TestConsumerSpec_ToNewConsumer(t *testing.T) {
-	t.Run("nil spec returns default consumer", func(t *testing.T) {
-		var spec *ConsumerSpec
-		newConsumer, err := spec.ToNewConsumer()
-		require.NoError(t, err)
-		require.NotNil(t, newConsumer)
-	})
-
-	t.Run("default consumer type", func(t *testing.T) {
-		spec := &ConsumerSpec{Type: ConsumerTypeDefault}
-		newConsumer, err := spec.ToNewConsumer()
-		require.NoError(t, err)
-		require.NotNil(t, newConsumer)
-	})
-
-	t.Run("empty consumer type defaults to default", func(t *testing.T) {
-		spec := &ConsumerSpec{Type: ""}
-		newConsumer, err := spec.ToNewConsumer()
-		require.NoError(t, err)
-		require.NotNil(t, newConsumer)
-	})
-
-	t.Run("buffered consumer without size", func(t *testing.T) {
-		spec := &ConsumerSpec{Type: ConsumerTypeBuffered}
-		newConsumer, err := spec.ToNewConsumer()
-		require.NoError(t, err)
-		require.NotNil(t, newConsumer)
-	})
-
-	t.Run("buffered consumer with size", func(t *testing.T) {
-		spec := &ConsumerSpec{
-			Type: ConsumerTypeBuffered,
-			Size: pointers.Int(100),
-		}
-		newConsumer, err := spec.ToNewConsumer()
-		require.NoError(t, err)
-		require.NotNil(t, newConsumer)
-	})
-
-	t.Run("invalid consumer type returns error", func(t *testing.T) {
-		spec := &ConsumerSpec{Type: "invalid"}
-		newConsumer, err := spec.ToNewConsumer()
-		assert.Error(t, err)
-		assert.Nil(t, newConsumer)
-		assert.Contains(t, err.Error(), "unknown consumer type")
-	})
-}
-
-func TestLaneSpec_ToConfig(t *testing.T) {
+func TestSpec_ToConfig(t *testing.T) {
 	t.Run("blocking lane without options", func(t *testing.T) {
-		spec := LaneSpec{
+		spec := Spec{
 			ID:   testLaneID,
-			Type: LaneTypeBlocking,
+			Type: TypeBlocking,
 		}
 		config, err := spec.ToConfig()
 		require.NoError(t, err)
@@ -74,9 +27,9 @@ func TestLaneSpec_ToConfig(t *testing.T) {
 	})
 
 	t.Run("concurrent lane without options", func(t *testing.T) {
-		spec := LaneSpec{
+		spec := Spec{
 			ID:   testLaneID,
-			Type: LaneTypeConcurrent,
+			Type: TypeConcurrent,
 		}
 		config, err := spec.ToConfig()
 		require.NoError(t, err)
@@ -85,9 +38,9 @@ func TestLaneSpec_ToConfig(t *testing.T) {
 	})
 
 	t.Run("blocking lane with size", func(t *testing.T) {
-		spec := LaneSpec{
+		spec := Spec{
 			ID:   testLaneID,
-			Type: LaneTypeBlocking,
+			Type: TypeBlocking,
 			Size: pointers.Int(50),
 		}
 		config, err := spec.ToConfig()
@@ -96,11 +49,11 @@ func TestLaneSpec_ToConfig(t *testing.T) {
 	})
 
 	t.Run("concurrent lane with consumer spec", func(t *testing.T) {
-		spec := LaneSpec{
+		spec := Spec{
 			ID:   testLaneID,
-			Type: LaneTypeConcurrent,
-			Consumer: &ConsumerSpec{
-				Type: ConsumerTypeBuffered,
+			Type: TypeConcurrent,
+			Consumer: &consumer.Spec{
+				Type: consumer.TypeBuffered,
 				Size: pointers.Int(200),
 			},
 		}
@@ -110,7 +63,7 @@ func TestLaneSpec_ToConfig(t *testing.T) {
 	})
 
 	t.Run("invalid lane type returns error", func(t *testing.T) {
-		spec := LaneSpec{
+		spec := Spec{
 			ID:   testLaneID,
 			Type: "invalid",
 		}
@@ -121,10 +74,10 @@ func TestLaneSpec_ToConfig(t *testing.T) {
 	})
 
 	t.Run("invalid consumer spec returns error", func(t *testing.T) {
-		spec := LaneSpec{
+		spec := Spec{
 			ID:   testLaneID,
-			Type: LaneTypeBlocking,
-			Consumer: &ConsumerSpec{
+			Type: TypeBlocking,
+			Consumer: &consumer.Spec{
 				Type: "invalid",
 			},
 		}
@@ -137,16 +90,16 @@ func TestLaneSpec_ToConfig(t *testing.T) {
 
 func TestSpecsToConfigs(t *testing.T) {
 	t.Run("empty specs", func(t *testing.T) {
-		configs, err := SpecsToConfigs([]LaneSpec{})
+		configs, err := SpecsToConfigs([]Spec{})
 		require.NoError(t, err)
 		assert.Empty(t, configs)
 	})
 
 	t.Run("multiple valid specs", func(t *testing.T) {
-		specs := []LaneSpec{
-			{ID: pubsub.LaneID(1), Type: LaneTypeBlocking},
-			{ID: pubsub.LaneID(2), Type: LaneTypeConcurrent},
-			{ID: pubsub.LaneID(3), Type: LaneTypeBlocking, Size: pointers.Int(100)},
+		specs := []Spec{
+			{ID: pubsub.LaneID(1), Type: TypeBlocking},
+			{ID: pubsub.LaneID(2), Type: TypeConcurrent},
+			{ID: pubsub.LaneID(3), Type: TypeBlocking, Size: pointers.Int(100)},
 		}
 		configs, err := SpecsToConfigs(specs)
 		require.NoError(t, err)
@@ -157,10 +110,10 @@ func TestSpecsToConfigs(t *testing.T) {
 	})
 
 	t.Run("invalid spec returns error with index", func(t *testing.T) {
-		specs := []LaneSpec{
-			{ID: pubsub.LaneID(1), Type: LaneTypeBlocking},
+		specs := []Spec{
+			{ID: pubsub.LaneID(1), Type: TypeBlocking},
 			{ID: pubsub.LaneID(2), Type: "invalid"},
-			{ID: pubsub.LaneID(3), Type: LaneTypeConcurrent},
+			{ID: pubsub.LaneID(3), Type: TypeConcurrent},
 		}
 		configs, err := SpecsToConfigs(specs)
 		assert.Error(t, err)
@@ -169,12 +122,12 @@ func TestSpecsToConfigs(t *testing.T) {
 	})
 
 	t.Run("invalid consumer spec returns error", func(t *testing.T) {
-		specs := []LaneSpec{
-			{ID: pubsub.LaneID(1), Type: LaneTypeBlocking},
+		specs := []Spec{
+			{ID: pubsub.LaneID(1), Type: TypeBlocking},
 			{
 				ID:   pubsub.LaneID(2),
-				Type: LaneTypeConcurrent,
-				Consumer: &ConsumerSpec{
+				Type: TypeConcurrent,
+				Consumer: &consumer.Spec{
 					Type: "invalid-consumer",
 				},
 			},
