@@ -19,6 +19,12 @@ concurrency:
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
+    with:
+      run_all: |
+        ^Makefile$
+        ^make/
+        ^.github/workflows/unit-tests.yaml$
+        ^.github/actions/job-preamble/
 
   go:
     strategy:
@@ -232,10 +238,7 @@ jobs:
     if: >-
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
-      contains(needs.detect-changes.outputs.files, '^.github/workflows/unit-tests.yaml$') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/job-preamble/')
+      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -277,10 +280,7 @@ jobs:
     if: >-
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
-      contains(needs.detect-changes.outputs.files, '^.github/workflows/unit-tests.yaml$') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/job-preamble/')
+      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
