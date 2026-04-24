@@ -660,13 +660,9 @@ _image_prefetcher_system_start() {
     # _image_prefetcher_system_await
 
     case "$CI_JOB_NAME" in
-    # ROX-24818: GKE is excluded from system image prefetch as it causes
-    # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*qa-e2e-tests)
         image_prefetcher_start_set stackrox-images
         ;;
-    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
-    # for gathering some more data points for CI reliability.
     *-scanner-v4-install-tests)
         image_prefetcher_start_set stackrox-images
         ;;
@@ -804,13 +800,9 @@ _image_prefetcher_prebuilt_await() {
 
 _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
-    # ROX-24818: GKE is excluded from system image prefetch as it causes
-    # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*qa-e2e-tests)
         image_prefetcher_await_set stackrox-images
         ;;
-    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
-    # for gathering some more data points for CI reliability.
     *-scanner-v4-install-tests)
         image_prefetcher_await_set stackrox-images
         ;;
