@@ -147,11 +147,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Verify Java version
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME"
-          java -version
-
       - name: Install xmlstarlet for shellcheck output to junit
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
