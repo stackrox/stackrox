@@ -648,7 +648,7 @@ class Kubernetes {
                                     "${containerName} in deployment ${ns}/${name}")
                         }
                         List<EnvVar> envVars = containers.get(containerIndex).env
-                        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
+                        int index = envVars.findIndexOf { EnvVar e -> e.name == key }
                         if (index > -1) {
                             envVars.get(index).value = value
                         } else {
@@ -682,7 +682,7 @@ class Kubernetes {
                                     "${containerName} in deployment ${ns}/${name}")
                         }
                         List<EnvVar> envVars = containers.get(containerIndex).env
-                        envVars.removeIf { EnvVar it -> it.name == key }
+                        envVars.removeIf { EnvVar e -> e.name == key }
                         new io.fabric8.kubernetes.api.model.apps.DeploymentBuilder(d)
                                 .editSpec()
                                 .editTemplate()
