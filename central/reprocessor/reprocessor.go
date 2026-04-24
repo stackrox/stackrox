@@ -134,7 +134,7 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		watchedImages: watchedImages,
 
-		deployments:       deployments,
+		deployments:       deploymentDatastore.NewActiveStateDatastore(deployments),
 		deploymentRiskSet: set.NewStringSet(),
 
 		nodeEnricher: nodeEnricher,
@@ -248,7 +248,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 	if len(deploymentIDs) > 0 {
 		queryBuilder = queryBuilder.AddDocIDs(deploymentIDs...)
 	}
-	query := search.ConjunctionQuery(queryBuilder.ProtoQuery(), deploymentDatastore.ActiveDeploymentsQuery())
+	query := queryBuilder.ProtoQuery()
 
 	results, err := l.deployments.SearchDeployments(allAccessCtx, query)
 	if err != nil {
@@ -538,8 +538,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 	if l.stopSig.IsDone() {
 		return
 	}
-	activeImageQuery := search.ConjunctionQuery(imageQuery, deploymentDatastore.ActiveDeploymentsQuery())
-	results, err := l.deployments.GetContainerImageViews(allAccessCtx, activeImageQuery)
+	results, err := l.deployments.GetContainerImageViews(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return

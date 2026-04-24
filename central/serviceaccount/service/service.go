@@ -27,7 +27,7 @@ func New(serviceAccounts saDatastore.DataStore, rolebindings bindingDatastore.Da
 		serviceAccounts: serviceAccounts,
 		bindings:        rolebindings,
 		roles:           roles,
-		deployments:     deployments,
+		deployments:     deploymentStore.NewActiveStateDatastore(deployments),
 		namespaces:      namespaces,
 	}
 }

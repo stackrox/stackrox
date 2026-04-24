@@ -28,11 +28,12 @@ func New(networkPolicies npDS.DataStore,
 	networkBaselines networkBaselineDataStore.ReadOnlyDataStore,
 ) Generator {
 	return &generator{
-		networkPolicies:     networkPolicies,
-		deploymentStore:     deploymentStore,
-		namespacesStore:     namespacesStore,
-		globalFlowDataStore: globalFlowDataStore,
-		networkTreeMgr:      networkTreeMgr,
-		networkBaselines:    networkBaselines,
+		networkPolicies:       networkPolicies,
+		deploymentStore:       deploymentStore,
+		activeDeploymentStore: dDS.NewActiveStateDatastore(deploymentStore),
+		namespacesStore:       namespacesStore,
+		globalFlowDataStore:   globalFlowDataStore,
+		networkTreeMgr:        networkTreeMgr,
+		networkBaselines:      networkBaselines,
 	}
 }

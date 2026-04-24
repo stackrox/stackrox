@@ -6,15 +6,17 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
+	activeDS := deploymentDS.NewActiveStateDatastore(ds)
 	return tracker.MakeTrackerBase(
 		"image_vuln",
 		"image vulnerabilities",
 		lazyLabels,
 		func(ctx context.Context, md tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
-			return track(ctx, ds)
+			return track(ctx, activeDS)
 		},
 	)
 }
@@ -23,7 +25,7 @@ func track(ctx context.Context, ds deploymentDS.DataStore) tracker.FindingErrorS
 	return func(yield func(*finding, error) bool) {
 		var f finding
 		collector := tracker.NewFindingCollector(yield)
-		collector.Finally(ds.WalkByQuery(ctx, deploymentDS.ActiveDeploymentsQuery(), func(deployment *storage.Deployment) error {
+		collector.Finally(ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
 			f.deployment = deployment
 			images, err := ds.GetImagesForDeployment(ctx, deployment)
 			if err != nil {

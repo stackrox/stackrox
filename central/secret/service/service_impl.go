@@ -72,7 +72,7 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		AddExactMatches(search.Namespace, secret.GetNamespace()).
 		AddExactMatches(search.SecretName, secret.GetName()).
 		ProtoQuery()
-	psr := search.ConjunctionQuery(baseQuery, deploymentDatastore.ActiveDeploymentsQuery())
+	psr := baseQuery
 
 	deploymentResults, err := s.deployments.SearchDeployments(ctx, psr)
 	if err != nil {

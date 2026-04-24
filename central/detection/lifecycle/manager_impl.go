@@ -102,7 +102,7 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIn
 
 func (m *managerImpl) buildIndicatorFilter() {
 	ctx := sac.WithAllAccess(context.Background())
-	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx, deploymentDatastore.ActiveDeploymentsQuery())
+	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx, search.EmptyQuery())
 	if err != nil {
 		utils.Should(errors.Wrap(err, "error getting deployment IDs"))
 		return

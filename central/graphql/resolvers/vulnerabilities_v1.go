@@ -323,7 +323,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVul
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForImages(ctx context.Context) (numerator, denominator int, err error) {
-	allDepsCount, err := evr.root.DeploymentDataStore.Count(ctx, deploymentDS.ActiveDeploymentsQuery())
+	allDepsCount, err := deploymentDS.NewActiveStateDatastore(evr.root.DeploymentDataStore).Count(ctx, search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
