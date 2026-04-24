@@ -83,12 +83,15 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         when:
         "Search for violations in Splunk"
         // The TA polls Central every 5s (input interval). Violations may not be indexed yet.
+        // Filter by deployment name to avoid picking up violations from other tests.
+        def deployName = splunkDeployment.deployment.name
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         withRetry(40, 15) {
-            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
+            def searchId = SplunkUtil.createSearch(port,
+                    "search sourcetype=stackrox-violations \"${deployName}\"")
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
             assert response != null
@@ -110,7 +113,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         withRetry(40, 15) {
             def vSearchId = SplunkUtil.createSearch(port,
                     "| datamodel Alerts Alerts search | rename Alerts.* AS *" +
-                    " | search sourcetype=stackrox-violations", "-30m")
+                    " | search sourcetype=stackrox-violations \"${deployName}\"", "-30m")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
