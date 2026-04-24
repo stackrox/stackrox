@@ -34,6 +34,7 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '.go$') ||
       contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
       contains(needs.detect-changes.outputs.files, '^proto/') ||
       contains(needs.detect-changes.outputs.files, '^generated/') ||
       contains(needs.detect-changes.outputs.files, '^operator/') ||
