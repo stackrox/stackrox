@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -72,7 +73,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.SensorInternalPubSub.Enabled() {
 		log.Info("Internal PubSub system enabled")
 		var err error
-		internalMessageDispatcher, err = buildPubSubDispatcher()
+		internalMessageDispatcher, err = buildPubSubDispatcher(buildinfo.ReleaseBuild)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create the pubsub dispatcher")
 		}

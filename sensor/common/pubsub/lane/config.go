@@ -31,7 +31,7 @@ func (s *Spec) getNewConsumer() (pubsub.NewConsumer, error) {
 	}
 	newConsumer, err := s.Consumer.ToNewConsumer()
 	if err != nil {
-		return nil, fmt.Errorf("invalid consumer spec for lane %s: %v", s.ID.String(), err)
+		return nil, fmt.Errorf("invalid consumer spec for lane %s: %w", s.ID.String(), err)
 	}
 	return newConsumer, nil
 }
@@ -73,7 +73,7 @@ func SpecsToConfigs(specs []Spec) ([]pubsub.LaneConfig, error) {
 	for i, spec := range specs {
 		config, err := spec.ToConfig()
 		if err != nil {
-			return nil, fmt.Errorf("invalid lane spec at index %d: %v", i, err)
+			return nil, fmt.Errorf("invalid lane spec at index %d: %w", i, err)
 		}
 		configs[i] = config
 	}

@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/sensor/queue"
@@ -13,12 +12,14 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 )
 
-func buildPubSubDispatcher() (common.PubSubDispatcher, error) {
+func buildPubSubDispatcher(releaseBuild bool) (common.PubSubDispatcher, error) {
 	laneType := lane.TypeConcurrent
 	consumerType := consumer.TypeBuffered
-	if !buildinfo.ReleaseBuild && !env.PubSubConcurrentLanes.BooleanSetting() {
+	if !releaseBuild && !env.PubSubConcurrentLanes.BooleanSetting() {
 		laneType = lane.TypeBlocking
 		consumerType = consumer.TypeDefault
+	} else if !releaseBuild {
+		log.Info("PubSub concurrent lanes enabled via environment variable")
 	}
 
 	eventPipelineQueueSize := queue.ScaleSizeOnNonDefault(env.EventPipelineQueueSize)
