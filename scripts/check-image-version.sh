@@ -4,7 +4,6 @@ set -euo pipefail
 
 assert_single_image_version() {
     local pattern="$1"
-    local title="$2"
 
     local details
     details="$(git grep -P -o -n "$pattern" | sort -u)"
@@ -37,14 +36,12 @@ assert_single_image_version() {
 exit_code=0
 
 assert_single_image_version \
-    '(quay\.io/stackrox-io/apollo-ci:)?(stackrox|scanner)-(build|test)-[0-9]+\.[0-9]+\.[0-9]+' \
-    'Multiple stackrox/scanner build/test image versions' || exit_code=1
+    '(quay\.io/stackrox-io/apollo-ci:)?(stackrox|scanner)-(build|test)-[0-9]+\.[0-9]+\.[0-9]+' || exit_code=1
 
 echo
 
 assert_single_image_version \
-    '(brew\.registry\.redhat\.io/rh-osbs/)?openshift-golang-builder:rhel_[0-9]+_golang_[0-9]+\.[0-9]+' \
-    'Multiple Go builder images' || exit_code=1
+    '(brew\.registry\.redhat\.io/rh-osbs/)?openshift-golang-builder:rhel_[0-9]+_golang_[0-9]+\.[0-9]+' || exit_code=1
 
 if [[ "$exit_code" -eq 0 ]]; then
     echo "OK"
