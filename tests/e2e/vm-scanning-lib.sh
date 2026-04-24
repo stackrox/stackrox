@@ -23,6 +23,13 @@ ensure_vm_scanning_cluster_prereqs() {
 
 # Downloads virtctl from the cluster's ConsoleCLIDownload if not already on PATH.
 ensure_virtctl_binary() {
+    if [[ -n "${VIRTCTL_PATH:-}" ]]; then
+        [[ -x "$VIRTCTL_PATH" ]] || die "VIRTCTL_PATH is not executable: ${VIRTCTL_PATH}"
+        export PATH="$(dirname "$VIRTCTL_PATH"):${PATH}"
+        info "Using virtctl from VIRTCTL_PATH: ${VIRTCTL_PATH}"
+        return
+    fi
+
     if command -v virtctl &>/dev/null; then
         info "virtctl already on PATH: $(command -v virtctl)"
         return
