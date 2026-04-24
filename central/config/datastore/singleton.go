@@ -40,7 +40,7 @@ const (
 	DefaultAdministrationEventsRetention = 4
 	// DefaultResourceRetention is the number of days to retain soft-deleted resources
 	// before they are permanently removed.
-	DefaultResourceRetention = 1
+	DefaultResourceRetention = 7
 	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
 	PlatformComponentSystemRuleName = "system rule"
 	// PlatformComponentSystemRegex is the system defined regex for matching kube and openshift workloads, this is un-editable by users
