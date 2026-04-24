@@ -68,8 +68,14 @@ jobs:
             exit 0
           fi
 
+          anchored=$(printf '^%s$\n' "${files[@]}")
+
+          if echo "${anchored}" | grep -qF "^.github/workflows/detect-changes.yml$"; then
+            echo "detect-changes.yml modified, running all jobs" >&2
+            exit 0
+          fi
+
           if [[ -n "${RUN_ALL}" ]]; then
-            anchored=$(printf '^%s$\n' "${files[@]}")
             while IFS= read -r pattern; do
               [[ -z "$pattern" ]] && continue
               if echo "${anchored}" | grep -qF "$pattern"; then
