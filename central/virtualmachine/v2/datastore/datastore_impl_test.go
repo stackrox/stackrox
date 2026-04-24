@@ -17,11 +17,13 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestVirtualMachineV2DataStore(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
 		t.Skip("VM enhanced data model is not enabled")
 	}
@@ -233,6 +235,39 @@ func (s *VirtualMachineV2DataStoreTestSuite) TestUpsertScan() {
 	s.Contains(err.Error(), "cannot upsert scan without a VM id")
 }
 
+func (s *VirtualMachineV2DataStoreTestSuite) TestEnsureVirtualMachineExists() {
+	vmID := uuid.NewTestUUID(1).String()
+	clusterID := uuid.NewV5FromNonUUIDs("cluster", "1").String()
+
+	// Creates a new minimal VM when it doesn't exist.
+	s.NoError(s.datastore.EnsureVirtualMachineExists(s.ctx, vmID, clusterID))
+
+	got, found, err := s.datastore.GetVirtualMachine(s.ctx, vmID)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(vmID, got.GetId())
+	s.Equal(clusterID, got.GetClusterId())
+	s.Empty(got.GetName(), "minimal VM should have no name")
+
+	// Does NOT overwrite richer metadata on subsequent calls.
+	richVM := createTestVM(1)
+	richVM.Id = vmID
+	richVM.ClusterId = clusterID
+	s.NoError(s.datastore.UpsertVirtualMachine(s.ctx, richVM))
+
+	s.NoError(s.datastore.EnsureVirtualMachineExists(s.ctx, vmID, clusterID))
+
+	got, found, err = s.datastore.GetVirtualMachine(s.ctx, vmID)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(richVM.GetName(), got.GetName(), "richer metadata must not be overwritten")
+
+	// Empty vmID returns an error.
+	err = s.datastore.EnsureVirtualMachineExists(s.ctx, "", clusterID)
+	s.Error(err)
+	s.Contains(err.Error(), "cannot ensure VM exists without an id")
+}
+
 // endregion Upsert tests
 
 // region Delete tests
@@ -329,3 +364,85 @@ func (s *VirtualMachineV2DataStoreTestSuite) TestWalk() {
 }
 
 // endregion Walk tests
+
+// region Concurrency tests
+
+func (s *VirtualMachineV2DataStoreTestSuite) TestConcurrentUpsertVMAndUpsertScan() {
+	vm := createTestVM(1)
+	s.NoError(s.datastore.UpsertVirtualMachine(s.ctx, vm))
+
+	const goroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	errs := make([]error, goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			if idx%2 == 0 {
+				// Simulate VM pipeline: upsert full VM metadata.
+				vmCopy := createTestVM(1)
+				vmCopy.Id = vm.GetId()
+				vmCopy.ClusterId = vm.GetClusterId()
+				vmCopy.Name = fmt.Sprintf("updated-vm-%d", idx)
+				errs[idx] = s.datastore.UpsertVirtualMachine(s.ctx, vmCopy)
+			} else {
+				// Simulate scan-index pipeline: ensure + upsert scan.
+				if err := s.datastore.EnsureVirtualMachineExists(s.ctx, vm.GetId(), vm.GetClusterId()); err != nil {
+					errs[idx] = err
+					return
+				}
+				parts := createTestScanParts(vm.GetId())
+				errs[idx] = s.datastore.UpsertScan(s.ctx, vm.GetId(), parts)
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	for i, err := range errs {
+		s.NoErrorf(err, "goroutine %d failed", i)
+	}
+
+	// VM must exist with non-empty metadata (not clobbered to minimal).
+	got, found, err := s.datastore.GetVirtualMachine(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.True(found)
+	s.NotEmpty(got.GetName(), "VM name must not be empty after concurrent operations")
+	s.Equal(vm.GetClusterId(), got.GetClusterId())
+}
+
+func (s *VirtualMachineV2DataStoreTestSuite) TestConcurrentUpsertScanAndDelete() {
+	vm := createTestVM(1)
+	s.NoError(s.datastore.UpsertVirtualMachine(s.ctx, vm))
+
+	parts := createTestScanParts(vm.GetId())
+	s.NoError(s.datastore.UpsertScan(s.ctx, vm.GetId(), parts))
+
+	const goroutines = 6
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			if idx%2 == 0 {
+				// Re-create the VM and upsert a scan.
+				_ = s.datastore.UpsertVirtualMachine(s.ctx, vm)
+				scanParts := createTestScanParts(vm.GetId())
+				_ = s.datastore.UpsertScan(s.ctx, vm.GetId(), scanParts)
+			} else {
+				_ = s.datastore.DeleteVirtualMachines(s.ctx, vm.GetId())
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	// Final state: VM either exists with valid data or is fully deleted.
+	got, found, err := s.datastore.GetVirtualMachine(s.ctx, vm.GetId())
+	s.NoError(err)
+	if found {
+		s.Equal(vm.GetId(), got.GetId())
+	}
+}
+
+// endregion Concurrency tests

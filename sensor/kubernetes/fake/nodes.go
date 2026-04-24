@@ -7,6 +7,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// nodeIP returns a deterministic IP for the i-th node in the range
+// <firstOctet>.128.0.0 – <firstOctet>.255.255.255 (~2M unique addresses).
+func nodeIP(firstOctet, i int) string {
+	return fmt.Sprintf("%d.%d.%d.%d", firstOctet, 128+(i/(256*256))%128, (i/256)%256, i%256)
+}
+
 func (w *WorkloadManager) getNodes(workload NodeWorkload, ids []string) []*corev1.Node {
 	nodes := make([]*corev1.Node, 0, workload.NumNodes)
 	for i := 0; i < workload.NumNodes; i++ {
@@ -53,11 +59,11 @@ func (w *WorkloadManager) getNodes(workload NodeWorkload, ids []string) []*corev
 			Status: corev1.NodeStatus{
 				Addresses: []corev1.NodeAddress{
 					{
-						Address: "10.138.28.6",
+						Address: nodeIP(10, i),
 						Type:    "InternalIP",
 					},
 					{
-						Address: "35.185.217.58",
+						Address: nodeIP(35, i),
 						Type:    "ExternalIP",
 					},
 					{

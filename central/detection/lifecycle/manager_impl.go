@@ -128,7 +128,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 	}
 
 	log.Infof("Cleaning up %d processes as a part of building process filter", len(processesToRemove))
-	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove); err != nil {
+	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove, processIndicatorDatastore.RemovalReasonProcessFilter); err != nil {
 		utils.Should(errors.Wrap(err, "error removing process indicators"))
 	}
 	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
@@ -209,7 +209,8 @@ func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBasel
 	}
 }
 
-// Perhaps the cluster config should be kept in memory and calling the database should not be needed
+// Lifecycle manager uses cachedStorage for cluster datastore,
+// thus repeated calls are memoized
 func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 	if !features.AutoLockProcessBaselines.Enabled() {
 		return false
@@ -252,7 +253,21 @@ func (m *managerImpl) flushIndicatorQueue() {
 		if m.deletedDeploymentsCache.Contains(indicator.GetDeploymentId()) {
 			continue
 		}
-		indicatorSlice = append(indicatorSlice, indicator)
+
+		match, err := m.clusterDataStore.MatchProcessIndicator(lifecycleMgrCtx, indicator)
+
+		if err != nil || !match {
+			// Add the indicator if not matching, or in the presence of an error
+			// (we consider any errors from MatchProcessIndicator as non-blocking).
+			//
+			// The only scenario when the indicator is not persisted is when it
+			// matches and we got no errors.
+			if err != nil {
+				log.Errorf("Cannot match indicator %s: %v", indicator.GetId(), err)
+			}
+
+			indicatorSlice = append(indicatorSlice, indicator)
+		}
 	}
 
 	// Index the process indicators in batch

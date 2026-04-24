@@ -58,7 +58,7 @@ func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (p *eventPipeline) Accepts(msg *central.MsgToSensor) bool {
-	return msg.GetPolicySync() != nil || msg.GetUpdatedImage() != nil || msg.GetReprocessDeployments() != nil || msg.GetReprocessDeployment() != nil || msg.GetInvalidateImageCache() != nil
+	return msg.GetPolicySync() != nil || msg.GetUpdatedImage() != nil || msg.GetReprocessDeployments() != nil || msg.GetReprocessDeployment() != nil || msg.GetInvalidateImageCache() != nil || msg.GetRefreshImageCacheTtl() != nil
 }
 
 // ProcessMessage implements common.SensorComponent
@@ -69,11 +69,13 @@ func (p *eventPipeline) ProcessMessage(_ context.Context, msg *central.MsgToSens
 	case msg.GetUpdatedImage() != nil:
 		return p.processUpdatedImage(msg.GetUpdatedImage())
 	case msg.GetReprocessDeployments() != nil:
-		return p.processReprocessDeployments()
+		return p.processReprocessDeployments(msg.GetReprocessDeployments())
 	case msg.GetReprocessDeployment() != nil:
 		return p.processReprocessDeployment(msg.GetReprocessDeployment())
 	case msg.GetInvalidateImageCache() != nil:
 		return p.processInvalidateImageCache(msg.GetInvalidateImageCache())
+	case msg.GetRefreshImageCacheTtl() != nil:
+		return p.processRefreshImageCacheTTL(msg.GetRefreshImageCacheTtl())
 	}
 	return nil
 }
@@ -171,7 +173,11 @@ func (p *eventPipeline) forwardMessages() {
 				log.Error("Output component channel closed")
 				return
 			}
-			p.eventsC <- msg
+			select {
+			case p.eventsC <- msg:
+			case <-p.stopper.Flow().StopRequested():
+				return
+			}
 		}
 	}
 }
@@ -184,9 +190,9 @@ func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 	return nil
 }
 
-func (p *eventPipeline) processReprocessDeployments() error {
+func (p *eventPipeline) processReprocessDeployments(reprocessMsg *central.ReprocessDeployments) error {
 	log.Debug("ReprocessDeployments message received from central")
-	if err := p.detector.ProcessReprocessDeployments(); err != nil {
+	if err := p.detector.ProcessReprocessDeployments(reprocessMsg); err != nil {
 		return errors.Wrap(err, "reprocessing deployments")
 	}
 	msg := component.NewEventWithTopicAndLane(pubsubDispatcher.FromCentralResolverEventTopic, pubsubDispatcher.FromCentralResolverEventLane)
@@ -224,6 +230,11 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 	msg.Context = p.getCurrentContext()
 	p.sendEvent(msg)
 	return nil
+}
+
+func (p *eventPipeline) processRefreshImageCacheTTL(req *central.RefreshImageCacheTTL) error {
+	log.Debug("RefreshImageCacheTTL message received from central")
+	return errors.Wrap(p.reprocessor.ProcessRefreshImageCacheTTL(req), "refreshing image cache TTLs")
 }
 
 func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImageCache) error {

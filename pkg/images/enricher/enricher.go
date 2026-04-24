@@ -115,7 +115,14 @@ const (
 	ScanTriggered
 	// ScanSucceeded denotes that the image was successfully scanned.
 	ScanSucceeded
+	// ScanReused denotes that an existing scan from the database was reused unchanged.
+	ScanReused
 )
+
+// HasScanData reports whether usable scan data is present on the image.
+func (s ScanResult) HasScanData() bool {
+	return s == ScanSucceeded || s == ScanReused
+}
 
 // TODO(ROX-30117): Remove this and use the ImageEnricherV2 interface after ImageV2 model is fully rolled out.
 // ImageEnricher provides functions for enriching images with integrations.

@@ -2,12 +2,9 @@
 
 {{- if or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled }}
   {{- if ._rox.env.openshift }}
-    {{- if eq ._rox.env.openshift 3 }}
-      {{ include "srox.warn" (list . "On OpenShift 3.x no SecurityContextConstraint will be configured for Scanner V4.") }}
-    {{- else }}
-      {{/* Use a default SCC that ships with OpenShift 4.x.
-           We only need to create a Role and a RoleBinding for
-           associating the SCC with the Scanner V4 deployment. */}}
+    {{/* Use a default SCC that ships with OpenShift 4.x.
+          We only need to create a Role and a RoleBinding for
+          associating the SCC with the Scanner V4 deployment. */}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -47,6 +44,5 @@ subjects:
 - kind: ServiceAccount
   name: scanner-v4
   namespace: {{ .Release.Namespace }}
-    {{- end }}
   {{- end }}
 {{- end }}

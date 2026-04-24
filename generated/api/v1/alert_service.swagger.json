@@ -1064,6 +1064,11 @@
         },
         "entityType": {
           "$ref": "#/definitions/AlertEntityType"
+        },
+        "enforcementCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts\nthis is the number of unique pods killed. For DEPLOY alerts with enforcement\nthis is 1. Avoids deserializing the full alert blob for ListAlert queries."
         }
       },
       "title": "Next available tag: 26"
@@ -1428,10 +1433,11 @@
         "CLUSTER_ROLE_BINDINGS",
         "NETWORK_POLICIES",
         "SECURITY_CONTEXT_CONSTRAINTS",
-        "EGRESS_FIREWALLS"
+        "EGRESS_FIREWALLS",
+        "NODE"
       ],
       "default": "DEPLOYMENT",
-      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"
+      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment and node as types\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)"
     },
     "storageNetworkEntityInfoType": {
       "type": "string",

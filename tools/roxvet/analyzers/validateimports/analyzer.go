@@ -249,7 +249,7 @@ func checkForbidden(impPath, packageName string) error {
 
 // verifyImportsFromAllowedPackagesOnly verifies that all Go files in (subdirectories of) root
 // only import StackRox code from allowedPackages
-func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string) {
+func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string, isTestFile bool) {
 	allowedPackages := []*allowedPackage{{path: validImportRoot}, {path: "generated"}, {path: "image"}}
 	// The migrator is NOT allowed to import all codes from pkg except isolated packages.
 	if validImportRoot != "pkg" && !strings.HasPrefix(validImportRoot, "migrator") {
@@ -272,6 +272,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/cvss/cvssv2",
 			"pkg/cvss/cvssv3",
 			"pkg/db",
+			"pkg/dblock",
 			"pkg/dberrors",
 			"pkg/dbhelper",
 			"pkg/defaults/policies",
@@ -281,6 +282,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			// Migration code should not depend on features being activated or not.
 			// See the migrator README for more details.
 			"pkg/fileutils",
+			"pkg/fixtures",
 			"pkg/fsutils",
 			"pkg/grpc/routes",
 			"pkg/images/types",
@@ -375,6 +377,9 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 
 	if validImportRoot == "pkg" {
 		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
+		if isTestFile {
+			allowedPackages = appendPackageWithChildren(allowedPackages, "tools/generate-helpers/pg-table-bindings")
+		}
 	}
 
 	for _, imp := range imports {
@@ -396,7 +401,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	for _, file := range pass.Files {
-		verifyImportsFromAllowedPackagesOnly(pass, file.Imports, root, pass.Pkg.Path())
+		fileName := pass.Fset.File(file.Pos()).Name()
+		isTestFile := strings.HasSuffix(fileName, "_test.go")
+		verifyImportsFromAllowedPackagesOnly(pass, file.Imports, root, pass.Pkg.Path(), isTestFile)
 	}
 
 	return nil, nil

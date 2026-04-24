@@ -34,11 +34,11 @@ func TestKeyedMutexDifferentKeys(t *testing.T) {
 
 	km := NewKeyedMutex(100000)
 
-	var counter uint32
+	var counter atomic.Uint32
 	for i := 0; i < 10; i++ {
 		go func(key string) {
 			km.Lock(key)
-			atomic.AddUint32(&counter, 1)
+			counter.Add(1)
 		}(strconv.FormatInt(int64(i), 10))
 	}
 
@@ -48,6 +48,6 @@ func TestKeyedMutexDifferentKeys(t *testing.T) {
 	// The probability of multiple collisions is negligible given
 	// our poolSize (and this is deterministic unless someone changes
 	// the code, so no chance of random flakes).
-	counterVal := atomic.LoadUint32(&counter)
+	counterVal := counter.Load()
 	a.True(counterVal >= 8, "%d was smaller than expected", counterVal)
 }

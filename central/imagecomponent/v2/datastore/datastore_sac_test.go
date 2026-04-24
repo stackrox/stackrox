@@ -9,6 +9,7 @@ import (
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -43,6 +44,22 @@ func getImageComponentID(component *storage.EmbeddedImageScanComponent, imageID 
 	return scancomponent.ComponentIDV2(component, imageID, index)
 }
 
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func getSherlockHolmesImageID() string {
+	if features.FlattenImageData.Enabled() {
+		return fixtures.GetImageV2SherlockHolmes1().GetId()
+	}
+	return fixtures.GetImageSherlockHolmes1().GetId()
+}
+
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func getDoctorJekyllImageID() string {
+	if features.FlattenImageData.Enabled() {
+		return fixtures.GetImageV2DoctorJekyll2().GetId()
+	}
+	return fixtures.GetImageDoctorJekyll2().GetId()
+}
+
 func (s *componentV2DataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
 	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
@@ -58,12 +75,12 @@ var (
 	imageComponent1s2x3     = fixtures.GetEmbeddedImageComponent1s2x3()
 	imageComponent2x4       = fixtures.GetEmbeddedImageComponent2x4()
 	imageComponent2x5       = fixtures.GetEmbeddedImageComponent2x5()
-	imageComponentID1x1     = getImageComponentID(imageComponent1x1, fixtures.GetImageSherlockHolmes1().GetId(), 0)
-	imageComponentID1x2     = getImageComponentID(imageComponent1x2, fixtures.GetImageSherlockHolmes1().GetId(), 1)
-	imageComponentID1s2x3i1 = getImageComponentID(imageComponent1s2x3, fixtures.GetImageSherlockHolmes1().GetId(), 2)
-	imageComponentID1s2x3i2 = getImageComponentID(imageComponent1s2x3, fixtures.GetImageDoctorJekyll2().GetId(), 0)
-	imageComponentID2x4     = getImageComponentID(imageComponent2x4, fixtures.GetImageDoctorJekyll2().GetId(), 1)
-	imageComponentID2x5     = getImageComponentID(imageComponent2x5, fixtures.GetImageDoctorJekyll2().GetId(), 2)
+	imageComponentID1x1     = getImageComponentID(imageComponent1x1, getSherlockHolmesImageID(), 0)
+	imageComponentID1x2     = getImageComponentID(imageComponent1x2, getSherlockHolmesImageID(), 1)
+	imageComponentID1s2x3i1 = getImageComponentID(imageComponent1s2x3, getSherlockHolmesImageID(), 2)
+	imageComponentID1s2x3i2 = getImageComponentID(imageComponent1s2x3, getDoctorJekyllImageID(), 0)
+	imageComponentID2x4     = getImageComponentID(imageComponent2x4, getDoctorJekyllImageID(), 1)
+	imageComponentID2x5     = getImageComponentID(imageComponent2x5, getDoctorJekyllImageID(), 2)
 
 	imageComponentTestCases = []componentTestCase{
 		{

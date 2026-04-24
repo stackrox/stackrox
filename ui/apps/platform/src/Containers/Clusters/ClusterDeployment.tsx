@@ -7,6 +7,8 @@ import { ClipLoader } from 'react-spinners';
 import type { ClusterManagerType } from 'types/cluster.proto';
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_YAML } from 'hooks/useAnalytics';
 
+import InstallMethodDeprecationAlert from './Components/InstallMethodDeprecationAlert';
+
 export type ClusterDeploymentProps = {
     clusterCheckedIn: boolean;
     createUpgraderSA: boolean;
@@ -28,27 +30,31 @@ function ClusterDeployment({
 }: ClusterDeploymentProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
 
-    let managerTypeTitle = 'Dynamic configurations are automatically applied';
-    let managerTypeText =
-        'If you edited static configurations or you need to redeploy, download a new bundle.';
-    if (managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
-        managerTypeTitle = 'Cluster labels have been saved';
-        managerTypeText = 'All other cluster settings are managed by the Kubernetes operator.';
-    }
-    if (managerType === 'MANAGER_TYPE_HELM_CHART') {
-        managerTypeTitle = 'Cluster labels have been saved';
-        managerTypeText = 'All other cluster settings are managed by the Helm chart.';
-    }
+    const isHelmOrOperatorManaged =
+        managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
+        managerType === 'MANAGER_TYPE_HELM_CHART';
+
+    const showPostCheckInSavedConfigAlert = editing && clusterCheckedIn && !isHelmOrOperatorManaged;
+
     // Without FlexItem element, Button stretches to column width.
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
-            {editing && clusterCheckedIn && (
-                <Alert variant="info" isInline title={managerTypeTitle} component="p">
-                    {managerTypeText}
+            {showPostCheckInSavedConfigAlert && (
+                <Alert
+                    variant="info"
+                    isInline
+                    title="Dynamic configurations are automatically applied"
+                    component="p"
+                >
+                    If you edited static configurations or you need to redeploy, download a new
+                    bundle.
                 </Alert>
             )}
             {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
-                <>
+                <Flex direction={{ default: 'column' }}>
+                    <FlexItem spacer={{ default: 'spacerLg' }}>
+                        <InstallMethodDeprecationAlert deprecationMessage="The legacy manifest bundle installation method is deprecated since version 4.9 and will be removed in 5.1." />
+                    </FlexItem>
                     <Title headingLevel="h2">Download manifest bundle</Title>
                     <Flex
                         direction={{ default: 'column' }}
@@ -102,7 +108,7 @@ function ClusterDeployment({
                             Use the deploy script inside the bundle to set up your cluster.
                         </Content>
                     </Flex>
-                </>
+                </Flex>
             )}
             {(!editing || !clusterCheckedIn) && (
                 <div className="flex flex-col text-primary-500 p-4">

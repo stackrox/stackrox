@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -119,22 +118,18 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 			return alerts, true, nil
 		}
 
-		var fetchImgCtx context.Context
-		if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 {
-			var cancel context.CancelFunc
-			fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
-			defer cancel()
-		}
+		ctx, cancel := s.admissionTimeoutCtx()
+		defer cancel()
 
 		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
 			enhancedDeployment := booleanpolicy.EnhancedDeployment{
 				Deployment: dep,
 				Images:     imgs,
 			}
-			return s.allK8sEventDetector.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, event)
+			return s.allK8sEventDetector.DetectForDeploymentAndKubeEvent(ctx, enhancedDeployment, event)
 		}
 
-		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
+		alerts, err := m.kickOffImgScansAndDetect(ctx, true, s, getAlertsFunc, deployment)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "runtime detection for deployment and event")
 		}
@@ -187,22 +182,18 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 		log.Debugf("Found deployment %s (id=%s) for %s/%s", deployment.GetName(), deployment.GetId(),
 			event.GetObject().GetNamespace(), event.GetObject().GetName())
 
-		var fetchImgCtx context.Context
-		if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 {
-			var cancel context.CancelFunc
-			fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
-			defer cancel()
-		}
+		ctx, cancel := s.admissionTimeoutCtx()
+		defer cancel()
 
 		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
 			enhancedDeployment := booleanpolicy.EnhancedDeployment{
 				Deployment: dep,
 				Images:     imgs,
 			}
-			return s.deployFieldK8sDetector.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, event)
+			return s.deployFieldK8sDetector.DetectForDeploymentAndKubeEvent(ctx, enhancedDeployment, event)
 		}
 
-		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
+		alerts, err := m.kickOffImgScansAndDetect(ctx, true, s, getAlertsFunc, deployment)
 		if err != nil {
 			log.Errorf("Failed to run StackRox detection: %v", err)
 			return

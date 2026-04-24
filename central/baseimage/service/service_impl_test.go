@@ -6,10 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/central/baseimage/datastore/repository"
 	"github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	integrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -333,6 +335,7 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 		mockSetup     func()
 		expectedError bool
 		errorContains string
+		errorIs       error
 	}{
 		{
 			description: "updates tag pattern with valid glob",
@@ -341,15 +344,7 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 				BaseImageTagPattern: "8.*",
 			},
 			mockSetup: func() {
-				existing := &storage.BaseImageRepository{
-					Id:             "test-id",
-					RepositoryPath: "nginx",
-					TagPattern:     "latest",
-				}
-				suite.mockDatastore.EXPECT().GetRepository(gomock.Any(), "test-id").
-					Return(existing, true, nil)
-				suite.mockDatastore.EXPECT().UpsertRepository(gomock.Any(), gomock.Any()).
-					Return(nil, nil)
+				suite.mockDatastore.EXPECT().UpdateConfiguration(gomock.Any(), "test-id", gomock.Any()).Return(&storage.BaseImageRepository{}, nil)
 			},
 			expectedError: false,
 		},
@@ -373,6 +368,32 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 			expectedError: true,
 			errorContains: "base image reference ID is required",
 		},
+		{
+			description: "returns retriable error when repository scanning is already in progress",
+			request: &v2.UpdateBaseImageTagPatternRequest{
+				Id:                  "test-id",
+				BaseImageTagPattern: "8.*",
+			},
+			mockSetup: func() {
+				suite.mockDatastore.EXPECT().UpdateConfiguration(gomock.Any(), "test-id", gomock.Any()).Return(nil, repository.ErrScanInProgress)
+			},
+			expectedError: true,
+			errorContains: "is currently being scanned and cannot be changed",
+			errorIs:       errox.ResourceExhausted,
+		},
+		{
+			description: "returns not found when repository disappears before update",
+			request: &v2.UpdateBaseImageTagPatternRequest{
+				Id:                  "test-id",
+				BaseImageTagPattern: "8.*",
+			},
+			mockSetup: func() {
+				suite.mockDatastore.EXPECT().UpdateConfiguration(gomock.Any(), "test-id", gomock.Any()).Return(nil, errox.NotFound.Newf("base image repository %q not found", "test-id"))
+			},
+			expectedError: true,
+			errorContains: "base image repository with ID \"test-id\" not found",
+			errorIs:       errox.NotFound,
+		},
 	}
 
 	for _, tt := range tests {
@@ -384,6 +405,9 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 			if tt.expectedError {
 				suite.Error(err, "expected error")
 				suite.Contains(err.Error(), tt.errorContains, "error message should contain expected text")
+				if tt.errorIs != nil {
+					suite.ErrorIs(err, tt.errorIs)
+				}
 			} else {
 				suite.NoError(err, "expected no error")
 			}

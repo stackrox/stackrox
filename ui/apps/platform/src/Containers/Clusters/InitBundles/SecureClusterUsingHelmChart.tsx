@@ -6,15 +6,18 @@ import {
     CodeBlockAction,
     CodeBlockCode,
     Flex,
+    FlexItem,
     List,
     ListItem,
     Title,
 } from '@patternfly/react-core';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useClipboardCopy from 'hooks/useClipboardCopy';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
-import useClipboardCopy from 'hooks/useClipboardCopy';
+
+import InstallMethodDeprecationAlert from '../Components/InstallMethodDeprecationAlert';
 
 const codeBlock = [
     'helm install -n stackrox --create-namespace \\',
@@ -52,6 +55,16 @@ function SecureClusterUsingHelmChart({
 
     return (
         <Flex direction={{ default: 'column' }}>
+            <FlexItem spacer={{ default: 'spacerLg' }}>
+                <InstallMethodDeprecationAlert
+                    deprecationMessage={
+                        <>
+                            The <strong>rhacs/secured-cluster-services</strong> Helm chart is
+                            deprecated since version 4.11 and will be removed in 5.1.
+                        </>
+                    }
+                />
+            </FlexItem>
             <Title headingLevel={headingLevel}>
                 Secure a cluster using Helm chart installation method
             </Title>

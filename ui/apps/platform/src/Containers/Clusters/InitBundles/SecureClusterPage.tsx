@@ -61,7 +61,7 @@ function SecureClusterPage(): ReactElement {
                     </Tab>
                     <Tab
                         eventKey={helmChartTab}
-                        title={<TabTitleText>{helmChartTab}</TabTitleText>}
+                        title={<TabTitleText>Helm chart (deprecated)</TabTitleText>}
                         tabContentId={helmChartTab}
                     >
                         <PageSection>
@@ -74,7 +74,7 @@ function SecureClusterPage(): ReactElement {
                 <Alert
                     variant="info"
                     isInline
-                    title="You can use one bundle to secure multiple clusters that have the same installation method."
+                    title="You can use a single init bundle to register multiple clusters."
                     component="p"
                 />
             </PageSection>

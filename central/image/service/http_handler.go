@@ -160,7 +160,7 @@ func errorOrNotScanned(enrichmentResult enricher.EnrichmentResult, err error) er
 		return err
 	}
 
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+	if !enrichmentResult.ScanResult.HasScanData() {
 		return errors.New("scan could not be completed, please check that an applicable registry is integrated")
 	}
 

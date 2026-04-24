@@ -79,7 +79,7 @@ type VirtualMachineScanV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// UUIDv7 primary key -- time-sortable, encodes creation timestamp.
 	// Finding the latest scan is ORDER BY id DESC LIMIT 1 without a separate timestamp index.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine Scan ID,hidden" sql:"pk,type(uuid)"` // @gotags: search:"Virtual Machine Scan ID,hidden" sql:"pk,type(uuid)"
 	// FK to VirtualMachineV2.id. CASCADE DELETE ensures scan cleanup when VM is removed.
 	VmV2Id string `protobuf:"bytes,2,opt,name=vm_v2_id,json=vmV2Id,proto3" json:"vm_v2_id,omitempty" sql:"fk(VirtualMachineV2:id),type(uuid),index=btree"` // @gotags: sql:"fk(VirtualMachineV2:id),type(uuid),index=btree"
 	// OS detected by the scanner during this scan.

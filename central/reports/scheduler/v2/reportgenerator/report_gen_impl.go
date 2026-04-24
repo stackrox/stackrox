@@ -260,12 +260,15 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
 		query.Pagination = deployedImagesQueryParts.Pagination
 		query.Selects = deployedImagesQueryParts.Selects
-		cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
-			deployedImagesQueryParts.Schema, query)
+		err = pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			deployedImagesQueryParts.Schema, query, func(r *ImageCVEQueryResponse) error {
+				cveResponses = append(cveResponses, r)
+				numDeployedImageResults++
+				return nil
+			})
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
 		}
-		numDeployedImageResults = len(cveResponses)
 	}
 
 	numWatchedImageResults := 0
@@ -280,13 +283,15 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 				cveFilterQuery)
 			query.Pagination = watchedImagesQueryParts.Pagination
 			query.Selects = watchedImagesQueryParts.Selects
-			watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
-				watchedImagesQueryParts.Schema, query)
+			err := pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](reportGenCtx, rg.db,
+				watchedImagesQueryParts.Schema, query, func(r *ImageCVEQueryResponse) error {
+					cveResponses = append(cveResponses, r)
+					numWatchedImageResults++
+					return nil
+				})
 			if err != nil {
 				return nil, errors.Wrap(err, "Failed to collect report data for watched images")
 			}
-			numWatchedImageResults = len(watchedImageCVEResponses)
-			cveResponses = append(cveResponses, watchedImageCVEResponses...)
 		}
 	}
 
@@ -316,8 +321,11 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 	var cveResponses []*ImageCVEQueryResponse
 	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
 	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
-	cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
-		deployedImagesQueryParts.Schema, query.DeployedImagesQuery)
+	err = pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](reportGenCtx, rg.db,
+		deployedImagesQueryParts.Schema, query.DeployedImagesQuery, func(r *ImageCVEQueryResponse) error {
+			cveResponses = append(cveResponses, r)
+			return nil
+		})
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
 	}
@@ -328,13 +336,15 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 	if len(watchedImages) != 0 {
 		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
 		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
-		watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
-			watchedImagesQueryParts.Schema, query.WatchedImagesQuery)
+		err := pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			watchedImagesQueryParts.Schema, query.WatchedImagesQuery, func(r *ImageCVEQueryResponse) error {
+				cveResponses = append(cveResponses, r)
+				numWatchedImageResults++
+				return nil
+			})
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
 		}
-		numWatchedImageResults = len(watchedImageCVEResponses)
-		cveResponses = append(cveResponses, watchedImageCVEResponses...)
 	}
 
 	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
@@ -379,7 +389,7 @@ func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSna
 
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
-	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
+	qb := common.NewVulnReportQueryBuilder(collection, snap.GetResourceScope().GetEntityScope(), snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		dataStartTime)
 	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
 	if err != nil {

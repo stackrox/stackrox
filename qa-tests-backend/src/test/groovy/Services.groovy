@@ -171,6 +171,15 @@ class Services extends BaseService {
         return violations != null && violations.size() > 0
     }
 
+    static waitForNodeViolation(String policyName, int timeoutSeconds = 30) {
+        def query = "Policy:${policyName}+Violation State:ACTIVE+Entity Type:NODE"
+        List<AlertOuterClass.ListAlert> violations = getViolationsHelper(query, policyName, timeoutSeconds)
+        if (violations == null || violations.size() == 0) {
+            return false
+        }
+        return violations != null && violations.size() > 0
+    }
+
     static waitForResolvedViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def query = "Deployment:${deploymentName}+Policy:${policyName}+Violation State:resolved"
         List<AlertOuterClass.ListAlert> violations = getViolationsHelper(query, policyName, timeoutSeconds)
@@ -540,7 +549,7 @@ class Services extends BaseService {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             def found = ImageService.getImages().find { it.name.endsWith(imageName) }
-            if (found.hasCves() || found.hasFixableCves()) {
+            if (found?.hasCves() || found?.hasFixableCves()) {
                 LOG.info "SR found vulnerabilities for the image ${imageName} within ${t.SecondsSince()}s"
                 return true
             }

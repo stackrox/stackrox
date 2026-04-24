@@ -78,6 +78,20 @@ func (mr *MockDataStoreMockRecorder) DeleteVirtualMachines(ctx any, ids ...any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVirtualMachines", reflect.TypeOf((*MockDataStore)(nil).DeleteVirtualMachines), varargs...)
 }
 
+// EnsureVirtualMachineExists mocks base method.
+func (m *MockDataStore) EnsureVirtualMachineExists(ctx context.Context, vmID, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnsureVirtualMachineExists", ctx, vmID, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnsureVirtualMachineExists indicates an expected call of EnsureVirtualMachineExists.
+func (mr *MockDataStoreMockRecorder) EnsureVirtualMachineExists(ctx, vmID, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureVirtualMachineExists", reflect.TypeOf((*MockDataStore)(nil).EnsureVirtualMachineExists), ctx, vmID, clusterID)
+}
+
 // GetManyVirtualMachines mocks base method.
 func (m *MockDataStore) GetManyVirtualMachines(ctx context.Context, ids []string) ([]*storage.VirtualMachineV2, []int, error) {
 	m.ctrl.T.Helper()

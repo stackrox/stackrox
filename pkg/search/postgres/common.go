@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -588,6 +589,28 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 
 }
 
+// composePostTransforms returns a PostTransform that runs both a and b on the
+// same input and merges their deduplicated []string results. Both transforms
+// return interface{}, but for map fields (labels, annotations) and array fields
+// the concrete type is []string.
+func composePostTransforms(a, b func(interface{}) interface{}) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		aResult := a(v)
+		bResult := b(v)
+		// Type-assert to []string; if either result isn't a string slice, skip the merge.
+		aSlice, aOk := aResult.([]string)
+		bSlice, bOk := bResult.([]string)
+		if aOk && bOk {
+			combined := make([]string, 0, len(aSlice)+len(bSlice))
+			combined = append(combined, aSlice...)
+			combined = append(combined, bSlice...)
+			slices.Sort(combined)
+			return slices.Compact(combined)
+		}
+		return aResult
+	}
+}
+
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
 	if len(entries) == 0 {
 		return nil
@@ -610,6 +633,19 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 		for _, selectedField := range entry.SelectedFields {
 			if seenSelectFields.Add(selectedField.SelectPath) {
 				newQE.SelectedFields = append(newQE.SelectedFields, selectedField)
+			} else if selectedField.PostTransform != nil {
+				// When multiple entries target the same column with different
+				// PostTransform functions (e.g., map/label queries with multiple
+				// filter values in a disjunction), compose the transforms so all
+				// matching values are included in the results.
+				for i, existing := range newQE.SelectedFields {
+					if existing.SelectPath == selectedField.SelectPath && existing.PostTransform != nil {
+						newQE.SelectedFields[i].PostTransform = composePostTransforms(
+							existing.PostTransform, selectedField.PostTransform,
+						)
+						break
+					}
+				}
 			}
 		}
 		if len(entry.GroupBy) > 0 {

@@ -170,7 +170,7 @@ func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgr
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := imageComponentV2Postgres.New(testDB.DB)
 
-	return imageComponentV2DS.New(storage, mockRisk, ranking.NewRanker())
+	return imageComponentV2DS.New(testDB.DB, storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestImageCVEV2Datastore creates imageCVE datastore for testing

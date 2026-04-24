@@ -24,6 +24,7 @@ import (
 )
 
 const inactiveGathererTTL = 2 * 24 * time.Hour
+const globalScopeID = ""
 
 var (
 	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
@@ -100,11 +101,16 @@ func (g *gatherer[F]) trySetRunning() bool {
 // TrackerBase implements a generic finding tracker.
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
+//
+// A tracker can be scoped, in which case it creates a separate registry for
+// each scrape user ID, or global, where it reuses the same global registry for
+// all users.
 type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
 	getters      LazyLabelGetters[F]
 	generator    FindingGenerator[F]
+	scoped       bool
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -116,17 +122,39 @@ type TrackerBase[F Finding] struct {
 	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
-// MakeTrackerBase initializes a tracker without any period or metrics
+// MakeTrackerBase initializes a scoped tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
 func MakeTrackerBase[F Finding](metricPrefix, description string,
 	getters LazyLabelGetters[F], generator FindingGenerator[F],
 ) *TrackerBase[F] {
+	return makeTrackerBase(metricPrefix, description, true, getters, generator)
+}
+
+// MakeGlobalTrackerBase creates a global, i.e. non-scoped tracker.
+func MakeGlobalTrackerBase[F Finding](metricPrefix, description string,
+	getters LazyLabelGetters[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	return makeTrackerBase(metricPrefix, description, false, getters, generator)
+}
+
+func globalRegistryFactory(string) (metrics.CustomRegistry, error) {
+	return metrics.GetGlobalRegistry()
+}
+
+func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
+	getters LazyLabelGetters[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	registryFactory := globalRegistryFactory
+	if scoped {
+		registryFactory = metrics.GetCustomRegistry
+	}
 	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
 		getters:         getters,
 		generator:       generator,
-		registryFactory: metrics.GetCustomRegistry,
+		scoped:          scoped,
+		registryFactory: registryFactory,
 	}
 }
 
@@ -276,13 +304,17 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	if !cfg.isEnabled() {
 		return
 	}
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
-		utils.Should(err)
-		return
+	id := globalScopeID
+	if tracker.scoped {
+		userID, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			utils.Should(err)
+			return
+		}
+		id = userID.UID()
 	}
 	// Pass the cfg so that the same configuration is used there and here.
-	gatherer := tracker.getGatherer(id.UID(), cfg)
+	gatherer := tracker.getGatherer(id, cfg)
 	// getGatherer() returns nil if the gatherer is still running.
 	if gatherer == nil {
 		return
@@ -370,9 +402,7 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't
 // shown up for inactiveGathererTTL.
 func (tracker *TrackerBase[F]) cleanupInactiveGatherers() {
-	tracker.cleanupWG.Add(1)
-	go func() {
-		defer tracker.cleanupWG.Done()
+	tracker.cleanupWG.Go(func() {
 		tracker.gatherers.Range(func(userID, gv any) bool {
 			g := gv.(*gatherer[F])
 			// Try to make it running to not interfere with the normal gathering
@@ -392,5 +422,5 @@ func (tracker *TrackerBase[F]) cleanupInactiveGatherers() {
 			}
 			return true
 		})
-	}()
+	})
 }

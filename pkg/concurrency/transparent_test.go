@@ -21,44 +21,40 @@ func TestTransparentMutexHappyPath(t *testing.T) {
 func TestTransparentMutexConcurrently(t *testing.T) {
 	lock := TransparentMutex{}
 
-	var successCount int32
+	var successCount atomic.Int32
 	var wg sync.WaitGroup
 	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			time.Sleep(time.Duration(rand.Int()%10) * time.Millisecond)
 			succeeded := lock.MaybeLock()
 			if succeeded {
-				atomic.AddInt32(&successCount, 1)
+				successCount.Add(1)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 
-	assert.Equal(t, int32(1), successCount)
+	assert.Equal(t, int32(1), successCount.Load())
 }
 
 func TestTransparentMutexIsResilientToRaces(t *testing.T) {
 	lock := TransparentMutex{}
 
-	var successCount int32
+	var successCount atomic.Int32
 	var wg sync.WaitGroup
 	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			time.Sleep(time.Duration(rand.Int()%100) * time.Millisecond)
 			succeeded := lock.MaybeLock()
 			if succeeded {
-				atomic.AddInt32(&successCount, 1)
+				successCount.Add(1)
 				lock.Unlock()
 			}
-		}()
+		})
 	}
 	wg.Wait()
 
 	// We expect at least one success, but can't be guaranteed more than that.
 	// The purpose of this test is really to make sure there are no race conditions.
-	assert.True(t, successCount >= int32(1))
+	assert.True(t, successCount.Load() >= int32(1))
 }

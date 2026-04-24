@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/reconciler"
 	"github.com/stackrox/rox/operator/internal/securedcluster/extensions"
 	scTranslation "github.com/stackrox/rox/operator/internal/securedcluster/values/translation"
+	"github.com/stackrox/rox/operator/internal/tlsprofile"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
@@ -23,7 +24,7 @@ import (
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
-func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
+func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlsprofile.TLSProfile) error {
 	renderCache := rendercache.NewRenderCache()
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	extraEventWatcher := pkgReconciler.WithExtraWatch(
@@ -107,6 +108,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		translation.WithEnrichment(
 			scTranslation.New(mgr.GetClient(), mgr.GetAPIReader()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
+			tlsprofile.NewEnricher(tlsProfile),
 			pullSecretRefInjector,
 		),
 		renderCache,

@@ -3,9 +3,7 @@ package service
 import (
 	"time"
 
-	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/jwt"
-	roleStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
@@ -28,13 +26,10 @@ var (
 func Singleton() Service {
 	once.Do(func() {
 		s = &serviceImpl{
-			issuer: getTokenIssuer(jwt.IssuerFactorySingleton()),
-			roleManager: &roleManager{
-				clusterStore: clusterStore.Singleton(),
-				roleStore:    roleStore.Singleton(),
-			},
-			now:    time.Now,
-			policy: defaultTokenPolicy(),
+			issuer:      getTokenIssuer(jwt.IssuerFactorySingleton()),
+			roleManager: &roleManager{},
+			now:         time.Now,
+			policy:      defaultTokenPolicy(),
 		}
 	})
 	return s

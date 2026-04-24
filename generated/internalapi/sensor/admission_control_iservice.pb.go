@@ -64,6 +64,7 @@ type MsgToAdmissionControl struct {
 	//
 	//	*MsgToAdmissionControl_SettingsPush
 	//	*MsgToAdmissionControl_UpdateResourceRequest
+	//	*MsgToAdmissionControl_ImageCacheInvalidation
 	Msg           isMsgToAdmissionControl_Msg `protobuf_oneof:"msg"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -124,6 +125,15 @@ func (x *MsgToAdmissionControl) GetUpdateResourceRequest() *AdmCtrlUpdateResourc
 	return nil
 }
 
+func (x *MsgToAdmissionControl) GetImageCacheInvalidation() *AdmCtrlImageCacheInvalidation {
+	if x != nil {
+		if x, ok := x.Msg.(*MsgToAdmissionControl_ImageCacheInvalidation); ok {
+			return x.ImageCacheInvalidation
+		}
+	}
+	return nil
+}
+
 type isMsgToAdmissionControl_Msg interface {
 	isMsgToAdmissionControl_Msg()
 }
@@ -136,19 +146,26 @@ type MsgToAdmissionControl_UpdateResourceRequest struct {
 	UpdateResourceRequest *AdmCtrlUpdateResourceRequest `protobuf:"bytes,2,opt,name=update_resource_request,json=updateResourceRequest,proto3,oneof"`
 }
 
+type MsgToAdmissionControl_ImageCacheInvalidation struct {
+	ImageCacheInvalidation *AdmCtrlImageCacheInvalidation `protobuf:"bytes,3,opt,name=image_cache_invalidation,json=imageCacheInvalidation,proto3,oneof"`
+}
+
 func (*MsgToAdmissionControl_SettingsPush) isMsgToAdmissionControl_Msg() {}
 
 func (*MsgToAdmissionControl_UpdateResourceRequest) isMsgToAdmissionControl_Msg() {}
+
+func (*MsgToAdmissionControl_ImageCacheInvalidation) isMsgToAdmissionControl_Msg() {}
 
 var File_internalapi_sensor_admission_control_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_admission_control_iservice_proto_rawDesc = "" +
 	"\n" +
 	"3internalapi/sensor/admission_control_iservice.proto\x12\x06sensor\x1a\x1bgoogle/protobuf/empty.proto\x1a*internalapi/sensor/admission_control.proto\"\x19\n" +
-	"\x17MsgFromAdmissionControl\"\xc7\x01\n" +
+	"\x17MsgFromAdmissionControl\"\xaa\x02\n" +
 	"\x15MsgToAdmissionControl\x12G\n" +
 	"\rsettings_push\x18\x01 \x01(\v2 .sensor.AdmissionControlSettingsH\x00R\fsettingsPush\x12^\n" +
-	"\x17update_resource_request\x18\x02 \x01(\v2$.sensor.AdmCtrlUpdateResourceRequestH\x00R\x15updateResourceRequestB\x05\n" +
+	"\x17update_resource_request\x18\x02 \x01(\v2$.sensor.AdmCtrlUpdateResourceRequestH\x00R\x15updateResourceRequest\x12a\n" +
+	"\x18image_cache_invalidation\x18\x03 \x01(\v2%.sensor.AdmCtrlImageCacheInvalidationH\x00R\x16imageCacheInvalidationB\x05\n" +
 	"\x03msg2\xbe\x01\n" +
 	"!AdmissionControlManagementService\x12Q\n" +
 	"\vCommunicate\x12\x1f.sensor.MsgFromAdmissionControl\x1a\x1d.sensor.MsgToAdmissionControl(\x010\x01\x12F\n" +
@@ -168,25 +185,27 @@ func file_internalapi_sensor_admission_control_iservice_proto_rawDescGZIP() []by
 
 var file_internalapi_sensor_admission_control_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_admission_control_iservice_proto_goTypes = []any{
-	(*MsgFromAdmissionControl)(nil),      // 0: sensor.MsgFromAdmissionControl
-	(*MsgToAdmissionControl)(nil),        // 1: sensor.MsgToAdmissionControl
-	(*AdmissionControlSettings)(nil),     // 2: sensor.AdmissionControlSettings
-	(*AdmCtrlUpdateResourceRequest)(nil), // 3: sensor.AdmCtrlUpdateResourceRequest
-	(*AdmissionControlAlerts)(nil),       // 4: sensor.AdmissionControlAlerts
-	(*emptypb.Empty)(nil),                // 5: google.protobuf.Empty
+	(*MsgFromAdmissionControl)(nil),       // 0: sensor.MsgFromAdmissionControl
+	(*MsgToAdmissionControl)(nil),         // 1: sensor.MsgToAdmissionControl
+	(*AdmissionControlSettings)(nil),      // 2: sensor.AdmissionControlSettings
+	(*AdmCtrlUpdateResourceRequest)(nil),  // 3: sensor.AdmCtrlUpdateResourceRequest
+	(*AdmCtrlImageCacheInvalidation)(nil), // 4: sensor.AdmCtrlImageCacheInvalidation
+	(*AdmissionControlAlerts)(nil),        // 5: sensor.AdmissionControlAlerts
+	(*emptypb.Empty)(nil),                 // 6: google.protobuf.Empty
 }
 var file_internalapi_sensor_admission_control_iservice_proto_depIdxs = []int32{
 	2, // 0: sensor.MsgToAdmissionControl.settings_push:type_name -> sensor.AdmissionControlSettings
 	3, // 1: sensor.MsgToAdmissionControl.update_resource_request:type_name -> sensor.AdmCtrlUpdateResourceRequest
-	0, // 2: sensor.AdmissionControlManagementService.Communicate:input_type -> sensor.MsgFromAdmissionControl
-	4, // 3: sensor.AdmissionControlManagementService.PolicyAlerts:input_type -> sensor.AdmissionControlAlerts
-	1, // 4: sensor.AdmissionControlManagementService.Communicate:output_type -> sensor.MsgToAdmissionControl
-	5, // 5: sensor.AdmissionControlManagementService.PolicyAlerts:output_type -> google.protobuf.Empty
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 2: sensor.MsgToAdmissionControl.image_cache_invalidation:type_name -> sensor.AdmCtrlImageCacheInvalidation
+	0, // 3: sensor.AdmissionControlManagementService.Communicate:input_type -> sensor.MsgFromAdmissionControl
+	5, // 4: sensor.AdmissionControlManagementService.PolicyAlerts:input_type -> sensor.AdmissionControlAlerts
+	1, // 5: sensor.AdmissionControlManagementService.Communicate:output_type -> sensor.MsgToAdmissionControl
+	6, // 6: sensor.AdmissionControlManagementService.PolicyAlerts:output_type -> google.protobuf.Empty
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_admission_control_iservice_proto_init() }
@@ -198,6 +217,7 @@ func file_internalapi_sensor_admission_control_iservice_proto_init() {
 	file_internalapi_sensor_admission_control_iservice_proto_msgTypes[1].OneofWrappers = []any{
 		(*MsgToAdmissionControl_SettingsPush)(nil),
 		(*MsgToAdmissionControl_UpdateResourceRequest)(nil),
+		(*MsgToAdmissionControl_ImageCacheInvalidation)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

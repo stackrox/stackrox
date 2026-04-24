@@ -80,16 +80,16 @@ func (m *MockNamespaceLabelProvider) EXPECT() *MockNamespaceLabelProviderMockRec
 }
 
 // GetNamespaceLabels mocks base method.
-func (m *MockNamespaceLabelProvider) GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error) {
+func (m *MockNamespaceLabelProvider) GetNamespaceLabels(ctx context.Context, clusterID, namespaceName string) (map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespaceLabels", ctx, namespaceID)
+	ret := m.ctrl.Call(m, "GetNamespaceLabels", ctx, clusterID, namespaceName)
 	ret0, _ := ret[0].(map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNamespaceLabels indicates an expected call of GetNamespaceLabels.
-func (mr *MockNamespaceLabelProviderMockRecorder) GetNamespaceLabels(ctx, namespaceID any) *gomock.Call {
+func (mr *MockNamespaceLabelProviderMockRecorder) GetNamespaceLabels(ctx, clusterID, namespaceName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockNamespaceLabelProvider)(nil).GetNamespaceLabels), ctx, namespaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockNamespaceLabelProvider)(nil).GetNamespaceLabels), ctx, clusterID, namespaceName)
 }

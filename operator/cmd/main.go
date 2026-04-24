@@ -25,13 +25,16 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
+	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/console/v1"
+	openshiftTLS "github.com/openshift/controller-runtime-common/pkg/tls"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	status "github.com/stackrox/rox/operator/internal/common/status"
 	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
+	"github.com/stackrox/rox/operator/internal/tlsprofile"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
@@ -66,6 +69,7 @@ const (
 	envSecuredClusterReconcilerEnabled       = "SECURED_CLUSTER_RECONCILER_ENABLED"
 	envCentralStatusControllerEnabled        = "CENTRAL_STATUS_CONTROLLER_ENABLED"
 	envSecuredClusterStatusControllerEnabled = "SECURED_CLUSTER_STATUS_CONTROLLER_ENABLED"
+	envForceOpenShiftTLSProfile              = "FORCE_OPENSHIFT_TLS_PROFILE"
 )
 
 var (
@@ -93,12 +97,17 @@ var (
 	centralStatusControllerEnabled = env.RegisterBooleanSetting(envCentralStatusControllerEnabled, true)
 	// securedClusterStatusControllerEnabled enables registering secured-cluster status controller if set to true otherwise skips it
 	securedClusterStatusControllerEnabled = env.RegisterBooleanSetting(envSecuredClusterStatusControllerEnabled, true)
+	// forceOpenShiftTLSProfile, if set to true, causes the Operator to enforce the cluster-wide TLS profile
+	// from apiserver.config.openshift.io/cluster regardless of the spec.tlsAdherence field. This is useful on clusters
+	// where the field is not yet supported but TLS profile enforcement is desired.
+	forceOpenShiftTLSProfile = env.RegisterBooleanSetting(envForceOpenShiftTLSProfile, false)
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(platform.AddToScheme(scheme))
 	utilruntime.Must(consolev1.Install(scheme))
+	utilruntime.Must(configv1.Install(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -138,19 +147,9 @@ func run() error {
 	}
 	defer restore()
 
-	var tlsOpts []func(c *tls.Config)
-	if !enableHTTP2 {
-		// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
-		// the Go standard library and golang.org/x/net are fully fixed.
-		// Right now, it is possible for authenticated and unauthenticated users to
-		// hold open HTTP2 connections and consume huge amounts of memory.
-		// See:
-		// * https://github.com/kubernetes/kubernetes/pull/121120
-		// * https://github.com/kubernetes/kubernetes/issues/121197
-		// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
-		tlsOpts = append(tlsOpts, func(c *tls.Config) {
-			c.NextProtos = []string{"http/1.1"}
-		})
+	clusterTLSProfile, tlsOpts, err := buildMetricsServerTLSOpts(enableHTTP2)
+	if err != nil {
+		return err
 	}
 
 	req, err := labels.NewRequirement(
@@ -217,8 +216,10 @@ func run() error {
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
+	operandTLSProfile := tlsprofile.ConvertProfile(clusterTLSProfile, forceOpenShiftTLSProfile.BooleanSetting())
+
 	if centralReconcilerEnabled.BooleanSetting() {
-		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
+		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector, operandTLSProfile); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
 
@@ -236,7 +237,7 @@ func run() error {
 	}
 
 	if securedClusterReconcilerEnabled.BooleanSetting() {
-		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector); err != nil {
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector, operandTLSProfile); err != nil {
 			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 		}
 
@@ -260,9 +261,60 @@ func run() error {
 		return errors.Wrap(err, "unable to set up readiness check")
 	}
 
+	// Wrap the signal handler context with a cancel so the TLS profile watcher
+	// can trigger a graceful shutdown when the cluster TLS profile changes.
+	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
+	defer cancel()
+
+	if err = tlsprofile.SetupTLSProfileWatcher(mgr, clusterTLSProfile, cancel); err != nil {
+		return errors.Wrap(err, "unable to set up TLS profile watcher")
+	}
+
 	setupLog.Info("starting manager")
-	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err = mgr.Start(ctx); err != nil {
 		return errors.Wrap(err, "problem running manager")
 	}
 	return nil
+}
+
+// buildMetricsServerTLSOpts reads the cluster TLS profile and returns the
+// TLS options for the Operator's metrics server along with the cluster profile
+// for later use by the watcher and operand enricher.
+func buildMetricsServerTLSOpts(enableHTTP2 bool) (*tlsprofile.ClusterTLSProfile, []func(c *tls.Config), error) {
+	bootstrapClient, err := ctrlClient.New(utils.GetRHACSConfigOrDie(), ctrlClient.Options{Scheme: scheme})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to create bootstrap client for TLS profile")
+	}
+
+	// Use a longer timeout because a TLS profile change causes the OpenShift API server itself to restart,
+	// so the kube API may be unavailable for an extended period right when we need to read it.
+	fetchCtx, fetchCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer fetchCancel()
+	clusterTLSProfile, err := tlsprofile.FetchProfile(fetchCtx, bootstrapClient)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to fetch cluster TLS profile")
+	}
+
+	var tlsOpts []func(c *tls.Config)
+	if clusterTLSProfile != nil {
+		tlsConfigFn, unsupported := openshiftTLS.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
+		if len(unsupported) > 0 {
+			setupLog.Info("Some ciphers from cluster TLS profile are not supported by Go, skipping them.", "ciphers", unsupported)
+		}
+		tlsOpts = append(tlsOpts, tlsConfigFn)
+	}
+
+	if !enableHTTP2 {
+		// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
+		// the Go standard library and golang.org/x/net are fully fixed.
+		// See:
+		// * https://github.com/kubernetes/kubernetes/pull/121120
+		// * https://github.com/kubernetes/kubernetes/issues/121197
+		// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
+		tlsOpts = append(tlsOpts, func(c *tls.Config) {
+			c.NextProtos = []string{"http/1.1"}
+		})
+	}
+
+	return clusterTLSProfile, tlsOpts, nil
 }

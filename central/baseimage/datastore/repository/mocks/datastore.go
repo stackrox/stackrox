@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	repository "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -84,6 +85,36 @@ func (m *MockDataStore) ListRepositories(ctx context.Context) ([]*storage.BaseIm
 func (mr *MockDataStoreMockRecorder) ListRepositories(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositories", reflect.TypeOf((*MockDataStore)(nil).ListRepositories), ctx)
+}
+
+// UpdateConfiguration mocks base method.
+func (m *MockDataStore) UpdateConfiguration(ctx context.Context, id string, update repository.ConfigUpdate) (*storage.BaseImageRepository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConfiguration", ctx, id, update)
+	ret0, _ := ret[0].(*storage.BaseImageRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConfiguration indicates an expected call of UpdateConfiguration.
+func (mr *MockDataStoreMockRecorder) UpdateConfiguration(ctx, id, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfiguration", reflect.TypeOf((*MockDataStore)(nil).UpdateConfiguration), ctx, id, update)
+}
+
+// UpdateStatus mocks base method.
+func (m *MockDataStore) UpdateStatus(ctx context.Context, id string, update repository.StatusUpdate) (*storage.BaseImageRepository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatus", ctx, id, update)
+	ret0, _ := ret[0].(*storage.BaseImageRepository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateStatus indicates an expected call of UpdateStatus.
+func (mr *MockDataStoreMockRecorder) UpdateStatus(ctx, id, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateStatus), ctx, id, update)
 }
 
 // UpsertRepository mocks base method.

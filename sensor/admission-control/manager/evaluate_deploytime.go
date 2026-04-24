@@ -203,21 +203,18 @@ func (m *manager) evaluateSlowPath(s *state, req *admission.AdmissionRequest, de
 	}
 
 	// Slow path: Fetch images and evaluate slow path policies. If there are no modified images, skip the scan.
-	var fetchImgCtx context.Context
-	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
-		var cancel context.CancelFunc
-		fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
-		defer cancel()
-	}
+	shouldFetch := hasModifiedImages(s, deployment, req)
+	ctx, cancel := s.admissionTimeoutCtx()
+	defer cancel()
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.enrichmentRequiredDeployDetector.Detect(context.Background(), booleanpolicy.EnhancedDeployment{
+		return s.enrichmentRequiredDeployDetector.Detect(ctx, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     imgs,
 		}, deploytime.WithEnforcementOnly())
 	}
 
-	alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
+	alerts, err := m.kickOffImgScansAndDetect(ctx, shouldFetch, s, getAlertsFunc, deployment)
 	if err != nil {
 		observeAdmissionReview(reviewResultError, time.Since(start))
 		return nil, errors.Wrapf(err, "running %s detection", branding.GetProductNameShort())

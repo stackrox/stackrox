@@ -176,9 +176,9 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
-	versionUtils "github.com/stackrox/rox/central/version/utils"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
+	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
@@ -319,7 +319,6 @@ func main() {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
 	}
-	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
 
@@ -488,7 +487,12 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+		if features.VirtualMachinesEnhancedDataModel.Enabled() {
+			// V2 service replaces V1 to avoid route conflicts on /v2/virtualmachines/{id}.
+			servicesToRegister = append(servicesToRegister, virtualmachineV2Service.Singleton())
+		} else {
+			servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+		}
 	}
 
 	if features.BaseImageDetection.Enabled() {

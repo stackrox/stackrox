@@ -1,8 +1,10 @@
 package watcher
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
-	"github.com/stackrox/rox/pkg/env"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -38,37 +39,54 @@ type watcherImpl struct {
 	startedOnce sync.Once
 	stoppedOnce sync.Once
 
-	pollInterval time.Duration
-	batchSize    int
-	tagLimit     int
+	pollInterval     time.Duration
+	schedulerCadence time.Duration
+	batchSize        int
+	tagLimit         int
 
 	delegationEnabled bool
+
+	// sem limits concurrent repository scans to maxConcurrent.
+	sem *semaphore.Weighted
+
+	// wg tracks active scan goroutines for graceful shutdown.
+	wg sync.WaitGroup
+
+	// pendingStatus holds repos where scan completed but status update failed.
+	pendingStatus   map[string]repoDS.StatusUpdate
+	pendingStatusMu sync.RWMutex
 }
 
 // New creates a new base image watcher.
 func New(
-	repoDS repoDS.DataStore,
+	repositoryDS repoDS.DataStore,
 	tagDS tagDS.DataStore,
 	baseImageDS baseImageDS.DataStore,
 	registries registries.Set,
 	delegator delegatedregistry.Delegator,
 	pollInterval time.Duration,
+	schedulerCadence time.Duration,
 	batchSize int,
 	tagLimit int,
+	maxConcurrent int,
 	delegationEnabled bool,
 ) Watcher {
 	return &watcherImpl{
-		repoDS:       repoDS,
-		tagDS:        tagDS,
-		baseImageDS:  baseImageDS,
-		delegator:    delegator,
-		localScanner: reposcan.NewLocalScanner(registries),
-		stopper:      concurrency.NewStopper(),
-		pollInterval: pollInterval,
-		batchSize:    batchSize,
-		tagLimit:     tagLimit,
+		repoDS:           repositoryDS,
+		tagDS:            tagDS,
+		baseImageDS:      baseImageDS,
+		delegator:        delegator,
+		localScanner:     reposcan.NewLocalScanner(registries),
+		stopper:          concurrency.NewStopper(),
+		pollInterval:     pollInterval,
+		schedulerCadence: schedulerCadence,
+		batchSize:        batchSize,
+		tagLimit:         tagLimit,
 
 		delegationEnabled: delegationEnabled,
+
+		sem:           semaphore.NewWeighted(int64(maxConcurrent)),
+		pendingStatus: make(map[string]repoDS.StatusUpdate),
 	}
 }
 
@@ -80,31 +98,36 @@ func (w *watcherImpl) Start() {
 	})
 }
 
-// Stop signals shutdown and blocks until polling goroutine exits.
+// Stop signals shutdown and blocks until all goroutines exit.
 // Subsequent calls are no-ops.
 func (w *watcherImpl) Stop() {
 	w.stoppedOnce.Do(func() {
 		w.stopper.Client().Stop()
 		_ = w.stopper.Client().Stopped().Wait()
+		w.wg.Wait()
 	})
 }
 
-// run is the main polling loop, runs until Stop() is called.
+// run is the main scheduling loop, runs until Stop() is called.
 func (w *watcherImpl) run() {
-	defer w.stopper.Flow().ReportStopped()
-
 	log.Info("Base image watcher started")
 
-	// Poll immediately on start
-	w.pollOnce()
+	defer w.stopper.Flow().ReportStopped()
 
-	ticker := time.NewTicker(w.pollInterval)
+	ctx := sac.WithAllAccess(concurrency.AsContext(w.stopper.LowLevel().GetStopRequestSignal()))
+
+	// Fail in-flight scans before starting the scheduler. At this point no scan
+	// goroutines exist, so any repo in QUEUED/IN_PROGRESS is leftover from a
+	// previous crash.
+	w.failInFlightScans(ctx)
+
+	ticker := time.NewTicker(w.schedulerCadence)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			w.pollOnce()
+			w.schedulerPass(ctx)
 		case <-w.stopper.Flow().StopRequested():
 			log.Info("Base image watcher stopped")
 			return
@@ -112,91 +135,205 @@ func (w *watcherImpl) run() {
 	}
 }
 
-// pollOnce executes a single poll cycle with metric tracking.
-func (w *watcherImpl) pollOnce() {
+// schedulerPass executes a single scheduler pass with metric tracking.
+func (w *watcherImpl) schedulerPass(ctx context.Context) {
+	w.updateStatus(ctx)
+
 	start := time.Now()
-	err := w.doPoll()
+	claimed, err := w.doSchedulerPass(ctx)
 	recordPollDuration(time.Since(start).Seconds(), err)
 	if err != nil {
-		log.Errorf("Base image watcher poll cycle failed: duration=%v: %v", time.Since(start), err)
+		log.Errorf("Base image watcher scheduler pass failed: duration=%v: %v", time.Since(start), err)
+	} else if claimed > 0 {
+		log.Infof("Base image watcher scheduler pass completed: duration=%v claimed=%d", time.Since(start), claimed)
 	} else {
-		log.Infof("Base image watcher poll cycle completed: duration=%v", time.Since(start))
+		log.Debugf("Base image watcher scheduler pass completed: duration=%v claimed=%d", time.Since(start), claimed)
 	}
 }
 
-// doPoll contains the core poll logic.
-func (w *watcherImpl) doPoll() error {
-	log.Debug("Starting base image watcher poll cycle")
-
-	ctx := concurrency.AsContext(w.stopper.LowLevel().GetStopRequestSignal())
-
-	// Use all access since the watcher is an internal Central component.
-	ctx = sac.WithAllAccess(ctx)
+// doSchedulerPass lists repositories, claims due ones, and spawns scans.
+func (w *watcherImpl) doSchedulerPass(ctx context.Context) (int, error) {
+	log.Debug("Starting base image watcher scheduler pass")
 
 	repos, err := w.repoDS.ListRepositories(ctx)
 	if err != nil {
-		return fmt.Errorf("listing repositories: %w", err)
+		return 0, fmt.Errorf("listing repositories: %w", err)
 	}
 
-	if len(repos) == 0 {
-		log.Info("No base image repositories configured, skipping poll cycle")
-		recordRepositoryCount(0)
-		return nil
-	}
-
-	log.Debugf("Processing repositories: count=%d", len(repos))
 	recordRepositoryCount(len(repos))
 
-	// Process repositories concurrently with bounded parallelism.
-	maxConcurrent := env.BaseImageWatcherMaxConcurrentRepositories.IntegerSetting()
-	sem := semaphore.NewWeighted(int64(maxConcurrent))
-	wg := &sync.WaitGroup{}
-	defer wg.Wait() // Wait for any goroutines launched before returning
-
-	for _, repo := range repos {
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return fmt.Errorf("interrupted during semaphore acquire: %w", err)
-		}
-		wg.Add(1)
-		go func(r *storage.BaseImageRepository) {
-			defer sem.Release(1)
-			defer wg.Done()
-			w.processRepository(ctx, r)
-		}(repo)
+	if len(repos) == 0 {
+		log.Debug("No base image repositories configured")
+		return 0, nil
 	}
 
-	return nil
+	// Sort by last_polled_at ascending so repos waiting longest get priority.
+	// Repos with nil last_polled_at (never scanned) come first.
+	slices.SortFunc(repos, func(a, b *storage.BaseImageRepository) int {
+		aTime := a.GetLastPolledAt().AsTime()
+		bTime := b.GetLastPolledAt().AsTime()
+		return cmp.Compare(aTime.UnixNano(), bTime.UnixNano())
+	})
+
+	// Claim due repositories and spawn scans.
+	var claimedCount int
+	for _, repo := range repos {
+		if !isRepositoryDue(repo, w.pollInterval) {
+			continue
+		}
+		if !w.sem.TryAcquire(1) {
+			break
+		}
+		claimedRepo, err := w.repoDS.UpdateStatus(ctx, repo.GetId(), repoDS.StatusUpdate{
+			Status: storage.BaseImageRepository_QUEUED,
+			OnlyIfStatus: []storage.BaseImageRepository_Status{
+				storage.BaseImageRepository_CREATED,
+				storage.BaseImageRepository_READY,
+				storage.BaseImageRepository_FAILED,
+			},
+		})
+		if err != nil || claimedRepo == nil {
+			w.sem.Release(1)
+			if err != nil {
+				log.Errorf("Failed to claim repository %q: %v", repo.GetRepositoryPath(), err)
+			}
+			continue
+		}
+		claimedCount++
+		w.wg.Add(1)
+		go w.scanRepository(ctx, claimedRepo)
+	}
+
+	if claimedCount > 0 {
+		log.Debugf("Claimed repositories for scanning: count=%d", claimedCount)
+	}
+
+	return claimedCount, nil
 }
 
-// processRepository processes a single repository.
-func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseImageRepository) {
-	log.Debugf("Processing repository: repository=%q pattern=%q",
-		repo.GetRepositoryPath(),
-		repo.GetTagPattern())
+// failInFlightScans marks repositories in QUEUED or IN_PROGRESS state as FAILED.
+func (w *watcherImpl) failInFlightScans(ctx context.Context) {
+	repos, err := w.repoDS.ListRepositories(ctx)
+	if err != nil {
+		log.Errorf("Failed to list repositories: %v", err)
+		return
+	}
+
+	for _, repo := range repos {
+		status := repo.GetStatus()
+		if status != storage.BaseImageRepository_QUEUED && status != storage.BaseImageRepository_IN_PROGRESS {
+			continue
+		}
+		msg := "scan interrupted by restart"
+		_, err := w.repoDS.UpdateStatus(ctx, repo.GetId(), repoDS.StatusUpdate{
+			Status:             storage.BaseImageRepository_FAILED,
+			LastFailureMessage: &msg,
+			FailureCountOp:     repoDS.FailureCountIncrement,
+		})
+		if err != nil {
+			log.Errorf("Failed to update in-flight scan %q: %v", repo.GetRepositoryPath(), err)
+		} else {
+			log.Warnf("Marked in-flight scan as failed: %q was %s", repo.GetRepositoryPath(), status)
+		}
+	}
+}
+
+// scanRepository scans a claimed repository (QUEUED → IN_PROGRESS → READY/FAILED).
+func (w *watcherImpl) scanRepository(ctx context.Context, repo *storage.BaseImageRepository) {
+	defer w.wg.Done()
+	defer w.sem.Release(1)
+
+	id := repo.GetId()
+	log.Debugf("Scanning repository: repository=%q pattern=%q",
+		repo.GetRepositoryPath(), repo.GetTagPattern())
+
+	scanErr := w.doScan(ctx, repo)
+
+	// Build final status update.
+	now := time.Now()
+	update := repoDS.StatusUpdate{
+		Status:         storage.BaseImageRepository_READY,
+		LastPolledAt:   &now,
+		FailureCountOp: repoDS.FailureCountReset,
+	}
+	if scanErr != nil {
+		update.Status = storage.BaseImageRepository_FAILED
+		s := scanErr.Error()
+		update.LastFailureMessage = &s
+		update.FailureCountOp = repoDS.FailureCountIncrement
+	}
+
+	// Persist.
+	_, err := w.repoDS.UpdateStatus(ctx, id, update)
+	if err != nil {
+		log.Errorf("Failed to save status for %q: %v", repo.GetRepositoryPath(), err)
+		concurrency.WithLock(&w.pendingStatusMu, func() {
+			w.pendingStatus[id] = update
+		})
+	}
+}
+
+// updateStatus retries pending status updates from previous failures.
+func (w *watcherImpl) updateStatus(ctx context.Context) {
+	ids := concurrency.WithRLock1(&w.pendingStatusMu, func() []string {
+		result := make([]string, 0, len(w.pendingStatus))
+		for id := range w.pendingStatus {
+			result = append(result, id)
+		}
+		return result
+	})
+
+	for _, id := range ids {
+		update, ok := concurrency.WithRLock2(&w.pendingStatusMu, func() (repoDS.StatusUpdate, bool) {
+			u, exists := w.pendingStatus[id]
+			return u, exists
+		})
+		if !ok {
+			continue
+		}
+
+		now := time.Now()
+		update.LastPolledAt = &now
+		_, err := w.repoDS.UpdateStatus(ctx, id, update)
+		if err != nil {
+			log.Errorf("Failed to update status for %q: %v", id, err)
+		} else {
+			concurrency.WithLock(&w.pendingStatusMu, func() {
+				delete(w.pendingStatus, id)
+			})
+		}
+	}
+}
+
+// doScan performs the actual scan of a repository. Returns an error if the scan fails.
+func (w *watcherImpl) doScan(ctx context.Context, repo *storage.BaseImageRepository) error {
+	// Transition to IN_PROGRESS.
+	_, err := w.repoDS.UpdateStatus(ctx, repo.GetId(), repoDS.StatusUpdate{
+		Status: storage.BaseImageRepository_IN_PROGRESS,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set IN_PROGRESS: %w", err)
+	}
 
 	// Validate repository ID is a valid UUID.
 	if _, err := uuid.FromString(repo.GetId()); err != nil {
-		utils.Should(fmt.Errorf("repository ID is not a valid UUID: id=%q repository=%q: %w",
-			repo.GetId(), repo.GetRepositoryPath(), err))
-		return
+		return fmt.Errorf("repository ID is not a valid UUID: id=%q repository=%q: %w",
+			repo.GetId(), repo.GetRepositoryPath(), err)
 	}
 
 	name, _, err := imageUtils.GenerateImageNameFromString(repo.GetRepositoryPath())
 	if err != nil {
-		utils.Should(fmt.Errorf("failed to parse repository path %q: %w", repo.GetRepositoryPath(), err))
-		return
+		return fmt.Errorf("failed to parse repository path %q: %w", repo.GetRepositoryPath(), err)
 	}
 
 	if repo.GetTagPattern() == "" {
-		utils.Should(fmt.Errorf("tag pattern is empty: repository: %q", repo.GetRepositoryPath()))
-		return
+		return fmt.Errorf("tag pattern is empty: repository: %q", repo.GetRepositoryPath())
 	}
 
 	// Check for context cancellation (shutdown during processing)
 	select {
 	case <-ctx.Done():
-		log.Warnf("Repository processing cancelled: repository=%q", repo.GetRepositoryPath())
-		return
+		return fmt.Errorf("repository processing cancelled: repository=%q", repo.GetRepositoryPath())
 	default:
 	}
 
@@ -219,8 +356,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	// Fetch existing tags from cache (sorted by created timestamp, newest first).
 	tags, err := w.tagDS.ListTagsByRepository(ctx, repo.GetId())
 	if err != nil {
-		log.Errorf("Failed to list tags: repository=%q: %v", repo.GetRepositoryPath(), err)
-		return
+		return fmt.Errorf("failed to list tags: repository=%q: %w", repo.GetRepositoryPath(), err)
 	}
 
 	// Build scan request.
@@ -230,7 +366,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		SkipTags:  make(map[string]struct{}),
 	}
 	for i, t := range tags {
-		if i < env.BaseImageWatcherPerRepoTagLimit.IntegerSetting() {
+		if i < w.tagLimit {
 			req.CheckTags[t.GetTag()] = t
 		} else {
 			req.SkipTags[t.GetTag()] = struct{}{}
@@ -246,12 +382,14 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	var metadataCount, errorCount, deleteCount int
 	var adds []*storage.BaseImageTag
 	var dels []string
+	var scanErr error
 
 	for event, err := range scanner.ScanRepository(ctx, repo, req) {
 		log.Debugf("Processing repository: scan event: err=%v event=%v repo=%v", err, event, repo)
 
 		if err != nil {
 			log.Errorf("Error during repository scan: repository=%q: %v", repo.GetRepositoryPath(), err)
+			scanErr = err
 			break
 		}
 
@@ -335,6 +473,8 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 
 	log.Infof("Repository scan completed: repository=%q pattern=%q processed=%d metadata=%d errors=%d deletes=%d",
 		repo.GetRepositoryPath(), repo.GetTagPattern(), metadataCount+errorCount+deleteCount, metadataCount, errorCount, deleteCount)
+
+	return scanErr
 }
 
 // promoteTags promotes the top-N tags by created timestamp from cache to base_images.
@@ -429,4 +569,20 @@ func tagUUID(repoID, tag string) (string, error) {
 		return "", err
 	}
 	return uuid.NewV5(repoUUID, tag).String(), nil
+}
+
+// isRepositoryDue returns true if a repository is eligible for polling.
+func isRepositoryDue(repo *storage.BaseImageRepository, pollInterval time.Duration) bool {
+	switch repo.GetStatus() {
+	case storage.BaseImageRepository_CREATED:
+		return true
+	case storage.BaseImageRepository_READY, storage.BaseImageRepository_FAILED:
+		lastPolled := repo.GetLastPolledAt()
+		if lastPolled == nil {
+			return true
+		}
+		return lastPolled.AsTime().Add(pollInterval).Before(time.Now())
+	default:
+		return false
+	}
 }

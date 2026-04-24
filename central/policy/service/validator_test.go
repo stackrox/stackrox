@@ -719,6 +719,70 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	s.NoError(s.validator.validateExclusions(policy))
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateExclusionRejectsLabels() {
+	for name, tc := range map[string]struct {
+		exclusion   *storage.Exclusion
+		errExpected bool
+		errContains string
+	}{
+		"cluster_label on exclusion scope is rejected": {
+			exclusion: &storage.Exclusion{
+				Deployment: &storage.Exclusion_Deployment{
+					Scope: &storage.Scope{
+						ClusterLabel: &storage.Scope_Label{Key: "env", Value: "prod"},
+					},
+				},
+			},
+			errExpected: true,
+			errContains: "cluster labels",
+		},
+		"namespace_label on exclusion scope is rejected": {
+			exclusion: &storage.Exclusion{
+				Deployment: &storage.Exclusion_Deployment{
+					Scope: &storage.Scope{
+						NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "backend"},
+					},
+				},
+			},
+			errExpected: true,
+			errContains: "namespace labels",
+		},
+		"deployment label on exclusion scope is allowed": {
+			exclusion: &storage.Exclusion{
+				Deployment: &storage.Exclusion_Deployment{
+					Scope: &storage.Scope{
+						Label: &storage.Scope_Label{Key: "app", Value: "nginx"},
+					},
+				},
+			},
+			errExpected: false,
+		},
+		"cluster ID on exclusion scope is allowed": {
+			exclusion: &storage.Exclusion{
+				Deployment: &storage.Exclusion_Deployment{
+					Scope: &storage.Scope{
+						Cluster: "cluster-1",
+					},
+				},
+			},
+			errExpected: false,
+		},
+	} {
+		s.T().Run(name, func(t *testing.T) {
+			policy := &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+				Exclusions:      []*storage.Exclusion{tc.exclusion},
+			}
+			err := s.validator.validateExclusions(policy)
+			if tc.errExpected {
+				assert.ErrorContains(t, err, tc.errContains)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
 	defaultPolicies, err := policies.DefaultPolicies()
 	s.Require().NoError(err)
@@ -1121,7 +1185,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 					fieldnames.FilePath:    "/var/log/audit.log",
 					fieldnames.ProcessName: "suspicious-binary",
 				}),
-			errExpected: true,
 		},
 		{
 			description: "Node policy with File Path and invalid container fields",

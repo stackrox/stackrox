@@ -4,8 +4,11 @@ import (
 	"testing"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stretchr/testify/require"
@@ -27,13 +30,24 @@ func (s *ImageCacheTestSuite) SetupSuite() {
 	})
 	require.NoError(s.T(), err)
 
+	nameCache, err := lru.New[string, string](imageNameCacheSize)
+	require.NoError(s.T(), err)
+
 	s.manager = &manager{
-		imageCache: cache,
+		imageCache:               cache,
+		imageNameToImageCacheKey: nameCache,
+		imageNameCacheEnabled:    true,
+		imageCacheTTL:            4 * time.Hour,
+		imageFetchGroup:          coalescer.New[*storage.Image](),
+		imageCacheGen:            newImageGenTracker(),
 	}
 }
 
 func (s *ImageCacheTestSuite) SetupTest() {
 	s.manager.imageCache.Purge()
+	s.manager.imageNameToImageCacheKey.Purge()
+	s.manager.imageCacheGen.Clear(s.T())
+	s.manager.state.Store(nil)
 }
 
 func createTestState(flattenImageData bool) *state {
@@ -154,7 +168,7 @@ func (s *ImageCacheTestSuite) TestGetCachedImage() {
 				})
 			}
 
-			result := s.manager.getCachedImage(tt.containerImage, tt.state)
+			result := s.manager.getCachedImage(tt.containerImage, tt.state, true)
 
 			if tt.expectFound {
 				s.NotNil(result)
@@ -220,7 +234,7 @@ func (s *ImageCacheTestSuite) TestCacheImage() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.manager.cacheImage(tt.image, tt.state)
+			s.manager.cacheImage(tt.image, tt.image.GetName().GetFullName(), tt.state)
 
 			if tt.shouldCache {
 				var expectedKey string
@@ -239,4 +253,147 @@ func (s *ImageCacheTestSuite) TestCacheImage() {
 			}
 		})
 	}
+}
+
+// --- test helpers ---
+
+func (s *ImageCacheTestSuite) addCacheEntry(key string, img *storage.Image) {
+	s.manager.imageCache.Add(key, imageCacheEntry{Image: img, timestamp: time.Now()})
+}
+
+func (s *ImageCacheTestSuite) addNameMapping(name, key string) {
+	s.manager.imageNameToImageCacheKey.Add(name, key)
+}
+
+func (s *ImageCacheTestSuite) assertCached(key string, expected bool, msgAndArgs ...interface{}) {
+	_, ok := s.manager.imageCache.Get(key)
+	s.Equal(expected, ok, msgAndArgs...)
+}
+
+func (s *ImageCacheTestSuite) assertNameMapped(name string, expected bool, msgAndArgs ...interface{}) {
+	_, ok := s.manager.imageNameToImageCacheKey.Get(name)
+	s.Equal(expected, ok, msgAndArgs...)
+}
+
+func (s *ImageCacheTestSuite) invalidate(keys ...*central.ImageKey) {
+	s.manager.processImageCacheInvalidation(&sensor.AdmCtrlImageCacheInvalidation{ImageKeys: keys})
+}
+
+// --- invalidation tests ---
+
+func (s *ImageCacheTestSuite) TestProcessImageInvalidation_RemovesTargetedEntry() {
+	s.manager.state.Store(createTestState(false))
+
+	s.addCacheEntry("sha256:nginx", &storage.Image{Id: "sha256:nginx"})
+	s.addCacheEntry("sha256:redis", &storage.Image{Id: "sha256:redis"})
+	s.addNameMapping("docker.io/library/nginx:1.25", "sha256:nginx")
+	s.addNameMapping("docker.io/library/redis:7", "sha256:redis")
+
+	s.invalidate(&central.ImageKey{
+		ImageId: "sha256:nginx", ImageFullName: "docker.io/library/nginx:1.25",
+	})
+
+	s.assertCached("sha256:nginx", false, "nginx should be removed")
+	s.assertNameMapped("docker.io/library/nginx:1.25", false, "nginx name mapping should be removed")
+	s.assertCached("sha256:redis", true, "redis should remain")
+	s.assertNameMapped("docker.io/library/redis:7", true, "redis name mapping should remain")
+}
+
+func (s *ImageCacheTestSuite) TestProcessImageInvalidation_WithFlattenImageData() {
+	s.manager.state.Store(createTestState(true))
+	v2Key := "v2-uuid-for-nginx"
+
+	s.addCacheEntry(v2Key, &storage.Image{Id: "sha256:nginx"})
+	s.addNameMapping("docker.io/library/nginx:1.25", v2Key)
+
+	s.invalidate(&central.ImageKey{
+		ImageId: "sha256:nginx", ImageIdV2: v2Key, ImageFullName: "docker.io/library/nginx:1.25",
+	})
+
+	s.assertCached(v2Key, false, "V2 cache entry should be removed")
+	s.assertNameMapped("docker.io/library/nginx:1.25", false, "name mapping should be removed")
+}
+
+func (s *ImageCacheTestSuite) TestProcessImageInvalidation_IncrementsGeneration() {
+	s.manager.state.Store(createTestState(false))
+
+	s.invalidate(&central.ImageKey{
+		ImageId: "sha256:abc", ImageFullName: "docker.io/library/nginx:1.25",
+	})
+
+	s.Equal(uint64(1), s.manager.imageCacheGen.Get(s.T(), "sha256:abc"))
+	s.Equal(uint64(1), s.manager.imageCacheGen.Get(s.T(), "docker.io/library/nginx:1.25"))
+}
+
+func (s *ImageCacheTestSuite) TestProcessImageInvalidation_MultipleKeys() {
+	s.manager.state.Store(createTestState(false))
+	for _, id := range []string{"sha256:a", "sha256:b", "sha256:c"} {
+		s.addCacheEntry(id, &storage.Image{Id: id})
+	}
+
+	s.invalidate(
+		&central.ImageKey{ImageId: "sha256:a"},
+		&central.ImageKey{ImageId: "sha256:c"},
+	)
+
+	s.assertCached("sha256:a", false)
+	s.assertCached("sha256:b", true, "sha256:b should not be invalidated")
+	s.assertCached("sha256:c", false)
+}
+
+// --- generation counter tests ---
+
+func (s *ImageCacheTestSuite) TestGenerationCounter() {
+	st := createTestState(false)
+	imgName := &storage.ImageName{FullName: "docker.io/library/nginx:1.25"}
+	img := &storage.Image{Id: "sha256:abc", Name: imgName}
+
+	tests := []struct {
+		name        string
+		mutate      func()
+		expectCache bool
+	}{
+		{
+			name:        "allows cache when unchanged",
+			mutate:      func() {},
+			expectCache: true,
+		},
+		{
+			name:        "prevents stale cache after per-key Inc",
+			mutate:      func() { s.manager.imageCacheGen.Inc("sha256:abc") },
+			expectCache: false,
+		},
+		{
+			name:        "prevents stale cache after CacheVersion change",
+			mutate:      func() { s.manager.imageCacheGen.UpdateCacheVersion("new-uuid") },
+			expectCache: false,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.manager.imageCache.Purge()
+			s.manager.imageCacheGen.Clear(s.T())
+
+			gen, cacheVer := s.manager.imageCacheGen.Snapshot("sha256:abc")
+			tt.mutate()
+			if !s.manager.imageCacheGen.Changed("sha256:abc", gen, cacheVer) {
+				s.manager.cacheImage(img, imgName.GetFullName(), st)
+			}
+			s.assertCached("sha256:abc", tt.expectCache)
+		})
+	}
+}
+
+func (s *ImageCacheTestSuite) TestClearImageCacheGen() {
+	s.manager.imageCacheGen.Inc("sha256:a")
+	s.manager.imageCacheGen.Inc("sha256:a")
+	s.manager.imageCacheGen.Inc("sha256:b")
+	s.manager.imageCacheGen.UpdateCacheVersion("v1")
+
+	s.manager.imageCacheGen.Clear(s.T())
+
+	s.Equal(uint64(0), s.manager.imageCacheGen.Get(s.T(), "sha256:a"))
+	s.Equal(uint64(0), s.manager.imageCacheGen.Get(s.T(), "sha256:b"))
+	s.Equal("", s.manager.imageCacheGen.CacheVersion())
 }

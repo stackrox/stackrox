@@ -21,6 +21,7 @@ func init() {
 		totalNetworkFlowsReceivedCounter,
 		processSignalBufferGauge,
 		processSignalDroppedCount,
+		processPipelineModeGauge,
 		sensorEvents,
 		sensorMaxMessageSizeSent,
 		sensorMessageSizeSent,
@@ -45,5 +46,6 @@ func init() {
 		InformersRegisteredCurrent,
 		InformersPendingCurrent,
 		informerSyncDurationMs,
+		informerInitialObjectPopulationDurationSeconds,
 	)
 }

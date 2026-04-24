@@ -62,9 +62,8 @@ const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForCompliance = 'Compliance';
 const keyForVulnerabilities = 'Vulnerability Management';
 
-function getNavDescriptions(
-    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
-): NavDescription[] {
+// Instead of removing argument, add disable comment for @typescript-eslint/no-unused-vars
+function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
     const vulnerabilityManagementChildren: ChildDescription[] = [
         {
             type: 'link',
@@ -97,7 +96,9 @@ function getNavDescriptions(
         },
         {
             type: 'link',
-            content: 'Vulnerability Reporting',
+            content: isFeatureFlagEnabled('ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING')
+                ? 'Reports'
+                : 'Vulnerability Reporting',
             path: vulnerabilityReportsPath,
             routeKey: 'vulnerabilities/reports',
         },

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -21,7 +22,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// TODO(ROX-30117): Remove this benchmark when FlattenImageData feature flag is removed.
 func BenchmarkImageGetMany(b *testing.B) {
+	if features.FlattenImageData.Enabled() {
+		b.Skip("Skipping benchmark - FlattenImageData is enabled.")
+	}
 	ctx := sac.WithAllAccess(context.Background())
 
 	testDB := pgtest.ForT(b)
@@ -60,7 +65,11 @@ func BenchmarkImageGetMany(b *testing.B) {
 	})
 }
 
+// TODO(ROX-30117): Remove this benchmark when FlattenImageData feature flag is removed.
 func BenchmarkImageUpsert(b *testing.B) {
+	if features.FlattenImageData.Enabled() {
+		b.Skip("Skipping benchmark - FlattenImageData is enabled.")
+	}
 	ctx := sac.WithAllAccess(context.Background())
 
 	testDB := pgtest.ForT(b)

@@ -21,6 +21,11 @@ type DataStore interface {
 	// GetManyVirtualMachines returns the VMs with the given IDs.
 	GetManyVirtualMachines(ctx context.Context, ids []string) ([]*storage.VirtualMachineV2, []int, error)
 
+	// EnsureVirtualMachineExists inserts a minimal VM record if one does not
+	// already exist. This satisfies FK constraints for scan upserts without
+	// overwriting richer metadata from the VM pipeline.
+	EnsureVirtualMachineExists(ctx context.Context, vmID string, clusterID string) error
+
 	// UpsertVirtualMachine upserts a VM. The store performs hash-based change
 	// detection to avoid unnecessary writes.
 	UpsertVirtualMachine(ctx context.Context, vm *storage.VirtualMachineV2) error

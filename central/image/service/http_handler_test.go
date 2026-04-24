@@ -115,9 +115,13 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		testcases := []struct {
 			name                    string
 			flattenImageDataEnabled bool
+			scanResult              enricher.ScanResult
+			imageUpdated            bool
 		}{
-			{name: "with flatten image data disabled", flattenImageDataEnabled: false},
-			{name: "with flatten image data enabled", flattenImageDataEnabled: true},
+			{name: "with flatten image data disabled", flattenImageDataEnabled: false, scanResult: enricher.ScanSucceeded, imageUpdated: true},
+			{name: "with flatten image data enabled", flattenImageDataEnabled: true, scanResult: enricher.ScanSucceeded, imageUpdated: true},
+			{name: "with reused scan", flattenImageDataEnabled: false, scanResult: enricher.ScanReused, imageUpdated: false},
+			{name: "with reused scan and flatten image data enabled", flattenImageDataEnabled: true, scanResult: enricher.ScanReused, imageUpdated: false},
 		}
 
 		for _, tc := range testcases {
@@ -136,8 +140,8 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
 				fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 
-				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
-				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
+				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
 				scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
 				scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
 				set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()

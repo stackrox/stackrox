@@ -18,14 +18,17 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scopecomp"
 	queueScaler "github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
@@ -64,15 +67,17 @@ type Detector interface {
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
-	ProcessReprocessDeployments() error
+	ProcessReprocessDeployments(msg *central.ReprocessDeployments) error
 	ProcessUpdatedImage(image *storage.Image) error
 	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
 }
 
 // New returns a new detector
+// TODO(ROX-33799): Refactor to use builder pattern to reduce parameter count
 func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore,
+	clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) Detector {
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
@@ -112,7 +117,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	)
 
 	return &detectorImpl{
-		unifiedDetector: unified.NewDetector(),
+		unifiedDetector: unified.NewDetector(clusterLabelProvider, namespaceLabelProvider),
 
 		output:                    make(chan *message.ExpiringMessage),
 		auditEventsChan:           auditLogEvents,
@@ -178,7 +183,7 @@ type detectorImpl struct {
 	serializerStopper concurrency.Stopper
 	alertStopSig      concurrency.Signal
 
-	admissionCacheNeedsFlush bool
+	updatedImageKeys []*central.ImageKey
 
 	networkPolicyStore store.NetworkPolicyStore
 
@@ -344,7 +349,8 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 	return nil
 }
 
-// ProcessUpdatedImage updates the imageCache with a new value
+// ProcessUpdatedImage updates the imageCache with a new value and accumulates
+// the image key for batched AC invalidation in ProcessReprocessDeployments.
 func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 	key := cache.GetKey(image)
 	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
@@ -354,18 +360,30 @@ func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 		regStore:  d.enricher.regStore,
 	}
 	d.enricher.imageCache.Add(key, newValue)
-	d.admissionCacheNeedsFlush = true
+	imageKey := &central.ImageKey{
+		ImageId:       image.GetId(),
+		ImageFullName: image.GetName().GetFullName(),
+	}
+	if centralcaps.Has(centralsensor.FlattenImageData) {
+		imageKey.ImageIdV2 = imgUtils.NewImageV2ID(image.GetName(), image.GetId())
+	}
+	d.updatedImageKeys = append(d.updatedImageKeys, imageKey)
 	return nil
 }
 
-// ProcessReprocessDeployments marks all deployments to be reprocessed
-func (d *detectorImpl) ProcessReprocessDeployments() error {
+// ProcessReprocessDeployments marks all deployments for reprocessing.
+// When skip_cache_flush=true, sends batched targeted AC invalidation
+// instead of a full purge.
+func (d *detectorImpl) ProcessReprocessDeployments(msg *central.ReprocessDeployments) error {
 	log.Debug("Reprocess deployments triggered. Clearing cache and deduper")
-	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
-		// Would prefer to do a targeted flush
-		d.admCtrlSettingsMgr.FlushCache()
+	if d.admCtrlSettingsMgr != nil {
+		if !msg.GetSkipCacheFlush() {
+			d.admCtrlSettingsMgr.FlushCache()
+		} else if len(d.updatedImageKeys) > 0 {
+			d.admCtrlSettingsMgr.InvalidateImageCache(d.updatedImageKeys)
+		}
 	}
-	d.admissionCacheNeedsFlush = false
+	d.updatedImageKeys = nil
 	d.deduper.reset()
 	return nil
 }
@@ -888,6 +906,7 @@ func (d *detectorImpl) processFileAccess() {
 
 			var alerts []*storage.Alert
 			var source central.AlertResults_Source
+			matchStart := time.Now()
 			if fsUtils.IsNodeFileAccess(item.Access) {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
 				source = central.AlertResults_NODE_EVENT
@@ -900,6 +919,7 @@ func (d *detectorImpl) processFileAccess() {
 				}, item.Access)
 				source = central.AlertResults_DEPLOYMENT_EVENT
 			}
+			detectorMetrics.FileAccessCriteriaMatchDuration.Observe(time.Since(matchStart).Seconds())
 
 			if len(alerts) == 0 {
 				// No need to process runtime alerts that have no violations

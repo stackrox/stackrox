@@ -26,6 +26,7 @@ import objects.K8sServiceAccount
 import objects.Secret
 import services.BaseService
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
@@ -44,9 +45,11 @@ class BaseSpecification extends Specification {
 
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
-    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12@$TEST_IMAGE_SHA"
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3@$TEST_IMAGE_SHA"
     static final String TEST_IMAGE_NAME_WITH_SHA = TEST_IMAGE
-    static final String TEST_IMAGE_SHA = "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728"
+    static final String TEST_IMAGE_SHA = "sha256:ebecc1ad41054eaef19ef9c84e0d95551dfbdebbf0875fd407aee697e4be3860"
+    // UUIDv5 of TEST_IMAGE (full name) and TEST_IMAGE_SHA (digest), used as image ID when FlattenImageData is enabled.
+    static final String TEST_IMAGE_V2_ID = Helpers.generateImageV2ID(TEST_IMAGE, TEST_IMAGE_SHA)
 
     static final String RUN_ID
 
@@ -72,6 +75,9 @@ class BaseSpecification extends Specification {
     private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
+
+    public static boolean scannerV4Enabled = false
+    public static boolean flattenImageDataEnabled = false
 
     private static synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
@@ -127,6 +133,12 @@ class BaseSpecification extends Specification {
                 throw(ex)
             }
         }
+
+        scannerV4Enabled = FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4")
+        LOG.info "Scanner V4 enabled: ${scannerV4Enabled}"
+
+        flattenImageDataEnabled = Env.get("ROX_FLATTEN_IMAGE_DATA") == "true"
+        LOG.info "Flatten Image Data enabled: ${flattenImageDataEnabled}"
 
         if (ClusterService.isOpenShift4()) {
             assert Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT,

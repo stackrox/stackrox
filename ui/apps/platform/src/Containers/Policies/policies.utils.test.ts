@@ -4,6 +4,9 @@ import {
     getLifeCyclesUpdates,
     getPolicyOriginLabel,
     getServerPolicy,
+    initialExcludedDeployment,
+    initialScope,
+    isExcludedDeploymentScopeEmpty,
 } from './policies.utils';
 
 describe('policies.utils', () => {
@@ -672,6 +675,132 @@ describe('policies.utils', () => {
             };
 
             expect(getServerPolicy(clientPolicy)).toEqual(serverPolicy);
+        });
+
+        test('normalizes all-empty exclusion deployment scope to null for server policy', () => {
+            const clientPolicy = {
+                id: 'e73359bd-68d0-48d6-8e3c-f81cf85e2574',
+                name: 'Test policy',
+                description: 'a description',
+                rationale: 'Rationale here',
+                remediation: 'Guidance here',
+                disabled: false,
+                categories: ['Cryptocurrency Mining'],
+                lifecycleStages: ['DEPLOY'] as const,
+                eventSource: 'NOT_APPLICABLE' as const,
+                exclusions: [],
+                scope: [],
+                excludedImageNames: [],
+                excludedDeploymentScopes: [
+                    {
+                        name: 'nginx',
+                        scope: initialExcludedDeployment.scope,
+                    },
+                ],
+                serverPolicySections: [],
+                policySections: [],
+                severity: 'LOW_SEVERITY' as const,
+                enforcementActions: [],
+                notifiers: [],
+                lastUpdated: null,
+                SORTName: '',
+                SORTLifecycleStage: '',
+                SORTEnforcement: false,
+                mitreAttackVectors: [],
+                criteriaLocked: false,
+                mitreVectorsLocked: false,
+                isDefault: false,
+                policyVersion: '1.1',
+                source: 'IMPERATIVE' as const,
+            } satisfies ClientPolicy;
+
+            const serverPolicy = getServerPolicy(clientPolicy);
+
+            expect(serverPolicy.exclusions?.[0]?.deployment?.scope).toBeNull();
+            expect(serverPolicy.exclusions?.[0]?.deployment?.name).toBe('nginx');
+        });
+
+        test('trims exclusion scope label key/value so whitespace-only becomes null scope', () => {
+            const clientPolicy = {
+                id: 'e73359bd-68d0-48d6-8e3c-f81cf85e2574',
+                name: 'Test policy',
+                description: 'a description',
+                rationale: 'Rationale here',
+                remediation: 'Guidance here',
+                disabled: false,
+                categories: ['Cryptocurrency Mining'],
+                lifecycleStages: ['DEPLOY'] as const,
+                eventSource: 'NOT_APPLICABLE' as const,
+                exclusions: [],
+                scope: [],
+                excludedImageNames: [],
+                excludedDeploymentScopes: [
+                    {
+                        name: 'nginx',
+                        scope: {
+                            cluster: '',
+                            clusterLabel: null,
+                            namespace: '',
+                            namespaceLabel: null,
+                            label: { key: '   ', value: '  ' },
+                        },
+                    },
+                ],
+                serverPolicySections: [],
+                policySections: [],
+                severity: 'LOW_SEVERITY' as const,
+                enforcementActions: [],
+                notifiers: [],
+                lastUpdated: null,
+                SORTName: '',
+                SORTLifecycleStage: '',
+                SORTEnforcement: false,
+                mitreAttackVectors: [],
+                criteriaLocked: false,
+                mitreVectorsLocked: false,
+                isDefault: false,
+                policyVersion: '1.1',
+                source: 'IMPERATIVE' as const,
+            } satisfies ClientPolicy;
+
+            expect(getServerPolicy(clientPolicy).exclusions?.[0]?.deployment?.scope).toBeNull();
+        });
+    });
+
+    describe('isExcludedDeploymentScopeEmpty', () => {
+        test('returns true for null and initialScope (empty PolicyScope)', () => {
+            expect(isExcludedDeploymentScopeEmpty(null)).toBe(true);
+            expect(isExcludedDeploymentScopeEmpty(initialScope)).toBe(true);
+        });
+
+        test('returns false when cluster, namespace, or label is set', () => {
+            expect(
+                isExcludedDeploymentScopeEmpty({
+                    cluster: 'id',
+                    clusterLabel: null,
+                    namespace: '',
+                    namespaceLabel: null,
+                    label: null,
+                })
+            ).toBe(false);
+            expect(
+                isExcludedDeploymentScopeEmpty({
+                    cluster: '',
+                    clusterLabel: null,
+                    namespace: 'ns',
+                    namespaceLabel: null,
+                    label: null,
+                })
+            ).toBe(false);
+            expect(
+                isExcludedDeploymentScopeEmpty({
+                    cluster: '',
+                    clusterLabel: null,
+                    namespace: '',
+                    namespaceLabel: null,
+                    label: { key: 'k', value: '' },
+                })
+            ).toBe(false);
         });
     });
 

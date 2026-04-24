@@ -390,6 +390,30 @@ const rules = {
             };
         },
     },
+    'no-non-deprecated-Component': {
+        // Distinguish which files need replacement of Component.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of Component',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ClassDeclaration(node) {
+                    if (node.superClass?.name === 'Component') {
+                        context.report({
+                            node,
+                            message:
+                                'Replace Component in non-deprecated file with function component',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-non-deprecated-JavaScript': {
         // Distinguish which JavaScript files need rewrite in TypeScript.
         // Less of a rule than a tool to document technical investment.
@@ -409,6 +433,80 @@ const rules = {
                         context.report({
                             node,
                             message: 'Rewrite non-deprecated JavaScript file as TypeScript',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'no-non-deprecated-PropTypes': {
+        // Distinguish which files need replacement of prop-types dependency.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of prop-types dependency',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === 'prop-types') {
+                        context.report({
+                            node,
+                            message: 'Replace prop-types dependency in non-deprecated file',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'no-non-deprecated-connect': {
+        // Distinguish which files need replacement of connect function.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of connect function',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (
+                        node.source?.value === 'react-redux' &&
+                        node.specifiers?.some((specifier) => specifier.imported?.name === 'connect')
+                    ) {
+                        context.report({
+                            node,
+                            message:
+                                'Replace connect function in non-deprecated file with useSelector hook',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'no-non-deprecated-reselect': {
+        // Distinguish which files need replacement of reselect dependency.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of reselect dependency',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === 'reselect') {
+                        context.report({
+                            node,
+                            message:
+                                'Replace createStructuredSelector function from reselect dependency in non-deprecated file with useSelector hook',
                         });
                     }
                 },

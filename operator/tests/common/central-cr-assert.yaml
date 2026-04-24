@@ -33,6 +33,8 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-indexer
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
+- command: retry-kubectl.sh describe pv
+- command: retry-kubectl.sh describe pvc -n $NAMESPACE
 - command: retry-kubectl.sh describe central.platform.stackrox.io -n $NAMESPACE stackrox-central-services
 # Please keep the above lists in sync with pods-debug.yaml and 021-assert-status-conditions.yaml
 resourceRefs:

@@ -22,12 +22,15 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-33098 (Tech Preview): Effective path and Actual Path have been combined into a single File Path policy criterion.
 - ROX-33156 (Tech Preview): A new default policy category called "File Activity Monitoring" is now available.
 - ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
+- ROX-33336: The Operator now reads the cluster-wide TLS profile from `apiserver.config.openshift.io/cluster` on OpenShift and propagates it to all managed ACS components via environment variables. The Operator's own metrics server always honors the cluster TLS profile when running on OpenShift.
 
 ### Removed Features
 
 ### Deprecated Features
 
 ### Technical Changes
+
+- OpenShift 3 support removed from all installation methods.
 
 ## [4.10.0]
 

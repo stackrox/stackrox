@@ -219,7 +219,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 			b.StartTimer()
 
 			// Delete
-			err = datastore.RemoveProcessIndicators(ctx, d1DeleteIDs)
+			err = datastore.RemoveProcessIndicators(ctx, d1DeleteIDs, RemovalReasonProcessFilter)
 			require.NoError(b, err)
 		}
 	})
@@ -233,7 +233,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 			b.StartTimer()
 
 			// Delete
-			err = datastore.RemoveProcessIndicators(ctx, d1PodID2DeleteIDs)
+			err = datastore.RemoveProcessIndicators(ctx, d1PodID2DeleteIDs, RemovalReasonProcessFilter)
 			require.NoError(b, err)
 		}
 	})

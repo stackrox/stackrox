@@ -32,37 +32,40 @@ _EO_KUTTL_HELP_
 
     image_prefetcher_prebuilt_await
 
-    # TODO(ROX-27191): Once there *is* a previous version shipping a non-OLM operator distribution,
-    # use it on other platforms too and run the upgrade test as well.
-     if [[ $operator_cluster_type == openshift4 ]]; then
-        info "Deploying operator"
+    info "Deploying operator"
+    if [[ $operator_cluster_type == openshift4 ]]; then
         junit_wrap deploy-previous-operator \
-                   "Deploy previously released version of the operator." \
+                   "Deploy previously released version of the operator using OLM." \
                    "${kuttl_help}" \
                    "make" "-C" "operator" "deploy-previous-via-olm" TEST_NAMESPACE="rhacs-operator-system"
+   else
+        # TODO(ROX-33128): change to use helm after release 4.11
+        junit_wrap deploy-previous-operator \
+                   "Deploy version 4.10 of the operator using install manifest." \
+                   "${kuttl_help}" \
+                   ./operator/hack/install-4.10.sh
+        info "Preparing operator helm chart"
+        junit_wrap prepare-operator-helm-chart \
+                   "Prepare operator helm chart." \
+                   "${kuttl_help}" \
+                   "env" "ROX_PRODUCT_BRANDING=RHACS_BRANDING" "ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true" \
+                   "make" "-C" "operator" "chart"
    fi
 
     image_prefetcher_system_await
 
-    if [[ $operator_cluster_type == openshift4 ]]; then
-        info "Executing operator upgrade test"
-        junit_wrap test-upgrade \
-                   "Test operator upgrade from previously released version to the current one." \
-                   "${kuttl_help}" \
-                   "make" "-C" "operator" "test-upgrade" TEST_NAMESPACE="rhacs-operator-system" || FAILED=1
-        store_test_results "operator/build/kuttl-test-artifacts-upgrade" "kuttl-test-artifacts-upgrade"
-        if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts-upgrade")"; then
-            # Prevent double-reporting
-            remove_junit_record test-upgrade
-        fi
-        [[ $FAILED = 0 ]] || die "operator upgrade tests failed"
-    else
-        info "Deploying operator using helm chart..."
-        junit_wrap deploy-operator \
-                   "Deploy current version of the operator." \
-                   "${kuttl_help}" \
-                   "make" "-C" "operator" "chart" "deploy-via-chart" TEST_NAMESPACE="rhacs-operator-system"
+    info "Executing operator upgrade test"
+    junit_wrap test-upgrade \
+               "Test operator upgrade from previously released version to the current one." \
+               "${kuttl_help}" \
+               "env" "OPERATOR_CLUSTER_TYPE=${operator_cluster_type}" TEST_NAMESPACE="rhacs-operator-system" \
+               "make" "-C" "operator" "test-upgrade" || FAILED=1
+    store_test_results "operator/build/kuttl-test-artifacts-upgrade" "kuttl-test-artifacts-upgrade"
+    if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts-upgrade")"; then
+        # Prevent double-reporting
+        remove_junit_record test-upgrade
     fi
+    [[ $FAILED = 0 ]] || die "operator upgrade tests failed"
 
     info "Executing operator e2e tests"
     junit_wrap test-e2e \

@@ -20,7 +20,7 @@ type controller struct {
 	returnChans      map[int64]chan *central.NetworkPoliciesResponse_Payload
 	returnChansMutex sync.Mutex
 
-	currSeqID int64
+	currSeqID atomic.Int64
 
 	injector common.MessageInjector
 }
@@ -34,7 +34,7 @@ func newController(injector common.MessageInjector, stopSig concurrency.ReadOnly
 }
 
 func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *storage.NetworkPolicyModification) (*storage.NetworkPolicyModification, error) {
-	seqID := atomic.AddInt64(&c.currSeqID, 1)
+	seqID := c.currSeqID.Add(1)
 
 	applyID := uuid.NewV4().String()
 

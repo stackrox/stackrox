@@ -32,6 +32,7 @@ type resourceEventHandlerImpl struct {
 	syncLock                   sync.Mutex
 	seenIDs                    map[types.UID]struct{}
 	missingInitialIDs          map[types.UID]struct{}
+	initialSyncTotalIDs        int
 	hasSeenAllInitialIDsSignal concurrency.Signal
 }
 
@@ -79,6 +80,7 @@ func (h *resourceEventHandlerImpl) populateInitialObjects(initialObjs []interfac
 			h.missingInitialIDs[newUID] = struct{}{}
 		}
 	}
+	h.initialSyncTotalIDs = len(initialObjs)
 	h.seenIDs = nil
 	h.checkHasSeenAllInitialIDsNoLock()
 }
@@ -104,6 +106,17 @@ func (h *resourceEventHandlerImpl) checkHasSeenAllInitialIDsNoLock() {
 		h.missingInitialIDs = nil
 		h.hasSeenAllInitialIDsSignal.Signal()
 	}
+}
+
+func (h *resourceEventHandlerImpl) initialSyncDebugState() (missingCount int, totalCount int) {
+	h.syncLock.Lock()
+	defer h.syncLock.Unlock()
+
+	if h.missingInitialIDs != nil {
+		missingCount = len(h.missingInitialIDs)
+	}
+	totalCount = h.initialSyncTotalIDs
+	return
 }
 
 func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, action central.ResourceAction) {

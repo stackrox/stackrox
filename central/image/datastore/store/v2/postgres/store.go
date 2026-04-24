@@ -581,29 +581,25 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 		return err
 	}
 
+	cvesByComponent, err := getAllImageComponentCVEs(ctx, tx, image.GetId())
+	if err != nil {
+		return err
+	}
+
 	imageParts := common.ImageParts{
 		Image:    image,
-		Children: []common.ComponentParts{},
+		Children: make([]common.ComponentParts, 0, len(components)),
 	}
 	for _, component := range components {
-		cves, err := getImageComponentCVEs(ctx, tx, component.GetId())
-		if err != nil {
-			return err
-		}
-
+		cves := cvesByComponent[component.GetId()]
 		cveParts := make([]common.CVEParts, 0, len(cves))
 		for _, cve := range cves {
-			cvePart := common.CVEParts{
-				CVEV2: cve,
-			}
-			cveParts = append(cveParts, cvePart)
+			cveParts = append(cveParts, common.CVEParts{CVEV2: cve})
 		}
-
-		child := common.ComponentParts{
+		imageParts.Children = append(imageParts.Children, common.ComponentParts{
 			ComponentV2: component,
 			Children:    cveParts,
-		}
-		imageParts.Children = append(imageParts.Children, child)
+		})
 	}
 	common.MergeV2(imageParts)
 	return nil
@@ -643,16 +639,24 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([
 	return pgutils.ScanRows[storage.ImageComponentV2, *storage.ImageComponentV2](rows)
 }
 
-func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID string) ([]*storage.ImageCVEV2, error) {
+func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, imageID string) (map[string][]*storage.ImageCVEV2, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
-	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
-	// the updates.  That may prove to not matter, but for now doing it this way.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE componentid = $1", componentID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageid = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
-	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+	cves, err := pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string][]*storage.ImageCVEV2)
+	for _, cve := range cves {
+		compID := cve.GetComponentId()
+		result[compID] = append(result[compID], cve)
+	}
+	return result, nil
 }
 
 func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
@@ -905,8 +909,11 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 // GetImagesRiskView retrieves an image id and risk score to initialize rankers
 func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
-	var results []*views.ImageRiskView
-	results, err := pgSearch.RunSelectRequestForSchema[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q)
+	results := make([]*views.ImageRiskView, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q, func(r *views.ImageRiskView) error {
+		results = append(results, r)
+		return nil
+	})
 	if err != nil {
 		log.Errorf("unable to initialize image ranking: %v", err)
 	}

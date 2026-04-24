@@ -17,57 +17,100 @@ import (
 	admission "k8s.io/api/admission/v1"
 )
 
-const (
-	imageCacheTTL = 30 * time.Minute
-)
-
 type imageCacheEntry struct {
 	*storage.Image
 	timestamp time.Time
 }
 
-func (m *manager) getCachedImage(img *storage.ContainerImage, s *state) *storage.Image {
-	if img.GetId() == "" {
-		observeCacheSkip()
-		return nil
+// getCachedImage looks up a previously enriched image in the two-level cache.
+//
+// Resolution order:
+//  1. Digest-based refs (Id non-empty): derive the imageCache key directly from the digest
+//     (or a V2 UUID5 when FlattenImageData is enabled).
+//  2. Tag-only refs (Id empty, e.g. "nginx:1.25"): consult the imageNameToImageCacheKey
+//     LRU, which maps full image names to their resolved imageCache keys. This map is
+//     populated by cacheImage after enrichment and avoids redundant fetches for the same
+//     tag across reviews.
+//  3. Tag-only refs with the name cache disabled: skip (no way to resolve without a digest).
+//
+// On imageCache miss or TTL expiry for a tag-only lookup, the stale name→key mapping is
+// removed so the next request triggers a fresh fetch.
+//
+// The observe flag controls whether cache metrics are emitted. It is false when called
+// from within the Coalescer callback (fetchImage) to avoid double-counting, since the
+// outer call in getAvailableImagesAndKickOffScans already records the metric.
+func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe bool) *storage.Image {
+	emit := func(fn func()) {
+		if observe {
+			fn()
+		}
 	}
 
-	id := img.GetId()
-	if s.GetFlattenImageData() {
-		id = utils.NewImageV2ID(img.GetName(), img.GetId())
+	var id string
+	if img.GetId() != "" {
+		id = img.GetId()
+		if s.GetFlattenImageData() {
+			id = utils.NewImageV2ID(img.GetName(), img.GetId())
+		}
+	} else if m.imageNameCacheEnabled {
+		cacheKey, ok := m.imageNameToImageCacheKey.Get(img.GetName().GetFullName())
+		if !ok {
+			emit(observeCacheSkip)
+			return nil
+		}
+		id = cacheKey
+	} else {
+		emit(observeCacheSkip)
+		return nil
 	}
 
 	cachedImg, ok := m.imageCache.Get(id)
 	if !ok {
-		observeCacheMiss()
+		// imageCache entry was LRU-evicted. Clean up the name→key mapping only for
+		// tag-only refs (Id empty), since those are the only lookups that went through
+		// imageNameToImageCacheKey. Digest-based refs bypass the name map entirely.
+		if img.GetId() == "" {
+			m.imageNameToImageCacheKey.Remove(img.GetName().GetFullName())
+		}
+		emit(observeCacheMiss)
 		return nil
 	}
-	if time.Since(cachedImg.timestamp) > imageCacheTTL {
+	if time.Since(cachedImg.timestamp) > m.imageCacheTTL {
 		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
-		observeCacheExpired()
+		// imageCache entry TTL-expired. Same reasoning as above: only tag-only refs
+		// have a name→key mapping to invalidate.
+		if img.GetId() == "" {
+			m.imageNameToImageCacheKey.Remove(img.GetName().GetFullName())
+		}
+		emit(observeCacheExpired)
 		return nil
 	}
 
-	observeCacheHit()
+	emit(observeCacheHit)
 	return cachedImg.Image
 }
 
-func (m *manager) cacheImage(img *storage.Image, s *state) {
-	if img.GetId() == "" {
+func (m *manager) cacheImage(scannedImg *storage.Image, containerImageFullName string, s *state) {
+	// For tag-only images Central's enricher populates Metadata.V2.Digest but
+	// does not set Image.Id. Fall back to the metadata digest so we can still
+	// cache enriched results.
+	id := utils.GetSHA(scannedImg)
+	if id == "" {
 		return
 	}
 
-	id := img.GetId()
 	if s.GetFlattenImageData() {
-		id = utils.NewImageV2ID(img.GetName(), img.GetId())
+		id = utils.NewImageV2ID(scannedImg.GetName(), id)
 	}
 
-	cacheEntry := imageCacheEntry{
-		Image:     img,
+	m.imageCache.Add(id, imageCacheEntry{
+		Image:     scannedImg,
 		timestamp: time.Now(),
-	}
+	})
 
-	m.imageCache.Add(id, cacheEntry)
+	if m.imageNameCacheEnabled && containerImageFullName != "" {
+		m.imageNameToImageCacheKey.Add(containerImageFullName, id)
+	}
 }
 
 type fetchImageResult struct {
@@ -106,14 +149,53 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	return resp.GetImage(), nil
 }
 
-func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
+// imageKey returns the key used for coalescing and cache lookup.
+//   - Tag-only refs (Id empty): returns the full image name (e.g. "docker.io/library/nginx:1.25").
+//     After enrichment, cacheImage maps this name to the resolved digest via imageNameToImageCacheKey.
+//   - Digest refs with FlattenImageData: returns a V2 UUID5 derived from name + digest.
+//   - Digest refs without FlattenImageData: returns the raw digest.
+func (m *manager) imageKey(img *storage.ContainerImage, s *state) string {
+	id := img.GetId()
+
+	if id == "" {
+		return img.GetName().GetFullName()
+	}
+
+	if s.GetFlattenImageData() {
+		return utils.NewImageV2ID(img.GetName(), id)
+	}
+
+	return id
+}
+
+func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *atomic.Int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
 	defer func() {
-		if atomic.AddInt32(pendingCount, -1) == 0 {
+		if pendingCount.Add(-1) == 0 {
 			close(resultChan)
 		}
 	}()
 
-	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
+	imgKey := m.imageKey(image, s)
+	scannedImg, err := m.imageFetchGroup.Coalesce(ctx, imgKey, func() (*storage.Image, error) {
+		if cached := m.getCachedImage(image, s, false); cached != nil {
+			return cached, nil
+		}
+		gen, cacheVer := m.imageCacheGen.Snapshot(imgKey)
+		img, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
+		if err != nil {
+			return nil, err
+		}
+		// Caching inside the Coalesce callback ensures only the leader goroutine
+		// writes to imageCache, avoiding N-1 redundant writes under bursts.
+		// Skip caching if an invalidation or purge happened during this fetch.
+		if !m.imageCacheGen.Changed(imgKey, gen, cacheVer) {
+			m.cacheImage(img, image.GetName().GetFullName(), s)
+		} else {
+			log.Warnf("Stale fetch detected for %q (key=%s): gen or cacheVersion changed during in-flight fetch, discarding result", image.GetName().GetFullName(), imgKey)
+		}
+		return img, nil
+	})
+
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", image.GetName().GetFullName(), err)
 		resultChan <- fetchImageResult{
@@ -123,7 +205,6 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		return
 	}
 
-	m.cacheImage(scannedImg, s)
 	// resultChan is exactly sized so this will be nonblocking
 	resultChan <- fetchImageResult{
 		idx: idx,
@@ -131,11 +212,12 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 	}
 }
 
-func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *state, deployment *storage.Deployment) ([]*storage.Image, <-chan fetchImageResult) {
+func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldFetch bool, s *state, deployment *storage.Deployment) ([]*storage.Image, <-chan fetchImageResult) {
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	imgChan := make(chan fetchImageResult, len(deployment.GetContainers()))
 
-	pendingCount := int32(1)
+	var pendingCount atomic.Int32
+	pendingCount.Store(1)
 	fetchCount := 0
 
 	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
@@ -143,13 +225,12 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 	for idx, container := range deployment.GetContainers() {
 		image := container.GetImage()
 		if image.GetId() != "" || scanInline {
-			cachedImage := m.getCachedImage(image, s)
+			cachedImage := m.getCachedImage(image, s, true)
 			if cachedImage != nil {
 				images[idx] = cachedImage
 			}
-			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
-			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
-				atomic.AddInt32(&pendingCount, 1)
+			if shouldFetch && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
+				pendingCount.Add(1)
 				fetchCount++
 				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 			}
@@ -161,7 +242,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 
 	observeImageFetchesPerReview(fetchCount)
 
-	if atomic.AddInt32(&pendingCount, -1) == 0 {
+	if pendingCount.Add(-1) == 0 {
 		close(imgChan)
 	}
 	return images, imgChan
@@ -213,7 +294,8 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 }
 
 func (m *manager) kickOffImgScansAndDetect(
-	fetchImgCtx context.Context,
+	ctx context.Context,
+	shouldFetch bool,
 	s *state,
 	getAlertsFunc func(*storage.Deployment, []*storage.Image) ([]*storage.Alert, error),
 	deployment *storage.Deployment,
@@ -221,32 +303,31 @@ func (m *manager) kickOffImgScansAndDetect(
 	if deployment == nil {
 		return nil, nil
 	}
-	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
+	images, resultChan := m.getAvailableImagesAndKickOffScans(ctx, shouldFetch, s, deployment)
 	alerts, err := getAlertsFunc(deployment, images)
 
-	if fetchImgCtx != nil {
-		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
-	resultsLoop:
-		// The results loop continues while this returns true, waiting for enrichment data to resolve them.
-		for hasOnlyUnenrichedImageAlerts(alerts) && err == nil {
-			select {
-			case nextRes, ok := <-resultChan:
-				if !ok {
-					break resultsLoop
-				}
-				if nextRes.err != nil {
-					continue
-				}
-				images[nextRes.idx] = nextRes.img
+	if !shouldFetch {
+		return filterOutUnenrichedImageAlerts(alerts), err
+	}
 
-			case <-fetchImgCtx.Done():
+resultsLoop:
+	// The results loop continues while this returns true, waiting for enrichment data to resolve them.
+	for hasOnlyUnenrichedImageAlerts(alerts) && err == nil {
+		select {
+		case nextRes, ok := <-resultChan:
+			if !ok {
 				break resultsLoop
 			}
+			if nextRes.err != nil {
+				continue
+			}
+			images[nextRes.idx] = nextRes.img
 
-			alerts, err = getAlertsFunc(deployment, images)
+		case <-ctx.Done():
+			break resultsLoop
 		}
-	} else {
-		alerts = filterOutUnenrichedImageAlerts(alerts) // no point in alerting on no scans if we're not even trying
+
+		alerts, err = getAlertsFunc(deployment, images)
 	}
 	return alerts, err
 }

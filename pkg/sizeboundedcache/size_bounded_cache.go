@@ -30,7 +30,7 @@ type valueEntry[V any] struct {
 }
 
 type sizeBoundedCache[K comparable, V any] struct {
-	currSize    int64
+	currSize    atomic.Int64
 	maxSize     int64
 	maxItemSize int64
 	sizeFunc    func(key K, value V) int64
@@ -77,7 +77,7 @@ func (c *sizeBoundedCache[K, V]) Purge() {
 	defer c.cacheLock.Unlock()
 
 	c.cache.Purge()
-	atomic.StoreInt64(&c.currSize, 0)
+	c.currSize.Store(0)
 }
 
 func (c *sizeBoundedCache[K, V]) addNoLock(itemSize int64, key K, value V) {
@@ -88,14 +88,14 @@ func (c *sizeBoundedCache[K, V]) addNoLock(itemSize int64, key K, value V) {
 	} else {
 		sizeDelta = itemSize - currValue.totalSize
 	}
-	for atomic.LoadInt64(&c.currSize)+sizeDelta > c.maxSize {
+	for c.currSize.Load()+sizeDelta > c.maxSize {
 		if !c.removeOldestNoLock() {
 			log.Error("internal cache error. We should always be able to make room for a valid cache object")
 			return
 		}
 	}
 	c.cache.Add(key, &valueEntry[V]{value: value, totalSize: itemSize})
-	atomic.AddInt64(&c.currSize, sizeDelta)
+	c.currSize.Add(sizeDelta)
 }
 
 func (c *sizeBoundedCache[K, V]) Add(key K, value V) {
@@ -115,7 +115,7 @@ func (c *sizeBoundedCache[K, V]) removeOldestNoLock() bool {
 		return false
 	}
 
-	atomic.AddInt64(&c.currSize, -value.totalSize)
+	c.currSize.Add(-value.totalSize)
 
 	return true
 }
@@ -134,9 +134,9 @@ func (c *sizeBoundedCache[K, V]) RemoveIf(key K, valPred func(V) bool) {
 	}
 	c.cache.Remove(key)
 
-	atomic.AddInt64(&c.currSize, -value.totalSize)
+	c.currSize.Add(-value.totalSize)
 }
 
 func (c *sizeBoundedCache[K, V]) Stats() (objects, size int64) {
-	return int64(c.cache.Len()), atomic.LoadInt64(&c.currSize)
+	return int64(c.cache.Len()), c.currSize.Load()
 }

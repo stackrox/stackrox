@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -123,8 +124,7 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 
 	unversionedGKs := make(map[schema.GroupKind]schema.GroupVersionKind)
-	for i := len(common.OrderedBundleResourceTypes) - 1; i >= 0; i-- {
-		gvk := common.OrderedBundleResourceTypes[i]
+	for _, gvk := range slices.Backward(common.OrderedBundleResourceTypes) {
 		gk := gvk.GroupKind()
 		if canonicalGVK, exists := unversionedGKs[gk]; exists {
 			log.Infof("Disregarding obsolete resource type %s in favor of %s", gvk, canonicalGVK)

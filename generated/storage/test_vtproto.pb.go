@@ -324,6 +324,7 @@ func (m *TestSingleUUIDKeyStruct) CloneVT() *TestSingleUUIDKeyStruct {
 	r.Timestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Timestamp).CloneVT())
 	r.Enum = m.Enum
 	r.Embedded = m.Embedded.CloneVT()
+	r.OptionalUuid = m.OptionalUuid
 	if rhs := m.StringSlice; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -1419,6 +1420,9 @@ func (this *TestSingleUUIDKeyStruct) EqualVT(that *TestSingleUUIDKeyStruct) bool
 		}
 	}
 	if string(this.Bytess) != string(that.Bytess) {
+		return false
+	}
+	if this.OptionalUuid != that.OptionalUuid {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3040,6 +3044,15 @@ func (m *TestSingleUUIDKeyStruct) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 			return 0, err
 		}
 		i -= size
+	}
+	if len(m.OptionalUuid) > 0 {
+		i -= len(m.OptionalUuid)
+		copy(dAtA[i:], m.OptionalUuid)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.OptionalUuid)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x9a
 	}
 	if len(m.Bytess) > 0 {
 		i -= len(m.Bytess)
@@ -5029,6 +5042,10 @@ func (m *TestSingleUUIDKeyStruct) SizeVT() (n int) {
 	}
 	if vtmsg, ok := m.OneofTwo.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	l = len(m.OptionalUuid)
+	if l > 0 {
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8142,6 +8159,38 @@ func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.OneofTwo = &TestSingleUUIDKeyStruct_OneofTwoInt{OneofTwoInt: v}
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OptionalUuid", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OptionalUuid = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14486,6 +14535,42 @@ func (m *TestSingleUUIDKeyStruct) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.OneofTwo = &TestSingleUUIDKeyStruct_OneofTwoInt{OneofTwoInt: v}
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OptionalUuid", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.OptionalUuid = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
