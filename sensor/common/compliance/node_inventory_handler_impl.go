@@ -2,12 +2,8 @@ package compliance
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/quay/claircore/indexer/controller"
-	"github.com/quay/claircore/pkg/rhctag"
-	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -28,17 +24,6 @@ var (
 	errStartMoreThanOnce        = errors.New("unable to start the component more than once")
 )
 
-const (
-	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
-
-	goldenKey = rhcc.RepositoryKey
-)
-
-var (
-	goldenName = rhcc.GoldRepo.Name
-	goldenURI  = rhcc.GoldRepo.URI
-)
-
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
 	reportWraps  <-chan *index.IndexReportWrap
@@ -52,9 +37,6 @@ type nodeInventoryHandlerImpl struct {
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
-	// archCache stores an architecture per node, so that it can be used in the index report for
-	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
-	archCache map[string]string
 }
 
 func (c *nodeInventoryHandlerImpl) Name() string {
@@ -411,13 +393,6 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		return
 	}
 
-	isRHCOS, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
-	if err != nil {
-		log.Warnf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
-		isRHCOS = false
-	}
-	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
-
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	default:
@@ -426,15 +401,15 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
 			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 		}()
-		irWrapperFunc := noop
-		arch := c.archCache[indexWrap.NodeName]
-		if isRHCOS {
-			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
-				arch = extractArch(indexWrap.IndexReport)
-				c.archCache[indexWrap.NodeName] = arch
+		if hasRHCOSPackage(indexWrap.IndexReport) {
+			log.Debugf("Node=%q has rhcos package from compliance", indexWrap.NodeName)
+		} else {
+			isRHCOS, ver, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
+			if err != nil {
+				log.Debugf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
+			} else if isRHCOS {
+				log.Warnf("Node %q appears to be RHCOS (osImage version=%s) but compliance did not add rhcos package - RHCOS-level vulnerabilities will not be reported", indexWrap.NodeName, ver)
 			}
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
-			irWrapperFunc = attachRPMtoRHCOS
 		}
 		toC <- message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
@@ -444,7 +419,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
 					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
+						IndexReport: indexWrap.IndexReport,
 					},
 				},
 			},
@@ -452,175 +427,11 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	}
 }
 
-func normalizeVersion(version string) []int32 {
-	rhctagVersion, err := rhctag.Parse(version)
-	if err != nil {
-		return []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	}
-	m := rhctagVersion.MinorStart()
-	v := m.Version(true).V
-	// Only two first fields matter for the initial db query that matches the vulnerabilities.
-	// The results of that query will be further filtered using the string value of the Version field.
-	return []int32{v[0], v[1], 0, 0, 0, 0, 0, 0, 0, 0}
-}
-
-func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
-	return rpm
-}
-
-func idTaken[T any](m map[string]T, id int) bool {
-	_, exists := m[strconv.Itoa(id)]
-	return exists
-}
-
-// extractArch deduces the architecture of the node OS based on the index report containing rpm packages.
-func extractArch(rpm *v4.IndexReport) string {
-	for _, distro := range rpm.GetContents().GetDistributions() {
-		if distro.GetArch() != "" && distro.GetArch() != "noarch" {
-			return distro.GetArch()
+func hasRHCOSPackage(report *v4.IndexReport) bool {
+	for _, p := range report.GetContents().GetPackages() {
+		if p.GetName() == "rhcos" {
+			return true
 		}
 	}
-	for _, distro := range rpm.GetContents().GetDistributionsDEPRECATED() {
-		if distro.GetArch() != "" && distro.GetArch() != "noarch" {
-			return distro.GetArch()
-		}
-	}
-	for _, p := range rpm.GetContents().GetPackages() {
-		if p.GetArch() != "" && p.GetArch() != "noarch" {
-			return p.GetArch()
-		}
-	}
-	for _, p := range rpm.GetContents().GetPackagesDEPRECATED() {
-		if p.GetArch() != "" && p.GetArch() != "noarch" {
-			return p.GetArch()
-		}
-	}
-	return ""
-}
-
-func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
-	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
-	envs := rpm.GetContents().GetEnvironments()
-	if len(envs) == 0 {
-		envs = rpm.GetContents().GetEnvironmentsDEPRECATED()
-	}
-	for idTaken(envs, idCandidate) {
-		idCandidate++
-	}
-	strID := strconv.Itoa(idCandidate)
-	oci := buildRHCOSIndexReport(strID, version, arch)
-	for pkgID, pkg := range rpm.GetContents().GetPackages() {
-		oci.Contents.Packages[pkgID] = pkg
-	}
-	oci.Contents.PackagesDEPRECATED = append(oci.Contents.PackagesDEPRECATED, rpm.GetContents().GetPackagesDEPRECATED()...)
-	for repoID, repo := range rpm.GetContents().GetRepositories() {
-		oci.Contents.Repositories[repoID] = repo
-	}
-	oci.Contents.RepositoriesDEPRECATED = append(oci.Contents.RepositoriesDEPRECATED, rpm.GetContents().GetRepositoriesDEPRECATED()...)
-	for envId, list := range rpm.GetContents().GetEnvironments() {
-		oci.Contents.Environments[envId] = list
-	}
-	for envId, list := range rpm.GetContents().GetEnvironmentsDEPRECATED() {
-		oci.Contents.EnvironmentsDEPRECATED[envId] = list
-	}
-	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
-	oci.Contents.DistributionsDEPRECATED = rpm.GetContents().GetDistributionsDEPRECATED()
-	return oci
-}
-
-func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
-	return &v4.IndexReport{
-		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
-		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		State:   controller.IndexFinished.String(),
-		Success: true,
-		Err:     "",
-		Contents: &v4.Contents{
-			Packages: map[string]*v4.Package{
-				Id: {
-					Id:      Id,
-					Name:    "rhcos",
-					Version: version,
-					NormalizedVersion: &v4.NormalizedVersion{
-						Kind: "rhctag",
-						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
-					},
-					Kind: "binary",
-					Source: &v4.Package{
-						Id:      Id,
-						Name:    "rhcos",
-						Kind:    "source",
-						Version: version,
-						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
-					},
-					Arch: arch,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
-			},
-			PackagesDEPRECATED: []*v4.Package{
-				{
-					Id:      Id,
-					Name:    "rhcos",
-					Version: version,
-					NormalizedVersion: &v4.NormalizedVersion{
-						Kind: "rhctag",
-						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
-					},
-					Kind: "binary",
-					Source: &v4.Package{
-						Id:      Id,
-						Name:    "rhcos",
-						Kind:    "source",
-						Version: version,
-						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
-					},
-					Arch: arch,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
-			},
-			Repositories: map[string]*v4.Repository{
-				Id: {
-					Id:   Id,
-					Name: goldenName,
-					Key:  goldenKey,
-					Uri:  goldenURI,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
-			},
-			RepositoriesDEPRECATED: []*v4.Repository{
-				{
-					Id:   Id,
-					Name: goldenName,
-					Key:  goldenKey,
-					Uri:  goldenURI,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
-			},
-			// Environments must be present for the matcher to discover records
-			Environments: map[string]*v4.Environment_List{
-				Id: {
-					Environments: []*v4.Environment{
-						{
-							PackageDb: "",
-							// IntroducedIn must be a valid sha256, but the value is not important.
-							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-							RepositoryIds: []string{Id},
-						},
-					},
-				},
-			},
-			EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
-				Id: {
-					Environments: []*v4.Environment{
-						{
-							PackageDb: "",
-							// IntroducedIn must be a valid sha256, but the value is not important.
-							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-							RepositoryIds: []string{Id},
-						},
-					},
-				},
-			},
-		},
-	}
+	return false
 }
