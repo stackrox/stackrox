@@ -128,7 +128,7 @@ jobs:
           from pre_tests import PreSystemTests
           PreSystemTests().run()
 
-      - name: Deploy StackRox and Execute tests
+      - name: Deploy StackRox
         if: |
           github.event_name != 'pull_request' ||
           contains(github.event.pull_request.labels.*.name, 'ci-all-qa-tests') ||
@@ -160,11 +160,17 @@ jobs:
           # Mask the admin password in GitHub Actions logs
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
+          # Export deployment env vars for next step
+          {
+            echo "ROX_USERNAME=${ROX_USERNAME}"
+            echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}"
+            echo "API_ENDPOINT=${API_ENDPOINT}"
+            echo "CLUSTER=${CLUSTER:-remote}"
+          } >> "$GITHUB_ENV"
+
           # Wait for cluster to be registered in Central
-          # Cluster defaults to "remote" from deploy/common/env.sh if not explicitly set
-          export CLUSTER="${CLUSTER:-remote}"
-          echo "Waiting for cluster '${CLUSTER}' to be registered in Central..."
-          if ! scripts/ci/cluster-registration-wait.sh "${CLUSTER}" stackrox 120; then
+          echo "Waiting for cluster '${CLUSTER:-remote}' to be registered in Central..."
+          if ! scripts/ci/cluster-registration-wait.sh "${CLUSTER:-remote}" stackrox 120; then
             echo "::group::Diagnostic logs - Sensor"
             kubectl -n stackrox logs deployment/sensor --tail=100 || true
             echo "::endgroup::"
@@ -174,7 +180,25 @@ jobs:
             exit 1
           fi
 
-          # Execute test group (BaseSpecification.groovy handles GHA log grouping)
+      - name: Execute tests
+        if: |
+          github.event_name != 'pull_request' ||
+          contains(github.event.pull_request.labels.*.name, 'ci-all-qa-tests') ||
+          !github.event.pull_request.draft ||
+          matrix.test-group != 'testRest'
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          MAIN_IMAGE_TAG: ${{ env.tag }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+          REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
+          REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+        run: |
+          set -euo pipefail
+
+          # BaseSpecification.groovy handles GHA log grouping per test spec
           cd qa-tests-backend
           ./gradlew ${{ matrix.test-group }}
 
