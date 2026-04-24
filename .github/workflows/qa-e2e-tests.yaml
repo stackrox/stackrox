@@ -54,6 +54,7 @@ jobs:
       - name: Get tag
         run: |
           echo "tag=$(make --quiet --no-print-directory tag)" >> "$GITHUB_ENV"
+          echo "scanner_tag=$(make --quiet --no-print-directory scanner-tag)" >> "$GITHUB_ENV"
 
       - name: Create GKE cluster
         uses: stackrox/actions/infra/create-cluster@v1
@@ -115,8 +116,8 @@ jobs:
             rhacs-eng/main:${{ env.tag }}
             rhacs-eng/central-db:${{ env.tag }}
             rhacs-eng/roxctl:${{ env.tag }}
-            rhacs-eng/scanner-v4:${{ env.tag }}
-            rhacs-eng/scanner-v4-db:${{ env.tag }}
+            rhacs-eng/scanner:${{ env.scanner_tag }}
+            rhacs-eng/scanner-db:${{ env.scanner_tag }}
             rhacs-eng/collector:${{ env.tag }}
 
       - name: Run pre-test setup
