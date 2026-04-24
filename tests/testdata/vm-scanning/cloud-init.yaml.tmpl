@@ -1,0 +1,6 @@
+#cloud-config
+users:
+  - name: {{ yamlQuote .GuestUser }}
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - {{ yamlQuote .SSHPublicKey }}
