@@ -18,6 +18,8 @@
 {{ $chartLabel := printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_") }}
 {{ if gt (len $chartLabel) 63 }}
   {{ $chartLabel = trunc 63 $chartLabel }}
+  {{/* Ensure label ends with alphanumeric character */}}
+  {{ $chartLabel = regexReplaceAll "[^a-zA-Z0-9]+$" $chartLabel "" }}
 {{ end }}
 {{ $_ = set $labels "helm.sh/chart" $chartLabel }}
 {{ $_ = set $labels "app.kubernetes.io/instance" $.Release.Name }}
