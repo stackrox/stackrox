@@ -69,8 +69,8 @@ test_ui_e2e() {
     deploy_optional_e2e_components
     deploy_stackrox
 
-    # Enable the console plugin for OpenShift
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+    # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
         enable_console_plugin
     fi
 
