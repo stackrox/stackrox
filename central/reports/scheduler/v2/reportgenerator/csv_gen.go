@@ -20,11 +20,9 @@ var (
 		"Deployment",
 		"Image",
 		"Component",
-		"CVE",
-		"Advisory Name",
-		"Advisory Link",
-		"Fixable",
 		"Component Version",
+		"CVE",
+		"Fixable",
 		"CVE Fixed In",
 		"Severity",
 		"CVSS",
@@ -32,6 +30,8 @@ var (
 		"EPSS Probability Percentage",
 		"Discovered At",
 		"Reference",
+		"Advisory Name",
+		"Advisory Link",
 	}
 )
 
@@ -53,16 +53,18 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			r.GetDeployment(),
 			r.GetImage(),
 			r.GetComponent(),
+			r.GetComponentVersion(),
 			r.GetCVE(),
-			r.GetAdvisoryName(),
-			r.GetAdvisoryLink(),
 			strconv.FormatBool(r.GetFixable()),
 			r.GetFixedByVersion(),
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
+			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
 			epssScore,
 			r.GetDiscoveredAtImage(),
 			r.Link,
+			r.GetAdvisoryName(),
+			r.GetAdvisoryLink(),
 		}
 		csvWriter.AddValue(row)
 	}

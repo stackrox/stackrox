@@ -1395,6 +1395,16 @@
           "type": "string",
           "format": "date-time"
         },
+        "includeNvdCvss": {
+          "type": "boolean",
+          "title": "deprecating optional column fields"
+        },
+        "includeEpssProbability": {
+          "type": "boolean"
+        },
+        "includeAdvisory": {
+          "type": "boolean"
+        },
         "query": {
           "type": "string",
           "title": "Filters related to image, cve etc for non-collection-based scopes"
