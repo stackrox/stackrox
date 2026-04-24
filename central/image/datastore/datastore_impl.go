@@ -81,7 +81,7 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	clonedQuery := q.CloneVT()
 	clonedQuery.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.ImageName).Proto())
 
-	results, err := ds.Search(ctx, q)
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 			return err
 		}
 	}
-	// removing component risk handled by pruning
+	// Component risks are not stored in the risk datastore (only embedded in components).
 	return errorList.ToError()
 }
 

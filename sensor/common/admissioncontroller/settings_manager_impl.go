@@ -69,7 +69,10 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 		if isEnforcedDeployTimePolicy(policy) {
 			deploytimePolicies = append(deploytimePolicies, policy.CloneVT())
 		}
+		// Audit log event policies share field types with k8s event policies
+		// so ContainsOneOf alone is insufficient to distinguish them.
 		if pkgPolicies.AppliesAtRunTime(policy) &&
+			policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT &&
 			booleanpolicy.ContainsOneOf(policy, booleanpolicy.KubeEvent) {
 			runtimePolicies = append(runtimePolicies, policy.CloneVT())
 		}

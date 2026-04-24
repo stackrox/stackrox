@@ -66,7 +66,7 @@ func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
-	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
+	s.componentDataStore = imageComponentDS.New(s.testDB.DB, componentStorage, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.New(s.testDB.DB)
 	s.cveDataStore = imageCVEDS.New(cveStorage)
@@ -645,4 +645,45 @@ func cloneAndUpdateRiskPriority(image *storage.ImageV2) *storage.ImageV2 {
 		component.Priority = 1
 	}
 	return cloned
+}
+
+// TestComponentRiskScorePersistedToDB verifies that when the component ranker
+// contains a risk score for a component, UpsertImage writes that score to the
+// database. This is a regression test for the bug where the ranker was not
+// being updated after risk calculation, causing updateComponentRisk to
+// overwrite calculated scores with 0.
+func (s *ImageV2DataStoreTestSuite) TestComponentRiskScorePersistedToDB() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	componentRanker := ranking.NewRanker()
+	ds := imageDataStoreV2.NewWithPostgres(
+		pgStore.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton()),
+		s.mockRisk,
+		ranking.NewRanker(),
+		componentRanker,
+	)
+
+	img := fixtures.GetImageV2WithUniqueComponents(3)
+
+	// Pre-populate the ranker with known scores for each component,
+	// simulating what the risk manager does after calculating risk.
+	expectedScores := []float32{1.5, 2.7, 4.2}
+	for index, component := range img.GetScan().GetComponents() {
+		componentID := scancomponent.ComponentIDV2(component, img.GetId(), index)
+		componentRanker.Add(componentID, expectedScores[index])
+	}
+
+	s.NoError(ds.UpsertImage(ctx, img))
+
+	// Read back from DB — the risk scores should match what was in the ranker.
+	got, found, err := ds.GetImage(ctx, img.GetId())
+	s.NoError(err)
+	s.True(found)
+
+	gotComponents := got.GetScan().GetComponents()
+	s.Require().Len(gotComponents, 3)
+	for i, component := range gotComponents {
+		s.InDelta(expectedScores[i], component.GetRiskScore(), 0.001,
+			"component %q risk score should be persisted to DB", component.GetName())
+	}
 }

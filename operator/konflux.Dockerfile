@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:b3851bd98933a656c8b738fadd79f34855754a4c4570eac9e31dd54af2f7caad AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -17,7 +17,7 @@ ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:48adecc91f276734fa51987bc2203a31db9ba87a512c436c0a3fcac53135378d
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:cf6d4fe800e3a6b9af0eb4dccb95c33289939cae9893c4338d51c5ae326d0c3e
 
 ARG BUILD_TAG
 

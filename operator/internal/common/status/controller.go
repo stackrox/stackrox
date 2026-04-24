@@ -45,7 +45,7 @@ func New[T platform.ObjectForStatusController](c ctrlClient.Client, name string)
 func (r *Reconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	log = log.WithName(r.name)
-	log.Info("Status reconciliation initiated")
+	log.V(1).Info("Status reconciliation initiated")
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return r.runReconciliationFlow(ctx, log, req)
@@ -69,7 +69,7 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 	// Update condition "Progressing".
 	updatedProgressingCond := r.updateProgressing(ctx, obj)
 	if updatedProgressingCond != nil {
-		log.Info("Progressing condition updated",
+		log.V(1).Info("Progressing condition updated",
 			"status", updatedProgressingCond.Status,
 			"reason", updatedProgressingCond.Reason)
 		anyChanges = true
@@ -78,7 +78,7 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 	// Update condition "Available".
 	updatedAvailableCond := r.updateAvailable(ctx, obj)
 	if updatedAvailableCond != nil {
-		log.Info("Available condition updated",
+		log.V(1).Info("Available condition updated",
 			"status", updatedAvailableCond.Status,
 			"reason", updatedAvailableCond.Reason)
 		anyChanges = true
@@ -92,7 +92,7 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 
 	// Update status subresource.
 	// Conflicts are handled by the retry mechanism in the Reconcile function.
-	log.Info("Updating status")
+	log.V(1).Info("Updating status")
 	if err := r.Status().Update(ctx, obj); err != nil {
 		if !errors.IsConflict(err) {
 			log.Error(err, "Failed to update status")
@@ -100,7 +100,7 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 		return err
 	}
 
-	log.Info("Status updated")
+	log.V(1).Info("Status updated")
 	return nil
 }
 
@@ -122,7 +122,6 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 	err = c.Watch(
 		source.Kind(mgr.GetCache(), emptyCR,
 			&handler.TypedEnqueueRequestForObject[T]{},
-			SkipStatusControllerUpdates[T]{},
 		),
 	)
 	if err != nil {
@@ -139,6 +138,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 				emptyCR,
 				handler.OnlyControllerOwner(),
 			),
+			NewPassThroughUpdatedStatusPredicate(mgr.GetLogger().WithName(r.name)),
 		),
 	)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -81,7 +82,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 // due to the absence (or presence) of image scans.
 func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
 	for _, a := range alerts {
-		if !policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
+		if !policyfields.AlertsOnMissingEnrichment(a.GetPolicy()) {
 			return true
 		}
 	}
@@ -93,7 +94,7 @@ func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
 func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
 	filteredAlerts := alerts[:0]
 	for _, a := range alerts {
-		if policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
+		if policyfields.AlertsOnMissingEnrichment(a.GetPolicy()) {
 			continue
 		}
 		filteredAlerts = append(filteredAlerts, a)
@@ -135,7 +136,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 	log.Debugf("Evaluating policies on %+v", deployment)
 
-	// Check if the deployment has a bypass annotation
+	// Check if deployment has bypass annotation
 	if !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass() {
 		if !enforcers.ShouldEnforce(deployment.GetAnnotations()) {
 			log.Warnf("deployment %s/%s of type %v was deployed without being checked due to matching bypass annotation %q",
@@ -144,6 +145,48 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		}
 	}
 
+	if resp, err := m.evaluateFastPath(s, req, deployment); resp != nil || err != nil {
+		return resp, err
+	}
+
+	return m.evaluateSlowPath(s, req, deployment)
+}
+
+// evaluateFastPath runs deployment-spec-only policies that don't require image enrichment data.
+func (m *manager) evaluateFastPath(s *state, req *admission.AdmissionRequest, deployment *storage.Deployment) (*admission.AdmissionResponse, error) {
+	// Fast path: skip entirely if there are no policies that require deployment spec fields only.
+	if len(s.specOnlyDeployDetector.PolicySet().GetCompiledPolicies()) == 0 {
+		return nil, nil
+	}
+
+	alerts, err := s.specOnlyDeployDetector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     toPlaceholderImages(deployment),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "running StackRox detection")
+	}
+	if len(alerts) == 0 {
+		return nil, nil
+	}
+
+	if !pointer.BoolDeref(req.DryRun, false) {
+		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
+	}
+	unevaluatedPolicyCount := len(s.enrichmentRequiredDeployDetector.PolicySet().GetCompiledPolicies())
+	log.Debugf("Violated policies (fast path): %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
+	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass(), unevaluatedPolicyCount)), nil
+}
+
+// evaluateSlowPath runs image-dependent policies, fetching and scanning images as needed.
+func (m *manager) evaluateSlowPath(s *state, req *admission.AdmissionRequest, deployment *storage.Deployment) (*admission.AdmissionResponse, error) {
+	// Slow path: skip entirely if there are no policies that require image enrichment data.
+	if len(s.enrichmentRequiredDeployDetector.PolicySet().GetCompiledPolicies()) == 0 {
+		log.Debugf("No policies violated, allowing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+		return pass(req.UID), nil
+	}
+
+	// Slow path: Fetch images and evaluate slow path policies. If there are no modified images, skip the scan.
 	var fetchImgCtx context.Context
 	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
 		var cancel context.CancelFunc
@@ -152,7 +195,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.deploytimeDetector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+		return s.enrichmentRequiredDeployDetector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     imgs,
 		})
@@ -173,5 +216,13 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
-	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
+	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass(), 0)), nil
+}
+
+func toPlaceholderImages(deployment *storage.Deployment) []*storage.Image {
+	images := make([]*storage.Image, len(deployment.GetContainers()))
+	for i, c := range deployment.GetContainers() {
+		images[i] = types.ToImage(c.GetImage())
+	}
+	return images
 }
