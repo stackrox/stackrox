@@ -124,7 +124,7 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	cluster.Status.UpgradeStatus = upgradeStatus
 
 	err = ds.clusterStorage.Upsert(ctx, cluster)
-	if err != nil {
+	if err == nil {
 		refresh.RefreshTracker(metrics.Health)
 	}
 	return err
@@ -149,7 +149,7 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 
 	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
 	err = ds.clusterStorage.Upsert(ctx, cluster)
-	if err != nil {
+	if err == nil {
 		refresh.RefreshTracker(metrics.Expiry)
 	}
 	return err
@@ -170,7 +170,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	cluster.Status = status
 
 	err = ds.clusterStorage.Upsert(ctx, cluster)
-	if err != nil {
+	if err == nil {
 		refresh.RefreshTracker(metrics.Health)
 	}
 	return err
