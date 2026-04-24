@@ -15,7 +15,9 @@ spec:
       imagePullSecrets:
         - name: {{.JobName}}-{{.Replica}}
       containers:
-      - args:
+      - command:
+        - berserker
+        args:
         - -f
         - /etc/berserker/workload.ber
         image: quay.io/stackrox-io/berserker:1.0-88-gbc9a937d18
