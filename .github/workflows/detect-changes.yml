@@ -45,6 +45,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_ALL: ${{ inputs.run_all }}
+          WORKFLOW_FILE_PATH: ".github/workflows/detect-changes.yml"
         shell: bash
         run: |
           set -eo pipefail
@@ -70,7 +71,7 @@ jobs:
 
           anchored=$(printf '^%s$\n' "${files[@]}")
 
-          if echo "${anchored}" | grep -qF "^.github/workflows/detect-changes.yml$"; then
+          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
             echo "detect-changes.yml modified, running all jobs" >&2
             exit 0
           fi
