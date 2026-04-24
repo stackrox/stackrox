@@ -21,6 +21,12 @@ concurrency:
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
+    with:
+      run_all: |
+        ^Makefile$
+        ^make/
+        ^.github/workflows/style.yaml$
+        ^.github/actions/job-preamble/
 
   check-generated-files:
     env:

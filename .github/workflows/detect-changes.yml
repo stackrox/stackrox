@@ -3,16 +3,29 @@ name: Detect changed files
 # Outputs the list of files changed in a PR, one per line, wrapped
 # with ^ and $ anchors (e.g. ^ui/src/App.tsx$). Jobs match with
 # contains() using anchors for precise substring matching:
-#   '^scripts/'  — root directory (won't match nested scripts/)
+#   '^scripts/'  — full tree under a root directory
 #   '.go$'       — file extension (won't match .gotmpl)
 #   '^go.mod$'   — exact root file
 #
 # Empty output (push events, API failure, 3000+ files) is falsy,
 # so jobs prefix with: !needs.detect-changes.outputs.files ||
 # to default to "run" when the file list is unavailable.
+#
+# Optional run_all input: patterns that affect all jobs. If any
+# changed file matches, output stays empty so all jobs run.
 
 on:
   workflow_call:
+    inputs:
+      run_all:
+        description: >
+          Newline-separated list of patterns (same ^/$ anchored
+          format as the output). If any changed file matches any
+          of these, output is empty and all jobs run.
+          Example: '^Makefile$', '^make/', '^.github/actions/job-preamble/'
+        type: string
+        required: false
+        default: ''
     outputs:
       files:
         description: >
@@ -32,6 +45,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ALL: ${{ inputs.run_all }}
         shell: bash
         run: |
           set -eo pipefail
@@ -53,6 +67,19 @@ jobs:
           if [[ ${#files[@]} -ge 3000 ]]; then
             echo "::warning::PR has 3000+ changed files" >&2
             exit 0
+          fi
+
+          # Check run_all patterns — if any match, output stays empty
+          # so all jobs run via the !...files fallback.
+          if [[ -n "${RUN_ALL}" ]]; then
+            anchored=$(printf '^%s$\n' "${files[@]}")
+            while IFS= read -r pattern; do
+              [[ -z "$pattern" ]] && continue
+              if echo "${anchored}" | grep -qF "$pattern"; then
+                echo "run_all: matched '${pattern}', running all jobs" >&2
+                exit 0
+              fi
+            done <<< "${RUN_ALL}"
           fi
 
           if [[ ${#files[@]} -gt 0 ]]; then
