@@ -88,6 +88,19 @@ func TestValidateEntityScope(t *testing.T) {
 			expectError: true,
 			errContains: "provide at least one matching value",
 		},
+		"invalid regex is rejected": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_NAME, regexValue("[invalid")),
+			),
+			expectError: true,
+			errContains: "invalid regex",
+		},
+		"valid regex is accepted": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_NAME, regexValue("web-.*")),
+			),
+			expectError: false,
+		},
 		"label with regex match type is valid": {
 			scope: makeEntityScope(
 				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_LABEL, regexValue("env=prod")),
@@ -100,6 +113,13 @@ func TestValidateEntityScope(t *testing.T) {
 			),
 			expectError: true,
 			errContains: "key=value",
+		},
+		"label with invalid k8s key": {
+			scope: makeEntityScope(
+				makeRule(apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT, apiV2.ScopeField_FIELD_LABEL, exactValue("invalid key!=value")),
+			),
+			expectError: true,
+			errContains: "invalid",
 		},
 		"cluster annotation unsupported": {
 			scope: makeEntityScope(

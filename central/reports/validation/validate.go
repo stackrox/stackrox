@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	k8sValidation "k8s.io/apimachinery/pkg/api/validate/content"
 )
 
 // Use this context only to
@@ -235,10 +237,23 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 			return errors.Wrapf(errox.InvalidArgs,
 				"provide at least one matching value for entity=%v field=%v rule", rule.GetEntity(), rule.GetField())
 		}
-		if rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
-			for _, rv := range rule.GetValues() {
-				if !strings.Contains(rv.GetValue(), "=") {
+		isMapField := rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION
+		for _, rv := range rule.GetValues() {
+			valOfValue := rv.GetValue()
+			if isMapField {
+				mapKey, mapValue, found := strings.Cut(valOfValue, "=")
+				if !found {
 					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
+				}
+				// Check the key for a Kubernetes qualified name.
+				if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
+					return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+				}
+				valOfValue = mapValue
+			}
+			if rv.GetMatchType() == apiV2.MatchType_REGEX {
+				if _, err := regexp.Compile(valOfValue); err != nil {
+					return errors.Wrapf(errox.InvalidArgs, "invalid regex %q: %v", valOfValue, err)
 				}
 			}
 		}
