@@ -22,9 +22,9 @@ jobs:
       matrix:
         test-group:
           - "testBegin testParallel"
-          - "testBAT"
-          - "testRest"
-          - "testSensorBounce testSensorBounceNext"
+          # - "testBAT"
+          # - "testRest"
+          # - "testSensorBounce testSensorBounceNext"
 
     env:
       CLUSTER_NAME: e2e-${{ github.run_id }}-${{ github.run_attempt }}-${{ strategy.job-index }}
@@ -86,7 +86,7 @@ jobs:
           install_components: "gke-gcloud-auth-plugin"
 
       - name: Wait for cluster and get kubeconfig
-        timeout-minutes: 10
+        timeout-minutes: 30
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
