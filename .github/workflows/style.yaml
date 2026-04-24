@@ -21,6 +21,12 @@ concurrency:
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
+    with:
+      run_all: |
+        ^Makefile$
+        ^make/
+        ^.github/workflows/style.yaml$
+        ^.github/actions/job-preamble/
 
   check-generated-files:
     needs: detect-changes
@@ -28,8 +34,6 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '.go$') ||
       contains(needs.detect-changes.outputs.files, '^go.mod$') ||
-      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
-      contains(needs.detect-changes.outputs.files, '^make/') ||
       contains(needs.detect-changes.outputs.files, '^proto/') ||
       contains(needs.detect-changes.outputs.files, '^generated/') ||
       contains(needs.detect-changes.outputs.files, '^operator/') ||
@@ -136,8 +140,6 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '.sh$') ||
       contains(needs.detect-changes.outputs.files, '^proto/') ||
-      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
-      contains(needs.detect-changes.outputs.files, '^make/') ||
       contains(needs.detect-changes.outputs.files, '^qa-tests-backend/') ||
       contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
     runs-on: ubuntu-latest
@@ -210,8 +212,7 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^go.mod$') ||
       contains(needs.detect-changes.outputs.files, '^go.sum$') ||
       contains(needs.detect-changes.outputs.files, '^.golangci.yml$') ||
-      contains(needs.detect-changes.outputs.files, '^Makefile$') ||
-      contains(needs.detect-changes.outputs.files, '^make/')
+      contains(needs.detect-changes.outputs.files, '^tools/')
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
