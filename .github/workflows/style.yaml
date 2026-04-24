@@ -142,6 +142,11 @@ jobs:
         with:
           node-version-file: ui/package.json
 
+      - uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b # ratchet:actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Install xmlstarlet for shellcheck output to junit
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
