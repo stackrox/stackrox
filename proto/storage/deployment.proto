@@ -62,10 +62,10 @@ message Deployment {
   bool platform_component = 35; // @gotags: search:"Platform Component"
   // `deleted` is the time at which the underlying deployment workload was
   // deleted. `nil` if the workload exists.
-  google.protobuf.Timestamp deleted = 36; // @gotags: search:"Deleted,hidden" hash:"ignore"
+  google.protobuf.Timestamp deleted = 36; // @gotags: search:"Deleted,hidden" hash:"ignore" sql:"index=btree"
 
   // `state` indicates the current status of the deployment workload.
-  DeploymentState state = 37; // @gotags: search:"Deployment State"
+  DeploymentState state = 37; // @gotags: search:"Deployment State,hidden"
 }
 
 // Next tag: 13
