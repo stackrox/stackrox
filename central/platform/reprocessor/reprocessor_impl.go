@@ -52,7 +52,7 @@ func New(alertDatastore alertDS.DataStore,
 	return &platformReprocessorImpl{
 		alertDatastore:      alertDatastore,
 		configDatastore:     configDatastore,
-		deploymentDatastore: deploymentDatastore,
+		deploymentDatastore: deploymentDS.NewActiveStateDatastore(deploymentDatastore),
 		platformMatcher:     platformMatcher,
 		semaphore:           semaphore.NewWeighted(1),
 		stopSignal:          concurrency.NewSignal(),
@@ -158,9 +158,9 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
 	var q *v1.Query
 	if pr.customized {
-		q = deploymentDS.ActiveDeploymentsQuery()
+		q = search.EmptyQuery()
 	} else {
-		q = search.ConjunctionQuery(unsetPlatformComponentQuery, deploymentDS.ActiveDeploymentsQuery())
+		q = unsetPlatformComponentQuery
 	}
 	q.Pagination = &v1.QueryPagination{
 		Limit: batchSize,

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -57,6 +58,7 @@ type imageFields interface {
 
 // NewVulnMgmtHandler returns an http.HandlerFunc implementation that returns all the required events for the Splunk TA
 func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.DataStore, imagesV2 imageV2Datastore.DataStore) http.HandlerFunc {
+	activeDeployments := datastore.NewActiveStateDatastore(deployments)
 	return func(w http.ResponseWriter, r *http.Request) {
 		arrayWriter := jsonutil.NewJSONArrayWriter(w)
 		if err := arrayWriter.Init(); err != nil {
@@ -64,7 +66,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 			return
 		}
 
-		ids, err := deployments.GetDeploymentIDs(r.Context(), datastore.ActiveDeploymentsQuery())
+		ids, err := activeDeployments.GetDeploymentIDs(r.Context(), search.EmptyQuery())
 		if err != nil {
 			httputil.WriteError(w, err)
 			return
@@ -74,7 +76,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 
 		imageSet := set.NewStringSet()
 		for _, id := range ids {
-			deployment, exists, err := deployments.GetDeployment(r.Context(), id)
+			deployment, exists, err := activeDeployments.GetDeployment(r.Context(), id)
 			if err != nil {
 				httputil.WriteError(w, err)
 				return

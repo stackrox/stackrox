@@ -85,7 +85,7 @@ func newManager(standardsRegistry *standards.Registry, complianceOperatorManager
 
 		clusterStore:    clusterStore,
 		nodeStore:       nodeStore,
-		deploymentStore: deploymentStore,
+		deploymentStore: datastore.NewActiveStateDatastore(deploymentStore),
 		podStore:        podStore,
 
 		dataRepoFactory: dataRepoFactory,
@@ -115,8 +115,7 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
-	activeDeploymentQuery := search.ConjunctionQuery(clusterQuery, datastore.ActiveDeploymentsQuery())
-	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, activeDeploymentQuery)
+	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
