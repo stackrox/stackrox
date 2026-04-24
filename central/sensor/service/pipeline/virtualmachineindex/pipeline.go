@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/v1tov2storage"
@@ -18,12 +19,18 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
+)
+
+const (
+	matcherNotReadyReasonText = "the matcher is not initialized"
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -78,6 +85,26 @@ func sendVMIndexNACK(ctx context.Context, resourceID, reason string, injector co
 	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, reason, injector)
 }
 
+func reasonForEnrichmentFailure(err error) string {
+	if isMatcherNotReadyError(err) {
+		return centralsensor.SensorACKReasonMatcherNotReady
+	}
+	return centralsensor.SensorACKReasonEnrichmentFailed
+}
+
+func isMatcherNotReadyError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	grpcStatus, ok := status.FromError(err)
+	if !ok || grpcStatus.Code() != codes.FailedPrecondition {
+		return false
+	}
+
+	return strings.Contains(grpcStatus.Message(), matcherNotReadyReasonText)
+}
+
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
@@ -121,7 +148,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Enrich VM with vulnerabilities
 	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
 	if err != nil {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonEnrichmentFailed, injector)
+		sendVMIndexNACK(ctx, index.GetId(), reasonForEnrichmentFailure(err), injector)
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
