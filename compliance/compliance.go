@@ -325,6 +325,7 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 
 // publishLatestVMRelayConfig publishes config without blocking and keeps at most
 // the latest scrape config in the channel buffer.
+// REQUIRES: single producer; concurrent calls are unsafe.
 func publishLatestVMRelayConfig(vmRelayConfigC chan *sensor.MsgToCompliance_ScrapeConfig, config *sensor.MsgToCompliance_ScrapeConfig) {
 	select {
 	case vmRelayConfigC <- config:

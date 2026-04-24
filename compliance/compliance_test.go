@@ -144,6 +144,14 @@ func TestShouldRunVMRelay(t *testing.T) {
 }
 
 func TestWaitForVMRelayEligibility(t *testing.T) {
+	t.Run("should start for nil config as safe fallback", func(t *testing.T) {
+		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
+		defer close(configC)
+		configC <- (*sensor.MsgToCompliance_ScrapeConfig)(nil)
+
+		require.True(t, waitForVMRelayEligibility(context.Background(), configC))
+	})
+
 	t.Run("should start immediately for worker config", func(t *testing.T) {
 		t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), "")
 		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
