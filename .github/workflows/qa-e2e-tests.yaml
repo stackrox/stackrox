@@ -31,6 +31,7 @@ jobs:
       CI_JOB_NAME: qa-e2e-tests-${{ strategy.job-index }}
       ARTIFACT_DIR: ./junit-reports
       ORCHESTRATOR_FLAVOR: k8s
+      KUBERNETES_PROVIDER: gke
       POD_SECURITY_POLICIES: "false"
       GCP_IMAGE_TYPE: cos_containerd
       OUTPUT_FORMAT: helm
