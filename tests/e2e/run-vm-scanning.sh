@@ -34,7 +34,11 @@ test_vm_scanning_e2e() {
 
     cd "$ROOT"
     rm -f FAIL
-    # Run VM scanning preflight tests.
+    # Run unit tests that cover the vmhelpers package.
+    make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-unit-tests || touch FAIL
+    store_test_results "tests/vm-scanning-unit-tests-results" "vm-scanning-unit-tests-results"
+
+    # Run the full VM scanning e2e suite.
     make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL
     store_test_results "tests/vm-scanning-tests-results" "$output_dir"
     [[ ! -f FAIL ]] || die "VM scanning e2e tests failed"
