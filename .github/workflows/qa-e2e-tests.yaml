@@ -158,7 +158,21 @@ jobs:
           source qa-tests-backend/scripts/run-part-1.sh
 
           # Deploy StackRox (sets ROX_USERNAME, ROX_ADMIN_PASSWORD, etc.)
-          config_part_1
+          if ! config_part_1; then
+            echo "::group::Pod status"
+            kubectl -n stackrox get pods -o wide || true
+            echo "::endgroup::"
+            echo "::group::Central pod describe"
+            kubectl -n stackrox describe pod -l app=central || true
+            echo "::endgroup::"
+            echo "::group::Central logs"
+            kubectl -n stackrox logs deployment/central --all-containers=true --tail=200 || true
+            echo "::endgroup::"
+            echo "::group::Scanner V4 DB logs"
+            kubectl -n stackrox logs deployment/scanner-v4-db --tail=100 || true
+            echo "::endgroup::"
+            exit 1
+          fi
 
           # Mask the admin password in GitHub Actions logs
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
