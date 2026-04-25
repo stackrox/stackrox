@@ -382,15 +382,33 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 
 func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
+		if ds == nil {
+			return nil, nil
+		}
 		telemetryCtx := sac.WithAllAccess(ctx)
 		counts, err := ds.DistinctProfiles(telemetryCtx, search.EmptyQuery())
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering compliance operator profiles for telemetry")
 		}
-		profiles := make(map[string]any, len(counts))
+		props := make(map[string]any, len(counts)+1)
 		for profile, count := range counts {
-			profiles["Compliance Operator Profile "+profile] = count
+			props["Compliance Operator Profile "+profile] = count
 		}
-		return profiles, nil
+
+		scanConfigs, err := ds.GetScanConfigurations(telemetryCtx, search.EmptyQuery())
+		if err != nil {
+			return props, errors.Wrap(err, "gathering tailored profile count for telemetry")
+		}
+		tailoredCount := 0
+		for _, sc := range scanConfigs {
+			for _, ref := range sc.GetProfileRefs() {
+				if ref.GetKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+					tailoredCount++
+				}
+			}
+		}
+		props["Compliance Operator Tailored Profile"] = tailoredCount
+
+		return props, nil
 	}
 }

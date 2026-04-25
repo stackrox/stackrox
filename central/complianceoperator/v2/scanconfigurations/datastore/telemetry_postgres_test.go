@@ -1,0 +1,163 @@
+//go:build sql_integration
+
+package datastore
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestGatherProfiles(t *testing.T) {
+	t.Setenv(features.ComplianceEnhancements.EnvVar(), "true")
+
+	pool := pgtest.ForT(t)
+	ds := GetTestPostgresDataStore(t, pool.DB)
+
+	writeCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Compliance, resources.Cluster),
+		),
+	)
+
+	testCases := map[string]struct {
+		scanConfigs         []*storage.ComplianceOperatorScanConfigurationV2
+		expectedTailored    int
+		expectedProfileKeys []string
+	}{
+		"no scan configs": {
+			scanConfigs:         nil,
+			expectedTailored:    0,
+			expectedProfileKeys: nil,
+		},
+		"scan config with only regular profiles": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfig("scan-regular", []profileDef{
+					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
+					{"ocp4-nist", storage.ComplianceOperatorProfileV2_PROFILE},
+				}),
+			},
+			expectedTailored:    0,
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile ocp4-nist"},
+		},
+		"scan config with tailored profiles": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfig("scan-tailored", []profileDef{
+					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
+					{"my-tailored-cis", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+				}),
+			},
+			expectedTailored:    1,
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile my-tailored-cis"},
+		},
+		"multiple scan configs with multiple tailored profiles": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfig("scan-1", []profileDef{
+					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
+					{"tp-cis", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+				}),
+				makeScanConfig("scan-2", []profileDef{
+					{"tp-nist", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+					{"tp-pci", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+				}),
+			},
+			expectedTailored:    3,
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile tp-cis", "Compliance Operator Profile tp-nist", "Compliance Operator Profile tp-pci"},
+		},
+		"scan config without profile_refs populated": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfigNoRefs("scan-no-refs", []string{"ocp4-cis"}),
+			},
+			expectedTailored:    0,
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis"},
+		},
+		"scan config with unspecified kind does not count as tailored": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfig("scan-unspecified", []profileDef{
+					{"ocp4-cis", storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED},
+					{"ocp4-nist", storage.ComplianceOperatorProfileV2_PROFILE},
+					{"tp-custom", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+				}),
+			},
+			expectedTailored:    1,
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile ocp4-nist", "Compliance Operator Profile tp-custom"},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			for _, sc := range tc.scanConfigs {
+				require.NoError(t, ds.UpsertScanConfiguration(writeCtx, sc))
+			}
+			t.Cleanup(func() {
+				for _, sc := range tc.scanConfigs {
+					_, _ = ds.DeleteScanConfiguration(writeCtx, sc.GetId())
+				}
+			})
+
+			props, err := GatherProfiles(ds)(context.Background())
+			require.NoError(t, err)
+
+			assert.Equal(t, tc.expectedTailored, props["Compliance Operator Tailored Profile"])
+
+			for _, key := range tc.expectedProfileKeys {
+				assert.Contains(t, props, key)
+			}
+		})
+	}
+}
+
+type profileDef struct {
+	name string
+	kind storage.ComplianceOperatorProfileV2_OperatorKind
+}
+
+func makeScanConfig(scanName string, profiles []profileDef) *storage.ComplianceOperatorScanConfigurationV2 {
+	profileNames := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(profiles))
+	profileRefs := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileReference, 0, len(profiles))
+	for _, p := range profiles {
+		profileNames = append(profileNames, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			ProfileName: p.name,
+		})
+		profileRefs = append(profileRefs, &storage.ComplianceOperatorScanConfigurationV2_ProfileReference{
+			Name: p.name,
+			Kind: p.kind,
+		})
+	}
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		Id:             uuid.NewV4().String(),
+		ScanConfigName: scanName,
+		Profiles:       profileNames,
+		ProfileRefs:    profileRefs,
+		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			{ClusterId: testconsts.Cluster1},
+		},
+	}
+}
+
+func makeScanConfigNoRefs(scanName string, profiles []string) *storage.ComplianceOperatorScanConfigurationV2 {
+	profileNames := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(profiles))
+	for _, p := range profiles {
+		profileNames = append(profileNames, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			ProfileName: p,
+		})
+	}
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		Id:             uuid.NewV4().String(),
+		ScanConfigName: scanName,
+		Profiles:       profileNames,
+		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			{ClusterId: testconsts.Cluster1},
+		},
+	}
+}

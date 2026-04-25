@@ -687,7 +687,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(authProviderTelemetry.Gather)
 	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 	add(clusterDataStore.Gather)
-	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 	add(declarativeconfig.ManagerSingleton().Gather())
 	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 	add(externalbackupsDS.Gather)
@@ -695,10 +695,10 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(globaldb.Gather)
 	add(imageintegrationsDS.Gather)
 	add(notifierDS.Gather)
+	add(policyDataStore.Gather)
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
-	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
-	add(policyDataStore.Gather)
+	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
