@@ -585,45 +585,96 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
-      - name: Build main images
+      - name: Prepare build contexts
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+          GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
+          cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
 
-      - name: Check debugger presence in the main image
-        run: make check-debugger
-
-      - name: Build roxctl image
+      - name: Compute image tags
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
+          source ./scripts/ci/lib.sh
+          registry="$(registry_from_branding "${{ env.ROX_PRODUCT_BRANDING }}")"
+          tag="${{ env.BUILD_TAG }}"
+          arch="${{ matrix.arch }}"
+          NL=$'\n'
 
-      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
 
-      - name: Push images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
+          for image in main roxctl central-db; do
+            TAGS="${registry}/${image}:${tag}-${arch}"
+            TAGS="${TAGS}${NL}${registry}/${image}:cache-${arch}"
+
+            if [[ "$push_context" == "merge-to-master" ]]; then
+              TAGS="${TAGS}${NL}${registry}/${image}:latest-${arch}"
             fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+            TAG_VAR="$(echo "${image}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')_TAGS"
+            {
+              echo "${TAG_VAR}<<EOF"
+              echo "$TAGS"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          done
+
+          echo "QUAY_REGISTRY=${registry}" >> "$GITHUB_ENV"
+
+      - name: Login to quay.io
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_USERNAME || secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_PASSWORD || secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Build and push main image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # ratchet:docker/build-push-action@v6
+        with:
+          context: image/rhel
+          file: image/rhel/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: ${{ github.event_name == 'push' || !github.event.pull_request.head.repo.fork }}
+          provenance: false
+          tags: ${{ env.MAIN_TAGS }}
+          build-args: |
+            DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
+            ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
+            TARGET_ARCH=${{ matrix.arch }}
+            ROX_IMAGE_FLAVOR=development_build
+            LABEL_VERSION=${{ env.BUILD_TAG }}
+            LABEL_RELEASE=${{ env.SHORTCOMMIT }}
+          cache-from: type=registry,ref=${{ env.QUAY_REGISTRY }}/main:cache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.QUAY_REGISTRY }}/main:cache-${{ matrix.arch }},mode=max,compression=zstd
+
+      - name: Build and push roxctl image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # ratchet:docker/build-push-action@v6
+        with:
+          context: image/roxctl
+          file: image/roxctl/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: ${{ github.event_name == 'push' || !github.event.pull_request.head.repo.fork }}
+          provenance: false
+          tags: ${{ env.ROXCTL_TAGS }}
+          cache-from: type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:cache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:cache-${{ matrix.arch }},mode=max,compression=zstd
+
+      - name: Build and push central-db image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # ratchet:docker/build-push-action@v6
+        with:
+          context: image/postgres
+          file: image/postgres/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: ${{ github.event_name == 'push' || !github.event.pull_request.head.repo.fork }}
+          provenance: false
+          tags: ${{ env.CENTRAL_DB_TAGS }}
+          build-args: |
+            MAIN_IMAGE_TAG=${{ env.BUILD_TAG }}
+          cache-from: type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:cache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:cache-${{ matrix.arch }},mode=max,compression=zstd
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
