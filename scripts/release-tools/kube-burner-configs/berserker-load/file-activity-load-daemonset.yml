@@ -23,10 +23,10 @@ spec:
         image: quay.io/stackrox-io/berserker:1.0-88-gbc9a937d18
         resources:
           requests:
-            memory: "10Mi"
+            memory: "20Mi"
             cpu: "15m"
           limits:
-            memory: "10Mi"
+            memory: "20Mi"
             cpu: "15m"
         volumeMounts:
         - name: config
