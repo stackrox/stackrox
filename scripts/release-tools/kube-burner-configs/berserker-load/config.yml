@@ -32,24 +32,24 @@ jobs:
     objects:
 
       - objectTemplate: process-load-daemonset.yml
-        replicas: 4
+        replicas: 6
         inputVars:
           podReplicas: 2
 
       - objectTemplate: endpoint-load-daemonset.yml
-        replicas: 4
+        replicas: 6
         inputVars:
           podReplicas: 2
 
       - objectTemplate: connection-load-daemonset.yml
-        replicas: 4
+        replicas: 6
         inputVars:
           podReplicas: 2
 
       - objectTemplate: file-activity-load-daemonset.yml
         replicas: 4
         inputVars:
-          podReplicas: 1
+          podReplicas: 2
 
       - objectTemplate: service.yml
         replicas: 10
