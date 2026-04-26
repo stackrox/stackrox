@@ -543,30 +543,21 @@ jobs:
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
-      - name: Cache buildah
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # ratchet:actions/cache@v4
-        with:
-          path: /opt/buildah
-          key: buildah-${{ runner.arch }}
-
       - name: Upgrade buildah
         run: |
           echo "Need >= 1.41 for COPY --link support"
-          if [[ -x /opt/buildah/bin/buildah ]]; then
-            echo "Using cached buildah"
+          ver=$(buildah version | awk '/^Version:/{print $2}')
+          if [[ "$ver" > "1.40" ]]; then
+            echo "buildah $ver is sufficient"
           else
-            echo "Extracting from quay.io/buildah/stable..."
-            id=$(docker create quay.io/buildah/stable:latest)
-            mkdir -p /opt/buildah/bin /opt/buildah/lib
-            docker cp "$id:/usr/bin/buildah" /opt/buildah/bin/buildah
-            for lib in $(docker run --rm quay.io/buildah/stable ldd /usr/bin/buildah | awk '/=>/{print $3}'); do
-              docker cp "$id:$lib" /opt/buildah/lib/ 2>/dev/null || true
-            done
-            docker rm "$id" > /dev/null
+            echo "Upgrading via kubic repo (per redhat-actions/podman-install)..."
+            . /etc/os-release
+            curl -fsSL "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/Release.key" \
+              | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubic.gpg
+            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/ /" \
+              | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
+            sudo apt-get update -qq && sudo apt-get install -y -qq buildah
           fi
-          export LD_LIBRARY_PATH="/opt/buildah/lib:${LD_LIBRARY_PATH:-}"
-          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          echo "/opt/buildah/bin" >> "$GITHUB_PATH"
           buildah version | head -1
 
       - name: Checkout submodules
