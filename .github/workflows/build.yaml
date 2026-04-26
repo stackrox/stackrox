@@ -548,10 +548,10 @@ jobs:
           ver=$(buildah version | awk '/^Version:/{print $2}')
           echo "Installed: buildah $ver"
           if [[ "$ver" < "1.41" ]]; then
-            echo "Installing buildah from source..."
-            sudo apt-get install -y -qq libgpgme-dev libseccomp-dev
-            go install github.com/containers/buildah/cmd/buildah@v1.43.0
-            sudo cp "$(go env GOPATH)/bin/buildah" /usr/bin/buildah
+            echo "Extracting buildah from quay.io/buildah/stable..."
+            id=$(docker create quay.io/buildah/stable:latest)
+            sudo docker cp "$id:/usr/bin/buildah" /usr/bin/buildah
+            docker rm "$id" > /dev/null
             echo "Upgraded: $(buildah version | head -1)"
           fi
 
