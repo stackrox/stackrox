@@ -548,13 +548,11 @@ jobs:
           ver=$(buildah version | awk '/^Version:/{print $2}')
           echo "Installed: buildah $ver"
           if [[ "$ver" < "1.41" ]]; then
-            . /etc/os-release
-            curl -fsSL "https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_${VERSION_ID}/Release.key" \
-              | sudo gpg --dearmor -o /etc/apt/keyrings/kubic.gpg
-            echo "deb [signed-by=/etc/apt/keyrings/kubic.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_${VERSION_ID}/ /" \
-              | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
-            sudo apt-get update -qq && sudo apt-get install -y -qq buildah
-            echo "Upgraded: buildah $(buildah version | awk '/^Version:/{print $2}')"
+            echo "Installing buildah from source..."
+            sudo apt-get install -y -qq libgpgme-dev libseccomp-dev
+            go install github.com/containers/buildah/cmd/buildah@v1.43.0
+            sudo cp "$(go env GOPATH)/bin/buildah" /usr/bin/buildah
+            echo "Upgraded: $(buildah version | head -1)"
           fi
 
       - name: Checkout submodules
