@@ -664,7 +664,7 @@ jobs:
           REGISTRY_USERNAME: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_USERNAME || secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           REGISTRY_PASSWORD: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_PASSWORD || secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         run: |
-          echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USERNAME" --password-stdin quay.io
+          echo "$REGISTRY_PASSWORD" | sudo buildah login -u "$REGISTRY_USERNAME" --password-stdin quay.io
 
       - name: Build and push images
         # Skip for external contributions.
@@ -672,11 +672,11 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           tag_flags() { echo "$1" | while read -r t; do [[ -n "$t" ]] && echo "--tag=$t"; done; }
-          push_tags() { local root="$1"; while IFS= read -r t; do [[ -n "$t" ]] && buildah --root "$root" push "$t" || return 1; done; }
+          push_tags() { local root="$1"; while IFS= read -r t; do [[ -n "$t" ]] && sudo buildah --root "$root" push "$t" || return 1; done; }
           REGISTRY="${{ env.QUAY_REGISTRY }}"
           ARCH="${{ matrix.arch }}"
 
-          buildah build --layers \
+          sudo buildah build --layers \
             --root "$RUNNER_TEMP/store-main" --runroot "$RUNNER_TEMP/run-main" \
             --file image/rhel/Dockerfile \
             --platform linux/${ARCH} \
@@ -692,7 +692,7 @@ jobs:
             image/rhel &
           pid_main=$!
 
-          buildah build --layers \
+          sudo buildah build --layers \
             --root "$RUNNER_TEMP/store-roxctl" --runroot "$RUNNER_TEMP/run-roxctl" \
             --file image/roxctl/Dockerfile \
             --platform linux/${ARCH} \
@@ -702,7 +702,7 @@ jobs:
             image/roxctl &
           pid_roxctl=$!
 
-          buildah build --layers \
+          sudo buildah build --layers \
             --root "$RUNNER_TEMP/store-centraldb" --runroot "$RUNNER_TEMP/run-centraldb" \
             --file image/postgres/Dockerfile \
             --platform linux/${ARCH} \
