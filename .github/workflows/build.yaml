@@ -545,9 +545,17 @@ jobs:
 
       - name: Ensure buildah >= 1.41 (COPY --link support)
         run: |
-          buildah version
-          [[ "$(buildah version | awk '/^Version:/{print $2}')" > "1.40" ]] \
-            || { sudo apt-get update -qq && sudo apt-get install -y -qq buildah && buildah version; }
+          ver=$(buildah version | awk '/^Version:/{print $2}')
+          echo "Installed: buildah $ver"
+          if [[ "$ver" < "1.41" ]]; then
+            . /etc/os-release
+            curl -fsSL "https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_${VERSION_ID}/Release.key" \
+              | sudo gpg --dearmor -o /etc/apt/keyrings/kubic.gpg
+            echo "deb [signed-by=/etc/apt/keyrings/kubic.gpg] https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_${VERSION_ID}/ /" \
+              | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
+            sudo apt-get update -qq && sudo apt-get install -y -qq buildah
+            echo "Upgraded: buildah $(buildah version | awk '/^Version:/{print $2}')"
+          fi
 
       - name: Checkout submodules
         run: |
@@ -596,8 +604,8 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
           cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
-          echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
           cp -f *VERSION image/rhel/
+          echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
 
       - name: Compute image tags
         run: |
@@ -634,12 +642,10 @@ jobs:
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          if [[ "${{ env.QUAY_REGISTRY }}" == "quay.io/stackrox-io" ]]; then
-            buildah login -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" -p "${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}" quay.io
-          else
-            buildah login -u "${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}" -p "${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}" quay.io
-          fi
+        env:
+          REGISTRY_USERNAME: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_USERNAME || secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          REGISTRY_PASSWORD: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_PASSWORD || secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        run: echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USERNAME" --password-stdin quay.io
 
       - name: Build and push images
         run: |
