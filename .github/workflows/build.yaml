@@ -560,7 +560,7 @@ jobs:
             echo "Building static buildah 1.43.0 from source (will be cached for next run)"
             docker run --rm -v /usr/local/bin:/out golang:1.24-alpine sh -c '
               apk add --no-cache git gcc musl-dev linux-headers \
-                gpgme-dev libseccomp-dev libassuan-dev lvm2-dev btrfs-progs-dev
+                gpgme-dev libseccomp-dev libseccomp-static libassuan-dev lvm2-dev btrfs-progs-dev
               git clone --depth 1 --branch v1.43.0 https://github.com/containers/buildah.git /buildah
               cd /buildah
               CGO_ENABLED=1 go build \
