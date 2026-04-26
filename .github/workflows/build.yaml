@@ -597,6 +597,8 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
           cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
+          echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
+          cp -f *VERSION image/rhel/
 
       - name: Compute image tags
         run: |
