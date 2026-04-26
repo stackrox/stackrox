@@ -543,24 +543,10 @@ jobs:
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
+      # Need buildah >= 1.41 for COPY --link support.
+      # redhat-actions/podman-install handles kubic repo + dependency workarounds.
       - name: Upgrade buildah
-        run: |
-          echo "Need >= 1.41 for COPY --link support"
-          ver=$(buildah version | awk '/^Version:/{print $2}')
-          if [[ "$ver" > "1.40" ]]; then
-            echo "buildah $ver is sufficient"
-          else
-            # Same repo used by redhat-actions/podman-install:
-            # https://github.com/redhat-actions/podman-install/blob/main/action.yml#L50
-            echo "Upgrading via kubic repo..."
-            UBUNTU_VER=23.10
-            curl -fsSL "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${UBUNTU_VER}/Release.key" \
-              | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubic.gpg
-            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${UBUNTU_VER}/ /" \
-              | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
-            sudo apt-get update -qq && sudo apt-get install -y -qq --allow-unauthenticated buildah
-          fi
-          buildah version | head -1
+        uses: redhat-actions/podman-install@edf9cd67e118e45e295f27c6e3ef5f73ad6505d3 # ratchet:redhat-actions/podman-install@v1
 
       - name: Checkout submodules
         run: |
