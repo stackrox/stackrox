@@ -637,7 +637,7 @@ jobs:
 
       - name: Build and push images
         run: |
-          tag_flags() { echo "$1" | while read -r t; do [[ -n "$t" ]] && echo "--tag=$t"; done; }
+          to_tag_args() { local -n arr=$1; while read -r t; do [[ -n "$t" ]] && arr+=("--tag=$t"); done <<< "$2"; }
 
           if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ github.event.pull_request.head.repo.fork }}" != "true" ]]; then
             OUTPUT="--push"
@@ -645,18 +645,22 @@ jobs:
             OUTPUT="--load"
           fi
 
+          to_tag_args main_tags "$MAIN_TAGS"
+          to_tag_args roxctl_tags "$ROXCTL_TAGS"
+          to_tag_args centraldb_tags "$CENTRAL_DB_TAGS"
+
           docker buildx build \
             --file image/rhel/Dockerfile \
             --platform linux/${{ matrix.arch }} \
             $OUTPUT --provenance=false \
-            $(tag_flags "$MAIN_TAGS") \
+            "${main_tags[@]}" \
             --build-arg DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }} \
             --build-arg ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }} \
             --build-arg TARGET_ARCH=${{ matrix.arch }} \
             --build-arg ROX_IMAGE_FLAVOR=development_build \
             --build-arg LABEL_VERSION=${{ env.BUILD_TAG }} \
             --build-arg LABEL_RELEASE=${{ env.SHORTCOMMIT }} \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/main:nocache-${{ matrix.arch }} \
+            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/main:cache-${{ matrix.arch }} \
             --cache-to type=inline \
             image/rhel &
           pid_main=$!
@@ -665,8 +669,8 @@ jobs:
             --file image/roxctl/Dockerfile \
             --platform linux/${{ matrix.arch }} \
             $OUTPUT --provenance=false \
-            $(tag_flags "$ROXCTL_TAGS") \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:nocache-${{ matrix.arch }} \
+            "${roxctl_tags[@]}" \
+            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:cache-${{ matrix.arch }} \
             --cache-to type=inline \
             image/roxctl &
           pid_roxctl=$!
@@ -675,9 +679,9 @@ jobs:
             --file image/postgres/Dockerfile \
             --platform linux/${{ matrix.arch }} \
             $OUTPUT --provenance=false \
-            $(tag_flags "$CENTRAL_DB_TAGS") \
+            "${centraldb_tags[@]}" \
             --build-arg MAIN_IMAGE_TAG=${{ env.BUILD_TAG }} \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:nocache-${{ matrix.arch }} \
+            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:cache-${{ matrix.arch }} \
             --cache-to type=inline \
             image/postgres &
           pid_centraldb=$!
