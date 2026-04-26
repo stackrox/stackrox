@@ -656,7 +656,7 @@ jobs:
             --build-arg ROX_IMAGE_FLAVOR=development_build \
             --build-arg LABEL_VERSION=${{ env.BUILD_TAG }} \
             --build-arg LABEL_RELEASE=${{ env.SHORTCOMMIT }} \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/main:cache-${{ matrix.arch }} \
+            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/main:nocache-${{ matrix.arch }} \
             --cache-to type=inline \
             image/rhel &
           pid_main=$!
@@ -666,7 +666,7 @@ jobs:
             --platform linux/${{ matrix.arch }} \
             $OUTPUT --provenance=false \
             $(tag_flags "$ROXCTL_TAGS") \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:cache-${{ matrix.arch }} \
+            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:nocache-${{ matrix.arch }} \
             --cache-to type=inline \
             image/roxctl &
           pid_roxctl=$!
@@ -677,7 +677,7 @@ jobs:
             $OUTPUT --provenance=false \
             $(tag_flags "$CENTRAL_DB_TAGS") \
             --build-arg MAIN_IMAGE_TAG=${{ env.BUILD_TAG }} \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:cache-${{ matrix.arch }} \
+            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:nocache-${{ matrix.arch }} \
             --cache-to type=inline \
             image/postgres &
           pid_centraldb=$!
