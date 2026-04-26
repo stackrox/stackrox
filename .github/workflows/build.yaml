@@ -544,22 +544,31 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       # Need buildah >= 1.41 for COPY --link support.
-      - name: Upgrade buildah
-        if: matrix.arch == 'amd64'
-        uses: redhat-actions/podman-install@edf9cd67e118e45e295f27c6e3ef5f73ad6505d3 # ratchet:redhat-actions/podman-install@v1
+      # Ubuntu repos and kubic repos only ship 1.39.x.
+      # Build a static binary from source (cached across runs).
+      - name: Cache buildah
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # ratchet:actions/cache@v4
+        with:
+          path: /usr/local/bin/buildah
+          key: buildah-1.43.0-${{ runner.arch }}
 
-      # redhat-actions/podman-install hardcodes amd64 CRIU package
-      - name: Upgrade buildah (arm64)
-        if: matrix.arch == 'arm64'
+      - name: Upgrade buildah
         run: |
-          echo "redhat-actions/podman-install hardcodes amd64 CRIU, installing directly for arm64"
-          echo "Need >= 1.41 for COPY --link support"
-          . /etc/os-release
-          curl -fsSL "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/Release.key" \
-            | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubic.gpg
-          echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/ /" \
-            | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
-          sudo apt-get update -qq && sudo apt-get install -y -qq buildah
+          if [[ -x /usr/local/bin/buildah ]]; then
+            echo "Using cached buildah"
+          else
+            echo "Building static buildah 1.43.0 from source (will be cached for next run)"
+            docker run --rm -v /usr/local/bin:/out golang:1.24-alpine sh -c '
+              apk add --no-cache git gcc musl-dev linux-headers \
+                gpgme-dev libseccomp-dev libassuan-dev lvm2-dev btrfs-progs-dev
+              git clone --depth 1 --branch v1.43.0 https://github.com/containers/buildah.git /buildah
+              cd /buildah
+              CGO_ENABLED=1 go build \
+                -tags "seccomp exclude_graphdriver_devicemapper containers_image_openpgp" \
+                -ldflags "-s -w -linkmode external -extldflags -static" \
+                -o /out/buildah ./cmd/buildah
+            '
+          fi
           buildah version | head -1
 
       - name: Checkout submodules
