@@ -181,8 +181,11 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable version for Go binaries — produces byte-identical output
+      # across commits that don't change Go source. Enables Docker
+      # COPY --link layer caching: unchanged binary = cached layer = skip push.
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -263,8 +266,9 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable version for byte-identical binaries (see pre-build-cli comment)
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
