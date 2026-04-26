@@ -544,9 +544,23 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       # Need buildah >= 1.41 for COPY --link support.
-      # redhat-actions/podman-install handles kubic repo + dependency workarounds.
       - name: Upgrade buildah
+        if: matrix.arch == 'amd64'
         uses: redhat-actions/podman-install@edf9cd67e118e45e295f27c6e3ef5f73ad6505d3 # ratchet:redhat-actions/podman-install@v1
+
+      # redhat-actions/podman-install hardcodes amd64 CRIU package
+      - name: Upgrade buildah (arm64)
+        if: matrix.arch == 'arm64'
+        run: |
+          echo "redhat-actions/podman-install hardcodes amd64 CRIU, installing directly for arm64"
+          echo "Need >= 1.41 for COPY --link support"
+          . /etc/os-release
+          curl -fsSL "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/Release.key" \
+            | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubic.gpg
+          echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/ /" \
+            | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq buildah
+          buildah version | head -1
 
       - name: Checkout submodules
         run: |
