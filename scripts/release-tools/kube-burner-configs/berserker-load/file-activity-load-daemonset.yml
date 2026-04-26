@@ -12,8 +12,6 @@ spec:
       labels:
         app: file-activity-load-{{.Replica}}
     spec:
-      imagePullSecrets:
-        - name: {{.JobName}}-{{.Replica}}
       containers:
       - command:
         - berserker
