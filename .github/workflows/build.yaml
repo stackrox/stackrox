@@ -543,7 +543,11 @@ jobs:
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
-      # buildah is pre-installed on ubuntu runners — no container boot overhead
+      - name: Ensure buildah >= 1.41 (COPY --link support)
+        run: |
+          buildah version
+          [[ "$(buildah version | awk '/^Version:/{print $2}')" > "1.40" ]] \
+            || { sudo apt-get update -qq && sudo apt-get install -y -qq buildah && buildah version; }
 
       - name: Checkout submodules
         run: |
