@@ -653,8 +653,8 @@ jobs:
             --build-arg ROX_IMAGE_FLAVOR=development_build \
             --build-arg LABEL_VERSION=${{ env.BUILD_TAG }} \
             --build-arg LABEL_RELEASE=${{ env.SHORTCOMMIT }} \
-            --cache-from ${REGISTRY}/main:cache-${ARCH} \
-            --cache-to ${REGISTRY}/main:cache-${ARCH} \
+            --cache-from ${REGISTRY}/main \
+            --cache-to ${REGISTRY}/main \
             image/rhel &
           pid_main=$!
 
@@ -662,8 +662,8 @@ jobs:
             --file image/roxctl/Dockerfile \
             --platform linux/${ARCH} \
             $(tag_flags "$ROXCTL_TAGS") \
-            --cache-from ${REGISTRY}/roxctl:cache-${ARCH} \
-            --cache-to ${REGISTRY}/roxctl:cache-${ARCH} \
+            --cache-from ${REGISTRY}/roxctl \
+            --cache-to ${REGISTRY}/roxctl \
             image/roxctl &
           pid_roxctl=$!
 
@@ -672,8 +672,8 @@ jobs:
             --platform linux/${ARCH} \
             $(tag_flags "$CENTRAL_DB_TAGS") \
             --build-arg MAIN_IMAGE_TAG=${{ env.BUILD_TAG }} \
-            --cache-from ${REGISTRY}/central-db:cache-${ARCH} \
-            --cache-to ${REGISTRY}/central-db:cache-${ARCH} \
+            --cache-from ${REGISTRY}/central-db \
+            --cache-to ${REGISTRY}/central-db \
             image/postgres &
           pid_centraldb=$!
 
