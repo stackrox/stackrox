@@ -561,6 +561,8 @@ jobs:
             docker cp "$id:/usr/bin/buildah" /tmp/buildah
             docker rm "$id" > /dev/null
             sudo install /tmp/buildah /usr/local/bin/buildah
+            # Install shared libs the extracted binary needs
+            sudo apt-get install -y -qq libsubid5 2>/dev/null || true
           fi
           buildah version | head -1
 
