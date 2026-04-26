@@ -543,27 +543,30 @@ jobs:
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
-      - name: Cache buildah binary
-        id: cache-buildah
+      - name: Cache buildah
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # ratchet:actions/cache@v4
         with:
-          path: /usr/local/bin/buildah
+          path: /opt/buildah
           key: buildah-${{ runner.arch }}
 
       - name: Upgrade buildah
         run: |
           echo "Need >= 1.41 for COPY --link support"
-          if [[ -x /usr/local/bin/buildah ]]; then
-            echo "Using cached binary"
+          if [[ -x /opt/buildah/bin/buildah ]]; then
+            echo "Using cached buildah"
           else
             echo "Extracting from quay.io/buildah/stable..."
             id=$(docker create quay.io/buildah/stable:latest)
-            docker cp "$id:/usr/bin/buildah" /tmp/buildah
+            mkdir -p /opt/buildah/bin /opt/buildah/lib
+            docker cp "$id:/usr/bin/buildah" /opt/buildah/bin/buildah
+            for lib in $(docker run --rm quay.io/buildah/stable ldd /usr/bin/buildah | awk '/=>/{print $3}'); do
+              docker cp "$id:$lib" /opt/buildah/lib/ 2>/dev/null || true
+            done
             docker rm "$id" > /dev/null
-            sudo install /tmp/buildah /usr/local/bin/buildah
-            # Install shared libs the extracted binary needs
-            sudo apt-get install -y -qq libsubid5 2>/dev/null || true
           fi
+          export LD_LIBRARY_PATH="/opt/buildah/lib:${LD_LIBRARY_PATH:-}"
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "/opt/buildah/bin" >> "$GITHUB_PATH"
           buildah version | head -1
 
       - name: Checkout submodules
