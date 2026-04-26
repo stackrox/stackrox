@@ -653,12 +653,17 @@ jobs:
         run: echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USERNAME" --password-stdin quay.io
 
       - name: Build and push images
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           tag_flags() { echo "$1" | while read -r t; do [[ -n "$t" ]] && echo "--tag=$t"; done; }
+          push_tags() { local root="$1"; while IFS= read -r t; do [[ -n "$t" ]] && buildah --root "$root" push "$t" || return 1; done; }
           REGISTRY="${{ env.QUAY_REGISTRY }}"
           ARCH="${{ matrix.arch }}"
 
           buildah build --layers \
+            --root "$RUNNER_TEMP/store-main" --runroot "$RUNNER_TEMP/run-main" \
             --file image/rhel/Dockerfile \
             --platform linux/${ARCH} \
             $(tag_flags "$MAIN_TAGS") \
@@ -674,6 +679,7 @@ jobs:
           pid_main=$!
 
           buildah build --layers \
+            --root "$RUNNER_TEMP/store-roxctl" --runroot "$RUNNER_TEMP/run-roxctl" \
             --file image/roxctl/Dockerfile \
             --platform linux/${ARCH} \
             $(tag_flags "$ROXCTL_TAGS") \
@@ -683,6 +689,7 @@ jobs:
           pid_roxctl=$!
 
           buildah build --layers \
+            --root "$RUNNER_TEMP/store-centraldb" --runroot "$RUNNER_TEMP/run-centraldb" \
             --file image/postgres/Dockerfile \
             --platform linux/${ARCH} \
             $(tag_flags "$CENTRAL_DB_TAGS") \
@@ -692,13 +699,21 @@ jobs:
             image/postgres &
           pid_centraldb=$!
 
-          wait $pid_main $pid_roxctl $pid_centraldb
+          rc=0
+          wait "$pid_main"      || { echo "::error::main build failed"; rc=1; }
+          wait "$pid_roxctl"    || { echo "::error::roxctl build failed"; rc=1; }
+          wait "$pid_centraldb" || { echo "::error::central-db build failed"; rc=1; }
+          [[ $rc -eq 0 ]] || exit $rc
 
-          # Push all images (buildah build doesn't have --push)
-          echo "$MAIN_TAGS" | while read -r t; do [[ -n "$t" ]] && buildah push "$t"; done &
-          echo "$ROXCTL_TAGS" | while read -r t; do [[ -n "$t" ]] && buildah push "$t"; done &
-          echo "$CENTRAL_DB_TAGS" | while read -r t; do [[ -n "$t" ]] && buildah push "$t"; done &
-          wait
+          # Push all images in parallel (buildah build doesn't have --push)
+          push_tags "$RUNNER_TEMP/store-main"      <<<"$MAIN_TAGS"       & pp_main=$!
+          push_tags "$RUNNER_TEMP/store-roxctl"    <<<"$ROXCTL_TAGS"     & pp_roxctl=$!
+          push_tags "$RUNNER_TEMP/store-centraldb" <<<"$CENTRAL_DB_TAGS" & pp_db=$!
+          rc=0
+          wait "$pp_main"   || { echo "::error::main push failed"; rc=1; }
+          wait "$pp_roxctl" || { echo "::error::roxctl push failed"; rc=1; }
+          wait "$pp_db"     || { echo "::error::central-db push failed"; rc=1; }
+          [[ $rc -eq 0 ]] || exit $rc
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
