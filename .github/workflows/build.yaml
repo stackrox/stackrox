@@ -550,13 +550,15 @@ jobs:
           if [[ "$ver" > "1.40" ]]; then
             echo "buildah $ver is sufficient"
           else
-            echo "Upgrading via kubic repo (per redhat-actions/podman-install)..."
-            . /etc/os-release
-            curl -fsSL "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/Release.key" \
+            # Same repo used by redhat-actions/podman-install:
+            # https://github.com/redhat-actions/podman-install/blob/main/action.yml#L50
+            echo "Upgrading via kubic repo..."
+            UBUNTU_VER=23.10
+            curl -fsSL "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${UBUNTU_VER}/Release.key" \
               | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubic.gpg
-            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${VERSION_ID}/ /" \
+            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_${UBUNTU_VER}/ /" \
               | sudo tee /etc/apt/sources.list.d/kubic.list > /dev/null
-            sudo apt-get update -qq && sudo apt-get install -y -qq buildah
+            sudo apt-get update -qq && sudo apt-get install -y -qq --allow-unauthenticated buildah
           fi
           buildah version | head -1
 
