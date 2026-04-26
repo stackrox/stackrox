@@ -543,17 +543,26 @@ jobs:
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
-      - name: Ensure buildah >= 1.41 (COPY --link support)
+      - name: Cache buildah binary
+        id: cache-buildah
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # ratchet:actions/cache@v4
+        with:
+          path: /usr/local/bin/buildah
+          key: buildah-${{ runner.arch }}
+
+      - name: Upgrade buildah
         run: |
-          ver=$(buildah version | awk '/^Version:/{print $2}')
-          echo "Installed: buildah $ver"
-          if [[ "$ver" < "1.41" ]]; then
-            echo "Extracting buildah from quay.io/buildah/stable..."
+          echo "Need >= 1.41 for COPY --link support"
+          if [[ -x /usr/local/bin/buildah ]]; then
+            echo "Using cached binary"
+          else
+            echo "Extracting from quay.io/buildah/stable..."
             id=$(docker create quay.io/buildah/stable:latest)
-            sudo docker cp "$id:/usr/bin/buildah" /usr/bin/buildah
+            docker cp "$id:/usr/bin/buildah" /tmp/buildah
             docker rm "$id" > /dev/null
-            echo "Upgraded: $(buildah version | head -1)"
+            sudo install /tmp/buildah /usr/local/bin/buildah
           fi
+          buildah version | head -1
 
       - name: Checkout submodules
         run: |
