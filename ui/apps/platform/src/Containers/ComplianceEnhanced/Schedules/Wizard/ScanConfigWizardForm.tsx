@@ -16,7 +16,6 @@ import useModal from 'hooks/useModal';
 import useRestQuery from 'hooks/useRestQuery';
 import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
 import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
-import { listProfileSummaries } from 'services/ComplianceProfileService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ScanConfigOptions from './ScanConfigOptions';
@@ -127,14 +126,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, isLoading: isFetchingClusters } = useRestQuery(listClustersQuery);
-
-    const listProfilesQuery = useCallback(() => {
-        if (clustersUsedForProfileData.length > 0) {
-            return listProfileSummaries(clustersUsedForProfileData);
-        }
-        return Promise.resolve([]);
-    }, [clustersUsedForProfileData]);
-    const { data: profiles, isLoading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
 
     const { isModalOpen, openModal, closeModal } = useModal();
 
@@ -271,8 +262,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     >
                         <ProfileSelection
                             alertRef={alertRef}
-                            profiles={profiles ?? []}
-                            isFetchingProfiles={isFetchingProfiles}
+                            clusterIds={clustersUsedForProfileData}
                         />
                     </WizardStep>
                     <WizardStep
