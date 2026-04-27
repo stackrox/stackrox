@@ -110,9 +110,9 @@ metadata:
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	_, err = src.Deployment("central-db")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not found")
+	dep, err := src.Deployment("central-db")
+	assert.NoError(t, err)
+	assert.Nil(t, dep)
 }
 
 func TestDirSource_YmlExtension(t *testing.T) {
@@ -164,7 +164,7 @@ func TestDirSource_EmptyDir(t *testing.T) {
 	src, err := NewDirSource(dir)
 	require.NoError(t, err)
 
-	_, err = src.Deployment("central-db")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not found")
+	dep, err := src.Deployment("central-db")
+	assert.NoError(t, err)
+	assert.Nil(t, dep)
 }

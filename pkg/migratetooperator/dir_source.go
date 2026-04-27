@@ -13,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 )
@@ -44,9 +45,6 @@ func (s *dirSource) Deployment(name string) (*appsv1.Deployment, error) {
 		return false
 	}); err != nil {
 		return nil, err
-	}
-	if found == nil {
-		return nil, errors.Errorf("Deployment %q not found in %q", name, s.dir)
 	}
 	return found, nil
 }
@@ -87,8 +85,12 @@ func (s *dirSource) Secret(name string) (*corev1.Secret, error) {
 	return found, nil
 }
 
-func (s *dirSource) Route(name string) (bool, error) {
-	return s.resourceExists("Route", name)
+func (s *dirSource) Route(name string) (*unstructured.Unstructured, error) {
+	found, err := s.resourceExists("Route", name)
+	if err != nil || !found {
+		return nil, err
+	}
+	return &unstructured.Unstructured{}, nil
 }
 
 func (s *dirSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
@@ -102,9 +104,6 @@ func (s *dirSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
 		return false
 	}); err != nil {
 		return nil, err
-	}
-	if found == nil {
-		return nil, errors.Errorf("DaemonSet %q not found in %q", name, s.dir)
 	}
 	return found, nil
 }
