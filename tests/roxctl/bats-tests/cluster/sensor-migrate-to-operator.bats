@@ -80,3 +80,32 @@ generate_bundle_and_migrate() {
   assert_success
   assert_output "AvoidTaints"
 }
+
+# Error cases
+
+@test "sensor migrate-to-operator: fails without --from-dir or --namespace" {
+  run roxctl-development sensor migrate-to-operator
+  assert_failure
+  assert_output --partial "either --from-dir or --namespace must be specified"
+}
+
+@test "sensor migrate-to-operator: fails with --from-dir and --namespace" {
+  run roxctl-development sensor migrate-to-operator --from-dir /tmp --namespace stackrox
+  assert_failure
+  assert_output --partial "if any flags in the group"
+}
+
+@test "sensor migrate-to-operator: fails with nonexistent directory" {
+  run roxctl-development sensor migrate-to-operator --from-dir /nonexistent/path
+  assert_failure
+  assert_output --partial "accessing directory"
+}
+
+@test "sensor migrate-to-operator: fails with empty directory" {
+  local empty_dir
+  empty_dir="$(mktemp -d)"
+  run roxctl-development sensor migrate-to-operator --from-dir "$empty_dir"
+  assert_failure
+  assert_output --partial "not found"
+  rm -rf "$empty_dir"
+}
