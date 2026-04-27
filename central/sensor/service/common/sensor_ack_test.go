@@ -41,6 +41,50 @@ func TestSendSensorACK_InjectorWithoutCapabilitySupport(t *testing.T) {
 	assert.Empty(t, injector.messages, "should not send when SensorACKSupport capability is not advertised")
 }
 
+func TestVMIndexACKResourceID(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		vmID     string
+		vsockCID string
+		expected string
+	}{
+		{
+			name:     "returns pair when both vm id and cid are present",
+			vmID:     "vm-1",
+			vsockCID: "100",
+			expected: "vm-1:100",
+		},
+		{
+			name:     "returns vm id when cid is missing",
+			vmID:     "vm-1",
+			vsockCID: "",
+			expected: "vm-1",
+		},
+		{
+			name:     "returns cid when vm id is missing",
+			vmID:     "",
+			vsockCID: "100",
+			expected: "100",
+		},
+		{
+			name:     "returns empty string when both vm id and cid are missing",
+			vmID:     "",
+			vsockCID: "",
+			expected: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			actual := VMIndexACKResourceID(tc.vmID, tc.vsockCID)
+			assert.Equalf(t, tc.expected, actual, "expected resource id %q, but got %q", tc.expected, actual)
+		})
+	}
+}
+
 type mockInjector struct {
 	messages     []*central.MsgToSensor
 	injectErr    error
