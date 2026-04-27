@@ -243,7 +243,10 @@ class BaseSpecification extends Specification {
         MDC.put("specification", this.class.getSimpleName())
 
         if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
-            println("::group::${this.class.getSimpleName()}")
+            // GitHub Actions workflow command - CodeNarc suppression needed
+            @SuppressWarnings('SystemOutPrint')
+            def printGroupStart = { System.out.println("::group::${this.class.getSimpleName()}") }
+            printGroupStart()
         }
 
         log.info("Starting testsuite")
@@ -341,7 +344,10 @@ class BaseSpecification extends Specification {
         }
 
         if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
-            println("::endgroup::")
+            // GitHub Actions workflow command - CodeNarc suppression needed
+            @SuppressWarnings('SystemOutPrint')
+            def printGroupEnd = { System.out.println("::endgroup::") }
+            printGroupEnd()
         }
 
         MDC.remove("specification")
