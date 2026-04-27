@@ -6,12 +6,15 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 
 import type { DetailsType, ReportPageAction } from '../reports.types';
 
-export type DetailsStepProps = {
-    formik: FormikProps<DetailsType>;
+export type DetailsStepProps<T extends DetailsType = DetailsType> = {
+    formik: FormikProps<T>;
     pageAction: ReportPageAction;
 };
 
-function DetailsStep({ formik, pageAction }: DetailsStepProps): ReactElement {
+function DetailsStep<T extends DetailsType = DetailsType>({
+    formik,
+    pageAction,
+}: DetailsStepProps<T>): ReactElement {
     return (
         <PageSection>
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
