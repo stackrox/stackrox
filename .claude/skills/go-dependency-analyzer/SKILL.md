@@ -135,83 +135,31 @@ goda list "reach(./..., module-name/...)" | cut -d: -f1 | sort -u | wc -l
 
 ### Step 4: Find Actual Usage Locations (Direct Dependencies Only)
 
-**First: Check for wrapper packages**
-
-Many dependencies are wrapped by internal `pkg/` packages. Check if this is the case:
+**Check for wrapper pattern:** Some dependencies are wrapped by `pkg/` packages (e.g., zap via pkg/logging). If wrapped, count BOTH direct imports AND wrapper usage.
 
 ```bash
-# Search for wrapper in pkg/
-grep -r '"module-name' pkg/ --include="*.go" --exclude-dir=vendor | head -10
-
-# If found wrapper, also count wrapper usage
-grep -r 'pkg/wrapper-name"' --include="*.go" --exclude-dir=vendor --exclude="*_test.go" | wc -l
-```
-
-**Example:** `go.uber.org/zap` is wrapped by `pkg/logging` - need to count BOTH:
-- Direct imports of zap (usually just in pkg/logging)
-- Imports of pkg/logging (actual usage across codebase)
-
-**Then: Find direct imports**
-
-```bash
-# Find all direct imports of the package
+# Find direct imports
 grep -r '"module-name' --include="*.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | head -20
-
-# Separate production vs test usage
-grep -r '"module-name' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | wc -l
-grep -r '"module-name' --include="*_test.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | wc -l
-
-# Use goda to show files that import it
 goda list "reach(./..., module-name/...)" | head -30
-```
 
-**If wrapper detected:**
+# Separate production vs test
+grep -r '"module-name' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | wc -l
+grep -r '"module-name' --include="*_test.go" --exclude-dir=vendor | wc -l
 
-Also analyze wrapper usage:
-
-```bash
-# Count wrapper package users
-grep -r 'pkg/wrapper"' --include="*.go" --exclude-dir=vendor --exclude="*_test.go" | wc -l
-
-# Find components using wrapper
-grep -r 'pkg/wrapper"' --include="*.go" --exclude-dir=vendor --exclude="*_test.go" | cut -d: -f1 | cut -d/ -f1 | sort -u
+# If wrapper detected in pkg/, count wrapper users too
+grep -r 'pkg/wrapper"' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | wc -l
 ```
 
 ### Step 5: Analyze Used Functionality (Direct Dependencies Only)
 
-**Optional: GitNexus Integration**
-
-If GitNexus MCP is available in the repository, PreToolUse:Bash hooks will automatically provide context like:
-```
-[GitNexus] 2 related symbols found:
-zapLogConverter (pkg/logging/log_converter_impl.go)
-```
-
-Use this context to identify key files and functions quickly. This is supplementary - proceed with manual analysis regardless.
-
-**Manual analysis:**
-
-Use gopls MCP tools for precise analysis when available:
+Use gopls MCP tools (`mcp__gopls__go_search`, `mcp__gopls__go_symbol_references`) or grep to find specific function usage:
 
 ```bash
-# Use mcp__gopls__go_search to find symbol usage
-# Search for types, functions from the vulnerable package
+# Search for vulnerable functions mentioned in CVE
+grep -r "FunctionName" --include="*.go" --exclude-dir=vendor | head -20
 ```
 
-For each file that imports the dependency:
-1. Use `mcp__gopls__go_file_context` to see what's imported
-2. Use `mcp__gopls__go_symbol_references` to find specific function calls
-3. Use `Grep` with function names from CVE description
-4. Reference GitNexus hook context if it appears
-
-**Example for CVE analysis:**
-```bash
-# If CVE mentions "QueryRow" vulnerability in pgx
-grep -r "QueryRow" --include="*.go" --exclude-dir=vendor | head -20
-
-# If CVE mentions specific prometheus metric types
-grep -r "NewCounter\|NewGauge\|NewHistogram" --include="*.go" --exclude-dir=vendor | head -10
-```
+Note: GitNexus hooks may auto-provide symbol context if available.
 
 ### Step 6: Determine Production Impact
 
@@ -310,73 +258,6 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 [If CVE with production impact: assign to team(s) from CODEOWNERS owning files that use the intermediate package]
 ```
 
-## Advanced Techniques
-
-### Analyzing multiple dependencies efficiently
-
-When asked to analyze multiple dependencies (e.g., "check pgx, docker, and zap"):
-
-**Step 1: Batch the go.mod checks**
-```bash
-# Check all at once
-grep -E "pgx|docker|zap" go.mod
-
-# Check for replaces
-grep -E "pgx|docker|zap" go.mod | grep "=>"
-```
-
-**Step 2: Count files in parallel**
-```bash
-# Production files for each
-grep -r "jackc/pgx" --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | wc -l
-grep -r '"github.com/docker' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | wc -l
-grep -r '"go.uber.org/zap"' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | wc -l
-```
-
-**Step 3: Present as summary table**
-Create a comparison table showing all dependencies side-by-side for easy decision-making.
-
-### Use goda for dependency trees
-
-IMPORTANT: goda commands work in current directory automatically.
-
-```bash
-# Show what imports this dependency
-goda graph "reach(./..., module-name/...)" | head -20
-
-# Show transitive dependency path
-goda graph "module-name/...:deps" | grep -A5 -B5 "module-name"
-
-# Filter by specific packages
-goda list "reach(./central/..., module-name/...)"
-
-# Count unique packages using dependency
-goda list "reach(./..., module-name/...)" | cut -d: -f1 | sort -u | wc -l
-```
-
-### Check version constraints
-
-```bash
-# See exact version used (works in current directory)
-go list -m module-name
-
-# Check if already updated
-go list -m -u module-name
-
-# Check for replace directives
-grep "^replace.*module-name" go.mod
-```
-
-### Verify test-only usage
-
-```bash
-# List all test files importing it
-find . -name "*_test.go" -exec grep -l "module-name" {} \;
-
-# Compare with non-test files
-find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
-```
-
 ## Examples
 
 ### Example 1: Direct production dependency
@@ -439,63 +320,7 @@ find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
 N/A - Test-only transitive dependency (not production-critical)
 ```
 
-### Example 3: Transitive not-used functionality
-
-**User:** "CVE in yaml.v3 affects Unmarshal, are we vulnerable?"
-
-**Actions:**
-1. Found yaml.v3 as transitive dependency
-2. Searched actual usage: `grep -r "yaml\.Unmarshal" --include="*.go"`
-3. Found we only use `yaml.Marshal` for writing config
-4. CVE affects Unmarshal only
-
-**Result:**
-```
-## CVE Analysis: yaml.v3 Unmarshal
-
-**Status:** NOT VULNERABLE - Functionality not used
-
-**Specific Functionality:**
-- CVE affects: yaml.Unmarshal() parsing untrusted input
-- We use: yaml.Marshal() - config writing only
-- No calls to vulnerable Unmarshal function
-
-**Team Assignment:**
-N/A - Vulnerable functionality not used (can close issue)
-```
-
-### Example 4: Upgrade impact analysis
-
-**User:** "We're considering upgrading to Go 1.25. What packages use old reflect APIs?"
-
-**Actions:**
-1. Search for deprecated API usage: `grep -r "reflect.SliceHeader" --include="*.go"`
-2. Use gopls: `mcp__gopls__go_search` with query "SliceHeader"
-3. Analyze impacted files and their component ownership
-4. Check if alternatives exist
-
-**Result:**
-```
-## Dependency Analysis: reflect.SliceHeader (Go 1.25 deprecation)
-
-**Status:** PRODUCTION CODE AFFECTED - Migration needed
-
-**Usage Summary:**
-- Standard library API (deprecated in Go 1.25)
-- Production files: 3 files
-- Components affected: central/metrics, pkg/utils
-
-**Locations:**
-- central/metrics/collector.go:89 - uses reflect.SliceHeader for unsafe conversions
-- pkg/utils/convert.go:234 - uses reflect.SliceHeader in byte slice operations
-
-**Team Assignment:**
-From CODEOWNERS:
-- `pkg/` (utils) → Multiple teams may own this (check callers)
-- `central/` → @stackrox/core-workflows or specific team based on subdirectory
-```
-
-### Example 5: Multiple dependency analysis
+### Example 3: Multiple dependency analysis
 
 **User:** "Check pgx, docker, and zap dependencies"
 
@@ -517,23 +342,6 @@ From CODEOWNERS:
 | **pgx** | v5.9.2 | Direct | 155 | Central, Scanner, Migrator | CRITICAL |
 | **docker/distribution** | v2.8.3 | Direct | 3 | pkg/registries | Medium |
 | **zap** | v1.18.2 (fork) | Direct | 7 | pkg/logging, operator | CRITICAL |
-
-### Key Findings
-
-**pgx (PostgreSQL Driver):**
-- Direct dependency: YES
-- Extensive usage across Scanner (primary), Central, Migrator
-- 155 production files - critical for all database operations
-
-**docker libs:**
-- Limited scope: Only in pkg/registries/docker/ (3 files)
-- Uses StackRox fork: heroku/docker-registry-client → stackrox/docker-registry-client
-- Note: docker/distribution is EOL
-
-**zap (Logging):**
-- REPLACED: go.uber.org/zap v1.27.1 → github.com/stackrox/zap v1.18.2
-- Core infrastructure: Used by entire platform via pkg/logging
-- Fork is behind upstream (1.18 vs 1.27) - consider sync
 ```
 
 ### Example 6: Wrapper pattern (infrastructure library)
@@ -582,59 +390,6 @@ github.com/stackrox/rox/pkg/logging
 From CODEOWNERS: Multiple teams own components using logging.
 Primary: Team owning `pkg/logging` wrapper.
 Impact: ALL TEAMS (critical infrastructure)
-```
-
-### Example 7: Transitive dependency
-
-**User:** "Why do we need github.com/envoyproxy/protoc-gen-validate?"
-
-**Actions:**
-1. Check go.mod: `grep protoc-gen-validate go.mod` → Found with `// indirect`
-2. **Branch to Step 2A** (transitive path)
-3. Run `go mod why -m github.com/envoyproxy/protoc-gen-validate`
-4. Run `go mod graph | grep protoc-gen-validate` → See chain
-5. Check direct imports: `grep -r protoc-gen-validate --include="*.go"` → 0 results!
-6. Find intermediate: GCS storage SDK pulls it
-
-**Result:**
-```
-## Dependency Analysis: protoc-gen-validate (TRANSITIVE)
-
-**Dependency:** github.com/envoyproxy/protoc-gen-validate v1.3.0
-**Status:** TRANSITIVE ONLY - Not directly imported
-
-**Dependency Chain:**
-```
-Our code (StackRox)
-    ↓ imports
-cloud.google.com/go/storage v1.62.1 (GCS external backup plugin)
-    ↓ depends on
-github.com/envoyproxy/protoc-gen-validate v1.3.0
-```
-
-**Why It Exists:**
-From go mod graph:
-- cloud.google.com/go/storage uses protoc-gen-validate for proto message validation
-- Also pulled by: github.com/envoyproxy/go-control-plane (another transitive)
-
-**Our Usage of Intermediate Package:**
-- We import: cloud.google.com/go/storage
-- Used in: 2 production files
-  - central/externalbackups/plugins/gcs/gcs.go - GCS backup plugin
-  - pkg/cloudproviders/gcp/utils/util.go - GCP utilities
-- Components: Central (external backups)
-
-**What Intermediate Uses It For:**
-- GCS SDK uses protoc-gen-validate to generate validation code for Google Cloud API protos
-- Validates proto messages in GCP service communication
-- We never call protoc-gen-validate directly
-
-**Team Assignment:**
-From CODEOWNERS (files using the intermediate cloud.google.com/go/storage):
-- `central/externalbackups/**/*` → External backups team
-- `pkg/cloudproviders/**/*` → Cloud provider integrations team
-
-Note: Transitive dependency managed via GCS SDK, but assign to team(s) using the intermediate package if CVE has production impact
 ```
 
 ## Troubleshooting
@@ -739,16 +494,7 @@ When assigning issues, consult `.github/CODEOWNERS` to determine team ownership 
 3. The LAST matching line wins (CODEOWNERS rule)
 4. Assign to the team(s) listed for those patterns
 
-**Examples from CODEOWNERS:**
-- `sensor/**/*` → @stackrox/sensor-ecosystem
-- `central/policy/**/*` → @stackrox/core-workflows
-- `scanner/` → @stackrox/scanner
-- `operator/**` → @stackrox/install
-- `ui/**/*` → @stackrox/ui
-- `pkg/postgres/**/*` → @stackrox/core-workflows
-- `migrator/**/*` → @stackrox/core-workflows
-
-**Multi-team dependencies:** If a dependency is used across multiple components with different owners, list all affected teams.
+**Multi-team dependencies:** If used across multiple components with different owners, list all affected teams.
 
 ## Performance Notes
 
