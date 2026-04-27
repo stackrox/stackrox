@@ -13,6 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 install_locally() {
     echo "Installing Quadlet units locally..."
 
+    sudo mkdir -p /run/lock/roxagent
+
     # Quadlet container file
     sudo mkdir -p /etc/containers/systemd/
     sudo cp "${SCRIPT_DIR}/roxagent.container" /etc/containers/systemd/
@@ -46,6 +48,8 @@ install_remote() {
 
     # Install on remote
     ssh -p "${SSH_PORT}" "${REMOTE_HOST}" << 'EOF'
+        sudo mkdir -p /run/lock/roxagent
+
         # Quadlet container file
         sudo mkdir -p /etc/containers/systemd/
         sudo mv /tmp/roxagent.container /etc/containers/systemd/
