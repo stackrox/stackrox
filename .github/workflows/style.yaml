@@ -147,6 +147,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Verify Java 17
+        run: java -version
+
       - name: Install xmlstarlet for shellcheck output to junit
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet

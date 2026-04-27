@@ -8,12 +8,6 @@ plugins {
     codenarc
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
 codenarc {
     configFile = file("./codenarc-rules.groovy")
     reportFormat = "text"
