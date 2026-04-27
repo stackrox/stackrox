@@ -55,6 +55,9 @@ func detectCentral(src Source) (*centralConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving central Deployment")
 	}
+	if centralDep == nil {
+		return nil, errors.New("central Deployment not found")
+	}
 	exposure, err := detectExposure(src)
 	if err != nil {
 		return nil, err
@@ -87,6 +90,9 @@ func detectStorage(src Source) (*storageConfig, error) {
 	dep, err := src.Deployment("central-db")
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving central-db Deployment")
+	}
+	if dep == nil {
+		return nil, errors.New("central-db Deployment not found")
 	}
 
 	var diskVolume *corev1.Volume
@@ -146,11 +152,11 @@ func detectExposure(src Source) (*exposureConfig, error) {
 		}
 	}
 
-	routeFound, err := src.Route("central")
+	route, err := src.Route("central")
 	if err != nil {
 		return nil, errors.Wrap(err, "checking for central Route")
 	}
-	cfg.routeEnabled = routeFound
+	cfg.routeEnabled = route != nil
 
 	return cfg, nil
 }

@@ -3,13 +3,13 @@ package migratetooperator
 import (
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type fakeSource struct {
@@ -27,7 +27,7 @@ func (f *fakeSource) Deployment(name string) (*appsv1.Deployment, error) {
 	if dep := defaultDeployments()[name]; dep != nil {
 		return dep, nil
 	}
-	return nil, assert.AnError
+	return nil, nil
 }
 
 func (f *fakeSource) Service(name string) (*corev1.Service, error) {
@@ -44,22 +44,18 @@ func (f *fakeSource) Secret(name string) (*corev1.Secret, error) {
 	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name}}, nil
 }
 
-func (f *fakeSource) Route(name string) (bool, error) {
-	if f.routes == nil {
-		return false, nil
+func (f *fakeSource) Route(name string) (*unstructured.Unstructured, error) {
+	if f.routes != nil && f.routes[name] {
+		return &unstructured.Unstructured{}, nil
 	}
-	return f.routes[name], nil
+	return nil, nil
 }
 
 func (f *fakeSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
 	if f.daemonSets == nil {
-		return nil, errors.Errorf("DaemonSet %q not found", name)
+		return nil, nil
 	}
-	ds, ok := f.daemonSets[name]
-	if !ok {
-		return nil, errors.Errorf("DaemonSet %q not found", name)
-	}
-	return ds, nil
+	return f.daemonSets[name], nil
 }
 
 func (f *fakeSource) ValidatingWebhookConfiguration(_ string) (*admissionv1.ValidatingWebhookConfiguration, error) {
