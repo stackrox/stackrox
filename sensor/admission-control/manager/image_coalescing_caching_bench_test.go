@@ -216,7 +216,7 @@ func generateWorkload(rng *rand.Rand, nDeployments, imgsPerDep, uniqueImages int
 	for i := range nDeployments {
 		images := make([]imageRef, imgsPerDep)
 		for j := range imgsPerDep {
-			images[j] = pool[rng.Intn(len(pool))]
+			images[j] = pool[rng.IntN(len(pool))]
 		}
 		dep := generateDeployment(
 			fmt.Sprintf("deploy-%d", i),
