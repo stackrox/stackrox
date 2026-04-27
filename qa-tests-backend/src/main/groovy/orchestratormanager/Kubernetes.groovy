@@ -573,66 +573,65 @@ class Kubernetes {
 
     void removeDaemonSetEnv(String ns, String name, String containerName, String key) {
         log.debug "Remove env var in ${ns}/${name}/${containerName}: ${key}"
-        List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
-                .spec.containers
-        int containerIndex = containers.findIndexOf { it.name == containerName }
-        if (containerIndex == -1) {
-            throw new RuntimeException("Could not remove env var. No container named ${containerName} in ${ns}/${name}")
+        withK8sClientRetry(3, 2) {
+            client.apps().daemonSets().inNamespace(ns).withName(name)
+                    .edit { d ->
+                        List<Container> containers = d.spec.template.spec.containers
+                        int containerIndex = containers.findIndexOf { it.name == containerName }
+                        if (containerIndex == -1) {
+                            throw new RuntimeException(
+                                    "Could not remove env var." +
+                                    " No container named ${containerName} in ${ns}/${name}")
+                        }
+                        List<EnvVar> envVars = containers.get(containerIndex).env
+                        envVars.removeIf { EnvVar e -> e.name == key }
+                        new DaemonSetBuilder(d)
+                                .editSpec()
+                                .editTemplate()
+                                .editSpec()
+                                .editContainer(containerIndex)
+                                .withEnv(envVars)
+                                .endContainer()
+                                .endSpec()
+                                .endTemplate()
+                                .endSpec()
+                                .build()
+                    }
         }
-        List<EnvVar> envVars = containers.get(containerIndex).env
-        envVars.removeIf { EnvVar it -> it.name == key }
-
-        client.apps().daemonSets().inNamespace(ns).withName(name)
-                .edit { d ->
-                    new DaemonSetBuilder(d)
-                            .editSpec()
-                            .editTemplate()
-                            .editSpec()
-                            .editContainer(containerIndex)
-                            .withEnv(envVars)
-                            .endContainer()
-                            .endSpec()
-                            .endTemplate()
-                            .endSpec()
-                            .build()
-                }
     }
 
     void updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
         log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
-        List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
-                .spec.containers
-        int containerIndex = containers.findIndexOf { it.name == containerName }
-        if (containerIndex == -1) {
-            throw new RuntimeException("Could not update env var. No container named ${containerName} in ${ns}/${name}")
+        withK8sClientRetry(3, 2) {
+            client.apps().daemonSets().inNamespace(ns).withName(name)
+                    .edit { d ->
+                        List<Container> containers = d.spec.template.spec.containers
+                        int containerIndex = containers.findIndexOf { it.name == containerName }
+                        if (containerIndex == -1) {
+                            throw new RuntimeException(
+                                    "Could not update env var." +
+                                    " No container named ${containerName} in ${ns}/${name}")
+                        }
+                        List<EnvVar> envVars = containers.get(containerIndex).env
+                        int index = envVars.findIndexOf { EnvVar e -> e.name == key }
+                        if (index > -1) {
+                            envVars.get(index).value = value
+                        } else {
+                            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+                        }
+                        new DaemonSetBuilder(d)
+                                .editSpec()
+                                .editTemplate()
+                                .editSpec()
+                                .editContainer(containerIndex)
+                                .withEnv(envVars)
+                                .endContainer()
+                                .endSpec()
+                                .endTemplate()
+                                .endSpec()
+                                .build()
+                    }
         }
-        log.debug "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
-        List<EnvVar> envVars = containers.get(containerIndex).env
-        log.debug "Current env vars of ${ns}/${name}/${containerName}: ${envVars}"
-
-        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index > -1) {
-            log.debug "Env var ${key} found on index: ${index}"
-            envVars.get(index).value = value
-        } else {
-            log.debug "Env var ${key} not found. Adding it now"
-            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
-        }
-
-        client.apps().daemonSets().inNamespace(ns).withName(name)
-                .edit { d ->
-                    new DaemonSetBuilder(d)
-                            .editSpec()
-                            .editTemplate()
-                            .editSpec()
-                            .editContainer(containerIndex)
-                            .withEnv(envVars)
-                            .endContainer()
-                            .endSpec()
-                            .endTemplate()
-                            .endSpec()
-                            .build()
-                }
     }
 
     boolean deploymentReady(String ns, String name) {
