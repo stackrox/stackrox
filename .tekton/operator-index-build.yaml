@@ -294,7 +294,7 @@ spec:
       - name: git-basic-auth
         workspace: git-auth
 
-    - name: build-operator-index
+    - name: generate-index-content
       runAfter:
       - wait-for-bundle-image
       params:
@@ -354,6 +354,8 @@ spec:
             value: $(params.BUNDLE_IMAGE)
           - name: INDEX_IMAGE
             value: $(params.INDEX_IMAGE)
+          - name: YQ
+            value: yq
           script: |
             #!/bin/bash
             set -euo pipefail
@@ -386,7 +388,7 @@ spec:
 
     - name: build-images
       runAfter:
-      - build-operator-index
+      - generate-index-content
       matrix:
         params:
         - name: PLATFORM
@@ -404,7 +406,7 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       - name: SOURCE_ARTIFACT
-        value: $(tasks.build-operator-index.results.SOURCE_ARTIFACT)
+        value: $(tasks.generate-index-content.results.SOURCE_ARTIFACT)
       - name: BUILD_TIMESTAMP
         value: "$(tasks.clone-repository.results.commit-timestamp)"
       - name: LABELS
