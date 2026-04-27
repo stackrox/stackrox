@@ -504,7 +504,7 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 
 	dep := w.GetDeployment().CloneVT()
 	if !centralcaps.Has(centralsensor.InitContainerSupport) {
-		dep.Containers = filterRegularContainers(dep.GetContainers())
+		dep.Containers = containers.FilterRegularContainers(dep.GetContainers())
 	}
 
 	return &central.SensorEvent{
@@ -514,16 +514,6 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 			Deployment: dep,
 		},
 	}
-}
-
-func filterRegularContainers(containers []*storage.Container) []*storage.Container {
-	regular := make([]*storage.Container, 0, len(containers))
-	for _, c := range containers {
-		if c.GetType() == storage.ContainerType_REGULAR {
-			regular = append(regular, c)
-		}
-	}
-	return regular
 }
 
 // anyNonHostPort is derived from `filterHostExposure(...)`. Therefore, if `filterHostExposure(...)` is updated,
