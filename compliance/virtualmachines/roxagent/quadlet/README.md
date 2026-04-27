@@ -164,6 +164,17 @@ sudo journalctl -u roxagent.service
 2. Check compliance container logs in the collector pod
 3. Verify Sensor can reach Central
 
+### Agent reports lock warning
+
+If logs show `could not acquire lock at /run/lock/roxagent/roxagent.lock`, verify the lock directory exists and is writable:
+
+```bash
+ls -la /run/lock/roxagent/
+sudo mkdir -p /run/lock/roxagent
+```
+
+The install script creates this directory automatically. If it was removed (e.g., after a reboot on systems where `/run` is tmpfs), re-run `install.sh` or create it manually.
+
 ## Uninstallation
 
 ```bash
