@@ -3,6 +3,7 @@ package migratetooperator
 import (
 	"testing"
 
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -70,77 +71,87 @@ func defaultSCSource() *scFakeSource {
 	}
 }
 
-func TestSCDetect_Default(t *testing.T) {
-	src := defaultSCSource()
-	config, err := detectSecuredCluster(src)
+func TestSC_Default(t *testing.T) {
+	cr, warnings, err := TransformToSecuredCluster(defaultSCSource())
 	require.NoError(t, err)
-	assert.Equal(t, "my-cluster", config.clusterName)
-	assert.Equal(t, "central.stackrox:443", config.centralEndpoint)
-	assert.False(t, config.enforcementDisabled)
-	assert.False(t, config.failurePolicyFail)
-	assert.False(t, config.collectionNone)
-	assert.False(t, config.tolerationsDisabled)
-	assert.False(t, config.customImages)
+	assert.Empty(t, warnings)
+	assert.Equal(t, "platform.stackrox.io/v1alpha1", cr.APIVersion)
+	assert.Equal(t, "SecuredCluster", cr.Kind)
+	assert.Equal(t, "stackrox-secured-cluster-services", cr.Name)
+	require.NotNil(t, cr.Spec.ClusterName)
+	assert.Equal(t, "my-cluster", *cr.Spec.ClusterName)
+	assert.Nil(t, cr.Spec.CentralEndpoint)
+	assert.Nil(t, cr.Spec.AdmissionControl)
+	assert.Nil(t, cr.Spec.PerNode)
 }
 
-func TestSCDetect_CustomCentralEndpoint(t *testing.T) {
+func TestSC_CustomCentralEndpoint(t *testing.T) {
 	src := defaultSCSource()
 	src.deployments["sensor"].Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
 		{Name: "ROX_CENTRAL_ENDPOINT", Value: "my-central.example.com:443"},
 	}
-	config, err := detectSecuredCluster(src)
+	cr, _, err := TransformToSecuredCluster(src)
 	require.NoError(t, err)
-	assert.Equal(t, "my-central.example.com:443", config.centralEndpoint)
+	require.NotNil(t, cr.Spec.CentralEndpoint)
+	assert.Equal(t, "my-central.example.com:443", *cr.Spec.CentralEndpoint)
 }
 
-func TestSCDetect_EnforcementDisabled(t *testing.T) {
+func TestSC_EnforcementDisabled(t *testing.T) {
 	src := defaultSCSource()
 	src.webhooks = []admissionv1.ValidatingWebhook{{Name: "check.stackrox.io"}}
-	config, err := detectSecuredCluster(src)
+	cr, _, err := TransformToSecuredCluster(src)
 	require.NoError(t, err)
-	assert.True(t, config.enforcementDisabled)
+	require.NotNil(t, cr.Spec.AdmissionControl)
+	require.NotNil(t, cr.Spec.AdmissionControl.Enforcement)
+	assert.Equal(t, platform.PolicyEnforcementDisabled, *cr.Spec.AdmissionControl.Enforcement)
 }
 
-func TestSCDetect_FailurePolicyFail(t *testing.T) {
+func TestSC_FailurePolicyFail(t *testing.T) {
 	src := defaultSCSource()
 	fail := admissionv1.Fail
 	src.webhooks = []admissionv1.ValidatingWebhook{
 		{Name: "check.stackrox.io", FailurePolicy: &fail},
 		{Name: "policyeval.stackrox.io", FailurePolicy: &fail},
 	}
-	config, err := detectSecuredCluster(src)
+	cr, _, err := TransformToSecuredCluster(src)
 	require.NoError(t, err)
-	assert.True(t, config.failurePolicyFail)
+	require.NotNil(t, cr.Spec.AdmissionControl)
+	require.NotNil(t, cr.Spec.AdmissionControl.FailurePolicy)
+	assert.Equal(t, platform.FailurePolicyFail, *cr.Spec.AdmissionControl.FailurePolicy)
 }
 
-func TestSCDetect_CollectionNone(t *testing.T) {
+func TestSC_CollectionNone(t *testing.T) {
 	src := defaultSCSource()
 	src.daemonSets["collector"].Spec.Template.Spec.Containers = []corev1.Container{{Name: "compliance"}}
-	config, err := detectSecuredCluster(src)
+	cr, _, err := TransformToSecuredCluster(src)
 	require.NoError(t, err)
-	assert.True(t, config.collectionNone)
+	require.NotNil(t, cr.Spec.PerNode)
+	require.NotNil(t, cr.Spec.PerNode.Collector)
+	assert.Equal(t, platform.CollectionNone, *cr.Spec.PerNode.Collector.Collection)
 }
 
-func TestSCDetect_TolerationsDisabled(t *testing.T) {
+func TestSC_TolerationsDisabled(t *testing.T) {
 	src := defaultSCSource()
 	src.daemonSets["collector"].Spec.Template.Spec.Tolerations = nil
-	config, err := detectSecuredCluster(src)
+	cr, _, err := TransformToSecuredCluster(src)
 	require.NoError(t, err)
-	assert.True(t, config.tolerationsDisabled)
+	require.NotNil(t, cr.Spec.PerNode)
+	assert.Equal(t, platform.TaintAvoid, *cr.Spec.PerNode.TaintToleration)
 }
 
-func TestSCDetect_CustomImages(t *testing.T) {
+func TestSC_CustomImages(t *testing.T) {
 	src := defaultSCSource()
-	src.deployments["sensor"].Spec.Template.Spec.Containers[0].Image = "my-registry.example.com/main:latest"
-	config, err := detectSecuredCluster(src)
+	src.deployments["sensor"].Spec.Template.Spec.Containers[0].Image = "my-reg.example.com/main:latest"
+	_, warnings, err := TransformToSecuredCluster(src)
 	require.NoError(t, err)
-	assert.True(t, config.customImages)
+	require.Len(t, warnings, 1)
+	assert.Contains(t, warnings[0], "RELATED_IMAGE")
 }
 
-func TestSCDetect_MissingClusterName(t *testing.T) {
+func TestSC_MissingClusterName(t *testing.T) {
 	src := defaultSCSource()
 	src.clusterName = ""
-	_, err := detectSecuredCluster(src)
+	_, _, err := TransformToSecuredCluster(src)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
