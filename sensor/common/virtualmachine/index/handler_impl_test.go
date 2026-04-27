@@ -350,30 +350,41 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
 	cases := map[string]struct {
 		centralAction  central.SensorACK_Action
 		resourceID     string
+		vmID           string
 		nodeName       string
 		reason         string
 		expectedAction sensor.MsgToCompliance_ComplianceACK_Action
 	}{
-		"should forward ACK to compliance": {
+		"should forward ACK to compliance with composite resource ID": {
 			centralAction:  central.SensorACK_ACK,
-			resourceID:     "vm-123",
+			resourceID:     "vm-123:100",
+			vmID:           "vm-123",
 			nodeName:       "node-a",
 			reason:         "all good",
 			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
 		},
-		"should forward NACK to compliance": {
+		"should forward NACK to compliance with composite resource ID": {
 			centralAction:  central.SensorACK_NACK,
-			resourceID:     "vm-456",
+			resourceID:     "vm-456:200",
+			vmID:           "vm-456",
 			nodeName:       "node-b",
 			reason:         "validation failed",
 			expectedAction: sensor.MsgToCompliance_ComplianceACK_NACK,
+		},
+		"should forward ACK with bare VM ID": {
+			centralAction:  central.SensorACK_ACK,
+			resourceID:     "vm-789",
+			vmID:           "vm-789",
+			nodeName:       "node-c",
+			reason:         "",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
 		},
 	}
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			s.store.EXPECT().Get(virtualmachine.VMID(tc.resourceID)).Return(
-				&virtualmachine.Info{ID: virtualmachine.VMID(tc.resourceID), NodeName: tc.nodeName})
+			s.store.EXPECT().Get(virtualmachine.VMID(tc.vmID)).Return(
+				&virtualmachine.Info{ID: virtualmachine.VMID(tc.vmID), NodeName: tc.nodeName})
 
 			ctx := context.Background()
 			msg := &central.MsgToSensor{
@@ -412,19 +423,25 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
 
 	cases := map[string]struct {
 		resourceID string
+		expectedID string
 	}{
 		"should broadcast when resource ID is empty": {
 			resourceID: "",
 		},
 		"should broadcast when VM not in store": {
 			resourceID: "vm-deleted",
+			expectedID: "vm-deleted",
+		},
+		"should broadcast when VM from composite ID not in store": {
+			resourceID: "vm-deleted:999",
+			expectedID: "vm-deleted",
 		},
 	}
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			if tc.resourceID != "" {
-				s.store.EXPECT().Get(virtualmachine.VMID(tc.resourceID)).Return(nil)
+			if tc.expectedID != "" {
+				s.store.EXPECT().Get(virtualmachine.VMID(tc.expectedID)).Return(nil)
 			}
 
 			ctx := context.Background()

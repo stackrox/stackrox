@@ -53,6 +53,16 @@ func VMIndexACKResourceID(vmID, vsockCID string) string {
 	return strings.Join([]string{vmID, vsockCID}, vmIndexACKResourceIDSeparator)
 }
 
+// VMIDFromACKResourceID extracts the VM ID from a composite resource ID
+// produced by VMIndexACKResourceID. If the resource ID has no separator,
+// it is returned as-is (assumed to be a bare VM ID or CID).
+func VMIDFromACKResourceID(resourceID string) string {
+	if idx := strings.Index(resourceID, vmIndexACKResourceIDSeparator); idx >= 0 {
+		return resourceID[:idx]
+	}
+	return resourceID
+}
+
 // SendLegacyNodeInventoryACK sends the legacy NodeInventoryACK message supported since version 4.1.
 func SendLegacyNodeInventoryACK(ctx concurrency.Waitable, clusterID, nodeName string, action central.NodeInventoryACK_Action, messageType central.NodeInventoryACK_MessageType, injector MessageInjector) {
 	if injector == nil {

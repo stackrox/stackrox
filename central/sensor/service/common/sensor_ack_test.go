@@ -85,6 +85,45 @@ func TestVMIndexACKResourceID(t *testing.T) {
 	}
 }
 
+func TestVMIDFromACKResourceID(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name       string
+		resourceID string
+		expected   string
+	}{
+		{
+			name:       "extracts vm id from composite resource id",
+			resourceID: "vm-1:100",
+			expected:   "vm-1",
+		},
+		{
+			name:       "returns bare vm id as-is",
+			resourceID: "vm-1",
+			expected:   "vm-1",
+		},
+		{
+			name:       "returns empty string for empty input",
+			resourceID: "",
+			expected:   "",
+		},
+		{
+			name:       "extracts uuid vm id from composite",
+			resourceID: "d2696fad-8ef2-49f5-9726-499b1419be20:1289650420",
+			expected:   "d2696fad-8ef2-49f5-9726-499b1419be20",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			actual := VMIDFromACKResourceID(tc.resourceID)
+			assert.Equalf(t, tc.expected, actual, "expected vm id %q, but got %q", tc.expected, actual)
+		})
+	}
+}
+
 type mockInjector struct {
 	messages     []*central.MsgToSensor
 	injectErr    error
