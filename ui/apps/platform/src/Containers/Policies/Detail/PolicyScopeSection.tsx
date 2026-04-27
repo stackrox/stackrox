@@ -1,54 +1,49 @@
 import type { ReactElement } from 'react';
-import { Card, CardBody, Grid, GridItem, List, ListItem, Title } from '@patternfly/react-core';
+import {
+    Card,
+    CardBody,
+    Content,
+    Grid,
+    GridItem,
+    List,
+    ListItem,
+    Title,
+} from '@patternfly/react-core';
 
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
-import type { PolicyExcludedDeployment, PolicyExclusion, PolicyScope } from 'types/policy.proto';
-import Restriction from './Restriction';
-import ExcludedDeployment from './ExcludedDeployment';
+import type { PolicyExclusion, PolicyScope } from 'types/policy.proto';
+import InclusionScopeDetails from './InclusionScopeDetails';
+import ExclusionDeploymentDetails from './ExclusionDeploymentDetails';
 import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils';
 
 type PolicyScopeSectionProps = {
     scope: PolicyScope[];
     exclusions: PolicyExclusion[];
-    excludedDeploymentScopes?: PolicyExcludedDeployment[];
-    excludedImageNames?: string[];
 };
 
-function PolicyScopeSection({
-    scope,
-    exclusions,
-    excludedDeploymentScopes = [],
-    excludedImageNames = [],
-}: PolicyScopeSectionProps): ReactElement {
+function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): ReactElement {
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
+    const excludedDeployments = getExcludedDeployments(exclusions);
+    const imageExclusionNames = getExcludedImageNames(exclusions);
 
-    const fromClientDeployments = excludedDeploymentScopes.filter((d) => d.name || d.scope);
-    const excludedDeployments =
-        fromClientDeployments.length !== 0
-            ? fromClientDeployments
-            : getExcludedDeployments(exclusions);
-
-    const fromClientImageNames = excludedImageNames.filter((name) => name !== '');
-    const imageExclusionNames =
-        fromClientImageNames.length !== 0
-            ? fromClientImageNames
-            : getExcludedImageNames(exclusions);
+    const hasIncludedScope = scope?.length > 0;
+    const hasExcludedDeployments = excludedDeployments.length > 0;
+    const hasImageExclusions = imageExclusionNames.length > 0;
+    const hasAnyResources = hasIncludedScope || hasExcludedDeployments || hasImageExclusions;
 
     return (
         <>
-            {scope?.length !== 0 && (
+            {!hasAnyResources && <Content component="p">No policy resources.</Content>}
+            {hasIncludedScope && (
                 <>
                     <Title headingLevel="h3">Included resources</Title>
                     <Grid hasGutter md={12} xl={6}>
-                        {scope.map((restriction, index) => (
+                        {scope.map((scope, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
                                 <Card>
                                     <CardBody>
-                                        <Restriction
-                                            clusters={clusters}
-                                            restriction={restriction}
-                                        />
+                                        <InclusionScopeDetails clusters={clusters} scope={scope} />
                                     </CardBody>
                                 </Card>
                             </GridItem>
@@ -56,7 +51,7 @@ function PolicyScopeSection({
                     </Grid>
                 </>
             )}
-            {excludedDeployments?.length !== 0 && (
+            {hasExcludedDeployments && (
                 <>
                     <Title headingLevel="h3">Excluded resources</Title>
                     <Grid hasGutter md={12} xl={6}>
@@ -65,7 +60,7 @@ function PolicyScopeSection({
                             <GridItem key={index}>
                                 <Card>
                                     <CardBody>
-                                        <ExcludedDeployment
+                                        <ExclusionDeploymentDetails
                                             clusters={clusters}
                                             excludedDeployment={excludedDeployment}
                                         />
@@ -76,7 +71,7 @@ function PolicyScopeSection({
                     </Grid>
                 </>
             )}
-            {imageExclusionNames?.length !== 0 && (
+            {hasImageExclusions && (
                 <>
                     <Title headingLevel="h3">Image exclusions</Title>
                     <List isPlain>

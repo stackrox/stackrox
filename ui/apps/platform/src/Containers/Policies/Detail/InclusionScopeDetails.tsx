@@ -7,13 +7,13 @@ import type { PolicyScope } from 'types/policy.proto';
 
 import { getClusterName } from '../policies.utils';
 
-type RestrictionProps = {
+type InclusionScopeDetailsProps = {
     clusters: ClusterScopeObject[];
-    restriction: PolicyScope;
+    scope: PolicyScope;
 };
 
-function Restriction({ clusters, restriction }: RestrictionProps): ReactElement {
-    const { cluster: clusterId, clusterLabel, namespace, namespaceLabel, label } = restriction;
+function InclusionScopeDetails({ clusters, scope }: InclusionScopeDetailsProps): ReactElement {
+    const { cluster: clusterId, clusterLabel, namespace, namespaceLabel, label } = scope;
 
     return (
         <DescriptionList isCompact isHorizontal horizontalTermWidthModifier={{ default: '16ch' }}>
@@ -40,4 +40,4 @@ function Restriction({ clusters, restriction }: RestrictionProps): ReactElement 
     );
 }
 
-export default Restriction;
+export default InclusionScopeDetails;

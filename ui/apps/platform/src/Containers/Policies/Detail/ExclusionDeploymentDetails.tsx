@@ -7,15 +7,15 @@ import type { PolicyExcludedDeployment } from 'types/policy.proto';
 
 import { getClusterName } from '../policies.utils';
 
-type ExcludedDeploymentProps = {
+type ExclusionDeploymentDetailsProps = {
     clusters: ClusterScopeObject[];
     excludedDeployment: PolicyExcludedDeployment;
 };
 
-function ExcludedDeployment({
+function ExclusionDeploymentDetails({
     clusters,
     excludedDeployment,
-}: ExcludedDeploymentProps): ReactElement {
+}: ExclusionDeploymentDetailsProps): ReactElement {
     const { name: deploymentName, scope } = excludedDeployment;
     const {
         cluster: clusterId,
@@ -51,4 +51,4 @@ function ExcludedDeployment({
     );
 }
 
-export default ExcludedDeployment;
+export default ExclusionDeploymentDetails;
