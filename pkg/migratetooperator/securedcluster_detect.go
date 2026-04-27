@@ -28,6 +28,9 @@ func detectSecuredCluster(src Source) (*securedClusterConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving sensor Deployment")
 	}
+	if sensorDep == nil {
+		return nil, errors.New("sensor Deployment not found")
+	}
 
 	centralEndpoint := envVarValue(sensorDep, "ROX_CENTRAL_ENDPOINT")
 
@@ -41,6 +44,9 @@ func detectSecuredCluster(src Source) (*securedClusterConfig, error) {
 	collectorDS, err := src.DaemonSet("collector")
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving collector DaemonSet")
+	}
+	if collectorDS == nil {
+		return nil, errors.New("collector DaemonSet not found")
 	}
 	collectionNone := !hasContainer(collectorDS, "collector")
 	tolerationsDisabled := len(collectorDS.Spec.Template.Spec.Tolerations) == 0

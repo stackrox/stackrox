@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -56,6 +57,9 @@ func (s *clusterSource) Deployment(name string) (*appsv1.Deployment, error) {
 
 	dep, err := s.typed.AppsV1().Deployments(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "getting Deployment %q in namespace %q", name, s.namespace)
 	}
 	return dep, nil
@@ -91,18 +95,18 @@ func (s *clusterSource) Secret(name string) (*corev1.Secret, error) {
 
 var routeGVR = schema.GroupVersionResource{Group: "route.openshift.io", Version: "v1", Resource: "routes"}
 
-func (s *clusterSource) Route(name string) (bool, error) {
+func (s *clusterSource) Route(name string) (*unstructured.Unstructured, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := s.dynamic.Resource(routeGVR).Namespace(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	obj, err := s.dynamic.Resource(routeGVR).Namespace(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return false, nil
+			return nil, nil
 		}
-		return false, errors.Wrapf(err, "getting Route %q in namespace %q", name, s.namespace)
+		return nil, errors.Wrapf(err, "getting Route %q in namespace %q", name, s.namespace)
 	}
-	return true, nil
+	return obj, nil
 }
 
 func (s *clusterSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
@@ -111,6 +115,9 @@ func (s *clusterSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
 
 	ds, err := s.typed.AppsV1().DaemonSets(s.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "getting DaemonSet %q in namespace %q", name, s.namespace)
 	}
 	return ds, nil
