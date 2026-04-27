@@ -1,13 +1,13 @@
 import type { CompoundSearchFilterAttribute } from '../types';
 
-export const Name: CompoundSearchFilterAttribute = {
+export const profileName: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Profile name',
     searchTerm: 'Compliance Profile Name',
     inputType: 'text',
 };
 
-export const Type: CompoundSearchFilterAttribute = {
+export const profileType: CompoundSearchFilterAttribute = {
     displayName: 'Type',
     filterChipLabel: 'Profile type',
     searchTerm: 'Compliance Profile Operator Kind',
@@ -19,5 +19,3 @@ export const Type: CompoundSearchFilterAttribute = {
         ],
     },
 };
-
-export const profileAttributes = [Name, Type];

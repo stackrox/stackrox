@@ -24,7 +24,7 @@ import {
     clusterTypeAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
-import { profileAttributes } from 'Components/CompoundSearchFilter/attributes/profile';
+import { profileName } from 'Components/CompoundSearchFilter/attributes/profile';
 
 import type { NonEmptyArray, ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
@@ -424,7 +424,7 @@ const regexSearchOptions = [
     clusterPlatformTypeAttribute,
     clusterTypeAttribute,
     policyAttributes,
-    profileAttributes,
+    profileName,
 ]
     .flat()
     .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
