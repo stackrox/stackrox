@@ -11,6 +11,7 @@ import (
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
 	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	vmDS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -396,7 +397,6 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 }
 
 // GetVMCVEComponents returns components affected by a specific CVE on a specific VM.
-// TODO(ROX-34165): Simplify with a SQL view joining CVEs and components.
 func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMCVEComponentsRequest) (*v2.GetVMCVEComponentsResponse, error) {
 	if request.GetVmId() == "" || request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "vm_id and cve_id must be specified")
@@ -407,43 +407,26 @@ func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMC
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
 
-	// Get CVEs matching the CVE ID to find the associated component IDs.
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	componentIDSet := make(map[string]struct{}, len(cves))
-	cveByComponent := make(map[string]*v2.Advisory, len(cves))
-	fixedByComponent := make(map[string]string, len(cves))
-	for _, cve := range cves {
-		componentIDSet[cve.GetVmComponentId()] = struct{}{}
-		if cve.GetAdvisory() != nil {
-			cveByComponent[cve.GetVmComponentId()] = &v2.Advisory{
-				Name: cve.GetAdvisory().GetName(),
-				Link: cve.GetAdvisory().GetLink(),
-			}
-		}
-		fixedByComponent[cve.GetVmComponentId()] = cve.GetFixedBy()
-	}
-
-	componentIDs := make([]string, 0, len(componentIDSet))
-	for id := range componentIDSet {
-		componentIDs = append(componentIDs, id)
-	}
-	components, err := s.componentDS.GetBatch(ctx, componentIDs)
+	components, err := s.cveView.GetCVEComponents(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
 	rows := make([]*v2.VMCVEComponentRow, 0, len(components))
 	for _, comp := range components {
+		var advisory *v2.Advisory
+		if comp.GetAdvisoryName() != "" {
+			advisory = &v2.Advisory{
+				Name: comp.GetAdvisoryName(),
+				Link: comp.GetAdvisoryLink(),
+			}
+		}
 		rows = append(rows, &v2.VMCVEComponentRow{
-			ComponentName:    comp.GetName(),
-			ComponentVersion: comp.GetVersion(),
-			Source:           v2.SourceType(comp.GetSource()),
-			FixedBy:          fixedByComponent[comp.GetId()],
-			Advisory:         cveByComponent[comp.GetId()],
+			ComponentName:    comp.GetComponentName(),
+			ComponentVersion: comp.GetComponentVersion(),
+			Source:           v2.SourceType(comp.GetComponentSource()),
+			FixedBy:          comp.GetFixedBy(),
+			Advisory:         advisory,
 		})
 	}
 
@@ -645,4 +628,52 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 		Vms:        rows,
 		TotalCount: int32(len(rows)),
 	}, nil
+}
+
+// GetVM returns detailed information about a single VM.
+func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.VMDetail, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "id must be specified")
+	}
+
+	vm, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "virtual machine %q not found", request.GetId())
+	}
+
+	detail := storagetov2.VirtualMachineV2ToDetail(vm)
+
+	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable),
+	// so sorting by the primary key is equivalent to sorting by time and avoids
+	// a separate index scan.
+	scanQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
+	scanQuery.Pagination = &v1.QueryPagination{
+		Limit: 1,
+		SortOptions: []*v1.QuerySortOption{
+			{Field: search.VirtualMachineScanID.String(), Reversed: true},
+		},
+	}
+	scans, err := s.scanDS.SearchRawVMScans(ctx, scanQuery)
+	if err != nil {
+		return nil, err
+	}
+	if len(scans) > 0 {
+		scan := scans[0]
+		scanNotes := make([]v2.VMScanNote, 0, len(scan.GetNotes()))
+		for _, n := range scan.GetNotes() {
+			scanNotes = append(scanNotes, storagetov2.ConvertScanNote(n))
+		}
+		detail.LatestScan = &v2.VMScanInfo{
+			ScanId:    scan.GetId(),
+			ScanOs:    scan.GetScanOs(),
+			ScanTime:  scan.GetScanTime(),
+			TopCvss:   scan.GetTopCvss(),
+			ScanNotes: scanNotes,
+		}
+	}
+
+	return detail, nil
 }

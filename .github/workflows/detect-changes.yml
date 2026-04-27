@@ -1,0 +1,64 @@
+name: Detect changed files
+
+# Outputs the list of files changed in a PR, one per line, wrapped
+# with ^ and $ anchors (e.g. ^ui/src/App.tsx$). Jobs match with
+# contains() using anchors for precise substring matching:
+#   '^scripts/'  — full tree under a root directory
+#   '.go$'       — file extension (won't match .gotmpl)
+#   '^go.mod$'   — exact root file
+#
+# Empty output (push events, API failure, 3000+ files) is falsy,
+# so jobs prefix with: !needs.detect-changes.outputs.files ||
+# to default to "run" when the file list is unavailable.
+
+on:
+  workflow_call:
+    outputs:
+      files:
+        description: >
+          Newline-separated list of changed filenames, or empty
+          string on push/failure (falsy, so jobs default to run).
+        value: ${{ jobs.detect.outputs.files }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - name: List changed files
+        id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          if [[ -z "${PR_NUMBER}" ]]; then
+            echo "Not a PR" >&2
+            exit 0
+          fi
+
+          if ! output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
+            echo "::warning::GitHub API call failed" >&2
+            exit 0
+          fi
+
+          mapfile -t files < <(echo -n "${output}")
+          echo "Changed files (${#files[@]}):" >&2
+          printf '  %s\n' "${files[@]}" >&2
+
+          if [[ ${#files[@]} -ge 3000 ]]; then
+            echo "::warning::PR has 3000+ changed files" >&2
+            exit 0
+          fi
+
+          if [[ ${#files[@]} -gt 0 ]]; then
+            {
+              echo "files<<EOF"
+              printf '^%s$\n' "${files[@]}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          fi

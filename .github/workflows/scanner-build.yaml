@@ -86,7 +86,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -148,7 +148,7 @@ jobs:
     needs: pre-build-scanner-go-binary
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
     if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
@@ -203,7 +203,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -281,7 +281,7 @@ jobs:
       # race-condition-debug
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_scanner_manifests }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}

@@ -14,8 +14,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
-
-import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
@@ -279,13 +278,29 @@ const PrivateConfigDataRetentionDetails = ({
                         ).length === 0 ? (
                             'No labels'
                         ) : (
-                            <ClusterLabelsTable
-                                labels={
-                                    privateConfig.decommissionedClusterRetention.ignoreClusterLabels
-                                }
-                                hasAction={false}
-                                handleChangeLabels={() => {}}
-                            />
+                            <Table variant="compact" aria-label="Cluster labels">
+                                <Thead>
+                                    <Tr>
+                                        <Th>Key</Th>
+                                        <Th>Value</Th>
+                                    </Tr>
+                                </Thead>
+                                <Tbody>
+                                    {Object.entries(
+                                        privateConfig.decommissionedClusterRetention
+                                            .ignoreClusterLabels
+                                    ).map(([key, value]) => (
+                                        <Tr key={key}>
+                                            <Td dataLabel="Key" modifier="breakWord">
+                                                {key}
+                                            </Td>
+                                            <Td dataLabel="Value" modifier="breakWord">
+                                                {value}
+                                            </Td>
+                                        </Tr>
+                                    ))}
+                                </Tbody>
+                            </Table>
                         )}
                     </CardBody>
                     {isClustersRoutePathRendered && (

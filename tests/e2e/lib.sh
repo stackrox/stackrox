@@ -417,6 +417,10 @@ deploy_sensor() {
     ci_export ROX_AFTERGLOW_PERIOD "15"
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
+    # Per-namespace filtering tests expect to have one namespace configured
+    # without persistence.
+    ci_export ROX_PROCESS_INDICATORS_PER_NAMESPACE "true"
+
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
@@ -466,9 +470,9 @@ deploy_sensor_via_operator() {
     # shellcheck disable=SC2016
     echo "${ROX_ADMIN_PASSWORD}" | \
     retrying_kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
-    'ROX_ADMIN_PASSWORD=$(cat) roxctl central init-bundles generate my-test-bundle \
+    'ROX_ADMIN_PASSWORD=$(cat) roxctl central crs generate my-test-cluster \
         --insecure-skip-tls-verify \
-        --output-secrets -' \
+        --output -' \
     | retrying_kubectl -n "${sensor_namespace}" apply -f -
 
     if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
