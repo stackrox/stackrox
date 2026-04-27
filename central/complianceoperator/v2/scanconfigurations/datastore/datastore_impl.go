@@ -380,33 +380,43 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }
 
-// gatherProfileCounts loads all scan configurations and categorizes profile
-// references into regular (CO-defined) and tailored (user-defined) profiles.
-// For legacy scan configs that lack profile_refs, all profiles are counted as
-// regular since tailored profiles didn't exist before that field was added.
-func gatherProfileCounts(ds DataStore, ctx context.Context) (regular map[string]int, tailoredCount int, err error) {
+type profileCount struct {
+	Kind  storage.ComplianceOperatorProfileV2_OperatorKind
+	Name  string
+	Count int
+}
+
+// countProfileRefs loads all scan configurations and counts profile references
+// by name and kind. For legacy scan configs that lack profile_refs, all
+// profiles are counted as PROFILE kind since tailored profiles didn't exist
+// before that field was added.
+func countProfileRefs(ds DataStore, ctx context.Context) ([]profileCount, error) {
 	scanConfigs, err := ds.GetScanConfigurations(ctx, search.EmptyQuery())
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	regular = make(map[string]int)
+	type key struct {
+		name string
+		kind storage.ComplianceOperatorProfileV2_OperatorKind
+	}
+	counts := make(map[key]int)
 	for _, sc := range scanConfigs {
 		refs := sc.GetProfileRefs()
 		if len(refs) == 0 {
 			for _, p := range sc.GetProfiles() {
-				regular[p.GetProfileName()]++
+				counts[key{p.GetProfileName(), storage.ComplianceOperatorProfileV2_PROFILE}]++
 			}
 			continue
 		}
 		for _, ref := range refs {
-			if ref.GetKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
-				tailoredCount++
-			} else {
-				regular[ref.GetName()]++
-			}
+			counts[key{ref.GetName(), ref.GetKind()}]++
 		}
 	}
-	return regular, tailoredCount, nil
+	result := make([]profileCount, 0, len(counts))
+	for k, count := range counts {
+		result = append(result, profileCount{Kind: k.kind, Name: k.name, Count: count})
+	}
+	return result, nil
 }
 
 func GatherProfiles(ds DataStore) phonehome.GatherFunc {
@@ -414,13 +424,15 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 		if ds == nil {
 			return map[string]any{}, nil
 		}
-		regular, _, err := gatherProfileCounts(ds, sac.WithAllAccess(ctx))
+		counts, err := countProfileRefs(ds, sac.WithAllAccess(ctx))
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering compliance operator profiles for telemetry")
 		}
-		profiles := make(map[string]any, len(regular))
-		for profile, count := range regular {
-			profiles["Compliance Operator Profile "+profile] = count
+		profiles := make(map[string]any)
+		for _, c := range counts {
+			if c.Kind != storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+				profiles["Compliance Operator Profile "+c.Name] = c.Count
+			}
 		}
 		return profiles, nil
 	}
@@ -435,12 +447,18 @@ func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 		if ds == nil {
 			return map[string]any{}, nil
 		}
-		_, tailoredCount, err := gatherProfileCounts(ds, sac.WithAllAccess(ctx))
+		counts, err := countProfileRefs(ds, sac.WithAllAccess(ctx))
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering tailored profile count for telemetry")
 		}
+		total := 0
+		for _, c := range counts {
+			if c.Kind == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+				total += c.Count
+			}
+		}
 		return map[string]any{
-			"Compliance Operator Tailored Profile": tailoredCount,
+			"Compliance Operator Tailored Profile": total,
 		}, nil
 	}
 }
