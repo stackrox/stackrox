@@ -1,12 +1,10 @@
 package compliance
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -141,74 +139,4 @@ func TestShouldRunVMRelay(t *testing.T) {
 			require.Equal(t, tc.expectedShouldRunVMRelay, shouldRunVMRelay(tc.config))
 		})
 	}
-}
-
-func TestWaitForVMRelayEligibility(t *testing.T) {
-	t.Run("should start for nil config as safe fallback", func(t *testing.T) {
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
-		defer close(configC)
-		configC <- (*sensor.MsgToCompliance_ScrapeConfig)(nil)
-
-		require.True(t, waitForVMRelayEligibility(context.Background(), configC))
-	})
-
-	t.Run("should start immediately for worker config", func(t *testing.T) {
-		t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), "")
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
-		defer close(configC)
-		configC <- &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false}
-
-		require.True(t, waitForVMRelayEligibility(context.Background(), configC))
-	})
-
-	t.Run("should wait for later eligible config", func(t *testing.T) {
-		t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), "")
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 2)
-		defer close(configC)
-		configC <- &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true}
-		configC <- &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false}
-
-		require.True(t, waitForVMRelayEligibility(context.Background(), configC))
-	})
-
-	t.Run("should return false when channel closes before eligibility", func(t *testing.T) {
-		t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), "")
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
-		configC <- &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true}
-		close(configC)
-
-		require.False(t, waitForVMRelayEligibility(context.Background(), configC))
-	})
-
-	t.Run("should return false when context is cancelled", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig)
-		defer close(configC)
-
-		require.False(t, waitForVMRelayEligibility(ctx, configC))
-	})
-}
-
-func TestPublishLatestVMRelayConfig(t *testing.T) {
-	t.Run("should publish when channel is empty", func(t *testing.T) {
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
-		defer close(configC)
-		config := &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false}
-
-		publishLatestVMRelayConfig(configC, config)
-		protoassert.Equal(t, config, <-configC)
-	})
-
-	t.Run("should replace stale config when channel is full", func(t *testing.T) {
-		configC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
-		defer close(configC)
-		staleConfig := &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true}
-		latestConfig := &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false}
-
-		configC <- staleConfig
-		publishLatestVMRelayConfig(configC, latestConfig)
-
-		protoassert.Equal(t, latestConfig, <-configC)
-	})
 }

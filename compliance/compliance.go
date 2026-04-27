@@ -49,17 +49,20 @@ type Compliance struct {
 	umhNodeIndex       node.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
+	scrapeConfig       atomic.Pointer[sensor.MsgToCompliance_ScrapeConfig]
+	scrapeConfigReady  concurrency.Signal
 }
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
 	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider: nnp,
-		nodeScanner:      scanner,
-		nodeIndexer:      nodeIndexer,
-		umhNodeInventory: umhNodeInv,
-		umhNodeIndex:     umhNodeIndex,
+		nodeNameProvider:  nnp,
+		nodeScanner:       scanner,
+		nodeIndexer:       nodeIndexer,
+		umhNodeInventory:  umhNodeInv,
+		umhNodeIndex:      umhNodeIndex,
+		scrapeConfigReady: concurrency.NewSignal(),
 	}
 }
 
@@ -95,7 +98,9 @@ func (c *Compliance) Start() {
 
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
-	vmRelayConfigC := c.manageStream(ctx, cli, &stoppedSig, toSensorC)
+	go func() {
+		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
+	}()
 
 	var wg concurrency.WaitGroup
 	wg.Add(3)
@@ -132,7 +137,13 @@ func (c *Compliance) Start() {
 		if !features.VirtualMachines.Enabled() {
 			return
 		}
-		if !waitForVMRelayEligibility(ctx, vmRelayConfigC) {
+		select {
+		case <-ctx.Done():
+			return
+		case <-c.scrapeConfigReady.Done():
+		}
+		if !shouldRunVMRelay(c.scrapeConfig.Load()) {
+			log.Infof("Virtual machine relay disabled on master node by default; set %s=true to enable it", env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
 			return
 		}
 		log.Infof("Virtual machine relay enabled")
@@ -283,87 +294,36 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 	return msg
 }
 
-func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) <-chan *sensor.MsgToCompliance_ScrapeConfig {
-	vmRelayConfigC := make(chan *sensor.MsgToCompliance_ScrapeConfig, 1)
-	go func() {
-		defer close(vmRelayConfigC)
-		for {
-			select {
-			case <-ctx.Done():
-				sig.Signal()
-				return
-			default:
-				// initializeStream must only be called once across all Compliance components,
-				// as multiple calls would overwrite associations on the Sensor side.
-				client, config, err := c.initializeStream(ctx, cli)
-				if err != nil {
-					if ctx.Err() != nil {
-						// continue and the <-ctx.Done() path should be taken next iteration
-						continue
-					}
-					log.Fatalf("Error initializing stream to sensor: %v", err)
-				}
-				// Best-effort publish of the latest config for relay startup without ever
-				// blocking stream management when no receiver is waiting.
-				publishLatestVMRelayConfig(vmRelayConfigC, config)
-				// A second Context is introduced for cancelling the goroutine if runRecv returns.
-				// runRecv only returns on errors, upon which the client will get reinitialized,
-				// orphaning manageSendToSensor in the process.
-				ctx2, cancelFn := context.WithCancel(ctx)
-				if toSensorC != nil {
-					go c.manageSendToSensor(ctx2, client, toSensorC)
-				}
-				if err := c.runRecv(ctx, client, config); err != nil {
-					log.Errorf("Error running recv: %v", err)
-				}
-				cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
-			}
-		}
-	}()
-	return vmRelayConfigC
-}
-
-// publishLatestVMRelayConfig publishes config without blocking and keeps at most
-// the latest scrape config in the channel buffer.
-// REQUIRES: single producer; concurrent calls are unsafe.
-func publishLatestVMRelayConfig(vmRelayConfigC chan *sensor.MsgToCompliance_ScrapeConfig, config *sensor.MsgToCompliance_ScrapeConfig) {
-	select {
-	case vmRelayConfigC <- config:
-		return
-	default:
-	}
-
-	// Channel is full: drop one stale item and try to publish the latest.
-	select {
-	case <-vmRelayConfigC:
-	default:
-	}
-	select {
-	case vmRelayConfigC <- config:
-	default:
-	}
-}
-
-// waitForVMRelayEligibility blocks until VM relay is eligible to start based on
-// scrape config updates. It returns false when the context is cancelled or when
-// the config channel closes before an eligible config is observed.
-func waitForVMRelayEligibility(ctx context.Context, vmRelayConfigC <-chan *sensor.MsgToCompliance_ScrapeConfig) bool {
+func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
-			return false
-		case config, ok := <-vmRelayConfigC:
-			if !ok {
-				return false
+			sig.Signal()
+			return
+		default:
+			// initializeStream must only be called once across all Compliance components,
+			// as multiple calls would overwrite associations on the Sensor side.
+			client, config, err := c.initializeStream(ctx, cli)
+			if err != nil {
+				if ctx.Err() != nil {
+					// continue and the <-ctx.Done() path should be taken next iteration
+					continue
+				}
+				log.Fatalf("Error initializing stream to sensor: %v", err)
 			}
-			if config == nil {
-				log.Info("Virtual machine relay starting without scrape config (safe fallback)")
-				return true
+			c.scrapeConfig.Store(config)
+			c.scrapeConfigReady.Signal()
+			// A second Context is introduced for cancelling the goroutine if runRecv returns.
+			// runRecv only returns on errors, upon which the client will get reinitialized,
+			// orphaning manageSendToSensor in the process.
+			ctx2, cancelFn := context.WithCancel(ctx)
+			if toSensorC != nil {
+				go c.manageSendToSensor(ctx2, client, toSensorC)
 			}
-			if shouldRunVMRelay(config) {
-				return true
+			if err := c.runRecv(ctx, client, config); err != nil {
+				log.Errorf("Error running recv: %v", err)
 			}
-			log.Infof("Virtual machine relay disabled on master node by default; set %s=true to enable it", env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
+			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
 		}
 	}
 }
