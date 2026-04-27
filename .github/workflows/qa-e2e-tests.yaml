@@ -40,9 +40,10 @@ jobs:
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: 30s
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       IS_RACE_BUILD: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug')) && 'true' || 'false' }}
+      ROX_SCANNER_V4: "false"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -57,7 +58,7 @@ jobs:
           echo "scanner_tag=$(make --quiet --no-print-directory scanner-tag)" >> "$GITHUB_ENV"
 
       - name: Create GKE cluster
-        uses: stackrox/actions/infra/create-cluster@v1
+        uses: stackrox/actions/infra/create-cluster@v1 # ratchet:exclude
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
@@ -67,7 +68,7 @@ jobs:
           wait: false
 
       - name: Docker login
-        uses: docker/login-action@v3
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -76,7 +77,7 @@ jobs:
       - name: Build tools
         run: make roxctl_linux-amd64
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@9a19a91eb6ff089b53e28e8b4cf8028888ebee5d # ratchet:actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -88,14 +89,14 @@ jobs:
           cd qa-tests-backend
           make compile
 
-      - uses: stackrox/actions/infra/install-infractl@v1
+      - uses: stackrox/actions/infra/install-infractl@v1 # ratchet:exclude
 
-      - uses: google-github-actions/auth@v3
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
           export_environment_variables: true
 
-      - uses: google-github-actions/setup-gcloud@v3
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
         with:
           install_components: "gke-gcloud-auth-plugin"
 
@@ -109,7 +110,7 @@ jobs:
           echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
       - name: Wait for container images
-        uses: stackrox/actions/release/wait-for-image@v1
+        uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: |
@@ -264,7 +265,7 @@ jobs:
           FinalPost(store_qa_tests_data=True).run()
 
       - name: Publish test summary
-        uses: test-summary/action@v2
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
         if: always()
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
