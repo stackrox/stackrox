@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
+	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
-	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
 )
 
 func TestEnrichDeploymentV2(t *testing.T) {
