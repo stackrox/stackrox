@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTryLock_shouldAcquireLockOnValidTempPath(t *testing.T) {
+func TestTryLock_shouldAcquireAndReacquireAfterRelease(t *testing.T) {
 	lockPath := filepath.Join(t.TempDir(), "test.lock")
 	res, release, err := TryLock(lockPath)
 	require.NoError(t, err)
@@ -37,21 +37,6 @@ func TestTryLock_shouldReportHeldWhenLockAlreadyAcquired(t *testing.T) {
 	require.NoError(t, err2)
 	assert.Equal(t, Held, res2)
 	assert.Nil(t, release2)
-}
-
-func TestTryLock_shouldReleaseLockWhenReleaseFunctionCalled(t *testing.T) {
-	lockPath := filepath.Join(t.TempDir(), "test.lock")
-	res, release, err := TryLock(lockPath)
-	require.NoError(t, err)
-	require.Equal(t, Acquired, res)
-	require.NotNil(t, release)
-	release()
-
-	res2, release2, err2 := TryLock(lockPath)
-	require.NoError(t, err2)
-	assert.Equal(t, Acquired, res2)
-	require.NotNil(t, release2)
-	release2()
 }
 
 func TestTryLock_shouldCreateParentDirectoryIfMissing(t *testing.T) {

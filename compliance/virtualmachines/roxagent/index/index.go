@@ -32,7 +32,9 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lo
 		return fmt.Errorf("delaying initial index: %w", err)
 	}
 
-	if err := runSingleWithLock(ctx, cfg, client, lockPath); err != nil {
+	scanFn := func() error { return RunSingle(ctx, cfg, client) }
+
+	if err := runWithLock(lockPath, scanFn); err != nil {
 		return fmt.Errorf("handling initial index: %w", err)
 	}
 
@@ -44,19 +46,19 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lo
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := runSingleWithLock(ctx, cfg, client, lockPath); err != nil {
+			if err := runWithLock(lockPath, scanFn); err != nil {
 				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
 	}
 }
 
-func runSingleWithLock(ctx context.Context, cfg *common.Config, client *vsock.Client, lockPath string) error {
+func runWithLock(lockPath string, scanFn func() error) error {
 	res, release, lockErr := lock.TryLock(lockPath)
 	switch res {
 	case lock.Acquired:
 		defer release()
-		return RunSingle(ctx, cfg, client)
+		return scanFn()
 	case lock.Held:
 		log.Info("roxagent scan skipped because another agent is already running")
 		return nil
@@ -68,7 +70,7 @@ func runSingleWithLock(ctx context.Context, cfg *common.Config, client *vsock.Cl
 				lockErr,
 			)
 		})
-		return RunSingle(ctx, cfg, client)
+		return scanFn()
 	default:
 		return fmt.Errorf("unexpected lock result: %d", res)
 	}

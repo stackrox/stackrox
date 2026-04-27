@@ -1,7 +1,6 @@
 package index
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,35 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// runWithLock mirrors runSingleWithLock's lock switch logic but invokes scanFn instead of RunSingle.
-func runWithLock(lockPath string, scanFn func() error) (lock.Result, error) {
-	res, release, lockErr := lock.TryLock(lockPath)
-	switch res {
-	case lock.Acquired:
-		defer release()
-		return res, scanFn()
-	case lock.Held:
-		return res, nil
-	case lock.Unavailable:
-		_ = lockErr
-		return res, scanFn()
-	default:
-		return res, fmt.Errorf("unexpected lock result: %d", res)
-	}
-}
-
 func TestRunWithLock_orchestration(t *testing.T) {
 	tests := map[string]struct {
 		setup      func(t *testing.T) (lockPath string, cleanup func())
-		assertions func(t *testing.T, scanCalled bool, res lock.Result, err error)
+		assertions func(t *testing.T, scanCalled bool, err error)
 	}{
 		"should run scan when lock acquired": {
 			setup: func(t *testing.T) (string, func()) {
 				return filepath.Join(t.TempDir(), "test.lock"), nil
 			},
-			assertions: func(t *testing.T, scanCalled bool, res lock.Result, err error) {
+			assertions: func(t *testing.T, scanCalled bool, err error) {
 				assert.True(t, scanCalled)
-				assert.Equal(t, lock.Acquired, res)
 				assert.NoError(t, err)
 			},
 		},
@@ -52,9 +33,8 @@ func TestRunWithLock_orchestration(t *testing.T) {
 				require.NotNil(t, release)
 				return lockPath, release
 			},
-			assertions: func(t *testing.T, scanCalled bool, res lock.Result, err error) {
+			assertions: func(t *testing.T, scanCalled bool, err error) {
 				assert.False(t, scanCalled)
-				assert.Equal(t, lock.Held, res)
 				assert.NoError(t, err)
 			},
 		},
@@ -68,9 +48,8 @@ func TestRunWithLock_orchestration(t *testing.T) {
 				}
 				return filepath.Join(roDir, "test.lock"), cleanup
 			},
-			assertions: func(t *testing.T, scanCalled bool, res lock.Result, err error) {
+			assertions: func(t *testing.T, scanCalled bool, err error) {
 				assert.True(t, scanCalled)
-				assert.Equal(t, lock.Unavailable, res)
 				assert.NoError(t, err)
 			},
 		},
@@ -84,11 +63,11 @@ func TestRunWithLock_orchestration(t *testing.T) {
 			}
 
 			var scanCalled bool
-			res, err := runWithLock(lockPath, func() error {
+			err := runWithLock(lockPath, func() error {
 				scanCalled = true
 				return nil
 			})
-			tt.assertions(t, scanCalled, res, err)
+			tt.assertions(t, scanCalled, err)
 		})
 	}
 }
