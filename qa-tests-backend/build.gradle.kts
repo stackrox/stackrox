@@ -12,9 +12,9 @@ codenarc {
     reportFormat = "text"
 }
 
-apply(from = "protobuf.gradle")
-
 afterEvaluate {
+    apply(from = "protobuf.gradle")
+
     // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
     sourceSets.forEach { sourceSet ->
         sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
