@@ -19,6 +19,7 @@ import type { Deployment } from 'types/deployment.proto';
 import type { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
 
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
 
@@ -62,6 +63,11 @@ function DeploymentDetails({
 }: DeploymentDetailsProps) {
     const labelKeys = Object.keys(deployment.labels);
     const annotationKeys = Object.keys(deployment.annotations);
+
+    const vulnMgmtBasePath = deployment.platformComponent
+        ? vulnerabilitiesPlatformPath
+        : vulnerabilitiesUserWorkloadsPath;
+    const getImageUrl = (imageId: string) => `${vulnMgmtBasePath}/images/${imageId}`;
 
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
@@ -291,7 +297,10 @@ function DeploymentDetails({
                                 {deployment.containers.map((container) => {
                                     return (
                                         <StackItem key={container.id}>
-                                            <DeploymentContainerConfig container={container} />
+                                            <DeploymentContainerConfig
+                                                container={container}
+                                                getImageUrl={getImageUrl}
+                                            />
                                         </StackItem>
                                     );
                                 })}
