@@ -88,22 +88,6 @@ func defaultBackOff() backoff.BackOff {
 	return eb
 }
 
-// noopUMH is a no-op UnconfirmedMessageHandler used as a fallback
-// when RunWithRetry is called without explicit UMH wiring.
-type noopUMH struct {
-	retryCh chan string
-}
-
-func newNoopUMH() *noopUMH {
-	return &noopUMH{retryCh: make(chan string)}
-}
-
-func (n *noopUMH) HandleACK(string)              {}
-func (n *noopUMH) HandleNACK(string)             {}
-func (n *noopUMH) ObserveSending(string)         {}
-func (n *noopUMH) RetryCommand() <-chan string   { return n.retryCh }
-func (n *noopUMH) OnACK(func(resourceID string)) {}
-
 func makeDefaultOperation(umh UnconfirmedMessageHandler) Operation {
 	return func(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 		ctx, cancel := context.WithCancel(ctx)
