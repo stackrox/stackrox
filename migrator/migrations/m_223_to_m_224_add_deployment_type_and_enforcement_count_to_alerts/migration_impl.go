@@ -238,8 +238,10 @@ func processEnforcementBatch(db postgres.DB, ctx context.Context, lastID string)
 		serialized []byte
 	}
 	updates := make([]alertUpdate, 0, batchSize)
+	fetched := 0
 
 	for rows.Next() {
+		fetched++
 		var id string
 		var data []byte
 		if err := rows.Scan(&id, &data); err != nil {
@@ -300,7 +302,7 @@ func processEnforcementBatch(db postgres.DB, ctx context.Context, lastID string)
 		return 0, "", errors.Wrap(err, "closing batch results")
 	}
 
-	return len(updates), newLastID, nil
+	return fetched, newLastID, nil
 }
 
 // computeEnforcementCount mirrors convert.EnforcementCount but is defined here

@@ -250,14 +250,11 @@ func makeBenchAlert(index int, deployIDs []string, deployTypes []string) *storag
 
 func resetBenchColumns(b *testing.B, ctx context.Context, db *pghelper.TestPostgres) {
 	b.Helper()
-	// Drop the columns added by migration so it re-adds them
+	// Drop the columns added by migration so it re-adds them.
+	// The blob already contains enforcement_count from the prior run,
+	// but the migration recomputes and re-serializes unconditionally
+	// so the benchmark still measures the full work.
 	for _, col := range []string{"deployment_type", "enforcementcount"} {
 		_, _ = db.Exec(ctx, fmt.Sprintf("ALTER TABLE alerts DROP COLUMN IF EXISTS %s", col))
-	}
-	// Reset enforcement_count in serialized blobs (set to 0)
-	_, err := db.Exec(ctx,
-		`UPDATE alerts SET serialized = serialized WHERE enforcement_action != 0`)
-	if err != nil {
-		b.Logf("Warning: could not reset serialized blobs: %v", err)
 	}
 }
