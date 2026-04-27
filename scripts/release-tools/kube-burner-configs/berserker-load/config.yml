@@ -47,7 +47,7 @@ jobs:
           podReplicas: 2
 
       - objectTemplate: file-activity-load-daemonset.yml
-        replicas: 4
+        replicas: 1
         inputVars:
           podReplicas: 2
 
