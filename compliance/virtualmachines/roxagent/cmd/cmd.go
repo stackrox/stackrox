@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -93,7 +94,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 			}
 			return nil
 		case lock.Held:
-			return fmt.Errorf("roxagent is already running; exiting")
+			return errors.New("roxagent is already running; exiting")
 		case lock.Unavailable:
 			log.Warnf(
 				"could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load",
