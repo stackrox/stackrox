@@ -417,8 +417,9 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 }
 
 // GatherTailoredProfiles reports the total number of tailored profile references across all scan configurations
-// (not the number of distinct tailored profiles). Individual tailored profile names are not collected because
-// they are user-defined (unlike standard Compliance Operator profiles) and would expose customer data.
+// (not the number of distinct tailored profiles - this mimics GatherProfiles where we count the same profile being
+// present in several scan configs). Individual tailored profile names are not collected because they are user-defined
+// (unlike standard Compliance Operator profiles) and would expose customer data.
 func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		if ds == nil {
