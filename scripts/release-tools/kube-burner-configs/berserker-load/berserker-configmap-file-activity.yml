@@ -11,5 +11,5 @@ data:
     main (workers = 2, duration = 0) {
       open(random_path("/tmp/data"));
     } : exp {
-      rate = 10.0;  // 10 operations per second
+      rate = 1000.0;
     }
