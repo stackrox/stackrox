@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/lock"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -17,16 +19,20 @@ import (
 
 var log = logging.LoggerForModule()
 
+var daemonLockUnavailableWarnOnce sync.Once
+
 const (
 	mappingClientTimeout = 30 * time.Second
 )
 
-func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
+// RunDaemon runs the indexer on an interval. lockPath is used for a non-blocking exclusive flock
+// around each scan so concurrent agent processes do not overload the host.
+func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lockPath string) error {
 	if err := applyRandomDelay(ctx, cfg.MaxInitialReportDelay); err != nil {
 		return fmt.Errorf("delaying initial index: %w", err)
 	}
 
-	if err := RunSingle(ctx, cfg, client); err != nil {
+	if err := runSingleWithLock(ctx, cfg, client, lockPath); err != nil {
 		return fmt.Errorf("handling initial index: %w", err)
 	}
 
@@ -38,10 +44,33 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := RunSingle(ctx, cfg, client); err != nil {
+			if err := runSingleWithLock(ctx, cfg, client, lockPath); err != nil {
 				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
+	}
+}
+
+func runSingleWithLock(ctx context.Context, cfg *common.Config, client *vsock.Client, lockPath string) error {
+	res, release, lockErr := lock.TryLock(lockPath)
+	switch res {
+	case lock.Acquired:
+		defer release()
+		return RunSingle(ctx, cfg, client)
+	case lock.Held:
+		log.Info("roxagent scan skipped because another agent is already running")
+		return nil
+	case lock.Unavailable:
+		daemonLockUnavailableWarnOnce.Do(func() {
+			log.Warnf(
+				"could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load",
+				lockPath,
+				lockErr,
+			)
+		})
+		return RunSingle(ctx, cfg, client)
+	default:
+		return fmt.Errorf("unexpected lock result: %d", res)
 	}
 }
 

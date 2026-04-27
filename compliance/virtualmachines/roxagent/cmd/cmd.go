@@ -8,8 +8,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/index"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/lock"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 const (
 	minDaemonIndexInterval = 10 * time.Minute
@@ -74,15 +78,35 @@ func RootCmd(ctx context.Context) *cobra.Command {
 			Verbose:  cfg.Verbose,
 		}
 		if cfg.DaemonMode {
-			if err := index.RunDaemon(ctx, cfg, client); err != nil {
+			if err := index.RunDaemon(ctx, cfg, client, lock.DefaultLockPath); err != nil {
 				return fmt.Errorf("running indexer daemon: %w", err)
 			}
 			return nil
 		}
-		if err := index.RunSingle(ctx, cfg, client); err != nil {
-			return fmt.Errorf("running indexer: %w", err)
+
+		res, release, lockErr := lock.TryLock(lock.DefaultLockPath)
+		switch res {
+		case lock.Acquired:
+			defer release()
+			if err := index.RunSingle(ctx, cfg, client); err != nil {
+				return fmt.Errorf("running indexer: %w", err)
+			}
+			return nil
+		case lock.Held:
+			return fmt.Errorf("roxagent is already running; exiting")
+		case lock.Unavailable:
+			log.Warnf(
+				"could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load",
+				lock.DefaultLockPath,
+				lockErr,
+			)
+			if err := index.RunSingle(ctx, cfg, client); err != nil {
+				return fmt.Errorf("running indexer: %w", err)
+			}
+			return nil
+		default:
+			return fmt.Errorf("unexpected lock result: %d", res)
 		}
-		return nil
 	}
 	return &cmd
 }
