@@ -1,7 +1,6 @@
 package migratetooperator
 
 import (
-	"io"
 	"os"
 
 	"github.com/pkg/errors"
@@ -31,7 +30,7 @@ func (cmd *Command) AddFlags(c *cobra.Command) {
 
 // Run creates a Source from the given flags, calls transform, emits warnings,
 // marshals the result to YAML, and writes it to output (or stdout).
-func Run[T runtime.Object](cmd *Command, transform func(migrate.Source) (T, []string, error)) error {
+func Run[T runtime.Object](cmd *Command, transform func(migrate.Source) (T, []string, error)) (retErr error) {
 	src, err := createSource(cmd.FromDir, cmd.Namespace)
 	if err != nil {
 		return err
@@ -51,26 +50,22 @@ func Run[T runtime.Object](cmd *Command, transform func(migrate.Source) (T, []st
 		return errors.Wrap(err, "marshalling custom resource")
 	}
 
-	var w io.Writer = cmd.Env.InputOutput().Out()
-	var f *os.File
+	w := cmd.Env.InputOutput().Out()
 	if cmd.Output != "" {
-		f, err = os.Create(cmd.Output)
+		f, err := os.Create(cmd.Output)
 		if err != nil {
 			return errors.Wrap(err, "creating output file")
 		}
+		defer func() {
+			if cerr := f.Close(); cerr != nil && retErr == nil {
+				retErr = errors.Wrap(cerr, "closing output file")
+			}
+		}()
 		w = f
 	}
 
 	if _, err := w.Write(out); err != nil {
-		if f != nil {
-			_ = f.Close()
-		}
 		return errors.Wrap(err, "writing output")
-	}
-	if f != nil {
-		if err := f.Close(); err != nil {
-			return errors.Wrap(err, "closing output file")
-		}
 	}
 	return nil
 }
@@ -79,10 +74,16 @@ func createSource(fromDir, namespace string) (migrate.Source, error) {
 	switch {
 	case fromDir != "":
 		src, err := migrate.NewDirSource(fromDir)
-		return src, errors.Wrap(err, "reading manifests from directory")
+		if err != nil {
+			return nil, errors.Wrap(err, "reading manifests from directory")
+		}
+		return src, nil
 	case namespace != "":
 		src, err := migrate.NewClusterSource(namespace)
-		return src, errors.Wrap(err, "connecting to cluster")
+		if err != nil {
+			return nil, errors.Wrap(err, "connecting to cluster")
+		}
+		return src, nil
 	default:
 		return nil, errors.New("either --from-dir or --namespace must be specified")
 	}

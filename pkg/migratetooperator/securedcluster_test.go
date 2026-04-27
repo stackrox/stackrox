@@ -14,22 +14,23 @@ import (
 
 type scFakeSource struct {
 	fakeSource
-	clusterName       string
-	clusterNameInData bool
-	webhooks          []admissionv1.ValidatingWebhook
+	clusterName        string
+	clusterNamePresent bool
+	clusterNameInData  bool
+	webhooks           []admissionv1.ValidatingWebhook
 }
 
 func (f *scFakeSource) Secret(name string) (*corev1.Secret, error) {
-	if name == "helm-effective-cluster-name" && f.clusterName != "" {
-		s := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name}}
-		if f.clusterNameInData {
-			s.Data = map[string][]byte{"cluster-name": []byte(f.clusterName)}
-		} else {
-			s.StringData = map[string]string{"cluster-name": f.clusterName}
-		}
-		return s, nil
+	if name != "helm-effective-cluster-name" || (!f.clusterNamePresent && f.clusterName == "") {
+		return nil, nil
 	}
-	return nil, nil
+	s := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	if f.clusterNameInData {
+		s.Data = map[string][]byte{"cluster-name": []byte(f.clusterName)}
+	} else {
+		s.StringData = map[string]string{"cluster-name": f.clusterName}
+	}
+	return s, nil
 }
 
 func (f *scFakeSource) ValidatingWebhookConfiguration(_ string) (*admissionv1.ValidatingWebhookConfiguration, error) {
@@ -67,7 +68,8 @@ func defaultSCSource() *scFakeSource {
 				},
 			},
 		},
-		clusterName: "my-cluster",
+		clusterName:        "my-cluster",
+		clusterNamePresent: true,
 		webhooks: []admissionv1.ValidatingWebhook{
 			{Name: "check.stackrox.io", FailurePolicy: &ignore},
 			{Name: "policyeval.stackrox.io", FailurePolicy: &ignore},
@@ -163,9 +165,19 @@ func TestSC_CustomImages(t *testing.T) {
 func TestSC_MissingClusterName(t *testing.T) {
 	src := defaultSCSource()
 	src.clusterName = ""
+	src.clusterNamePresent = false
 	_, _, err := TransformToSecuredCluster(src)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestSC_EmptyClusterNameInSecret(t *testing.T) {
+	src := defaultSCSource()
+	src.clusterName = ""
+	src.clusterNamePresent = true
+	_, _, err := TransformToSecuredCluster(src)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cluster name is empty")
 }
 
 func TestSC_ClusterNameFromData(t *testing.T) {
