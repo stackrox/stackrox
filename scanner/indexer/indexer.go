@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/rand/v2"
 	"net/http"
 	"net/url"
@@ -37,7 +38,6 @@ import (
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -171,8 +171,6 @@ type localIndexer struct {
 
 // NewIndexer creates a new indexer.
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewIndexer")
-
 	var success bool
 
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
@@ -268,19 +266,19 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		// Start the manifest GC.
 		go func() {
 			if err := manifestManager.StartGC(); err != nil {
-				zlog.Error(ctx).Err(err).Msg("manifest GC failed")
+				slog.ErrorContext(ctx, "manifest GC failed", "reason", err)
 			}
 		}()
 	}
 
 	deleteIntervalStart := env.ScannerV4ManifestDeleteStart.DurationSetting()
 	if deleteIntervalStart < minManifestDeleteStart {
-		zlog.Warn(ctx).Msgf("configured manifest delete interval (%v) start is too small: setting to %v", deleteIntervalStart, minManifestDeleteStart)
+		slog.WarnContext(ctx, "configured manifest delete interval start too small, using minimum", "configured", deleteIntervalStart, "minimum", minManifestDeleteStart)
 		deleteIntervalStart = minManifestDeleteStart
 	}
 	deleteIntervalDuration := env.ScannerV4ManifestDeleteDuration.DurationSetting()
 	if deleteIntervalDuration < minManifestDeleteDuration {
-		zlog.Warn(ctx).Msgf("configured manifest delete interval (%v) duration is too small: setting to %v", deleteIntervalDuration, minManifestDeleteDuration)
+		slog.WarnContext(ctx, "configured manifest delete interval duration too small, using minimum", "configured", deleteIntervalDuration, "minimum", minManifestDeleteDuration)
 		deleteIntervalDuration = minManifestDeleteDuration
 	}
 
@@ -368,7 +366,6 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
 	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
 	if features.ScannerV4ReIndex.Enabled() && i.manifestManager != nil {
 		err = errors.Join(err, i.manifestManager.StopGC())
@@ -389,8 +386,6 @@ func (i *localIndexer) Ready(ctx context.Context) error {
 // URL. This method performs a partial content request on each layer to generate
 // the layer's URI and headers.
 func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, imageURL string, opts ...Option) (*claircore.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.IndexContainerImage")
-
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, err
@@ -414,10 +409,7 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		Hash: manifestDigest,
 	}
 
-	zlog.Info(ctx).
-		Str("image_reference", imgRef.String()).
-		Int("layers_count", len(imgLayers)).
-		Msg("retrieving layers to populate container image manifest")
+	slog.InfoContext(ctx, "retrieving layers to populate container image manifest", "image_reference", imgRef.String(), "layers_count", len(imgLayers))
 	for _, layer := range imgLayers {
 		ccDigest, layerDigest, err := getLayerDigests(layer)
 		if err != nil {
@@ -521,16 +513,10 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	utils.IgnoreError(res.Body.Close)
 	if res.StatusCode != http.StatusPartialContent {
 		if exists, _ := regsNoRange.ContainsOrAdd(registryURL.Host, struct{}{}); !exists {
-			zlog.Warn(ctx).
-				Str("registry", registryURL.Host).
-				Msg("Range HTTP header may not be supported, so indexing may required about twice as many image pulls")
+			slog.WarnContext(ctx, "Range HTTP header may not be supported, so indexing may required about twice as many image pulls", "registry", registryURL.Host)
 		}
 
-		zlog.Debug(ctx).
-			Int("status_code", res.StatusCode).
-			Int("len", int(res.ContentLength)).
-			Str("url", u.String()).
-			Msg("server might not support requests with Range HTTP header")
+		slog.DebugContext(ctx, "server might not support requests with Range HTTP header", "status_code", res.StatusCode, "len", int(res.ContentLength), "url", u.String())
 	}
 	return res.Request, nil
 }
@@ -622,7 +608,6 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 }
 
 func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, indexerVersion string, report *claircore.IndexReport) (string, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.StoreIndexReport")
 
 	var err error
 	report.Hash, err = createManifestDigest(hashID)

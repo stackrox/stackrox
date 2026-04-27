@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	stdlog "log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ import (
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/rhel/vex"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
@@ -88,9 +89,9 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		parsedInterval, err := time.ParseDuration(configuredInterval)
 		switch {
 		case err != nil:
-			log.Printf("invalid interval, using default (%v): %v", interval, err)
+			stdlog.Printf("invalid interval, using default (%v): %v", interval, err)
 		case parsedInterval < interval:
-			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
+			stdlog.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
 		default:
 			interval = parsedInterval
 		}
@@ -106,7 +107,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 
 	// Export to bundle(s).
 	for name, o := range bundles {
-		ctx = zlog.ContextWithValues(ctx, "bundle", name)
+		ctx = log.With(ctx, "bundle", name)
 		w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
 		if err != nil {
 			return err
@@ -185,7 +186,8 @@ func rhelVexOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{rhelVexUpdaterName}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
 			rhelVexUpdaterName: func(i any) error {
-				ctx := zlog.ContextWithValues(context.Background(), "updater", rhelVexUpdaterName)
+				ctx := context.Background()
+				ctx = log.With(ctx, "updater", rhelVexUpdaterName)
 
 				// This function gets called for both the Factory and the Updater.
 				// We only need to configure the Factory (which has the CompressedFileTimeout field).
@@ -196,14 +198,10 @@ func rhelVexOpts() []updates.ManagerOption {
 					if timeout != "" {
 						parsedTimeout, err := time.ParseDuration(timeout)
 						if err != nil {
-							zlog.Warn(ctx).
-								Err(err).
-								Msg("using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration")
+							slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
 						} else {
 							cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
-							zlog.Info(ctx).
-								Str("timeout", parsedTimeout.String()).
-								Msg("using compressed file timeout")
+							slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
 						}
 					}
 				case *vex.UpdaterConfig:

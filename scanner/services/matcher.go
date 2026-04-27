@@ -3,11 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -59,40 +60,39 @@ func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *m
 }
 
 func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher.GetVulnerabilities")
 	if err := validators.ValidateGetVulnerabilitiesRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 	if err := s.matcher.Initialized(ctx); err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
 	}
-	ctx = zlog.ContextWithValues(ctx, "hash_id", req.GetHashId())
+	ctx = log.With(ctx, "hash_id", req.GetHashId())
 	// Get an index report to enrich: either using the indexer, or provided in the request.
 	var ir *claircore.IndexReport
 	var err error
 	if req.GetContents() == nil {
 		if s.disableEmptyContents {
-			zlog.Debug(ctx).Msg("no contents, rejecting")
+			slog.DebugContext(ctx, "no contents, rejecting")
 			return nil, errox.InvalidArgs.New("empty contents is disabled")
 		}
-		zlog.Debug(ctx).Msg("no contents, retrieving")
+		slog.DebugContext(ctx, "no contents, retrieving")
 		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId(), false)
 	} else {
-		zlog.Info(ctx).Msg("has contents, parsing")
+		slog.InfoContext(ctx, "has contents, parsing")
 		ir, err = parseIndexReport(req.GetContents())
 	}
 	if err != nil {
 		return nil, err
 	}
-	zlog.Info(ctx).Msgf("getting vulnerabilities for index report %q", req.GetHashId())
+	slog.InfoContext(ctx, "getting vulnerabilities for index report", "hash_id", req.GetHashId())
 	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Send()
+		slog.ErrorContext(ctx, "getting vulnerabilities failed", "reason", err)
 		return nil, err
 	}
 	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
+		slog.ErrorContext(ctx, "internal error: converting to v4.VulnerabilityReport", "reason", err)
 		return nil, err
 	}
 	report.HashId = req.GetHashId()
@@ -169,25 +169,21 @@ func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) 
 }
 
 func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*v4.GetSBOMResponse, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/service/matcher.GetSBOM",
-		"id", req.GetId(),
-		"name", req.GetName(),
-	)
+	ctx = log.With(ctx, "id", req.GetId(), "name", req.GetName())
 
 	if err := validators.ValidateGetSBOMRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	zlog.Info(ctx).Msgf("generating SBOM from index report (%d dists (%d deprecated), %d envs (%d deprecated), %d pkgs (%d deprecated), %d repos (%d deprecated))",
-		len(req.GetContents().GetDistributions()),
-		len(req.GetContents().GetDistributionsDEPRECATED()),
-		len(req.GetContents().GetEnvironments()),
-		len(req.GetContents().GetEnvironmentsDEPRECATED()),
-		len(req.GetContents().GetPackages()),
-		len(req.GetContents().GetPackagesDEPRECATED()),
-		len(req.GetContents().GetRepositories()),
-		len(req.GetContents().GetRepositoriesDEPRECATED()),
+	slog.InfoContext(ctx, "generating SBOM from index report",
+		"distributions", len(req.GetContents().GetDistributions()),
+		"distributions_deprecated", len(req.GetContents().GetDistributionsDEPRECATED()),
+		"environments", len(req.GetContents().GetEnvironments()),
+		"environments_deprecated", len(req.GetContents().GetEnvironmentsDEPRECATED()),
+		"packages", len(req.GetContents().GetPackages()),
+		"packages_deprecated", len(req.GetContents().GetPackagesDEPRECATED()),
+		"repositories", len(req.GetContents().GetRepositories()),
+		"repositories_deprecated", len(req.GetContents().GetRepositoriesDEPRECATED()),
 	)
 
 	// The remote indexer is not used. This creates flexibility and enables SBOMs to be generated
@@ -195,7 +191,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	// indexed by indexer, such as Central scans from third party scanners).
 	ir, err := parseIndexReport(req.GetContents())
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("parsing index report")
+		slog.ErrorContext(ctx, "parsing index report", "reason", err)
 		return nil, err
 	}
 
@@ -205,7 +201,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		Comment:   fmt.Sprintf("Generated for '%s'", req.GetName()),
 	})
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("generating SBOM")
+		slog.ErrorContext(ctx, "generating SBOM", "reason", err)
 		return nil, err
 	}
 

@@ -3,12 +3,12 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
 )
 
 // ErrDidNotUpdateRow indicates the row was not updated.
@@ -27,12 +27,6 @@ func (e *externalIndexStore) StoreIndexReport(
 	expiration time.Time,
 	shouldUpdateStoredReportFn func(iv string) bool,
 ) error {
-	ctx = zlog.ContextWithValues(
-		ctx,
-		"component",
-		"datastore/postgres/externalIndexStore.StoreIndexReport",
-	)
-
 	const selectIndexReport = `
 		SELECT indexer_version FROM external_index_report
 		WHERE hash_id = $1 FOR UPDATE`
@@ -79,8 +73,6 @@ func (e *externalIndexStore) StoreIndexReport(
 }
 
 func (e *externalIndexStore) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.GetIndexReport")
-
 	const selectIndexReport = `
 		SELECT index_report FROM external_index_report
 			WHERE hash_id = $1`
@@ -106,12 +98,6 @@ func (e *externalIndexStore) GCIndexReports(
 ) ([]string, error) {
 	o := makeReindexGCOpts(opts)
 
-	ctx = zlog.ContextWithValues(
-		ctx,
-		"component",
-		"datastore/postgres/externalIndexStore.GCIndexReports",
-	)
-
 	const deleteIndexReports = `
 		DELETE FROM external_index_report
 		WHERE hash_id IN (
@@ -132,7 +118,7 @@ func (e *externalIndexStore) GCIndexReports(
 	}
 	defer func() {
 		if commitErr := tx.Commit(ctx); commitErr != nil && !errors.Is(commitErr, pgx.ErrTxClosed) {
-			zlog.Warn(ctx).Err(commitErr).Msg("failed to commit GCIndexReports transaction")
+			slog.WarnContext(ctx, "failed to commit GCIndexReports transaction", "error", commitErr)
 		}
 	}()
 
@@ -146,7 +132,7 @@ func (e *externalIndexStore) GCIndexReports(
 	for rows.Next() {
 		var hashID string
 		if err := rows.Scan(&hashID); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("scanning deleted external index report row")
+			slog.WarnContext(ctx, "scanning deleted external index report row", "reason", err)
 			continue
 		}
 		deletedHashes = append(deletedHashes, hashID)
