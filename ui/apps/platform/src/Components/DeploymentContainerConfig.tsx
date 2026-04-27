@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExpandableSection, Stack, StackItem } from '@patternfly/react-core';
+import { ExpandableSection, Flex, FlexItem, Label, Stack, StackItem } from '@patternfly/react-core';
 
 import type { Container } from 'types/deployment.proto';
 import ContainerImageInfo from 'Components/ContainerImageInfo';
@@ -22,11 +22,22 @@ function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContain
         setIsExpanded(_isExpanded);
     };
 
-    const toggleText = container.name;
+    const toggleContent = (
+        <Flex alignItems={{ default: 'alignItemsCenter' }} gap={{ default: 'gapSm' }}>
+            <FlexItem>{container.name}</FlexItem>
+            {container.type === 'INIT' && (
+                <FlexItem>
+                    <Label isCompact color="teal">
+                        Init
+                    </Label>
+                </FlexItem>
+            )}
+        </Flex>
+    );
 
     return (
         <ExpandableSection
-            toggleText={toggleText}
+            toggleContent={toggleContent}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             isExpanded={isExpanded}
             isWidthLimited
