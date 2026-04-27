@@ -272,7 +272,7 @@ github.com/stackrox/rox/path/to/package
 - Total indirect users: [count] files
 
 **Team Assignment:**
-Based on `.github/CODEOWNERS` and component usage: [suggest team(s) from CODEOWNERS file]
+[Team name(s) from CODEOWNERS based on component usage]
 ```
 
 **For TRANSITIVE dependencies (from Step 2A):**
@@ -307,7 +307,7 @@ Our code (StackRox)
 
 **Team Assignment:**
 N/A - Transitive dependency managed via [intermediate-package] updates
-[If CVE with production impact: assign to team(s) owning intermediate package usage based on `.github/CODEOWNERS`]
+[If CVE with production impact: assign to team(s) from CODEOWNERS owning files that use the intermediate package]
 ```
 
 ## Advanced Techniques
@@ -411,7 +411,7 @@ find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
 - central/database/postgres/migration.go:89 - uses Exec()
 
 **Team Assignment:**
-@stackrox/core-workflows (per `.github/CODEOWNERS`: `pkg/postgres/**/*` and `migrator/**/*`)
+@stackrox/core-workflows (from CODEOWNERS: `pkg/postgres/**/*` and `migrator/**/*`)
 ```
 
 ### Example 2: Test-only dependency
@@ -490,7 +490,7 @@ N/A - Vulnerable functionality not used (can close issue)
 - pkg/utils/convert.go:234 - uses reflect.SliceHeader in byte slice operations
 
 **Team Assignment:**
-Based on `.github/CODEOWNERS`:
+From CODEOWNERS:
 - `pkg/` (utils) → Multiple teams may own this (check callers)
 - `central/` → @stackrox/core-workflows or specific team based on subdirectory
 ```
@@ -579,9 +579,9 @@ github.com/stackrox/rox/pkg/logging
 - Architecture: All platform logging flows through pkg/logging → zap
 
 **Team Assignment:**
-Based on`.github/CODEOWNERS`: Multiple teams own components using logging.
-Primary: Team owning `pkg/` logging wrapper (check CODEOWNERS for `pkg/logging`).
-Impact: ALL TEAMS (critical infrastructure used across entire codebase)
+From CODEOWNERS: Multiple teams own components using logging.
+Primary: Team owning `pkg/logging` wrapper.
+Impact: ALL TEAMS (critical infrastructure)
 ```
 
 ### Example 7: Transitive dependency
@@ -630,9 +630,10 @@ From go mod graph:
 - We never call protoc-gen-validate directly
 
 **Team Assignment:**
-Based on `.github/CODEOWNERS` for files using the intermediate dependency (cloud.google.com/go/storage):
-- `central/externalbackups/**/*` → Team owning external backups
-- `pkg/cloudproviders/**/*` → Team owning cloud provider integrations
+From CODEOWNERS (files using the intermediate cloud.google.com/go/storage):
+- `central/externalbackups/**/*` → External backups team
+- `pkg/cloudproviders/**/*` → Cloud provider integrations team
+
 Note: Transitive dependency managed via GCS SDK, but assign to team(s) using the intermediate package if CVE has production impact
 ```
 
