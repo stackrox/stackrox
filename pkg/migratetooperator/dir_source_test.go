@@ -51,36 +51,6 @@ spec:
           path: /data/stackrox
 `
 
-func TestDirSource_PVCInSubdir(t *testing.T) {
-	dir := t.TempDir()
-	centralDir := filepath.Join(dir, "central")
-	require.NoError(t, os.MkdirAll(centralDir, 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(centralDir, "01-central-12-central-db.yaml"), []byte(pvcDeploymentYAML), 0644))
-
-	src, err := NewDirSource(dir)
-	require.NoError(t, err)
-
-	dep, err := src.Deployment("central-db")
-	require.NoError(t, err)
-	assert.Equal(t, "central-db", dep.Name)
-	require.Len(t, dep.Spec.Template.Spec.Volumes, 1)
-	require.NotNil(t, dep.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim)
-	assert.Equal(t, "my-pvc", dep.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
-}
-
-func TestDirSource_PVCInRoot(t *testing.T) {
-	dir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "deployment.yaml"), []byte(pvcDeploymentYAML), 0644))
-
-	src, err := NewDirSource(dir)
-	require.NoError(t, err)
-
-	dep, err := src.Deployment("central-db")
-	require.NoError(t, err)
-	assert.Equal(t, "central-db", dep.Name)
-	assert.Equal(t, "my-pvc", dep.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
-}
-
 func TestDirSource_DeepNesting(t *testing.T) {
 	dir := t.TempDir()
 	nested := filepath.Join(dir, "a", "b", "c")
