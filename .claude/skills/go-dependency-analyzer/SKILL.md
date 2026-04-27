@@ -49,9 +49,13 @@ grep -i "module-name" go.mod | grep "// indirect"
 
 **CRITICAL DECISION POINT:**
 
+A dependency can be BOTH direct and indirect (imported directly by some packages, pulled transitively by others).
+
 Check if dependency is marked `// indirect`:
-- **If YES:** Follow **Step 2A: Transitive Dependency Analysis Path**
-- **If NO:** Follow **Step 3: Direct Dependency Analysis Path**
+- **If YES (only indirect):** Follow **Step 2A: Transitive Dependency Analysis Path**
+- **If NO (direct, or both direct+indirect):** Follow **Step 3: Direct Dependency Analysis Path**
+
+Note: If `go mod why` shows direct import paths AND the dependency is marked `// indirect`, it means the dependency is used both ways - report this in the analysis.
 
 ### Step 2A: Transitive Dependency Analysis Path
 
@@ -267,15 +271,8 @@ github.com/stackrox/rox/path/to/package
 - Components using wrapper: [list]
 - Total indirect users: [count] files
 
-**Recommended Action:**
-- [ ] Assign to [team] - production impact in [component]
-- [ ] Low priority - test code only
-- [ ] Close - dependency not used
-- [ ] Close - vulnerable functionality not used
-- [ ] Review fork - sync with upstream [if fork detected]
-
 **Team Assignment:**
-Based on component usage: [suggest team from component ownership]
+Based on `.github/CODEOWNERS` and component usage: [suggest team(s) from CODEOWNERS file]
 ```
 
 **For TRANSITIVE dependencies (from Step 2A):**
@@ -308,14 +305,9 @@ Our code (StackRox)
 - [Brief explanation - e.g., "GCS SDK uses it for proto validation"]
 - [CVE impact: "If CVE affects this, check if intermediate is vulnerable"]
 
-**Recommended Action:**
-- [x] No direct action needed - transitive dependency
-- [ ] Monitor for security updates (managed by [intermediate-package])
-- [ ] Low priority - updated automatically with [intermediate-package]
-
 **Team Assignment:**
-N/A - Managed via [intermediate-package] updates
-[If CVE: assign to team owning intermediate package usage]
+N/A - Transitive dependency managed via [intermediate-package] updates
+[If CVE with production impact: assign to team(s) owning intermediate package usage based on `.github/CODEOWNERS`]
 ```
 
 ## Advanced Techniques
@@ -418,11 +410,8 @@ find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
 - central/database/postgres/store.go:234 - uses QueryRow()
 - central/database/postgres/migration.go:89 - uses Exec()
 
-**Recommended Action:**
-- [x] Assign to Central/Database team - CRITICAL
-- [ ] Upgrade to pgx v5.4.3+ immediately
-
-**Team Assignment:** @central-storage-team
+**Team Assignment:**
+@stackrox/core-workflows (per `.github/CODEOWNERS`: `pkg/postgres/**/*` and `migrator/**/*`)
 ```
 
 ### Example 2: Test-only dependency
@@ -446,11 +435,8 @@ find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
 - Test files: 500+ files
 - Primary components: Test infrastructure only
 
-**Recommended Action:**
-- [ ] Low priority - monitor for fix
-- [ ] Not production-critical
-
-**Team Assignment:** N/A - test dependency
+**Team Assignment:**
+N/A - Test-only transitive dependency (not production-critical)
 ```
 
 ### Example 3: Transitive not-used functionality
@@ -474,11 +460,8 @@ find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
 - We use: yaml.Marshal() - config writing only
 - No calls to vulnerable Unmarshal function
 
-**Recommended Action:**
-- [x] Close issue - vulnerable functionality not used
-- [ ] Optional: Upgrade when convenient
-
-**Team Assignment:** N/A
+**Team Assignment:**
+N/A - Vulnerable functionality not used (can close issue)
 ```
 
 ### Example 4: Upgrade impact analysis
@@ -506,11 +489,10 @@ find . -name "*.go" ! -name "*_test.go" -exec grep -l "module-name" {} \;
 - central/metrics/collector.go:89 - uses reflect.SliceHeader for unsafe conversions
 - pkg/utils/convert.go:234 - uses reflect.SliceHeader in byte slice operations
 
-**Recommended Action:**
-- [x] Migrate to unsafe.Slice() before Go 1.25 upgrade
-- [ ] Review unsafe operations for alternatives
-
-**Team Assignment:** @platform-team (pkg/utils), @central-team (metrics)
+**Team Assignment:**
+Based on `.github/CODEOWNERS`:
+- `pkg/` (utils) → Multiple teams may own this (check callers)
+- `central/` → @stackrox/core-workflows or specific team based on subdirectory
 ```
 
 ### Example 5: Multiple dependency analysis
@@ -596,13 +578,10 @@ github.com/stackrox/rox/pkg/logging
 - Components using wrapper: Central (100+ files), Sensor (80+ files), ALL other components
 - Architecture: All platform logging flows through pkg/logging → zap
 
-**Recommended Action:**
-- ✅ CRITICAL INFRASTRUCTURE - Foundation of all platform logging
-- ⚠️ Review fork - 9 versions behind upstream
-- ⚠️ Check for security patches in upstream v1.19-v1.27
-- ❌ DO NOT REMOVE - Would break all logging
-
-**Team Assignment:** @platform-team (owns pkg/logging), Impacts: ALL TEAMS
+**Team Assignment:**
+Based on`.github/CODEOWNERS`: Multiple teams own components using logging.
+Primary: Team owning `pkg/` logging wrapper (check CODEOWNERS for `pkg/logging`).
+Impact: ALL TEAMS (critical infrastructure used across entire codebase)
 ```
 
 ### Example 7: Transitive dependency
@@ -650,14 +629,11 @@ From go mod graph:
 - Validates proto messages in GCP service communication
 - We never call protoc-gen-validate directly
 
-**Recommended Action:**
-- [x] No direct action needed - transitive dependency
-- [x] Monitor for security updates (managed by cloud.google.com/go/storage)
-- [ ] Low priority - updated automatically with GCS SDK
-
 **Team Assignment:**
-N/A - Managed via GCS SDK updates
-(If CVE: assign to @integrations-team who owns GCS backup plugin)
+Based on `.github/CODEOWNERS` for files using the intermediate dependency (cloud.google.com/go/storage):
+- `central/externalbackups/**/*` → Team owning external backups
+- `pkg/cloudproviders/**/*` → Team owning cloud provider integrations
+Note: Transitive dependency managed via GCS SDK, but assign to team(s) using the intermediate package if CVE has production impact
 ```
 
 ## Troubleshooting
@@ -754,17 +730,24 @@ grep "//go:build" path/to/file.go  # Build constraints?
 
 ## Component to Team Mapping
 
-When assigning issues, use this mapping based on component usage:
+When assigning issues, consult `.github/CODEOWNERS` to determine team ownership based on the files/directories where the dependency is used.
 
-- **central/** → Central team (@central-team)
-- **sensor/** → Sensor team (@sensor-team)
-- **scanner/** → Scanner/Vulnerability team (@scanner-team)
-- **roxctl/** → CLI team (@cli-team)
-- **ui/** → UI team (@ui-team)
-- **operator/** → Operator team (@operator-team)
-- **pkg/** → Check callers, likely multiple teams
-- **migrator/** → Database/Central team
-- **qa-tests-backend/** → QA team, not production
+**How to use CODEOWNERS:**
+1. Identify which files/directories use the dependency (from your analysis)
+2. Read `.github/CODEOWNERS` to find matching patterns
+3. The LAST matching line wins (CODEOWNERS rule)
+4. Assign to the team(s) listed for those patterns
+
+**Examples from CODEOWNERS:**
+- `sensor/**/*` → @stackrox/sensor-ecosystem
+- `central/policy/**/*` → @stackrox/core-workflows
+- `scanner/` → @stackrox/scanner
+- `operator/**` → @stackrox/install
+- `ui/**/*` → @stackrox/ui
+- `pkg/postgres/**/*` → @stackrox/core-workflows
+- `migrator/**/*` → @stackrox/core-workflows
+
+**Multi-team dependencies:** If a dependency is used across multiple components with different owners, list all affected teams.
 
 ## Performance Notes
 
