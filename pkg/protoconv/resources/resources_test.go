@@ -521,6 +521,6 @@ func TestNewDeploymentFromStaticResource_SetsStateActive(t *testing.T) {
 	result, err := NewDeploymentFromStaticResource(deployment, kubernetes.Deployment, "cluster-1", "")
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, storage.DeploymentState_STATE_ACTIVE, result.GetState(), "New deployments should be created with STATE_ACTIVE")
+	assert.Equal(t, storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE, result.GetState(), "New deployments should be created with DEPLOYMENT_STATE_ACTIVE.")
 	assert.Nil(t, result.GetDeleted(), "New deployments should not have a deleted timestamp set")
 }

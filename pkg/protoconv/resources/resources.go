@@ -117,7 +117,7 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 			Annotations:    meta.GetAnnotations(),
 			Created:        createdTime,
 			StateTimestamp: int64(timestamp.Now()),
-			State:          storage.DeploymentState_STATE_ACTIVE,
+			State:          storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 		},
 	}
 }

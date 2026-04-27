@@ -36,7 +36,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 		if err != nil {
 			return err
 		}
-		if !exists || (features.DeploymentSoftDeletion.Enabled() && dep.GetState() == storage.DeploymentState_STATE_DELETED) {
+		if !exists || (features.DeploymentSoftDeletion.Enabled() && dep.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_DELETED) {
 			// Assume it's not excluded if it doesn't exist or is soft-deleted,
 			// otherwise runtime alerts for deleted deployments will always get
 			// removed every time we update a policy.
@@ -58,5 +58,5 @@ func (d *detectorImpl) DeploymentInactive(deploymentID string) bool {
 		log.Errorf("Couldn't determine inactive state of deployment %q: %v", deploymentID, err)
 		return false
 	}
-	return !exists || (features.DeploymentSoftDeletion.Enabled() && dep.GetState() == storage.DeploymentState_STATE_DELETED)
+	return !exists || (features.DeploymentSoftDeletion.Enabled() && dep.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_DELETED)
 }

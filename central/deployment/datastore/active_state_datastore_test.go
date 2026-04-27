@@ -90,7 +90,7 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentFiltersDeleted() {
 
 	deleted := &storage.Deployment{
 		Id:    "d1",
-		State: storage.DeploymentState_STATE_DELETED,
+		State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 	}
 	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(deleted, true, nil)
 
@@ -106,7 +106,7 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentReturnsActive() {
 
 	active := &storage.Deployment{
 		Id:    "d1",
-		State: storage.DeploymentState_STATE_ACTIVE,
+		State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 	}
 	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(active, true, nil)
 
@@ -133,9 +133,9 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentsFiltersDeleted() {
 	testutils.MustUpdateFeature(s.T(), features.DeploymentSoftDeletion, true)
 
 	deployments := []*storage.Deployment{
-		{Id: "d1", State: storage.DeploymentState_STATE_ACTIVE},
-		{Id: "d2", State: storage.DeploymentState_STATE_DELETED},
-		{Id: "d3", State: storage.DeploymentState_STATE_ACTIVE},
+		{Id: "d1", State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE},
+		{Id: "d2", State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED},
+		{Id: "d3", State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE},
 	}
 	s.inner.EXPECT().GetDeployments(s.ctx, []string{"d1", "d2", "d3"}).Return(deployments, nil)
 
@@ -152,7 +152,7 @@ func (s *ActiveStateDatastoreTestSuite) TestListDeploymentFiltersDeleted() {
 
 	deleted := &storage.ListDeployment{
 		Id:    "d1",
-		State: storage.DeploymentState_STATE_DELETED,
+		State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 	}
 	s.inner.EXPECT().ListDeployment(s.ctx, "d1").Return(deleted, true, nil)
 
@@ -168,10 +168,10 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentNoFilterWhenFlagDisable
 	s.T().Setenv(features.DeploymentSoftDeletion.EnvVar(), "false")
 	testutils.MustUpdateFeature(s.T(), features.DeploymentSoftDeletion, false)
 
-	// Even a deployment with STATE_DELETED should be returned when the flag is off.
+	// Even a deployment with DEPLOYMENT_STATE_DELETED should be returned when the flag is off.
 	deleted := &storage.Deployment{
 		Id:    "d1",
-		State: storage.DeploymentState_STATE_DELETED,
+		State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 	}
 	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(deleted, true, nil)
 
@@ -221,12 +221,12 @@ func (s *ActiveStateDatastoreTestSuite) TestGetImagesForDeploymentDelegatesDirec
 // --- Helpers ---
 
 // assertQueryContainsActiveFilter checks that the query contains a match
-// for the DeploymentState field with STATE_ACTIVE.
+// for the DeploymentState field with DEPLOYMENT_STATE_ACTIVE.
 func assertQueryContainsActiveFilter(t *testing.T, q *v1.Query) {
 	t.Helper()
 	serialized := q.String()
-	assert.Contains(t, serialized, storage.DeploymentState_STATE_ACTIVE.String(),
-		"expected query to contain active-deployment state filter")
+	assert.Contains(t, serialized, storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE.String(),
+		"expected query to contain DEPLOYMENT_STATE_ACTIVE filter")
 }
 
 // assertQueryDoesNotContainActiveFilter checks that the query does not contain
@@ -234,6 +234,6 @@ func assertQueryContainsActiveFilter(t *testing.T, q *v1.Query) {
 func assertQueryDoesNotContainActiveFilter(t *testing.T, q *v1.Query) {
 	t.Helper()
 	serialized := q.String()
-	assert.NotContains(t, serialized, storage.DeploymentState_STATE_ACTIVE.String(),
+	assert.NotContains(t, serialized, storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE.String(),
 		"expected query to NOT contain active-deployment state filter")
 }

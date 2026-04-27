@@ -71,7 +71,7 @@ func (a *activeStateDatastore) GetDeployment(ctx context.Context, id string) (*s
 	if err != nil || !found {
 		return nil, false, err
 	}
-	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() != storage.DeploymentState_STATE_ACTIVE {
+	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() != storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE {
 		return nil, false, nil
 	}
 	return deployment, true, nil
@@ -84,7 +84,7 @@ func (a *activeStateDatastore) GetDeployments(ctx context.Context, ids []string)
 	}
 	filtered := deployments[:0]
 	for _, d := range deployments {
-		if d.GetState() == storage.DeploymentState_STATE_ACTIVE {
+		if d.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE {
 			filtered = append(filtered, d)
 		}
 	}
@@ -96,7 +96,7 @@ func (a *activeStateDatastore) ListDeployment(ctx context.Context, id string) (*
 	if err != nil || !found {
 		return nil, false, err
 	}
-	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() != storage.DeploymentState_STATE_ACTIVE {
+	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() != storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE {
 		return nil, false, nil
 	}
 	return deployment, true, nil
