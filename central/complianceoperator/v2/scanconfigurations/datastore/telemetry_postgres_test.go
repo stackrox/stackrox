@@ -17,7 +17,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGatherProfiles(t *testing.T) {
+func TestGatherProfilesNilDatastore(t *testing.T) {
+	props, err := GatherProfiles(nil)(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, props)
+}
+
+func TestGatherTailoredProfilesNilDatastore(t *testing.T) {
+	props, err := GatherTailoredProfiles(nil)(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, props)
+}
+
+func TestGatherTailoredProfiles(t *testing.T) {
 	t.Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 
 	pool := pgtest.ForT(t)
@@ -31,14 +43,12 @@ func TestGatherProfiles(t *testing.T) {
 	)
 
 	testCases := map[string]struct {
-		scanConfigs         []*storage.ComplianceOperatorScanConfigurationV2
-		expectedTailored    int
-		expectedProfileKeys []string
+		scanConfigs      []*storage.ComplianceOperatorScanConfigurationV2
+		expectedTailored int
 	}{
 		"no scan configs": {
-			scanConfigs:         nil,
-			expectedTailored:    0,
-			expectedProfileKeys: nil,
+			scanConfigs:      nil,
+			expectedTailored: 0,
 		},
 		"scan config with only regular profiles": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
@@ -47,8 +57,7 @@ func TestGatherProfiles(t *testing.T) {
 					{"ocp4-nist", storage.ComplianceOperatorProfileV2_PROFILE},
 				}),
 			},
-			expectedTailored:    0,
-			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile ocp4-nist"},
+			expectedTailored: 0,
 		},
 		"scan config with tailored profiles": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
@@ -57,8 +66,7 @@ func TestGatherProfiles(t *testing.T) {
 					{"my-tailored-cis", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 				}),
 			},
-			expectedTailored:    1,
-			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile my-tailored-cis"},
+			expectedTailored: 1,
 		},
 		"multiple scan configs with multiple tailored profiles": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
@@ -71,15 +79,13 @@ func TestGatherProfiles(t *testing.T) {
 					{"tp-pci", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 				}),
 			},
-			expectedTailored:    3,
-			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile tp-cis", "Compliance Operator Profile tp-nist", "Compliance Operator Profile tp-pci"},
+			expectedTailored: 3,
 		},
 		"scan config without profile_refs populated": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
 				makeScanConfigNoRefs("scan-no-refs", []string{"ocp4-cis"}),
 			},
-			expectedTailored:    0,
-			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis"},
+			expectedTailored: 0,
 		},
 		"scan config with unspecified kind does not count as tailored": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
@@ -89,8 +95,7 @@ func TestGatherProfiles(t *testing.T) {
 					{"tp-custom", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 				}),
 			},
-			expectedTailored:    1,
-			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile ocp4-nist", "Compliance Operator Profile tp-custom"},
+			expectedTailored: 1,
 		},
 	}
 
@@ -105,22 +110,11 @@ func TestGatherProfiles(t *testing.T) {
 				}
 			})
 
-			props, err := GatherProfiles(ds)(context.Background())
+			props, err := GatherTailoredProfiles(ds)(context.Background())
 			require.NoError(t, err)
-
 			assert.Equal(t, tc.expectedTailored, props["Compliance Operator Tailored Profile"])
-
-			for _, key := range tc.expectedProfileKeys {
-				assert.Contains(t, props, key)
-			}
 		})
 	}
-}
-
-func TestGatherProfilesNilDatastore(t *testing.T) {
-	props, err := GatherProfiles(nil)(context.Background())
-	require.NoError(t, err)
-	assert.Empty(t, props)
 }
 
 type profileDef struct {

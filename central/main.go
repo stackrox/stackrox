@@ -688,6 +688,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 	add(clusterDataStore.Gather)
 	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+	add(complianceScanDS.GatherTailoredProfiles(complianceScanDS.Singleton()))
 	add(declarativeconfig.ManagerSingleton().Gather())
 	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 	add(externalbackupsDS.Gather)

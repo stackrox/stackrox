@@ -390,14 +390,27 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering compliance operator profiles for telemetry")
 		}
-		props := make(map[string]any, len(counts)+1)
+		profiles := make(map[string]any, len(counts))
 		for profile, count := range counts {
-			props["Compliance Operator Profile "+profile] = count
+			profiles["Compliance Operator Profile "+profile] = count
 		}
+		return profiles, nil
+	}
+}
 
+// GatherTailoredProfiles returns the total number of tailored profiles
+// referenced across all scan configurations. Individual tailored profile
+// names are not collected because they are user-defined (unlike standard
+// Compliance Operator profiles) and would expose customer-specific data.
+func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
+	return func(ctx context.Context) (map[string]any, error) {
+		if ds == nil {
+			return map[string]any{}, nil
+		}
+		telemetryCtx := sac.WithAllAccess(ctx)
 		scanConfigs, err := ds.GetScanConfigurations(telemetryCtx, search.EmptyQuery())
 		if err != nil {
-			return props, errors.Wrap(err, "gathering tailored profile count for telemetry")
+			return nil, errors.Wrap(err, "gathering tailored profile count for telemetry")
 		}
 		tailoredCount := 0
 		for _, sc := range scanConfigs {
@@ -407,8 +420,8 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 				}
 			}
 		}
-		props["Compliance Operator Tailored Profile"] = tailoredCount
-
-		return props, nil
+		return map[string]any{
+			"Compliance Operator Tailored Profile": tailoredCount,
+		}, nil
 	}
 }
