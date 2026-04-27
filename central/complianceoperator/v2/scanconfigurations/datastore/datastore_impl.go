@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -26,6 +27,7 @@ import (
 )
 
 var (
+	log           = logging.LoggerForModule()
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
@@ -402,8 +404,13 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 				continue
 			}
 			for _, ref := range refs {
-				if ref.GetKind() == storage.ComplianceOperatorProfileV2_PROFILE {
+				switch ref.GetKind() {
+				case storage.ComplianceOperatorProfileV2_PROFILE:
 					profiles[ref.GetName()]++
+				case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+					// Tailored profiles are counted separately by GatherTailoredProfiles.
+				case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+					log.Warnf("Scan config %q has profile ref %q with unspecified operator kind", sc.GetScanConfigName(), ref.GetName())
 				}
 			}
 		}
@@ -416,9 +423,9 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 	}
 }
 
-// GatherTailoredProfiles reports the aggregate count of tailored profiles referenced across all scan configurations.
-// Individual tailored profile names are not collected because they are user-defined (unlike standard Compliance Operator
-// profiles) and would expose customer data.
+// GatherTailoredProfiles reports the total number of tailored profile references across all scan configurations
+// (not the number of distinct tailored profiles). Individual tailored profile names are not collected because
+// they are user-defined (unlike standard Compliance Operator profiles) and would expose customer data.
 func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		if ds == nil {
@@ -432,8 +439,11 @@ func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 		tpCount := 0
 		for _, sc := range scanConfigs {
 			for _, ref := range sc.GetProfileRefs() {
-				if ref.GetKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+				switch ref.GetKind() {
+				case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
 					tpCount++
+				case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+					log.Warnf("Scan config %q has profile ref %q with unspecified operator kind", sc.GetScanConfigName(), ref.GetName())
 				}
 			}
 		}
@@ -441,6 +451,5 @@ func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 		return map[string]any{
 			"Compliance Operator Tailored Profiles": tpCount,
 		}, nil
-
 	}
 }
