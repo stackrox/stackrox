@@ -89,16 +89,22 @@ spec:
           value: task
         resolver: bundles
 
-    - name: show-sbom
+    - name: show-summary
       params:
-      - name: IMAGE_URL
-        value: $(tasks.build-image-index.results.IMAGE_URL)
+      - name: pipelinerun-name
+        value: $(context.pipelineRun.name)
+      - name: git-url
+        value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
+      - name: image-url
+        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - name: build-task-status
+        value: $(tasks.build-image-index.status)
       taskRef:
         params:
         - name: name
-          value: show-sbom
+          value: summary
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:beb0616db051952b4b861dd8c3e00fa1c0eccbd926feddf71194d3bb3ace9ce7
+          value: quay.io/konflux-ci/tekton-catalog/task-summary:0.2@sha256:e1b8e42962b0c6d9ebe95f3709c34ae5e1569b73941a79654248e0af55eb3ff9
         - name: kind
           value: task
         resolver: bundles
@@ -338,7 +344,8 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: registry.access.redhat.com/ubi9/go-toolset:1.25
+          # Using the image with go and yq preinstalled
+          image: quay.io/stackrox-io/apollo-ci:stackrox-test-latest
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
@@ -353,17 +360,6 @@ spec:
 
             echo "Building operator index for bundle: ${BUNDLE_IMAGE}"
             echo "Target index image: ${INDEX_IMAGE}"
-
-            # Pre-install yq to avoid version lookup issues in CI
-            # The build script checks if YQ is set and skips fetch_yq if it is
-            YQ_VERSION="4.52.5"
-            YQ_PATH="./bin/yq-${YQ_VERSION}"
-            if [[ ! -f "${YQ_PATH}" ]]; then
-              mkdir -p ./bin
-              curl -sL "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64" -o "${YQ_PATH}"
-              chmod +x "${YQ_PATH}"
-            fi
-            export YQ="${YQ_PATH}"
 
             # Use the existing build script to generate index content
             ./hack/build-index-image.sh \
