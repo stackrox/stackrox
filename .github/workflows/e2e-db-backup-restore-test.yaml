@@ -99,6 +99,7 @@ jobs:
     - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
 
     - name: Build roxctl
+      # The test uses roxctl for central backup/restore operations
       run: |
         make roxctl_linux-amd64
         echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
