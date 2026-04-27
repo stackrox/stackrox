@@ -33,17 +33,23 @@ protobuf {
                     outputSubDir = "java"
                 }
             }
-            it.outputSourceDirectorySet.srcDirs.forEach { srcDir ->
-                sourceSets.getByName(it.sourceSet.name).java.srcDirs(srcDir)
-            }
         }
     }
 }
 
-// Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
-project.sourceSets.forEach { sourceSet ->
-    sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
-    sourceSet.java.setSrcDirs(emptyList<File>())
+afterEvaluate {
+    // Add protobuf output dirs to sourceSets after configuration
+    tasks.withType<com.google.protobuf.gradle.GenerateProtoTask>().forEach { task ->
+        task.outputSourceDirectorySet.srcDirs.forEach { srcDir ->
+            sourceSets.getByName(task.sourceSet.name).java.srcDirs(srcDir)
+        }
+    }
+
+    // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them
+    sourceSets.forEach { sourceSet ->
+        sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
+        sourceSet.java.setSrcDirs(emptyList<File>())
+    }
 }
 
 dependencies {
