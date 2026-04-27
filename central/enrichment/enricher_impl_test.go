@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-
 	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
 )
