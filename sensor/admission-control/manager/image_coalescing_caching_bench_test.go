@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"sort"
 	"sync/atomic"
 	"testing"
@@ -45,7 +45,7 @@ func newCoalescingBenchImageClient(latency time.Duration) *coalescingBenchImageC
 	}
 }
 
-func (c *coalescingBenchImageClient) GetImage(_ context.Context, req *sensor.GetImageRequest, _ ...grpc.CallOption) (*sensor.GetImageResponse, error) {
+func (c *coalescingBenchImageClient) GetImage(ctx context.Context, req *sensor.GetImageRequest, _ ...grpc.CallOption) (*sensor.GetImageResponse, error) {
 	c.callCount.Add(1)
 
 	imageID := req.GetImage().GetId()
@@ -59,7 +59,11 @@ func (c *coalescingBenchImageClient) GetImage(_ context.Context, req *sensor.Get
 	c.mu.Unlock()
 
 	if c.latency > 0 {
-		time.Sleep(c.latency)
+		select {
+		case <-time.After(c.latency):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 	}
 
 	return &sensor.GetImageResponse{
@@ -280,7 +284,10 @@ func setupManager(b *testing.B, imgClient sensor.ImageServiceClient) *manager {
 	mgr := NewManager("stackrox", 200*size.MB, true, imgClient, noopDeploymentServiceClient{})
 	mgr.ProcessNewSettings(cachingBenchSettings())
 	mgr.Start()
-	b.Cleanup(func() { mgr.Stop() })
+	b.Cleanup(func() {
+		mgr.Stop()
+		logging.SetGlobalLogLevel(zapcore.InfoLevel)
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -323,7 +330,7 @@ func BenchmarkAdmissionReview_BaselineColdCache(b *testing.B) {
 	defer close(done)
 	drainAlerts(mgr, done)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewPCG(42, 0))
 	wl := generateWorkload(rng, 100, 3, 300)
 
 	for b.Loop() {
@@ -347,7 +354,7 @@ func BenchmarkAdmissionReview_ConcurrentBurst_LowDiversity(b *testing.B) {
 	defer close(done)
 	drainAlerts(mgr, done)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewPCG(42, 0))
 	wl := generateWorkload(rng, 1000, 3, 50)
 
 	for b.Loop() {
@@ -371,7 +378,7 @@ func BenchmarkAdmissionReview_ConcurrentBurst_MediumDiversity(b *testing.B) {
 	defer close(done)
 	drainAlerts(mgr, done)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewPCG(42, 0))
 	wl := generateWorkload(rng, 1000, 3, 200)
 
 	for b.Loop() {
@@ -395,7 +402,7 @@ func BenchmarkAdmissionReview_ConcurrentBurst_HighDiversity(b *testing.B) {
 	defer close(done)
 	drainAlerts(mgr, done)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewPCG(42, 0))
 	wl := generateWorkload(rng, 1000, 3, 2000)
 
 	for b.Loop() {
@@ -419,7 +426,7 @@ func BenchmarkAdmissionReview_WarmCache(b *testing.B) {
 	defer close(done)
 	drainAlerts(mgr, done)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewPCG(42, 0))
 	wl := generateWorkload(rng, 1000, 3, 100)
 
 	// Warm the cache by running all reviews once sequentially.
@@ -468,7 +475,7 @@ func BenchmarkAdmissionReview_ScaleSweep(b *testing.B) {
 				defer close(done)
 				drainAlerts(mgr, done)
 
-				rng := rand.New(rand.NewSource(42))
+				rng := rand.New(rand.NewPCG(42, 0))
 				wl := generateWorkload(rng, nDeps, imgsPerDep, uniqueImgs)
 
 				for b.Loop() {
