@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -27,7 +26,6 @@ import (
 )
 
 var (
-	log           = logging.LoggerForModule()
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
@@ -404,11 +402,8 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 				continue
 			}
 			for _, ref := range refs {
-				switch ref.GetKind() {
-				case storage.ComplianceOperatorProfileV2_PROFILE:
+				if ref.GetKind() == storage.ComplianceOperatorProfileV2_PROFILE {
 					profiles[ref.GetName()]++
-				case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
-					log.Warnf("Scan config %q has profile ref %q with unspecified operator kind", sc.GetScanConfigName(), ref.GetName())
 				}
 			}
 		}
@@ -437,11 +432,8 @@ func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 		tpCount := 0
 		for _, sc := range scanConfigs {
 			for _, ref := range sc.GetProfileRefs() {
-				switch ref.GetKind() {
-				case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+				if ref.GetKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
 					tpCount++
-				case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
-					log.Warnf("Scan config %q has profile ref %q with unspecified operator kind", sc.GetScanConfigName(), ref.GetName())
 				}
 			}
 		}
