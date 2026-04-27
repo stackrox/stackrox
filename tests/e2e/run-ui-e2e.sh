@@ -101,6 +101,10 @@ run_ui_e2e_tests() {
     make -C ui test-e2e || touch FAIL
 
     store_test_results "ui/test-results/reports/cypress/integration/." "cy-reps"
+    # OCP console plugin tests write to a separate directory; only present on OpenShift runs
+    if [[ -d "ui/test-results/reports/cypress/integration-ocp" ]]; then
+        store_test_results "ui/test-results/reports/cypress/integration-ocp/." "cy-reps/consolePlugin"
+    fi
 
     if is_OPENSHIFT_CI; then
         cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
