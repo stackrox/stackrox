@@ -2,7 +2,7 @@ import { getFilteredSecurityContextMap } from './securityContextUtils';
 
 describe('securityContextUtils', () => {
     describe('getFilteredSecurityContextMap', () => {
-        it('should return an empty array when there all security context values are falsy', () => {
+        it('should return an empty array when all security context values are falsy', () => {
             const securityContext = {
                 privileged: false,
                 selinux: null,
