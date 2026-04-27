@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net"
 	"net/url"
 	"os"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mitchellh/mapstructure"
-	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
@@ -64,7 +64,7 @@ var (
 		Proxy: ProxyConfig{
 			ConfigFile: "config.yaml",
 		},
-		LogLevel: zerolog.InfoLevel,
+		LogLevel: slog.LevelInfo,
 	}
 )
 
@@ -78,7 +78,7 @@ type Config struct {
 	GRPCListenAddr   string        `mapstructure:"grpc_listen_addr"`
 	MTLS             MTLSConfig    `mapstructure:"mtls"`
 	Proxy            ProxyConfig   `mapstructure:"proxy"`
-	LogLevel         zerolog.Level `mapstructure:"log_level"`
+	LogLevel         slog.Level    `mapstructure:"log_level"`
 }
 
 func (c *Config) validate() error {
@@ -372,17 +372,16 @@ func (c *ProxyConfig) validate() error {
 	return nil
 }
 
-// LogLevel is YAML serializable zerolog.Level
-type LogLevel zerolog.Level
+// LogLevel is YAML serializable slog.Level
+type LogLevel slog.Level
 
 // UnmarshalText implements YAML's TextUnmarshaler for LogLevel
 func (l *LogLevel) UnmarshalText(level []byte) error {
-	levelS := string(level)
-	zl, err := zerolog.ParseLevel(levelS)
+	sl, err := parseSlogLevel(string(level))
 	if err != nil {
-		return fmt.Errorf("unknown log_level string: %q", levelS)
+		return err
 	}
-	*l = LogLevel(zl)
+	*l = LogLevel(sl)
 	return nil
 }
 
@@ -400,9 +399,26 @@ func (d *Duration) UnmarshalText(dBytes []byte) error {
 	return nil
 }
 
-// stringToZeroLogLevelFunc returns a DecodeHookFunc that converts
-// strings to zerolog.Level
-func stringToZeroLogLevelFunc() mapstructure.DecodeHookFunc {
+func parseSlogLevel(s string) (slog.Level, error) {
+	switch strings.ToLower(s) {
+	case "trace", "debug":
+		return slog.LevelDebug, nil
+	case "info", "":
+		return slog.LevelInfo, nil
+	case "warn", "warning":
+		return slog.LevelWarn, nil
+	case "error", "fatal", "panic":
+		return slog.LevelError, nil
+	default:
+		return slog.LevelInfo, fmt.Errorf("unknown log_level string: %q", s)
+	}
+}
+
+// stringToSlogLevelFunc returns a DecodeHookFunc that converts
+// strings to slog.Level. This hook is used with mapstructure to enable
+// automatic conversion of string log level values in configuration files
+// to slog.Level types during unmarshaling.
+func stringToSlogLevelFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
@@ -410,10 +426,10 @@ func stringToZeroLogLevelFunc() mapstructure.DecodeHookFunc {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
-		if t != reflect.TypeOf(zerolog.InfoLevel) {
+		if t != reflect.TypeOf(slog.LevelInfo) {
 			return data, nil
 		}
-		return zerolog.ParseLevel(data.(string))
+		return parseSlogLevel(data.(string))
 	}
 }
 
@@ -446,7 +462,7 @@ func Load(r io.Reader) (*Config, error) {
 	if err := v.UnmarshalExact(&cfg, viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
-		stringToZeroLogLevelFunc(),
+		stringToSlogLevelFunc(),
 	))); err != nil {
 		return nil, fmt.Errorf("loading config file: %w", err)
 	}

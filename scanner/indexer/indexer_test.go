@@ -14,7 +14,6 @@ import (
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln/updates"
 	mockccindexer "github.com/quay/claircore/test/mock/indexer"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
 	mockindexer "github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +57,7 @@ log_level: info
 `
 
 	ic := mustLoadIndexerConfig(t, strings.NewReader(cfg))
-	indexer, err := newLibindex(zlog.Test(context.Background(), t), ic, http.DefaultClient, "", store, nil)
+	indexer, err := newLibindex(context.Background(), ic, http.DefaultClient, "", store, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
 	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])
@@ -66,7 +65,7 @@ log_level: info
 }
 
 func TestGetIndexReport(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := context.Background()
 
 	ctrl := gomock.NewController(t)
 	store := mockccindexer.NewMockStore(ctrl)

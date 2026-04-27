@@ -22,8 +22,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/test"
-	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -284,10 +282,11 @@ func TestUpdater_Initialized(t *testing.T) {
 	})
 
 	t.Run("when not initialized and get last update fails then log return not ready", func(t *testing.T) {
-		b := &bytes.Buffer{}
-		l := zerolog.New(b)
-		zlog.Set(&l)
-		ctx := zlog.Test(context.Background(), t)
+		var buf bytes.Buffer
+		h := slog.NewJSONHandler(&buf, nil)
+		prev := slog.Default()
+		slog.SetDefault(slog.New(h))
+		ctx := context.Background()
 		ctrl := gomock.NewController(t)
 		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
 		metaMock.
@@ -300,9 +299,9 @@ func TestUpdater_Initialized(t *testing.T) {
 		u.initialized.Store(false)
 		got := u.Initialized(ctx)
 		assert.False(t, got, `expecting "not ready" got "ready"`)
-		assert.Contains(t, `"did not get previous vuln update timestamp"`, b.String())
-		assert.Contains(t, `"error":"last update failed (fake error)"`, b.String())
-		assert.Contains(t, `"level":"error"`, b.String())
+		assert.Contains(t, buf.String(), `did not get previous vuln update timestamp`)
+		assert.Contains(t, buf.String(), `last update failed (fake error)`)
+		assert.Contains(t, buf.String(), `WARN`)
 	})
 }
 
@@ -400,7 +399,7 @@ func TestIsRetryableDialError(t *testing.T) {
 }
 
 func TestUpdater_Import(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 
 	// Represents one vulnerability or enrichment iteration.
