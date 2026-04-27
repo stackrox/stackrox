@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/quay/claircore/toolkit/log"
+	"github.com/quay/zlog/v2"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
@@ -140,8 +142,10 @@ func initializeLogging(logLevel slog.Level) error {
 	if err != nil {
 		return err
 	}
-	h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: logLevel,
+	h := zlog.NewHandler(os.Stdout, &zlog.Options{
+		Level:      logLevel,
+		ContextKey: log.AttrsKey,
+		LevelKey:   log.LevelKey,
 	})
 	logger := slog.New(h).With("host", hostname)
 	slog.SetDefault(logger)
