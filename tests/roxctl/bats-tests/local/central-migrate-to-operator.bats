@@ -319,3 +319,12 @@ generate_and_migrate() {
   assert_failure
   assert_output --partial "accessing directory"
 }
+
+@test "migrate-to-operator: fails with empty directory" {
+  local empty_dir
+  empty_dir="$(mktemp -d)"
+  run roxctl-development central migrate-to-operator --from-dir "$empty_dir"
+  assert_failure
+  assert_output --partial "not found"
+  rm -rf "$empty_dir"
+}
