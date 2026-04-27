@@ -357,8 +357,8 @@ func (h *handlerImpl) sendIndexReportEvent(
 // vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
 // (format "vmID:vsockCID"). Returns the input as-is when no separator is found.
 func vmIDFromResourceID(resourceID string) string {
-	if vmID, _, found := strings.Cut(resourceID, ":"); found {
-		return vmID
+	if i := strings.IndexByte(resourceID, ':'); i >= 0 {
+		return resourceID[:i]
 	}
 	return resourceID
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -690,4 +691,41 @@ func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
 
 	err = s.handler.Start()
 	s.Require().ErrorIs(err, errStartMoreThanOnce)
+}
+
+func TestVmIDFromResourceID(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		resourceID string
+		expected   string
+	}{
+		"extracts vm id from composite resource id": {
+			resourceID: "vm-1:100",
+			expected:   "vm-1",
+		},
+		"returns bare vm id as-is": {
+			resourceID: "vm-1",
+			expected:   "vm-1",
+		},
+		"returns empty string for empty input": {
+			resourceID: "",
+			expected:   "",
+		},
+		"extracts uuid vm id from composite": {
+			resourceID: "d2696fad-8ef2-49f5-9726-499b1419be20:1289650420",
+			expected:   "d2696fad-8ef2-49f5-9726-499b1419be20",
+		},
+		"returns bare CID as-is": {
+			resourceID: "1289650420",
+			expected:   "1289650420",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, vmIDFromResourceID(tc.resourceID))
+		})
+	}
 }
