@@ -1186,6 +1186,10 @@ wait_for_ready_deployment() {
         if (( elapsed_seconds > max_seconds )); then
             retrying_kubectl </dev/null -n "${namespace}" get pod -o wide
             retrying_kubectl </dev/null -n "${namespace}" get deploy -o wide
+            info "Describing pods for deployment ${deployment_name}..."
+            retrying_kubectl </dev/null -n "${namespace}" describe pod -l "app=${deployment_name}" || true
+            info "Getting logs for deployment ${deployment_name} (including init containers)..."
+            retrying_kubectl </dev/null -n "${namespace}" logs -l "app=${deployment_name}" --all-containers=true --prefix=true --tail=100 || true
             die "wait_for_ready_deployment() timeout after $max_seconds seconds."
         fi
 

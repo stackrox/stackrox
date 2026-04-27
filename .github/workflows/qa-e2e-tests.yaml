@@ -174,6 +174,15 @@ jobs:
             echo "::group::Scanner V4 DB logs"
             kubectl -n stackrox logs deployment/scanner-v4-db --tail=100 || true
             echo "::endgroup::"
+            echo "::group::Scanner V2 scanner-db pod describe"
+            kubectl -n stackrox describe pod -l app=scanner-db || true
+            echo "::endgroup::"
+            echo "::group::Scanner V2 scanner-db init container logs"
+            kubectl -n stackrox logs -l app=scanner-db --all-containers=true --prefix=true --tail=200 || true
+            echo "::endgroup::"
+            echo "::group::Scanner V2 scanner logs"
+            kubectl -n stackrox logs -l app=scanner --tail=100 || true
+            echo "::endgroup::"
             exit 1
           fi
 
