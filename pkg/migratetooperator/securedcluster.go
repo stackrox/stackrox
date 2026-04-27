@@ -18,7 +18,6 @@ import (
 func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, error) {
 	var warnings []string
 
-	// Cluster name
 	clusterName, err := detectClusterName(src)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "detecting cluster name")
@@ -37,7 +36,6 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 		},
 	}
 
-	// Central endpoint
 	sensorDep, err := src.Deployment("sensor")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "retrieving sensor Deployment")
@@ -45,14 +43,44 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 	if sensorDep == nil {
 		return nil, nil, errors.New("sensor Deployment not found")
 	}
+
+	setSCCentralEndpoint(sensorDep, cr)
+	if err := setSCAdmissionControl(src, cr); err != nil {
+		return nil, nil, err
+	}
+	if err := setSCPerNode(src, cr); err != nil {
+		return nil, nil, err
+	}
+
+	if detectCustomImages(sensorDep) {
+		warnings = append(warnings, "Detected non-default container images. "+
+			"The operator does not support image overrides in the SecuredCluster CR. "+
+			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
+	}
+
+	// TODO: The following options are stored as server-side cluster configuration
+	// in Central and are not reflected in the generated sensor manifests:
+	//   - --admission-controller-disable-bypass → spec.admissionControl.bypass
+	//   - --auto-lock-process-baselines → spec.processBaselines.autoLock
+	//   - --disable-audit-logs → spec.auditLogs.collection
+	// To detect these, the tool would need to query the Central API
+	// (e.g. GET /v1/clusters/<id>) to read the cluster's runtime configuration.
+	// This could be implemented for the --namespace (live cluster) mode by
+	// reading the cluster config from the API using the same credentials.
+
+	return cr, warnings, nil
+}
+
+func setSCCentralEndpoint(sensorDep *appsv1.Deployment, cr *platform.SecuredCluster) {
 	if ep := envVarValue(sensorDep, "ROX_CENTRAL_ENDPOINT"); ep != "" && ep != "central.stackrox:443" {
 		cr.Spec.CentralEndpoint = pointers.String(ep)
 	}
+}
 
-	// Admission controller
+func setSCAdmissionControl(src Source, cr *platform.SecuredCluster) error {
 	vwc, err := src.ValidatingWebhookConfiguration("stackrox")
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "checking for admission controller webhooks")
+		return errors.Wrap(err, "checking for admission controller webhooks")
 	}
 	if vwc != nil {
 		ac := &platform.AdmissionControlComponentSpec{}
@@ -71,14 +99,16 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 			cr.Spec.AdmissionControl = ac
 		}
 	}
+	return nil
+}
 
-	// Collector
+func setSCPerNode(src Source, cr *platform.SecuredCluster) error {
 	collectorDS, err := src.DaemonSet("collector")
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "retrieving collector DaemonSet")
+		return errors.Wrap(err, "retrieving collector DaemonSet")
 	}
 	if collectorDS == nil {
-		return nil, nil, errors.New("collector DaemonSet not found")
+		return errors.New("collector DaemonSet not found")
 	}
 	collectionNone := !hasContainer(collectorDS, "collector")
 	tolerationsDisabled := len(collectorDS.Spec.Template.Spec.Tolerations) == 0
@@ -86,9 +116,7 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 		perNode := &platform.PerNodeSpec{}
 		if collectionNone {
 			cm := platform.CollectionNone
-			perNode.Collector = &platform.CollectorContainerSpec{
-				Collection: &cm,
-			}
+			perNode.Collector = &platform.CollectorContainerSpec{Collection: &cm}
 		}
 		if tolerationsDisabled {
 			tt := platform.TaintAvoid
@@ -96,25 +124,7 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 		}
 		cr.Spec.PerNode = perNode
 	}
-
-	// Custom images
-	if detectCustomImages(sensorDep) {
-		warnings = append(warnings, "Detected non-default container images. "+
-			"The operator does not support image overrides in the SecuredCluster CR. "+
-			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
-	}
-
-	// TODO: The following options are stored as server-side cluster configuration
-	// in Central and are not reflected in the generated sensor manifests:
-	//   - --admission-controller-disable-bypass → spec.admissionControl.bypass
-	//   - --auto-lock-process-baselines → spec.processBaselines.autoLock
-	//   - --disable-audit-logs → spec.auditLogs.collection
-	// To detect these, the tool would need to query the Central API
-	// (e.g. GET /v1/clusters/<id>) to read the cluster's runtime configuration.
-	// This could be implemented for the --namespace (live cluster) mode by
-	// reading the cluster config from the API using the same credentials.
-
-	return cr, warnings, nil
+	return nil
 }
 
 func detectClusterName(src Source) (string, error) {
@@ -139,9 +149,6 @@ func detectClusterName(src Source) (string, error) {
 }
 
 func hasWebhook(vwc *admissionv1.ValidatingWebhookConfiguration, name string) bool {
-	if vwc == nil {
-		return false
-	}
 	for _, wh := range vwc.Webhooks {
 		if wh.Name == name {
 			return true
@@ -151,9 +158,6 @@ func hasWebhook(vwc *admissionv1.ValidatingWebhookConfiguration, name string) bo
 }
 
 func hasFailurePolicyFail(vwc *admissionv1.ValidatingWebhookConfiguration) bool {
-	if vwc == nil {
-		return false
-	}
 	for _, wh := range vwc.Webhooks {
 		if wh.FailurePolicy != nil && *wh.FailurePolicy == admissionv1.Fail {
 			return true
