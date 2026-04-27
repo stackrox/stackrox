@@ -407,8 +407,6 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 				switch ref.GetKind() {
 				case storage.ComplianceOperatorProfileV2_PROFILE:
 					profiles[ref.GetName()]++
-				case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
-					// Tailored profiles are counted separately by GatherTailoredProfiles.
 				case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
 					log.Warnf("Scan config %q has profile ref %q with unspecified operator kind", sc.GetScanConfigName(), ref.GetName())
 				}
