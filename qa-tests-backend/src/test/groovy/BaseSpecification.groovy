@@ -238,15 +238,22 @@ class BaseSpecification extends Specification {
     @Shared
     private long testSpecStartTimeMillis
 
+    @SuppressWarnings('SystemOutPrint')
+    private static void printGHAGroup(String name) {
+        System.out.println("::group::${name}")
+    }
+
+    @SuppressWarnings('SystemOutPrint')
+    private static void printGHAEndGroup() {
+        System.out.println("::endgroup::")
+    }
+
     def setupSpec() {
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
 
         if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
-            // GitHub Actions workflow command - CodeNarc suppression needed
-            @SuppressWarnings('SystemOutPrint')
-            def printGroupStart = { System.out.println("::group::${this.class.getSimpleName()}") }
-            printGroupStart()
+            printGHAGroup(this.class.getSimpleName())
         }
 
         log.info("Starting testsuite")
@@ -344,10 +351,7 @@ class BaseSpecification extends Specification {
         }
 
         if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
-            // GitHub Actions workflow command - CodeNarc suppression needed
-            @SuppressWarnings('SystemOutPrint')
-            def printGroupEnd = { System.out.println("::endgroup::") }
-            printGroupEnd()
+            printGHAEndGroup()
         }
 
         MDC.remove("specification")
