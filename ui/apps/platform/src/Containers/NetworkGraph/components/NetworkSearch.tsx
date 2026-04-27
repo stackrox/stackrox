@@ -1,22 +1,14 @@
 import { useEffect, useState } from 'react';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { getSearchOptionsForCategory } from 'services/SearchService';
-import { orchestratorComponentsOption } from 'utils/orchestratorComponents';
 
 import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 import './NetworkSearch.css';
 
 const searchCategory = 'DEPLOYMENTS';
-const searchOptionExclusions = [
-    'Cluster',
-    'Deployment',
-    'Namespace',
-    'Namespace ID',
-    'Orchestrator Component',
-];
+const searchOptionExclusions = ['Cluster', 'Deployment', 'Namespace', 'Namespace ID'];
 
 type NetworkSearchProps = {
     selectedCluster: string;
@@ -57,8 +49,6 @@ function NetworkSearch({
         setSearchFilter(newOptions);
     }
 
-    const prependAutocompleteQuery = [...orchestratorComponentsOption];
-
     return (
         <SearchFilterInput
             className="pf-v6-u-w-100 pf-search-shim"
@@ -66,7 +56,6 @@ function NetworkSearch({
             searchFilter={searchFilter}
             searchCategory="DEPLOYMENTS"
             searchOptions={searchOptions}
-            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             handleChangeSearchFilter={onSearch}
             isDisabled={isDisabled}
         />

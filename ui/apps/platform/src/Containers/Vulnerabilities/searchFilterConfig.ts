@@ -237,8 +237,8 @@ export const configForViewBasedReport = [
 ];
 
 export const attributeForPlatformComponent: SelectSearchFilterAttribute = {
-    displayName: 'View context', // corresponds to horizontal navigation
-    filterChipLabel: 'View context',
+    displayName: 'Area of concern', // corresponds to horizontal navigation
+    filterChipLabel: 'Area of concern',
     searchTerm: 'Platform Component',
     inputType: 'select',
     inputProps: {
@@ -266,7 +266,7 @@ export const attributeForVulnerabilityState: SelectSearchFilterAttribute = {
 
 export const attributesSeparateFromConfigForViewBasedReport = [
     attributeForPlatformComponent,
-    attributeForFixableInBackendAndViewBasedReport,
     attributeForVulnerabilityState,
     attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
+    attributeForFixableInBackendAndViewBasedReport,
 ];

@@ -216,17 +216,13 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 		return nil, err
 	}
 
-	indicators, err := resolver.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving process indicators from search")
-	}
-
-	processEvents := make([]*ProcessActivityEventResolver, 0, len(indicators))
+	var processEvents []*ProcessActivityEventResolver
 	baselines := make(map[string]*set.StringSet)
 	// This determines if we should read baseline information.
 	// nil means we can.
 	canReadBaseline := readDeploymentExtensions(ctx) == nil
-	for _, indicator := range indicators {
+
+	fn := func(indicator *storage.ProcessIndicator) error {
 		var keyStr, procName string
 		if canReadBaseline {
 			key := &storage.ProcessBaselineKey{
@@ -242,10 +238,10 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 					baseline, exists, err := resolver.BaselineDataStore.GetProcessBaseline(ctx, key)
 					if err != nil {
 						log.Error(errors.Wrapf(err, "retrieving baseline data for process %s", indicator.GetSignal().GetName()))
-						continue
+						return nil
 					}
 					if !exists {
-						continue
+						return nil
 					}
 
 					baselines[keyStr] = processbaseline.Processes(baseline, processbaseline.RoxOrUserLocked)
@@ -256,7 +252,7 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 		timestamp, err := protocompat.ConvertTimestampToTimeOrError(indicator.GetSignal().GetTime())
 		if err != nil {
 			logTimestampConversionError(indicator.GetSignal().GetName(), "indicator", err)
-			continue
+			return nil
 		}
 		// -1 indicates we do not have parent UID information (either no parent exists or we do not know its UID).
 		var parentName *string
@@ -282,7 +278,14 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 			canReadBaseline:     canReadBaseline,
 			inBaseline:          baselines[keyStr] == nil || baselines[keyStr].Contains(procName),
 		})
+		return nil
 	}
+
+	err := resolver.ProcessIndicatorStore.GetByQueryFn(ctx, query, fn)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving process indicators from search")
+	}
+
 	return processEvents, nil
 }
 

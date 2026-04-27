@@ -79,6 +79,20 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockDataStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockDataStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockDataStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // GetProcessIndicator mocks base method.
 func (m *MockDataStore) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
 	m.ctrl.T.Helper()

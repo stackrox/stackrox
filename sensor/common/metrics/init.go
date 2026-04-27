@@ -47,5 +47,7 @@ func init() {
 		InformersPendingCurrent,
 		informerSyncDurationMs,
 		informerInitialObjectPopulationDurationSeconds,
+		fileActivityBufferDrops,
+		fileActivityBufferSize,
 	)
 }

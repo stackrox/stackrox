@@ -156,6 +156,114 @@ func (mr *MockCveCoreMockRecorder) GetVMsBySeverity() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMsBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetVMsBySeverity))
 }
 
+// MockCVEComponentCore is a mock of CVEComponentCore interface.
+type MockCVEComponentCore struct {
+	ctrl     *gomock.Controller
+	recorder *MockCVEComponentCoreMockRecorder
+	isgomock struct{}
+}
+
+// MockCVEComponentCoreMockRecorder is the mock recorder for MockCVEComponentCore.
+type MockCVEComponentCoreMockRecorder struct {
+	mock *MockCVEComponentCore
+}
+
+// NewMockCVEComponentCore creates a new mock instance.
+func NewMockCVEComponentCore(ctrl *gomock.Controller) *MockCVEComponentCore {
+	mock := &MockCVEComponentCore{ctrl: ctrl}
+	mock.recorder = &MockCVEComponentCoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCVEComponentCore) EXPECT() *MockCVEComponentCoreMockRecorder {
+	return m.recorder
+}
+
+// GetAdvisoryLink mocks base method.
+func (m *MockCVEComponentCore) GetAdvisoryLink() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAdvisoryLink")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetAdvisoryLink indicates an expected call of GetAdvisoryLink.
+func (mr *MockCVEComponentCoreMockRecorder) GetAdvisoryLink() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdvisoryLink", reflect.TypeOf((*MockCVEComponentCore)(nil).GetAdvisoryLink))
+}
+
+// GetAdvisoryName mocks base method.
+func (m *MockCVEComponentCore) GetAdvisoryName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAdvisoryName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetAdvisoryName indicates an expected call of GetAdvisoryName.
+func (mr *MockCVEComponentCoreMockRecorder) GetAdvisoryName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdvisoryName", reflect.TypeOf((*MockCVEComponentCore)(nil).GetAdvisoryName))
+}
+
+// GetComponentName mocks base method.
+func (m *MockCVEComponentCore) GetComponentName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComponentName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetComponentName indicates an expected call of GetComponentName.
+func (mr *MockCVEComponentCoreMockRecorder) GetComponentName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComponentName", reflect.TypeOf((*MockCVEComponentCore)(nil).GetComponentName))
+}
+
+// GetComponentSource mocks base method.
+func (m *MockCVEComponentCore) GetComponentSource() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComponentSource")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetComponentSource indicates an expected call of GetComponentSource.
+func (mr *MockCVEComponentCoreMockRecorder) GetComponentSource() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComponentSource", reflect.TypeOf((*MockCVEComponentCore)(nil).GetComponentSource))
+}
+
+// GetComponentVersion mocks base method.
+func (m *MockCVEComponentCore) GetComponentVersion() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComponentVersion")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetComponentVersion indicates an expected call of GetComponentVersion.
+func (mr *MockCVEComponentCoreMockRecorder) GetComponentVersion() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComponentVersion", reflect.TypeOf((*MockCVEComponentCore)(nil).GetComponentVersion))
+}
+
+// GetFixedBy mocks base method.
+func (m *MockCVEComponentCore) GetFixedBy() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFixedBy")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetFixedBy indicates an expected call of GetFixedBy.
+func (mr *MockCVEComponentCoreMockRecorder) GetFixedBy() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFixedBy", reflect.TypeOf((*MockCVEComponentCore)(nil).GetFixedBy))
+}
+
 // MockCveView is a mock of CveView interface.
 type MockCveView struct {
 	ctrl     *gomock.Controller
@@ -223,6 +331,21 @@ func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]vmcve.CveCore, er
 func (mr *MockCveViewMockRecorder) Get(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCveView)(nil).Get), ctx, q)
+}
+
+// GetCVEComponents mocks base method.
+func (m *MockCveView) GetCVEComponents(ctx context.Context, q *v1.Query) ([]vmcve.CVEComponentCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEComponents", ctx, q)
+	ret0, _ := ret[0].([]vmcve.CVEComponentCore)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCVEComponents indicates an expected call of GetCVEComponents.
+func (mr *MockCveViewMockRecorder) GetCVEComponents(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEComponents", reflect.TypeOf((*MockCveView)(nil).GetCVEComponents), ctx, q)
 }
 
 // GetVMIDs mocks base method.
