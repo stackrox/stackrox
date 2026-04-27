@@ -7,6 +7,12 @@ plugins {
     codenarc
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 codenarc {
     configFile = file("./codenarc-rules.groovy")
     reportFormat = "text"
@@ -232,15 +238,5 @@ tasks.register<Test>("testPZDebug") {
 tasks.register<Test>("testDeploymentCheck") {
     useJUnitPlatform {
         includeTags("DeploymentCheck")
-    }
-}
-
-allprojects {
-    plugins.withType<JavaPlugin> {
-        extensions.configure<JavaPluginExtension> {
-            toolchain {
-                languageVersion.set(JavaLanguageVersion.of(17))
-            }
-        }
     }
 }
