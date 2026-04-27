@@ -14,16 +14,20 @@ import (
 
 type scFakeSource struct {
 	fakeSource
-	clusterName string
-	webhooks    []admissionv1.ValidatingWebhook
+	clusterName       string
+	clusterNameInData bool
+	webhooks          []admissionv1.ValidatingWebhook
 }
 
 func (f *scFakeSource) Secret(name string) (*corev1.Secret, error) {
 	if name == "helm-effective-cluster-name" && f.clusterName != "" {
-		return &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{Name: name},
-			StringData: map[string]string{"cluster-name": f.clusterName},
-		}, nil
+		s := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name}}
+		if f.clusterNameInData {
+			s.Data = map[string][]byte{"cluster-name": []byte(f.clusterName)}
+		} else {
+			s.StringData = map[string]string{"cluster-name": f.clusterName}
+		}
+		return s, nil
 	}
 	return nil, nil
 }
@@ -106,6 +110,14 @@ func TestSC_EnforcementDisabled(t *testing.T) {
 	assert.Equal(t, platform.PolicyEnforcementDisabled, *cr.Spec.AdmissionControl.Enforcement)
 }
 
+func TestSC_NoVWCDoesNotSetEnforcement(t *testing.T) {
+	src := defaultSCSource()
+	src.webhooks = nil
+	cr, _, err := TransformToSecuredCluster(src)
+	require.NoError(t, err)
+	assert.Nil(t, cr.Spec.AdmissionControl)
+}
+
 func TestSC_FailurePolicyFail(t *testing.T) {
 	src := defaultSCSource()
 	fail := admissionv1.Fail
@@ -154,4 +166,12 @@ func TestSC_MissingClusterName(t *testing.T) {
 	_, _, err := TransformToSecuredCluster(src)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestSC_ClusterNameFromData(t *testing.T) {
+	src := defaultSCSource()
+	src.clusterNameInData = true
+	cr, _, err := TransformToSecuredCluster(src)
+	require.NoError(t, err)
+	assert.Equal(t, "my-cluster", *cr.Spec.ClusterName)
 }

@@ -54,17 +54,22 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "checking for admission controller webhooks")
 	}
-	enforcementDisabled := !hasWebhook(vwc, "policyeval.stackrox.io")
-	failurePolicyFail := hasFailurePolicyFail(vwc)
-	if enforcementDisabled || failurePolicyFail {
+	if vwc != nil {
 		ac := &platform.AdmissionControlComponentSpec{}
-		if enforcementDisabled {
-			ac.Enforcement = (*platform.PolicyEnforcement)(pointers.String(string(platform.PolicyEnforcementDisabled)))
+		changed := false
+		if !hasWebhook(vwc, "policyeval.stackrox.io") {
+			enforcement := platform.PolicyEnforcementDisabled
+			ac.Enforcement = &enforcement
+			changed = true
 		}
-		if failurePolicyFail {
-			ac.FailurePolicy = (*platform.FailurePolicy)(pointers.String(string(platform.FailurePolicyFail)))
+		if hasFailurePolicyFail(vwc) {
+			fp := platform.FailurePolicyFail
+			ac.FailurePolicy = &fp
+			changed = true
 		}
-		cr.Spec.AdmissionControl = ac
+		if changed {
+			cr.Spec.AdmissionControl = ac
+		}
 	}
 
 	// Collector
@@ -80,12 +85,14 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 	if collectionNone || tolerationsDisabled {
 		perNode := &platform.PerNodeSpec{}
 		if collectionNone {
+			cm := platform.CollectionNone
 			perNode.Collector = &platform.CollectorContainerSpec{
-				Collection: (*platform.CollectionMethod)(pointers.String(string(platform.CollectionNone))),
+				Collection: &cm,
 			}
 		}
 		if tolerationsDisabled {
-			perNode.TaintToleration = (*platform.TaintTolerationPolicy)(pointers.String(string(platform.TaintAvoid)))
+			tt := platform.TaintAvoid
+			perNode.TaintToleration = &tt
 		}
 		cr.Spec.PerNode = perNode
 	}

@@ -12,7 +12,6 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
@@ -61,9 +60,6 @@ func (s *dirSource) Service(name string) (*corev1.Service, error) {
 	}); err != nil {
 		return nil, err
 	}
-	if found == nil {
-		return nil, nil
-	}
 	return found, nil
 }
 
@@ -79,18 +75,22 @@ func (s *dirSource) Secret(name string) (*corev1.Secret, error) {
 	}); err != nil {
 		return nil, err
 	}
-	if found == nil {
-		return nil, nil
-	}
 	return found, nil
 }
 
 func (s *dirSource) Route(name string) (*unstructured.Unstructured, error) {
-	found, err := s.resourceExists("Route", name)
-	if err != nil || !found {
+	var found *unstructured.Unstructured
+	if err := s.walkYAML(func(doc []byte) bool {
+		var u unstructured.Unstructured
+		if err := yaml.Unmarshal(doc, &u); err == nil && u.GetKind() == "Route" && u.GetName() == name {
+			found = &u
+			return true
+		}
+		return false
+	}); err != nil {
 		return nil, err
 	}
-	return &unstructured.Unstructured{}, nil
+	return found, nil
 }
 
 func (s *dirSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
@@ -119,24 +119,6 @@ func (s *dirSource) ValidatingWebhookConfiguration(name string) (*admissionv1.Va
 		return false
 	}); err != nil {
 		return nil, err
-	}
-	return found, nil
-}
-
-func (s *dirSource) resourceExists(kind, name string) (bool, error) {
-	found := false
-	if err := s.walkYAML(func(doc []byte) bool {
-		var meta struct {
-			metav1.TypeMeta   `json:",inline"`
-			metav1.ObjectMeta `json:"metadata"`
-		}
-		if err := yaml.Unmarshal(doc, &meta); err == nil && meta.Kind == kind && meta.Name == name {
-			found = true
-			return true
-		}
-		return false
-	}); err != nil {
-		return false, err
 	}
 	return found, nil
 }

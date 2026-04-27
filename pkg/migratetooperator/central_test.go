@@ -230,6 +230,22 @@ func TestCentral_DeclarativeConfig(t *testing.T) {
 	assert.Equal(t, "my-cm", cr.Spec.Central.DeclarativeConfiguration.ConfigMaps[0].Name)
 }
 
+func TestCentral_MissingCentralDB(t *testing.T) {
+	src := defaultCentralSource()
+	delete(src.deployments, "central-db")
+	_, _, err := TransformToCentral(src)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestCentral_MissingCentral(t *testing.T) {
+	src := defaultCentralSource()
+	delete(src.deployments, "central")
+	_, _, err := TransformToCentral(src)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
 func TestCentral_Metadata(t *testing.T) {
 	cr, _, err := TransformToCentral(defaultCentralSource())
 	require.NoError(t, err)
