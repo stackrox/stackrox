@@ -1,4 +1,4 @@
-name: e2e-db-backup-restore-test
+name: e2e-nongroovy-tests
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
+        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests')
       )
     runs-on: ubuntu-latest
     steps:
@@ -45,22 +45,28 @@ jobs:
           rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
 
-  gke-db-backup-restore-test:
+  gke-nongroovy-e2e-tests:
     needs: [ wait-for-images ]
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
+        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests')
       )
     runs-on: ubuntu-latest
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
-      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}-${{ github.run_attempt }}
-      CI_JOB_NAME: gke-db-backup-restore-test
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      CI_JOB_NAME: gke-nongroovy-e2e-tests
       ARTIFACT_DIR: ./junit-reports/
       LOAD_BALANCER: lb
-    timeout-minutes: 60
+      ORCHESTRATOR_FLAVOR: k8s
+      KUBERNETES_PROVIDER: gke
+      SENSOR_SCANNER_SUPPORT: "true"
+      ROX_DEPLOY_SENSOR_WITH_CRS: "true"
+      SENSOR_HELM_MANAGED: "true"
+      SCANNER_V4_DB_STORAGE_CLASS: faster
+      ROX_SCANNER_V4: "false"
+    timeout-minutes: 120
     steps:
 
     - name: Checkout repo
@@ -73,16 +79,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: ${{ env.CLUSTER_NAME }}
-        lifespan: 1h
-        args: nodes=3,machine-type=e2-standard-8
-        wait: false
-
     - name: Docker login to Quay.io
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -92,32 +88,50 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
-        install_components: "gke-gcloud-auth-plugin"
+        install_components: "gke-gcloud-auth-plugin,beta"
 
-    - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+    - name: Create GKE cluster
+      env:
+        MACHINE_TYPE: e2-standard-8
+        NUM_NODES: "3"
+      timeout-minutes: 20
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster nongroovy
+        {
+          echo "CLUSTER_NAME=${CLUSTER_NAME}"
+          echo "ZONE=${ZONE}"
+          echo "KUBECONFIG=${HOME}/.kube/config"
+        } >> "$GITHUB_ENV"
+
+    - name: Wait for cluster to stabilize
+      timeout-minutes: 5
+      run: |
+        source scripts/ci/gke.sh
+        wait_for_cluster
 
     - name: Build roxctl
-      # The test uses roxctl for central backup/restore operations
+      # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
+      # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/
       run: |
         make roxctl_linux-amd64
-        echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
-
-    - name: Wait for the cluster and grab artifacts
-      timeout-minutes: 25
-      run: |
-        infractl wait "${CLUSTER_NAME}"
-        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-        echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+        sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
     - name: Verify kubectl access
       run: |
         kubectl cluster-info
         kubectl get nodes
 
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
+
     - name: Run pre-test
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         PYTHONUNBUFFERED: "1"
       run: |
         import sys
@@ -125,23 +139,32 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
-    - name: Deploy StackRox and run DB backup/restore test
+    - name: Install bats
+      run: |
+        sudo npm install -g bats bats-support bats-assert
+        sudo mkdir -p /usr/lib/node_modules
+        sudo ln -s /usr/local/lib/node_modules/bats-support /usr/lib/node_modules/bats-support
+        sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
+
+    - name: Run e2e tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        ORCHESTRATOR_FLAVOR: k8s
+        GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2 }}
+        GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2: ${{ secrets.GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2 }}
+        BUILD_ID: ${{ github.run_id }}
+      timeout-minutes: 90
+      run: tests/e2e/run.sh /tmp/e2e-test-logs
+
+    - name: Persist env vars for post-test
+      if: failure() || github.event_name == 'push'
       run: |
         source tests/e2e/lib.sh
-        source tests/scripts/setup-certs.sh
-        source scripts/ci/sensor-wait.sh
-        export_test_environment
-        setup_deployment_env false false
-        deploy_stackrox
-        # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
+        wait_for_api
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        db_backup_and_restore_test /tmp/db-backup-restore-test
+        echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
       if: failure() || github.event_name == 'push'
@@ -149,13 +172,15 @@ jobs:
       env:
         PYTHONUNBUFFERED: "1"
       run: |
-        import sys
+        import os, sys
         sys.path.append('.openshift-ci')
-        from post_tests import CheckStackroxLogs
-        CheckStackroxLogs(
-            check_for_errors_in_stackrox_logs=True,
-            artifact_destination_prefix="db-test",
-        ).run(['/tmp/db-backup-restore-test', '${{ env.ARTIFACT_DIR }}'])
+        from post_tests import PostClusterTest
+        post = PostClusterTest(
+            check_stackrox_logs=False,
+        )
+        if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
+            post.openshift_namespaces = []
+        post.run(['/tmp/e2e-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
       if: always()
@@ -168,9 +193,15 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Delete cluster
+    - name: Teardown GKE cluster
       if: always()
-      run: infractl delete "${CLUSTER_NAME}" || echo "infractl delete failed or cluster not found; relying on lifespan expiry"
+      run: |
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        source scripts/ci/gke.sh
+        teardown_gke_cluster false || echo "Cluster teardown failed"
 
     - name: Publish test summary
       uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
