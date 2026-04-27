@@ -1,4 +1,3 @@
-import com.google.protobuf.gradle.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.time.Duration
 
