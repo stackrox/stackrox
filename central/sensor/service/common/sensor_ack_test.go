@@ -113,6 +113,11 @@ func TestVMIDFromACKResourceID(t *testing.T) {
 			resourceID: "d2696fad-8ef2-49f5-9726-499b1419be20:1289650420",
 			expected:   "d2696fad-8ef2-49f5-9726-499b1419be20",
 		},
+		{
+			name:       "returns bare CID as-is",
+			resourceID: "1289650420",
+			expected:   "1289650420",
+		},
 	}
 
 	for _, tc := range testCases {
