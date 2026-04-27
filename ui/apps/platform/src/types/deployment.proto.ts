@@ -99,6 +99,7 @@ export type ContainerSecurityContext = {
     addCapabilities: string[];
     readOnlyRootFilesystem: boolean;
     seccompProfile: SeccompProfile | null;
+    allowPrivilegeEscalation: boolean;
 };
 
 export type SELinux = {
