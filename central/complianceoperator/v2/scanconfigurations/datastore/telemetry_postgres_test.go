@@ -29,6 +29,68 @@ func TestGatherTailoredProfilesNilDatastore(t *testing.T) {
 	assert.Empty(t, props)
 }
 
+func TestGatherProfiles(t *testing.T) {
+	t.Setenv(features.ComplianceEnhancements.EnvVar(), "true")
+
+	pool := pgtest.ForT(t)
+	ds := GetTestPostgresDataStore(t, pool.DB)
+
+	writeCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Compliance, resources.Cluster),
+		),
+	)
+
+	testCases := map[string]struct {
+		scanConfigs         []*storage.ComplianceOperatorScanConfigurationV2
+		expectedProfileKeys []string
+	}{
+		"no scan configs": {
+			scanConfigs:         nil,
+			expectedProfileKeys: nil,
+		},
+		"reports each profile name": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfig("scan-1", []profileDef{
+					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
+					{"ocp4-nist", storage.ComplianceOperatorProfileV2_PROFILE},
+				}),
+			},
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile ocp4-nist"},
+		},
+		"includes tailored profile names in profile list": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfig("scan-2", []profileDef{
+					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
+					{"my-tp", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+				}),
+			},
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile my-tp"},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			for _, sc := range tc.scanConfigs {
+				require.NoError(t, ds.UpsertScanConfiguration(writeCtx, sc))
+			}
+			t.Cleanup(func() {
+				for _, sc := range tc.scanConfigs {
+					_, _ = ds.DeleteScanConfiguration(writeCtx, sc.GetId())
+				}
+			})
+
+			props, err := GatherProfiles(ds)(context.Background())
+			require.NoError(t, err)
+
+			for _, key := range tc.expectedProfileKeys {
+				assert.Contains(t, props, key)
+			}
+		})
+	}
+}
+
 func TestGatherTailoredProfiles(t *testing.T) {
 	t.Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 
