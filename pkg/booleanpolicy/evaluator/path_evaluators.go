@@ -29,7 +29,6 @@ func (f *Factory) wrapBaseEvaluatorWithPathTraversal(pathToBase pathutil.MetaPat
 }
 
 func wrapEvaluatorWithTraversal(currentType reflect.Type, pathToEvaluator pathutil.MetaPath, evaluator fieldEvaluator) (fieldEvaluator, error) {
-	// Base case
 	if len(pathToEvaluator) == 0 {
 		return evaluator, nil
 	}
@@ -100,8 +99,12 @@ func takeSliceMetaStep(currentType reflect.Type, metaStep pathutil.MetaStep, eva
 			return nil, false
 		}
 
+		f := value.ValueFilter()
 		var results []*fieldResult
 		for i := 0; i < length; i++ {
+			if f != nil && !f(value, i) {
+				continue
+			}
 			if res, matches := nestedEvaluator.Evaluate(value.Index(i)); matches {
 				results = append(results, res)
 			}
@@ -111,7 +114,6 @@ func takeSliceMetaStep(currentType reflect.Type, metaStep pathutil.MetaStep, eva
 		}
 		return nil, false
 	}), nil
-
 }
 
 func takePtrMetaStep(currentType reflect.Type, metaStep pathutil.MetaStep, evaluator fieldEvaluator) (fieldEvaluator, error) {

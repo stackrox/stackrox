@@ -646,6 +646,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_VulnerabilityType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
+	utils.Must(builder.AddType("EvaluationFilter", []string{
+		"skipContainerTypes: [SkipContainerType!]!",
+		"skipImageLayers: SkipImageLayers!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EventSource(0)))
 	utils.Must(builder.AddType("Exclusion", []string{
 		"deployment: Exclusion_Deployment",
@@ -1104,6 +1108,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"disabled: Boolean!",
 		"enforcementActions: [EnforcementAction!]!",
+		"evaluationFilter: EvaluationFilter",
 		"eventSource: EventSource!",
 		"exclusions: [Exclusion]!",
 		"id: ID!",
@@ -1415,6 +1420,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SkipContainerType(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SkipImageLayers(0)))
 	utils.Must(builder.AddType("SlimUser", []string{
 		"id: ID!",
 		"name: String!",
@@ -7792,6 +7799,58 @@ func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 	return output
 }
 
+type evaluationFilterResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.EvaluationFilter
+}
+
+func (resolver *Resolver) wrapEvaluationFilter(value *storage.EvaluationFilter, ok bool, err error) (*evaluationFilterResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &evaluationFilterResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEvaluationFilters(values []*storage.EvaluationFilter, err error) ([]*evaluationFilterResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*evaluationFilterResolver, len(values))
+	for i, v := range values {
+		output[i] = &evaluationFilterResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapEvaluationFilterWithContext(ctx context.Context, value *storage.EvaluationFilter, ok bool, err error) (*evaluationFilterResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &evaluationFilterResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEvaluationFiltersWithContext(ctx context.Context, values []*storage.EvaluationFilter, err error) ([]*evaluationFilterResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*evaluationFilterResolver, len(values))
+	for i, v := range values {
+		output[i] = &evaluationFilterResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *evaluationFilterResolver) SkipContainerTypes(ctx context.Context) []string {
+	value := resolver.data.GetSkipContainerTypes()
+	return stringSlice(value)
+}
+
+func (resolver *evaluationFilterResolver) SkipImageLayers(ctx context.Context) string {
+	value := resolver.data.GetSkipImageLayers()
+	return value.String()
+}
+
 func toEventSource(value *string) storage.EventSource {
 	if value != nil {
 		return storage.EventSource(storage.EventSource_value[*value])
@@ -12324,6 +12383,11 @@ func (resolver *policyResolver) EnforcementActions(ctx context.Context) []string
 	return stringSlice(value)
 }
 
+func (resolver *policyResolver) EvaluationFilter(ctx context.Context) (*evaluationFilterResolver, error) {
+	value := resolver.data.GetEvaluationFilter()
+	return resolver.root.wrapEvaluationFilter(value, true, nil)
+}
+
 func (resolver *policyResolver) EventSource(ctx context.Context) string {
 	value := resolver.data.GetEventSource()
 	return value.String()
@@ -15340,6 +15404,42 @@ func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx conte
 func (resolver *simpleAccessScope_Rules_NamespaceResolver) NamespaceName(ctx context.Context) string {
 	value := resolver.data.GetNamespaceName()
 	return value
+}
+
+func toSkipContainerType(value *string) storage.SkipContainerType {
+	if value != nil {
+		return storage.SkipContainerType(storage.SkipContainerType_value[*value])
+	}
+	return storage.SkipContainerType(0)
+}
+
+func toSkipContainerTypes(values *[]string) []storage.SkipContainerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SkipContainerType, len(*values))
+	for i, v := range *values {
+		output[i] = toSkipContainerType(&v)
+	}
+	return output
+}
+
+func toSkipImageLayers(value *string) storage.SkipImageLayers {
+	if value != nil {
+		return storage.SkipImageLayers(storage.SkipImageLayers_value[*value])
+	}
+	return storage.SkipImageLayers(0)
+}
+
+func toSkipImageLayerses(values *[]string) []storage.SkipImageLayers {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SkipImageLayers, len(*values))
+	for i, v := range *values {
+		output[i] = toSkipImageLayers(&v)
+	}
+	return output
 }
 
 type slimUserResolver struct {

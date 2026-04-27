@@ -49,6 +49,12 @@ func addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *Augm
 	return nil
 }
 
+// ValueFilter is a generic predicate applied before the evaluator descends into each slice
+// element during traversal. v is the AugmentedValue at the slice level; i is the candidate
+// index. Return false to skip (pre-terminate) that element. Returning true or a nil filter
+// means the element is visited normally.
+type ValueFilter func(v AugmentedValue, i int) bool
+
 // An AugmentedObj represents an object with some augments.
 // Concretely, this means that it effectively consists of two parts:
 // -> the core object itself
@@ -69,8 +75,21 @@ func addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *Augm
 // It is a concrete realization of the object hierarchy described
 // in an AugmentedObjMeta.
 // Callers must use NewAugmentedObj to create one.
+// valueFilter holds the filter to pre-terminate some branches of the augmentTree.
+// It can be inherited by all the children of the AugmentedObj.
 type AugmentedObj struct {
 	augmentTreeRoot augmentTree
+	valueFilter     ValueFilter
+}
+
+// WithFilter returns a shallow copy of the AugmentedObj with the given ValueFilter attached.
+// The augmentTreeRoot is shared — no tree data is copied. When Value() is called on the
+// returned object, the filter is propagated into the root AugmentedValue and from there
+// to all child values during traversal.
+func (o *AugmentedObj) WithFilter(f ValueFilter) *AugmentedObj {
+	copy := *o
+	copy.valueFilter = f
+	return &copy
 }
 
 // NewAugmentedObj returns a ready-to-use instance of AugmentedObj, where the core
@@ -94,8 +113,10 @@ func (o *AugmentedObj) AddPlainObjAt(subObj interface{}, steps ...Step) error {
 }
 
 // Value returns an AugmentedValue, which starts off at the "root" of the augmented object.
+// If a ValueFilter was set via WithFilter, it is propagated to the root value and from there
+// to all child values during traversal.
 func (o *AugmentedObj) Value() AugmentedValue {
-	return &augmentedValue{underlying: *o.augmentTreeRoot.value, currentNode: &o.augmentTreeRoot}
+	return &augmentedValue{underlying: *o.augmentTreeRoot.value, currentNode: &o.augmentTreeRoot, valueFilter: o.valueFilter}
 }
 
 // An AugmentedValue is a wrapper around a reflect.Value which can be traversed in a way
@@ -110,6 +131,8 @@ type AugmentedValue interface {
 	// It panics if Index(i) on the reflect.Value panics.
 	Index(int) AugmentedValue
 	PathFromRoot() *Path
+	// ValueFilter returns the active ValueFilter, or nil if none was set.
+	ValueFilter() ValueFilter
 }
 
 type augmentedValue struct {
@@ -119,10 +142,15 @@ type augmentedValue struct {
 
 	currentNode *augmentTree
 	underlying  reflect.Value
+	valueFilter ValueFilter
 }
 
 func (v *augmentedValue) Elem() AugmentedValue {
-	return &augmentedValue{underlying: v.underlying.Elem(), currentNode: v.currentNode, parent: v.parent, edgeToParent: v.edgeToParent, depth: v.depth}
+	return &augmentedValue{underlying: v.underlying.Elem(), currentNode: v.currentNode, parent: v.parent, edgeToParent: v.edgeToParent, depth: v.depth, valueFilter: v.valueFilter}
+}
+
+func (v *augmentedValue) ValueFilter() ValueFilter {
+	return v.valueFilter
 }
 
 func (v *augmentedValue) Index(i int) AugmentedValue {
@@ -173,6 +201,7 @@ func (v *augmentedValue) childValue(newUnderlying reflect.Value, nextNode *augme
 		depth:        v.depth + 1,
 		underlying:   newUnderlying,
 		currentNode:  nextNode,
+		valueFilter:  v.valueFilter,
 	}
 }
 
