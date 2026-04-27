@@ -12,39 +12,10 @@ codenarc {
     reportFormat = "text"
 }
 
-protobuf {
-    // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
-    // See https://github.com/grpc/grpc-java/issues/7690
-    var protocGenArch = ""
-    if (System.getProperty("os.arch") == "aarch64" && System.getProperty("os.name").lowercase().contains("mac")) {
-        protocGenArch = ":osx-x86_64"
-    }
-    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
-    plugins {
-        id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}${protocGenArch}"
-        }
-    }
-    generateProtoTasks {
-        ofSourceSet("main").forEach {
-            it.plugins {
-                id("grpc") {
-                    outputSubDir = "java"
-                }
-            }
-        }
-    }
-}
+apply(from = "protobuf.gradle")
 
 afterEvaluate {
-    // Add protobuf output dirs to sourceSets after configuration
-    tasks.withType<com.google.protobuf.gradle.GenerateProtoTask>().forEach { task ->
-        task.outputSourceDirectorySet.srcDirs.forEach { srcDir ->
-            sourceSets.getByName(task.sourceSet.name).java.srcDirs(srcDir)
-        }
-    }
-
-    // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them
+    // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
     sourceSets.forEach { sourceSet ->
         sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
         sourceSet.java.setSrcDirs(emptyList<File>())
