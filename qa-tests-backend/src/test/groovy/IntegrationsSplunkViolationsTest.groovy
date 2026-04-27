@@ -132,9 +132,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // FILE_ACCESS violations may lack deploymentInfo (e.g. node-level events)
         // and have their own CIM structure validated in the file access test
         // (currently disabled pending ROX-31047).
-        def nonFileAccessAlerts = alerts.findAll { !isViolationOfType(it, "FILE_ACCESS") }
-        for (alert in nonFileAccessAlerts) {
-            validateCimMappings(alert)
+        alerts.findAll {
+            !isViolationOfType(it, "FILE_ACCESS")
+        }.each {
+            alert -> validateCimMappings(alert)
         }
     }
 
