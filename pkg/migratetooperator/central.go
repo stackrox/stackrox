@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/pointers"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,19 +25,50 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 		},
 	}
 
-	// Storage
-	centralDBDep, err := src.Deployment("central-db")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "retrieving central-db Deployment")
+	if err := setCentralDBSpec(src, cr); err != nil {
+		return nil, nil, err
 	}
-	if centralDBDep == nil {
-		return nil, nil, errors.New("central-db Deployment not found")
+
+	centralDep, err := src.Deployment("central")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "retrieving central Deployment")
+	}
+	if centralDep == nil {
+		return nil, nil, errors.New("central Deployment not found")
+	}
+
+	setCentralMonitoring(centralDep, cr)
+	if err := setCentralExposure(src, cr); err != nil {
+		return nil, nil, err
+	}
+	setCentralDefaultTLS(src, cr)
+	setCentralDeclarativeConfig(centralDep, cr)
+	setCentralTelemetry(centralDep, cr)
+	setCentralPlaintextEndpoints(centralDep, cr)
+	setCentralOfflineMode(centralDep, cr)
+
+	if detectCustomImages(centralDep) {
+		warnings = append(warnings, "Detected non-default container images. "+
+			"The operator does not support image overrides in the Central CR. "+
+			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
+	}
+
+	return cr, warnings, nil
+}
+
+func setCentralDBSpec(src Source, cr *platform.Central) error {
+	dep, err := src.Deployment("central-db")
+	if err != nil {
+		return errors.Wrap(err, "retrieving central-db Deployment")
+	}
+	if dep == nil {
+		return errors.New("central-db Deployment not found")
 	}
 
 	db := &platform.CentralDBSpec{}
-	diskVolume := findVolume(centralDBDep, "disk")
+	diskVolume := findVolume(dep, "disk")
 	if diskVolume == nil {
-		return nil, nil, errors.New("central-db Deployment has no volume named \"disk\"")
+		return errors.New("central-db Deployment has no volume named \"disk\"")
 	}
 	switch {
 	case diskVolume.PersistentVolumeClaim != nil:
@@ -55,23 +87,16 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 			},
 		}
 	default:
-		return nil, nil, errors.New("central-db Deployment \"disk\" volume is neither a PVC nor a hostPath")
+		return errors.New("central-db Deployment \"disk\" volume is neither a PVC nor a hostPath")
 	}
-	if ns := centralDBDep.Spec.Template.Spec.NodeSelector; len(ns) > 0 {
+	if ns := dep.Spec.Template.Spec.NodeSelector; len(ns) > 0 {
 		db.NodeSelector = ns
 	}
 	cr.Spec.Central = &platform.CentralComponentSpec{DB: db}
+	return nil
+}
 
-	// Central Deployment settings
-	centralDep, err := src.Deployment("central")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "retrieving central Deployment")
-	}
-	if centralDep == nil {
-		return nil, nil, errors.New("central Deployment not found")
-	}
-
-	// Monitoring
+func setCentralMonitoring(centralDep *appsv1.Deployment, cr *platform.Central) {
 	isOpenShift := envVarIsTrue(centralDep, "ROX_ENABLE_OPENSHIFT_AUTH")
 	if isOpenShift && !envVarIsTrue(centralDep, "ROX_ENABLE_SECURE_METRICS") {
 		cr.Spec.Monitoring = &platform.GlobalMonitoring{
@@ -80,15 +105,16 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 			},
 		}
 	}
+}
 
-	// Exposure
+func setCentralExposure(src Source, cr *platform.Central) error {
 	svc, err := src.Service("central-loadbalancer")
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "checking for central-loadbalancer Service")
+		return errors.Wrap(err, "checking for central-loadbalancer Service")
 	}
 	route, err := src.Route("central")
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "checking for central Route")
+		return errors.Wrap(err, "checking for central Route")
 	}
 	if svc != nil || route != nil {
 		exposure := &platform.Exposure{}
@@ -105,19 +131,19 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 		}
 		cr.Spec.Central.Exposure = exposure
 	}
+	return nil
+}
 
-	// Default TLS cert
-	tlsSecret, err := src.Secret("central-default-tls-cert")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "checking for default TLS cert Secret")
-	}
+func setCentralDefaultTLS(src Source, cr *platform.Central) {
+	tlsSecret, _ := src.Secret("central-default-tls-cert")
 	if tlsSecret != nil {
 		cr.Spec.Central.DefaultTLSSecret = &platform.LocalSecretReference{
 			Name: "central-default-tls-cert",
 		}
 	}
+}
 
-	// Declarative configuration
+func setCentralDeclarativeConfig(centralDep *appsv1.Deployment, cr *platform.Central) {
 	declConfigMaps, declSecrets := detectDeclarativeConfig(centralDep)
 	if len(declConfigMaps) > 0 || len(declSecrets) > 0 {
 		dc := &platform.DeclarativeConfiguration{}
@@ -129,15 +155,17 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 		}
 		cr.Spec.Central.DeclarativeConfiguration = dc
 	}
+}
 
-	// Telemetry
+func setCentralTelemetry(centralDep *appsv1.Deployment, cr *platform.Central) {
 	if envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED" {
 		cr.Spec.Central.Telemetry = &platform.Telemetry{
 			Enabled: pointers.Bool(false),
 		}
 	}
+}
 
-	// Plaintext endpoints
+func setCentralPlaintextEndpoints(centralDep *appsv1.Deployment, cr *platform.Central) {
 	if pe := envVarValue(centralDep, "ROX_PLAINTEXT_ENDPOINTS"); pe != "" {
 		if cr.Spec.Customize == nil {
 			cr.Spec.Customize = &platform.CustomizeSpec{}
@@ -147,20 +175,12 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 			Value: pe,
 		})
 	}
+}
 
-	// Offline mode
+func setCentralOfflineMode(centralDep *appsv1.Deployment, cr *platform.Central) {
 	if envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true" {
 		cr.Spec.Egress = &platform.Egress{
 			ConnectivityPolicy: platform.ConnectivityOffline.Pointer(),
 		}
 	}
-
-	// Custom images
-	if detectCustomImages(centralDep) {
-		warnings = append(warnings, "Detected non-default container images. "+
-			"The operator does not support image overrides in the Central CR. "+
-			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
-	}
-
-	return cr, warnings, nil
 }
