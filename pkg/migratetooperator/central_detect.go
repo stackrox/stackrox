@@ -16,37 +16,37 @@ const (
 )
 
 type storageConfig struct {
-	Type         storageType
-	PVCName      string
-	HostPath     string
-	NodeSelector map[string]string
+	typ          storageType
+	pvcName      string
+	hostPath     string
+	nodeSelector map[string]string
 }
 
 type monitoringConfig struct {
-	IsOpenShift                bool
-	OpenShiftMonitoringEnabled bool
+	isOpenShift                bool
+	openShiftMonitoringEnabled bool
 }
 
 type exposureConfig struct {
-	LoadBalancerEnabled bool
-	NodePortEnabled     bool
-	RouteEnabled        bool
+	loadBalancerEnabled bool
+	nodePortEnabled     bool
+	routeEnabled        bool
 }
 
-type detectedConfig struct {
-	Storage               storageConfig
-	Monitoring            monitoringConfig
-	Exposure              exposureConfig
-	OfflineMode           bool
-	TelemetryDisabled     bool
-	DefaultTLSSecretName  string
-	DeclarativeConfigMaps []string
-	DeclarativeSecrets    []string
-	PlaintextEndpoints    string
-	CustomImages          bool
+type centralConfig struct {
+	storage               storageConfig
+	monitoring            monitoringConfig
+	exposure              exposureConfig
+	offlineMode           bool
+	telemetryDisabled     bool
+	defaultTLSSecretName  string
+	declarativeConfigMaps []string
+	declarativeSecrets    []string
+	plaintextEndpoints    string
+	customImages          bool
 }
 
-func detectCentral(src Source) (*detectedConfig, error) {
+func detectCentral(src Source) (*centralConfig, error) {
 	storage, err := detectStorage(src)
 	if err != nil {
 		return nil, err
@@ -69,17 +69,17 @@ func detectCentral(src Source) (*detectedConfig, error) {
 
 	declConfigMaps, declSecrets := detectDeclarativeConfig(centralDep)
 
-	return &detectedConfig{
-		Storage:               *storage,
-		Monitoring:            detectMonitoring(centralDep),
-		Exposure:              *exposure,
-		OfflineMode:           envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
-		TelemetryDisabled:     envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
-		DefaultTLSSecretName:  defaultTLSSecretName,
-		DeclarativeConfigMaps: declConfigMaps,
-		DeclarativeSecrets:    declSecrets,
-		PlaintextEndpoints:    envVarValue(centralDep, "ROX_PLAINTEXT_ENDPOINTS"),
-		CustomImages:          detectCustomImages(centralDep),
+	return &centralConfig{
+		storage:               *storage,
+		monitoring:            detectMonitoring(centralDep),
+		exposure:              *exposure,
+		offlineMode:           envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true",
+		telemetryDisabled:     envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED",
+		defaultTLSSecretName:  defaultTLSSecretName,
+		declarativeConfigMaps: declConfigMaps,
+		declarativeSecrets:    declSecrets,
+		plaintextEndpoints:    envVarValue(centralDep, "ROX_PLAINTEXT_ENDPOINTS"),
+		customImages:          detectCustomImages(centralDep),
 	}, nil
 }
 
@@ -104,20 +104,20 @@ func detectStorage(src Source) (*storageConfig, error) {
 	switch {
 	case diskVolume.PersistentVolumeClaim != nil:
 		cfg = &storageConfig{
-			Type:    storagePVC,
-			PVCName: diskVolume.PersistentVolumeClaim.ClaimName,
+			typ:     storagePVC,
+			pvcName: diskVolume.PersistentVolumeClaim.ClaimName,
 		}
 	case diskVolume.HostPath != nil:
 		cfg = &storageConfig{
-			Type:     storageHostPath,
-			HostPath: diskVolume.HostPath.Path,
+			typ:      storageHostPath,
+			hostPath: diskVolume.HostPath.Path,
 		}
 	default:
 		return nil, errors.New("central-db Deployment \"disk\" volume is neither a PVC nor a hostPath")
 	}
 
 	if ns := dep.Spec.Template.Spec.NodeSelector; len(ns) > 0 {
-		cfg.NodeSelector = ns
+		cfg.nodeSelector = ns
 	}
 	return cfg, nil
 }
@@ -125,8 +125,8 @@ func detectStorage(src Source) (*storageConfig, error) {
 func detectMonitoring(dep *appsv1.Deployment) monitoringConfig {
 	isOpenShift := envVarIsTrue(dep, "ROX_ENABLE_OPENSHIFT_AUTH")
 	return monitoringConfig{
-		IsOpenShift:                isOpenShift,
-		OpenShiftMonitoringEnabled: isOpenShift && envVarIsTrue(dep, "ROX_ENABLE_SECURE_METRICS"),
+		isOpenShift:                isOpenShift,
+		openShiftMonitoringEnabled: isOpenShift && envVarIsTrue(dep, "ROX_ENABLE_SECURE_METRICS"),
 	}
 }
 
@@ -140,9 +140,9 @@ func detectExposure(src Source) (*exposureConfig, error) {
 	if svc != nil {
 		switch svc.Spec.Type {
 		case corev1.ServiceTypeLoadBalancer:
-			cfg.LoadBalancerEnabled = true
+			cfg.loadBalancerEnabled = true
 		case corev1.ServiceTypeNodePort:
-			cfg.NodePortEnabled = true
+			cfg.nodePortEnabled = true
 		}
 	}
 
@@ -150,7 +150,7 @@ func detectExposure(src Source) (*exposureConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "checking for central Route")
 	}
-	cfg.RouteEnabled = routeFound
+	cfg.routeEnabled = routeFound
 
 	return cfg, nil
 }

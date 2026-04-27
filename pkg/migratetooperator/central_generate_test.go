@@ -10,10 +10,10 @@ import (
 )
 
 func TestGenerateCR_PVC(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{
-			Type:    storagePVC,
-			PVCName: "my-db-pvc",
+	config := &centralConfig{
+		storage: storageConfig{
+			typ:     storagePVC,
+			pvcName: "my-db-pvc",
 		},
 	}
 
@@ -36,11 +36,11 @@ func TestGenerateCR_PVC(t *testing.T) {
 }
 
 func TestGenerateCR_HostPath(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{
-			Type:         storageHostPath,
-			HostPath:     "/data/stackrox",
-			NodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
+	config := &centralConfig{
+		storage: storageConfig{
+			typ:          storageHostPath,
+			hostPath:     "/data/stackrox",
+			nodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
 		},
 	}
 
@@ -53,10 +53,10 @@ func TestGenerateCR_HostPath(t *testing.T) {
 }
 
 func TestGenerateCR_HostPathWithoutNodeSelector(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{
-			Type:     storageHostPath,
-			HostPath: "/var/lib/stackrox-central",
+	config := &centralConfig{
+		storage: storageConfig{
+			typ:      storageHostPath,
+			hostPath: "/var/lib/stackrox-central",
 		},
 	}
 
@@ -68,9 +68,9 @@ func TestGenerateCR_HostPathWithoutNodeSelector(t *testing.T) {
 }
 
 func TestGenerateCR_OpenShiftMonitoringEnabled(t *testing.T) {
-	config := &detectedConfig{
-		Storage:    storageConfig{Type: storagePVC, PVCName: "central-db"},
-		Monitoring: monitoringConfig{IsOpenShift: true, OpenShiftMonitoringEnabled: true},
+	config := &centralConfig{
+		storage:    storageConfig{typ: storagePVC, pvcName: "central-db"},
+		monitoring: monitoringConfig{isOpenShift: true, openShiftMonitoringEnabled: true},
 	}
 
 	cr, _ := generateCentral(config)
@@ -79,9 +79,9 @@ func TestGenerateCR_OpenShiftMonitoringEnabled(t *testing.T) {
 }
 
 func TestGenerateCR_OpenShiftMonitoringDisabled(t *testing.T) {
-	config := &detectedConfig{
-		Storage:    storageConfig{Type: storagePVC, PVCName: "central-db"},
-		Monitoring: monitoringConfig{IsOpenShift: true, OpenShiftMonitoringEnabled: false},
+	config := &centralConfig{
+		storage:    storageConfig{typ: storagePVC, pvcName: "central-db"},
+		monitoring: monitoringConfig{isOpenShift: true, openShiftMonitoringEnabled: false},
 	}
 
 	cr, _ := generateCentral(config)
@@ -93,9 +93,9 @@ func TestGenerateCR_OpenShiftMonitoringDisabled(t *testing.T) {
 }
 
 func TestGenerateCR_K8sOmitsMonitoring(t *testing.T) {
-	config := &detectedConfig{
-		Storage:    storageConfig{Type: storagePVC, PVCName: "central-db"},
-		Monitoring: monitoringConfig{IsOpenShift: false, OpenShiftMonitoringEnabled: false},
+	config := &centralConfig{
+		storage:    storageConfig{typ: storagePVC, pvcName: "central-db"},
+		monitoring: monitoringConfig{isOpenShift: false, openShiftMonitoringEnabled: false},
 	}
 
 	cr, _ := generateCentral(config)
@@ -104,9 +104,9 @@ func TestGenerateCR_K8sOmitsMonitoring(t *testing.T) {
 }
 
 func TestGenerateCR_ExposureLoadBalancer(t *testing.T) {
-	config := &detectedConfig{
-		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
-		Exposure: exposureConfig{LoadBalancerEnabled: true},
+	config := &centralConfig{
+		storage:  storageConfig{typ: storagePVC, pvcName: "central-db"},
+		exposure: exposureConfig{loadBalancerEnabled: true},
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Central.Exposure)
@@ -117,9 +117,9 @@ func TestGenerateCR_ExposureLoadBalancer(t *testing.T) {
 }
 
 func TestGenerateCR_ExposureRoute(t *testing.T) {
-	config := &detectedConfig{
-		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
-		Exposure: exposureConfig{RouteEnabled: true},
+	config := &centralConfig{
+		storage:  storageConfig{typ: storagePVC, pvcName: "central-db"},
+		exposure: exposureConfig{routeEnabled: true},
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Central.Exposure)
@@ -128,17 +128,17 @@ func TestGenerateCR_ExposureRoute(t *testing.T) {
 }
 
 func TestGenerateCR_ExposureNone(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	config := &centralConfig{
+		storage: storageConfig{typ: storagePVC, pvcName: "central-db"},
 	}
 	cr, _ := generateCentral(config)
 	assert.Nil(t, cr.Spec.Central.Exposure)
 }
 
 func TestGenerateCR_ExposureMultiple(t *testing.T) {
-	config := &detectedConfig{
-		Storage:  storageConfig{Type: storagePVC, PVCName: "central-db"},
-		Exposure: exposureConfig{LoadBalancerEnabled: true, RouteEnabled: true},
+	config := &centralConfig{
+		storage:  storageConfig{typ: storagePVC, pvcName: "central-db"},
+		exposure: exposureConfig{loadBalancerEnabled: true, routeEnabled: true},
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Central.Exposure)
@@ -148,9 +148,9 @@ func TestGenerateCR_ExposureMultiple(t *testing.T) {
 }
 
 func TestGenerateCR_OfflineMode(t *testing.T) {
-	config := &detectedConfig{
-		Storage:     storageConfig{Type: storagePVC, PVCName: "central-db"},
-		OfflineMode: true,
+	config := &centralConfig{
+		storage:     storageConfig{typ: storagePVC, pvcName: "central-db"},
+		offlineMode: true,
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Egress)
@@ -159,17 +159,17 @@ func TestGenerateCR_OfflineMode(t *testing.T) {
 }
 
 func TestGenerateCR_OnlineMode(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	config := &centralConfig{
+		storage: storageConfig{typ: storagePVC, pvcName: "central-db"},
 	}
 	cr, _ := generateCentral(config)
 	assert.Nil(t, cr.Spec.Egress)
 }
 
 func TestGenerateCR_TelemetryDisabled(t *testing.T) {
-	config := &detectedConfig{
-		Storage:           storageConfig{Type: storagePVC, PVCName: "central-db"},
-		TelemetryDisabled: true,
+	config := &centralConfig{
+		storage:           storageConfig{typ: storagePVC, pvcName: "central-db"},
+		telemetryDisabled: true,
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Central.Telemetry)
@@ -177,17 +177,17 @@ func TestGenerateCR_TelemetryDisabled(t *testing.T) {
 }
 
 func TestGenerateCR_TelemetryDefault(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	config := &centralConfig{
+		storage: storageConfig{typ: storagePVC, pvcName: "central-db"},
 	}
 	cr, _ := generateCentral(config)
 	assert.Nil(t, cr.Spec.Central.Telemetry)
 }
 
 func TestGenerateCR_DefaultTLSSecret(t *testing.T) {
-	config := &detectedConfig{
-		Storage:              storageConfig{Type: storagePVC, PVCName: "central-db"},
-		DefaultTLSSecretName: "central-default-tls-cert",
+	config := &centralConfig{
+		storage:              storageConfig{typ: storagePVC, pvcName: "central-db"},
+		defaultTLSSecretName: "central-default-tls-cert",
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Central.DefaultTLSSecret)
@@ -195,18 +195,18 @@ func TestGenerateCR_DefaultTLSSecret(t *testing.T) {
 }
 
 func TestGenerateCR_NoDefaultTLSSecret(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	config := &centralConfig{
+		storage: storageConfig{typ: storagePVC, pvcName: "central-db"},
 	}
 	cr, _ := generateCentral(config)
 	assert.Nil(t, cr.Spec.Central.DefaultTLSSecret)
 }
 
 func TestGenerateCR_DeclarativeConfig(t *testing.T) {
-	config := &detectedConfig{
-		Storage:               storageConfig{Type: storagePVC, PVCName: "central-db"},
-		DeclarativeConfigMaps: []string{"my-cm"},
-		DeclarativeSecrets:    []string{"my-secret"},
+	config := &centralConfig{
+		storage:               storageConfig{typ: storagePVC, pvcName: "central-db"},
+		declarativeConfigMaps: []string{"my-cm"},
+		declarativeSecrets:    []string{"my-secret"},
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Central.DeclarativeConfiguration)
@@ -217,17 +217,17 @@ func TestGenerateCR_DeclarativeConfig(t *testing.T) {
 }
 
 func TestGenerateCR_NoDeclarativeConfig(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	config := &centralConfig{
+		storage: storageConfig{typ: storagePVC, pvcName: "central-db"},
 	}
 	cr, _ := generateCentral(config)
 	assert.Nil(t, cr.Spec.Central.DeclarativeConfiguration)
 }
 
 func TestGenerateCR_PlaintextEndpoints(t *testing.T) {
-	config := &detectedConfig{
-		Storage:            storageConfig{Type: storagePVC, PVCName: "central-db"},
-		PlaintextEndpoints: "8080,grpc@8081",
+	config := &centralConfig{
+		storage:            storageConfig{typ: storagePVC, pvcName: "central-db"},
+		plaintextEndpoints: "8080,grpc@8081",
 	}
 	cr, _ := generateCentral(config)
 	require.NotNil(t, cr.Spec.Customize)
@@ -237,8 +237,8 @@ func TestGenerateCR_PlaintextEndpoints(t *testing.T) {
 }
 
 func TestGenerateCR_NoPlaintextEndpoints(t *testing.T) {
-	config := &detectedConfig{
-		Storage: storageConfig{Type: storagePVC, PVCName: "central-db"},
+	config := &centralConfig{
+		storage: storageConfig{typ: storagePVC, pvcName: "central-db"},
 	}
 	cr, _ := generateCentral(config)
 	assert.Nil(t, cr.Spec.Customize)
