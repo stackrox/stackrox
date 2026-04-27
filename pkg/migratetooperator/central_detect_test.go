@@ -116,7 +116,7 @@ func TestDetectStorage(t *testing.T) {
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "central-db"},
 				},
 			}},
-			expected: storageConfig{Type: storagePVC, PVCName: "central-db"},
+			expected: storageConfig{typ: storagePVC, pvcName: "central-db"},
 		},
 		"PVC with custom name": {
 			volumes: []corev1.Volume{{
@@ -125,14 +125,14 @@ func TestDetectStorage(t *testing.T) {
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "my-custom-db"},
 				},
 			}},
-			expected: storageConfig{Type: storagePVC, PVCName: "my-custom-db"},
+			expected: storageConfig{typ: storagePVC, pvcName: "my-custom-db"},
 		},
 		"hostPath with default path": {
 			volumes: []corev1.Volume{{
 				Name:         "disk",
 				VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/var/lib/stackrox-central"}},
 			}},
-			expected: storageConfig{Type: storageHostPath, HostPath: "/var/lib/stackrox-central"},
+			expected: storageConfig{typ: storageHostPath, hostPath: "/var/lib/stackrox-central"},
 		},
 		"hostPath with custom path and nodeSelector": {
 			volumes: []corev1.Volume{{
@@ -141,8 +141,8 @@ func TestDetectStorage(t *testing.T) {
 			}},
 			nodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
 			expected: storageConfig{
-				Type: storageHostPath, HostPath: "/data/stackrox",
-				NodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
+				typ: storageHostPath, hostPath: "/data/stackrox",
+				nodeSelector: map[string]string{"kubernetes.io/hostname": "worker-1"},
 			},
 		},
 	}
@@ -154,7 +154,7 @@ func TestDetectStorage(t *testing.T) {
 			}}
 			config, err := detectCentral(src)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, config.Storage)
+			assert.Equal(t, tt.expected, config.storage)
 		})
 	}
 }
@@ -226,8 +226,8 @@ func TestDetectMonitoring(t *testing.T) {
 			}}
 			config, err := detectCentral(src)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expectIsOpenShift, config.Monitoring.IsOpenShift)
-			assert.Equal(t, tt.expectMonitoring, config.Monitoring.OpenShiftMonitoringEnabled)
+			assert.Equal(t, tt.expectIsOpenShift, config.monitoring.isOpenShift)
+			assert.Equal(t, tt.expectMonitoring, config.monitoring.openShiftMonitoringEnabled)
 		})
 	}
 }
@@ -272,9 +272,9 @@ func TestDetectExposure(t *testing.T) {
 			src := &fakeSource{services: tt.services, routes: tt.routes}
 			config, err := detectCentral(src)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expectedLB, config.Exposure.LoadBalancerEnabled)
-			assert.Equal(t, tt.expectedNP, config.Exposure.NodePortEnabled)
-			assert.Equal(t, tt.expectedRoute, config.Exposure.RouteEnabled)
+			assert.Equal(t, tt.expectedLB, config.exposure.loadBalancerEnabled)
+			assert.Equal(t, tt.expectedNP, config.exposure.nodePortEnabled)
+			assert.Equal(t, tt.expectedRoute, config.exposure.routeEnabled)
 		})
 	}
 }
