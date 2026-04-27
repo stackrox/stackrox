@@ -45,12 +45,13 @@ func TestGatherProfiles(t *testing.T) {
 	testCases := map[string]struct {
 		scanConfigs         []*storage.ComplianceOperatorScanConfigurationV2
 		expectedProfileKeys []string
+		excludedKeys        []string
 	}{
 		"no scan configs": {
 			scanConfigs:         nil,
 			expectedProfileKeys: nil,
 		},
-		"reports each profile name": {
+		"reports each regular profile name": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
 				makeScanConfig("scan-1", []profileDef{
 					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
@@ -59,14 +60,21 @@ func TestGatherProfiles(t *testing.T) {
 			},
 			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile ocp4-nist"},
 		},
-		"includes tailored profile names in profile list": {
+		"excludes tailored profile names": {
 			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
 				makeScanConfig("scan-2", []profileDef{
 					{"ocp4-cis", storage.ComplianceOperatorProfileV2_PROFILE},
 					{"my-tp", storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 				}),
 			},
-			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis", "Compliance Operator Profile my-tp"},
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis"},
+			excludedKeys:        []string{"Compliance Operator Profile my-tp"},
+		},
+		"legacy scan config without profile_refs": {
+			scanConfigs: []*storage.ComplianceOperatorScanConfigurationV2{
+				makeScanConfigNoRefs("scan-legacy", []string{"ocp4-cis"}),
+			},
+			expectedProfileKeys: []string{"Compliance Operator Profile ocp4-cis"},
 		},
 	}
 
@@ -86,6 +94,9 @@ func TestGatherProfiles(t *testing.T) {
 
 			for _, key := range tc.expectedProfileKeys {
 				assert.Contains(t, props, key)
+			}
+			for _, key := range tc.excludedKeys {
+				assert.NotContains(t, props, key)
 			}
 		})
 	}

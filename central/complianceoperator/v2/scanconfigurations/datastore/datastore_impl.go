@@ -380,25 +380,53 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }
 
+// gatherProfileCounts loads all scan configurations and categorizes profile
+// references into regular (CO-defined) and tailored (user-defined) profiles.
+// For legacy scan configs that lack profile_refs, all profiles are counted as
+// regular since tailored profiles didn't exist before that field was added.
+func gatherProfileCounts(ds DataStore, ctx context.Context) (regular map[string]int, tailoredCount int, err error) {
+	scanConfigs, err := ds.GetScanConfigurations(ctx, search.EmptyQuery())
+	if err != nil {
+		return nil, 0, err
+	}
+	regular = make(map[string]int)
+	for _, sc := range scanConfigs {
+		refs := sc.GetProfileRefs()
+		if len(refs) == 0 {
+			for _, p := range sc.GetProfiles() {
+				regular[p.GetProfileName()]++
+			}
+			continue
+		}
+		for _, ref := range refs {
+			if ref.GetKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+				tailoredCount++
+			} else {
+				regular[ref.GetName()]++
+			}
+		}
+	}
+	return regular, tailoredCount, nil
+}
+
 func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		if ds == nil {
 			return map[string]any{}, nil
 		}
-		telemetryCtx := sac.WithAllAccess(ctx)
-		counts, err := ds.DistinctProfiles(telemetryCtx, search.EmptyQuery())
+		regular, _, err := gatherProfileCounts(ds, sac.WithAllAccess(ctx))
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering compliance operator profiles for telemetry")
 		}
-		profiles := make(map[string]any, len(counts))
-		for profile, count := range counts {
+		profiles := make(map[string]any, len(regular))
+		for profile, count := range regular {
 			profiles["Compliance Operator Profile "+profile] = count
 		}
 		return profiles, nil
 	}
 }
 
-// GatherTailoredProfiles returns the total number of tailored profiles
+// GatherTailoredProfiles reports the aggregate count of tailored profiles
 // referenced across all scan configurations. Individual tailored profile
 // names are not collected because they are user-defined (unlike standard
 // Compliance Operator profiles) and would expose customer-specific data.
@@ -407,18 +435,9 @@ func GatherTailoredProfiles(ds DataStore) phonehome.GatherFunc {
 		if ds == nil {
 			return map[string]any{}, nil
 		}
-		telemetryCtx := sac.WithAllAccess(ctx)
-		scanConfigs, err := ds.GetScanConfigurations(telemetryCtx, search.EmptyQuery())
+		_, tailoredCount, err := gatherProfileCounts(ds, sac.WithAllAccess(ctx))
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering tailored profile count for telemetry")
-		}
-		tailoredCount := 0
-		for _, sc := range scanConfigs {
-			for _, ref := range sc.GetProfileRefs() {
-				if ref.GetKind() == storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
-					tailoredCount++
-				}
-			}
 		}
 		return map[string]any{
 			"Compliance Operator Tailored Profile": tailoredCount,
