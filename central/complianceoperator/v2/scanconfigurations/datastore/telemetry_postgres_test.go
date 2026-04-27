@@ -185,7 +185,7 @@ func TestGatherTailoredProfiles(t *testing.T) {
 
 			props, err := GatherTailoredProfiles(ds)(context.Background())
 			require.NoError(t, err)
-			assert.Equal(t, tc.expectedTailored, props["Compliance Operator Tailored Profile"])
+			assert.Equal(t, tc.expectedTailored, props["Compliance Operator Tailored Profiles"])
 		})
 	}
 }
