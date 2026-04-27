@@ -58,7 +58,8 @@ func ActiveDeploymentsQuery() *v1.Query {
 		return pkgSearch.EmptyQuery()
 	}
 	return pkgSearch.NewQueryBuilder().
-		AddExactMatches(pkgSearch.DeploymentState, storage.DeploymentState_STATE_ACTIVE.String()).
+		AddExactMatches(pkgSearch.DeploymentState,
+			storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE.String()).
 		ProtoQuery()
 }
 

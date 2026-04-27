@@ -120,7 +120,7 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	// Skip risk reprocessing for soft-deleted deployments.
-	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() == storage.DeploymentState_STATE_DELETED {
+	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_DELETED {
 		return nil
 	}
 

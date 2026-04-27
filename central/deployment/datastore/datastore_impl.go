@@ -402,7 +402,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	// Delete the deployment from the store using either soft or hard deletion.
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
 		if features.DeploymentSoftDeletion.Enabled() {
-			// Soft delete: set deleted and transition state to STATE_DELETED.
+			// Soft delete: set deleted and transition state to DEPLOYMENT_STATE_DELETED.
 			deployment, exists, err := ds.deploymentStore.Get(ctx, id)
 			if err != nil {
 				return err
@@ -411,7 +411,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 				return nil
 			}
 			deployment.Deleted = protocompat.TimestampNow()
-			deployment.State = storage.DeploymentState_STATE_DELETED
+			deployment.State = storage.DeploymentState_DEPLOYMENT_STATE_DELETED
 			return ds.deploymentStore.Upsert(ctx, deployment)
 		}
 		// Hard delete: remove the deployment row from the database.

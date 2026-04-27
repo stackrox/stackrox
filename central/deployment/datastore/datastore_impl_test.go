@@ -274,7 +274,7 @@ func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment() {
 				deployment := &storage.Deployment{
 					Id:        deploymentID,
 					ClusterId: clusterID,
-					State:     storage.DeploymentState_STATE_ACTIVE,
+					State:     storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 				}
 				if tc.getErr != nil {
 					suite.storage.EXPECT().Get(gomock.Any(), deploymentID).Return(nil, false, tc.getErr)
@@ -287,7 +287,7 @@ func (suite *DeploymentDataStoreTestSuite) TestRemoveDeployment() {
 				if tc.expectUpsert {
 					suite.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).DoAndReturn(
 						func(_ context.Context, dep *storage.Deployment) error {
-							suite.Equal(storage.DeploymentState_STATE_DELETED, dep.GetState())
+							suite.Equal(storage.DeploymentState_DEPLOYMENT_STATE_DELETED, dep.GetState())
 							suite.NotNil(dep.GetDeleted())
 							return tc.upsertErr
 						})
