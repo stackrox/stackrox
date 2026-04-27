@@ -117,6 +117,12 @@ func TestGatherProfiles(t *testing.T) {
 	}
 }
 
+func TestGatherProfilesNilDatastore(t *testing.T) {
+	props, err := GatherProfiles(nil)(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, props)
+}
+
 type profileDef struct {
 	name string
 	kind storage.ComplianceOperatorProfileV2_OperatorKind

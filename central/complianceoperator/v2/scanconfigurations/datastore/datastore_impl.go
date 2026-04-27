@@ -383,7 +383,7 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		if ds == nil {
-			return nil, nil
+			return map[string]any{}, nil
 		}
 		telemetryCtx := sac.WithAllAccess(ctx)
 		counts, err := ds.DistinctProfiles(telemetryCtx, search.EmptyQuery())
