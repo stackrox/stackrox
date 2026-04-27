@@ -453,6 +453,11 @@
                 "id": 23,
                 "name": "entity_type",
                 "type": "EntityType"
+              },
+              {
+                "id": 25,
+                "name": "enforcement_count",
+                "type": "int32"
               }
             ],
             "reserved_ids": [
