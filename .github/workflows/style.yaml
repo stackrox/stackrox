@@ -142,7 +142,7 @@ jobs:
         with:
           node-version-file: ui/package.json
 
-      - uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b # ratchet:actions/setup-java@v4
+      - uses: actions/setup-java@0ab4596768b603586c0de567f2430c30f5b0d2b0 # ratchet:actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
