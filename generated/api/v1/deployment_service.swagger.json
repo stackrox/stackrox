@@ -897,12 +897,11 @@
     "storageDeploymentState": {
       "type": "string",
       "enum": [
-        "STATE_UNSPECIFIED",
-        "STATE_ACTIVE",
-        "STATE_DELETED"
+        "DEPLOYMENT_STATE_ACTIVE",
+        "DEPLOYMENT_STATE_DELETED"
       ],
-      "default": "STATE_UNSPECIFIED",
-      "description": " - STATE_ACTIVE: The deployment workload is currently active.\n - STATE_DELETED: The deployment workload was deleted."
+      "default": "DEPLOYMENT_STATE_ACTIVE",
+      "description": " - DEPLOYMENT_STATE_ACTIVE: The deployment workload is currently active.\n - DEPLOYMENT_STATE_DELETED: The deployment workload was deleted."
     },
     "storageEmbeddedSecret": {
       "type": "object",

@@ -13,11 +13,10 @@ option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 enum DeploymentState {
-  STATE_UNSPECIFIED = 0;
   // The deployment workload is currently active.
-  STATE_ACTIVE = 1;
+  DEPLOYMENT_STATE_ACTIVE = 0;
   // The deployment workload was deleted.
-  STATE_DELETED = 2;
+  DEPLOYMENT_STATE_DELETED = 1;
 }
 
 // Next available tag: 38

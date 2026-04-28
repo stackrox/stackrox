@@ -25,24 +25,21 @@ const (
 type DeploymentState int32
 
 const (
-	DeploymentState_STATE_UNSPECIFIED DeploymentState = 0
 	// The deployment workload is currently active.
-	DeploymentState_STATE_ACTIVE DeploymentState = 1
+	DeploymentState_DEPLOYMENT_STATE_ACTIVE DeploymentState = 0
 	// The deployment workload was deleted.
-	DeploymentState_STATE_DELETED DeploymentState = 2
+	DeploymentState_DEPLOYMENT_STATE_DELETED DeploymentState = 1
 )
 
 // Enum value maps for DeploymentState.
 var (
 	DeploymentState_name = map[int32]string{
-		0: "STATE_UNSPECIFIED",
-		1: "STATE_ACTIVE",
-		2: "STATE_DELETED",
+		0: "DEPLOYMENT_STATE_ACTIVE",
+		1: "DEPLOYMENT_STATE_DELETED",
 	}
 	DeploymentState_value = map[string]int32{
-		"STATE_UNSPECIFIED": 0,
-		"STATE_ACTIVE":      1,
-		"STATE_DELETED":     2,
+		"DEPLOYMENT_STATE_ACTIVE":  0,
+		"DEPLOYMENT_STATE_DELETED": 1,
 	}
 )
 
@@ -642,7 +639,7 @@ func (x *Deployment) GetState() DeploymentState {
 	if x != nil {
 		return x.State
 	}
-	return DeploymentState_STATE_UNSPECIFIED
+	return DeploymentState_DEPLOYMENT_STATE_ACTIVE
 }
 
 // Next tag: 13
@@ -1822,7 +1819,7 @@ func (x *ListDeployment) GetState() DeploymentState {
 	if x != nil {
 		return x.State
 	}
-	return DeploymentState_STATE_UNSPECIFIED
+	return DeploymentState_DEPLOYMENT_STATE_ACTIVE
 }
 
 type Pod_ContainerInstanceList struct {
@@ -2362,11 +2359,10 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\bpriority\x18\a \x01(\x03R\bpriority\x124\n" +
 	"\adeleted\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\adeleted\x12.\n" +
 	"\x05state\x18\n" +
-	" \x01(\x0e2\x18.storage.DeploymentStateR\x05state*M\n" +
-	"\x0fDeploymentState\x12\x15\n" +
-	"\x11STATE_UNSPECIFIED\x10\x00\x12\x10\n" +
-	"\fSTATE_ACTIVE\x10\x01\x12\x11\n" +
-	"\rSTATE_DELETED\x10\x02*&\n" +
+	" \x01(\x0e2\x18.storage.DeploymentStateR\x05state*L\n" +
+	"\x0fDeploymentState\x12\x1b\n" +
+	"\x17DEPLOYMENT_STATE_ACTIVE\x10\x00\x12\x1c\n" +
+	"\x18DEPLOYMENT_STATE_DELETED\x10\x01*&\n" +
 	"\rContainerType\x12\v\n" +
 	"\aREGULAR\x10\x00\x12\b\n" +
 	"\x04INIT\x10\x01B.\n" +
