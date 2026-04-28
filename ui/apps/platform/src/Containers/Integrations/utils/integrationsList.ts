@@ -28,6 +28,7 @@ import S3CompatibleSvg from 'images/s3-compatible.svg?react';
 import SyslogSvg from 'images/syslog.svg?react';
 import TeamsSvg from 'images/teams.svg?react';
 import PaladinCloudSvg from 'images/paladinCloud.svg?react';
+import ServiceNowSvg from 'images/servicenow.svg?react';
 import { integrationsPath } from 'routePaths';
 
 /*
@@ -43,6 +44,7 @@ import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import { integrationSources } from 'types/integration';
 import type {
+    ApiClientIntegrationType,
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,
@@ -84,6 +86,11 @@ export type SignatureIntegrationDescriptor = {
 
 export type CloudSourceDescriptor = {
     type: CloudSourceIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type ApiClientDescriptor = {
+    type: ApiClientIntegrationType;
+    externalUrl: string;
 } & BaseIntegrationDescriptor;
 
 export type BaseIntegrationDescriptor = {
@@ -322,6 +329,18 @@ export const ocmDescriptor: CloudSourceDescriptor = {
 
 const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
 
+export const apiClientsSource: IntegrationSource = 'apiClients';
+
+export const serviceNowDescriptor: ApiClientDescriptor = {
+    Logo: ServiceNowSvg,
+    label: 'ServiceNow',
+    type: 'serviceNow',
+    externalUrl:
+        'https://store.servicenow.com/sn_appstore_store.do#!/store/application/23c2bf3b47632110acebb8a2e36d4356',
+};
+
+export const apiClientDescriptors: ApiClientDescriptor[] = [serviceNowDescriptor];
+
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {
         case 'imageIntegrations':
@@ -336,6 +355,8 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
             return authenticationTokensDescriptors;
         case 'cloudSources':
             return cloudSourceDescriptors;
+        case 'apiClients':
+            return apiClientDescriptors;
         default:
             return [];
     }
@@ -359,6 +380,7 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRo
     notifiers: {},
     backups: { centralCapabilityRequirement: 'centralCanUseCloudBackupIntegrations' },
     cloudSources: {},
+    apiClients: {},
     authProviders: {},
 };
 
@@ -406,6 +428,7 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     notifiers: 'Notifier',
     backups: 'Backup',
     cloudSources: 'Cloud source',
+    apiClients: 'API client',
     authProviders: 'Authentication',
 };
 

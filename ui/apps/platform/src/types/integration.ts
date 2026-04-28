@@ -7,6 +7,7 @@ export const integrationSources = [
     'notifiers',
     'backups',
     'cloudSources',
+    'apiClients',
     'authProviders',
 ] as const;
 
@@ -16,13 +17,16 @@ export function isIntegrationSource(source: unknown): source is IntegrationSourc
     return integrationSources.some((s) => s === source);
 }
 
+export type ApiClientIntegrationType = 'serviceNow';
+
 export type IntegrationType =
     | AuthProviderType
     | BackupIntegrationType
     | ImageIntegrationType
     | NotifierIntegrationType
     | SignatureIntegrationType
-    | CloudSourceIntegrationType;
+    | CloudSourceIntegrationType
+    | ApiClientIntegrationType;
 
 export type AuthProviderType = 'apitoken' | 'machineAccess';
 

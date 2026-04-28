@@ -6,6 +6,7 @@ import { updateCloudSource } from './CloudSourceService';
 import type { UpdateCloudSourceRequest } from './CloudSourceService';
 
 export type IntegrationSource =
+    | 'apiClients'
     | 'authProviders'
     | 'backups'
     | 'imageIntegrations'
