@@ -7,6 +7,15 @@ from typing import Any
 from .github_client import GitHubClient
 from .models import BackportAuditError, GitHubError, ReleaseBranch
 
+# GitHub bot user logins
+# Note: gh CLI commands use different formats than REST API:
+# - gh pr list/view --json author returns "app/dependabot"
+# - gh api .../issues/{pr}/events returns "dependabot[bot]" in actor.login
+DEPENDABOT_LOGIN_CLI = "app/dependabot"
+DEPENDABOT_LOGIN_API = "dependabot[bot]"
+RHACS_BOT_LOGIN = "rhacs-bot"
+GITHUB_ACTIONS_BOT_LOGIN = "github-actions[bot]"
+
 
 def extract_jira_keys(text: str) -> list[str]:
     """Extract ROX-XXXXX Jira keys from text.
@@ -31,7 +40,7 @@ def find_backport_label_adder(pr_number: int, gh_client: GitHubClient) -> str:
         gh_client: GitHub client
 
     Returns:
-        GitHub username of label adder, or 'app/dependabot' if not found
+        GitHub username of label adder, or DEPENDABOT_LOGIN_CLI if not found
 
     """
     try:
@@ -39,12 +48,12 @@ def find_backport_label_adder(pr_number: int, gh_client: GitHubClient) -> str:
         for event in events:
             if (event.get("event") == "labeled" and
                 event.get("label", {}).get("name", "").startswith("backport") and
-                event.get("actor", {}).get("login") != "github-actions[bot]"):
+                event.get("actor", {}).get("login") not in (GITHUB_ACTIONS_BOT_LOGIN, DEPENDABOT_LOGIN_API)):
                 return event["actor"]["login"]
     except GitHubError:
         pass
 
-    return "app/dependabot"
+    return DEPENDABOT_LOGIN_CLI
 
 
 def resolve_author(pr_data: dict[str, Any], gh_client: GitHubClient) -> str:
@@ -65,7 +74,7 @@ def resolve_author(pr_data: dict[str, Any], gh_client: GitHubClient) -> str:
     body = pr_data.get("body", "")
 
     # Handle rhacs-bot
-    if author == "rhacs-bot":
+    if author == RHACS_BOT_LOGIN:
         # Extract original PR number from body
         match = re.search(r"from #(\d+)", body)
         if match:
@@ -75,13 +84,13 @@ def resolve_author(pr_data: dict[str, Any], gh_client: GitHubClient) -> str:
                 author = original_pr["author"]["login"]
 
                 # If original author is also dependabot, find label adder
-                if author == "app/dependabot":
+                if author == DEPENDABOT_LOGIN_CLI:
                     author = find_backport_label_adder(original_pr_number, gh_client)
             except GitHubError:
                 pass
 
     # Handle direct dependabot PRs
-    elif author == "app/dependabot":
+    elif author == DEPENDABOT_LOGIN_CLI:
         pr_number = pr_data["number"]
         author = find_backport_label_adder(pr_number, gh_client)
 
