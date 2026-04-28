@@ -45,10 +45,8 @@ func (s *migrationTestSuite) TestMigration() {
 
 	// Insert test deployments using the old schema (without deleted and state columns).
 	numDeployments := 5
-	deploymentIDs := make([]string, numDeployments)
-	for i := range numDeployments {
+	for range numDeployments {
 		id := uuid.NewV4().String()
-		deploymentIDs[i] = id
 
 		dep := &storage.Deployment{Id: id, Name: "test-deployment"}
 		serialized, err := dep.MarshalVT()
@@ -61,50 +59,21 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(err)
 	}
 
-	// Run migration to add deleted and state columns and backfill state.
+	// Run migration to add deleted and state columns.
 	s.Require().NoError(migration.Run(dbs))
 
-	// Verify all deployments now have state = 1 (STATE_ACTIVE) in the column.
+	// Verify all existing rows default to DEPLOYMENT_STATE_ACTIVE (0).
 	var activeCount int
-	err := db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state = 1").Scan(&activeCount)
+	err := db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state = 0").Scan(&activeCount)
 	s.Require().NoError(err)
 	s.Equal(numDeployments, activeCount)
 
-	// Verify no deployments have NULL state or state = 0 (STATE_UNSPECIFIED) after migration.
-	var unspecifiedCount int
-	err = db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state IS NULL OR state = 0").Scan(&unspecifiedCount)
+	// Verify the deleted column exists and is NULL for all rows.
+	var deletedNullCount int
+	err = db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE deleted IS NULL").Scan(&deletedNullCount)
 	s.Require().NoError(err)
-	s.Equal(0, unspecifiedCount)
-
-	// Verify the serialized proto also has state = STATE_ACTIVE for all deployments.
-	for _, id := range deploymentIDs {
-		var serialized []byte
-		err = db.QueryRow(s.ctx, "SELECT serialized FROM deployments WHERE id = $1", id).Scan(&serialized)
-		s.Require().NoError(err)
-
-		dep := &storage.Deployment{}
-		err = dep.UnmarshalVT(serialized)
-		s.Require().NoError(err)
-		s.Equal(storage.DeploymentState_STATE_ACTIVE, dep.GetState(), "deployment %s serialized proto should have STATE_ACTIVE", id)
-	}
+	s.Equal(numDeployments, deletedNullCount)
 
 	// Run migration again to verify idempotency.
 	s.Require().NoError(migration.Run(dbs))
-
-	// Verify state is still STATE_ACTIVE after second run.
-	err = db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state = 1").Scan(&activeCount)
-	s.Require().NoError(err)
-	s.Equal(numDeployments, activeCount)
-
-	// Verify the serialized proto still has STATE_ACTIVE after idempotency check.
-	for _, id := range deploymentIDs {
-		var serialized []byte
-		err = db.QueryRow(s.ctx, "SELECT serialized FROM deployments WHERE id = $1", id).Scan(&serialized)
-		s.Require().NoError(err)
-
-		dep := &storage.Deployment{}
-		err = dep.UnmarshalVT(serialized)
-		s.Require().NoError(err)
-		s.Equal(storage.DeploymentState_STATE_ACTIVE, dep.GetState(), "deployment %s serialized proto should still have STATE_ACTIVE after second run", id)
-	}
 }
