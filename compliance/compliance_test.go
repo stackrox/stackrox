@@ -128,7 +128,7 @@ func TestCheckNodeRelayEligibility(t *testing.T) {
 			if tc.enableRelayOnMasterNodes != "" {
 				t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), tc.enableRelayOnMasterNodes)
 			}
-			require.Equal(t, tc.expected, checkNodeRelayEligibility(tc.config))
+			require.Equal(t, tc.expected, shouldStartVMRelay(tc.config))
 		})
 	}
 }

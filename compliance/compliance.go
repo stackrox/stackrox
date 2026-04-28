@@ -145,7 +145,7 @@ func (c *Compliance) Start() {
 			log.Info("Virtual machine relay start aborted: context cancelled")
 			return
 		}
-		if !checkNodeRelayEligibility(config) {
+		if !shouldStartVMRelay(config) {
 			log.Infof("Virtual machine relay not started on master node; set %s=true to enable",
 				env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
 			return
@@ -350,9 +350,9 @@ func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.Msg
 	}
 }
 
-// checkNodeRelayEligibility reports whether the VM relay should start based on
+// shouldStartVMRelay reports whether the VM relay should start based on
 // the scrape config and the master-node override env var.
-func checkNodeRelayEligibility(config *sensor.MsgToCompliance_ScrapeConfig) bool {
+func shouldStartVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) bool {
 	return !config.GetIsMasterNode() || env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting()
 }
 
