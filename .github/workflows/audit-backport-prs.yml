@@ -1,8 +1,9 @@
 name: Audit Backport PRs
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  schedule:
+    # Run twice a month: 1st and 15th at 9:00 AM UTC
+    - cron: '0 9 1,15 * *'
   workflow_dispatch:
     inputs:
       release_branches:
@@ -25,7 +26,7 @@ jobs:
     name: Read repository properties
     runs-on: ubuntu-latest
     outputs:
-      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.slack-channel, steps.properties.outputs.dry-slack-channel))[github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)] }}
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.slack-channel, steps.properties.outputs.dry-slack-channel))[github.event_name == 'workflow_dispatch' && inputs.dry_run] }}
     steps:
       - name: Read workflow properties file
         id: properties
@@ -36,7 +37,6 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     needs: [properties]
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       pull-requests: read
