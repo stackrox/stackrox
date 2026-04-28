@@ -63,6 +63,20 @@ jobs:
       - name: Run Python unit tests
         run: make test-bundle-helpers
 
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+      # with newer go directives (e.g. tools/proto) can auto-download.
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
       - name: Generate bundle with Python
         env:
           USE_GO_BUNDLE_HELPER: false
