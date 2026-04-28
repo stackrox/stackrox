@@ -109,6 +109,9 @@ func getDefaultClient() (*http.Client, error) {
 type NodeIndexerConfig struct {
 	// HostPath is the mount point of the read-only host filesystem on the node.
 	HostPath string
+	// OSReleasePath is the path where os-release can be found for RHCOS detection.
+	// This may differ from HostPath when the RPM database is mounted separately.
+	OSReleasePath string
 	// Client is the HTTP client used to reach out to external data sources.
 	// If unset, a default which uses client-side TLS certificates is used.
 	Client *http.Client
@@ -127,7 +130,8 @@ type NodeIndexerConfig struct {
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
 func DefaultNodeIndexerConfig() NodeIndexerConfig {
 	return NodeIndexerConfig{
-		HostPath: env.NodeIndexHostPath.Setting(),
+		HostPath:      env.NodeIndexHostPath.Setting(),
+		OSReleasePath: env.NodeIndexOSReleasePath.Setting(),
 		// The default, mTLS-capable client will be used.
 		Client:             nil,
 		Repo2CPEMappingURL: buildMappingURL(),
@@ -188,7 +192,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	}
 	log.Debugf("Finished coalescing report. Report contains %d repositories with %d packages", len(ccReport.Repositories), len(ccReport.Packages))
 
-	rhcosRel, err := osRelease(ctx, l.cfg.HostPath)
+	rhcosRel, err := osRelease(ctx, l.cfg.OSReleasePath)
 	if err != nil {
 		log.Debugf("Not adding RHCOS package to index report: %v", err)
 	} else {

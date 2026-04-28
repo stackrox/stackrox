@@ -244,6 +244,38 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
 }
 
+func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
+	s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join("testdata", "certs", "client-cert.pem"))
+	s.T().Setenv(mtls.KeyFileEnvName, filepath.Join("testdata", "certs", "client-key.pem"))
+	server := s.createTestServer(true)
+	cfg := DefaultNodeIndexerConfig()
+	cfg.HostPath = "testdata"
+	cfg.OSReleasePath = "testdata-rhcos"
+	cfg.Repo2CPEMappingURL = server.URL
+	cfg.PackageDBFilter = rhcosPackageDB
+	indexer := NewNodeIndexer(cfg)
+
+	report, err := indexer.IndexNode(context.Background())
+	s.NoError(err)
+
+	s.NotNil(report)
+	s.True(report.GetSuccess())
+	// 106 RPM packages + 2 rhcos packages (binary + source)
+	s.Len(report.GetContents().GetPackages(), 108, "Expected 106 RPM + 2 rhcos packages")
+	// 2 RPM repositories + 1 rhcos repository
+	s.Len(report.GetContents().GetRepositories(), 3, "Expected 2 RPM + 1 rhcos repositories")
+
+	var hasRHCOS bool
+	for _, pkg := range report.GetContents().GetPackages() {
+		if pkg.GetName() == "rhcos" {
+			hasRHCOS = true
+			s.Equal("9.6.20260324-0", pkg.GetVersion())
+			break
+		}
+	}
+	s.True(hasRHCOS, "Expected rhcos package in report")
+}
+
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	server := s.createTestServer(false)
 	cfg := DefaultNodeIndexerConfig()
