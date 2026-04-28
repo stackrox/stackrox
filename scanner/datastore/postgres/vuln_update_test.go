@@ -3,16 +3,16 @@
 package postgres
 
 import (
-	"context"
 	"testing"
 	"time"
 
+	"github.com/quay/claircore/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVulnUpdateStore(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	pool := testDB(t, ctx, "vuln_update_test")
 	store, err := InitPostgresMatcherMetadataStore(ctx, pool, true)
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestVulnUpdateStore(t *testing.T) {
 }
 
 func Test_CleanVulnerabilityUpdates(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	pool := testDB(t, ctx, "vuln_update_test")
 	store, err := InitPostgresMatcherMetadataStore(ctx, pool, true)
 	require.NoError(t, err)

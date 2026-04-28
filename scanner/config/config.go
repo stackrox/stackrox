@@ -424,7 +424,9 @@ func parseSlogLevel(s string) (slog.Level, error) {
 }
 
 // stringToSlogLevelFunc returns a DecodeHookFunc that converts
-// strings to slog.Level.
+// strings to slog.Level. This hook is used with mapstructure to enable
+// automatic conversion of string log level values in configuration files
+// to slog.Level types during unmarshaling.
 func stringToSlogLevelFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
