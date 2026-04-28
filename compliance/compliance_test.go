@@ -106,40 +106,40 @@ func TestShouldRunVMRelay(t *testing.T) {
 	cases := map[string]struct {
 		config                   *sensor.MsgToCompliance_ScrapeConfig
 		enableRelayOnMasterNodes string
-		expectedShouldRunVMRelay bool
+		expectedErr              error
 	}{
 		"nil config should not run relay": {
-			config:                   nil,
-			enableRelayOnMasterNodes: "",
-			expectedShouldRunVMRelay: false,
+			config:      nil,
+			expectedErr: errNilScrapeConfig,
 		},
 		"worker node should run relay": {
 			config: &sensor.MsgToCompliance_ScrapeConfig{
 				IsMasterNode: false,
 			},
-			enableRelayOnMasterNodes: "",
-			expectedShouldRunVMRelay: true,
+			expectedErr: nil,
 		},
 		"master node should skip relay by default": {
 			config: &sensor.MsgToCompliance_ScrapeConfig{
 				IsMasterNode: true,
 			},
-			enableRelayOnMasterNodes: "",
-			expectedShouldRunVMRelay: false,
+			expectedErr: errRelayDisabledOnMasterNode,
 		},
 		"master node should run relay when override is enabled": {
 			config: &sensor.MsgToCompliance_ScrapeConfig{
 				IsMasterNode: true,
 			},
 			enableRelayOnMasterNodes: "true",
-			expectedShouldRunVMRelay: true,
+			expectedErr:              nil,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), tc.enableRelayOnMasterNodes)
-			require.Equal(t, tc.expectedShouldRunVMRelay, shouldRunVMRelay(tc.config))
+			if tc.enableRelayOnMasterNodes != "" {
+				t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), tc.enableRelayOnMasterNodes)
+			}
+			err := shouldRunVMRelay(tc.config)
+			require.ErrorIs(t, err, tc.expectedErr)
 		})
 	}
 }
@@ -149,7 +149,6 @@ func TestWaitForInitialScrapeConfig(t *testing.T) {
 	cases := map[string]struct {
 		arrange        func(c *Compliance, cancel context.CancelFunc)
 		expectedConfig *sensor.MsgToCompliance_ScrapeConfig
-		expectedOK     bool
 	}{
 		"should return config after readiness signal": {
 			arrange: func(c *Compliance, _ context.CancelFunc) {
@@ -157,21 +156,18 @@ func TestWaitForInitialScrapeConfig(t *testing.T) {
 				c.scrapeConfigReady.Signal()
 			},
 			expectedConfig: workerConfig,
-			expectedOK:     true,
 		},
-		"should return false when context is cancelled": {
+		"should return nil when context is cancelled": {
 			arrange: func(_ *Compliance, cancel context.CancelFunc) {
 				cancel()
 			},
 			expectedConfig: nil,
-			expectedOK:     false,
 		},
-		"should return false when signal fires without config": {
+		"should return nil when signal fires without config": {
 			arrange: func(c *Compliance, _ context.CancelFunc) {
 				c.scrapeConfigReady.Signal()
 			},
 			expectedConfig: nil,
-			expectedOK:     false,
 		},
 	}
 
@@ -184,8 +180,7 @@ func TestWaitForInitialScrapeConfig(t *testing.T) {
 			defer cancel()
 
 			tc.arrange(c, cancel)
-			config, ok := c.waitForInitialScrapeConfig(ctx)
-			require.Equal(t, tc.expectedOK, ok)
+			config := c.waitForInitialScrapeConfig(ctx)
 			if tc.expectedConfig == nil {
 				require.Nil(t, config)
 			} else {

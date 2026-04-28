@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -32,7 +33,12 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+
+	errNilScrapeConfig           = errors.New("initial scrape config is unexpectedly nil")
+	errRelayDisabledOnMasterNode = errors.New("relay disabled on master node by default")
+)
 
 const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
@@ -98,8 +104,7 @@ func (c *Compliance) Start() {
 
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
-	c.scrapeConfig.Store(nil)
-	c.scrapeConfigReady.Reset()
+	// the anonymous go func will read from toSensorC and send it using the client
 	go func() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
@@ -139,14 +144,11 @@ func (c *Compliance) Start() {
 		if !features.VirtualMachines.Enabled() {
 			return
 		}
-		// Assumption: VM relay startup is gated by the first valid scrape config.
+		// Design choice: VM relay startup is gated by the first valid scrape config.
 		// We must not start relay until that config is available.
-		config, ok := c.waitForInitialScrapeConfig(ctx)
-		if !ok {
-			return
-		}
-		if !shouldRunVMRelay(config) {
-			log.Infof("Virtual machine relay disabled on master node by default; set %s=true to enable it", env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
+		config := c.waitForInitialScrapeConfig(ctx)
+		if err := shouldRunVMRelay(config); err != nil {
+			log.Infof("Virtual machine relay not started: %v", err)
 			return
 		}
 		log.Infof("Virtual machine relay enabled")
@@ -335,36 +337,37 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 }
 
 // waitForInitialScrapeConfig waits for the first scrape config observed by the
-// stream manager and returns it.
+// stream manager and returns it:
 //
-// Assumptions:
+// Design choices:
 //   - manageStream stores scrape config before signaling readiness.
 //   - the first scrape config is valid (non-nil) and must exist before VM relay
 //     startup is allowed; nil is treated as unexpected and startup is skipped.
 //   - waiting on scrapeConfigReady prevents races between scrape config
 //     publication and VM relay startup.
-func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) (*sensor.MsgToCompliance_ScrapeConfig, bool) {
+func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.MsgToCompliance_ScrapeConfig {
 	select {
 	case <-ctx.Done():
-		return nil, false
+		return nil
 	case <-c.scrapeConfigReady.Done():
-		config := c.scrapeConfig.Load()
-		if config == nil {
-			log.Error("VM relay startup skipped because initial scrape config is unexpectedly nil")
-			return nil, false
-		}
-		return config, true
+		return c.scrapeConfig.Load()
 	}
 }
 
-func shouldRunVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) bool {
+// shouldRunVMRelay decides whether the VM relay should start based on the
+// scrape config. Returns nil when the relay is allowed, or an error describing
+// why it was skipped.
+func shouldRunVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) error {
 	if config == nil {
-		return false
+		return errNilScrapeConfig
 	}
 	if !config.GetIsMasterNode() {
-		return true
+		return nil
 	}
-	return env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting()
+	if env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting() {
+		return nil
+	}
+	return fmt.Errorf("%w; set %s=true to enable it", errRelayDisabledOnMasterNode, env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
 }
 
 func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
