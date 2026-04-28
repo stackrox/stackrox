@@ -43,6 +43,7 @@ export type BasePolicy = {
     SORTEnforcement: boolean; // For internal use only.
     policyVersion: string;
     mitreAttackVectors: PolicyMitreAttackVector[];
+    evaluationFilter?: EvaluationFilter;
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
     readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
 } & ListPolicy;
@@ -156,6 +157,18 @@ export type ClientPolicyValue = {
 export type PolicyMitreAttackVector = {
     tactic: string; // tactic id
     techniques: string[]; // technique ids
+};
+
+// Matches proto enum SkipContainerType in storage/policy.proto
+export type SkipContainerType = 'SKIP_INIT';
+
+// Matches proto enum SkipImageLayers in storage/policy.proto
+export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
+
+// Matches proto message EvaluationFilter in storage/policy.proto
+export type EvaluationFilter = {
+    skipContainerTypes: SkipContainerType[];
+    skipImageLayers: SkipImageLayers;
 };
 
 export type PolicyCategory = {
