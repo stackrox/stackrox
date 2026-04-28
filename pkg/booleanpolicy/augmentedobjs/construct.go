@@ -269,7 +269,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 }
 
 // filterInitContainers returns a filtered deployment and image slice with init containers removed.
-// Temporary for 4.11 tech preview — remove in 5.0 when policy UX supports init containers.
+// TODO(ROX-33067): Remove this filter when policy evaluation supports init containers.
 func filterInitContainers(deployment *storage.Deployment, images []*storage.Image) (*storage.Deployment, []*storage.Image) {
 	if !features.InitContainerSupport.Enabled() {
 		return deployment, images
