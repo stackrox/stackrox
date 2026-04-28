@@ -72,7 +72,7 @@ type DeploymentWithProcessMatcher interface {
 
 // A KubeEventMatcher matches kubernetes event against a policy.
 type KubeEventMatcher interface {
-	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (Violations, error)
+	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, enhancedDeployment EnhancedDeployment) (Violations, error)
 }
 
 // An AuditLogEventMatcher matches audit log event against a policy.
@@ -136,7 +136,8 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 
 	return &kubeEventMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:       sectionsAndEvals,
+			evaluationFilter: p.GetEvaluationFilter(),
 		},
 		kubeEventOnlyEvaluators: kubeEventOnlyEvaluators,
 	}, nil
@@ -150,7 +151,8 @@ func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (Au
 	}
 	return &auditLogEventMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:       sectionsAndEvals,
+			evaluationFilter: p.GetEvaluationFilter(),
 		},
 	}, nil
 }
@@ -196,7 +198,8 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 
 	return &processMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:       sectionsAndEvals,
+			evaluationFilter: p.GetEvaluationFilter(),
 		},
 		processOnlyEvaluators: processOnlyEvaluators,
 	}, nil
@@ -236,7 +239,8 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 	// since it implements another check func MatchDeploymentWithNetworkFlowInfo
 	return &networkFlowMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:       sectionsAndEvals,
+			evaluationFilter: p.GetEvaluationFilter(),
 		},
 		networkFlowOnlyEvaluators: networkFlowOnlyEvaluators,
 	}, nil
@@ -274,7 +278,8 @@ func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...Validate
 
 	return &fileAccessMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:       sectionsAndEvals,
+			evaluationFilter: p.GetEvaluationFilter(),
 		},
 		fileAccessOnlyEvaluators: fileAccessOnlyEvaluators,
 	}, nil
@@ -289,7 +294,8 @@ func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (Deplo
 	}
 
 	return &matcherImpl{
-		evaluators: sectionsAndEvals,
+		evaluators:       sectionsAndEvals,
+		evaluationFilter: p.GetEvaluationFilter(),
 	}, nil
 }
 
@@ -301,7 +307,8 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 		return nil, err
 	}
 	return &matcherImpl{
-		evaluators: sectionsAndEvals,
+		evaluators:       sectionsAndEvals,
+		evaluationFilter: p.GetEvaluationFilter(),
 	}, nil
 }
 
@@ -314,7 +321,8 @@ func BuildNodeEventMatcher(p *storage.Policy, options ...ValidateOption) (NodeEv
 	}
 	return &nodeEventMatcher{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:       sectionsAndEvals,
+			evaluationFilter: p.GetEvaluationFilter(),
 		},
 	}, nil
 }

@@ -133,12 +133,7 @@ func (d *detectorImpl) detectForDeployment(
 	var cacheReceptable booleanpolicy.CacheReceptacle
 	deployment := enhancedDeployment.Deployment
 
-	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
-	if err != nil {
-		return nil, err
-	}
-
-	err = d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
 		}
@@ -162,7 +157,7 @@ func (d *detectorImpl) detectForDeployment(
 		}
 
 		if kubeEvent != nil {
-			violation, err := compiled.MatchAgainstKubeResourceAndEvent(&cacheReceptable, kubeEvent, augmentedDeploy)
+			violation, err := compiled.MatchAgainstKubeResourceAndEvent(&cacheReceptable, kubeEvent, enhancedDeployment)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; kubernetes request %s",
 					compiled.Policy().GetName(), kubernetes.EventAsString(kubeEvent))
