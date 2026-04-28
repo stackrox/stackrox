@@ -7278,15 +7278,11 @@
             "name": "DeploymentState",
             "enum_fields": [
               {
-                "name": "STATE_UNSPECIFIED"
+                "name": "DEPLOYMENT_STATE_ACTIVE"
               },
               {
-                "name": "STATE_ACTIVE",
+                "name": "DEPLOYMENT_STATE_DELETED",
                 "integer": 1
-              },
-              {
-                "name": "STATE_DELETED",
-                "integer": 2
               }
             ]
           },
