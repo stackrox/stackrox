@@ -145,7 +145,7 @@ deploy_stackrox_with_roxie() {
         --early-readiness=false \
         --override <(yq eval '.central // {}' "$override_file")
 
-    # Persist and load (extended) roxie environment, mimicing the effect of ci_export in a more concise way.
+    # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
     if [[ -n "${BASH_ENV:-}" ]]; then
         cat "$roxie_envrc" >> "$BASH_ENV"
