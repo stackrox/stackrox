@@ -88,14 +88,24 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 		return nil, err
 	}
 
-	vms, err := s.vmDS.SearchRawVirtualMachines(ctx, searchQuery)
+	searchResults, err := s.vmDS.Search(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	vmIDs := make([]string, 0, len(vms))
-	for _, vm := range vms {
-		vmIDs = append(vmIDs, vm.GetId())
+	vmIDs := make([]string, 0, len(searchResults))
+	for _, r := range searchResults {
+		vmIDs = append(vmIDs, r.ID)
+	}
+
+	if len(vmIDs) == 0 {
+		return &v2.ListVMsResponse{TotalCount: int32(totalCount)}, nil
+	}
+
+	// Fetch full VM objects for the page.
+	vms, _, err := s.vmDS.GetManyVirtualMachines(ctx, vmIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	// Fetch per-VM CVE severity counts via SQL GROUP BY.
@@ -109,8 +119,9 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 		severityByVM[row.GetVMID()] = storagetov2.SeverityCountsToProto(row.GetSeverityCounts())
 	}
 
-	// Batch fetch component scan counts (Notes field is not search-indexed,
-	// so in-memory aggregation is used).
+	// Batch fetch component scan counts. The component Notes field has no dedicated
+	// column (no search tag), so SQL-level filtering of scanned vs unscanned is not
+	// possible and in-memory aggregation is used.
 	componentCountsByVM, err := s.batchComponentScanCounts(ctx, vmIDs)
 	if err != nil {
 		return nil, err
