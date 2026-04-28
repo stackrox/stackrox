@@ -149,6 +149,10 @@ func (c *Compliance) Start() {
 		// Design choice: VM relay startup is gated by the first valid scrape config.
 		// We must not start relay until that config is available.
 		config := c.waitForInitialScrapeConfig(ctx)
+		if err := ctx.Err(); err != nil {
+			log.Infof("Virtual machine relay start aborted: %v", err)
+			return
+		}
 		if err := shouldStartVMRelay(config); err != nil {
 			log.Infof("Virtual machine relay not started: %v", err)
 			return
