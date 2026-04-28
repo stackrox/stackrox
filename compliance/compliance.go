@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -15,6 +16,7 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
+	vmmetrics "github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,7 +39,8 @@ var log = logging.LoggerForModule()
 const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
 	// Compliance handles exactly one node, so a single constant suffices.
-	nodeResourceID = "this-node"
+	nodeResourceID           = "this-node"
+	vmACKResourceIDSeparator = ":"
 )
 
 // Compliance represents the Compliance app
@@ -47,19 +50,23 @@ type Compliance struct {
 	nodeIndexer        node.NodeIndexer
 	umhNodeInventory   node.UnconfirmedMessageHandler
 	umhNodeIndex       node.UnconfirmedMessageHandler
+	umhVMIndex         node.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
 }
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
-	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
+	umhNodeInv, umhNodeIndex, umhVMIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider: nnp,
-		nodeScanner:      scanner,
-		nodeIndexer:      nodeIndexer,
-		umhNodeInventory: umhNodeInv,
-		umhNodeIndex:     umhNodeIndex,
+		nodeNameProvider:   nnp,
+		nodeScanner:        scanner,
+		nodeIndexer:        nodeIndexer,
+		umhNodeInventory:   umhNodeInv,
+		umhNodeIndex:       umhNodeIndex,
+		umhVMIndex:         umhVMIndex,
+		nodeInventoryCache: atomic.Pointer[sensor.MsgFromCompliance]{},
+		nodeIndexCache:     atomic.Pointer[sensor.MsgFromCompliance]{},
 	}
 }
 
@@ -138,7 +145,7 @@ func (c *Compliance) Start() {
 		log.Infof("Virtual machine relay enabled")
 
 		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-		err := relay.RunWithRetry(ctx, sensorClient)
+		err := relay.RunWithRetry(ctx, sensorClient, c.umhVMIndex)
 		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 			log.Errorf("Error running virtual machine relay: %v", err)
 		}
@@ -377,7 +384,7 @@ func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceA
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
 		dispatchACK(c.umhNodeIndex, "node index", ack.GetAction(), ack.GetReason())
 	case sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT:
-		// TODO: Implement basic handling of VM_INDEX_REPORT ACK/NACK messages in ROX-33555.
+		c.handleVMIndexACK(ack.GetResourceId(), ack.GetAction(), ack.GetReason())
 	default:
 		log.Errorf("Unknown ComplianceACK message type: %s", ack.GetMessageType())
 	}
@@ -396,6 +403,41 @@ func dispatchACK(umh node.UnconfirmedMessageHandler, label string, action sensor
 	default:
 		log.Errorf("Unknown ComplianceACK action for %s: %s", label, action)
 	}
+}
+
+// handleVMIndexACK handles ACK/NACK for VM index report messages.
+func (c *Compliance) handleVMIndexACK(resourceID string, action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
+	relayResourceID := resolveVMRelayResourceID(resourceID)
+	switch action {
+	case sensor.MsgToCompliance_ComplianceACK_ACK:
+		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("ACK").Inc()
+		c.umhVMIndex.HandleACK(relayResourceID)
+	case sensor.MsgToCompliance_ComplianceACK_NACK:
+		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("NACK").Inc()
+		if reason != "" {
+			log.Infof("VM index NACK received for %s: %s", relayResourceID, reason)
+		}
+		c.umhVMIndex.HandleNACK(relayResourceID)
+	default:
+		log.Errorf("Unknown ComplianceACK action for VM index: %s", action)
+	}
+}
+
+// resolveVMRelayResourceID returns the CID key expected by relay/UMH.
+// Sensor can send VM index ACK/NACK as VMID:CID correlation pairs; relay state
+// remains CID-keyed, so we extract the CID portion when present.
+//
+// Limitation: VMID:CID does not distinguish multiple reports for the same VM
+// when the CID is unchanged, so a stale ACK can still match the latest entry.
+func resolveVMRelayResourceID(resourceID string) string {
+	vmID, cid, found := strings.Cut(resourceID, vmACKResourceIDSeparator)
+	if !found {
+		return resourceID
+	}
+	if vmID == "" || cid == "" || strings.Contains(cid, vmACKResourceIDSeparator) {
+		return resourceID
+	}
+	return cid
 }
 
 func (c *Compliance) startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {

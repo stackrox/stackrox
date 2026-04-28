@@ -28,7 +28,7 @@ func (s *senderTestSuite) SetupTest() {
 }
 
 func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
-	client := relaytest.NewMockSensorClient(s.T())
+	client := relaytest.NewMockSensorClient(s.T()).WithDelay(200 * time.Millisecond)
 	sender := New(client)
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
@@ -38,26 +38,22 @@ func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
 	s.Contains(err.Error(), "context canceled")
 }
 
-func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
+func (s *senderTestSuite) TestSend_ErrorBehavior() {
 	cases := map[string]struct {
 		err         error
 		respSuccess bool
-		shouldRetry bool
 	}{
-		"retryable error is retried": {
+		"retryable error returns error": {
 			err:         status.Error(codes.ResourceExhausted, "retryable error"),
 			respSuccess: false,
-			shouldRetry: true,
 		},
-		"non-retryable error is not retried": {
+		"non-retryable error returns error": {
 			err:         errox.NotImplemented,
 			respSuccess: false,
-			shouldRetry: false,
 		},
-		"Unsuccessful request is retried": {
+		"unsuccessful request returns error": {
 			err:         nil,
 			respSuccess: false,
-			shouldRetry: true,
 		},
 	}
 	for name, c := range cases {
@@ -68,16 +64,13 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 			}
 			sender := New(client)
 
-			// The retry logic uses withExponentialBackoff, which currently has an initial delay between retries of
-			// 100 ms, therefore after 500 ms the failing call has been retried already
+			// Sender performs a single RPC attempt and returns any resulting error immediately.
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
 			err := sender.Send(ctx, relaytest.NewTestVMReport("42"))
 			s.Require().Error(err)
-
-			retried := len(client.CapturedRequests()) > 1
-			s.Equal(c.shouldRetry, retried)
+			s.Len(client.CapturedRequests(), 1)
 		})
 	}
 }

@@ -37,9 +37,11 @@ func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal {
 func TestHandleComplianceACK(t *testing.T) {
 	inv := &fakeUMH{}
 	idx := &fakeUMH{}
+	vmIdx := &fakeUMH{}
 	c := &Compliance{
 		umhNodeInventory: inv,
 		umhNodeIndex:     idx,
+		umhVMIndex:       vmIdx,
 	}
 
 	tests := []struct {
@@ -49,6 +51,7 @@ func TestHandleComplianceACK(t *testing.T) {
 		wantInvNACK int
 		wantIdxACK  int
 		wantIdxNACK int
+		wantVMIdx   int
 	}{
 		{
 			name: "node inventory ack",
@@ -83,11 +86,12 @@ func TestHandleComplianceACK(t *testing.T) {
 			wantIdxNACK: 1,
 		},
 		{
-			name: "vm message type ignored",
+			name: "vm index ack",
 			ack: &sensor.MsgToCompliance_ComplianceACK{
 				Action:      sensor.MsgToCompliance_ComplianceACK_ACK,
 				MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
 			},
+			wantVMIdx: 1,
 		},
 		{
 			name: "unknown action ignored",
@@ -106,11 +110,95 @@ func TestHandleComplianceACK(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			inv.ackCount, inv.nackCount = 0, 0
 			idx.ackCount, idx.nackCount = 0, 0
+			vmIdx.ackCount, vmIdx.nackCount = 0, 0
 			c.handleComplianceACK(tt.ack)
 			assert.Equal(t, tt.wantInvACK, inv.ackCount)
 			assert.Equal(t, tt.wantInvNACK, inv.nackCount)
 			assert.Equal(t, tt.wantIdxACK, idx.ackCount)
 			assert.Equal(t, tt.wantIdxNACK, idx.nackCount)
+			assert.Equal(t, tt.wantVMIdx, vmIdx.ackCount)
+		})
+	}
+}
+
+// idTrackingUMH extends fakeUMH to record the resource IDs passed to HandleACK/HandleNACK.
+type idTrackingUMH struct {
+	fakeUMH
+	lastACKResourceID  string
+	lastNACKResourceID string
+}
+
+func (f *idTrackingUMH) HandleACK(resourceID string) {
+	f.fakeUMH.HandleACK(resourceID)
+	f.lastACKResourceID = resourceID
+}
+
+func (f *idTrackingUMH) HandleNACK(resourceID string) {
+	f.fakeUMH.HandleNACK(resourceID)
+	f.lastNACKResourceID = resourceID
+}
+
+func TestHandleComplianceACK_VMIndexPairUsesCID(t *testing.T) {
+	vmIdx := &idTrackingUMH{}
+	c := &Compliance{umhVMIndex: vmIdx}
+
+	c.handleComplianceACK(&sensor.MsgToCompliance_ComplianceACK{
+		Action:      sensor.MsgToCompliance_ComplianceACK_ACK,
+		MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
+		ResourceId:  "vm-1:100",
+	})
+	assert.Equal(t, 1, vmIdx.ackCount)
+	assert.Equal(t, "100", vmIdx.lastACKResourceID)
+
+	c.handleComplianceACK(&sensor.MsgToCompliance_ComplianceACK{
+		Action:      sensor.MsgToCompliance_ComplianceACK_NACK,
+		MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
+		ResourceId:  "vm-2:200",
+	})
+	assert.Equal(t, 1, vmIdx.nackCount)
+	assert.Equal(t, "200", vmIdx.lastNACKResourceID)
+}
+
+func TestResolveVMRelayResourceID(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "returns cid for vmid cid pair",
+			input:    "vm-1:123",
+			expected: "123",
+		},
+		{
+			name:     "returns unchanged id when no separator is present",
+			input:    "123",
+			expected: "123",
+		},
+		{
+			name:     "returns unchanged id when vm id is missing",
+			input:    ":123",
+			expected: ":123",
+		},
+		{
+			name:     "returns unchanged id when cid is missing",
+			input:    "vm-1:",
+			expected: "vm-1:",
+		},
+		{
+			name:     "returns unchanged id when extra separators are present",
+			input:    "vm-1:123:extra",
+			expected: "vm-1:123:extra",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			actual := resolveVMRelayResourceID(tc.input)
+			assert.Equalf(t, tc.expected, actual, "expected relay resource id %q, but got %q", tc.expected, actual)
 		})
 	}
 }
