@@ -139,7 +139,7 @@ func (c *Config) Open() (*openshiftConnector, error) {
 	openshiftConnector.oauth2Config = &oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
-		Scopes:       []string{"user:full"},
+		Scopes:       []string{"user:info"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  metadata.Auth,
 			TokenURL: metadata.Token,
