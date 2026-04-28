@@ -32,9 +32,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
