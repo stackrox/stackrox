@@ -19,6 +19,17 @@ ensure_vm_scanning_cluster_prereqs() {
     # VM_SSH_PRIVATE_KEY    - PEM content (not a path); ephemeral ed25519 key generated if unset
     # VM_SSH_PUBLIC_KEY     - authorized_keys line (not a path); generated with private key if unset
 
+    # Build a docker config JSON for pulling private container-disk images
+    # (e.g. quay.io/rhacs-eng/vm-images/*) inside the VM test namespace.
+    if [[ -n "${QUAY_RHACS_ENG_RO_USERNAME:-}" && -n "${QUAY_RHACS_ENG_RO_PASSWORD:-}" ]]; then
+        local vm_pull_secret
+        vm_pull_secret="$(mktemp)"
+        cat > "$vm_pull_secret" <<EOF
+{"auths":{"quay.io":{"username":"${QUAY_RHACS_ENG_RO_USERNAME}","password":"${QUAY_RHACS_ENG_RO_PASSWORD}"}}}
+EOF
+        export VM_IMAGE_PULL_SECRET_PATH="$vm_pull_secret"
+        info "VM image pull secret written to ${vm_pull_secret}"
+    fi
 }
 
 # Downloads virtctl from the cluster's ConsoleCLIDownload if not already on PATH.
