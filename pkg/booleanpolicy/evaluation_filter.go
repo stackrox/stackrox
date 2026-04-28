@@ -126,27 +126,48 @@ func filterSingleImageByLayer(img *storage.Image, skip storage.SkipImageLayers) 
 		return img
 	}
 
+	layerFilter := func(idx int32) bool {
+		switch skip {
+		case storage.SkipImageLayers_SKIP_BASE:
+			return idx > maxBaseLayerIdx
+		case storage.SkipImageLayers_SKIP_APP:
+			return idx <= maxBaseLayerIdx
+		default:
+			return true
+		}
+	}
+
 	filteredComponents := sliceutils.Filter(scan.GetComponents(), func(c *storage.EmbeddedImageScanComponent) bool {
 		li, hasIdx := c.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
 		if !hasIdx {
 			return true
 		}
-		switch skip {
-		case storage.SkipImageLayers_SKIP_BASE:
-			return li.LayerIndex > maxBaseLayerIdx
-		case storage.SkipImageLayers_SKIP_APP:
-			return li.LayerIndex <= maxBaseLayerIdx
-		default:
-			return true
-		}
+		return layerFilter(li.LayerIndex)
 	})
 
-	if len(filteredComponents) == len(scan.GetComponents()) {
+	layers := img.GetMetadata().GetV1().GetLayers()
+	var filteredLayers []*storage.ImageLayer
+	if len(layers) > 0 {
+		for i, l := range layers {
+			if layerFilter(int32(i)) {
+				filteredLayers = append(filteredLayers, l)
+			}
+		}
+	}
+
+	componentsChanged := len(filteredComponents) != len(scan.GetComponents())
+	layersChanged := len(filteredLayers) != len(layers)
+	if !componentsChanged && !layersChanged {
 		return img
 	}
 
 	cloned := img.CloneVT()
-	cloned.Scan.Components = filteredComponents
+	if componentsChanged {
+		cloned.Scan.Components = filteredComponents
+	}
+	if layersChanged && cloned.GetMetadata().GetV1() != nil {
+		cloned.Metadata.V1.Layers = filteredLayers
+	}
 	return cloned
 }
 

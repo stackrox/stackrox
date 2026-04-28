@@ -216,6 +216,64 @@ func TestFilterImagesByLayer_NoBaseImageInfo(t *testing.T) {
 		"without BaseImageInfo, image should be returned unmodified")
 }
 
+func TestFilterImagesByLayer_DockerfileLayers(t *testing.T) {
+	img := &storage.Image{
+		Id: "test-img",
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{},
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "FROM", Value: "ubuntu:22.04"},
+					{Instruction: "RUN", Value: "apt-get update"},
+					{Instruction: "RUN", Value: "apt-get install -y curl"},
+					{Instruction: "COPY", Value: "app.py /app/"},
+					{Instruction: "RUN", Value: "pip install flask"},
+				},
+			},
+		},
+		BaseImageInfo: []*storage.BaseImageInfo{
+			{MaxLayerIndex: 2},
+		},
+	}
+
+	cases := map[string]struct {
+		skip               storage.SkipImageLayers
+		expectedLayerCount int
+		expectedFirstInstr string
+	}{
+		"SKIP_NONE keeps all layers": {
+			skip:               storage.SkipImageLayers_SKIP_NONE,
+			expectedLayerCount: 5,
+			expectedFirstInstr: "FROM",
+		},
+		"SKIP_BASE keeps only app layers (index > 2)": {
+			skip:               storage.SkipImageLayers_SKIP_BASE,
+			expectedLayerCount: 2,
+			expectedFirstInstr: "COPY",
+		},
+		"SKIP_APP keeps only base layers (index <= 2)": {
+			skip:               storage.SkipImageLayers_SKIP_APP,
+			expectedLayerCount: 3,
+			expectedFirstInstr: "FROM",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			filter := &storage.EvaluationFilter{SkipImageLayers: tc.skip}
+			result := filterImagesByLayer([]*storage.Image{img}, filter)
+
+			layers := result[0].GetMetadata().GetV1().GetLayers()
+			assert.Len(t, layers, tc.expectedLayerCount)
+			if tc.expectedLayerCount > 0 {
+				assert.Equal(t, tc.expectedFirstInstr, layers[0].GetInstruction())
+			}
+		})
+	}
+}
+
 func TestFilterImagesByLayer_NilImage(t *testing.T) {
 	filter := &storage.EvaluationFilter{SkipImageLayers: storage.SkipImageLayers_SKIP_BASE}
 	result := filterImagesByLayer([]*storage.Image{nil}, filter)

@@ -1024,3 +1024,128 @@ func (suite *WorkloadCriteriaTestSuite) TestReadinessProbePolicyCriteria() {
 		})
 	}
 }
+
+func (suite *WorkloadCriteriaTestSuite) TestEvaluationFilter_SkipInitContainers() {
+	regularContainer := &storage.Container{
+		Name:            "app",
+		Type:            storage.ContainerType_REGULAR,
+		SecurityContext: &storage.SecurityContext{Privileged: true},
+		Image:           &storage.ContainerImage{Id: "app-img"},
+	}
+	initContainer := &storage.Container{
+		Name:            "init",
+		Type:            storage.ContainerType_INIT,
+		SecurityContext: &storage.SecurityContext{Privileged: true},
+		Image:           &storage.ContainerImage{Id: "init-img"},
+	}
+
+	dep := &storage.Deployment{
+		Id:         "DEP_INIT_FILTER",
+		Containers: []*storage.Container{regularContainer, initContainer},
+	}
+	suite.addDepAndImages(dep,
+		&storage.Image{Id: "app-img", Name: &storage.ImageName{FullName: "app:latest"}},
+		&storage.Image{Id: "init-img", Name: &storage.ImageName{FullName: "init:latest"}},
+	)
+
+	privPolicy := policyWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
+
+	suite.Run("no filter matches both containers", func() {
+		matcher, err := BuildDeploymentMatcher(privPolicy)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 2)
+	})
+
+	suite.Run("SKIP_INIT only matches regular container", func() {
+		p := privPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+		}
+		matcher, err := BuildDeploymentMatcher(p)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "app")
+	})
+}
+
+func (suite *WorkloadCriteriaTestSuite) TestEvaluationFilter_SkipInitAndSkipBaseCombined() {
+	regularContainer := &storage.Container{
+		Name:  "app",
+		Type:  storage.ContainerType_REGULAR,
+		Image: &storage.ContainerImage{Id: "app-img"},
+	}
+	initContainer := &storage.Container{
+		Name:  "init",
+		Type:  storage.ContainerType_INIT,
+		Image: &storage.ContainerImage{Id: "init-img"},
+	}
+
+	baseComponent := &storage.EmbeddedImageScanComponent{
+		Name: "base-pkg", Version: "1.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
+		Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-BASE", Cvss: 9, Link: "https://base"}},
+	}
+	appComponent := &storage.EmbeddedImageScanComponent{
+		Name: "app-pkg", Version: "2.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 5},
+		Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-APP", Cvss: 8, Link: "https://app"}},
+	}
+
+	appImage := &storage.Image{
+		Id:   "app-img",
+		Name: &storage.ImageName{FullName: "docker.io/app"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{baseComponent, appComponent},
+		},
+		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 3}},
+	}
+	initImage := &storage.Image{
+		Id:   "init-img",
+		Name: &storage.ImageName{FullName: "docker.io/init"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "init-pkg", Version: "1.0",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
+					Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-INIT", Cvss: 9, Link: "https://init"}}},
+			},
+		},
+		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 3}},
+	}
+
+	dep := &storage.Deployment{
+		Id:         "DEP_COMBO_FILTER",
+		Containers: []*storage.Container{regularContainer, initContainer},
+	}
+	suite.addDepAndImages(dep, appImage, initImage)
+
+	cvssPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
+	)
+
+	suite.Run("no filter matches all CVEs from both containers", func() {
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		suite.NoError(err)
+		suite.GreaterOrEqual(len(violations.AlertViolations), 3,
+			"should have violations from base+app layers of app container and init container")
+	})
+
+	suite.Run("skip init + skip base only produces app-layer violations from regular container", func() {
+		p := cvssPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			SkipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+		}
+		matcher, err := BuildDeploymentMatcher(p)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-APP")
+	})
+}

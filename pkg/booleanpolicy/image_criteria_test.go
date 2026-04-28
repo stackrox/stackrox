@@ -442,6 +442,187 @@ func (suite *ImageCriteriaTestSuite) TestImageVerified() {
 	}
 }
 
+func (suite *ImageCriteriaTestSuite) TestEvaluationFilter_SkipBaseLayers() {
+	baseComponent := &storage.EmbeddedImageScanComponent{
+		Name: "base-pkg", Version: "1.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2024-0001", Cvss: 9, Link: "https://base-cve"},
+		},
+	}
+	appComponent := &storage.EmbeddedImageScanComponent{
+		Name: "app-pkg", Version: "2.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 5},
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2024-0002", Cvss: 8, Link: "https://app-cve"},
+		},
+	}
+
+	img := &storage.Image{
+		Id:   "IMG_LAYER_TEST",
+		Name: &storage.ImageName{FullName: "docker.io/layertest"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{baseComponent, appComponent},
+		},
+		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 3}},
+	}
+
+	dep := &storage.Deployment{
+		Id: "DEP_LAYER_TEST",
+		Containers: []*storage.Container{{
+			Name:  "app",
+			Image: &storage.ContainerImage{Id: img.GetId()},
+		}},
+	}
+	suite.addDepAndImages(dep, img)
+
+	cvssPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
+	)
+
+	suite.Run("no filter produces violations for both layers", func() {
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 2)
+	})
+
+	suite.Run("SKIP_BASE only produces app-layer violations", func() {
+		p := cvssPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+		}
+		matcher, err := BuildDeploymentMatcher(p)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0002")
+	})
+
+	suite.Run("SKIP_APP only produces base-layer violations", func() {
+		p := cvssPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
+		}
+		matcher, err := BuildDeploymentMatcher(p)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0001")
+	})
+}
+
+func (suite *ImageCriteriaTestSuite) TestEvaluationFilter_DockerfileLineSkipBase() {
+	img := &storage.Image{
+		Id:   "IMG_DOCKERFILE_LAYER",
+		Name: &storage.ImageName{FullName: "docker.io/dockerfiletest"},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "FROM", Value: "ubuntu:22.04"},
+					{Instruction: "RUN", Value: "apt-get update"},
+					{Instruction: "ADD", Value: "base-config /etc/"},
+					{Instruction: "ADD", Value: "app.tar.gz /app/"},
+					{Instruction: "RUN", Value: "pip install flask"},
+				},
+			},
+		},
+		Scan:          &storage.ImageScan{},
+		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 2}},
+	}
+
+	dep := &storage.Deployment{
+		Id: "DEP_DOCKERFILE_LAYER",
+		Containers: []*storage.Container{{
+			Name:  "app",
+			Image: &storage.ContainerImage{Id: img.GetId()},
+		}},
+	}
+	suite.addDepAndImages(dep, img)
+
+	addPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+		&storage.PolicyGroup{
+			FieldName: fieldnames.DockerfileLine,
+			Values:    []*storage.PolicyValue{{Value: "ADD=.*"}},
+		},
+	)
+
+	suite.Run("no filter matches ADD in both base and app layers", func() {
+		matcher, err := BuildDeploymentMatcher(addPolicy)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 2, "should match ADD in base layer (index 2) and app layer (index 3)")
+	})
+
+	suite.Run("SKIP_BASE only matches ADD in app layers", func() {
+		p := addPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+		}
+		matcher, err := BuildDeploymentMatcher(p)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "app.tar.gz")
+	})
+
+	suite.Run("SKIP_APP only matches ADD in base layers", func() {
+		p := addPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
+		}
+		matcher, err := BuildDeploymentMatcher(p)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "base-config")
+	})
+}
+
+func (suite *ImageCriteriaTestSuite) TestEvaluationFilter_MissingBaseImageInfo() {
+	component := &storage.EmbeddedImageScanComponent{
+		Name: "some-pkg", Version: "1.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 2},
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2024-0099", Cvss: 9, Link: "https://cve"},
+		},
+	}
+	img := &storage.Image{
+		Id:   "IMG_NO_BASE_INFO",
+		Name: &storage.ImageName{FullName: "docker.io/nobaseinfo"},
+		Scan: &storage.ImageScan{Components: []*storage.EmbeddedImageScanComponent{component}},
+	}
+
+	dep := &storage.Deployment{
+		Id: "DEP_NO_BASE_INFO",
+		Containers: []*storage.Container{{
+			Name:  "app",
+			Image: &storage.ContainerImage{Id: img.GetId()},
+		}},
+	}
+	suite.addDepAndImages(dep, img)
+
+	p := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
+	)
+	p.EvaluationFilter = &storage.EvaluationFilter{
+		SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+	}
+
+	matcher, err := BuildDeploymentMatcher(p)
+	suite.NoError(err)
+	violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+	suite.NoError(err)
+	suite.Len(violations.AlertViolations, 1,
+		"without BaseImageInfo, image should be returned unmodified and produce violations")
+}
+
 func (suite *ImageCriteriaTestSuite) TestImageVerified_WithDeployment() {
 	const (
 		verifier1 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
