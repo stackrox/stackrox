@@ -182,6 +182,88 @@ func TestToProtobuf(t *testing.T) {
 	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")
 }
 
+func TestToProtobuf_EvaluationFilter(t *testing.T) {
+	caches := map[CacheType]map[string]string{
+		Notifier: {},
+		Cluster:  {},
+	}
+
+	t.Run("nil filter produces nil proto field", func(t *testing.T) {
+		spec := SecurityPolicySpec{
+			PolicyName:      "no-filter",
+			Categories:      []string{"Test"},
+			LifecycleStages: []LifecycleStage{"DEPLOY"},
+			Severity:        "LOW_SEVERITY",
+			PolicySections: []PolicySection{{
+				PolicyGroups: []PolicyGroup{{FieldName: "Image Tag", Values: []PolicyValue{{Value: "latest"}}}},
+			}},
+		}
+		p, err := spec.ToProtobuf(caches)
+		assert.NoError(t, err)
+		assert.Nil(t, p.GetEvaluationFilter())
+	})
+
+	t.Run("skip init containers", func(t *testing.T) {
+		spec := SecurityPolicySpec{
+			PolicyName:      "skip-init",
+			Categories:      []string{"Test"},
+			LifecycleStages: []LifecycleStage{"DEPLOY"},
+			Severity:        "LOW_SEVERITY",
+			PolicySections: []PolicySection{{
+				PolicyGroups: []PolicyGroup{{FieldName: "Image Tag", Values: []PolicyValue{{Value: "latest"}}}},
+			}},
+			EvaluationFilter: &EvaluationFilter{
+				SkipContainerTypes: []SkipContainerType{"SKIP_INIT"},
+			},
+		}
+		p, err := spec.ToProtobuf(caches)
+		assert.NoError(t, err)
+		assert.NotNil(t, p.GetEvaluationFilter())
+		assert.Equal(t, []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT}, p.GetEvaluationFilter().GetSkipContainerTypes())
+		assert.Equal(t, storage.SkipImageLayers_SKIP_NONE, p.GetEvaluationFilter().GetSkipImageLayers())
+	})
+
+	t.Run("skip base layers", func(t *testing.T) {
+		spec := SecurityPolicySpec{
+			PolicyName:      "skip-base",
+			Categories:      []string{"Test"},
+			LifecycleStages: []LifecycleStage{"BUILD"},
+			Severity:        "LOW_SEVERITY",
+			PolicySections: []PolicySection{{
+				PolicyGroups: []PolicyGroup{{FieldName: "CVE", Values: []PolicyValue{{Value: ".*"}}}},
+			}},
+			EvaluationFilter: &EvaluationFilter{
+				SkipImageLayers: "SKIP_BASE",
+			},
+		}
+		p, err := spec.ToProtobuf(caches)
+		assert.NoError(t, err)
+		assert.NotNil(t, p.GetEvaluationFilter())
+		assert.Equal(t, storage.SkipImageLayers_SKIP_BASE, p.GetEvaluationFilter().GetSkipImageLayers())
+	})
+
+	t.Run("combined skip init and skip app", func(t *testing.T) {
+		spec := SecurityPolicySpec{
+			PolicyName:      "combined",
+			Categories:      []string{"Test"},
+			LifecycleStages: []LifecycleStage{"DEPLOY"},
+			Severity:        "LOW_SEVERITY",
+			PolicySections: []PolicySection{{
+				PolicyGroups: []PolicyGroup{{FieldName: "CVE", Values: []PolicyValue{{Value: ".*"}}}},
+			}},
+			EvaluationFilter: &EvaluationFilter{
+				SkipContainerTypes: []SkipContainerType{"SKIP_INIT"},
+				SkipImageLayers:    "SKIP_APP",
+			},
+		}
+		p, err := spec.ToProtobuf(caches)
+		assert.NoError(t, err)
+		assert.NotNil(t, p.GetEvaluationFilter())
+		assert.Equal(t, []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT}, p.GetEvaluationFilter().GetSkipContainerTypes())
+		assert.Equal(t, storage.SkipImageLayers_SKIP_APP, p.GetEvaluationFilter().GetSkipImageLayers())
+	})
+}
+
 func TestConditionUpdates(t *testing.T) {
 	startTime := metav1.Now()
 	policy := &SecurityPolicy{}

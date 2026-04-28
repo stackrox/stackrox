@@ -45,11 +45,13 @@ var (
 	PolicyCategoryName = newFieldLabel("Policy Category")
 	PolicyCategoryID   = newFieldLabel("Policy Category ID")
 
-	LifecycleStage = newFieldLabel("Lifecycle Stage")
-	Description    = newFieldLabel("Description")
-	Category       = newFieldLabel("Category")
-	Severity       = newFieldLabel("Severity")
-	Disabled       = newFieldLabel("Disabled")
+	LifecycleStage    = newFieldLabel("Lifecycle Stage")
+	Description       = newFieldLabel("Description")
+	Category          = newFieldLabel("Category")
+	Severity          = newFieldLabel("Severity")
+	Disabled          = newFieldLabel("Disabled")
+	SkipContainerType = newFieldLabel("Skip Container Type")
+	SkipImageLayers   = newFieldLabel("Skip Image Layers")
 
 	CVEID              = newFieldLabel("CVE ID")
 	CVE                = newFieldLabel("CVE")

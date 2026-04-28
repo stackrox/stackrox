@@ -136,6 +136,9 @@ var (
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
+
+	// ImageLayerFilter enables image layer filtering in policy evaluation filters.
+	ImageLayerFilter = registerFeature("Enable image layer filtering in policy evaluation", "ROX_IMAGE_LAYER_FILTER")
 )
 
 // The following feature flags are related to Scanner V4.

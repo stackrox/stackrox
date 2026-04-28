@@ -163,17 +163,18 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 	listPolicies := make([]*storage.ListPolicy, 0, len(policies))
 	for _, p := range policies {
 		listPolicies = append(listPolicies, &storage.ListPolicy{
-			Id:              p.GetId(),
-			Name:            p.GetName(),
-			Description:     p.GetDescription(),
-			Severity:        p.GetSeverity(),
-			Disabled:        p.GetDisabled(),
-			LifecycleStages: p.GetLifecycleStages(),
-			Notifiers:       p.GetNotifiers(),
-			LastUpdated:     p.GetLastUpdated(),
-			EventSource:     p.GetEventSource(),
-			IsDefault:       p.GetIsDefault(),
-			Source:          p.GetSource(),
+			Id:               p.GetId(),
+			Name:             p.GetName(),
+			Description:      p.GetDescription(),
+			Severity:         p.GetSeverity(),
+			Disabled:         p.GetDisabled(),
+			LifecycleStages:  p.GetLifecycleStages(),
+			Notifiers:        p.GetNotifiers(),
+			LastUpdated:      p.GetLastUpdated(),
+			EventSource:      p.GetEventSource(),
+			IsDefault:        p.GetIsDefault(),
+			Source:           p.GetSource(),
+			EvaluationFilter: p.GetEvaluationFilter(),
 		})
 	}
 	return listPolicies

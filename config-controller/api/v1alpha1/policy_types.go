@@ -36,6 +36,22 @@ type EventSource string
 // +kubebuilder:validation:Enum=UNSET_ENFORCEMENT;SCALE_TO_ZERO_ENFORCEMENT;UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT;KILL_POD_ENFORCEMENT;FAIL_BUILD_ENFORCEMENT;FAIL_KUBE_REQUEST_ENFORCEMENT;FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
 type EnforcementAction string
 
+// +kubebuilder:validation:Enum=SKIP_INIT
+type SkipContainerType string
+
+// +kubebuilder:validation:Enum=SKIP_NONE;SKIP_BASE;SKIP_APP
+type SkipImageLayers string
+
+// EvaluationFilter controls which parts of a deployment or image a policy evaluates.
+type EvaluationFilter struct {
+	// SkipContainerTypes lists container types to skip during evaluation. Empty list evaluates all container types.
+	// +optional
+	SkipContainerTypes []SkipContainerType `json:"skipContainerTypes,omitempty"`
+	// SkipImageLayers selects which image layers to skip. SKIP_NONE evaluates all layers.
+	// +optional
+	SkipImageLayers SkipImageLayers `json:"skipImageLayers,omitempty"`
+}
+
 // SecurityPolicySpec defines the desired state of SecurityPolicy
 type SecurityPolicySpec struct {
 	// +kubebuilder:validation:Required
@@ -75,6 +91,9 @@ type SecurityPolicySpec struct {
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []PolicySection      `json:"policySections"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
+	// EvaluationFilter controls which parts of a deployment or image this policy evaluates.
+	// +optional
+	EvaluationFilter *EvaluationFilter `json:"evaluationFilter,omitempty"`
 
 	// +optional
 	// CriteriaLocked is unused and deprecated
@@ -418,6 +437,23 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 		}
 
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
+	}
+
+	if p.EvaluationFilter != nil {
+		ef := &storage.EvaluationFilter{}
+		for _, ct := range p.EvaluationFilter.SkipContainerTypes {
+			val, found := storage.SkipContainerType_value[string(ct)]
+			if found {
+				ef.SkipContainerTypes = append(ef.SkipContainerTypes, storage.SkipContainerType(val))
+			}
+		}
+		if p.EvaluationFilter.SkipImageLayers != "" {
+			val, found := storage.SkipImageLayers_value[string(p.EvaluationFilter.SkipImageLayers)]
+			if found {
+				ef.SkipImageLayers = storage.SkipImageLayers(val)
+			}
+		}
+		proto.EvaluationFilter = ef
 	}
 
 	return &proto, nil

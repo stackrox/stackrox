@@ -13,7 +13,7 @@ option java_package = "io.stackrox.proto.storage";
 // in `config-controller/api/v1alpha1/policy_types.go` and the ToProtobuf() function
 // to account for the new field, and its conversion.
 
-//Next tag: 28
+//Next tag: 29
 message Policy {
   string id = 1; // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
   // Name of the policy.  Must be unique.
@@ -77,6 +77,9 @@ message Policy {
   bool is_default = 26; // @gotags: crYaml:"isDefault"
 
   PolicySource source = 27; // @gotags: crYaml:"-"
+
+  // Controls which parts of a deployment or image the policy evaluates.
+  EvaluationFilter evaluation_filter = 28; // @gotags: crYaml:"evaluationFilter,omitempty"
 }
 
 enum PolicySource {
@@ -133,6 +136,7 @@ message ListPolicy {
   EventSource event_source = 9;
   bool is_default = 10;
   PolicySource source = 11;
+  EvaluationFilter evaluation_filter = 12;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.
@@ -171,6 +175,27 @@ enum Comparator {
   EQUALS = 2;
   GREATER_THAN_OR_EQUALS = 3;
   GREATER_THAN = 4;
+}
+
+// SkipContainerType identifies container types that can be skipped during policy evaluation.
+enum SkipContainerType {
+  SKIP_INIT = 0;
+}
+
+// SkipImageLayers controls which image layers to skip during policy evaluation.
+enum SkipImageLayers {
+  SKIP_NONE = 0;
+  SKIP_BASE = 1;
+  SKIP_APP = 2;
+}
+
+// EvaluationFilter controls which parts of a deployment or image a policy evaluates.
+// Empty/zero-value means evaluate everything (no filtering).
+message EvaluationFilter {
+  // Container types to skip during evaluation. Empty list = evaluate all container types.
+  repeated SkipContainerType skip_container_types = 1; // @gotags: search:"Skip Container Type" crYaml:"skipContainerTypes,omitempty,stringer"
+  // Image layers to skip. SKIP_NONE = evaluate all layers.
+  SkipImageLayers skip_image_layers = 2; // @gotags: search:"Skip Image Layers" crYaml:"skipImageLayers,omitempty,stringer"
 }
 
 message Exclusion {
