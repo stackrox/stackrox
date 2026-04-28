@@ -129,6 +129,7 @@ jobs:
       run: |
         docker run --rm -d --name postgres --network=host \
           -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
           docker.io/library/postgres:${{ matrix.pg }}
         until pg_isready -h 127.0.0.1 --timeout=60; do sleep 1; done
 
