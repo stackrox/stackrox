@@ -649,7 +649,7 @@ func (g *garbageCollectorImpl) collectDeletedDeployments(config *storage.Private
 	// Find and remove soft-deleted deployments past the retention window.
 	q := search.ConjunctionQuery(
 		search.NewQueryBuilder().
-			AddExactMatches(search.DeploymentState, storage.DeploymentState_STATE_DELETED.String()).
+			AddExactMatches(search.DeploymentState, storage.DeploymentState_DEPLOYMENT_STATE_DELETED.String()).
 			ProtoQuery(),
 		search.NewQueryBuilder().
 			AddDays(search.Deleted, retentionDays).

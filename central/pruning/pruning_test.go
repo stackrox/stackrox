@@ -1592,7 +1592,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPsSoftDeletedDeployment() {
 	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
 		Id:        fixtureconsts.Deployment1,
 		ClusterId: fixtureconsts.Cluster1,
-		State:     storage.DeploymentState_STATE_DELETED,
+		State:     storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 		Deleted:   protocompat.TimestampNow(),
 	}))
 
@@ -1646,7 +1646,7 @@ func (s *PruningTestSuite) TestMarkOrphanedAlertsSoftDeletedDeployment() {
 	// Create a soft-deleted deployment.
 	s.Require().NoError(deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{
 		Id:      fixtureconsts.Deployment1,
-		State:   storage.DeploymentState_STATE_DELETED,
+		State:   storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 		Deleted: protocompat.TimestampNow(),
 	}))
 
@@ -2845,7 +2845,7 @@ const (
 func newDeletedDeployment(id string, daysOld int) *storage.Deployment {
 	return &storage.Deployment{
 		Id:      id,
-		State:   storage.DeploymentState_STATE_DELETED,
+		State:   storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 		Deleted: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Duration(daysOld) * time.Hour)),
 	}
 }
@@ -2853,7 +2853,7 @@ func newDeletedDeployment(id string, daysOld int) *storage.Deployment {
 func newActiveDeployment(id string) *storage.Deployment {
 	return &storage.Deployment{
 		Id:    id,
-		State: storage.DeploymentState_STATE_ACTIVE,
+		State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 	}
 }
 
