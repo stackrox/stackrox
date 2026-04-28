@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/coalescer"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stretchr/testify/require"
@@ -396,4 +398,56 @@ func (s *ImageCacheTestSuite) TestClearImageCacheGen() {
 	s.Equal(uint64(0), s.manager.imageCacheGen.Get(s.T(), "sha256:a"))
 	s.Equal(uint64(0), s.manager.imageCacheGen.Get(s.T(), "sha256:b"))
 	s.Equal("", s.manager.imageCacheGen.CacheVersion())
+}
+
+func (s *ImageCacheTestSuite) TestGetAvailableImagesSkipsInitContainers() {
+	s.T().Setenv(features.InitContainerSupport.EnvVar(), "true")
+
+	st := createTestState(false)
+	st.ClusterConfig = &storage.DynamicClusterConfig{
+		AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+			ScanInline: true,
+		},
+	}
+	s.manager.state.Store(st)
+
+	deployment := &storage.Deployment{
+		Name:      "test",
+		Namespace: "default",
+		Containers: []*storage.Container{
+			{
+				Name: "init",
+				Type: storage.ContainerType_INIT,
+				Image: &storage.ContainerImage{
+					Id:   "sha256:init123",
+					Name: &storage.ImageName{FullName: "docker.io/library/busybox:1.36"},
+				},
+			},
+			{
+				Name: "main",
+				Type: storage.ContainerType_REGULAR,
+				Image: &storage.ContainerImage{
+					Id:   "sha256:main456",
+					Name: &storage.ImageName{FullName: "docker.io/library/nginx:1.25"},
+				},
+			},
+		},
+	}
+
+	// shouldFetch=false so we don't need real connections — we just verify
+	// the init container gets a placeholder image and no fetch is attempted.
+	images, resultChan := s.manager.getAvailableImagesAndKickOffScans(context.Background(), false, st, deployment)
+
+	// Drain the channel
+	for range resultChan {
+	}
+
+	s.Require().Len(images, 2)
+
+	// Init container should have a placeholder image (not fetched/cached)
+	s.Equal("docker.io/library/busybox:1.36", images[0].GetName().GetFullName())
+	s.Empty(images[0].GetScan())
+
+	// Regular container should also have a placeholder (shouldFetch=false, not cached)
+	s.Equal("docker.io/library/nginx:1.25", images[1].GetName().GetFullName())
 }
