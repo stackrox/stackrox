@@ -61,6 +61,7 @@ type MetaValues struct {
 	TelemetryKey                     string
 	TelemetryEndpoint                string
 	AutoLockProcessBaselines         bool
+	ExcludeNamespaceFilter           string
 
 	AutoSensePodSecurityPolicies bool
 	EnablePodSecurityPolicies    bool // Only used in the Helm chart if AutoSensePodSecurityPolicies is false.

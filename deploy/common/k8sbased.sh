@@ -718,6 +718,10 @@ function launch_sensor {
       fi
     fi
 
+    if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
+      extra_config+=("--exclude-namespace-filter=namespace-without-persistence")
+    fi
+
     rm -rf "${k8s_dir}/sensor-deploy"
     rm -rf "${k8s_dir}/scanner-deploy"
 

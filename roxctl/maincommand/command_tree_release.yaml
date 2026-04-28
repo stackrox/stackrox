@@ -2002,6 +2002,7 @@ sensor:
       - create-upgrader-sa
       - disable-tolerations
       - enable-pod-security-policies
+      - exclude-namespace-filter
       - istio-support
       - main-image-repository
       - name
@@ -2046,6 +2047,7 @@ sensor:
         - disable-tolerations
         - enable-pod-security-policies
         - endpoint
+        - exclude-namespace-filter
         - force-http1
         - help
         - insecure
@@ -2088,6 +2090,7 @@ sensor:
         - disable-tolerations
         - enable-pod-security-policies
         - endpoint
+        - exclude-namespace-filter
         - force-http1
         - help
         - insecure
