@@ -61,39 +61,28 @@ func TestTryLock_shouldCreateParentDirectoryIfMissing(t *testing.T) {
 func TestTryLock_invalidInputs(t *testing.T) {
 	tests := map[string]struct {
 		lockPath  string
-		setup     func(t *testing.T) string
 		errSubstr string
 	}{
 		"should report unavailable for empty path": {
 			lockPath:  "",
 			errSubstr: "lock path is empty",
 		},
-		"should report unavailable for unwritable parent": {
-			setup: func(t *testing.T) string {
-				roDir := filepath.Join(t.TempDir(), "readonly")
-				require.NoError(t, os.MkdirAll(roDir, 0o755))
-				require.NoError(t, os.Chmod(roDir, 0o555))
-				t.Cleanup(func() {
-					_ = os.Chmod(roDir, 0o755)
-				})
-				return filepath.Join(roDir, "test.lock")
-			},
+		"should report unavailable when parent is not a directory": {
+			// /dev/null is a character device, not a directory. MkdirAll fails
+			// with ENOTDIR even when running as root, unlike chmod-based tests
+			// where root bypasses permission checks.
+			lockPath:  "/dev/null/test.lock",
+			errSubstr: "not a directory",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			path := tt.lockPath
-			if tt.setup != nil {
-				path = tt.setup(t)
-			}
-			res, release, err := TryLock(path)
+			res, release, err := TryLock(tt.lockPath)
 			assert.Equal(t, Unavailable, res)
 			assert.Nil(t, release)
 			require.Error(t, err)
-			if tt.errSubstr != "" {
-				assert.ErrorContains(t, err, tt.errSubstr)
-			}
+			assert.ErrorContains(t, err, tt.errSubstr)
 		})
 	}
 }

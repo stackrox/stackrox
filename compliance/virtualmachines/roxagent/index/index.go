@@ -33,8 +33,9 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lo
 	}
 
 	scanFn := func() error { return RunSingle(ctx, cfg, client) }
+	tryLockFn := func() (lock.Result, func(), error) { return lock.TryLock(lockPath) }
 
-	if err := runWithLock(lockPath, scanFn); err != nil {
+	if err := runWithLock(lockPath, scanFn, tryLockFn); err != nil {
 		return fmt.Errorf("handling initial index: %w", err)
 	}
 
@@ -46,15 +47,16 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lo
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := runWithLock(lockPath, scanFn); err != nil {
+			if err := runWithLock(lockPath, scanFn, tryLockFn); err != nil {
 				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
 	}
 }
 
-func runWithLock(lockPath string, scanFn func() error) error {
-	res, release, lockErr := lock.TryLock(lockPath)
+// tryLockFn is injected so tests can stub lock outcomes without touching the filesystem.
+func runWithLock(lockPath string, scanFn func() error, tryLockFn func() (lock.Result, func(), error)) error {
+	res, release, lockErr := tryLockFn()
 	switch res {
 	case lock.Acquired:
 		defer release()
