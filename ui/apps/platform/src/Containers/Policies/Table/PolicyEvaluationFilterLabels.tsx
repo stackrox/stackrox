@@ -1,39 +1,13 @@
 import type { ReactElement } from 'react';
 import { Label, LabelGroup } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { EvaluationFilter } from 'types/policy.proto';
 
 export type FilterLabel = {
     text: string;
-    color: 'blue' | 'gold';
+    color: 'blue' | 'orange';
 };
-
-export function getEvaluationFilterLabels(
-    evaluationFilter: EvaluationFilter | undefined
-): FilterLabel[] {
-    if (!evaluationFilter) {
-        return [];
-    }
-
-    const labels: FilterLabel[] = [];
-
-    if (evaluationFilter.skipContainerTypes?.includes('SKIP_INIT')) {
-        labels.push({ text: 'Skips init', color: 'blue' });
-    }
-
-    switch (evaluationFilter.skipImageLayers) {
-        case 'SKIP_BASE':
-            labels.push({ text: 'App layers only', color: 'gold' });
-            break;
-        case 'SKIP_APP':
-            labels.push({ text: 'Base layers only', color: 'gold' });
-            break;
-        default:
-            break;
-    }
-
-    return labels;
-}
 
 type PolicyEvaluationFilterLabelsProps = {
     evaluationFilter: EvaluationFilter | undefined;
@@ -44,7 +18,33 @@ function PolicyEvaluationFilterLabels({
     evaluationFilter,
     className,
 }: PolicyEvaluationFilterLabelsProps): ReactElement | null {
-    const labels = getEvaluationFilterLabels(evaluationFilter);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    if (!evaluationFilter) {
+        return null;
+    }
+
+    const labels: FilterLabel[] = [];
+
+    if (
+        isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT') &&
+        evaluationFilter.skipContainerTypes?.includes('SKIP_INIT')
+    ) {
+        labels.push({ text: 'Skips init', color: 'blue' });
+    }
+
+    if (isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER')) {
+        switch (evaluationFilter.skipImageLayers) {
+            case 'SKIP_BASE':
+                labels.push({ text: 'App layers only', color: 'orange' });
+                break;
+            case 'SKIP_APP':
+                labels.push({ text: 'Base layers only', color: 'orange' });
+                break;
+            default:
+                break;
+        }
+    }
 
     if (labels.length === 0) {
         return null;
