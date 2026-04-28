@@ -91,7 +91,7 @@ deploy_stackrox() {
 
 # Deploy StackRox using roxie.
 #
-# This is the modern way of deploying StackRox for tests.
+# This is the preferred way of deploying StackRox for tests as of 2026Q2.
 # This function expects two arguments:
 # 1) Namespace to deploy into (required)
 # 2) Path to a 'roxie override file' (optional)
