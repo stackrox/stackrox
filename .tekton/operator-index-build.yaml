@@ -345,7 +345,7 @@ spec:
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
           # Using the image with go and yq preinstalled
-          image: quay.io/stackrox-io/apollo-ci:stackrox-test-latest
+          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:4830f867bf50f9084d03d8ba32ea0eea098284b99e69d2039bb3a66763c7742b
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
