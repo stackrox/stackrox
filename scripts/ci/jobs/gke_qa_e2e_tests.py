@@ -29,7 +29,7 @@ os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 # variables for configuration with the same defaulting behaviour.
 #
 # Long term, the goal is to migrate all test suites to use the modern roxie-based deployment mechanism,
-# where teh entire deployment configuration is to be assembled explicitly in a single YAML configuration file.
+# where the entire deployment configuration is to be assembled explicitly in a single YAML configuration file.
 os.environ["USE_ROXIE_DEPLOY"] = "true"
 
 make_qa_e2e_test_runner(cluster=GKECluster("qa-e2e-test")).run()
