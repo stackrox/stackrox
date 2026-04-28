@@ -183,9 +183,7 @@ function PolicyDetail({
                             )}
                         </ToolbarItem>
                         <ToolbarItem>
-                            <PolicyEvaluationFilterLabels
-                                evaluationFilter={evaluationFilter}
-                            />
+                            <PolicyEvaluationFilterLabels evaluationFilter={evaluationFilter} />
                         </ToolbarItem>
                         <ToolbarItem align={{ default: 'alignEnd' }}>
                             <MenuDropdown

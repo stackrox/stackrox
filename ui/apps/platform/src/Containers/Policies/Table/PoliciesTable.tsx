@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
@@ -38,6 +38,7 @@ import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverit
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import PolicyEvaluationFilterLabels from './PolicyEvaluationFilterLabels';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
 import type { AlertVariantType } from 'hooks/patternfly/useToasts';
@@ -57,15 +58,13 @@ import {
     isExternalPolicy,
 } from '../policies.utils';
 import type { LabelAndNotifierIdsForType } from '../policies.utils';
-import { policySearchFilterConfig } from '../policiesSearchFilterConfig';
+import { getPolicySearchFilterConfig } from '../policiesSearchFilterConfig';
 
 import './PoliciesTable.css';
 
 function isExternalPolicySelected(policies: ListPolicy[], selectedIds: string[]): boolean {
     return policies.filter(({ id }) => selectedIds.includes(id)).some(isExternalPolicy);
 }
-
-const searchFilterConfig = [policySearchFilterConfig];
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -102,6 +101,16 @@ function PoliciesTable({
 }: PoliciesTableProps): ReactElement {
     const expandedRowSet = useSet<string>();
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const searchFilterConfig = useMemo(() => {
+        const config = getPolicySearchFilterConfig({
+            initContainerSupport: isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT'),
+            imageLayerFilter: isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER'),
+        });
+        return [config];
+    }, [isFeatureFlagEnabled]);
+
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);

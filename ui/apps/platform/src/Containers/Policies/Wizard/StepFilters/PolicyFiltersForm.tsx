@@ -1,3 +1,4 @@
+import type { FormEvent } from 'react';
 import {
     Alert,
     Checkbox,
@@ -16,7 +17,7 @@ import { policyCriteriaCategories } from 'messages/common';
 import { policyCriteriaDescriptors } from '../Step3/policyCriteriaDescriptors';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
-const imageCriteriaCategories = new Set([
+const imageCriteriaCategories = new Set<string>([
     policyCriteriaCategories.IMAGE_CONTENTS,
     policyCriteriaCategories.IMAGE_SCANNING,
 ]);
@@ -34,8 +35,7 @@ function hasImageCriteria(policy: ClientPolicy): boolean {
 }
 
 const imageLayerDescriptions: Record<SkipImageLayers, string> = {
-    SKIP_NONE:
-        'Policy will evaluate all image layers, including both base and application layers.',
+    SKIP_NONE: 'Policy will evaluate all image layers, including both base and application layers.',
     SKIP_BASE:
         'Policy will evaluate only application layers added on top of the base image. Base image layers (e.g., OS packages, system libraries) will be skipped.',
     SKIP_APP:
@@ -67,7 +67,7 @@ function PolicyFiltersForm() {
         containerTypeDescription = 'Policy will skip init containers.';
     }
 
-    function handleSkipInitChange(_event: React.FormEvent, checked: boolean) {
+    function handleSkipInitChange(_event: FormEvent, checked: boolean) {
         const updated = checked
             ? [...skipContainerTypes, 'SKIP_INIT' as const]
             : skipContainerTypes.filter((ct) => ct !== 'SKIP_INIT');
