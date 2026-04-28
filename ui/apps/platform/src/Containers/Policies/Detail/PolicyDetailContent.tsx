@@ -4,6 +4,7 @@ import { Formik } from 'formik';
 import { Flex, Grid, Stack, Title } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { NotifierIntegration } from 'types/notifier.proto';
 import type { BasePolicy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
@@ -19,6 +20,11 @@ type PolicyDetailContentProps = {
 
 function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentProps): ReactElement {
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const showFiltersSection =
+        isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT') ||
+        isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER');
 
     useEffect(() => {
         fetchNotifierIntegrations()
@@ -30,8 +36,14 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
             });
     }, []);
 
-    const { enforcementActions, evaluationFilter, eventSource, exclusions, scope, lifecycleStages } =
-        policy;
+    const {
+        enforcementActions,
+        evaluationFilter,
+        eventSource,
+        exclusions,
+        scope,
+        lifecycleStages,
+    } = policy;
     return (
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
@@ -60,13 +72,15 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                         )}
                     </Formik>
                 </Stack>
-                <Stack hasGutter>
-                    <Title headingLevel="h2">Policy filters</Title>
-                    <PolicyFiltersSection
-                        evaluationFilter={evaluationFilter}
-                        lifecycleStages={lifecycleStages}
-                    />
-                </Stack>
+                {showFiltersSection && (
+                    <Stack hasGutter>
+                        <Title headingLevel="h2">Policy filters</Title>
+                        <PolicyFiltersSection
+                            evaluationFilter={evaluationFilter}
+                            lifecycleStages={lifecycleStages}
+                        />
+                    </Stack>
+                )}
                 {(scope?.length > 0 || exclusions?.length > 0) && (
                     <Stack hasGutter>
                         <Title headingLevel="h2">Policy scope</Title>
