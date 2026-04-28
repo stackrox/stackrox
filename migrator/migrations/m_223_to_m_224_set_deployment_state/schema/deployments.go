@@ -45,6 +45,6 @@ type Deployments struct {
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	Deleted                       *time.Time              `gorm:"column:deleted;type:timestamp"`
-	State                         storage.DeploymentState `gorm:"column:state;type:integer"`
+	State                         storage.DeploymentState `gorm:"column:state;type:integer;default:0"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
