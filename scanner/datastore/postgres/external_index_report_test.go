@@ -3,17 +3,17 @@
 package postgres
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_ExternalIndexReport_GCIndexReports(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	pool := testDB(t, ctx, "external_index_report_test")
 	store, err := InitPostgresExternalIndexStore(ctx, pool, true)
 	require.NoError(t, err)

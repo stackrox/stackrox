@@ -4,9 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -107,7 +109,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(time.Time{}, errors.New("err"))
-	err := u.Update(context.Background())
+	err := u.Update(test.Logging(t))
 	assert.Error(t, err)
 	assert.Nil(t, u.KnownDistributions())
 
@@ -136,7 +138,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 	store.EXPECT().
 		Distributions(gomock.Any()).
 		Return(dists, nil)
-	err = u.Update(context.Background())
+	err = u.Update(test.Logging(t))
 	assert.NoError(t, err)
 	assert.Equal(t, dists, u.KnownDistributions())
 
@@ -144,7 +146,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(time.Minute), nil)
-	err = u.Update(context.Background())
+	err = u.Update(test.Logging(t))
 	assert.NoError(t, err)
 	assert.Equal(t, dists, u.KnownDistributions())
 }
@@ -163,19 +165,19 @@ func TestFetch(t *testing.T) {
 	}
 
 	// Fetch file, as it's modified after the given time.
-	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	f, timestamp, err := u.fetch(test.Logging(t), time.Time{})
 	require.NoError(t, err)
 	assert.NotNil(t, f)
 	assert.Equal(t, now, timestamp)
 
 	// Fetch file, as it's modified after the given time.
-	f, timestamp, err = u.fetch(context.Background(), now.Add(-time.Minute))
+	f, timestamp, err = u.fetch(test.Logging(t), now.Add(-time.Minute))
 	require.NoError(t, err)
 	assert.NotNil(t, f)
 	assert.Equal(t, now, timestamp)
 
 	// Do not fetch file, as it's not modified after the given time.
-	f, timestamp, err = u.fetch(context.Background(), now.Add(time.Minute))
+	f, timestamp, err = u.fetch(test.Logging(t), now.Add(time.Minute))
 	require.NoError(t, err)
 	assert.Nil(t, f)
 	assert.Equal(t, time.Time{}, timestamp)
@@ -203,7 +205,7 @@ func TestFetchRCBundle(t *testing.T) {
 		retryMax:   1,
 	}
 
-	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	f, timestamp, err := u.fetch(test.Logging(t), time.Time{})
 	require.NoError(t, err)
 	assert.NotNil(t, f)
 	assert.Equal(t, now, timestamp)
@@ -235,7 +237,7 @@ func TestFetchRCBundleFallback(t *testing.T) {
 		retryMax:   1,
 	}
 
-	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	f, timestamp, err := u.fetch(test.Logging(t), time.Time{})
 	require.NoError(t, err)
 	assert.NotNil(t, f)
 	assert.Equal(t, now, timestamp)
@@ -244,17 +246,19 @@ func TestFetchRCBundleFallback(t *testing.T) {
 
 func TestUpdater_Initialized(t *testing.T) {
 	t.Run("when initialized then return ready", func(t *testing.T) {
+		ctx := test.Logging(t)
 		ctrl := gomock.NewController(t)
 		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
 		u := Updater{
 			metadataStore: metaMock,
 		}
 		u.initialized.Store(true)
-		got := u.Initialized(context.Background())
+		got := u.Initialized(ctx)
 		assert.True(t, got, `expecting "ready" got "not ready"`)
 	})
 
 	t.Run("when not initialized and get last update is empty then return not ready", func(t *testing.T) {
+		ctx := test.Logging(t)
 		ctrl := gomock.NewController(t)
 		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
 		metaMock.
@@ -263,11 +267,12 @@ func TestUpdater_Initialized(t *testing.T) {
 		u := Updater{
 			metadataStore: metaMock,
 		}
-		got := u.Initialized(context.Background())
+		got := u.Initialized(ctx)
 		assert.False(t, got, `expecting "not ready" got "ready"`)
 	})
 
 	t.Run("when not initialized and get last update is not empty then return ready", func(t *testing.T) {
+		ctx := test.Logging(t)
 		ctrl := gomock.NewController(t)
 		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
 		metaMock.
@@ -277,7 +282,7 @@ func TestUpdater_Initialized(t *testing.T) {
 		u := Updater{
 			metadataStore: metaMock,
 		}
-		got := u.Initialized(context.Background())
+		got := u.Initialized(ctx)
 		assert.True(t, got, `expecting "ready" got "not ready"`)
 	})
 
@@ -286,6 +291,7 @@ func TestUpdater_Initialized(t *testing.T) {
 		h := slog.NewJSONHandler(&buf, nil)
 		prev := slog.Default()
 		slog.SetDefault(slog.New(h))
+		t.Cleanup(func() { slog.SetDefault(prev) })
 		ctx := context.Background()
 		ctrl := gomock.NewController(t)
 		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
@@ -299,9 +305,12 @@ func TestUpdater_Initialized(t *testing.T) {
 		u.initialized.Store(false)
 		got := u.Initialized(ctx)
 		assert.False(t, got, `expecting "not ready" got "ready"`)
-		assert.Contains(t, buf.String(), `did not get previous vuln update timestamp`)
-		assert.Contains(t, buf.String(), `last update failed (fake error)`)
-		assert.Contains(t, buf.String(), `WARN`)
+
+		var entry map[string]interface{}
+		require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
+		assert.Equal(t, "did not get previous vuln update timestamp", entry["msg"])
+		assert.Contains(t, entry["reason"], "last update failed (fake error)")
+		assert.Equal(t, "WARN", entry["level"])
 	})
 }
 
@@ -399,7 +408,7 @@ func TestIsRetryableDialError(t *testing.T) {
 }
 
 func TestUpdater_Import(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	ctrl := gomock.NewController(t)
 
 	// Represents one vulnerability or enrichment iteration.
