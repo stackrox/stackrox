@@ -26,11 +26,9 @@ var (
 	VirtualMachinesIndexReportsBufferSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_BUFFER_SIZE", 100).
 						WithMinimum(0)
 
-	// VirtualMachinesRelayEnabled is a tri-state override for VM relay startup:
-	//   - "true":  always start the relay regardless of scrape config
-	//   - "false": never start the relay
-	//   - unset:   rely on the scrape config (start on worker nodes, skip on master nodes)
-	VirtualMachinesRelayEnabled = RegisterSetting("ROX_VIRTUAL_MACHINES_RELAY_ENABLED", AllowEmpty())
+	// VirtualMachinesRelayEnabledOnMasterNodes allows enabling the VM relay on master/control-plane nodes.
+	// The default is false because these nodes typically do not host VMs and would otherwise retry forever.
+	VirtualMachinesRelayEnabledOnMasterNodes = RegisterBooleanSetting("ROX_VIRTUAL_MACHINES_RELAY_ENABLED_ON_MASTER_NODES", false)
 
 	// VMIndexReportRateLimit defines the maximum number of VM index reports per second that Central will accept
 	// across all sensors that actually send VM index reports. Each such sensor gets an equal share (1/N) of this

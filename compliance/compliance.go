@@ -2,10 +2,8 @@ package compliance
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -36,10 +34,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	errNilScrapeConfig    = errors.New("initial scrape config is unexpectedly nil")
-	errRelayDisabledByEnv = errors.New("relay explicitly disabled via env var")
-	errRelayOnMasterNode  = errors.New("relay disabled on master node by default")
 )
 
 const (
@@ -146,15 +140,16 @@ func (c *Compliance) Start() {
 		if !features.VirtualMachines.Enabled() {
 			return
 		}
-		// Design choice: VM relay startup is gated by the first valid scrape config.
+		// VM relay startup is gated by the first scrape config.
 		// We must not start relay until that config is available.
 		config := c.waitForInitialScrapeConfig(ctx)
-		if err := ctx.Err(); err != nil {
-			log.Infof("Virtual machine relay start aborted: %v", err)
+		if config == nil { // nil means ctx was cancelled
+			log.Info("Virtual machine relay start aborted: context cancelled")
 			return
 		}
-		if err := shouldStartVMRelay(config); err != nil {
-			log.Infof("Virtual machine relay not started: %v", err)
+		if !checkNodeRelayEligibility(config) {
+			log.Infof("Virtual machine relay not started on master node; set %s=true to enable",
+				env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
 			return
 		}
 		log.Infof("Virtual machine relay enabled")
@@ -343,14 +338,11 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 }
 
 // waitForInitialScrapeConfig waits for the first scrape config observed by the
-// stream manager and returns it:
+// stream manager and returns it. Returns nil only when ctx is cancelled.
 //
-// Design choices:
-//   - manageStream stores scrape config before signaling readiness.
-//   - the first scrape config is valid (non-nil) and must exist before VM relay
-//     startup is allowed; nil is treated as unexpected and startup is skipped.
-//   - waiting on scrapeConfigReady prevents races between scrape config
-//     publication and VM relay startup.
+// manageStream stores the scrape config before signaling readiness, and
+// initializeStream guarantees a non-nil config on success, so the returned
+// config is always valid when the context is not cancelled.
 func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.MsgToCompliance_ScrapeConfig {
 	select {
 	case <-ctx.Done():
@@ -360,41 +352,10 @@ func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.Msg
 	}
 }
 
-// shouldStartVMRelay decides whether the VM relay should start by checking the env
-// override first, then falling back to scrape-config-based logic. Returns nil
-// when the relay is allowed, or an error describing why it was skipped.
-//
-// Decision order:
-//  1. ROX_VIRTUAL_MACHINES_RELAY_ENABLED="true"  → always start
-//  2. ROX_VIRTUAL_MACHINES_RELAY_ENABLED="false" → never start
-//  3. unset → rely on scrape config (start on worker, skip on master)
-func shouldStartVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) error {
-	override := strings.ToLower(env.VirtualMachinesRelayEnabled.Setting())
-	switch override {
-	case "true":
-		return nil
-	case "false":
-		return errRelayDisabledByEnv
-	case "":
-		// unset — fall through to config-based decision
-	default:
-		log.Warnf("Unexpected value %q for %s; falling back to default (scrape config based decision)",
-			override, env.VirtualMachinesRelayEnabled.EnvVar())
-	}
-	return checkNodeRelayEligibility(config)
-}
-
-// checkNodeRelayEligibility decides whether the VM relay should start based on the
-// scrape config. Returns nil when the relay is allowed, or an error describing
-// why it was skipped.
-func checkNodeRelayEligibility(config *sensor.MsgToCompliance_ScrapeConfig) error {
-	if config == nil {
-		return errNilScrapeConfig
-	}
-	if !config.GetIsMasterNode() {
-		return nil
-	}
-	return fmt.Errorf("%w; set %s=true to override", errRelayOnMasterNode, env.VirtualMachinesRelayEnabled.EnvVar())
+// checkNodeRelayEligibility reports whether the VM relay should start based on
+// the scrape config and the master-node override env var.
+func checkNodeRelayEligibility(config *sensor.MsgToCompliance_ScrapeConfig) bool {
+	return !config.GetIsMasterNode() || env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting()
 }
 
 func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
