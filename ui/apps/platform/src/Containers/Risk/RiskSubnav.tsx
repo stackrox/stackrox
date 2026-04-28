@@ -1,48 +1,40 @@
 import { NavList } from '@patternfly/react-core';
 
-import {
-    violationsFullViewPath,
-    violationsNodeViewPath,
-    violationsPlatformViewPath,
-    violationsUserWorkloadsViewPath,
-} from 'routePaths';
+import { riskFullViewPath, riskPlatformViewPath, riskUserWorkloadsViewPath } from 'routePaths';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import {
     fullWorkflowView,
-    nodeWorkflowView,
     platformWorkflowView,
     userWorkloadWorkflowView,
 } from 'Components/FilteredWorkflowViewSelector/types';
 import NavigationItem from 'Containers/MainPage/Navigation/NavigationItem';
 
-function ViolationsSubnav() {
+function RiskSubnav() {
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
     const isUserWorkloadsActive = filteredWorkflowView === userWorkloadWorkflowView;
     const isPlatformActive = filteredWorkflowView === platformWorkflowView;
-    const isNodeActive = filteredWorkflowView === nodeWorkflowView;
     const isFullViewActive = filteredWorkflowView === fullWorkflowView;
 
     return (
         <NavList>
             <NavigationItem
                 isActive={isUserWorkloadsActive}
-                path={violationsUserWorkloadsViewPath}
+                path={riskUserWorkloadsViewPath}
                 content="User Workloads"
             />
             <NavigationItem
                 isActive={isPlatformActive}
-                path={violationsPlatformViewPath}
+                path={riskPlatformViewPath}
                 content="Platform"
             />
-            <NavigationItem isActive={isNodeActive} path={violationsNodeViewPath} content="Nodes" />
             <NavigationItem
                 isActive={isFullViewActive}
-                path={violationsFullViewPath}
-                content="All Violations"
+                path={riskFullViewPath}
+                content="All Deployments"
             />
         </NavList>
     );
 }
 
-export default ViolationsSubnav;
+export default RiskSubnav;
