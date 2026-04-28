@@ -106,7 +106,7 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 	softDeletedDeploymentID := uuid.NewV4().String()
 	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
 		Id:      softDeletedDeploymentID,
-		State:   storage.DeploymentState_STATE_DELETED,
+		State:   storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 		Deleted: protocompat.TimestampNow(),
 	}))
 
@@ -419,12 +419,12 @@ func (s *PostgresPruningSuite) TestGetOrphanedProcessesBySoftDeletedDeployment()
 	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
 		Id:        fixtureconsts.Deployment6,
 		ClusterId: fixtureconsts.Cluster1,
-		State:     storage.DeploymentState_STATE_ACTIVE,
+		State:     storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 	}))
 	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
 		Id:        fixtureconsts.Deployment5,
 		ClusterId: fixtureconsts.Cluster1,
-		State:     storage.DeploymentState_STATE_DELETED,
+		State:     storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 		Deleted:   protocompat.TimestampNow(),
 	}))
 
