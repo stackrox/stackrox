@@ -2,12 +2,51 @@ package views
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/search"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+
+	// ListAlertSelectProtos defines the column projections for ListAlert queries.
+	// Order must match the scan destinations in ListAlertScanner.Dests.
+	ListAlertSelectProtos = []*v1.QuerySelect{
+		search.NewQuerySelect(search.AlertID).Proto(),
+		search.NewQuerySelect(search.LifecycleStage).Proto(),
+		search.NewQuerySelect(search.ViolationTime).Proto(),
+		search.NewQuerySelect(search.ViolationState).Proto(),
+		search.NewQuerySelect(search.PolicyID).Proto(),
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+		search.NewQuerySelect(search.Description).Proto(),
+		search.NewQuerySelect(search.Category).Proto(),
+		search.NewQuerySelect(search.EnforcementAction).Proto(),
+		search.NewQuerySelect(search.EnforcementCount).Proto(),
+		search.NewQuerySelect(search.EntityType).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.NamespaceID).Proto(),
+		search.NewQuerySelect(search.DeploymentID).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.DeploymentType).Proto(),
+		search.NewQuerySelect(search.Inactive).Proto(),
+		search.NewQuerySelect(search.NodeID).Proto(),
+		search.NewQuerySelect(search.Node).Proto(),
+		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ResourceType).Proto(),
+	}
+
+	// ListAlertArrayFields tells the query builder that "category" is a
+	// parent-table array column, not a child table requiring a JOIN.
+	ListAlertArrayFields = map[string]bool{
+		"category": true,
+	}
+)
 
 // ListAlertScanner holds pgtype scan destinations for the column projection
 // query and converts scanned values into a *storage.ListAlert.
