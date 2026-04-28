@@ -102,43 +102,84 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK_NilACK() {
 	s.Equal(0, mockIndex.nackCount)
 }
 
-func TestShouldRunVMRelay(t *testing.T) {
+func TestCheckNodeRelayEligibility(t *testing.T) {
 	cases := map[string]struct {
-		config                   *sensor.MsgToCompliance_ScrapeConfig
-		enableRelayOnMasterNodes string
-		expectedErr              error
+		config      *sensor.MsgToCompliance_ScrapeConfig
+		expectedErr error
 	}{
 		"nil config should not run relay": {
 			config:      nil,
 			expectedErr: errNilScrapeConfig,
 		},
 		"worker node should run relay": {
-			config: &sensor.MsgToCompliance_ScrapeConfig{
-				IsMasterNode: false,
-			},
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false},
 			expectedErr: nil,
 		},
-		"master node should skip relay by default": {
-			config: &sensor.MsgToCompliance_ScrapeConfig{
-				IsMasterNode: true,
-			},
-			expectedErr: errRelayDisabledOnMasterNode,
-		},
-		"master node should run relay when override is enabled": {
-			config: &sensor.MsgToCompliance_ScrapeConfig{
-				IsMasterNode: true,
-			},
-			enableRelayOnMasterNodes: "true",
-			expectedErr:              nil,
+		"master node should skip relay": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true},
+			expectedErr: errRelayOnMasterNode,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			if tc.enableRelayOnMasterNodes != "" {
-				t.Setenv(env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar(), tc.enableRelayOnMasterNodes)
+			err := checkNodeRelayEligibility(tc.config)
+			require.ErrorIs(t, err, tc.expectedErr)
+		})
+	}
+}
+
+func TestShouldStartVMRelay(t *testing.T) {
+	cases := map[string]struct {
+		config      *sensor.MsgToCompliance_ScrapeConfig
+		envOverride string
+		expectedErr error
+	}{
+		"env=true overrides nil config": {
+			config:      nil,
+			envOverride: "true",
+			expectedErr: nil,
+		},
+		"env=true overrides master node": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true},
+			envOverride: "true",
+			expectedErr: nil,
+		},
+		"env=false disables relay on worker node": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false},
+			envOverride: "false",
+			expectedErr: errRelayDisabledByEnv,
+		},
+		"env=false disables relay on master node": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true},
+			envOverride: "false",
+			expectedErr: errRelayDisabledByEnv,
+		},
+		"invalid env value falls back to scrape config": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true},
+			envOverride: "maybe",
+			expectedErr: errRelayOnMasterNode,
+		},
+		"unset env with nil config should not run relay": {
+			config:      nil,
+			expectedErr: errNilScrapeConfig,
+		},
+		"unset env with worker node should run relay": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: false},
+			expectedErr: nil,
+		},
+		"unset env with master node should skip relay": {
+			config:      &sensor.MsgToCompliance_ScrapeConfig{IsMasterNode: true},
+			expectedErr: errRelayOnMasterNode,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			if tc.envOverride != "" {
+				t.Setenv(env.VirtualMachinesRelayEnabled.EnvVar(), tc.envOverride)
 			}
-			err := shouldRunVMRelay(tc.config)
+			err := shouldStartVMRelay(tc.config)
 			require.ErrorIs(t, err, tc.expectedErr)
 		})
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -36,8 +37,9 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	errNilScrapeConfig           = errors.New("initial scrape config is unexpectedly nil")
-	errRelayDisabledOnMasterNode = errors.New("relay disabled on master node by default")
+	errNilScrapeConfig    = errors.New("initial scrape config is unexpectedly nil")
+	errRelayDisabledByEnv = errors.New("relay explicitly disabled via env var")
+	errRelayOnMasterNode  = errors.New("relay disabled on master node by default")
 )
 
 const (
@@ -147,7 +149,7 @@ func (c *Compliance) Start() {
 		// Design choice: VM relay startup is gated by the first valid scrape config.
 		// We must not start relay until that config is available.
 		config := c.waitForInitialScrapeConfig(ctx)
-		if err := shouldRunVMRelay(config); err != nil {
+		if err := shouldStartVMRelay(config); err != nil {
 			log.Infof("Virtual machine relay not started: %v", err)
 			return
 		}
@@ -354,20 +356,41 @@ func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.Msg
 	}
 }
 
-// shouldRunVMRelay decides whether the VM relay should start based on the
+// shouldStartVMRelay decides whether the VM relay should start by checking the env
+// override first, then falling back to scrape-config-based logic. Returns nil
+// when the relay is allowed, or an error describing why it was skipped.
+//
+// Decision order:
+//  1. ROX_VIRTUAL_MACHINES_RELAY_ENABLED="true"  → always start
+//  2. ROX_VIRTUAL_MACHINES_RELAY_ENABLED="false" → never start
+//  3. unset → rely on scrape config (start on worker, skip on master)
+func shouldStartVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) error {
+	override := strings.ToLower(env.VirtualMachinesRelayEnabled.Setting())
+	switch override {
+	case "true":
+		return nil
+	case "false":
+		return errRelayDisabledByEnv
+	case "":
+		// unset — fall through to config-based decision
+	default:
+		log.Warnf("Unexpected value %q for %s; falling back to default (scrape config based decision)",
+			override, env.VirtualMachinesRelayEnabled.EnvVar())
+	}
+	return checkNodeRelayEligibility(config)
+}
+
+// checkNodeRelayEligibility decides whether the VM relay should start based on the
 // scrape config. Returns nil when the relay is allowed, or an error describing
 // why it was skipped.
-func shouldRunVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) error {
+func checkNodeRelayEligibility(config *sensor.MsgToCompliance_ScrapeConfig) error {
 	if config == nil {
 		return errNilScrapeConfig
 	}
 	if !config.GetIsMasterNode() {
 		return nil
 	}
-	if env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting() {
-		return nil
-	}
-	return fmt.Errorf("%w; set %s=true to enable it", errRelayDisabledOnMasterNode, env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
+	return fmt.Errorf("%w; set %s=true to override", errRelayOnMasterNode, env.VirtualMachinesRelayEnabled.EnvVar())
 }
 
 func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
