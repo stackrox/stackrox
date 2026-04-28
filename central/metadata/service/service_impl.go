@@ -58,7 +58,7 @@ var (
 
 	// secondaryCALeafCert holds a short-lived leaf cert signed by the secondary CA,
 	// used only to sign TLSChallenge responses for Sensors that trust the secondary CA.
-	// Re-issued automatically when it nears expiry.
+	// Re-issued automatically when closer than secondaryLeafCertRenewalBuf to expiry.
 	secondaryCALeafCert         atomic.Pointer[tls.Certificate]
 	secondaryCALeafCertIssueMu  sync.Mutex
 	secondaryLeafCertRenewalBuf = 1 * time.Hour

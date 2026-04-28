@@ -270,7 +270,7 @@ func getInternalCertificates(namespace string) ([]tls.Certificate, error) {
 
 // buildInternalCerts returns a cert slice containing the given cert. If the cert
 // is not valid for all DNS names in the given namespace, an additional ephemeral
-// cert with the correct SANs is appended.
+// cert with the correct SANs is issued and appended.
 func buildInternalCerts(cert *tls.Certificate, namespace string) ([]tls.Certificate, error) {
 	if cert.Leaf != nil && validForAllDNSNames(cert.Leaf, mtls.CentralSubject.AllHostnamesForNamespace(namespace)...) {
 		return []tls.Certificate{*cert}, nil
