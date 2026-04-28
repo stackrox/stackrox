@@ -24,10 +24,9 @@ os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
 os.environ["ROX_SCANNER_V4"] = "true"
-# TODO(ROX-34355): Move images to quay.io/rhacs-eng/.
 os.environ["VM_IMAGES"] = ",".join([
-    "quay.io/prygiels/rhel9-dnf-primed:latest",
-    "quay.io/prygiels/rhel10-dnf-primed:latest",
+    "quay.io/rhacs-eng/vm-images/rhel9-dnf-primed-latest",
+    "quay.io/rhacs-eng/vm-images/rhel10-dnf-primed-latest",
 ])
 
 
