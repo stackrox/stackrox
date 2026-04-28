@@ -145,7 +145,7 @@ jobs:
           -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
           -e LANG=C.UTF-8 \
           quay.io/sclorg/postgresql-${{ matrix.pg }}-c9s@sha256:77c1e962234c598f3ed2b5e581f0845fca333bd262e9b0ee542bf8fa96fbc03d
-        for i in $(seq 1 60); do pg_isready -h 127.0.0.1 && break; sleep 1; done || { docker logs postgres; exit 1; }
+        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -221,7 +221,7 @@ jobs:
           -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
           -e LANG=C.UTF-8 \
           quay.io/sclorg/postgresql-${{ matrix.pg }}-c9s@sha256:77c1e962234c598f3ed2b5e581f0845fca333bd262e9b0ee542bf8fa96fbc03d
-        for i in $(seq 1 60); do pg_isready -h 127.0.0.1 && break; sleep 1; done || { docker logs postgres; exit 1; }
+        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
