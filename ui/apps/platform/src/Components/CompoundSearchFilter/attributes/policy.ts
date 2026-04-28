@@ -135,6 +135,30 @@ export const LastUpdated: CompoundSearchFilterAttribute = {
     inputType: 'date-picker',
 };
 
+export const SkipContainerType: CompoundSearchFilterAttribute = {
+    displayName: 'Skip container type',
+    filterChipLabel: 'Skip container type',
+    searchTerm: 'Skip Container Type',
+    inputType: 'select',
+    inputProps: {
+        options: [{ value: 'SKIP_INIT', label: 'Init containers' }],
+    },
+};
+
+export const SkipImageLayers: CompoundSearchFilterAttribute = {
+    displayName: 'Image layer filter',
+    filterChipLabel: 'Image layer filter',
+    searchTerm: 'Skip Image Layers',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { value: 'SKIP_NONE', label: 'All layers' },
+            { value: 'SKIP_BASE', label: 'App layers only' },
+            { value: 'SKIP_APP', label: 'Base layers only' },
+        ],
+    },
+};
+
 export const policyAttributes = [
     Name,
     Category,

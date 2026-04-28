@@ -36,6 +36,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import PolicyEvaluationFilterLabels from './PolicyEvaluationFilterLabels';
 
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
@@ -397,6 +398,7 @@ function PoliciesTable({
                                     const {
                                         description,
                                         disabled,
+                                        evaluationFilter,
                                         id,
                                         isDefault,
                                         lifecycleStages,
@@ -485,9 +487,25 @@ function PoliciesTable({
                                                     }}
                                                 />
                                                 <Td dataLabel="Policy">
-                                                    <Link to={`${policiesBasePath}/${id}`}>
-                                                        {name}
-                                                    </Link>
+                                                    <Flex
+                                                        spaceItems={{
+                                                            default: 'spaceItemsSm',
+                                                        }}
+                                                        alignItems={{
+                                                            default: 'alignItemsCenter',
+                                                        }}
+                                                    >
+                                                        <FlexItem>
+                                                            <Link to={`${policiesBasePath}/${id}`}>
+                                                                {name}
+                                                            </Link>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <PolicyEvaluationFilterLabels
+                                                                evaluationFilter={evaluationFilter}
+                                                            />
+                                                        </FlexItem>
+                                                    </Flex>
                                                 </Td>
                                                 <Td dataLabel="Status">
                                                     <PolicyDisabledIconText isDisabled={disabled} />

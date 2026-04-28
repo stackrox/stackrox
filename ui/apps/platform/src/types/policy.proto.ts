@@ -10,6 +10,7 @@ export type ListPolicy = {
     eventSource: PolicyEventSource;
     readonly isDefault: boolean; // Indicates the policy is a default policy if true and a custom policy if false.
     readonly source: 'IMPERATIVE' | 'DECLARATIVE';
+    evaluationFilter?: EvaluationFilter;
 };
 
 export const policySeverities = [
@@ -43,7 +44,6 @@ export type BasePolicy = {
     SORTEnforcement: boolean; // For internal use only.
     policyVersion: string;
     mitreAttackVectors: PolicyMitreAttackVector[];
-    evaluationFilter?: EvaluationFilter;
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
     readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
 } & ListPolicy;
