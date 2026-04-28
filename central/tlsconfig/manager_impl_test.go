@@ -177,7 +177,15 @@ func (s *managerTestSuite) TestUpdateInternalCertificateIssuesEphemeralForAltNam
 	newCert := testutils.IssueSelfSignedCert(s.T(), "central.stackrox", "central.stackrox.svc")
 	mgr.UpdateInternalCertificate(&newCert)
 
-	s.Len(mgr.internalCerts, 2, "expected reloaded cert + ephemeral cert for alt namespace")
+	s.Require().Len(mgr.internalCerts, 2, "expected reloaded cert + ephemeral cert for alt namespace")
+
+	// First cert is the one we passed in (no alt-ns DNS names)
+	s.Require().NotNil(mgr.internalCerts[0].Leaf)
+	s.Error(mgr.internalCerts[0].Leaf.VerifyHostname("central.alt-ns.svc"))
+
+	// Second cert is the ephemeral one covering the alt namespace
+	s.Require().NotNil(mgr.internalCerts[1].Leaf)
+	s.NoError(mgr.internalCerts[1].Leaf.VerifyHostname("central.alt-ns.svc"))
 }
 
 func (s *managerTestSuite) TestLoadInternalCertificateFromDirectory() {

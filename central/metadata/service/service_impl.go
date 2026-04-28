@@ -83,7 +83,7 @@ type CertificateProvider interface {
 // defaultCertificateProvider implements CertificateProvider using global mtls functions
 type defaultCertificateProvider struct{}
 
-func startPrimaryLeafCertWatcher() {
+func loadAndWatchPrimaryLeafCert() {
 	primaryLeafCertOnce.Do(func() {
 		certwatch.WatchCertDir("internal service", mtls.CertsPrefix, tlsconfig.LoadInternalCertificateFromDirectory, func(cert *tls.Certificate) {
 			if cert != nil {
@@ -98,7 +98,7 @@ func (p *defaultCertificateProvider) GetPrimaryCACert() (*x509.Certificate, []by
 }
 
 func (p *defaultCertificateProvider) GetPrimaryLeafCert() (tls.Certificate, error) {
-	startPrimaryLeafCertWatcher()
+	loadAndWatchPrimaryLeafCert()
 	if cert := primaryLeafCert.Load(); cert != nil {
 		return *cert, nil
 	}
