@@ -88,24 +88,17 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 		return nil, err
 	}
 
-	searchResults, err := s.vmDS.Search(ctx, searchQuery)
+	vms, err := s.vmDS.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
-
-	vmIDs := make([]string, 0, len(searchResults))
-	for _, r := range searchResults {
-		vmIDs = append(vmIDs, r.ID)
-	}
-
-	if len(vmIDs) == 0 {
+	if len(vms) == 0 {
 		return &v2.ListVMsResponse{TotalCount: int32(totalCount)}, nil
 	}
 
-	// Fetch full VM objects for the page.
-	vms, _, err := s.vmDS.GetManyVirtualMachines(ctx, vmIDs)
-	if err != nil {
-		return nil, err
+	vmIDs := make([]string, 0, len(vms))
+	for _, vm := range vms {
+		vmIDs = append(vmIDs, vm.GetId())
 	}
 
 	// Fetch per-VM CVE severity counts via SQL GROUP BY.
