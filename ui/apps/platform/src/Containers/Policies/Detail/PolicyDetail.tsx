@@ -31,6 +31,7 @@ import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from './PolicyDetailContent';
+import PolicyEvaluationFilterLabels from '../Table/PolicyEvaluationFilterLabels';
 import { isExternalPolicy } from '../policies.utils';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
@@ -57,7 +58,7 @@ function PolicyDetail({
 
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { disabled, id, isDefault, name } = policy;
+    const { disabled, evaluationFilter, id, isDefault, name } = policy;
 
     function onEditPolicy() {
         navigate(`${policiesBasePath}/${id}?action=edit`);
@@ -180,6 +181,11 @@ function PolicyDetail({
                             ) : (
                                 <Label color="green">Enabled</Label>
                             )}
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <PolicyEvaluationFilterLabels
+                                evaluationFilter={evaluationFilter}
+                            />
                         </ToolbarItem>
                         <ToolbarItem align={{ default: 'alignEnd' }}>
                             <MenuDropdown
