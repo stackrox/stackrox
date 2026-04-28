@@ -53,6 +53,10 @@ func TestParseKeyBundle(t *testing.T) {
 			input:   `{"keys": [{"name": "", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
 			wantErr: "empty name",
 		},
+		"whitespace-only name": {
+			input:   `{"keys": [{"name": "  \t ", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
+			wantErr: "empty name",
+		},
 		"name with path separator": {
 			input:   `{"keys": [{"name": "foo/bar", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
 			wantErr: "path separators",

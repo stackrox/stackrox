@@ -30,6 +30,7 @@ func parseKeyBundle(data []byte) (*keyBundle, error) {
 	seenNames := make(map[string]struct{}, len(bundle.Keys))
 	for i := range bundle.Keys {
 		entry := &bundle.Keys[i]
+		entry.Name = strings.TrimSpace(entry.Name)
 		if entry.Name == "" {
 			return nil, errors.Errorf("key at index %d has empty name", i)
 		}

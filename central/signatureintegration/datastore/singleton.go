@@ -46,11 +46,12 @@ func seedRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
 
 	id := signatures.DefaultRedHatSignatureIntegration.GetId()
 	_, exists, err := siStore.Get(ctx, id)
-	utils.Should(errors.Wrap(err, "checking for default Red Hat signature integration"))
-	if err != nil || exists {
-		if exists {
-			log.Debugf("Default Red Hat signature integration %q already exists, skipping seed", id)
-		}
+	if err != nil {
+		utils.Should(errors.Wrap(err, "checking for default Red Hat signature integration"))
+		return
+	}
+	if exists {
+		log.Debugf("Default Red Hat signature integration %q already exists, skipping seed", id)
 		return
 	}
 

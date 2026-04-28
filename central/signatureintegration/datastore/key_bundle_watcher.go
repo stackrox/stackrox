@@ -23,7 +23,13 @@ type keyBundleWatcher struct {
 	lastHash [sha256.Size]byte
 }
 
+const minWatchInterval = 5 * time.Second
+
 func newKeyBundleWatcher(filePath string, interval time.Duration, siStore store.SignatureIntegrationStore) *keyBundleWatcher {
+	if interval < minWatchInterval {
+		log.Warnf("Watch interval %v is below minimum %v, clamping", interval, minWatchInterval)
+		interval = minWatchInterval
+	}
 	return &keyBundleWatcher{
 		filePath: filePath,
 		interval: interval,

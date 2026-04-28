@@ -27,7 +27,13 @@ type keyBundleUpdater struct {
 	stopSig  concurrency.Signal
 }
 
+const minUpdateInterval = 1 * time.Minute
+
 func newKeyBundleUpdater(url, filePath string, interval time.Duration) *keyBundleUpdater {
+	if interval < minUpdateInterval {
+		log.Warnf("Update interval %v is below minimum %v, clamping", interval, minUpdateInterval)
+		interval = minUpdateInterval
+	}
 	return &keyBundleUpdater{
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
