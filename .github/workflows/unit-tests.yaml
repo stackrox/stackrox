@@ -31,16 +31,17 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -105,7 +106,6 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -115,37 +115,32 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
+    - name: Start Postgres
       run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo systemctl start postgresql.service
+        pg_isready
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
-
-    - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -178,35 +173,33 @@ jobs:
 
   go-bench:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     steps:
-    - name: Set Postgres version
+    - name: Start Postgres
       run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo systemctl start postgresql.service
+        pg_isready
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-
-    - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
