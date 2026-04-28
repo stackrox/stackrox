@@ -198,8 +198,11 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	} else {
 		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 		// references up the chain, which will be used to trigger the actual deployment event and detection.
-		events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()),
-			component.WithParentResourceAction(action))
+		opts := []component.DeploymentReferenceOption{component.WithParentResourceAction(action)}
+		if action == central.ResourceAction_SYNC_RESOURCE {
+			opts = append(opts, component.WithSkipDeduping())
+		}
+		events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), opts...)
 	}
 
 	// Upsert/Delete at the end to avoid data race with other dispatchers
