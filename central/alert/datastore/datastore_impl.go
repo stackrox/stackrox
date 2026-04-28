@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
@@ -44,8 +43,8 @@ var (
 
 	alertSAC = sac.ForResource(resources.Alert)
 
-	// listAlertSelectProtos defines the 22 column projections for SearchListAlerts.
-	// Order must match the scan destinations in scanListAlertRow.
+	// listAlertSelectProtos defines the column projections for SearchListAlerts.
+	// Order must match the scan destinations in listAlertScanner.dests.
 	listAlertSelectProtos = []*v1.QuerySelect{
 		search.NewQuerySelect(search.AlertID).Proto(),
 		search.NewQuerySelect(search.LifecycleStage).Proto(),
@@ -125,119 +124,13 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 	cloned := q.CloneVT()
 	cloned.Selects = listAlertSelectProtos
 
-	// Scan destinations — pgtype value types avoid per-field heap allocations.
-	var (
-		id                 pgtype.Text
-		lifecycleStage     pgtype.Int4
-		violationTime      pgtype.Timestamp
-		state              pgtype.Int4
-		policyID           pgtype.Text
-		policyName         pgtype.Text
-		severity           pgtype.Int4
-		description        pgtype.Text
-		categories         pgtype.FlatArray[string]
-		enforcementAction  pgtype.Int4
-		enforcementCount   pgtype.Int4
-		entityType         pgtype.Int4
-		clusterID          pgtype.Text
-		clusterName        pgtype.Text
-		namespace          pgtype.Text
-		namespaceID        pgtype.Text
-		deploymentID       pgtype.Text
-		deploymentName     pgtype.Text
-		deploymentType     pgtype.Text
-		deploymentInactive pgtype.Bool
-		nodeID             pgtype.Text
-		nodeName           pgtype.Text
-		resourceName       pgtype.Text
-		resourceType       pgtype.Int4
-	)
-
-	dests := []any{
-		&id, &lifecycleStage, &violationTime, &state,
-		&policyID, &policyName, &severity, &description, &categories,
-		&enforcementAction, &enforcementCount, &entityType,
-		&clusterID, &clusterName, &namespace, &namespaceID,
-		&deploymentID, &deploymentName, &deploymentType, &deploymentInactive,
-		&nodeID, &nodeName, &resourceName, &resourceType,
-	}
-
+	var sc alertviews.ListAlertScanner
 	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(cloned.GetPagination().GetLimit(), whenUnlimited))
 	err := pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema, cloned, listAlertArrayFields,
 		&pgSearch.DirectScanConfig{
-			ScanDests: func() []any { return dests },
+			ScanDests: sc.Dests,
 			OnRow: func() error {
-				la := &storage.ListAlert{
-					Id:             id.String,
-					LifecycleStage: storage.LifecycleStage(lifecycleStage.Int32),
-					State:          storage.ViolationState(state.Int32),
-					Policy: &storage.ListAlertPolicy{
-						Id:          policyID.String,
-						Name:        policyName.String,
-						Severity:    storage.Severity(severity.Int32),
-						Description: description.String,
-						Categories:  []string(categories),
-					},
-					EnforcementAction: storage.EnforcementAction(enforcementAction.Int32),
-				}
-
-				if storage.ViolationState(state.Int32) == storage.ViolationState_ACTIVE {
-					la.EnforcementCount = enforcementCount.Int32
-				}
-
-				if violationTime.Valid {
-					la.Time = protocompat.ConvertTimeToTimestampOrNil(&violationTime.Time)
-				}
-
-				et := storage.Alert_EntityType(entityType.Int32)
-				switch et {
-				case storage.Alert_DEPLOYMENT:
-					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName:  clusterName.String,
-						ClusterId:    clusterID.String,
-						Namespace:    namespace.String,
-						NamespaceId:  namespaceID.String,
-						ResourceType: storage.ListAlert_DEPLOYMENT,
-					}
-					la.Entity = &storage.ListAlert_Deployment{
-						Deployment: &storage.ListAlertDeployment{
-							Id:             deploymentID.String,
-							Name:           deploymentName.String,
-							ClusterName:    clusterName.String,
-							ClusterId:      clusterID.String,
-							Namespace:      namespace.String,
-							NamespaceId:    namespaceID.String,
-							DeploymentType: deploymentType.String,
-							Inactive:       deploymentInactive.Bool,
-						},
-					}
-				case storage.Alert_RESOURCE:
-					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName:  clusterName.String,
-						ClusterId:    clusterID.String,
-						Namespace:    namespace.String,
-						NamespaceId:  namespaceID.String,
-						ResourceType: storage.ListAlert_ResourceType(resourceType.Int32),
-					}
-					la.Entity = &storage.ListAlert_Resource{
-						Resource: &storage.ListAlert_ResourceEntity{
-							Name: resourceName.String,
-						},
-					}
-				case storage.Alert_NODE:
-					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName:  clusterName.String,
-						ClusterId:    clusterID.String,
-						ResourceType: storage.ListAlert_NODE,
-					}
-					la.Entity = &storage.ListAlert_Node{
-						Node: &storage.ListAlert_NodeEntity{
-							Name: nodeName.String,
-						},
-					}
-				}
-
-				listAlerts = append(listAlerts, la)
+				listAlerts = append(listAlerts, sc.Build())
 				return nil
 			},
 		})
@@ -669,117 +562,12 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 	q := searchCommon.EmptyQuery()
 	q.Selects = listAlertSelectProtos
 
-	var (
-		id                 pgtype.Text
-		lifecycleStage     pgtype.Int4
-		violationTime      pgtype.Timestamp
-		state              pgtype.Int4
-		policyID           pgtype.Text
-		policyName         pgtype.Text
-		severity           pgtype.Int4
-		description        pgtype.Text
-		categories         pgtype.FlatArray[string]
-		enforcementAction  pgtype.Int4
-		enforcementCount   pgtype.Int4
-		entityType         pgtype.Int4
-		clusterID          pgtype.Text
-		clusterName        pgtype.Text
-		namespace          pgtype.Text
-		namespaceID        pgtype.Text
-		deploymentID       pgtype.Text
-		deploymentName     pgtype.Text
-		deploymentType     pgtype.Text
-		deploymentInactive pgtype.Bool
-		nodeID             pgtype.Text
-		nodeName           pgtype.Text
-		resourceName       pgtype.Text
-		resourceType       pgtype.Int4
-	)
-
-	dests := []any{
-		&id, &lifecycleStage, &violationTime, &state,
-		&policyID, &policyName, &severity, &description, &categories,
-		&enforcementAction, &enforcementCount, &entityType,
-		&clusterID, &clusterName, &namespace, &namespaceID,
-		&deploymentID, &deploymentName, &deploymentType, &deploymentInactive,
-		&nodeID, &nodeName, &resourceName, &resourceType,
-	}
-
+	var sc alertviews.ListAlertScanner
 	return pgSearch.RunSelectDirectFn(ctx, ds.db, schema.AlertsSchema, q, listAlertArrayFields,
 		&pgSearch.DirectScanConfig{
-			ScanDests: func() []any { return dests },
+			ScanDests: sc.Dests,
 			OnRow: func() error {
-				la := &storage.ListAlert{
-					Id:             id.String,
-					LifecycleStage: storage.LifecycleStage(lifecycleStage.Int32),
-					State:          storage.ViolationState(state.Int32),
-					Policy: &storage.ListAlertPolicy{
-						Id:          policyID.String,
-						Name:        policyName.String,
-						Severity:    storage.Severity(severity.Int32),
-						Description: description.String,
-						Categories:  []string(categories),
-					},
-					EnforcementAction: storage.EnforcementAction(enforcementAction.Int32),
-				}
-
-				if storage.ViolationState(state.Int32) == storage.ViolationState_ACTIVE {
-					la.EnforcementCount = enforcementCount.Int32
-				}
-
-				if violationTime.Valid {
-					la.Time = protocompat.ConvertTimeToTimestampOrNil(&violationTime.Time)
-				}
-
-				et := storage.Alert_EntityType(entityType.Int32)
-				switch et {
-				case storage.Alert_DEPLOYMENT:
-					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName:  clusterName.String,
-						ClusterId:    clusterID.String,
-						Namespace:    namespace.String,
-						NamespaceId:  namespaceID.String,
-						ResourceType: storage.ListAlert_DEPLOYMENT,
-					}
-					la.Entity = &storage.ListAlert_Deployment{
-						Deployment: &storage.ListAlertDeployment{
-							Id:             deploymentID.String,
-							Name:           deploymentName.String,
-							ClusterName:    clusterName.String,
-							ClusterId:      clusterID.String,
-							Namespace:      namespace.String,
-							NamespaceId:    namespaceID.String,
-							DeploymentType: deploymentType.String,
-							Inactive:       deploymentInactive.Bool,
-						},
-					}
-				case storage.Alert_RESOURCE:
-					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName:  clusterName.String,
-						ClusterId:    clusterID.String,
-						Namespace:    namespace.String,
-						NamespaceId:  namespaceID.String,
-						ResourceType: storage.ListAlert_ResourceType(resourceType.Int32),
-					}
-					la.Entity = &storage.ListAlert_Resource{
-						Resource: &storage.ListAlert_ResourceEntity{
-							Name: resourceName.String,
-						},
-					}
-				case storage.Alert_NODE:
-					la.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-						ClusterName:  clusterName.String,
-						ClusterId:    clusterID.String,
-						ResourceType: storage.ListAlert_NODE,
-					}
-					la.Entity = &storage.ListAlert_Node{
-						Node: &storage.ListAlert_NodeEntity{
-							Name: nodeName.String,
-						},
-					}
-				}
-
-				return fn(la)
+				return fn(sc.Build())
 			},
 		})
 }
