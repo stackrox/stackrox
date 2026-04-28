@@ -166,7 +166,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -241,6 +241,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.pg }}
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
