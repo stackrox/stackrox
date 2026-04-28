@@ -22,10 +22,10 @@ function SecurityContext({ securityContext }: SecurityContextProps) {
     return (
         <Card>
             <CardTitle>Security context</CardTitle>
-            <CardBody className="pf-v6-u-pt-xl pf-v6-u-mx-lg pf-v6-u-mb-lg">
-                {filteredValues.size > 0 ? (
+            <CardBody>
+                {filteredValues.length > 0 ? (
                     <DescriptionList columnModifier={{ default: '2Col' }} isCompact>
-                        {Array.from(filteredValues.entries()).map(([key, value]) => {
+                        {filteredValues.map(([key, value]) => {
                             return (
                                 <DescriptionListGroup key={key}>
                                     <DescriptionListTerm>{key}</DescriptionListTerm>
