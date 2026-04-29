@@ -243,6 +243,8 @@ def _create_all_pr_rows(
         ) = issue_info
 
         pr_refs = jira_to_prs.get(jira_key, [])
+        issue = jira_issues.get(jira_key)
+
         if pr_refs:
             pr_elements = []
 
@@ -273,7 +275,6 @@ def _create_all_pr_rows(
             }
 
             # Use assignee if complete and assigned, otherwise notify PR authors
-            issue = jira_issues.get(jira_key)
             has_assignee = issue and issue.assignee
 
             if is_complete and has_assignee:
