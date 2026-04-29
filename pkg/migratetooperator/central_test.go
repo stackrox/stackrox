@@ -3,6 +3,7 @@ package migratetooperator
 import (
 	"testing"
 
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -190,6 +191,8 @@ func TestCentral_Offline(t *testing.T) {
 	cr, _, err := TransformToCentral(src)
 	require.NoError(t, err)
 	require.NotNil(t, cr.Spec.Egress)
+	require.NotNil(t, cr.Spec.Egress.ConnectivityPolicy)
+	assert.Equal(t, platform.ConnectivityOffline, *cr.Spec.Egress.ConnectivityPolicy)
 }
 
 func TestCentral_CustomImages(t *testing.T) {
