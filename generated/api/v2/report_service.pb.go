@@ -744,7 +744,8 @@ type VulnerabilityReportFilters struct {
 	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
 	//	*VulnerabilityReportFilters_SinceStartDate
 	CvesSince isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
-	// deprecating optional column fields
+	// Deprecated: These fields are no longer used.
+	// NVD CVSS, EPSS Probability and Advisory columns are always included in reports.
 	//
 	// Deprecated: Marked as deprecated in api/v2/report_service.proto.
 	IncludeNvdCvss bool `protobuf:"varint,7,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`

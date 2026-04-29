@@ -32,6 +32,7 @@ type ImageCVEQueryResponse struct {
 	Deployment        *string                        `db:"deployment"`
 	Image             *string                        `db:"image"`
 	Component         *string                        `db:"component"`
+	ComponentVersion  *string                        `db:"component_version"`
 	CVEID             *string                        `db:"cve_id"`
 	CVE               *string                        `db:"cve"`
 	Fixable           *bool                          `db:"fixable"`
@@ -44,8 +45,7 @@ type ImageCVEQueryResponse struct {
 	AdvisoryName      *string                        `db:"advisory_name"`
 	AdvisoryLink      *string                        `db:"advisory_link"`
 
-	Link             string
-	ComponentVersion *string `db:"component_version"`
+	Link string
 }
 
 func (res *ImageCVEQueryResponse) GetCluster() string {
