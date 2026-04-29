@@ -57,7 +57,24 @@ const routeMatcherMap = {
     ...routeMatcherMapForComplianceLevelsByStandard,
 };
 
-const routeMatcherMapForConsole = undefined;
+const routeMatcherMapForConsole = {
+    mypermissions: {
+        method: 'GET',
+        url: '**/api-service/**/v1/mypermissions',
+    },
+    featureflags: {
+        method: 'GET',
+        url: '**/api-service/**/v1/featureflags',
+    },
+    metadata: {
+        method: 'GET',
+        url: '**/api-service/**/v1/metadata',
+    },
+    'config/public': {
+        method: 'GET',
+        url: '**/api-service/**/v1/config/public',
+    },
+};
 
 const basePath = '/main/dashboard';
 
