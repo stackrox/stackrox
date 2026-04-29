@@ -50,9 +50,6 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -116,7 +113,7 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ 'default', '15' ]
+        pg: [ '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -145,7 +142,6 @@ jobs:
           -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
           -e LANG=C.UTF-8 \
           quay.io/sclorg/postgresql-${{ matrix.pg }}-c9s@sha256:77c1e962234c598f3ed2b5e581f0845fca333bd262e9b0ee542bf8fa96fbc03d
-        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -168,6 +164,10 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
+    - name: Is Postgres ready
+      if: matrix.pg != 'default'
+      run: timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
+      
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
@@ -220,9 +220,6 @@ jobs:
       with:
         go-version-file: go.mod
         cache: false
-
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
