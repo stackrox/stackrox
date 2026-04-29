@@ -9,7 +9,7 @@ assert_single_image_version() {
     details="$(git grep -P -o -n "$pattern" | sort -u)"
 
     local versions
-    versions="$(echo "$details" | cut -d: -f3- | grep -oP '[0-9]+\.[0-9]+\.[0-9]+|rhel_[0-9]+_golang_[0-9]+\.[0-9]+' | sort -uV)"
+    versions="$(echo "$details" | cut -d: -f3- | grep -oP '[0-9]+\.[0-9]+\.[0-9]+|@sha256:[A-Fa-f0-9]{64}+' | sort -uV)"
 
     local version_count
     version_count="$(echo "$versions" | wc -l)"
@@ -41,7 +41,7 @@ assert_single_image_version \
 echo
 
 assert_single_image_version \
-    '(brew\.registry\.redhat\.io/rh-osbs/)?openshift-golang-builder:rhel_[0-9]+_golang_[0-9]+\.[0-9]+' || exit_code=1
+    '(brew\.registry\.redhat\.io/rh-osbs/)?openshift-golang-builder:.+@sha256:[A-Fa-f0-9]{64}' || exit_code=1
 
 if [[ "$exit_code" -eq 0 ]]; then
     echo "OK"
