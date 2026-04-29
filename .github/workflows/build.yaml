@@ -70,7 +70,7 @@ jobs:
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
-            "build_and_push_main": { "name":[], "arch":[] },
+            "build_and_push_main": { "name":[], "arch":[], "image":["main","roxctl","central-db"] },
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
             "push_operator_multiarch_manifests": { "name":[] },
@@ -522,9 +522,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      # Skip job-preamble: image builds don't need GCP auth or disk cleanup
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
@@ -542,41 +540,41 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
         with:
-          # docker driver skips ~40s container boot for native builds.
-          # QEMU cross-builds (ppc64le/s390x) need the default docker-container driver.
           driver: ${{ (matrix.arch == 'amd64' || matrix.arch == 'arm64') && 'docker' || 'docker-container' }}
 
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
-
+      # Download only artifacts needed for this image
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main' || matrix.image == 'roxctl'
         with:
           name: cli-build
 
       - name: Unpack cli build
-        run: |
-          tar xvzf cli-build.tgz
+        if: matrix.image == 'main' || matrix.image == 'roxctl'
+        run: tar xzf cli-build.tgz
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
       - name: Unpack Go binaries build
-        run: |
-          tar xvzf go-binaries-build.tgz
+        if: matrix.image == 'main'
+        run: tar xzf go-binaries-build.tgz
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: docs-build
           path: image/rhel/docs
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: oss-notice
           path: image/rhel/THIRD_PARTY_NOTICES
@@ -589,10 +587,18 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
-      - name: Prepare build contexts
+      - name: Prepare build context
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
-          cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
+          case "${{ matrix.image }}" in
+            main)
+              GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
+              ;;
+            roxctl)
+              cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
+              ;;
+            central-db)
+              ;; # no prep needed
+          esac
 
       - name: Compute image tags
         run: |
@@ -635,9 +641,11 @@ jobs:
           username: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_USERNAME || secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_PASSWORD || secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Build and push images
+      - name: Build and push ${{ matrix.image }} image
         run: |
-          to_tag_args() { local -n arr=$1; while read -r t; do [[ -n "$t" ]] && arr+=("--tag=$t"); done <<< "$2"; }
+          REGISTRY="${{ env.QUAY_REGISTRY }}"
+          ARCH="${{ matrix.arch }}"
+          IMAGE="${{ matrix.image }}"
 
           if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ github.event.pull_request.head.repo.fork }}" != "true" ]]; then
             OUTPUT="--push"
@@ -645,52 +653,51 @@ jobs:
             OUTPUT="--load"
           fi
 
-          to_tag_args main_tags "$MAIN_TAGS"
-          to_tag_args roxctl_tags "$ROXCTL_TAGS"
-          to_tag_args centraldb_tags "$CENTRAL_DB_TAGS"
+          # Select tags, Dockerfile, context, and build-args per image
+          case "$IMAGE" in
+            main)
+              TAGS="$MAIN_TAGS"
+              DOCKERFILE=image/rhel/Dockerfile
+              CONTEXT=image/rhel
+              BUILD_ARGS=(
+                --build-arg DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
+                --build-arg ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
+                --build-arg TARGET_ARCH=${ARCH}
+                --build-arg ROX_IMAGE_FLAVOR=development_build
+                --build-arg LABEL_VERSION=${{ env.BUILD_TAG }}
+                --build-arg LABEL_RELEASE=${{ env.SHORTCOMMIT }}
+              )
+              ;;
+            roxctl)
+              TAGS="$ROXCTL_TAGS"
+              DOCKERFILE=image/roxctl/Dockerfile
+              CONTEXT=image/roxctl
+              BUILD_ARGS=()
+              ;;
+            central-db)
+              TAGS="$CENTRAL_DB_TAGS"
+              DOCKERFILE=image/postgres/Dockerfile
+              CONTEXT=image/postgres
+              BUILD_ARGS=(--build-arg MAIN_IMAGE_TAG=${{ env.BUILD_TAG }})
+              ;;
+          esac
 
+          TAG_FLAGS=()
+          while read -r t; do [[ -n "$t" ]] && TAG_FLAGS+=("--tag=$t"); done <<< "$TAGS"
+
+          # BuildKit (docker driver) resolves inline cache via lazy pull —
+          # metadata only, no layer blob downloads. With stable ldflags,
+          # binary layers have identical digests across commits.
           docker buildx build \
-            --file image/rhel/Dockerfile \
-            --platform linux/${{ matrix.arch }} \
-            $OUTPUT --provenance=false \
-            "${main_tags[@]}" \
-            --build-arg DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }} \
-            --build-arg ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }} \
-            --build-arg TARGET_ARCH=${{ matrix.arch }} \
-            --build-arg ROX_IMAGE_FLAVOR=development_build \
-            --build-arg LABEL_VERSION=${{ env.BUILD_TAG }} \
-            --build-arg LABEL_RELEASE=${{ env.SHORTCOMMIT }} \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/main:cache-${{ matrix.arch }} \
+            --file "$DOCKERFILE" \
+            --platform "linux/${ARCH}" \
+            $OUTPUT \
+            --provenance=false \
+            "${TAG_FLAGS[@]}" \
+            "${BUILD_ARGS[@]}" \
+            --cache-from "type=registry,ref=${REGISTRY}/${IMAGE}:cache-${ARCH}" \
             --cache-to type=inline \
-            image/rhel &
-          pid_main=$!
-
-          docker buildx build \
-            --file image/roxctl/Dockerfile \
-            --platform linux/${{ matrix.arch }} \
-            $OUTPUT --provenance=false \
-            "${roxctl_tags[@]}" \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/roxctl:cache-${{ matrix.arch }} \
-            --cache-to type=inline \
-            image/roxctl &
-          pid_roxctl=$!
-
-          docker buildx build \
-            --file image/postgres/Dockerfile \
-            --platform linux/${{ matrix.arch }} \
-            $OUTPUT --provenance=false \
-            "${centraldb_tags[@]}" \
-            --build-arg MAIN_IMAGE_TAG=${{ env.BUILD_TAG }} \
-            --cache-from type=registry,ref=${{ env.QUAY_REGISTRY }}/central-db:cache-${{ matrix.arch }} \
-            --cache-to type=inline \
-            image/postgres &
-          pid_centraldb=$!
-
-          rc=0
-          wait "$pid_main"      || { echo "::error::main build failed"; rc=1; }
-          wait "$pid_roxctl"    || { echo "::error::roxctl build failed"; rc=1; }
-          wait "$pid_centraldb" || { echo "::error::central-db build failed"; rc=1; }
-          [[ $rc -eq 0 ]] || exit $rc
+            "$CONTEXT"
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
