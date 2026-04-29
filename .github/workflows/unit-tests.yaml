@@ -132,7 +132,6 @@ jobs:
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
 
     # Same base image as production (image/postgres/Dockerfile).
     - name: Start Postgres (${{ matrix.pg }})
@@ -165,7 +164,6 @@ jobs:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
     - name: Is Postgres ready
-      if: matrix.pg != 'default'
       run: timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
       
     - name: Go Unit Tests
