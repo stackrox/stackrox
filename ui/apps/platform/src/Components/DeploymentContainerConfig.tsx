@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { ExpandableSection, Flex, FlexItem, Label, Stack, StackItem } from '@patternfly/react-core';
+import {
+    ExpandableSection,
+    Label,
+    Split,
+    SplitItem,
+    Stack,
+    StackItem,
+} from '@patternfly/react-core';
 
 import type { Container } from 'types/deployment.proto';
 import ContainerImageInfo from 'Components/ContainerImageInfo';
@@ -23,16 +30,16 @@ function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContain
     };
 
     const toggleContent = (
-        <Flex alignItems={{ default: 'alignItemsCenter' }} gap={{ default: 'gapSm' }}>
-            <FlexItem>{container.name}</FlexItem>
+        <Split hasGutter>
+            <SplitItem>{container.name}</SplitItem>
             {container.type === 'INIT' && (
-                <FlexItem>
+                <SplitItem>
                     <Label isCompact color="teal">
                         Init
                     </Label>
-                </FlexItem>
+                </SplitItem>
             )}
-        </Flex>
+        </Split>
     );
 
     return (
