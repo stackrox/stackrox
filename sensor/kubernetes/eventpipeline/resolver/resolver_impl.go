@@ -7,11 +7,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -33,7 +36,19 @@ type deploymentRef struct {
 
 // GetDedupeKey returns the key to index the deploymentRef in the queue
 func (d *deploymentRef) GetDedupeKey() string {
-	return fmt.Sprintf("%s-%s-%t-%t", d.id, d.action.String(), d.skipResolving, d.forceDetection)
+	return fmt.Sprintf("%s-%s", d.id, d.action.String())
+}
+
+// MergeFrom merges flags from an existing queued ref when a duplicate key is pushed.
+// forceDetection is sticky-true: if either ref needs forced detection, keep it.
+// skipResolving is sticky-false: if either ref needs full resolution, do it.
+func (d *deploymentRef) MergeFrom(old dedupingqueue.Item[string]) {
+	oldRef, ok := old.(*deploymentRef)
+	if !ok {
+		return
+	}
+	d.forceDetection = d.forceDetection || oldRef.forceDetection
+	d.skipResolving = d.skipResolving && oldRef.skipResolving
 }
 
 type resolverImpl struct {
@@ -175,6 +190,18 @@ func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *depl
 	return false
 }
 
+// resolveAndSend resolves a single deployment ref and sends the resulting event
+// to the output queue if the deployment was resolved or if reprocess data was added.
+func (r *resolverImpl) resolveAndSend(ref *deploymentRef) {
+	msg := component.NewEvent()
+	msg.Context = ref.context
+	msg.DeploymentTiming = ref.deploymentTiming
+	resolved := r.resolveDeployment(msg, ref)
+	if resolved || len(msg.ReprocessDeployments) > 0 {
+		r.outputQueue.Send(msg)
+	}
+}
+
 // runPullAndResolve pull the next deployment reference to be resolved out of the queue
 func (r *resolverImpl) runPullAndResolve() {
 	defer r.pullAndResolveStopped.Signal()
@@ -194,12 +221,7 @@ func (r *resolverImpl) runPullAndResolve() {
 		if ref == nil {
 			continue
 		}
-		msg := component.NewEvent()
-		msg.Context = ref.context
-		msg.DeploymentTiming = ref.deploymentTiming
-		if r.resolveDeployment(msg, ref) {
-			r.outputQueue.Send(msg)
-		}
+		r.resolveAndSend(ref)
 	}
 }
 
@@ -239,12 +261,16 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 }
 
 func toEvent(action central.ResourceAction, deployment *storage.Deployment, timing *central.Timing) *central.SensorEvent {
+	dep := deployment.CloneVT()
+	if !centralcaps.Has(centralsensor.InitContainerSupport) {
+		dep.Containers = containers.FilterRegularContainers(dep.GetContainers())
+	}
 	return &central.SensorEvent{
-		Id:     deployment.GetId(),
+		Id:     dep.GetId(),
 		Action: action,
 		Timing: timing,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: deployment.CloneVT(),
+			Deployment: dep,
 		},
 	}
 }

@@ -173,9 +173,11 @@ process_central_metrics() {
 
     local output_dir="$1"
 
+    local base_link
     local metrics_output
     local csv_output
     local debug_dump_zip
+    base_link="$(get_base_link)"
     metrics_output="$(mktemp --suffix=.prom)"
     csv_output="$(mktemp --suffix=.csv)"
     # shellcheck disable=SC2012
@@ -184,12 +186,7 @@ process_central_metrics() {
 
     get_prometheus_metrics_parser
 
-    # We need a link to repository. In case it's not part of job spec (e.g., periodic`s)
-    # we will fallback to short commit
-    base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
-    calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-
-    local metadata="build_tag=${STACKROX_BUILD_TAG:-none},build_id=${BUILD_ID:-none},orchestrator_flavor=${ORCHESTRATOR_FLAVOR:-PROW},job_name=${JOB_NAME:-missing},base_link=${base_link:-$calculated_base_link}"
+    local metadata="build_tag=${STACKROX_BUILD_TAG:-none},build_id=${BUILD_ID:-none},orchestrator_flavor=${ORCHESTRATOR_FLAVOR:-PROW},job_name=${JOB_NAME:-missing},base_link=${base_link}"
     prometheus-metric-parser single \
         --format csv \
         --file "${metrics_output}" \
@@ -694,20 +691,28 @@ image_prefetcher_start_set() {
     local manifest
     manifest=$(mktemp)
 
-    case "${ORCHESTRATOR_FLAVOR}" in
-    k8s)
+    local kubelet_image_creds
+    case "${KUBERNETES_PROVIDER}" in
+    gke)
         flavor=vanilla
+        kubelet_image_creds=GKE
         ;;
-    openshift)
+    eks|aks)
+        flavor=vanilla
+        kubelet_image_creds="" # i.e. disabled
+        ;;
+    ocp)
         flavor=ocp
+        kubelet_image_creds="" # i.e. disabled
         ;;
     *)
-        die "unsupported ORCHESTRATOR: ${ORCHESTRATOR_FLAVOR}"
+        die "unsupported KUBERNETES_PROVIDER: ${KUBERNETES_PROVIDER}"
         ;;
     esac
 
     # daemonset, etc
     ${image_prefetcher_deploy_bin} \
+        --use-kubelet-image-credential-integration="${kubelet_image_creds}" \
         --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
@@ -719,6 +724,16 @@ image_prefetcher_start_set() {
     local image_list
     image_list=$(mktemp)
     populate_prefetcher_image_list "$name" "${image_list}"
+
+    # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
+    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
+        local filtered_image_list
+        filtered_image_list=$(mktemp)
+        info "Filtering out *.gcr.io images for non-GKE cluster"
+        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${filtered_image_list}" || true
+        mv "${filtered_image_list}" "${image_list}"
+    fi
+
     echo "---" >> "$manifest"
     kubectl create --dry-run=client -o yaml configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
 
@@ -953,7 +968,7 @@ populate_stackrox_image_list() {
     local image_list="$1"
 
     local tag
-    tag="$(make --quiet --no-print-directory tag)"
+    tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
     local operator_metadata_tag
     operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
     local operator_controller_tag="${tag//x/0}"
@@ -1612,7 +1627,7 @@ handle_nightly_binary_version_mismatch() {
 }
 
 store_qa_test_results() {
-    if ! is_OPENSHIFT_CI; then
+    if ! is_CI; then
         return
     fi
 
@@ -1638,7 +1653,11 @@ store_test_results() {
         die "missing args. usage: store_test_results <from> <to>"
     fi
 
-    if ! is_OPENSHIFT_CI; then
+    if ! is_CI; then
+        return
+    fi
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        warn "ARTIFACT_DIR is not set, skipping store_test_results"
         return
     fi
 
@@ -1673,7 +1692,6 @@ post_process_test_results() {
     local csv_output
     local extra_args=()
     local base_link
-    local calculated_base_link
     local create_jiras
     local jira_project="ROX"
     local prow_job_link
@@ -1709,14 +1727,11 @@ post_process_test_results() {
         fi
 
         csv_output="$(mktemp --suffix=.csv)"
-        # We need a link to repository. In case it's not part of job spec (e.g., periodic`s)
-        # we will fallback to short commit
-        base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
-        calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
+        base_link="$(get_base_link)"
         curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
-            -base-link "${base_link:-$calculated_base_link}" \
+            -base-link "${base_link}" \
             -build-id "${BUILD_ID}" \
             -build-link "${prow_job_link}" \
             -build-tag "${STACKROX_BUILD_TAG}" \
@@ -1735,6 +1750,19 @@ post_process_test_results() {
         save_test_metrics "${csv_output}"
     } || true
     set -u
+}
+
+get_base_link() {
+    # We need a link to repository. In case it's not part of job spec (e.g., periodic`s)
+    # we will fallback to short commit
+    local base_link=""
+    if [[ "${JOB_SPEC:-}" ]]; then
+        base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
+    fi
+    if [[ -z "${base_link}" ]]; then
+        base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
+    fi
+    echo "${base_link}"
 }
 
 gate_flaky_tests() {

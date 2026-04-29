@@ -201,9 +201,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	var wg sync.WaitGroup
 	for _, opts := range c.verifierOpts {
 		for cnt, sig := range sigs {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
 				mutex.Lock()
 				defer mutex.Unlock()
@@ -216,7 +214,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 				}
 				// Successful verification. Keep the image references.
 				verifiedImageReferences.AddAll(verifierRefs...)
-			}()
+			})
 		}
 	}
 	wg.Wait()

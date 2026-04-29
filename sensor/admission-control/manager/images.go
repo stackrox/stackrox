@@ -17,10 +17,6 @@ import (
 	admission "k8s.io/api/admission/v1"
 )
 
-const (
-	imageCacheTTL = 30 * time.Minute
-)
-
 type imageCacheEntry struct {
 	*storage.Image
 	timestamp time.Time
@@ -79,7 +75,7 @@ func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe 
 		emit(observeCacheMiss)
 		return nil
 	}
-	if time.Since(cachedImg.timestamp) > imageCacheTTL {
+	if time.Since(cachedImg.timestamp) > m.imageCacheTTL {
 		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
 		// imageCache entry TTL-expired. Same reasoning as above: only tag-only refs
 		// have a name→key mapping to invalidate.
@@ -184,14 +180,19 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		if cached := m.getCachedImage(image, s, false); cached != nil {
 			return cached, nil
 		}
+		gen, cacheVer := m.imageCacheGen.Snapshot(imgKey)
 		img, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
 		if err != nil {
 			return nil, err
 		}
 		// Caching inside the Coalesce callback ensures only the leader goroutine
-		// writes to imageCache. Waiters receive the result from the coalescer,
-		// avoiding N-1 redundant cache writes under concurrent bursts.
-		m.cacheImage(img, image.GetName().GetFullName(), s)
+		// writes to imageCache, avoiding N-1 redundant writes under bursts.
+		// Skip caching if an invalidation or purge happened during this fetch.
+		if !m.imageCacheGen.Changed(imgKey, gen, cacheVer) {
+			m.cacheImage(img, image.GetName().GetFullName(), s)
+		} else {
+			log.Warnf("Stale fetch detected for %q (key=%s): gen or cacheVersion changed during in-flight fetch, discarding result", image.GetName().GetFullName(), imgKey)
+		}
 		return img, nil
 	})
 

@@ -402,9 +402,7 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't
 // shown up for inactiveGathererTTL.
 func (tracker *TrackerBase[F]) cleanupInactiveGatherers() {
-	tracker.cleanupWG.Add(1)
-	go func() {
-		defer tracker.cleanupWG.Done()
+	tracker.cleanupWG.Go(func() {
 		tracker.gatherers.Range(func(userID, gv any) bool {
 			g := gv.(*gatherer[F])
 			// Try to make it running to not interfere with the normal gathering
@@ -424,5 +422,5 @@ func (tracker *TrackerBase[F]) cleanupInactiveGatherers() {
 			}
 			return true
 		})
-	}()
+	})
 }

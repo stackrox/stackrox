@@ -1,6 +1,5 @@
 import queryString from 'qs';
 
-import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 import { convertToExactMatch, getListQueryParams } from 'utils/searchUtils';
 
 import axios from './instance';
@@ -160,8 +159,7 @@ export function fetchNetworkPolicyGraph(
     deployments,
     query,
     modification,
-    includePorts,
-    includeOrchestratorComponents = false
+    includePorts
 ) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
@@ -173,15 +171,6 @@ export function fetchNetworkPolicyGraph(
         urlParams.includePorts = true;
     }
 
-    // for openshift filtering toggle
-    if (
-        !includeOrchestratorComponents &&
-        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
-    ) {
-        urlParams.scope = {
-            query: 'Orchestrator Component:false',
-        };
-    }
     const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
 
     let options;
@@ -218,7 +207,7 @@ export function fetchNetworkPolicyGraph(
  * @param {String} query
  * @param {String} sinceTimestamp
  * @param {boolean} includePorts
- * @param {boolean} includeOrchestratorComponents
+ * @param {boolean} includePolicies
  *
  * @returns {Promise<Object, Error>}
  */
@@ -229,7 +218,6 @@ export function fetchNetworkFlowGraph(
     query = '',
     sinceTimestamp = '',
     includePorts = false,
-    includeOrchestratorComponents = false,
     includePolicies = false
 ) {
     const urlParams = query ? { query } : {};
@@ -249,15 +237,6 @@ export function fetchNetworkFlowGraph(
     }
     if (includePolicies) {
         urlParams.include_policies = true;
-    }
-    // for openshift filtering toggle
-    if (
-        !includeOrchestratorComponents &&
-        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
-    ) {
-        urlParams.scope = {
-            query: 'Orchestrator Component:false',
-        };
     }
     const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
     const options = {

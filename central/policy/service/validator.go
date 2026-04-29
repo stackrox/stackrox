@@ -196,7 +196,7 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 }
 
 func validateNoLabelsInScopeForAuditEvent(scope *storage.Scope, context string) error {
-	if scope.GetLabel() != nil || (features.LabelBasedPolicyScoping.Enabled() && (scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil)) {
+	if scope.GetLabel() != nil {
 		return errors.Errorf("labels in `%s` section are not permitted for audit log events based policies", context)
 	}
 	return nil

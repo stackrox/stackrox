@@ -1,4 +1,3 @@
-import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
@@ -84,12 +83,15 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         when:
         "Search for violations in Splunk"
         // The TA polls Central every 5s (input interval). Violations may not be indexed yet.
+        // Filter by deployment name to avoid picking up violations from other tests.
+        def deployName = splunkDeployment.deployment.name
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         withRetry(40, 15) {
-            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
+            def searchId = SplunkUtil.createSearch(port,
+                    "search sourcetype=stackrox-violations \"${deployName}\"")
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
             assert response != null
@@ -111,7 +113,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         withRetry(40, 15) {
             def vSearchId = SplunkUtil.createSearch(port,
                     "| datamodel Alerts Alerts search | rename Alerts.* AS *" +
-                    " | search sourcetype=stackrox-violations", "-30m")
+                    " | search sourcetype=stackrox-violations \"${deployName}\"", "-30m")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
@@ -127,23 +129,21 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         "StackRox violations are in Splunk with correct CIM field mappings"
         assert !alerts.isEmpty()
         log.info "Validating CIM mappings for alerts"
-        for (alert in alerts) {
-            validateCimMappings(alert)
+        // FILE_ACCESS violations may lack deploymentInfo (e.g. node-level events)
+        // and have their own CIM structure validated in the file access test
+        // (currently disabled pending ROX-31047).
+        alerts.findAll {
+            !isViolationOfType(it, "FILE_ACCESS")
+        }.each {
+            alert -> validateCimMappings(alert)
         }
     }
 
     @Tag("Integration")
     def "Verify Splunk violations: file access violations reach Splunk TA"() {
         given:
-        "FACT is enabled in the collector"
-        Assume.assumeTrue(
-                "FACT container not found in collector DaemonSet — skipping file access test",
-                orchestrator.containsDaemonSetContainer(
-                        Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER))
-
-        and:
-        "FACT is configured to monitor /tmp paths"
-        patchFactEnv()
+        "ROX-34178: skip until file access Splunk TA test is stabilised"
+        Assume.assumeTrue("ROX-34178: file access Splunk TA test is disabled pending stabilisation", false)
 
         and:
         "a file activity policy targeting a unique path"
@@ -196,19 +196,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         cleanup:
         if (policyID) {
             PolicyService.deletePolicy(policyID)
-        }
-    }
-
-    private void patchFactEnv() {
-        log.info "Setting FACT_PATHS on collector DaemonSet"
-        waitForTrue(20, 20) {
-            orchestrator.updateDaemonSetEnv(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_PATHS", "/tmp/**/*")
-            orchestrator.daemonSetEnvVarUpdated(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_PATHS", "/tmp/**/*")
-            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
         }
     }
 

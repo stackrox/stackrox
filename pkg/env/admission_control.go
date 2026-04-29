@@ -1,5 +1,7 @@
 package env
 
+import "time"
+
 var (
 	// AdmissionControlImageCacheMaxSizeMB AdmissionControlImageCacheSizeMB controls the maximum size (in megabytes) of
 	// the in-process image cache used by the admission controller for policy evaluation.
@@ -13,4 +15,9 @@ var (
 	// requiring to be re-fetched. Disable for workflows where image tags are frequently repointed
 	// to new digests without being re-tagged (mutable tags).
 	AdmissionControlImageNameCacheEnabled = RegisterBooleanSetting("ROX_ADMISSION_CONTROL_IMAGE_NAME_CACHE_ENABLED", true)
+
+	// AdmissionControlImageCacheTTL controls how long enriched image entries remain valid
+	// in the admission controller's in-process cache before being evicted and re-fetched.
+	// Aligned with the Central reprocessing interval by default.
+	AdmissionControlImageCacheTTL = registerDurationSetting("ROX_ADMISSION_CONTROL_IMAGE_CACHE_TTL", 4*time.Hour)
 )
