@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
-	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/repo2cpe"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
@@ -96,8 +95,10 @@ type matcherImpl struct {
 	readyWithVulns bool
 }
 
-// NewMatcher creates a new matcher.
-func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
+// NewMatcher creates a new matcher. If repo2cpeGetter is non-nil and SBOM
+// scanning is enabled, a background updater is started for the
+// repository-to-CPE mapping.
+func NewMatcher(ctx context.Context, cfg config.MatcherConfig, repo2cpeGetter repo2cpe.Getter) (Matcher, error) {
 	var success bool
 
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
@@ -202,16 +203,12 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// include vulnerabilities vs. not.
 	sbomer := sbom.NewSBOMer()
 
-	// Create the repository-to-CPE mapping updater if SBOM scanning is enabled
-	// and a remote indexer is configured. The updater initializes lazily on
-	// first access, so no explicit Start call is needed.
 	var repo2cpeUpdater *repo2cpe.Updater
-	if features.SBOMScanning.Enabled() && cfg.RemoteIndexerEnabled {
-		remoteIndexer, err := indexer.NewRemoteIndexer(ctx, cfg.IndexerAddr)
-		if err != nil {
-			slog.WarnContext(ctx, "failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete", "reason", err)
+	if features.SBOMScanning.Enabled() {
+		if repo2cpeGetter != nil {
+			repo2cpeUpdater = repo2cpe.NewUpdater(repo2cpeGetter)
 		} else {
-			repo2cpeUpdater = repo2cpe.NewUpdater(remoteIndexer)
+			slog.ErrorContext(ctx, "failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete")
 		}
 	}
 
