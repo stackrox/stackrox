@@ -57,16 +57,16 @@ func TestVMIndexACKResourceID(t *testing.T) {
 			expected: "vm-1:100",
 		},
 		{
-			name:     "returns vm id when cid is missing",
+			name:     "keeps separator when cid is missing",
 			vmID:     "vm-1",
 			vsockCID: "",
-			expected: "vm-1",
+			expected: "vm-1:",
 		},
 		{
-			name:     "returns cid when vm id is missing",
+			name:     "keeps separator when vm id is missing",
 			vmID:     "",
 			vsockCID: "100",
-			expected: "100",
+			expected: ":100",
 		},
 		{
 			name:     "returns empty string when both vm id and cid are missing",
