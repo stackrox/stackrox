@@ -2,7 +2,7 @@
 
 
 from .models import PR, JiraIssue, ReleaseBranch
-from .slack import get_slack_mention
+from .report_slack import get_slack_mention
 from .urgency import URGENCY_ORDER, calculate_urgency, format_deadline_info
 
 

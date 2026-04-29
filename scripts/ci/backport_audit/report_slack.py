@@ -1,11 +1,57 @@
 """Slack Block Kit payload generation for backport audit reports."""
 
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .models import PR, JiraIssue, ReleaseBranch
-from .slack import get_slack_mention
 from .urgency import URGENCY_ORDER, calculate_urgency
+
+
+def get_slack_user_id(github_login: str) -> str:
+    """Get Slack user ID for GitHub login using shell script.
+
+    Args:
+        github_login: GitHub username
+
+    Returns:
+        Slack user ID or empty string if not found
+
+    """
+    script_path = Path(__file__).parent.parent / "get-slack-user-id.sh"
+    try:
+        result = subprocess.run(
+            [str(script_path), github_login],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        return ""
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return ""
+
+
+def get_slack_mention(github_login: str) -> str:
+    """Get Slack mention for GitHub user.
+
+    Args:
+        github_login: GitHub username
+
+    Returns:
+        Slack mention string (<@ID>, @username, or :konflux:)
+
+    """
+    if github_login == "app/red-hat-konflux":
+        return ":konflux:"
+
+    slack_id = get_slack_user_id(github_login)
+    if slack_id:
+        return f"<@{slack_id}>"
+    return f"@{github_login}"
 
 
 @dataclass
