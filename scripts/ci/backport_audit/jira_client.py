@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from .models import JiraIssue
+from .utils import github_error, github_warning
 
 # HTTP status codes
 HTTP_NOT_FOUND = 404
@@ -57,11 +58,18 @@ class JiraClient:
                 return self._parse_issue(data)
         except HTTPError as e:
             if e.code == HTTP_NOT_FOUND:
+                github_warning(f"Jira issue not found: {issue_key}")
                 return None
-            raise
-        except URLError:
+            github_error(
+                f"Failed to fetch Jira issue {issue_key}: "
+                f"HTTP {e.code} - {e.reason}"
+            )
             return None
-        except json.JSONDecodeError:
+        except URLError as e:
+            github_error(f"Network error fetching Jira issue {issue_key}: {e}")
+            return None
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            github_error(f"Invalid Jira response for {issue_key}: {e}")
             return None
 
     def _parse_issue(self, data: dict[str, Any]) -> JiraIssue:
@@ -137,14 +145,36 @@ class JiraClient:
         try:
             with urlopen(req, timeout=30) as response:
                 data = json.loads(response.read())
-                return [JiraIssue(
-                        key=issue_data["key"],
-                        summary=issue_data["fields"].get("summary", ""),
-                        fix_versions=[],
-                        affected_versions=[],
-                        assignee=None,
-                        team=None,
-                        component=None,
-                    ) for issue_data in data.get("issues", [])]
-        except (HTTPError, URLError, json.JSONDecodeError):
+                issues = []
+
+                for item in data.get("issues", []):
+                    try:
+                        issues.append(
+                            JiraIssue(
+                                key=item["key"],
+                                summary=item["fields"].get("summary", ""),
+                                fix_versions=[],
+                                affected_versions=[],
+                                assignee=None,
+                                team=None,
+                                component=None,
+                            )
+                        )
+                    except (KeyError, ValueError) as e:
+                        github_warning(f"Skipping malformed Jira issue in search results: {e}")
+                        continue
+
+                return issues
+
+        except HTTPError as e:
+            github_error(
+                f"Failed to search Jira issues with JQL '{jql}': "
+                f"HTTP {e.code} - {e.reason}"
+            )
+            return []
+        except URLError as e:
+            github_error(f"Network error searching Jira with JQL '{jql}': {e}")
+            return []
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            github_error(f"Invalid Jira search response: {e}")
             return []

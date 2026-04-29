@@ -21,6 +21,7 @@ from .utils import (
     detect_release_branches,
     detect_release_version,
     extract_jira_keys,
+    github_notice,
     resolve_author,
 )
 
@@ -294,6 +295,8 @@ def main() -> int:
             orphaned_issues,
             timestamp,
         )
+
+        github_notice(f"Backport audit completed for branches: {', '.join(branch_names)}")
 
         return 0
 

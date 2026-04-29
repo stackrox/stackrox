@@ -7,6 +7,70 @@ from typing import Any
 from .github_client import GitHubClient
 from .models import BackportAuditError, GitHubError, ReleaseBranch
 
+
+def _escape_workflow_message(message: str) -> str:
+    """Escape special characters in workflow command messages.
+
+    Args:
+        message: Message to escape
+
+    Returns:
+        Escaped message safe for workflow commands
+
+    """
+    return message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def github_error(message: str, file: str | None = None, line: int | None = None) -> None:
+    """Emit GitHub workflow error annotation.
+
+    Args:
+        message: Error message
+        file: Optional file path
+        line: Optional line number
+
+    """
+    annotation = "::error"
+    if file:
+        annotation += f" file={file}"
+    if line:
+        annotation += f",line={line}"
+    print(f"{annotation}::{_escape_workflow_message(message)}", flush=True)
+
+
+def github_notice(message: str, file: str | None = None, line: int | None = None) -> None:
+    """Emit GitHub workflow notice annotation.
+
+    Args:
+        message: Notice message
+        file: Optional file path
+        line: Optional line number
+
+    """
+    annotation = "::notice"
+    if file:
+        annotation += f" file={file}"
+    if line:
+        annotation += f",line={line}"
+    print(f"{annotation}::{_escape_workflow_message(message)}", flush=True)
+
+
+def github_warning(message: str, file: str | None = None, line: int | None = None) -> None:
+    """Emit GitHub workflow warning annotation.
+
+    Args:
+        message: Warning message
+        file: Optional file path
+        line: Optional line number
+
+    """
+    annotation = "::warning"
+    if file:
+        annotation += f" file={file}"
+    if line:
+        annotation += f",line={line}"
+    print(f"{annotation}::{_escape_workflow_message(message)}", flush=True)
+
 # GitHub bot user logins
 # Note: gh CLI commands use different formats than REST API:
 # - gh pr list/view --json author returns "app/dependabot"
