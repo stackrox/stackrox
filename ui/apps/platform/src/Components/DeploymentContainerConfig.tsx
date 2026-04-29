@@ -36,9 +36,11 @@ function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContain
                 <StackItem>
                     <ContainerImageInfo image={container.image} getImageUrl={getImageUrl} />
                 </StackItem>
-                <StackItem>
-                    <ContainerResourcesInfo resources={container.resources} />
-                </StackItem>
+                {container.resources && (
+                    <StackItem>
+                        <ContainerResourcesInfo resources={container.resources} />
+                    </StackItem>
+                )}
                 <StackItem>
                     <ContainerVolumesInfo volumes={container.volumes} />
                 </StackItem>
@@ -46,14 +48,16 @@ function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContain
                     <ContainerSecretsInfo secrets={container.secrets} />
                 </StackItem>
                 <StackItem>
-                    <ContainerArgumentsInfo args={container.config.args} />
+                    <ContainerArgumentsInfo args={container.config?.args ?? []} />
                 </StackItem>
                 <StackItem>
-                    <ContainerCommandInfo command={container.config.command} />
+                    <ContainerCommandInfo command={container.config?.command ?? []} />
                 </StackItem>
-                <StackItem>
-                    <SecurityContext securityContext={container.securityContext} />
-                </StackItem>
+                {container.securityContext && (
+                    <StackItem>
+                        <SecurityContext securityContext={container.securityContext} />
+                    </StackItem>
+                )}
             </Stack>
         </ExpandableSection>
     );
