@@ -197,31 +197,20 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
+  # they compile and execute without errors. A single postgres version is
+  # sufficient since go-postgres already tests against multiple versions.
   go-bench:
-    strategy:
-      matrix:
-        pg: [ 'default', '15' ]
     runs-on: ubuntu-latest
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-      POSTGRES_PASSWORD: testpassword
     steps:
-    - name: Start Postgres (pre-installed)
-      if: matrix.pg == 'default'
+    - name: Start Postgres
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
         timeout 60 bash -c 'until pg_isready; do sleep 1; done'
-
-    - name: Start Postgres (${{ matrix.pg }})
-      if: matrix.pg != 'default'
-      run: |
-        docker run --rm -d --name postgres --network=host \
-          -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
-          -e LANG=C.UTF-8 \
-          quay.io/sclorg/postgresql-${{ matrix.pg }}-c9s@sha256:77c1e962234c598f3ed2b5e581f0845fca333bd262e9b0ee542bf8fa96fbc03d
-        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -241,8 +230,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        key-suffix: ${{ matrix.pg }}
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
