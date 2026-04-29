@@ -377,15 +377,18 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    result_str = f"{result.major}.{result.minor}"
+    result_str = f"{result.major}.{result.minor}.{result.patch}"
 
     compatibility_html = fetch_compatibility_matrix()
     compatibility_matrix = parse_compatibility_matrix(compatibility_html)
     compatible_ocp = find_compatible_openshift(
         target_version, result, compatibility_matrix)
 
-    print(f"Upgrade start version: {result_str}")
-    print(f"OCP version: {compatible_ocp if compatible_ocp else 'unknown'}")
+    print(f"ACS upgrade start version: {result_str}")
+    if compatible_ocp:
+        print(f"Compatible OCP version: ocp/stable-{compatible_ocp}")
+    else:
+        print("Compatible OCP version: unknown")
 
 
 if __name__ == "__main__":
