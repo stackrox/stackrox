@@ -135,7 +135,7 @@ jobs:
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
-        pg_isready
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
 
     # Same base image as production (image/postgres/Dockerfile).
     - name: Start Postgres (${{ matrix.pg }})
@@ -212,7 +212,7 @@ jobs:
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
-        pg_isready
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
 
     - name: Start Postgres (${{ matrix.pg }})
       if: matrix.pg != 'default'
