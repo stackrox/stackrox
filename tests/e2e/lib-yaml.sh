@@ -55,9 +55,9 @@ set_overlay_env() {
 
     # Add new patch.
     local env_path="spec.template.spec.containers[name:${container}].env"
-    local env_entry="{\"name\": \"${name}\", \"value\": \"${value}\"}"
+    local env_entry="{\"name\": strenv(NAME), \"value\": strenv(VALUE)}"
     local patch="{\"path\":\"${env_path}[-1]\", \"value\": (${env_entry} | toyaml)}"
-    patch_yaml "$override_file" "(${overlays}[] | select(.name == \"${resource_name}\" and .kind == \"${kind}\").patches) += $patch"
+    NAME="$name" VALUE="$value" patch_yaml "$override_file" "(${overlays}[] | select(.name == \"${resource_name}\" and .kind == \"${kind}\").patches) += $patch"
 }
 
 init_yaml_path_as_list() {
