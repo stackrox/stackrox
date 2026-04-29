@@ -417,7 +417,7 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
 	}
 }
 
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenVMUnknown() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	defer s.handler.Stop()
@@ -426,14 +426,14 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
 		resourceID string
 		expectedID string
 	}{
-		"should broadcast when resource ID is empty": {
+		"should drop when resource ID is empty": {
 			resourceID: "",
 		},
-		"should broadcast when VM not in store": {
+		"should drop when VM not in store": {
 			resourceID: "vm-deleted",
 			expectedID: "vm-deleted",
 		},
-		"should broadcast when VM from composite ID not in store": {
+		"should drop when VM from composite ID not in store": {
 			resourceID: "vm-deleted:999",
 			expectedID: "vm-deleted",
 		},
@@ -458,12 +458,9 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
 			s.Require().NoError(err)
 
 			select {
-			case got := <-s.handler.ComplianceC():
-				s.Equal(tc.resourceID, got.Msg.GetComplianceAck().GetResourceId())
-				s.Empty(got.Hostname)
-				s.True(got.Broadcast)
-			case <-time.After(100 * time.Millisecond):
-				s.Fail("timed out waiting for broadcast compliance ACK")
+			case <-s.handler.ComplianceC():
+				s.Fail("ACK should have been dropped when VM is unknown, not forwarded")
+			default:
 			}
 		})
 	}

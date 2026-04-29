@@ -243,14 +243,22 @@ func (h *handlerImpl) forwardToCompliance(
 	}
 
 	// Resolve the VM's host node so the compliance multiplexer can route to
-	// the correct compliance connection. If the VM is unknown (e.g. deleted
-	// between send and ACK), broadcast to all connections as a fallback.
+	// the correct compliance connection.
 	var nodeName string
 	if resourceID != "" {
 		vmID := vmIDFromResourceID(resourceID)
 		if vmInfo := h.store.Get(virtualmachine.VMID(vmID)); vmInfo != nil {
 			nodeName = vmInfo.NodeName
 		}
+	}
+
+	// Drop the ACK when the target node is unknown rather than broadcasting.
+	// vsock CIDs are host-local and can collide across nodes; broadcasting
+	// would risk a compliance instance on another node matching the CID to
+	// the wrong VM. A deleted/migrated VM does not need its ACK delivered.
+	if nodeName == "" {
+		log.Debugf("Dropping VM ACK/NACK (resourceID=%s): VM not found in store, cannot route to node", resourceID)
+		return
 	}
 
 	msg := common.MessageToComplianceWithAddress{
@@ -267,7 +275,7 @@ func (h *handlerImpl) forwardToCompliance(
 		// Hostname is the node name (not the VM resource ID) used by the
 		// compliance multiplexer to route to the correct compliance connection.
 		Hostname:  nodeName,
-		Broadcast: nodeName == "",
+		Broadcast: false,
 	}
 
 	select {
