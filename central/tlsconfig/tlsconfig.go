@@ -282,7 +282,7 @@ func buildInternalCerts(cert *tls.Certificate, namespace string) ([]tls.Certific
 		logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
 	ephemeralCert, err := issueInternalCertificate(namespace)
 	if err != nil {
-		return []tls.Certificate{*cert}, err
+		return []tls.Certificate{*cert}, errors.Wrap(err, "issuing ephemeral certificate for alternative namespace")
 	}
 	return []tls.Certificate{*cert, *ephemeralCert}, nil
 }

@@ -90,7 +90,7 @@ func (m *managerImpl) UpdateInternalCertificate(cert *tls.Certificate) {
 
 	internalCerts, err := buildInternalCerts(cert, m.namespace)
 	if err != nil {
-		log.Errorf("Failed to issue ephemeral certificate for alternative namespace during reload, keeping previous certs: %v", err)
+		log.Errorf("Failed to build internal certificates (keeping previous certs): %v", err)
 		return
 	}
 
