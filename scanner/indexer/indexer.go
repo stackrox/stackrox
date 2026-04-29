@@ -291,7 +291,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	if cfg.RepositoryToCPEURL != "" {
 		repo2cpeFetcher = NewRepositoryToCPEFetcher(client, cfg.RepositoryToCPEURL)
 	} else if features.SBOMScanning.Enabled() {
-		zlog.Warn(ctx).Msg("unconfigured repository_to_cpe_url will lead to inaccurate SBOM scanning results")
+		zlog.Error(ctx).Msg("unconfigured repository_to_cpe_url may lead to inaccurate SBOM scanning results")
 	}
 
 	success = true
