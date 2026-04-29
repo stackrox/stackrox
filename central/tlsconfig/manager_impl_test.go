@@ -137,6 +137,82 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	s.ErrorIs(err, net.ErrClosed)
 }
 
+func (s *managerTestSuite) TestUpdateInternalCertificateReplacesExisting() {
+	mgr, err := newManager(namespaces.StackRox)
+	s.Require().NoError(err)
+
+	s.Require().NotEmpty(mgr.internalCerts)
+	originalSerial := mgr.internalCerts[0].Leaf.SerialNumber
+
+	ca, err := certgen.GenerateCA()
+	s.Require().NoError(err)
+	issuedCert, err := ca.IssueCertForSubject(mtls.CentralSubject)
+	s.Require().NoError(err)
+	newCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
+	s.Require().NoError(err)
+
+	mgr.UpdateInternalCertificate(&newCert)
+
+	s.Len(mgr.internalCerts, 1)
+	s.NotEqual(originalSerial, mgr.internalCerts[0].Leaf.SerialNumber)
+}
+
+func (s *managerTestSuite) TestUpdateInternalCertificateNilIsNoop() {
+	mgr, err := newManager(namespaces.StackRox)
+	s.Require().NoError(err)
+
+	s.Require().NotEmpty(mgr.internalCerts)
+	certCountBefore := len(mgr.internalCerts)
+
+	mgr.UpdateInternalCertificate(nil)
+
+	s.Len(mgr.internalCerts, certCountBefore)
+}
+
+func (s *managerTestSuite) TestUpdateInternalCertificateIssuesEphemeralForAltNamespace() {
+	mgr, err := newManager("alt-ns")
+	s.Require().NoError(err)
+
+	// Cert without alt-ns DNS names triggers ephemeral cert issuance
+	newCert := testutils.IssueSelfSignedCert(s.T(), "central.stackrox", "central.stackrox.svc")
+	mgr.UpdateInternalCertificate(&newCert)
+
+	s.Require().Len(mgr.internalCerts, 2, "expected reloaded cert + ephemeral cert for alt namespace")
+
+	// First cert is the one we passed in (no alt-ns DNS names)
+	s.Require().NotNil(mgr.internalCerts[0].Leaf)
+	s.Error(mgr.internalCerts[0].Leaf.VerifyHostname("central.alt-ns.svc"))
+
+	// Second cert is the ephemeral one covering the alt namespace
+	s.Require().NotNil(mgr.internalCerts[1].Leaf)
+	s.NoError(mgr.internalCerts[1].Leaf.VerifyHostname("central.alt-ns.svc"))
+}
+
+func (s *managerTestSuite) TestLoadInternalCertificateFromDirectory() {
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
+	centralCert, err := ca.IssueCertForSubject(mtls.CentralSubject)
+	s.Require().NoError(err)
+
+	dir := s.T().TempDir()
+	s.Require().NoError(os.WriteFile(filepath.Join(dir, mtls.ServiceCertFileName), centralCert.CertPEM, 0644))
+	s.Require().NoError(os.WriteFile(filepath.Join(dir, mtls.ServiceKeyFileName), centralCert.KeyPEM, 0600))
+
+	cert, err := LoadInternalCertificateFromDirectory(dir)
+	s.Require().NoError(err)
+	s.Require().NotNil(cert)
+	s.Require().NotNil(cert.Leaf)
+	s.Contains(cert.Leaf.DNSNames, "central.stackrox.svc")
+}
+
+func (s *managerTestSuite) TestLoadInternalCertificateFromDirectoryMissingFiles() {
+	dir := s.T().TempDir()
+	cert, err := LoadInternalCertificateFromDirectory(dir)
+	s.NoError(err)
+	s.Nil(cert)
+}
+
 func getCertPool(certs []*x509.Certificate) *x509.CertPool {
 	pool := x509.NewCertPool()
 	for _, cert := range certs {
