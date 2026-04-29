@@ -113,6 +113,11 @@ func (s *ListAlertScanner) Build() *storage.ListAlert {
 		la.Time = protocompat.ConvertTimeToTimestampOrNil(&s.ViolationTime.Time)
 	}
 
+	if !s.EntityType.Valid {
+		log.Warnf("alert %s has NULL entity type, skipping entity info", s.ID.String)
+		return la
+	}
+
 	et := storage.Alert_EntityType(s.EntityType.Int32)
 	switch et {
 	case storage.Alert_DEPLOYMENT:
