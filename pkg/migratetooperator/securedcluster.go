@@ -58,7 +58,7 @@ func TransformToSecuredCluster(src Source) (*platform.SecuredCluster, []string, 
 			"Configure RELATED_IMAGE_* environment variables on the operator Deployment instead.")
 	}
 
-	// TODO: The following options are stored as server-side cluster configuration
+	// TODO(ROX-33127): The following options are stored as server-side cluster configuration
 	// in Central and are not reflected in the generated sensor manifests:
 	//   - --admission-controller-disable-bypass → spec.admissionControl.bypass
 	//   - --auto-lock-process-baselines → spec.processBaselines.autoLock
