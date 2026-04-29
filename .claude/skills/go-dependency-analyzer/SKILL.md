@@ -16,6 +16,14 @@ Analyzes Go dependencies to determine production impact, used functionality, and
 - **Replace Directive Tracking:** Detects StackRox forks and version gaps
 - **go mod why Integration:** Includes dependency justification in all reports
 
+## Prerequisites
+
+This skill requires the `goda` tool for dependency graph visualization. Install it with:
+
+```bash
+go install github.com/loov/goda@latest
+```
+
 ## Instructions
 
 ### Step 1: Identify the Dependency
