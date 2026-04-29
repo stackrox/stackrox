@@ -181,8 +181,10 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable version produces byte-identical binaries across commits.
+      # Enables Docker COPY --link layer caching for unchanged binaries.
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -263,8 +265,9 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable version (see pre-build-cli comment)
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -592,6 +595,8 @@ jobs:
           case "${{ matrix.image }}" in
             main)
               GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
+              cp -f *VERSION image/rhel/
+              echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
               ;;
             roxctl)
               cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
@@ -642,15 +647,17 @@ jobs:
           password: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_PASSWORD || secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Build and push ${{ matrix.image }} image
+        env:
+          SOURCE_DATE_EPOCH: 0
         run: |
           REGISTRY="${{ env.QUAY_REGISTRY }}"
           ARCH="${{ matrix.arch }}"
           IMAGE="${{ matrix.image }}"
 
           if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ github.event.pull_request.head.repo.fork }}" != "true" ]]; then
-            OUTPUT="--push"
+            OUTPUT="type=image,push=true,rewrite-timestamp=true"
           else
-            OUTPUT="--load"
+            OUTPUT="type=image"
           fi
 
           # Select tags, Dockerfile, context, and build-args per image
@@ -692,7 +699,7 @@ jobs:
           docker buildx build \
             --file "$DOCKERFILE" \
             --platform "linux/${ARCH}" \
-            $OUTPUT \
+            --output "$OUTPUT" \
             --provenance=false \
             "${TAG_FLAGS[@]}" \
             "${BUILD_ARGS[@]}" \

@@ -95,6 +95,8 @@ COPY --link bin/config-controller  /stackrox/bin/config-controller
 COPY --link bin/roxagent           /stackrox/bin/roxagent
 COPY --link bin/roxctl*            /assets/downloads/cli/
 
+COPY --link *VERSION /
+
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
 
