@@ -660,12 +660,12 @@ jobs:
               DOCKERFILE=image/rhel/Dockerfile
               CONTEXT=image/rhel
               BUILD_ARGS=(
-                --build-arg DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}
-                --build-arg ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
-                --build-arg TARGET_ARCH=${ARCH}
-                --build-arg ROX_IMAGE_FLAVOR=development_build
-                --build-arg LABEL_VERSION=${{ env.BUILD_TAG }}
-                --build-arg LABEL_RELEASE=${{ env.SHORTCOMMIT }}
+                "--build-arg" "DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}"
+                "--build-arg" "ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}"
+                "--build-arg" "TARGET_ARCH=${ARCH}"
+                "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
+                "--build-arg" "LABEL_VERSION=${{ env.BUILD_TAG }}"
+                "--build-arg" "LABEL_RELEASE=${{ env.SHORTCOMMIT }}"
               )
               ;;
             roxctl)
@@ -678,7 +678,7 @@ jobs:
               TAGS="$CENTRAL_DB_TAGS"
               DOCKERFILE=image/postgres/Dockerfile
               CONTEXT=image/postgres
-              BUILD_ARGS=(--build-arg MAIN_IMAGE_TAG=${{ env.BUILD_TAG }})
+              BUILD_ARGS=("--build-arg" "MAIN_IMAGE_TAG=${{ env.BUILD_TAG }}")
               ;;
           esac
 
