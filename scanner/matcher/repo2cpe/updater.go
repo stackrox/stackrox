@@ -74,21 +74,29 @@ func (u *Updater) init() {
 }
 
 // refreshLoop periodically refreshes the mapping using conditional fetches.
+// It uses a shorter interval after a failed refresh.
 func (u *Updater) refreshLoop(ctx context.Context) {
-	ticker := time.NewTicker(defaultRefreshInterval)
-	defer ticker.Stop()
+	interval := defaultRefreshInterval
+	if u.lastFailed.Load() {
+		interval = failedRefreshInterval
+	}
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
 
 	for {
 		select {
 		case <-u.done:
 			return
-		case <-ticker.C:
+		case <-timer.C:
 			lastMod := concurrency.WithRLock1(&u.mu, func() string {
 				return u.lastModified
 			})
 
 			if err := u.fetch(ctx, lastMod); err != nil {
 				slog.WarnContext(ctx, "failed to refresh repo-to-CPE mapping", "reason", err)
+				timer.Reset(failedRefreshInterval)
+			} else {
+				timer.Reset(defaultRefreshInterval)
 			}
 		}
 	}
@@ -105,8 +113,11 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 
 	result, err := u.getter.GetRepositoryToCPEMapping(ctx, ifModifiedSince)
 	if err != nil {
+		u.lastFailed.Store(true)
 		return err
 	}
+
+	u.lastFailed.Store(false)
 
 	concurrency.WithLock(&u.mu, func() {
 		u.lastModified = result.LastModified
