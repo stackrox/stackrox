@@ -40,34 +40,23 @@
 - Sensor cert init (one-time copy at startup): `sensor/kubernetes/certinit/init_tls_certs.go`
 - Sensor cert refresh (TLS challenge + CA bundle): `sensor/kubernetes/certrefresh/`
 
-## Caching behavior
-
-### Read once per process (sync.Once in pkg/mtls/crypto.go)
-
-- `CACert()`, `CACertPEM()`, `SecondaryCACert()` — CA cert public bytes
-- `CAForSigning()`, `SecondaryCAForSigning()` — CA signing objects
-- CA key bytes
-- These NEVER refresh without a pod restart.
-
-### Hot-reloaded via certwatch (Central)
-
-- Default/ingress TLS cert — `certwatch.WatchCertDir` in `central/tlsconfig/manager_impl.go`
-- Internal service leaf cert — `certwatch.WatchCertDir` on `CertsPrefix` in `central/tlsconfig/manager_impl.go`, verified against internal CA on each reload
-- Primary leaf for TLS challenge — `certwatch.WatchCertDir` with atomic pointer in `central/metadata/service/service_impl.go`
-- Secure metrics TLS cert — `certwatch.WatchCertDir` in `pkg/metrics/tls.go`
-
-### Loaded once at startup, never refreshed
-
-- Scanner V4 (indexer/matcher): server cert via `verifier.NonCA{}`, client cert via `clientconn.TLSConfig`
-- Admission controller: webhook server cert via `verifier.NonCA{}`
-- Sensor: client cert loaded in `centralclient.NewClient`, proxy cert in `StartProxyServer`
-- Config controller: CA pool via `verifier.SystemCertPool()`
-
-## Central has three independent cert-handling paths
+### Central has three independent cert-handling paths
 
 1. **TLS manager** (`TLSConfigHolder`) — incoming connections. Composes default cert (watched) + internal cert (watched) + sync.Once trust roots.
 2. **Outbound client connections** (`clientconn.TLSConfig`) — reads leaf from disk per connection, trust pool from `mtls.CACert()`.
 3. **TLS challenge endpoint** (`central/metadata/service`) — reads primary leaf via certwatch, issues secondary leaf with short validity and auto-renewal, reads CA via `mtls.CACert()`.
+
+## Certificate caching
+
+The following certificates are currently known to be cached at start-up and not reloaded:
+
+- CA material (`CACert()`, `SecondaryCACert()`, `CAForSigning()`, etc.) in `pkg/mtls/crypto.go`: `sync.Once`, never refreshed. Intentional — the Operator restarts all pods on CA change.
+
+- Sensor: all certs are effectively cached because `certinit` copies them to an emptyDir at startup. Client certs are also cached at construction (`centralclient.NewClient`, `StartProxyServer`, scanner client).
+- Scanner V4 (indexer/matcher) client certs: cached at dial time via `clientconn.TLSConfig`
+- Admission controller client cert for Sensor connection: `clientconn.AuthenticatedGRPCConnection` at startup
+- Compliance client cert for Sensor connection: `clientconn.AuthenticatedGRPCConnection` at startup
+- Postgres (Central DB, Scanner DB, Scanner V4 DB): need SIGHUP to reload SSL certs
 
 ## Certificate management — who manages what
 
@@ -105,11 +94,3 @@
 - Response includes: primary cert chain, secondary cert chain (if present), additional CAs, default TLS leaf cert.
 - Signed with both primary and secondary leaf certs. Sensor verifies one signature and trusts all certs in the response (trust delegation).
 - Secondary leaf cert: issued in memory from secondary CA with ~3-hour validity, auto-renewed before expiry.
-
-## Sensor certinit — blocks hot reload
-
-`sensor/kubernetes/certinit/init_tls_certs.go` copies certs from source mounts
-(`certs-new` or `certs-legacy`) to `CertsPrefix` at startup. This is a ONE-TIME
-COPY to an emptyDir. After startup, Secret updates to the source volume do NOT
-propagate to the files the process reads. This blocks any hot-reload for Sensor
-until certinit is made continuous or removed.
