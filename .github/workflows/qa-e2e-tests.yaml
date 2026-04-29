@@ -152,9 +152,11 @@ jobs:
           setup_deployment_env false false
           deploy_stackrox
           # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
-          echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-          echo "ROX_USERNAME=${ROX_USERNAME}" >> "$GITHUB_ENV"
-          echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
+          {
+            echo "API_ENDPOINT=${API_ENDPOINT}"
+            echo "ROX_USERNAME=${ROX_USERNAME}"
+            echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}"
+          } >> "$GITHUB_ENV"
           # Mask the admin password in GitHub Actions logs
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
