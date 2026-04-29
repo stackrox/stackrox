@@ -16,6 +16,8 @@ import (
 var defaultRefreshInterval = 24 * time.Hour
 
 // Getter provides access to the repository-to-CPE mapping with conditional fetch support.
+//
+//go:generate mockgen-wrapper
 type Getter interface {
 	GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*indexer.FetchResult, error)
 }

@@ -3,33 +3,25 @@ package repo2cpe
 import (
 	"context"
 	"errors"
-	"sync/atomic"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/matcher/repo2cpe/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
-
-// mockGetter implements Getter for testing.
-type mockGetter struct {
-	result    *indexer.FetchResult
-	err       error
-	callCount atomic.Int32
-}
-
-func (m *mockGetter) GetRepositoryToCPEMapping(_ context.Context, _ string) (*indexer.FetchResult, error) {
-	m.callCount.Add(1)
-	return m.result, m.err
-}
 
 func TestUpdater_Get(t *testing.T) {
 	t.Run("returns cached value after init", func(t *testing.T) {
-		g := &mockGetter{
-			result: &indexer.FetchResult{
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
 				Modified:     true,
 				LastModified: "Tue, 01 Jan 2025 00:00:00 GMT",
 				Data: &repositorytocpe.MappingFile{
@@ -37,8 +29,9 @@ func TestUpdater_Get(t *testing.T) {
 						"rhel-8": {CPEs: []string{"cpe:rhel:8"}},
 					},
 				},
-			},
-		}
+			}, nil).
+			AnyTimes()
+
 		u := NewUpdater(g)
 		defer u.Close()
 
@@ -51,9 +44,13 @@ func TestUpdater_Get(t *testing.T) {
 	})
 
 	t.Run("returns empty MappingFile when initial fetch fails", func(t *testing.T) {
-		g := &mockGetter{
-			err: errors.New("connection refused"),
-		}
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(nil, errors.New("connection refused")).
+			AnyTimes()
+
 		u := NewUpdater(g)
 		defer u.Close()
 
@@ -63,17 +60,20 @@ func TestUpdater_Get(t *testing.T) {
 	})
 
 	t.Run("lazy init called exactly once", func(t *testing.T) {
-		g := &mockGetter{
-			result: &indexer.FetchResult{
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
 				Modified:     true,
 				LastModified: "now",
 				Data:         &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
-			},
-		}
+			}, nil).
+			MinTimes(1)
+
 		u := NewUpdater(g)
 		defer u.Close()
 
-		// Call Get multiple times concurrently.
 		var wg sync.WaitGroup
 		for range 10 {
 			wg.Go(func() {
@@ -81,17 +81,16 @@ func TestUpdater_Get(t *testing.T) {
 			})
 		}
 		wg.Wait()
-
-		// Initial fetch should be called exactly once (by init).
-		// The background refresh may add more calls, so we just assert >= 1.
-		assert.GreaterOrEqual(t, int(g.callCount.Load()), 1)
 	})
 }
 
 func TestUpdater_fetch(t *testing.T) {
 	t.Run("modified result stores new data", func(t *testing.T) {
-		g := &mockGetter{
-			result: &indexer.FetchResult{
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
 				Modified:     true,
 				LastModified: "Tue, 01 Jan 2025 00:00:00 GMT",
 				Data: &repositorytocpe.MappingFile{
@@ -99,8 +98,8 @@ func TestUpdater_fetch(t *testing.T) {
 						"repo-1": {CPEs: []string{"cpe:1"}},
 					},
 				},
-			},
-		}
+			}, nil)
+
 		u := NewUpdater(g)
 		defer u.Close()
 
@@ -122,12 +121,15 @@ func TestUpdater_fetch(t *testing.T) {
 				"old-repo": {CPEs: []string{"cpe:old"}},
 			},
 		}
-		g := &mockGetter{
-			result: &indexer.FetchResult{
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
 				Modified:     false,
 				LastModified: "Mon, 01 Jan 2024 00:00:00 GMT",
-			},
-		}
+			}, nil)
+
 		u := NewUpdater(g)
 		defer u.Close()
 		u.value.Store(existing)
@@ -148,9 +150,12 @@ func TestUpdater_fetch(t *testing.T) {
 				"existing": {CPEs: []string{"cpe:existing"}},
 			},
 		}
-		g := &mockGetter{
-			err: errors.New("rpc error"),
-		}
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(nil, errors.New("rpc error"))
+
 		u := NewUpdater(g)
 		defer u.Close()
 		u.value.Store(existing)
@@ -165,18 +170,21 @@ func TestUpdater_fetch(t *testing.T) {
 }
 
 func TestUpdater_Close(t *testing.T) {
-	g := &mockGetter{
-		result: &indexer.FetchResult{
+	ctrl := gomock.NewController(t)
+	g := mocks.NewMockGetter(ctrl)
+	g.EXPECT().
+		GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+		Return(&indexer.FetchResult{
 			Modified: true,
 			Data:     &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
-		},
-	}
+		}, nil).
+		AnyTimes()
+
 	u := NewUpdater(g)
 
 	// Trigger init to start the background goroutine.
 	u.Get(context.Background())
 
-	// Close should not panic or block.
 	assert.NotPanics(t, func() {
 		u.Close()
 	})
