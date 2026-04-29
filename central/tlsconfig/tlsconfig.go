@@ -210,11 +210,6 @@ func LoadInternalCertificateFromDirectory(dir string) (*tls.Certificate, error) 
 		return nil, errors.Wrap(err, "loading internal certificate")
 	}
 
-	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing internal leaf certificate")
-	}
-
 	trustPool, err := verifier.TrustedCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "building trust pool for internal certificate verification")
@@ -251,19 +246,13 @@ func getInternalCertificates(namespace string) ([]tls.Certificate, error) {
 		return nil, err
 	}
 	if certFromFiles != nil {
-		if certFromFiles.Leaf == nil {
-			certFromFiles.Leaf, err = x509.ParseCertificate(certFromFiles.Certificate[0])
-			if err != nil {
-				return nil, errors.Wrap(err, "loaded internal certificate is invalid")
-			}
-		}
 		return buildInternalCerts(certFromFiles, namespace)
 	}
 
 	// No cert files on disk — issue an ephemeral cert from scratch.
 	ephemeralCert, err := issueInternalCertificate(namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "issuing ephemeral internal certificate for namespace %s", namespace)
 	}
 	return []tls.Certificate{*ephemeralCert}, nil
 }

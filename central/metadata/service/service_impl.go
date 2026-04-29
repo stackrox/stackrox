@@ -115,8 +115,11 @@ func (p *defaultCertificateProvider) GetSecondaryCACert() (*x509.Certificate, []
 
 func loadSecondaryLeafCertIfValid() *tls.Certificate {
 	cert := secondaryCALeafCert.Load()
-	if cert != nil && cert.Leaf != nil &&
-		time.Now().Add(secondaryLeafCertRenewalBuf).Before(cert.Leaf.NotAfter) {
+	if cert == nil || cert.Leaf == nil {
+		return nil
+	}
+	stillInRenewalBuffer := time.Now().Add(secondaryLeafCertRenewalBuf).Before(cert.Leaf.NotAfter)
+	if stillInRenewalBuffer {
 		return cert
 	}
 	return nil
@@ -126,10 +129,10 @@ func (p *defaultCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, er
 	if cert := loadSecondaryLeafCertIfValid(); cert != nil {
 		return *cert, nil
 	}
-	return p.issueAndCacheSecondaryLeafCert()
+	return p.ensureSecondaryLeafCert()
 }
 
-func (p *defaultCertificateProvider) issueAndCacheSecondaryLeafCert() (tls.Certificate, error) {
+func (p *defaultCertificateProvider) ensureSecondaryLeafCert() (tls.Certificate, error) {
 	secondaryCALeafCertIssueMu.Lock()
 	defer secondaryCALeafCertIssueMu.Unlock()
 
