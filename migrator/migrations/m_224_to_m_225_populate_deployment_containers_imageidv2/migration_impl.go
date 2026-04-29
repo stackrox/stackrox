@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_populate_deployment_containers_imageidv2/schema"
@@ -23,7 +22,6 @@ var (
 type batchResult struct {
 	updated int
 	lastID  string
-	errors  *multierror.Error
 }
 
 // migrate updates image_idv2 in both the deployments_containers column and the
@@ -41,7 +39,6 @@ func migrate(database *types.Databases) error {
 	defer conn.Release()
 
 	updatedCount := 0
-	var upsertErrors *multierror.Error
 
 	// Paginate by deployment ID to guarantee forward progress even if some
 	// deployments consistently fail to update.
@@ -51,7 +48,6 @@ func migrate(database *types.Databases) error {
 		if err != nil {
 			return err
 		}
-		upsertErrors = multierror.Append(upsertErrors, res.errors)
 		if res.lastID == "" {
 			break
 		}
@@ -60,9 +56,6 @@ func migrate(database *types.Databases) error {
 	}
 
 	log.Infof("Populated image_idv2 for %d deployments", updatedCount)
-	if upsertErrors.ErrorOrNil() != nil {
-		log.Errorf("Errors during migration: %v", upsertErrors.ErrorOrNil())
-	}
 	return nil
 }
 
@@ -80,24 +73,20 @@ func migrateBatch(ctx context.Context, conn *postgres.Conn, lastID string) (batc
 		return batchResult{}, nil
 	}
 
-	batch, count, errs := buildBatchUpdates(deps)
+	batch, count, err := buildBatchUpdates(deps)
+	if err != nil {
+		return batchResult{}, err
+	}
 
 	if batch.Len() > 0 {
-		execErr, closeErr := sendBatch(ctx, conn, batch)
-		if execErr != nil {
-			errs = multierror.Append(errs, execErr)
-			// No deployments in batch would have been updated as the batch errored out
-			count = 0
-		}
-		if closeErr != nil {
-			return batchResult{}, closeErr
+		if err := sendBatch(ctx, conn, batch); err != nil {
+			return batchResult{}, err
 		}
 	}
 
 	return batchResult{
 		updated: count,
 		lastID:  deps[len(deps)-1].id,
-		errors:  errs,
 	}, nil
 }
 
@@ -119,7 +108,7 @@ func fetchDeployments(ctx context.Context, conn *postgres.Conn, lastID string) (
 	}
 	defer rows.Close()
 
-	var deps []depRow
+	deps := make([]depRow, 0, batchSize)
 	for rows.Next() {
 		var d depRow
 		if err := rows.Scan(&d.id, &d.serialized); err != nil {
@@ -133,16 +122,14 @@ func fetchDeployments(ctx context.Context, conn *postgres.Conn, lastID string) (
 	return deps, nil
 }
 
-func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, *multierror.Error) {
-	var errs *multierror.Error
+func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, error) {
 	batch := &pgx.Batch{}
 	count := 0
 
 	for _, dep := range deps {
 		d := &storage.Deployment{}
 		if err := d.UnmarshalVT(dep.serialized); err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err))
-			continue
+			return nil, 0, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err)
 		}
 
 		blobChanged := populateContainerImageIDV2s(d)
@@ -150,8 +137,7 @@ func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, *multierror.Error) {
 		if blobChanged {
 			newSerialized, err := d.MarshalVT()
 			if err != nil {
-				errs = multierror.Append(errs, fmt.Errorf("marshal deployment %s: %w", dep.id, err))
-				continue
+				return nil, 0, fmt.Errorf("marshal deployment %s: %w", dep.id, err)
 			}
 			batch.Queue("UPDATE deployments SET serialized = $1 WHERE id = $2",
 				newSerialized, pgutils.NilOrUUID(dep.id))
@@ -167,22 +153,18 @@ func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, *multierror.Error) {
 		count++
 	}
 
-	return batch, count, errs
+	return batch, count, nil
 }
 
-func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) (execErr error, closeErr error) {
-	// SendBatch runs all queries in an implicit transaction. If any query fails, the entire batch is rolled back
+func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) error {
 	results := conn.SendBatch(ctx, batch)
 	for i := 0; i < batch.Len(); i++ {
 		if _, err := results.Exec(); err != nil {
 			_ = results.Close()
-			return fmt.Errorf("batch exec statement %d: %w", i, err), nil
+			return fmt.Errorf("batch exec statement %d: %w", i, err)
 		}
 	}
-	if err := results.Close(); err != nil {
-		return nil, fmt.Errorf("closing batch results: %w", err)
-	}
-	return nil, nil
+	return results.Close()
 }
 
 // populateContainerImageIDV2s sets IdV2 on containers that have an image ID
