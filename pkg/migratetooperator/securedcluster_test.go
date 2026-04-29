@@ -1,6 +1,7 @@
 package migratetooperator
 
 import (
+	"os"
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -10,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type scFakeSource struct {
@@ -81,14 +83,14 @@ func TestSC_Default(t *testing.T) {
 	cr, warnings, err := TransformToSecuredCluster(defaultSCSource())
 	require.NoError(t, err)
 	assert.Empty(t, warnings)
-	assert.Equal(t, "platform.stackrox.io/v1alpha1", cr.APIVersion)
-	assert.Equal(t, "SecuredCluster", cr.Kind)
-	assert.Equal(t, "stackrox-secured-cluster-services", cr.Name)
-	require.NotNil(t, cr.Spec.ClusterName)
-	assert.Equal(t, "my-cluster", *cr.Spec.ClusterName)
-	assert.Nil(t, cr.Spec.CentralEndpoint)
-	assert.Nil(t, cr.Spec.AdmissionControl)
-	assert.Nil(t, cr.Spec.PerNode)
+
+	golden, err := os.ReadFile("testdata/securedcluster_default.yaml")
+	require.NoError(t, err)
+
+	var expected platform.SecuredCluster
+	require.NoError(t, yaml.Unmarshal(golden, &expected))
+
+	assert.Equal(t, expected, *cr)
 }
 
 func TestSC_CustomCentralEndpoint(t *testing.T) {
