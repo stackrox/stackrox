@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	commonViews "github.com/stackrox/rox/central/views/common"
@@ -781,29 +780,6 @@ func TestListVMs(t *testing.T) {
 	}
 }
 
-// mockCveCore implements vmcve.CveCore for testing ListVMCVEs.
-type mockCveCore struct {
-	cve        string
-	cveIDs     []string
-	topCVSS    float32
-	affected   int
-	epss       float32
-	published  *time.Time
-	discovered *time.Time
-}
-
-func (m *mockCveCore) GetCVE() string { return m.cve }
-
-func (m *mockCveCore) GetCVEIDs() []string { return m.cveIDs }
-func (m *mockCveCore) GetVMsBySeverity() commonViews.ResourceCountByCVESeverity {
-	return &commonViews.ResourceCountByImageCVESeverity{}
-}
-func (m *mockCveCore) GetTopCVSS() float32                    { return m.topCVSS }
-func (m *mockCveCore) GetAffectedVMCount() int                { return m.affected }
-func (m *mockCveCore) GetFirstDiscoveredInSystem() *time.Time { return m.discovered }
-func (m *mockCveCore) GetPublishDate() *time.Time             { return m.published }
-func (m *mockCveCore) GetEPSSProbability() float32            { return m.epss }
-
 func TestListVMCVEs(t *testing.T) {
 	ctx := context.Background()
 
@@ -815,9 +791,14 @@ func TestListVMCVEs(t *testing.T) {
 		"successful list": {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockView.EXPECT().Count(ctx, gomock.Any()).Return(1, nil)
-				mockView.EXPECT().Get(ctx, gomock.Any()).Return([]vmcve.CveCore{
-					&mockCveCore{cve: "CVE-2024-1234", topCVSS: 7.5, affected: 3, epss: 0.5},
-				}, nil)
+				cveCore := cveViewMocks.NewMockCveCore(gomock.NewController(t))
+				cveCore.EXPECT().GetCVE().Return("CVE-2024-1234").AnyTimes()
+				cveCore.EXPECT().GetVMsBySeverity().Return(&commonViews.ResourceCountByImageCVESeverity{}).AnyTimes()
+				cveCore.EXPECT().GetTopCVSS().Return(float32(7.5)).AnyTimes()
+				cveCore.EXPECT().GetAffectedVMCount().Return(3).AnyTimes()
+				cveCore.EXPECT().GetEPSSProbability().Return(float32(0.5)).AnyTimes()
+				cveCore.EXPECT().GetPublishDate().Return(nil).AnyTimes()
+				mockView.EXPECT().Get(ctx, gomock.Any()).Return([]vmcve.CveCore{cveCore}, nil)
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(10, nil)
 			},
 			expectedCount: 1,
