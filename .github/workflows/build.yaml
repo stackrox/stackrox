@@ -176,7 +176,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -258,7 +258,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -686,7 +686,11 @@ jobs:
             image/postgres &
           pid_centraldb=$!
 
-          wait $pid_main $pid_roxctl $pid_centraldb
+          rc=0
+          wait "$pid_main"      || { echo "::error::main build failed"; rc=1; }
+          wait "$pid_roxctl"    || { echo "::error::roxctl build failed"; rc=1; }
+          wait "$pid_centraldb" || { echo "::error::central-db build failed"; rc=1; }
+          [[ $rc -eq 0 ]] || exit $rc
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
