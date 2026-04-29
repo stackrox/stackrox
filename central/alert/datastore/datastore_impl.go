@@ -105,6 +105,20 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 	return listAlerts, nil
 }
 
+// searchListAlertsLegacy is the original SearchListAlerts implementation that
+// deserializes the full alert blob. Used as a fallback via ROX_LIST_ALERT_LEGACY_QUERY.
+func (ds *datastoreImpl) searchListAlertsLegacy(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return listAlerts, nil
+}
+
 // SearchAlertPolicyNamesAndSeverities returns lightweight policy name and severity pairs
 // for matching alerts.
 func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.PolicyNameAndSeverity, error) {
@@ -537,6 +551,17 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		})
 }
 
+// walkAllLegacy is the original WalkAll implementation that deserializes the
+// full alert blob. Used as a fallback via ROX_LIST_ALERT_LEGACY_QUERY.
+func (ds *datastoreImpl) walkAllLegacy(ctx context.Context, fn func(*storage.ListAlert) error) error {
+	walkFn := func() error {
+		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
+			return fn(convert.AlertToListAlert(alert))
+		})
+	}
+	return pgutils.RetryIfPostgres(ctx, walkFn)
+}
+
 // DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
 type DefaultStateAlertDataStoreImpl struct {
 	DataStore *DataStore
@@ -625,29 +650,4 @@ func (c *AlertSearchResultConverter) GetCategory() v1.SearchCategory {
 
 func (c *AlertSearchResultConverter) GetScore(result *search.Result) float64 {
 	return result.Score
-}
-
-// searchListAlertsLegacy is the original SearchListAlerts implementation that
-// deserializes the full alert blob. Used as a fallback via ROX_LIST_ALERT_LEGACY_QUERY.
-func (ds *datastoreImpl) searchListAlertsLegacy(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
-	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
-	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return listAlerts, nil
-}
-
-// walkAllLegacy is the original WalkAll implementation that deserializes the
-// full alert blob. Used as a fallback via ROX_LIST_ALERT_LEGACY_QUERY.
-func (ds *datastoreImpl) walkAllLegacy(ctx context.Context, fn func(*storage.ListAlert) error) error {
-	walkFn := func() error {
-		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
-			return fn(convert.AlertToListAlert(alert))
-		})
-	}
-	return pgutils.RetryIfPostgres(ctx, walkFn)
 }
