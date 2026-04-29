@@ -378,7 +378,7 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_ACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Empty(ack.GetReason())
 }
 
@@ -464,7 +464,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
 }
 
@@ -492,7 +492,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonEnrichmentFailed, ack.GetReason())
 }
 
@@ -523,7 +523,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMatcherNotInitializedError() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonMatcherNotReady, ack.GetReason())
 }
 
@@ -547,7 +547,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMissingClusterID() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonMissingClusterID, ack.GetReason())
 }
 
@@ -600,7 +600,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMissingScannerIndexPayload() {
 			suite.Require().NotNil(ack)
 			suite.Equal(central.SensorACK_NACK, ack.GetAction())
 			suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-			suite.Equal(vmID, ack.GetResourceId())
+			suite.Equal(vmID+":", ack.GetResourceId())
 			suite.Equal(centralsensor.SensorACKReasonMissingScanData, ack.GetReason())
 		})
 	}
@@ -636,7 +636,7 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	assert.NotNil(t, ack)
 	assert.Equal(t, central.SensorACK_ACK, ack.GetAction())
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	assert.Equal(t, vmID, ack.GetResourceId())
+	assert.Equal(t, vmID+":", ack.GetResourceId())
 	assert.Equal(t, centralsensor.SensorACKReasonFeatureDisabled, ack.GetReason())
 }
 
