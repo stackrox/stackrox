@@ -1,10 +1,13 @@
-import static util.Helpers.waitForTrue
+import static util.FileActivityUtil.createFileActivityPolicy
+import static util.FileActivityUtil.isFactAvailable
+import static util.FileActivityUtil.removeFactEnv
+import static util.FileActivityUtil.resolveAlertsByPolicy
+import static util.FileActivityUtil.setFactEnv
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 
-import groovy.transform.CompileStatic
 import objects.Deployment
 import org.junit.Assume
 
@@ -32,20 +35,18 @@ class FileActivityTest extends BaseSpecification {
     def setupSpec() {
         Assume.assumeTrue(
                 "FACT container not found in collector DaemonSet",
-                orchestrator.containsDaemonSetContainer(
-                        Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER))
+                isFactAvailable(orchestrator))
 
-        setFactEnv("/tmp/**/*", true)
+        setFactEnv(orchestrator, "/tmp/**/*", true)
 
         orchestrator.createDeployment(testDeployment)
         assert Services.waitForDeployment(testDeployment)
     }
 
     def cleanupSpec() {
-        if (orchestrator.containsDaemonSetContainer(
-                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER)) {
+        if (isFactAvailable(orchestrator)) {
             orchestrator.deleteDeployment(testDeployment)
-            removeFactEnv()
+            removeFactEnv(orchestrator)
         }
     }
 
@@ -134,88 +135,4 @@ class FileActivityTest extends BaseSpecification {
         }
     }
 
-    @CompileStatic
-    private void setFactEnv(String paths, boolean json) {
-        String jsonStr = Boolean.toString(json)
-        log.info "Setting FACT env on collector DaemonSet: FACT_PATHS=${paths}, FACT_JSON=${jsonStr}"
-
-        orchestrator.updateDaemonSetEnv(
-                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
-                "FACT_PATHS", paths)
-        orchestrator.updateDaemonSetEnv(
-                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
-                "FACT_JSON", jsonStr)
-
-        log.info "Waiting for collector DS to pick up FACT env vars and be ready"
-        waitForTrue(20, 10) {
-            orchestrator.daemonSetEnvVarUpdated(
-                    Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
-                    "FACT_PATHS", paths) &&
-            orchestrator.daemonSetEnvVarUpdated(
-                    Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
-                    "FACT_JSON", jsonStr) &&
-            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS)
-        }
-    }
-
-    private void removeFactEnv() {
-        log.info "Removing FACT env vars from collector DaemonSet"
-
-        orchestrator.removeDaemonSetEnv(
-                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
-                "FACT_PATHS")
-        orchestrator.removeDaemonSetEnv(
-                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER,
-                "FACT_JSON")
-
-        log.info "Waiting for collector DS to be ready"
-        waitForTrue(20, 10) {
-            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS)
-        }
-    }
-
-    @CompileStatic
-    private static PolicyOuterClass.Policy createFileActivityPolicy(
-            String name, String path, PolicyOuterClass.EventSource eventSource, String... operations) {
-        def groups = [
-                PolicyOuterClass.PolicyGroup.newBuilder()
-                        .setFieldName("File Path")
-                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(path))
-                        .build(),
-        ]
-
-        if (operations.length > 0) {
-            def opGroup = PolicyOuterClass.PolicyGroup.newBuilder()
-                    .setFieldName("File Operation")
-            operations.each { op ->
-                opGroup.addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(op))
-            }
-            groups << opGroup.build()
-        }
-
-        return PolicyOuterClass.Policy.newBuilder()
-                .setName(name)
-                .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
-                .setEventSource(eventSource)
-                .setSeverityValue(2)
-                .addCategories("File Activity Monitoring")
-                .setDisabled(false)
-                .addPolicySections(
-                        PolicyOuterClass.PolicySection.newBuilder()
-                                .setSectionName("file-access")
-                                .addAllPolicyGroups(groups)
-                                .build()
-                )
-                .build()
-    }
-
-    private static void resolveAlertsByPolicy(String policyName) {
-        def alerts = AlertService.getViolations(
-                ListAlertsRequest.newBuilder()
-                        .setQuery("Policy:${policyName}+Violation State:ACTIVE")
-                        .build())
-        for (alert in alerts) {
-            AlertService.resolveAlert(alert.id)
-        }
-    }
 }

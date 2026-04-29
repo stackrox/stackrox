@@ -1,3 +1,7 @@
+import static util.FileActivityUtil.createFileActivityPolicy
+import static util.FileActivityUtil.isFactAvailable
+import static util.FileActivityUtil.removeFactEnv
+import static util.FileActivityUtil.setFactEnv
 import static util.Helpers.withRetry
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
@@ -35,10 +39,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     @spock.lang.Shared
     private SplunkDeployment splunkDeployment
-    private static final String FACT_CONTAINER = "fact"
-    private static final String COLLECTOR_DS = "collector"
 
     def setupSpec() {
+        Assume.assumeTrue(
+                "FACT container not found in collector DaemonSet",
+                isFactAvailable(orchestrator))
+
+        setFactEnv(orchestrator, "/tmp/**/*", true)
+
         orchestrator.deleteNamespace(TEST_NAMESPACE)
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
         addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
@@ -55,6 +63,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             tearDownSplunk(orchestrator, splunkDeployment)
         }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
+        removeFactEnv(orchestrator)
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
@@ -130,8 +139,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         assert !alerts.isEmpty()
         log.info "Validating CIM mappings for alerts"
         // FILE_ACCESS violations may lack deploymentInfo (e.g. node-level events)
-        // and have their own CIM structure validated in the file access test
-        // (currently disabled pending ROX-31047).
+        // and have their own CIM structure validated in the file access test.
         alerts.findAll {
             !isViolationOfType(it, "FILE_ACCESS")
         }.each {
@@ -142,14 +150,12 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify Splunk violations: file access violations reach Splunk TA"() {
         given:
-        "ROX-34178: skip until file access Splunk TA test is stabilised"
-        Assume.assumeTrue("ROX-34178: file access Splunk TA test is disabled pending stabilisation", false)
-
-        and:
         "a file activity policy targeting a unique path"
         def path = "/tmp/fa-splunk-${UUID.randomUUID()}"
         def policyName = "FA-Splunk-${UUID.randomUUID()}"
-        def policy = createFileActivityPolicy(policyName, path)
+        def policy = createFileActivityPolicy(
+                policyName, path,
+                PolicyOuterClass.EventSource.DEPLOYMENT_EVENT, "CREATE")
         def policyID = PolicyService.createNewPolicy(policy)
         assert policyID
 
@@ -163,10 +169,12 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         and:
         "we search for file access violations in Splunk"
+        def deployName = splunkDeployment.deployment.name
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         List<Map<String, String>> results = []
         withRetry(40, 15) {
-            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
+            def searchId = SplunkUtil.createSearch(port,
+                    "search sourcetype=stackrox-violations \"${deployName}\"")
             Response response = SplunkUtil.getSearchResults(port, searchId)
             assert response != null
             results = response.getBody().jsonPath().getList("results")
@@ -197,33 +205,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         if (policyID) {
             PolicyService.deletePolicy(policyID)
         }
-    }
-
-    private static PolicyOuterClass.Policy createFileActivityPolicy(String name, String path) {
-        return PolicyOuterClass.Policy.newBuilder()
-                .setName(name)
-                .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
-                .setEventSource(PolicyOuterClass.EventSource.DEPLOYMENT_EVENT)
-                .setSeverityValue(2)
-                .addCategories("File Activity Monitoring")
-                .setDisabled(false)
-                .addPolicySections(
-                        PolicyOuterClass.PolicySection.newBuilder()
-                                .setSectionName("file-access")
-                                .addPolicyGroups(
-                                        PolicyOuterClass.PolicyGroup.newBuilder()
-                                                .setFieldName("File Path")
-                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue(path))
-                                                .build())
-                                .addPolicyGroups(
-                                        PolicyOuterClass.PolicyGroup.newBuilder()
-                                                .setFieldName("File Operation")
-                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue("CREATE"))
-                                                .build())
-                                .build())
-                .build()
     }
 
     private static void validateCimMappings(Map<String, String> result) {
