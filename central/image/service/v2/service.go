@@ -3,7 +3,8 @@ package service
 import (
 	"context"
 
-	imagev2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -17,9 +18,10 @@ type Service interface {
 	v2.ImageExportServiceServer
 }
 
-// New returns a new Service instance using the given DataStore.
-func New(imageDS imagev2DS.DataStore) Service {
+// New returns a new Service instance using the given datastores.
+func New(images imageDS.DataStore, cves imagecvev2DS.DataStore) Service {
 	return &serviceImpl{
-		imageDS: imageDS,
+		imageDS: images,
+		cveDS:   cves,
 	}
 }

@@ -16,6 +16,90 @@
     "application/json"
   ],
   "paths": {
+    "/v2/export/cves": {
+      "get": {
+        "summary": "ListCVEs returns a paginated list of unique CVE details. The cve field in each\nrecord matches the cve field in ImageCVEFinding, allowing callers to build a\nlookup dictionary. Use ExportCVEs for large unbounded datasets.",
+        "operationId": "ImageExportService_ListCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListCVEsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "since",
+            "description": "When set, only CVEs first seen in the system on or after since are returned.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "ImageExportService"
+        ]
+      }
+    },
     "/v2/export/images": {
       "get": {
         "summary": "ListImages returns a paginated list of image data (metadata, layers, and installed\ncomponents). Use ExportImages for large unbounded datasets.",
@@ -235,7 +319,7 @@
       ],
       "default": "UNSET"
     },
-    "v2ImageCVEFinding": {
+    "v2CVEDetail": {
       "type": "object",
       "properties": {
         "cve": {
@@ -248,11 +332,29 @@
           "type": "number",
           "format": "float"
         },
-        "isFixable": {
-          "type": "boolean"
-        },
-        "fixedBy": {
+        "summary": {
           "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "description": "CVEDetail holds vulnerability metadata that is shared across all images and components\nwhere the CVE appears. Consumers can build a local dictionary keyed by cve and join\nit against the cve field in ImageCVEFinding to avoid re-fetching repeated data."
+    },
+    "v2ImageCVEFinding": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string",
+          "description": "cve is the CVE identifier (e.g. \"CVE-2024-12345\"). Use it to look up full\ndetails in the /v2/export/cves response."
         },
         "componentName": {
           "type": "string"
@@ -260,21 +362,22 @@
         "componentVersion": {
           "type": "string"
         },
+        "isFixable": {
+          "type": "boolean"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time"
         },
         "state": {
-          "$ref": "#/definitions/v2VulnerabilityState"
-        },
-        "summary": {
-          "type": "string"
-        },
-        "link": {
-          "type": "string"
+          "$ref": "#/definitions/v2VulnerabilityState",
+          "description": "state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE."
         }
       },
-      "description": "ImageCVEFinding holds the details of a single CVE affecting a specific component\nin an image."
+      "description": "ImageCVEFinding records that a specific CVE affects a specific component in an image.\nIt intentionally omits CVE-level metadata (summary, CVSS, severity) to avoid\nduplication across images; those details are available via the /cves endpoint."
     },
     "v2ImageExportComponent": {
       "type": "object",
@@ -433,6 +536,23 @@
         }
       },
       "description": "ImageVulnCounts holds CVE counts broken down by severity and fixability."
+    },
+    "v2ListCVEsResponse": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVEDetail"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ListCVEsResponse is the paginated response for ListCVEs.\nEach entry is unique by cve identifier."
     },
     "v2ListImagesResponse": {
       "type": "object",

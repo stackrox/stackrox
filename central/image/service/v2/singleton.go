@@ -1,7 +1,8 @@
 package service
 
 import (
-	imagev2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +13,10 @@ var (
 )
 
 func initialize() {
-	srv = New(imagev2DS.Singleton())
+	// imageDS.Singleton() is the mapping datastore used by the v1 image service.
+	// It handles both the legacy images table and the imagev2 table transparently,
+	// so the service works regardless of the ROX_FLATTEN_IMAGE_DATA feature flag.
+	srv = New(imageDS.Singleton(), imagecvev2DS.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

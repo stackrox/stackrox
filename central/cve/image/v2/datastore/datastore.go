@@ -24,6 +24,10 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
+
+	// WalkByQuery calls fn for every ImageCVEV2 that matches q, in storage order.
+	// The caller is responsible for deduplication if unique CVEs are required.
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.ImageCVEV2) error) error
 }
 
 // New returns a new instance of a DataStore.

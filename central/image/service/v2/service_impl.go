@@ -6,7 +6,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	imagev2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,8 +30,10 @@ var (
 		user.With(permissions.View(resources.Image)): {
 			v2.ImageExportService_ListImages_FullMethodName,
 			v2.ImageExportService_ListScans_FullMethodName,
+			v2.ImageExportService_ListCVEs_FullMethodName,
 			v2.ImageExportService_ExportImages_FullMethodName,
 			v2.ImageExportService_ExportScans_FullMethodName,
+			v2.ImageExportService_ExportCVEs_FullMethodName,
 		},
 	})
 )
@@ -38,7 +41,11 @@ var (
 type serviceImpl struct {
 	v2.UnimplementedImageExportServiceServer
 
-	imageDS imagev2DS.DataStore
+	// imageDS is the mapping datastore used by the v1 image service. It handles
+	// both the legacy images table and the imagev2 table transparently, so it works
+	// regardless of the ROX_FLATTEN_IMAGE_DATA feature flag.
+	imageDS imageDS.DataStore
+	cveDS   imagecvev2DS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -125,6 +132,40 @@ func (s *serviceImpl) ListScans(ctx context.Context, req *v2.ExportScansRequest)
 	}, nil
 }
 
+// ListCVEs returns a paginated list of unique CVE details. Uniqueness is by CVE
+// identifier string. The implementation collects all matching CVEs, deduplicates
+// in memory, then applies offset-based pagination on the deduplicated set.
+func (s *serviceImpl) ListCVEs(ctx context.Context, req *v2.ExportCVEsRequest) (*v2.ListCVEsResponse, error) {
+	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing input query")
+	}
+
+	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
+	filteredQuery = sortByCVE(filteredQuery)
+
+	// Collect all unique CVEs in a single pass.
+	unique, err := collectUniqueCVEs(ctx, s.cveDS, filteredQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "collecting unique CVEs")
+	}
+
+	// Apply manual pagination on the deduplicated result.
+	p := req.GetQuery().GetPagination()
+	offset := int(p.GetOffset())
+	limit := int(p.GetLimit())
+	if limit <= 0 || limit > defaultPageSize {
+		limit = defaultPageSize
+	}
+	start := min(offset, len(unique))
+	end := min(start+limit, len(unique))
+
+	return &v2.ListCVEsResponse{
+		Cves:       unique[start:end],
+		TotalCount: int32(len(unique)),
+	}, nil
+}
+
 // ExportImages streams image information for all images matching the query.
 func (s *serviceImpl) ExportImages(req *v2.ExportImagesRequest, srv grpc.ServerStreamingServer[v2.ImageInfo]) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
@@ -134,7 +175,7 @@ func (s *serviceImpl) ExportImages(req *v2.ExportImagesRequest, srv grpc.ServerS
 
 	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
 
-	return s.imageDS.WalkByQuery(srv.Context(), filteredQuery, func(img *storage.ImageV2) error {
+	return s.imageDS.WalkByQuery(srv.Context(), filteredQuery, func(img *storage.Image) error {
 		return srv.Send(toImageInfo(img))
 	})
 }
@@ -149,8 +190,29 @@ func (s *serviceImpl) ExportScans(req *v2.ExportScansRequest, srv grpc.ServerStr
 
 	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
 
-	return s.imageDS.WalkByQuery(srv.Context(), filteredQuery, func(img *storage.ImageV2) error {
+	return s.imageDS.WalkByQuery(srv.Context(), filteredQuery, func(img *storage.Image) error {
 		return srv.Send(toImageScan(img))
+	})
+}
+
+// ExportCVEs streams unique CVE details for all CVEs matching the query. Results
+// are sorted by CVE identifier and deduplicated: each CVE is emitted exactly once.
+func (s *serviceImpl) ExportCVEs(req *v2.ExportCVEsRequest, srv grpc.ServerStreamingServer[v2.CVEDetail]) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(err, "parsing input query")
+	}
+
+	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
+	filteredQuery = sortByCVE(filteredQuery)
+
+	var lastSeen string
+	return s.cveDS.WalkByQuery(srv.Context(), filteredQuery, func(cve *storage.ImageCVEV2) error {
+		if id := cve.GetCveBaseInfo().GetCve(); id != lastSeen {
+			lastSeen = id
+			return srv.Send(toCVEDetail(cve))
+		}
+		return nil
 	})
 }
 
@@ -167,10 +229,64 @@ func applySinceFilter(q *v1.Query, since time.Time) *v1.Query {
 	return search.ConjunctionQuery(q, sinceQuery)
 }
 
-// toImageInfo converts a storage.ImageV2 to the v2 API ImageInfo projection.
+// applySinceCVEFilter filters CVEs by the time they were first seen in the system
+// (CVEInfo.created_at). The "since" semantics differ from the image last_updated filter.
+func applySinceCVEFilter(q *v1.Query, since time.Time) *v1.Query {
+	if since.IsZero() {
+		return q
+	}
+	sinceStr := ">=" + since.UTC().Format("01/02/2006 3:04:05 PM MST")
+	sinceQuery := search.NewQueryBuilder().AddStrings(search.CVECreatedTime, sinceStr).ProtoQuery()
+	return search.ConjunctionQuery(q, sinceQuery)
+}
+
+// sortByCVE adds an ascending sort on the CVE identifier string to a query.
+// This enables the streaming deduplication in ExportCVEs to work with O(1) state.
+func sortByCVE(q *v1.Query) *v1.Query {
+	cloned := q.CloneVT()
+	if cloned.Pagination == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+	}
+	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+		{Field: search.CVE.String(), Reversed: false},
+	}
+	return cloned
+}
+
+// collectUniqueCVEs walks all CVEs matching q (must be sorted by CVE string) and
+// returns one CVEDetail per unique CVE identifier.
+func collectUniqueCVEs(ctx context.Context, ds imagecvev2DS.DataStore, q *v1.Query) ([]*v2.CVEDetail, error) {
+	var (
+		results  []*v2.CVEDetail
+		lastSeen string
+	)
+	err := ds.WalkByQuery(ctx, q, func(cve *storage.ImageCVEV2) error {
+		if id := cve.GetCveBaseInfo().GetCve(); id != lastSeen {
+			lastSeen = id
+			results = append(results, toCVEDetail(cve))
+		}
+		return nil
+	})
+	return results, err
+}
+
+// toCVEDetail converts a storage.ImageCVEV2 to the API CVEDetail message.
+func toCVEDetail(cve *storage.ImageCVEV2) *v2.CVEDetail {
+	return &v2.CVEDetail{
+		Cve:             cve.GetCveBaseInfo().GetCve(),
+		Severity:        convertSeverity(cve.GetSeverity()),
+		Cvss:            cve.GetCvss(),
+		Summary:         cve.GetCveBaseInfo().GetSummary(),
+		Link:            cve.GetCveBaseInfo().GetLink(),
+		PublishedOn:     cve.GetCveBaseInfo().GetPublishedOn(),
+		EpssProbability: cve.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+	}
+}
+
+// toImageInfo converts a storage.Image to the v2 API ImageInfo projection.
 // Components are included but their vulnerability lists are intentionally omitted; use
 // toImageScan to retrieve vulnerability findings.
-func toImageInfo(img *storage.ImageV2) *v2.ImageInfo {
+func toImageInfo(img *storage.Image) *v2.ImageInfo {
 	layers := make([]*v2.ImageExportLayer, 0, len(img.GetMetadata().GetV1().GetLayers()))
 	for _, l := range img.GetMetadata().GetV1().GetLayers() {
 		layers = append(layers, &v2.ImageExportLayer{
@@ -195,8 +311,10 @@ func toImageInfo(img *storage.ImageV2) *v2.ImageInfo {
 	}
 
 	return &v2.ImageInfo{
+		// In the legacy image model the id field holds the image SHA, which is
+		// also the digest. There is no separate UUID-style id.
 		Id:              img.GetId(),
-		Digest:          img.GetDigest(),
+		Digest:          img.GetId(),
 		Names:           names,
 		OperatingSystem: img.GetScan().GetOperatingSystem(),
 		Created:         img.GetMetadata().GetV1().GetCreated(),
@@ -206,58 +324,76 @@ func toImageInfo(img *storage.ImageV2) *v2.ImageInfo {
 	}
 }
 
-// toImageScan converts a storage.ImageV2 to the v2 API ImageScan projection.
-// All CVE findings are flattened from the per-component vulnerability lists.
-// The ImageId field links the scan result back to the corresponding image.
-func toImageScan(img *storage.ImageV2) *v2.ImageScan {
+// toImageScan converts a storage.Image to the v2 API ImageScan projection.
+// CVE findings contain only the finding-specific fields (component reference, fixability,
+// state). Full CVE metadata is available separately via the /cves endpoint.
+func toImageScan(img *storage.Image) *v2.ImageScan {
 	var cves []*v2.ImageCVEFinding
 	for _, comp := range img.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
 			cves = append(cves, &v2.ImageCVEFinding{
 				Cve:                  vuln.GetCve(),
-				Severity:             convertSeverity(vuln.GetSeverity()),
-				Cvss:                 vuln.GetCvss(),
-				IsFixable:            vuln.GetSetFixedBy() != nil,
-				FixedBy:              vuln.GetFixedBy(),
 				ComponentName:        comp.GetName(),
 				ComponentVersion:     comp.GetVersion(),
+				IsFixable:            vuln.GetSetFixedBy() != nil,
+				FixedBy:              vuln.GetFixedBy(),
 				FirstImageOccurrence: vuln.GetFirstImageOccurrence(),
 				State:                convertVulnState(vuln.GetState()),
-				Summary:              vuln.GetSummary(),
-				Link:                 vuln.GetLink(),
 			})
 		}
 	}
 
 	return &v2.ImageScan{
+		// In the legacy model, id is the image SHA which also serves as the digest.
 		ImageId:         img.GetId(),
-		Digest:          img.GetDigest(),
+		Digest:          img.GetId(),
 		ScanTime:        img.GetScan().GetScanTime(),
 		ScannerVersion:  img.GetScan().GetScannerVersion(),
 		OperatingSystem: img.GetScan().GetOperatingSystem(),
 		Cves:            cves,
-		CveCounts:       toVulnCounts(img.GetScanStats()),
+		CveCounts:       computeVulnCounts(img.GetScan().GetComponents()),
 		LastUpdated:     img.GetLastUpdated(),
 	}
 }
 
-// toVulnCounts converts the ScanStats cached counts to the API ImageVulnCounts message.
-func toVulnCounts(stats *storage.ImageV2_ScanStats) *v2.ImageVulnCounts {
-	if stats == nil {
-		return &v2.ImageVulnCounts{}
+// computeVulnCounts tallies CVE counts per severity by iterating the scan components.
+// storage.Image does not cache per-severity counts the way ImageV2.ScanStats does,
+// so we compute them on the fly from the embedded vulnerability list.
+func computeVulnCounts(components []*storage.EmbeddedImageScanComponent) *v2.ImageVulnCounts {
+	counts := &v2.ImageVulnCounts{}
+	for _, comp := range components {
+		for _, vuln := range comp.GetVulns() {
+			fixable := vuln.GetSetFixedBy() != nil
+			switch vuln.GetSeverity() {
+			case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+				counts.CriticalTotal++
+				if fixable {
+					counts.CriticalFixable++
+				}
+			case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+				counts.ImportantTotal++
+				if fixable {
+					counts.ImportantFixable++
+				}
+			case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+				counts.ModerateTotal++
+				if fixable {
+					counts.ModerateFixable++
+				}
+			case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+				counts.LowTotal++
+				if fixable {
+					counts.LowFixable++
+				}
+			default:
+				counts.UnknownTotal++
+				if fixable {
+					counts.UnknownFixable++
+				}
+			}
+		}
 	}
-	return &v2.ImageVulnCounts{
-		CriticalTotal:    stats.GetCriticalCveCount(),
-		CriticalFixable:  stats.GetFixableCriticalCveCount(),
-		ImportantTotal:   stats.GetImportantCveCount(),
-		ImportantFixable: stats.GetFixableImportantCveCount(),
-		ModerateTotal:    stats.GetModerateCveCount(),
-		ModerateFixable:  stats.GetFixableModerateCveCount(),
-		LowTotal:         stats.GetLowCveCount(),
-		LowFixable:       stats.GetFixableLowCveCount(),
-		UnknownTotal:     stats.GetUnknownCveCount(),
-		UnknownFixable:   stats.GetFixableUnknownCveCount(),
-	}
+	return counts
 }
 
 // convertSeverity maps storage.VulnerabilitySeverity to the v2 API enum.
@@ -286,4 +422,11 @@ func convertVulnState(s storage.VulnerabilityState) v2.VulnerabilityState {
 	default:
 		return v2.VulnerabilityState_OBSERVED
 	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
