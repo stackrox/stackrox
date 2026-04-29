@@ -71,16 +71,16 @@ roxie_override_from_environment_compat() {
 
     handle_pod_security_policies
 
-    info "Handling TRUSTED_CA_FILE configuration"
+    info "Configuring TRUSTED_CA_FILE..."
     handle_trusted_ca_file "$override_file"
 
-    info "Handling default TLS configuration"
+    info "Configuring TLS..."
     handle_default_tls_settings "$override_file" "$namespace"
 
-    info "Determining load balancer settings for deployment"
+    info "Configuring load balancer..."
     handle_load_balancer_setting "$override_file"
 
-    info "Determining custom central environment"
+    info "Configuring custom central environment..."
     {
         # These are set in env.sh and picked up roxctl/central/generate/generate.go:updateConfig().
         env_with_default ROX_DEVELOPMENT_BUILD "true"   # pkg/devbuild/setting.go.
@@ -126,7 +126,7 @@ roxie_override_from_environment_compat() {
         ci_export "$name" "$value"
     done
 
-    info "Configuring custom securedCluster environment"
+    info "Configuring custom securedCluster environment..."
     {
         # Set in export_test_environment() and deploy_sensor_via_operator().
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
@@ -141,7 +141,7 @@ roxie_override_from_environment_compat() {
         ci_export "$name" "$value"
     done
 
-    info "Configuring custom securedCluster/collector environment"
+    info "Configuring custom securedCluster/collector environment..."
     {
         # Set in deploy_sensor_via_operator() and deploy_sensor().
         env_with_default ROX_AFTERGLOW_PERIOD "15"
@@ -160,14 +160,14 @@ roxie_override_from_environment_compat() {
         ci_export "$name" "$value"
     done
 
-    info "Configuring scanner V4 component for deployment"
+    info "Configuring scanner V4..."
     handle_scanner_v4_setting "$override_file" ".central.spec.scannerV4.scannerComponent"
     handle_scanner_v4_setting "$override_file" ".securedCluster.spec.scannerV4.scannerComponent"
 
-    info "Configuring declarative configurations"
+    info "Configuring declarative configuration..."
     handle_declarative_configuration "$override_file"
 
-    info "Determining file activity monitoring mode..."
+    info "Configuring file activity monitoring mode..."
     handle_file_activity_monitoring "$override_file"
 }
 
