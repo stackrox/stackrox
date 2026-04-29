@@ -183,6 +183,30 @@ jobs:
             echo "::group::Scanner V2 scanner logs"
             kubectl -n stackrox logs -l app=scanner --tail=100 || true
             echo "::endgroup::"
+            echo "::group::Scanner V2 scanner-db init container detailed logs"
+            # Get the pod name first
+            SCANNER_DB_POD=$(kubectl -n stackrox get pods -l app=scanner-db -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+            if [[ -n "$SCANNER_DB_POD" ]]; then
+              echo "Pod name: $SCANNER_DB_POD"
+
+              # Get init container name
+              INIT_CONTAINER=$(kubectl -n stackrox get pod "$SCANNER_DB_POD" -o jsonpath='{.spec.initContainers[0].name}' 2>/dev/null || echo "")
+              echo "Init container name: $INIT_CONTAINER"
+
+              # Get init container logs with more context
+              if [[ -n "$INIT_CONTAINER" ]]; then
+                kubectl -n stackrox logs "$SCANNER_DB_POD" -c "$INIT_CONTAINER" --tail=500 2>&1 || echo "Failed to get init container logs"
+              fi
+
+              # Get pod events
+              kubectl -n stackrox get events --field-selector involvedObject.name="$SCANNER_DB_POD" --sort-by='.lastTimestamp' 2>&1 || echo "Failed to get pod events"
+
+              # Get pod full YAML for detailed inspection
+              kubectl -n stackrox get pod "$SCANNER_DB_POD" -o yaml 2>&1 || echo "Failed to get pod YAML"
+            else
+              echo "No scanner-db pod found"
+            fi
+            echo "::endgroup::"
             exit 1
           fi
 
@@ -192,6 +216,12 @@ jobs:
           # Show pod status after successful deployment
           echo "::group::Pod status after deployment"
           kubectl -n stackrox get pods -o wide
+          echo "::endgroup::"
+
+          # Show scanner-db init container status for verification
+          echo "::group::Scanner V2 initialization verification"
+          kubectl -n stackrox get pods -l app=scanner-db -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.initContainerStatuses[*].state}{"\n"}{end}' || true
+          kubectl -n stackrox get pods -l app=scanner -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' || true
           echo "::endgroup::"
 
           # Export deployment env vars for next step
