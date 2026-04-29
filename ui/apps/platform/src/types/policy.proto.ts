@@ -10,6 +10,7 @@ export type ListPolicy = {
     eventSource: PolicyEventSource;
     readonly isDefault: boolean; // Indicates the policy is a default policy if true and a custom policy if false.
     readonly source: 'IMPERATIVE' | 'DECLARATIVE';
+    evaluationFilter?: EvaluationFilter;
 };
 
 export const policySeverities = [
@@ -156,6 +157,18 @@ export type ClientPolicyValue = {
 export type PolicyMitreAttackVector = {
     tactic: string; // tactic id
     techniques: string[]; // technique ids
+};
+
+// Matches proto enum SkipContainerType in storage/policy.proto
+export type SkipContainerType = 'SKIP_INIT';
+
+// Matches proto enum SkipImageLayers in storage/policy.proto
+export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
+
+// Matches proto message EvaluationFilter in storage/policy.proto
+export type EvaluationFilter = {
+    skipContainerTypes: SkipContainerType[];
+    skipImageLayers: SkipImageLayers;
 };
 
 export type PolicyCategory = {

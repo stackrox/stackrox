@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
@@ -36,7 +36,9 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import PolicyEvaluationFilterLabels from './PolicyEvaluationFilterLabels';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
 import type { AlertVariantType } from 'hooks/patternfly/useToasts';
@@ -56,15 +58,13 @@ import {
     isExternalPolicy,
 } from '../policies.utils';
 import type { LabelAndNotifierIdsForType } from '../policies.utils';
-import { policySearchFilterConfig } from '../policiesSearchFilterConfig';
+import { getPolicySearchFilterConfig } from '../policiesSearchFilterConfig';
 
 import './PoliciesTable.css';
 
 function isExternalPolicySelected(policies: ListPolicy[], selectedIds: string[]): boolean {
     return policies.filter(({ id }) => selectedIds.includes(id)).some(isExternalPolicy);
 }
-
-const searchFilterConfig = [policySearchFilterConfig];
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -101,6 +101,16 @@ function PoliciesTable({
 }: PoliciesTableProps): ReactElement {
     const expandedRowSet = useSet<string>();
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const searchFilterConfig = useMemo(() => {
+        const config = getPolicySearchFilterConfig({
+            initContainerSupport: isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT'),
+            imageLayerFilter: isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER'),
+        });
+        return [config];
+    }, [isFeatureFlagEnabled]);
+
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);
@@ -397,6 +407,7 @@ function PoliciesTable({
                                     const {
                                         description,
                                         disabled,
+                                        evaluationFilter,
                                         id,
                                         isDefault,
                                         lifecycleStages,
@@ -485,9 +496,25 @@ function PoliciesTable({
                                                     }}
                                                 />
                                                 <Td dataLabel="Policy">
-                                                    <Link to={`${policiesBasePath}/${id}`}>
-                                                        {name}
-                                                    </Link>
+                                                    <Flex
+                                                        spaceItems={{
+                                                            default: 'spaceItemsSm',
+                                                        }}
+                                                        alignItems={{
+                                                            default: 'alignItemsCenter',
+                                                        }}
+                                                    >
+                                                        <FlexItem>
+                                                            <Link to={`${policiesBasePath}/${id}`}>
+                                                                {name}
+                                                            </Link>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <PolicyEvaluationFilterLabels
+                                                                evaluationFilter={evaluationFilter}
+                                                            />
+                                                        </FlexItem>
+                                                    </Flex>
                                                 </Td>
                                                 <Td dataLabel="Status">
                                                     <PolicyDisabledIconText isDisabled={disabled} />
