@@ -242,7 +242,7 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 				return nil, fmt.Errorf("matcher: remote indexer: %w", err)
 			}
 		}
-		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher)
+		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher, b.RemoteIndexer)
 		if err != nil {
 			return nil, fmt.Errorf("matcher: %w", err)
 		}
