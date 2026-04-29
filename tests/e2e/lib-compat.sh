@@ -43,6 +43,14 @@ deploy_stackrox_with_roxie_compat() {
     fi
 
     local override_file; override_file="$(mktemp)"
+
+    # Prepare override file with some static settings coming from secured-cluster-cr.envsubst.yaml.
+    merge_yaml "$override_file" <<EOF
+securedCluster:
+  spec:
+    processIndicators:
+      excludeNamespaceRegex: namespace-without-persistence
+EOF
     roxie_override_from_environment_compat "$override_file" "$namespace"
 
     deploy_stackrox_with_roxie "$namespace" "$override_file"
@@ -158,6 +166,9 @@ roxie_override_from_environment_compat() {
 
     info "Configuring declarative configurations"
     handle_declarative_configuration "$override_file"
+
+    info "Determining file activity monitoring mode..."
+    handle_file_activity_monitoring "$override_file"
 }
 
 # Emit feature flags, enabling injection into roxie overrides, rendering them overwritable using
@@ -292,6 +303,23 @@ central:
         secrets:
         - name: "sensitive-declarative-configurations"
 EOF
+}
+
+handle_file_activity_monitoring() {
+    local override_file="$1"
+    local sfa_agent="${SFA_AGENT:-false}"
+
+    case "$sfa_agent" in
+    true)
+        patch_yaml "$override_file" '.securedCluster.spec.perNode.fileActivityMonitoring.mode = "Enabled"'
+        ;;
+    false)
+        patch_yaml "$override_file" '.securedCluster.spec.perNode.fileActivityMonitoring.mode = "Disabled"'
+        ;;
+    *)
+        die "Unsupported value for SFA_AGENT: ${sfa_agent}"
+        ;;
+    esac
 }
 
 env_with_default() {
