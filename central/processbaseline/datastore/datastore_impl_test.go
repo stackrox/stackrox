@@ -342,7 +342,15 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 			},
 		}
 
-	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any()).Return(indicators, nil)
+	suite.indicatorMockStore.EXPECT().GetByQueryFn(suite.requestContext, gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
+			for _, indicator := range indicators {
+				if err := fn(indicator); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
@@ -395,7 +403,15 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 			},
 		}
 
-	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any()).Return(indicators, nil)
+	suite.indicatorMockStore.EXPECT().GetByQueryFn(suite.requestContext, gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
+			for _, indicator := range indicators {
+				if err := fn(indicator); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
@@ -411,7 +427,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaselineNoProcesses() {
 	key := fixtures.GetBaselineKey()
 
-	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any())
+	suite.indicatorMockStore.EXPECT().GetByQueryFn(suite.requestContext, gomock.Any(), gomock.Any()).Return(nil)
 
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)

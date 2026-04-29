@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { Flex, PageSection } from '@patternfly/react-core';
 
@@ -8,16 +9,29 @@ import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import {
-    ORCHESTRATOR_COMPONENTS_KEY,
-    orchestratorComponentsOption,
-} from 'utils/orchestratorComponents';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import type { SearchFilter } from 'types/search';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
 import RiskPageHeader from './RiskPageHeader';
 
 const DEFAULT_RISK_PAGE_SIZE = 20;
+
+function getFilteredWorkflowViewSearchFilter(
+    filteredWorkflowView: FilteredWorkflowView
+): SearchFilter {
+    switch (filteredWorkflowView) {
+        case 'Applications view':
+            return { 'Platform Component': 'false' };
+        case 'Platform view':
+            return { 'Platform Component': 'true' };
+        case 'Full view':
+        default:
+            return {};
+    }
+}
 
 function RiskTablePage() {
     const urlSort = useURLSort({
@@ -28,22 +42,33 @@ function RiskTablePage() {
     const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
     const urlSearch = useURLSearch();
 
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+    const additionalContextFilter = useMemo(
+        () => getFilteredWorkflowViewSearchFilter(filteredWorkflowView),
+        [filteredWorkflowView]
+    );
+    const mergedSearchFilter = useMemo(
+        () => ({
+            ...urlSearch.searchFilter,
+            ...additionalContextFilter,
+        }),
+        [urlSearch.searchFilter, additionalContextFilter]
+    );
+
     const searchQueryOptions = {
         variables: {
             categories: [searchCategories.DEPLOYMENT],
         },
     };
-    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
+    const { data: searchData } = useQuery<{
+        searchOptions: string[];
+    }>(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = searchData?.searchOptions ?? [];
-    const filteredSearchOptions = searchOptions.filter(
-        (option) => option !== 'Orchestrator Component'
+    const filteredOptions = searchOptions.filter(
+        (option) => option !== 'Platform Component' && option !== 'Orchestrator Component'
     );
 
     const autoCompleteCategory = searchCategories.DEPLOYMENT;
-
-    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
-    const prependAutocompleteQuery =
-        orchestratorComponentShowState !== 'true' ? orchestratorComponentsOption : [];
 
     return (
         <>
@@ -54,19 +79,21 @@ function RiskTablePage() {
                     <SearchFilterInput
                         className=""
                         searchFilter={urlSearch.searchFilter}
-                        searchOptions={filteredSearchOptions}
+                        searchOptions={filteredOptions}
                         searchCategory={autoCompleteCategory}
                         placeholder="Filter deployments"
                         handleChangeSearchFilter={(newSearchFilter) => {
                             urlSearch.setSearchFilter(newSearchFilter);
                             urlPagination.setPage(1);
                         }}
-                        autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
+                        autocompleteQueryPrefix={getRequestQueryStringForSearchFilter(
+                            additionalContextFilter
+                        )}
                     />
                     <RiskTablePanel
                         sortOption={urlSort.sortOption}
                         getSortParams={urlSort.getSortParams}
-                        searchFilter={urlSearch.searchFilter}
+                        searchFilter={mergedSearchFilter}
                         onSearchFilterChange={(newSearchFilter) => {
                             urlSearch.setSearchFilter(newSearchFilter);
                             urlPagination.setPage(1);

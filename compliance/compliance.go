@@ -15,8 +15,6 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,17 +49,20 @@ type Compliance struct {
 	umhNodeIndex       node.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
+	scrapeConfig       atomic.Pointer[sensor.MsgToCompliance_ScrapeConfig]
+	scrapeConfigReady  concurrency.Signal
 }
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
 	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider: nnp,
-		nodeScanner:      scanner,
-		nodeIndexer:      nodeIndexer,
-		umhNodeInventory: umhNodeInv,
-		umhNodeIndex:     umhNodeIndex,
+		nodeNameProvider:  nnp,
+		nodeScanner:       scanner,
+		nodeIndexer:       nodeIndexer,
+		umhNodeInventory:  umhNodeInv,
+		umhNodeIndex:      umhNodeIndex,
+		scrapeConfigReady: concurrency.NewSignal(),
 	}
 }
 
@@ -134,22 +135,27 @@ func (c *Compliance) Start() {
 	// sensor and accelerates initial development.
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
-		if features.VirtualMachines.Enabled() {
-			log.Infof("Virtual machine relay enabled")
+		if !features.VirtualMachines.Enabled() {
+			return
+		}
+		// VM relay startup is gated by the first scrape config.
+		// We must not start relay until that config is available.
+		config := c.waitForInitialScrapeConfig(ctx)
+		if config == nil { // nil means ctx was cancelled
+			log.Info("Virtual machine relay start aborted: context cancelled")
+			return
+		}
+		if !shouldStartVMRelay(config) {
+			log.Infof("Virtual machine relay not started on master node; set %s=true to enable",
+				env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
+			return
+		}
+		log.Infof("Virtual machine relay enabled")
 
-			reportStream, err := stream.New()
-			if err != nil {
-				log.Errorf("Error creating report stream: %v", err)
-				return
-			}
-
-			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-			reportSender := sender.New(sensorClient)
-
-			vmRelay := relay.New(reportStream, reportSender)
-			if err := vmRelay.Run(ctx); err != nil {
-				log.Errorf("Error running virtual machine relay: %v", err)
-			}
+		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+		err := relay.RunWithRetry(ctx, sensorClient)
+		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			log.Errorf("Error running virtual machine relay: %v", err)
 		}
 	}(ctx)
 
@@ -309,6 +315,11 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 				}
 				log.Fatalf("Error initializing stream to sensor: %v", err)
 			}
+			// Record and signal the first valid scrape config for VM relay startup.
+			if !c.scrapeConfigReady.IsDone() {
+				c.scrapeConfig.Store(config)
+				c.scrapeConfigReady.Signal()
+			}
 			// A second Context is introduced for cancelling the goroutine if runRecv returns.
 			// runRecv only returns on errors, upon which the client will get reinitialized,
 			// orphaning manageSendToSensor in the process.
@@ -322,6 +333,27 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
 		}
 	}
+}
+
+// waitForInitialScrapeConfig waits for the first scrape config observed by the
+// stream manager and returns it. Returns nil only when ctx is cancelled.
+//
+// manageStream stores the scrape config before signaling readiness, and
+// initializeStream guarantees a non-nil config on success, so the returned
+// config is always valid when the context is not cancelled.
+func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.MsgToCompliance_ScrapeConfig {
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-c.scrapeConfigReady.Done():
+		return c.scrapeConfig.Load()
+	}
+}
+
+// shouldStartVMRelay reports whether the VM relay should start based on
+// the scrape config and the master-node override env var.
+func shouldStartVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) bool {
+	return !config.GetIsMasterNode() || env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting()
 }
 
 func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {

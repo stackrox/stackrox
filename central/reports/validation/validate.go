@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 
@@ -20,10 +21,14 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	k8sValidation "k8s.io/apimachinery/pkg/api/validate/content"
 )
 
 // Use this context only to
@@ -163,15 +168,28 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 }
 
 func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) error {
-	if config.GetResourceScope() == nil || config.GetResourceScope().GetCollectionScope() == nil {
+	scope := config.GetResourceScope()
+	if scope == nil {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
 	}
-	collectionID := config.GetResourceScope().GetCollectionScope().GetCollectionId()
+	switch ref := scope.GetScopeReference().(type) {
+	case *apiV2.ResourceScope_CollectionScope:
+		return v.validateCollectionScope(ref.CollectionScope)
+	case *apiV2.ResourceScope_EntityScope:
+		if !features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection as resource scope")
+		}
+		return validateEntityScope(ref.EntityScope)
+	default:
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+	}
+}
 
-	if collectionID == "" {
+func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionReference) error {
+	if collectionRef == nil || collectionRef.GetCollectionId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID")
 	}
-
+	collectionID := collectionRef.GetCollectionId()
 	// Use allAccessCtx since report creator/updater might not have permissions for workflowAdministrationSAC
 	exists, err := v.collectionDatastore.Exists(allAccessCtx, collectionID)
 	if err != nil {
@@ -180,7 +198,66 @@ func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) err
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Collection %s not found.", collectionID)
 	}
+	return nil
+}
 
+// validateEntityScope validates the provided EntityScope and its rules.
+// It returns an error if:
+// 1. the scope is nil;
+// 2. any rule has an unset entity or field;
+// 3. a rule uses the unsupported (cluster, annotation) combination;
+// 4. a duplicate (entity, field) pair appears
+// 5. a rule has no values, or a label rule contains values that are not in `key=value` format.
+func validateEntityScope(es *apiV2.EntityScope) error {
+	if es == nil {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
+	}
+	type entityFieldKey struct {
+		entity apiV2.ScopeEntity
+		field  apiV2.ScopeField
+	}
+	seen := set.NewSet[entityFieldKey]()
+	for _, rule := range es.GetRules() {
+		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_UNSET {
+			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule: %s", rule.GetEntity())
+		}
+		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
+			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
+		}
+		// Cluster annotation is not indexed and therefore unsupported.
+		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
+			return errors.Wrap(errox.InvalidArgs, "Annotation field is not supported for cluster entity scope rules")
+		}
+		key := entityFieldKey{entity: rule.GetEntity(), field: rule.GetField()}
+		if !seen.Add(key) {
+			return errors.Wrapf(errox.InvalidArgs,
+				"One rule per (entity, field) pair in entity scope rules is expected. Duplicate (entity, field) pair found: entity=%v field=%v. ", rule.GetEntity(), rule.GetField())
+		}
+		if len(rule.GetValues()) == 0 {
+			return errors.Wrapf(errox.InvalidArgs,
+				"provide at least one matching value for entity=%v field=%v rule", rule.GetEntity(), rule.GetField())
+		}
+		isMapField := rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION
+		for _, rv := range rule.GetValues() {
+			valOfValue := rv.GetValue()
+			if isMapField {
+				mapKey, mapValue, found := strings.Cut(valOfValue, "=")
+				if !found {
+					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
+				}
+				// Check the key for a Kubernetes qualified name.
+				if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
+					return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+				}
+				valOfValue = mapValue
+			}
+			if rv.GetMatchType() == apiV2.MatchType_REGEX {
+				if _, err := regexp.Compile(valOfValue); err != nil {
+					return errors.Wrapf(errox.InvalidArgs, "invalid regex %q: %v", valOfValue, err)
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -198,6 +275,13 @@ func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) err
 	if filters.GetCvesSince() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
 			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
+	}
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		if q := filters.GetQuery(); q != "" {
+			if _, err := search.ParseQuery(q); err != nil {
+				return errors.Wrapf(errox.InvalidArgs, "Invalid query in vulnerability report filters: %s", err)
+			}
+		}
 	}
 	return nil
 }
@@ -225,12 +309,17 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 			"Email request sent for a report configuration that does not have any email notifiers configured")
 	}
 
-	collection, found, err := v.collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding collection ID '%s'", config.GetResourceScope().GetCollectionId())
-	}
-	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", config.GetResourceScope().GetCollectionId())
+	var collection *storage.ResourceCollection
+	if collectionID := config.GetResourceScope().GetCollectionId(); collectionID != "" {
+		var found bool
+		var err error
+		collection, found, err = v.collectionDatastore.Get(allAccessCtx, collectionID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error finding collection ID '%s'", collectionID)
+		}
+		if !found {
+			return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", collectionID)
+		}
 	}
 
 	notifierIDs := make([]string, 0, len(config.GetNotifiers()))
@@ -274,6 +363,16 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	return nil
 }
 
+func collectionSnapshot(collection *storage.ResourceCollection) *storage.CollectionSnapshot {
+	if collection == nil {
+		return nil
+	}
+	return &storage.CollectionSnapshot{
+		Id:   collection.GetId(),
+		Name: collection.GetName(),
+	}
+}
+
 func generateReportSnapshot(
 	config *storage.ReportConfiguration,
 	collection *storage.ResourceCollection,
@@ -287,16 +386,17 @@ func generateReportSnapshot(
 		Name:                  config.GetName(),
 		Description:           config.GetDescription(),
 		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Collection: &storage.CollectionSnapshot{
-			Id:   config.GetResourceScope().GetCollectionId(),
-			Name: collection.GetName(),
-		},
-		Schedule: config.GetSchedule(),
+		Collection:            collectionSnapshot(collection),
+		Schedule:              config.GetSchedule(),
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_WAITING,
 			ReportRequestType:        requestType,
 			ReportNotificationMethod: notificationMethod,
 		},
+	}
+
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		snapshot.ResourceScope = config.GetResourceScope().CloneVT()
 	}
 
 	reportFilters := config.GetVulnReportFilters().CloneVT()

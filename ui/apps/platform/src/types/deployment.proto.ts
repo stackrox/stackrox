@@ -22,7 +22,7 @@ export type Deployment = {
     type: string;
     namespace: string;
     namespaceId: string;
-    orchestratorComponent: boolean;
+    orchestratorComponent: boolean; // unused - favor `platformComponent` instead
     replicas: string; // int64
     labels: Record<string, string>;
     podLabels: Record<string, string>;
@@ -99,6 +99,7 @@ export type ContainerSecurityContext = {
     addCapabilities: string[];
     readOnlyRootFilesystem: boolean;
     seccompProfile: SeccompProfile | null;
+    allowPrivilegeEscalation: boolean;
 };
 
 export type SELinux = {

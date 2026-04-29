@@ -83,6 +83,7 @@ class FileActivityTest extends BaseSpecification {
         assert alert.violationsList[0].message.contains(path)
 
         cleanup:
+        resolveAlertsByPolicy(policyName)
         if (policyID) {
             PolicyService.deletePolicy(policyID)
         }
@@ -127,6 +128,7 @@ class FileActivityTest extends BaseSpecification {
             orchestrator.execInContainer(hostDeployment, "chroot /host sudo rm -f ${path}")
             orchestrator.deleteDeployment(hostDeployment)
         }
+        resolveAlertsByPolicy(policyName)
         if (policyID) {
             PolicyService.deletePolicy(policyID)
         }
@@ -205,5 +207,15 @@ class FileActivityTest extends BaseSpecification {
                                 .build()
                 )
                 .build()
+    }
+
+    private static void resolveAlertsByPolicy(String policyName) {
+        def alerts = AlertService.getViolations(
+                ListAlertsRequest.newBuilder()
+                        .setQuery("Policy:${policyName}+Violation State:ACTIVE")
+                        .build())
+        for (alert in alerts) {
+            AlertService.resolveAlert(alert.id)
+        }
     }
 }

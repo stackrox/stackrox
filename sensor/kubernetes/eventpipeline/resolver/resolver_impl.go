@@ -7,11 +7,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -258,12 +261,16 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 }
 
 func toEvent(action central.ResourceAction, deployment *storage.Deployment, timing *central.Timing) *central.SensorEvent {
+	dep := deployment.CloneVT()
+	if !centralcaps.Has(centralsensor.InitContainerSupport) {
+		dep.Containers = containers.FilterRegularContainers(dep.GetContainers())
+	}
 	return &central.SensorEvent{
-		Id:     deployment.GetId(),
+		Id:     dep.GetId(),
 		Action: action,
 		Timing: timing,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: deployment.CloneVT(),
+			Deployment: dep,
 		},
 	}
 }
