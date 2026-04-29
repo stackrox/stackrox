@@ -34,7 +34,7 @@ deploy_stackrox_with_roxie_compat() {
     check_for_roxie
 
     if retrying_kubectl get ns "$namespace" </dev/null >/dev/null 2>&1; then
-        # Deletes secrets created outside of roxie, e.g. default TLS secret for central.
+        # Deletes secrets created by previous invocation of this compat layer, e.g. default TLS secret for central.
         retrying_kubectl -n "$namespace" delete --ignore-not-found=true secrets -l app.kubernetes.io/managed-by="${managed_by}" --wait </dev/null
         retrying_kubectl -n "$namespace" delete --ignore-not-found=true configmap declarative-configurations --wait </dev/null
         retrying_kubectl -n "$namespace" delete --ignore-not-found=true configmap sensitive-declarative-configurations --wait </dev/null
