@@ -134,14 +134,14 @@ fixup_artifacts_content_type() {
 make_artifacts_help() {
 
     _artifacts_preamble
-    
+
     local gs_workflow_url="$GS_URL/$WORKFLOW_SUBDIR"
     local gs_job_url="$gs_workflow_url/$JOB_SUBDIR"
     local browser_url="https://console.cloud.google.com/storage/browser/stackrox-ci-artifacts"
     local browser_job_url="$browser_url/$WORKFLOW_SUBDIR/$JOB_SUBDIR"
 
     local help_file
-    if is_OPENSHIFT_CI || is_GITHUB_ACTIONS; then
+    if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
         help_file="$ARTIFACT_DIR/howto-locate-other-artifacts-summary.html"
 
