@@ -142,7 +142,6 @@ deploy_stackrox_with_roxie() {
         --envrc "$roxie_envrc" \
         --single-namespace \
         --pause-reconciliation \
-        --early-readiness=false \
         --override <(yq eval '.central // {}' "$override_file")
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
@@ -165,12 +164,15 @@ deploy_stackrox_with_roxie() {
         --envrc "$roxie_envrc" \
         --single-namespace \
         --pause-reconciliation \
-        --early-readiness=false \
         --override <(yq eval '.securedCluster // {}' "$override_file")
 
-    wait_for_collectors_to_be_operational stackrox
-
-    # This will be rendered obsolete once --early-readiness=false is properly implemented in roxie.
+    # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
+    # It just waits for sensor and collector workloads to be up and running.
+    # We use the same mechanism here instead of `--early-readiness=false`, because the latter
+    # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
+    # and we don't want to slow down this deployment path using roxie.
+    sensor_wait "$namespace"
+    wait_for_collectors_to_be_operational "$namespace"
     if retrying_kubectl </dev/null -n "$namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
         wait_for_scanner_V4 "$namespace"
     fi
