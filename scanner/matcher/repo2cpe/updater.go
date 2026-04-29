@@ -2,18 +2,25 @@ package repo2cpe
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/indexer"
 )
 
-// defaultRefreshInterval is how often we attempt to refresh the mapping.
-var defaultRefreshInterval = 24 * time.Hour
+var (
+	defaultRefreshInterval = 24 * time.Hour
+	failedRefreshInterval  = 5 * time.Minute
+	initMaxRetries         = 3
+)
+
+var errNoSuccessfulFetch = errors.New("repo-to-CPE mapping has never been successfully fetched")
 
 // Getter provides access to the repository-to-CPE mapping with conditional fetch support.
 //
@@ -34,6 +41,7 @@ type Updater struct {
 	mu           sync.RWMutex
 	value        atomic.Pointer[repositorytocpe.MappingFile]
 	lastModified string
+	lastFailed   atomic.Bool
 }
 
 // NewUpdater creates a new Updater that fetches the repository-to-CPE mapping
@@ -49,12 +57,19 @@ func NewUpdater(getter Getter) *Updater {
 // It is called once on first access via Get.
 func (u *Updater) init() {
 	ctx := context.Background()
-	// Initial fetch (unconditional).
-	if err := u.fetch(ctx, ""); err != nil {
-		slog.WarnContext(ctx, "failed initial fetch of repo-to-CPE mapping; will retry", "reason", err)
+
+	err := retry.WithRetry(
+		func() error { return u.fetch(ctx, "") },
+		retry.Tries(initMaxRetries),
+		retry.WithExponentialBackoff(),
+		retry.OnFailedAttempts(func(err error) {
+			slog.WarnContext(ctx, "failed to fetch repo-to-CPE mapping; retrying", "reason", err)
+		}),
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed initial fetch of repo-to-CPE mapping after retries", "reason", err)
 	}
 
-	// Start background refresh goroutine.
 	go u.refreshLoop(ctx)
 }
 
