@@ -50,13 +50,13 @@ export type Deployment = {
 
 export type Container = {
     id: string;
-    config: ContainerConfig;
+    config: ContainerConfig | null;
     image: ContainerImage;
-    securityContext: ContainerSecurityContext;
+    securityContext: ContainerSecurityContext | null;
     volumes: ContainerVolume[];
     ports: PortConfig[];
     secrets: EmbeddedSecret[];
-    resources: ContainerResources;
+    resources: ContainerResources | null;
     name: string;
 };
 

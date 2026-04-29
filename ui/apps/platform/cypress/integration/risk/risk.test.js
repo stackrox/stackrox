@@ -1,5 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
+import pf6 from '../../selectors/pf6';
 
 import {
     clickTab,
@@ -53,7 +54,14 @@ describe('Risk', () => {
             viewFirstRiskDeployment();
 
             clickTab('Deployment details');
-            cy.get(RiskPageSelectors.imageLink).first().click();
+
+            cy.contains('h3', 'Container configuration')
+                .parents(pf6.card)
+                .first()
+                .within(() => {
+                    cy.get('button[aria-expanded="false"]').first().click();
+                    cy.get('a').first().click();
+                });
 
             cy.location('pathname')
                 .should('contain', '/main/vulnerabilities/')
