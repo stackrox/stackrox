@@ -82,6 +82,10 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 		q = applyDefaultState(q)
 	}
 
+	if q == nil {
+		q = search.EmptyQuery()
+	}
+
 	if env.ListAlertUseLegacyQuery.BooleanSetting() {
 		return ds.searchListAlertsLegacy(ctx, q)
 	}
