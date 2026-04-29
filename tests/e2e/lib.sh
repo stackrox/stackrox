@@ -84,10 +84,6 @@ deploy_stackrox() {
         # Wait for Scanner V2 when Scanner V4 is not deployed
         if retrying_kubectl </dev/null -n "${central_namespace}" get deployment scanner-db >/dev/null 2>&1; then
             info "Waiting for Scanner V2 to become ready..."
-            # Check scanner-db resource requests/limits
-            info "Checking Scanner V2 resource configuration..."
-            kubectl -n "${central_namespace}" get deployment scanner-db -o jsonpath='{.spec.template.spec.initContainers[*].resources}' || true
-            kubectl -n "${central_namespace}" get deployment scanner-db -o jsonpath='{.spec.template.spec.containers[*].resources}' || true
             wait_for_ready_deployment "${central_namespace}" "scanner-db" 600
             wait_for_ready_deployment "${central_namespace}" "scanner" 600
         fi
