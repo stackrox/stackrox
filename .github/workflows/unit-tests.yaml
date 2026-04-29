@@ -152,9 +152,6 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
