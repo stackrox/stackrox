@@ -3,7 +3,7 @@ module github.com/stackrox/stackrox/tools/proto
 go 1.25.7
 
 require (
-	github.com/bufbuild/buf v1.68.1
+	github.com/bufbuild/buf v1.68.4
 	github.com/favadi/protoc-go-inject-tag v1.4.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.1
 )
@@ -11,12 +11,12 @@ require (
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.11-20250718181942-e35f9b667443.1 // indirect
 	buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-20250109164928-1da0de137947.1 // indirect
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1 // indirect
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260126144947-819582968857.2 // indirect
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1 // indirect
 	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1 // indirect
 	buf.build/go/app v0.2.1-0.20260407195847-833f8f978cda // indirect
-	buf.build/go/bufplugin v0.9.0 // indirect
+	buf.build/go/bufplugin v0.10.0 // indirect
 	buf.build/go/bufprivateusage v0.1.0 // indirect
 	buf.build/go/interrupt v1.1.0 // indirect
 	buf.build/go/protovalidate v1.1.3 // indirect
@@ -28,7 +28,7 @@ require (
 	connectrpc.com/otelconnect v0.9.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/bufbuild/protocompile v0.14.2-0.20260414204819-0b1a6cd46bcb // indirect
+	github.com/bufbuild/protocompile v0.14.2-0.20260422150859-0395838fcd3c // indirect
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
@@ -39,7 +39,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v29.4.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.5 // indirect
-	github.com/docker/go-connections v0.6.0 // indirect
+	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect

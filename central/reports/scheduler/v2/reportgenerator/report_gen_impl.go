@@ -389,7 +389,7 @@ func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSna
 
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
-	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
+	qb := common.NewVulnReportQueryBuilder(collection, snap.GetResourceScope().GetEntityScope(), snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		dataStartTime)
 	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
 	if err != nil {

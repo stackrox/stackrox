@@ -630,6 +630,11 @@
         },
         "entityType": {
           "$ref": "#/definitions/AlertEntityType"
+        },
+        "enforcementCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts\nthis is the number of unique pods killed. For DEPLOY alerts with enforcement\nthis is 1. Avoids deserializing the full alert blob for ListAlert queries."
         }
       },
       "title": "Next available tag: 26"
@@ -770,6 +775,9 @@
         },
         "readinessProbe": {
           "$ref": "#/definitions/storageReadinessProbe"
+        },
+        "type": {
+          "$ref": "#/definitions/storageContainerType"
         }
       }
     },
@@ -830,6 +838,14 @@
         }
       },
       "title": "Next tag: 13"
+    },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
     },
     "storageDeployment": {
       "type": "object",

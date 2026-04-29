@@ -24,7 +24,7 @@ runs:
 
     - name: Cache Go Build (save)
       if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
@@ -32,7 +32,7 @@ runs:
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache/restore@v5
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
@@ -58,7 +58,7 @@ runs:
     # Registered AFTER cache steps so the post-step runs BEFORE cache save
     # (GHA runs post-steps in reverse registration order).
     - name: Trim stale GOCACHE entries (post-step)
-      uses: gacts/run-and-post-run@81b6ce503cde93862cec047c54652e45c5dca991 # v1.4.0
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       with:
         post: >
           set +e;

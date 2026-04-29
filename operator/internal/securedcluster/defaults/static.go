@@ -73,6 +73,10 @@ var staticDefaults = platform.SecuredClusterSpec{
 			PinToNodes: ptr.To(platform.PinToNodesNone),
 		},
 	},
+	ProcessIndicators: &platform.ProcessIndicatorsSpec{
+		Persistence:        platform.ProcessIndicatorConfigEnabled.Pointer(),
+		ExcludeOpenshiftNs: platform.ProcessIndicatorConfigDisabled.Pointer(),
+	},
 }
 
 var SecuredClusterStaticDefaults = SecuredClusterDefaultingFlow{

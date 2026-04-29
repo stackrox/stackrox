@@ -8,6 +8,7 @@ import (
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -293,21 +294,43 @@ func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
+	containerCount := len(podSpec.Containers)
+	if features.InitContainerSupport.Enabled() {
+		containerCount += len(podSpec.InitContainers)
+	}
+	allK8sContainers := make([]v1.Container, 0, containerCount)
+	w.Deployment.Containers = make([]*storage.Container, 0, containerCount)
+
+	if features.InitContainerSupport.Enabled() {
+		for _, c := range podSpec.InitContainers {
+			w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
+				Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
+				Name: c.Name,
+				Type: storage.ContainerType_INIT,
+			})
+			allK8sContainers = append(allK8sContainers, c)
+		}
+	}
+
 	for _, c := range podSpec.Containers {
 		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
 			Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
 			Name: c.Name,
+			Type: storage.ContainerType_REGULAR,
 		})
+		allK8sContainers = append(allK8sContainers, c)
 	}
 
-	w.populateContainerConfigs(podSpec)
-	w.populateImages(podSpec)
-	w.populateSecurityContext(podSpec)
-	w.populateVolumesAndSecrets(podSpec)
-	w.populatePorts(podSpec)
-	w.populateResources(podSpec)
-	w.populateProbes(podSpec)
+	// combinedSpec aligns podSpec.Containers with w.Deployment.Containers for the index-based helpers.
+	combinedSpec := podSpec
+	combinedSpec.Containers = allK8sContainers
+	w.populateContainerConfigs(combinedSpec)
+	w.populateImages(combinedSpec)
+	w.populateSecurityContext(combinedSpec)
+	w.populateVolumesAndSecrets(combinedSpec)
+	w.populatePorts(combinedSpec)
+	w.populateResources(combinedSpec)
+	w.populateProbes(combinedSpec)
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {

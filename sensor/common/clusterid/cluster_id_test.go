@@ -93,11 +93,9 @@ func (s *clusterIDSuite) Test_Get() {
 				handler.clusterIDAvailable.Signal()
 			}()
 			wg := sync.WaitGroup{}
-			wg.Add(1)
-			go func() {
+			wg.Go(func() {
 				actualID = handler.Get()
-				wg.Done()
-			}()
+			})
 			select {
 			case <-time.After(100 * time.Millisecond):
 				s.FailNow("the call to Get should not block")

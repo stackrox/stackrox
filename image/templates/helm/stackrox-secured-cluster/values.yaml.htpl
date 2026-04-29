@@ -21,11 +21,7 @@ admissionControl:
   [<- else >]
   failurePolicy: Ignore
   [<- end >]
-  [<- if eq .ClusterType "OPENSHIFT_CLUSTER" >]
-  listenOnEvents: false
-  [<- else >]
   listenOnEvents: true
-  [<- end >]
   enforce: [< or .AdmissionControllerEnabled .AdmissionControlEnforceOnUpdates >]
   disableBypass: [< default false .DisableBypass >]
 

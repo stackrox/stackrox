@@ -8,22 +8,32 @@ import {
     FlexItem,
     Title,
 } from '@patternfly/react-core';
+import type { BreakpointModifiers } from '@patternfly/react-core';
 
-import type { DetailsType } from '../imageVulnerabilityReports.types';
+import type { DetailsType } from '../reports.types';
 
 export type DetailsViewProps = {
     headingLevel: 'h2' | 'h3';
+    horizontalTermWidthModifier: BreakpointModifiers;
     values: DetailsType;
 };
 
-function DetailsView({ headingLevel, values }: DetailsViewProps): ReactElement {
+function DetailsView({
+    headingLevel,
+    horizontalTermWidthModifier,
+    values,
+}: DetailsViewProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <FlexItem>
                 <Title headingLevel={headingLevel}>Details</Title>
             </FlexItem>
             <FlexItem>
-                <DescriptionList isCompact isHorizontal>
+                <DescriptionList
+                    isCompact
+                    isHorizontal
+                    horizontalTermWidthModifier={horizontalTermWidthModifier}
+                >
                     <DescriptionListGroup>
                         <DescriptionListTerm>Name</DescriptionListTerm>
                         <DescriptionListDescription>

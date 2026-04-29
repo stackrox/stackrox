@@ -40,6 +40,7 @@ var (
 
 	PolicyID           = newFieldLabel("Policy ID")
 	Enforcement        = newFieldLabel("Enforcement")
+	EnforcementCount   = newFieldLabel("Enforcement Count")
 	PolicyName         = newFieldLabel("Policy")
 	PolicyCategoryName = newFieldLabel("Policy Category")
 	PolicyCategoryID   = newFieldLabel("Policy Category ID")
@@ -143,6 +144,7 @@ var (
 	ContainerID                  = newFieldLabel("Container ID")
 	ContainerImageDigest         = newFieldLabel("Container Image Digest")
 	ContainerName                = newFieldLabel("Container Name")
+	ContainerType                = newFieldLabel("Container Type")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentHash               = newFieldLabel("Deployment Hash")
 	DeploymentName               = newFieldLabel("Deployment")
@@ -495,6 +497,7 @@ var (
 	VirtualMachineName     = newFieldLabel("Virtual Machine Name")
 	GuestOS                = newFieldLabel("Guest OS")
 	VirtualMachineState    = newFieldLabel("Virtual Machine State")
+	VirtualMachineScanID   = newFieldLabel("Virtual Machine Scan ID")
 	VirtualMachineScanTime = newFieldLabel("Virtual Machine Scan Time")
 	VirtualMachineScanOS   = newFieldLabel("Virtual Machine Scan OS")
 	VirtualMachineTopCVSS  = newFieldLabel("Virtual Machine Top CVSS")

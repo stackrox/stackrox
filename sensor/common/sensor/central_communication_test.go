@@ -126,18 +126,18 @@ func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
 		recvErr error
 		wantMsg string
 	}{
-		"PermissionDenied error suggests revoked or expired credentials": {
+		"PermissionDenied error returns wrapped gRPC error": {
 			recvErr: status.Error(codes.PermissionDenied, "not authorized: no authorizer could authorize this request"),
-			wantMsg: "may be revoked or expired",
+			wantMsg: "permission denied by central",
 		},
-		"Other gRPC error includes networking suggestion": {
+		"Other gRPC error returns raw gRPC error": {
 			recvErr: status.Error(codes.Internal, "unexpected HTTP status code received from server"),
-			wantMsg: "likely due to a networking or TLS configuration issue",
+			wantMsg: "unexpected HTTP status code",
 		},
-		"No error from Recv falls back to networking suggestion": {
+		"No error from Recv returns SensorHello not acknowledged": {
 			recvMsg: &central.MsgToSensor{},
 			recvErr: nil,
-			wantMsg: "likely due to a networking or TLS configuration issue",
+			wantMsg: "central did not acknowledge SensorHello",
 		},
 	}
 

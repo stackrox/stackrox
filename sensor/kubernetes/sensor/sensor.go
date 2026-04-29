@@ -205,6 +205,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
+		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -288,7 +289,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if features.SensitiveFileActivity.Enabled() {
 		activityChan := make(chan *sensorInternal.FileActivity)
-		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
 	}

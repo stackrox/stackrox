@@ -20,7 +20,12 @@ import (
 
 const (
 	DATA_NOT_AVAILABLE = "Data Not Available"
-	NO_REMEDIATION     = "No Remediation Available"
+	// CONTROL_NOT_APPLICABLE is used when a control reference cannot be resolved for structural reasons
+	// (e.g. tailored profiles with no benchmark mapping, or profiles like E8 whose benchmark short name
+	// has no matching standard in rule annotations). DATA_NOT_AVAILABLE is used instead when the lookup
+	// fails due to errors or data-integrity issues.
+	CONTROL_NOT_APPLICABLE = "N/A"
+	NO_REMEDIATION         = "No Remediation Available"
 )
 
 var (
@@ -122,11 +127,12 @@ func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clu
 			Rationale:    checkResult.GetRationale(),
 			Instructions: checkResult.GetInstructions(),
 		}
-		profileInfo, profileName, err := g.getProfileInfo(ctx, checkResult, clusterID)
+		profileInfo, profileName, profileType, err := g.getProfileInfo(ctx, checkResult, clusterID)
 		if err != nil {
 			return err
 		}
 		row.Profile = profileInfo
+		row.ProfileType = profileType
 		remediationInfo, err := g.getRemediationInfo(ctx, checkResult, clusterID)
 		if err != nil {
 			return err
@@ -143,19 +149,32 @@ func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clu
 	}
 }
 
-func (g *Aggregator) getProfileInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, string, error) {
+func (g *Aggregator) getProfileInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, string, string, error) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanRef, checkResult.GetScanRefId()).
 		ProtoQuery()
 	profiles, err := g.profileDS.SearchProfiles(ctx, q)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if len(profiles) < 1 {
 		log.Errorf("profile not found for cluster %s and check name %s", clusterID, checkResult.GetCheckName())
-		return DATA_NOT_AVAILABLE, "", nil
+		return DATA_NOT_AVAILABLE, "", DATA_NOT_AVAILABLE, nil
 	}
-	return fmt.Sprintf("%s %s", profiles[0].GetName(), profiles[0].GetProfileVersion()), profiles[0].GetName(), nil
+	profileInfo := fmt.Sprintf("%s %s", profiles[0].GetName(), profiles[0].GetProfileVersion())
+	profileType := operatorKindToHumanReadable(profiles[0].GetOperatorKind())
+	return profileInfo, profiles[0].GetName(), profileType, nil
+}
+
+func operatorKindToHumanReadable(kind storage.ComplianceOperatorProfileV2_OperatorKind) string {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return "Profile"
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return "Tailored Profile"
+	default:
+		return DATA_NOT_AVAILABLE
+	}
 }
 
 func (g *Aggregator) getRemediationInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, error) {
@@ -195,7 +214,7 @@ func (g *Aggregator) getControlsInfo(ctx context.Context, checkResult *storage.C
 		return DATA_NOT_AVAILABLE, err
 	}
 	if len(controls) == 0 {
-		return DATA_NOT_AVAILABLE, nil
+		return CONTROL_NOT_APPLICABLE, nil
 	}
 	controlsList := make([]string, 0, len(controls))
 	for _, ctrl := range controls {

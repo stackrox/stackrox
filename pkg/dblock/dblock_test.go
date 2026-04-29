@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package lock
+package dblock
 
 import (
 	"context"
@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
+
+const testLockID int64 = 999_999_999
 
 type AdvisoryLockSuite struct {
 	suite.Suite
@@ -45,14 +47,14 @@ func (s *AdvisoryLockSuite) TearDownTest() {
 }
 
 func (s *AdvisoryLockSuite) TestTryAcquireAndRelease() {
-	acquired, release, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	acquired, release, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().True(acquired)
 	s.Require().NotNil(release)
 
 	release()
 
-	acquired2, release2, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	acquired2, release2, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().True(acquired2)
 	s.Require().NotNil(release2)
@@ -60,13 +62,13 @@ func (s *AdvisoryLockSuite) TestTryAcquireAndRelease() {
 }
 
 func (s *AdvisoryLockSuite) TestMutualExclusion() {
-	acquired, release, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	acquired, release, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().True(acquired)
 	s.Require().NotNil(release)
 
-	// TryAcquire  should fail because lock already held by other connection.
-	acquired2, release2, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	// TryAcquire should fail because lock already held by other connection.
+	acquired2, release2, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().False(acquired2)
 	s.Require().Nil(release2)
@@ -75,12 +77,12 @@ func (s *AdvisoryLockSuite) TestMutualExclusion() {
 }
 
 func (s *AdvisoryLockSuite) TestReleaseAllowsReacquire() {
-	acquired, release, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	acquired, release, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().True(acquired)
 	release()
 
-	acquired2, release2, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	acquired2, release2, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().True(acquired2)
 	s.Require().NotNil(release2)
@@ -99,7 +101,7 @@ func (s *AdvisoryLockSuite) TestConcurrentTryAcquire() {
 	for i := 0; i < numGoroutines; i++ {
 		go func(idx int) {
 			defer wg.Done()
-			results[idx], releases[idx], errs[idx] = TryAcquireMigrationLock(s.ctx, s.pool)
+			results[idx], releases[idx], errs[idx] = TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 		}(i)
 	}
 	wg.Wait()
@@ -117,7 +119,7 @@ func (s *AdvisoryLockSuite) TestConcurrentTryAcquire() {
 }
 
 func (s *AdvisoryLockSuite) TestDoubleReleaseIsIdempotent() {
-	acquired, release, err := TryAcquireMigrationLock(s.ctx, s.pool)
+	acquired, release, err := TryAcquireAdvisoryLock(s.ctx, s.pool, testLockID)
 	s.Require().NoError(err)
 	s.Require().True(acquired)
 

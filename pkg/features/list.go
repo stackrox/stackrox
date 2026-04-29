@@ -120,7 +120,7 @@ var (
 	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB", enabled)
 
 	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
-	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
+	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING", enabled)
 
 	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
 	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING")
@@ -133,6 +133,9 @@ var (
 
 	// TailoredProfiles enables support for compliance tailored profiles
 	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
+
+	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
+	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
 )
 
 // The following feature flags are related to Scanner V4.

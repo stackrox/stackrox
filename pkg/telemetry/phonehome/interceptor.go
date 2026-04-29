@@ -66,8 +66,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		if ri.HTTPRequest.URL != nil {
 			path = ri.HTTPRequest.URL.Path
 		}
-		// Override the User-Agent with the gRPC client or the grpc-gateway user
-		// agent.
+		// Override the User-Agent with the gRPC client or the grpc-gateway user agent.
 		grpcClientAgent := ri.Metadata.Get(userAgentHeaderKey)
 		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentHeaderKey); clientAgent != "" {
 			grpcClientAgent = append(grpcClientAgent, clientAgent)

@@ -5,6 +5,7 @@ import {
     nodeEventDescriptor,
     policyCriteriaDescriptors,
     validateFilePath,
+    warnBroadFilePath,
 } from './policyCriteriaDescriptors';
 
 // Enforce consistency of whicheverName properties in policy criteria descriptors.
@@ -94,6 +95,105 @@ describe('validateFilePath', () => {
         expect(validateFilePath('/home/user/..')).toBe(
             'File path must not contain directory traversal (..)'
         );
+    });
+});
+
+describe('warnBroadFilePath', () => {
+    it('should return undefined for an empty string', () => {
+        expect(warnBroadFilePath('')).toBeUndefined();
+    });
+
+    it('should return undefined for a whitespace-only string', () => {
+        expect(warnBroadFilePath('   ')).toBeUndefined();
+    });
+
+    it('should warn for /** (root catch-all)', () => {
+        expect(warnBroadFilePath('/**')).toContain('every file event on the system');
+    });
+
+    it('should warn for /* (root catch-all)', () => {
+        expect(warnBroadFilePath('/*')).toContain('every file event on the system');
+    });
+
+    it('should warn for /**/foo (root-level recursive search)', () => {
+        expect(warnBroadFilePath('/**/foo')).toContain('subdirectories of root');
+    });
+
+    it('should warn for /**/* (root-level recursive catch-all)', () => {
+        expect(warnBroadFilePath('/**/*')).toContain('subdirectories of root');
+    });
+
+    it('should warn for /*/bar (root-level single-level search)', () => {
+        expect(warnBroadFilePath('/*/bar')).toContain('subdirectories of root');
+    });
+
+    it('should warn for /tmp/**', () => {
+        expect(warnBroadFilePath('/tmp/**')).toContain('temporary file');
+    });
+
+    it('should warn for /proc/* and /proc/**', () => {
+        expect(warnBroadFilePath('/proc/*')).toContain('system');
+        expect(warnBroadFilePath('/proc/**')).toContain('system');
+    });
+
+    it('should warn for /sys/**', () => {
+        expect(warnBroadFilePath('/sys/**')).toContain('system');
+    });
+
+    it('should warn for /var/log/**', () => {
+        expect(warnBroadFilePath('/var/log/**')).toContain('log file');
+    });
+
+    it('should not warn for /var/log/nginx/access.log.* (scoped glob under high-churn)', () => {
+        expect(warnBroadFilePath('/var/log/nginx/access.log.*')).toBeUndefined();
+    });
+
+    it('should not warn for /etc/passwd (specific safe path)', () => {
+        expect(warnBroadFilePath('/etc/passwd')).toBeUndefined();
+    });
+
+    it('should not warn for / (root path, not a glob)', () => {
+        expect(warnBroadFilePath('/')).toBeUndefined();
+    });
+
+    it('should not warn for /tmp (exact path, no glob)', () => {
+        expect(warnBroadFilePath('/tmp')).toBeUndefined();
+    });
+
+    it('should not warn for /tmp/specific.txt (exact path under high-churn)', () => {
+        expect(warnBroadFilePath('/tmp/specific.txt')).toBeUndefined();
+    });
+
+    it('should not warn for /proc/1/status (specific path under high-churn)', () => {
+        expect(warnBroadFilePath('/proc/1/status')).toBeUndefined();
+    });
+
+    it('should not warn for /home/**/.ssh/id_* (scoped pattern)', () => {
+        expect(warnBroadFilePath('/home/**/.ssh/id_*')).toBeUndefined();
+    });
+
+    it('should warn for /opt/app/** (unscoped recursive glob under unknown prefix)', () => {
+        expect(warnBroadFilePath('/opt/app/**')).toContain('Recursive glob patterns');
+    });
+
+    it('should warn for /opt/app/* (unscoped single-level glob under unknown prefix)', () => {
+        expect(warnBroadFilePath('/opt/app/*')).toContain('Single-level glob patterns');
+    });
+
+    it('should not warn for /srv/data/**/config.yaml (scoped recursive pattern with suffix)', () => {
+        expect(warnBroadFilePath('/srv/data/**/config.yaml')).toBeUndefined();
+    });
+
+    it('should prefer specific prefix warning over generic recursive warning', () => {
+        expect(warnBroadFilePath('/tmp/**')).toContain('temporary file');
+    });
+
+    it('should prefer specific prefix warning over generic single-level warning', () => {
+        expect(warnBroadFilePath('/tmp/*')).toContain('temporary file');
+    });
+
+    it('should handle leading/trailing whitespace', () => {
+        expect(warnBroadFilePath('  /**  ')).toBeDefined();
     });
 });
 

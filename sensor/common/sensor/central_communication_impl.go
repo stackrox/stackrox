@@ -156,6 +156,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	if features.FlattenImageData.Enabled() {
 		capsSet.Add(centralsensor.FlattenImageData)
 	}
+	if features.InitContainerSupport.Enabled() {
+		capsSet.Add(centralsensor.InitContainerSupport)
+	}
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -217,7 +220,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		return ProbeStreamForConnectionError(stream, "the credentials may be revoked or expired")
+		return DiagnoseConnectionFailure(stream, "the credentials may be revoked or expired")
 	}
 
 	var centralHello *central.CentralHello

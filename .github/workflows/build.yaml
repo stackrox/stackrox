@@ -153,7 +153,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
         with:
           node-version-file: ui/package.json
 
@@ -176,7 +176,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -194,10 +194,50 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Create CLI stub files
+        if: |
+          !(needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli'))
+        run: |
+          cat > stub.txt << 'EOF'
+          This is a placeholder file. CLI binaries were not built for this PR build.
+
+          To build CLI binaries in PR builds:
+          - Add the "ci-build-cli" label to your pull request
+          - Re-push to trigger a new build
+
+          To download the latest roxctl binary:
+          - Visit https://mirror.openshift.com/pub/rhacs/assets/latest/bin/
+
+          EOF
+
+          mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
+
+          for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
+            cp stub.txt bin/${arch}/roxctl
+            cp stub.txt bin/${arch}/roxagent
+          done
+          cp stub.txt bin/windows_amd64/roxctl.exe
+
+      - name: PR labels
+        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
+
       - name: Cache Go dependencies
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Build CLI
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         run: make cli
 
       - name: Bundle build to preserve permissions
@@ -218,7 +258,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -347,7 +387,7 @@ jobs:
         cache: false
 
     - name: Set up Node.js
-      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
       with:
         node-version-file: ui/package.json
 
@@ -416,7 +456,8 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   build-and-push-main:
-    runs-on: ubuntu-latest
+    # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -495,7 +536,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
@@ -744,7 +785,7 @@ jobs:
         message-path: build-comment.md
 
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
@@ -822,7 +863,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable

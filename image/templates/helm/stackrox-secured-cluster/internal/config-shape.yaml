@@ -215,3 +215,7 @@ crs:
   file: null # string
 consolePlugin:
   enabled: null # bool
+processIndicators:
+  noPersistence: null # bool
+  excludeOpenshiftNs: null # bool
+  excludeNamespaceFilter: null # string

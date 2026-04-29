@@ -28,7 +28,6 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
             toggleText={toggleText}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             isExpanded={isExpanded}
-            displaySize="lg"
             isWidthLimited
             data-testid="deployment-container-config"
         >

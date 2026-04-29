@@ -19,6 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
@@ -138,7 +141,7 @@ jobs:
       - name: Override GOTOOLCHAIN
         run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # ratchet:actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
         with:
           node-version-file: ui/package.json
 
@@ -171,6 +174,9 @@ jobs:
       - name: Fetch UI deps
         run: make -C ui deps
 
+      - name: Cache ESLint results
+        uses: ./.github/actions/cache-eslint
+
       - name: make style-slim
         run: make style-slim
 
@@ -195,7 +201,7 @@ jobs:
 
     - name: Cache golangci-lint
       if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
@@ -204,7 +210,7 @@ jobs:
 
     - name: Restore golangci-lint analysis cache
       if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
-      uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # ratchet:actions/cache/restore@v5
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
@@ -278,21 +284,28 @@ jobs:
             rhacs-eng/release-scanner-db-slim:${{ env.scanner_tag }}-fast
 
   github-actions-lint:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '^.github/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      - name: Download actionlint
-        id: get_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/2ab3a12c7848f6c15faca9a92612ef4261d0e370/scripts/download-actionlint.bash) 1.6.27
-        shell: bash
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
       - name: Check workflow files
-        run: ${{ steps.get_actionlint.outputs.executable }} -color
-        shell: bash
+        run: make github-actions-lint
 
   github-actions-shellcheck:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '^.github/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -303,6 +316,10 @@ jobs:
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

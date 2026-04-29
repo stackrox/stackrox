@@ -140,6 +140,7 @@ var (
 		{
 			Name:           "ocp4-cis",
 			ProfileVersion: "1.7.0",
+			OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 		},
 	}
 	remediations = []*storage.ComplianceOperatorRemediationV2{
@@ -364,6 +365,75 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*datastore.ControlResult{}, nil
 			},
 		},
+		"profile without benchmark mapping renders control reference as N/A": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "my-custom-tailored-profile",
+						ProfileVersion: "1.0.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_TAILORED_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
+			},
+		},
+		"profile with benchmark but no matching controls renders control reference as N/A": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "ocp4-e8",
+						ProfileVersion: "1.0.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return []*datastore.ControlResult{}, nil
+			},
+		},
+		"profile matching benchmark regex resolves controls": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "ocp4-cis",
+						ProfileVersion: "1.4.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
+			},
+		},
 	}
 	for tname, tcase := range cases {
 		s.Run(tname, func() {
@@ -477,6 +547,7 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 		Rationale:    fmt.Sprintf("rationale-%s-%s", clusterID, check),
 		Instructions: fmt.Sprintf("instructions-%s-%s", clusterID, check),
 		Profile:      fmt.Sprintf("profile-%s-%s", clusterID, check),
+		ProfileType:  fmt.Sprintf("profiletype-%s-%s", clusterID, check),
 		ControlRef:   fmt.Sprintf("control-%s-%s", clusterID, check),
 		Remediation:  fmt.Sprintf("remediation=%s-%s", clusterID, check),
 	}
@@ -553,9 +624,11 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 		expProfiles, _ := tcase.expectedProfiles()
 		if len(expProfiles) < 1 {
 			assert.Equal(t, DATA_NOT_AVAILABLE, row.Profile)
+			assert.Equal(t, DATA_NOT_AVAILABLE, row.ProfileType)
 		} else {
 			require.Len(t, expProfiles, 1)
 			assert.Equal(t, fmt.Sprintf("%s %s", expProfiles[0].GetName(), expProfiles[0].GetProfileVersion()), row.Profile)
+			assert.Equal(t, operatorKindToHumanReadable(expProfiles[0].GetOperatorKind()), row.ProfileType)
 		}
 	}
 	if tcase.expectedRemediations != nil {
@@ -584,7 +657,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	}
 	expBench, _ := tcase.expectedBenchmarks()
 	if len(expBench) == 0 {
-		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		assert.Equal(t, CONTROL_NOT_APPLICABLE, row.ControlRef)
 		return
 	}
 	if tcase.expectedControls == nil {
@@ -592,7 +665,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	}
 	expControls, _ := tcase.expectedControls()
 	if len(expControls) == 0 {
-		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		assert.Equal(t, CONTROL_NOT_APPLICABLE, row.ControlRef)
 		return
 	}
 	expControlInfos := make([]string, 0, len(expControls))

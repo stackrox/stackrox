@@ -129,3 +129,19 @@ func (r *resourceCountByFixability) GetTotal() int {
 func (r *resourceCountByFixability) GetFixable() int {
 	return r.fixable
 }
+
+type cveComponentResponse struct {
+	ComponentName    string `db:"component"`
+	ComponentVersion string `db:"component_version"`
+	ComponentSource  int32  `db:"component_source"`
+	FixedBy          string `db:"fixed_by"`
+	AdvisoryName     string `db:"advisory_name"`
+	AdvisoryLink     string `db:"advisory_link"`
+}
+
+func (c *cveComponentResponse) GetComponentName() string    { return c.ComponentName }
+func (c *cveComponentResponse) GetComponentVersion() string { return c.ComponentVersion }
+func (c *cveComponentResponse) GetComponentSource() int32   { return c.ComponentSource }
+func (c *cveComponentResponse) GetFixedBy() string          { return c.FixedBy }
+func (c *cveComponentResponse) GetAdvisoryName() string     { return c.AdvisoryName }
+func (c *cveComponentResponse) GetAdvisoryLink() string     { return c.AdvisoryLink }

@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -113,8 +114,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			protoassert.ElementsMatch(s.T(), objs, batch)
 
 			// clean up data
-			for i := len(objIDs) - 1; i >= 0; i-- {
-				assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objIDs[i]))
+			for _, objID := range slices.Backward(objIDs) {
+				assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objID))
 			}
 			assert.NoError(s.T(), resetLocalGraph(s.datastore.(*datastoreImpl)))
 		})

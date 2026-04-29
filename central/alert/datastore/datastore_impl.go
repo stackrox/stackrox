@@ -463,8 +463,12 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 		return nil
 	}
 
-	if features.PlatformComponents.Enabled() {
-		for _, alert := range alerts {
+	for _, alert := range alerts {
+		// Compute and cache enforcement count so it can be queried directly
+		// from the column without deserializing the full alert blob.
+		alert.EnforcementCount = convert.EnforcementCount(alert)
+
+		if features.PlatformComponents.Enabled() {
 			alert.EntityType = alertutils.GetEntityType(alert)
 			match, err := ds.platformMatcher.MatchAlert(alert)
 			if err != nil {
@@ -566,6 +570,8 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 	resourceName := fv[strings.ToLower(search.ResourceName.String())]
 	resourceType := fv[strings.ToLower(search.ResourceType.String())]
 
+	nodeName := fv[strings.ToLower(search.Node.String())]
+
 	var entityName string
 	switch entityType {
 	case "DEPLOYMENT":
@@ -573,6 +579,9 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 		resourceType = entityType
 	case "RESOURCE":
 		entityName = resourceName
+	case "NODE":
+		entityName = nodeName
+		resourceType = entityType
 	}
 
 	var location string

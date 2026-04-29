@@ -11,6 +11,7 @@ from ci_tests import SensorIntegration
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
 
 ClusterTestRunner(
