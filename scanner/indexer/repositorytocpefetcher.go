@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/quay/claircore/rhel"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -21,9 +20,6 @@ type RepositoryToCPEFetcher struct {
 
 // NewRepositoryToCPEFetcher creates a new fetcher for the repository-to-CPE mapping.
 func NewRepositoryToCPEFetcher(client *http.Client, url string) *RepositoryToCPEFetcher {
-	if url == "" {
-		url = rhel.DefaultRepo2CPEMappingURL
-	}
 	return &RepositoryToCPEFetcher{
 		url:    url,
 		client: client,
