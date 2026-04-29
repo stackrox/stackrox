@@ -112,7 +112,7 @@ def _fetch_merged_prs_from_commits(
                 if len(parts) != 4:
                     raise BackportAuditError(f"Unexpected git log format: {line}")
 
-                commit_sha, subject, author_name, author_email = parts
+                commit_sha, author_name, author_email, subject = parts
 
                 # Extract PR number from commit message like "(#19752)"
                 pr_match = re.search(r"\(#(\d+)\)", subject)
