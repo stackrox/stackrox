@@ -84,8 +84,9 @@ def _fetch_merged_prs_from_commits(
     all_jira_keys = set()
 
     for branch in branches:
-        # Use current_version if available, otherwise latest_tag
-        base_ref = branch.current_version or branch.latest_tag
+        # Use latest_tag (last release) to show all merged commits for this release
+        # current_version might be an RC tag, which would hide most merged PRs
+        base_ref = branch.latest_tag or branch.current_version
         if not base_ref:
             # No tag yet, skip merged PR collection
             continue
