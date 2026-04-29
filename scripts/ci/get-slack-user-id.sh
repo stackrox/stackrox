@@ -19,7 +19,6 @@ slack_user=''
 # TODO: please keep the list in the alphabetic order (case-insensitive, like sort -f). It is simpler to maintain it this way.
 case "$github_login" in
 'ajheflin')         slack_user='U087GT2H45Q' ;;
-'akameric')         slack_user='U076CG62KL4' ;;
 'alanonthegit')     slack_user='U01PZFFSZRB' ;;
 'AlexVulaj')        slack_user='U03M3QKBES2' ;;
 'alwayshooin')      slack_user='U01PLAWUU8N' ;;
@@ -37,7 +36,7 @@ case "$github_login" in
 'gaurav-nelson')    slack_user='U01P6PMFGKF' ;;
 'GrimmiMeloni')     slack_user='U048VH2JZ1C' ;;
 'guzalv')           slack_user='U08NQKQJH4N' ;;
-'house-d')          slack_user='U03H69TFKH9' ;;
+'davdhacs')          slack_user='U03H69TFKH9' ;;
 'janisz')           slack_user='U0218FUVDMJ' ;;
 'johannes94')       slack_user='U03E2SD2ZPB' ;;
 'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
@@ -49,7 +48,6 @@ case "$github_login" in
 'kylape')           slack_user='UGJML86DD'   ;;
 'ludydoo')          slack_user='U04TFDR57KQ' ;;
 'lvalerom')         slack_user='U02SJTV567N' ;;
-'Maddosaurus')      slack_user='U01Q5L5R0GJ' ;;
 'mclasmeier')       slack_user='U02DKH1LQ5N' ;;
 'mfosterrox')       slack_user='U01PMH71ACU' ;;
 'Molter73')         slack_user='U02A292NPV2' ;;
@@ -61,10 +59,8 @@ case "$github_login" in
 'porridge')         slack_user='U020XCUG2LA' ;;
 'rhybrillou')       slack_user='U02GPRG4NHF' ;;
 'robbycochran')     slack_user='U03NAEPKDE1' ;;
-'RTann')            slack_user='U01NZ6U730X' ;;
 'rukletsov')        slack_user='U01G6P17RTK' ;;
 'sachaudh')         slack_user='U01QLCGS0NM' ;;
-'SimonBaeumer')     slack_user='U01Q5RMEHCK' ;;
 'stehessel')        slack_user='U02SDMERUFP' ;;
 'sthadka')          slack_user='U029PASTL5C' ;;
 'Stringy')          slack_user='U02KJKREKPY' ;;
