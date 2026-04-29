@@ -84,7 +84,9 @@ def _fetch_merged_prs_from_commits(
     all_jira_keys = set()
 
     for branch in branches:
-        if not branch.latest_tag:
+        # Use current_version if available, otherwise latest_tag
+        base_ref = branch.current_version or branch.latest_tag
+        if not base_ref:
             # No tag yet, skip merged PR collection
             continue
 
@@ -93,7 +95,7 @@ def _fetch_merged_prs_from_commits(
             result = subprocess.run(
                 [
                     "git", "log",
-                    f"{branch.latest_tag}..origin/{branch.name}",
+                    f"{base_ref}..origin/{branch.name}",
                     "--format=%H|%an|%ae|%s"
                 ],
                 capture_output=True,

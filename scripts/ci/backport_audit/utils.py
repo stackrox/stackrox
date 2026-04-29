@@ -223,7 +223,44 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
 
     base_version = match.group(1)
 
-    # Find latest tag for this version
+    # Detect current version from branch HEAD (includes RC tags, excludes nightly)
+    current_version = None
+    try:
+        result = subprocess.run(
+            ["git", "tag", "--merged", f"origin/{branch_name}"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+        # Collect tags matching version pattern (X.Y.Z or X.Y.Z-rc.N), excluding nightly
+        pattern = f"^{re.escape(base_version)}\\." + r"\d+(-rc\.\d+)?$"
+        matching_tags = [
+            tag for tag in result.stdout.splitlines()
+            if re.match(pattern, tag)
+        ]
+
+        if matching_tags:
+            def sort_key(tag: str) -> tuple[int, int, int, bool, int]:
+                """Sort key: prefer higher versions, then release over RC."""
+                match = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$', tag)
+                if not match:
+                    return (0, 0, 0, False, 0)
+                major = int(match.group(1))
+                minor = int(match.group(2))
+                patch = int(match.group(3))
+                is_release = match.group(4) is None
+                rc_num = 0 if is_release else int(match.group(4))
+                # Sort: major desc, minor desc, patch desc, release first, then rc desc
+                return (major, minor, patch, is_release, rc_num)
+
+            matching_tags.sort(key=sort_key, reverse=True)
+            current_version = matching_tags[0]
+
+    except subprocess.CalledProcessError:
+        pass
+
+    # Find latest release tag for this version (excludes RC/alpha/beta)
     try:
         result = subprocess.run(
             ["git", "tag"],
@@ -233,7 +270,7 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
             timeout=10,
         )
 
-        # Filter tags for this version
+        # Filter tags for this version (only release tags, no RC/alpha/beta)
         pattern = f"^{re.escape(base_version)}\\." + r"\d+$"
         matching_tags = [
             tag for tag in result.stdout.splitlines()
@@ -257,6 +294,7 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
             name=branch_name,
             expected_version=expected_version,
             latest_tag=latest_tag,
+            current_version=current_version,
         )
 
     except subprocess.CalledProcessError as e:

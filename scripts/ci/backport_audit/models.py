@@ -73,3 +73,4 @@ class ReleaseBranch:
     name: str
     expected_version: str
     latest_tag: str | None
+    current_version: str | None = None

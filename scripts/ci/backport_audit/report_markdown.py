@@ -151,7 +151,10 @@ def generate_markdown(
         if not prs and not orphaned:
             continue
 
-        lines.extend((f"## {branch.name} (Expected: {branch.expected_version})", ""))
+        version_info = f"Expected: {branch.expected_version}"
+        if branch.current_version:
+            version_info += f", Current: {branch.current_version}"
+        lines.extend((f"## {branch.name} ({version_info})", ""))
 
         # PRs without Jira reference
         prs_no_jira = [pr for pr in prs if not pr.jira_keys]

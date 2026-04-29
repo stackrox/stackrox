@@ -406,12 +406,15 @@ def _generate_branch_blocks(
     blocks = []
 
     # Branch header
+    version_info = f"Expected: {branch.expected_version}"
+    if branch.current_version:
+        version_info += f", Current: {branch.current_version}"
     blocks.append(
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*{branch.name} (Expected: {branch.expected_version})*",
+                "text": f"*{branch.name} ({version_info})*",
             },
         }
     )
