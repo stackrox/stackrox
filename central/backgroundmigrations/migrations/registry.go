@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/stackrox/rox/central/backgroundmigrations/types"
 )
@@ -26,6 +27,6 @@ func Get(startingSeqNum int) (types.BackgroundMigration, bool) {
 }
 
 // ResetRegistryForTesting clears all registered migrations. Test use only.
-func ResetRegistryForTesting() {
+func ResetRegistryForTesting(t *testing.T) {
 	migrations = make(map[int]types.BackgroundMigration)
 }

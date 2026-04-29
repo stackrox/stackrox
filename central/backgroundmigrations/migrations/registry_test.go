@@ -8,7 +8,7 @@ import (
 )
 
 func TestRegistryPanicsOnDuplicate(t *testing.T) {
-	ResetRegistryForTesting()
+	ResetRegistryForTesting(t)
 	MustRegister(types.BackgroundMigration{StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "first"})
 	assert.Panics(t, func() {
 		MustRegister(types.BackgroundMigration{StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "duplicate"})
@@ -16,7 +16,7 @@ func TestRegistryPanicsOnDuplicate(t *testing.T) {
 }
 
 func TestRegistryGet(t *testing.T) {
-	ResetRegistryForTesting()
+	ResetRegistryForTesting(t)
 	MustRegister(types.BackgroundMigration{StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0"})
 	MustRegister(types.BackgroundMigration{StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1"})
 

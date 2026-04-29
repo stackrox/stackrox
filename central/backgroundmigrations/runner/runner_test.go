@@ -83,7 +83,7 @@ func (s *RunnerTestSuite) SetupSuite() {
 }
 
 func (s *RunnerTestSuite) SetupTest() {
-	migrations.ResetRegistryForTesting()
+	migrations.ResetRegistryForTesting(s.T())
 
 	_, err := s.db.Exec(s.ctx,
 		"DELETE FROM "+schema.BackgroundMigrationVersionsTableName)

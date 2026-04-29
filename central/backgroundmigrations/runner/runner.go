@@ -66,7 +66,10 @@ func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 
 // Start launches the background migration goroutine.
 func (r *Runner) Start() {
-	r.started.Swap(true)
+	if !r.started.CompareAndSwap(false, true) {
+		return
+	}
+
 	go r.run()
 }
 
