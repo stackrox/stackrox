@@ -73,19 +73,17 @@ func migrateBatch(ctx context.Context, conn *postgres.Conn, lastID string) (batc
 		return batchResult{}, nil
 	}
 
-	batch, count, err := buildBatchUpdates(deps)
+	batch, err := buildBatchUpdates(deps)
 	if err != nil {
 		return batchResult{}, err
 	}
 
-	if batch.Len() > 0 {
-		if err := sendBatch(ctx, conn, batch); err != nil {
-			return batchResult{}, err
-		}
+	if err := sendBatch(ctx, conn, batch); err != nil {
+		return batchResult{}, err
 	}
 
 	return batchResult{
-		updated: count,
+		updated: len(deps),
 		lastID:  deps[len(deps)-1].id,
 	}, nil
 }
@@ -122,14 +120,13 @@ func fetchDeployments(ctx context.Context, conn *postgres.Conn, lastID string) (
 	return deps, nil
 }
 
-func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, error) {
+func buildBatchUpdates(deps []depRow) (*pgx.Batch, error) {
 	batch := &pgx.Batch{}
-	count := 0
 
 	for _, dep := range deps {
 		d := &storage.Deployment{}
 		if err := d.UnmarshalVT(dep.serialized); err != nil {
-			return nil, 0, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err)
+			return nil, fmt.Errorf("unmarshal deployment %s: %w", dep.id, err)
 		}
 
 		blobChanged := populateContainerImageIDV2s(d)
@@ -137,7 +134,7 @@ func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, error) {
 		if blobChanged {
 			newSerialized, err := d.MarshalVT()
 			if err != nil {
-				return nil, 0, fmt.Errorf("marshal deployment %s: %w", dep.id, err)
+				return nil, fmt.Errorf("marshal deployment %s: %w", dep.id, err)
 			}
 			batch.Queue("UPDATE deployments SET serialized = $1 WHERE id = $2",
 				newSerialized, pgutils.NilOrUUID(dep.id))
@@ -149,11 +146,9 @@ func buildBatchUpdates(deps []depRow) (*pgx.Batch, int, error) {
 					idv2, pgutils.NilOrUUID(dep.id), idx)
 			}
 		}
-
-		count++
 	}
 
-	return batch, count, nil
+	return batch, nil
 }
 
 func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) error {
