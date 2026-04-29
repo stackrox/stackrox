@@ -93,7 +93,7 @@ def _fetch_merged_prs_from_commits(
                 [
                     "git", "log",
                     f"{branch.latest_tag}..origin/{branch.name}",
-                    "--format=%H|%s|%an|%ae"
+                    "--format=%H|%an|%ae|%s"
                 ],
                 capture_output=True,
                 text=True,
@@ -107,13 +107,14 @@ def _fetch_merged_prs_from_commits(
 
                 parts = line.split("|", 3)
                 if len(parts) != 4:
-                    continue
+                    raise BackportAuditError(f"Unexpected git log format: {line}")
 
                 commit_sha, subject, author_name, author_email = parts
 
                 # Extract PR number from commit message like "(#19752)"
                 pr_match = re.search(r"\(#(\d+)\)", subject)
                 if not pr_match:
+                    print(f"WARNING: commit without PR number {commit_sha} {subject}", file=sys.stderr)
                     continue
 
                 pr_number = int(pr_match.group(1))

@@ -58,7 +58,7 @@ class JiraClient:
         except HTTPError as e:
             if e.code == HTTP_NOT_FOUND:
                 return None
-            return None
+            raise
         except URLError:
             return None
         except json.JSONDecodeError:
