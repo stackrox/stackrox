@@ -6,6 +6,7 @@ Description=Prepare RPM database for StackRox VM Agent
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStartPre=/bin/mkdir -p /run/lock/roxagent
 ExecStart=/bin/rm -rf /tmp/roxagent-rpm
 ExecStart=/bin/cp -a /var/lib/rpm /tmp/roxagent-rpm
 ExecStart=/bin/chmod -R 755 /tmp/roxagent-rpm

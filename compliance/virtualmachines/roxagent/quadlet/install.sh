@@ -25,6 +25,12 @@ install_locally() {
     sudo cp "${SCRIPT_DIR}/roxagent-prep.service" /etc/systemd/system/
     sudo restorecon -Rv /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
 
+    # Recreate the lock directory on every boot since /run is tmpfs.
+    sudo mkdir -p /etc/tmpfiles.d/
+    sudo cp "${SCRIPT_DIR}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
+    sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
+    sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
+
     echo "Reloading systemd..."
     sudo systemctl daemon-reload
 
@@ -45,6 +51,7 @@ install_remote() {
     scp -P "${SSH_PORT}" "${SCRIPT_DIR}/roxagent.container" "${REMOTE_HOST}:/tmp/"
     scp -P "${SSH_PORT}" "${SCRIPT_DIR}/roxagent.timer" "${REMOTE_HOST}:/tmp/"
     scp -P "${SSH_PORT}" "${SCRIPT_DIR}/roxagent-prep.service" "${REMOTE_HOST}:/tmp/"
+    scp -P "${SSH_PORT}" "${SCRIPT_DIR}/roxagent-tmpfiles.conf" "${REMOTE_HOST}:/tmp/"
 
     # Install on remote
     ssh -p "${SSH_PORT}" "${REMOTE_HOST}" << 'EOF'
@@ -59,6 +66,12 @@ install_remote() {
         sudo mv /tmp/roxagent.timer /etc/systemd/system/
         sudo mv /tmp/roxagent-prep.service /etc/systemd/system/
         sudo restorecon -Rv /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
+
+        # Recreate the lock directory on every boot since /run is tmpfs.
+        sudo mkdir -p /etc/tmpfiles.d/
+        sudo mv /tmp/roxagent-tmpfiles.conf /etc/tmpfiles.d/roxagent.conf
+        sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
+        sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
 
         echo "Reloading systemd..."
         sudo systemctl daemon-reload
