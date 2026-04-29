@@ -1,6 +1,7 @@
 package migratetooperator
 
 import (
+	"os"
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -11,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 type fakeSource struct {
@@ -47,47 +49,41 @@ func (f *fakeSource) ValidatingWebhookConfiguration(_ string) (*admissionv1.Vali
 	return nil, nil
 }
 
-func defaultCentralSource() *fakeSource {
+func loadDeployment(t *testing.T, path string) *appsv1.Deployment {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var dep appsv1.Deployment
+	require.NoError(t, yaml.Unmarshal(data, &dep))
+	return &dep
+}
+
+func defaultCentralSource(t *testing.T) *fakeSource {
+	t.Helper()
 	return &fakeSource{
 		deployments: map[string]*appsv1.Deployment{
-			"central": {
-				ObjectMeta: metav1.ObjectMeta{Name: "central"},
-				Spec: appsv1.DeploymentSpec{Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{Containers: []corev1.Container{{
-						Name:  "central",
-						Image: "quay.io/rhacs-eng/main:latest",
-						Env: []corev1.EnvVar{
-							{Name: "ROX_ENABLE_OPENSHIFT_AUTH", Value: "true"},
-							{Name: "ROX_ENABLE_SECURE_METRICS", Value: "true"},
-						},
-					}}},
-				}},
-			},
-			"central-db": {
-				ObjectMeta: metav1.ObjectMeta{Name: "central-db"},
-				Spec: appsv1.DeploymentSpec{Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Volumes: []corev1.Volume{{
-							Name:         "disk",
-							VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "central-db"}},
-						}},
-					},
-				}},
-			},
+			"central":    loadDeployment(t, "testdata/central_deployment.yaml"),
+			"central-db": loadDeployment(t, "testdata/central_db_deployment.yaml"),
 		},
 	}
 }
 
-func TestCentral_PVCDefault(t *testing.T) {
-	cr, _, err := TransformToCentral(defaultCentralSource())
+func TestCentral_Default(t *testing.T) {
+	cr, warnings, err := TransformToCentral(defaultCentralSource(t))
 	require.NoError(t, err)
-	require.NotNil(t, cr.Spec.Central.DB.Persistence.PersistentVolumeClaim)
-	assert.Equal(t, "central-db", *cr.Spec.Central.DB.Persistence.PersistentVolumeClaim.ClaimName)
-	assert.Nil(t, cr.Spec.Central.DB.Persistence.HostPath)
+	assert.Empty(t, warnings)
+
+	golden, err := os.ReadFile("testdata/central_default.yaml")
+	require.NoError(t, err)
+
+	var expected platform.Central
+	require.NoError(t, yaml.Unmarshal(golden, &expected))
+
+	assert.Equal(t, expected, *cr)
 }
 
 func TestCentral_PVCCustomName(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central-db"].Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName = "my-pvc"
 	cr, _, err := TransformToCentral(src)
 	require.NoError(t, err)
@@ -95,7 +91,7 @@ func TestCentral_PVCCustomName(t *testing.T) {
 }
 
 func TestCentral_HostPath(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central-db"].Spec.Template.Spec.Volumes = []corev1.Volume{{
 		Name:         "disk",
 		VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/data/stackrox"}},
@@ -109,13 +105,13 @@ func TestCentral_HostPath(t *testing.T) {
 }
 
 func TestCentral_MonitoringDefault(t *testing.T) {
-	cr, _, err := TransformToCentral(defaultCentralSource())
+	cr, _, err := TransformToCentral(defaultCentralSource(t))
 	require.NoError(t, err)
 	assert.Nil(t, cr.Spec.Monitoring)
 }
 
 func TestCentral_MonitoringDisabled(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
 		{Name: "ROX_ENABLE_OPENSHIFT_AUTH", Value: "true"},
 	}
@@ -126,7 +122,7 @@ func TestCentral_MonitoringDisabled(t *testing.T) {
 }
 
 func TestCentral_K8sOmitsMonitoring(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].Env = nil
 	cr, _, err := TransformToCentral(src)
 	require.NoError(t, err)
@@ -134,7 +130,7 @@ func TestCentral_K8sOmitsMonitoring(t *testing.T) {
 }
 
 func TestCentral_ExposureLB(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.services = map[string]*corev1.Service{
 		"central-loadbalancer": {Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer}},
 	}
@@ -145,7 +141,7 @@ func TestCentral_ExposureLB(t *testing.T) {
 }
 
 func TestCentral_ExposureRoute(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.routes = map[string]bool{"central": true}
 	cr, _, err := TransformToCentral(src)
 	require.NoError(t, err)
@@ -154,13 +150,13 @@ func TestCentral_ExposureRoute(t *testing.T) {
 }
 
 func TestCentral_ExposureNone(t *testing.T) {
-	cr, _, err := TransformToCentral(defaultCentralSource())
+	cr, _, err := TransformToCentral(defaultCentralSource(t))
 	require.NoError(t, err)
 	assert.Nil(t, cr.Spec.Central.Exposure)
 }
 
 func TestCentral_DefaultTLSSecret(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.secrets = map[string]*corev1.Secret{
 		"central-default-tls-cert": {ObjectMeta: metav1.ObjectMeta{Name: "central-default-tls-cert"}},
 	}
@@ -171,7 +167,7 @@ func TestCentral_DefaultTLSSecret(t *testing.T) {
 }
 
 func TestCentral_TelemetryDisabled(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].Env = append(
 		src.deployments["central"].Spec.Template.Spec.Containers[0].Env,
 		corev1.EnvVar{Name: "ROX_TELEMETRY_STORAGE_KEY_V1", Value: "DISABLED"},
@@ -183,7 +179,7 @@ func TestCentral_TelemetryDisabled(t *testing.T) {
 }
 
 func TestCentral_Offline(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].Env = append(
 		src.deployments["central"].Spec.Template.Spec.Containers[0].Env,
 		corev1.EnvVar{Name: "ROX_OFFLINE_MODE", Value: "true"},
@@ -196,7 +192,7 @@ func TestCentral_Offline(t *testing.T) {
 }
 
 func TestCentral_CustomImages(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].Image = "my-reg.example.com/main:v1"
 	_, warnings, err := TransformToCentral(src)
 	require.NoError(t, err)
@@ -205,7 +201,7 @@ func TestCentral_CustomImages(t *testing.T) {
 }
 
 func TestCentral_PlaintextEndpoints(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].Env = append(
 		src.deployments["central"].Spec.Template.Spec.Containers[0].Env,
 		corev1.EnvVar{Name: "ROX_PLAINTEXT_ENDPOINTS", Value: "8080"},
@@ -218,7 +214,7 @@ func TestCentral_PlaintextEndpoints(t *testing.T) {
 }
 
 func TestCentral_DeclarativeConfig(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	src.deployments["central"].Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
 		{Name: "my-cm", MountPath: "/run/stackrox.io/declarative-configuration/my-cm"},
 	}
@@ -234,7 +230,7 @@ func TestCentral_DeclarativeConfig(t *testing.T) {
 }
 
 func TestCentral_MissingCentralDB(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	delete(src.deployments, "central-db")
 	_, _, err := TransformToCentral(src)
 	require.Error(t, err)
@@ -242,7 +238,7 @@ func TestCentral_MissingCentralDB(t *testing.T) {
 }
 
 func TestCentral_MissingCentral(t *testing.T) {
-	src := defaultCentralSource()
+	src := defaultCentralSource(t)
 	delete(src.deployments, "central")
 	_, _, err := TransformToCentral(src)
 	require.Error(t, err)
@@ -250,7 +246,7 @@ func TestCentral_MissingCentral(t *testing.T) {
 }
 
 func TestCentral_Metadata(t *testing.T) {
-	cr, _, err := TransformToCentral(defaultCentralSource())
+	cr, _, err := TransformToCentral(defaultCentralSource(t))
 	require.NoError(t, err)
 	assert.Equal(t, "platform.stackrox.io/v1alpha1", cr.APIVersion)
 	assert.Equal(t, "Central", cr.Kind)
