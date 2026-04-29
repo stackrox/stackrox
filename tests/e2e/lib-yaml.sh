@@ -32,7 +32,7 @@ set_custom_env() {
 
     # Needs to be initialized to list first, if doesn't exist.
     init_yaml_path_as_list "$override_file" "$path"
-    patch_yaml "$override_file" "${path} += {\"name\": \"${name}\", \"value\": \"${value}\"}"
+    NAME="$name" VALUE="$value" patch_yaml "$override_file" "${path} += {\"name\": strenv(NAME), \"value\": strenv(VALUE)}"
 }
 
 set_overlay_env() {
