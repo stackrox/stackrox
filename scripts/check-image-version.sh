@@ -9,7 +9,7 @@ assert_single_image_version() {
     details="$(git grep -P -o -n "$pattern" | sort -u)"
 
     local versions
-    versions="$(echo "$details" | cut -d: -f3- | grep -oP '[0-9]+\.[0-9]+\.[0-9]+|@sha256:[A-Fa-f0-9]{64}+' | sort -uV)"
+    versions="$(echo "$details" | cut -d: -f3- | cut -d: -f2 | tr -d '[:alpha:]' | sort -uV)"
 
     local version_count
     version_count="$(echo "$versions" | wc -l)"
