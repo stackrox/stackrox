@@ -178,7 +178,6 @@ def _create_all_pr_rows(
     """Create table rows for all PRs, including those with and without issues."""
     all_rows = []
     jira_to_prs: dict[str, list[PR]] = {}
-    pr_by_number: dict[int, PR] = {pr.number: pr for pr in prs}
 
     # Track which PRs we've already added
     processed_prs = set()
@@ -209,7 +208,8 @@ def _create_all_pr_rows(
             )
 
             # Get PR title from first associated PR
-            pr_title = jira_to_prs.get(jira_key, [None])[0].title if jira_to_prs.get(jira_key) else "—"
+            pr_refs = jira_to_prs.get(jira_key, [])
+            pr_title = pr_refs[0].title if pr_refs else "—"
 
             issue_info = (
                 jira_key,
