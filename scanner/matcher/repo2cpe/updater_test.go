@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
@@ -35,7 +36,8 @@ func TestUpdater_Get(t *testing.T) {
 		u := NewUpdater(g)
 		defer u.Close()
 
-		mf := u.Get(context.Background())
+		mf, err := u.Get(context.Background())
+		require.NoError(t, err)
 		require.NotNil(t, mf)
 		assert.Len(t, mf.Data, 1)
 		cpes, ok := mf.GetCPEs("rhel-8")
@@ -43,7 +45,7 @@ func TestUpdater_Get(t *testing.T) {
 		assert.Equal(t, []string{"cpe:rhel:8"}, cpes)
 	})
 
-	t.Run("returns empty MappingFile when initial fetch fails", func(t *testing.T) {
+	t.Run("returns error when all fetches fail", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		g := mocks.NewMockGetter(ctrl)
 		g.EXPECT().
@@ -54,9 +56,10 @@ func TestUpdater_Get(t *testing.T) {
 		u := NewUpdater(g)
 		defer u.Close()
 
-		mf := u.Get(context.Background())
-		require.NotNil(t, mf)
-		assert.Empty(t, mf.Data)
+		mf, err := u.Get(context.Background())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, errNoSuccessfulFetch)
+		assert.Nil(t, mf)
 	})
 
 	t.Run("lazy init called exactly once", func(t *testing.T) {
@@ -105,6 +108,7 @@ func TestUpdater_fetch(t *testing.T) {
 
 		err := u.fetch(context.Background(), "")
 		require.NoError(t, err)
+		assert.False(t, u.lastFailed.Load())
 
 		v := u.value.Load()
 		require.NotNil(t, v)
@@ -136,6 +140,7 @@ func TestUpdater_fetch(t *testing.T) {
 
 		err := u.fetch(context.Background(), "Mon, 01 Jan 2024 00:00:00 GMT")
 		require.NoError(t, err)
+		assert.False(t, u.lastFailed.Load())
 
 		v := u.value.Load()
 		require.NotNil(t, v)
@@ -162,10 +167,77 @@ func TestUpdater_fetch(t *testing.T) {
 
 		err := u.fetch(context.Background(), "")
 		require.Error(t, err)
+		assert.True(t, u.lastFailed.Load())
 
 		v := u.value.Load()
 		require.NotNil(t, v)
 		assert.Len(t, v.Data, 1)
+	})
+
+	t.Run("lastFailed cleared after successful fetch following failure", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(nil, errors.New("transient error"))
+
+		u := NewUpdater(g)
+		defer u.Close()
+
+		_ = u.fetch(context.Background(), "")
+		assert.True(t, u.lastFailed.Load())
+
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
+				Modified:     true,
+				LastModified: "now",
+				Data:         &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
+			}, nil)
+
+		err := u.fetch(context.Background(), "")
+		require.NoError(t, err)
+		assert.False(t, u.lastFailed.Load())
+	})
+}
+
+func TestUpdater_refreshLoop(t *testing.T) {
+	t.Run("uses shorter interval after failure", func(t *testing.T) {
+		origFailed := failedRefreshInterval
+		failedRefreshInterval = 50 * time.Millisecond
+		defer func() { failedRefreshInterval = origFailed }()
+
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+
+		callCount := 0
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, _ string) (*indexer.FetchResult, error) {
+				callCount++
+				if callCount <= 2 {
+					return nil, errors.New("transient error")
+				}
+				return &indexer.FetchResult{
+					Modified:     true,
+					LastModified: "now",
+					Data:         &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
+				}, nil
+			}).
+			MinTimes(3)
+
+		u := NewUpdater(g)
+		u.lastFailed.Store(true)
+
+		ctx := context.Background()
+		go u.refreshLoop(ctx)
+
+		assert.Eventually(t, func() bool {
+			return u.value.Load() != nil
+		}, 2*time.Second, 10*time.Millisecond)
+
+		u.Close()
 	})
 }
 
@@ -182,7 +254,6 @@ func TestUpdater_Close(t *testing.T) {
 
 	u := NewUpdater(g)
 
-	// Trigger init to start the background goroutine.
 	u.Get(context.Background())
 
 	assert.NotPanics(t, func() {

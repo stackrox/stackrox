@@ -136,15 +136,14 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 
 // Get returns the cached repository-to-CPE mapping.
 // On first call, it triggers initialization: fetching the mapping and starting
-// the background refresh goroutine. Returns an empty MappingFile if fetch fails.
-func (u *Updater) Get(_ context.Context) *repositorytocpe.MappingFile {
-	// Lazy initialization on first access.
+// the background refresh goroutine. Returns an error if no successful fetch has
+// ever occurred.
+func (u *Updater) Get(_ context.Context) (*repositorytocpe.MappingFile, error) {
 	u.initOnce.Do(u.init)
 
 	if v := u.value.Load(); v != nil {
-		return v
+		return v, nil
 	}
 
-	// Return empty mapping as fallback.
-	return &repositorytocpe.MappingFile{}
+	return nil, errNoSuccessfulFetch
 }
