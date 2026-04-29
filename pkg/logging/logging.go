@@ -35,6 +35,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -380,14 +381,14 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	return result
 }
 
-// sharedFileWriters caches lumberjack writers by path so multiple loggers
-// share one writer instead of each creating their own. This prevents:
-// - 30+ goroutines for log rotation (one per lumberjack.Logger)
-// - 30+ independent file handles to the same file
-// - Potential log corruption from concurrent uncoordinated writes
-var sharedFileWriters = make(map[string]zapcore.WriteSyncer)
+var (
+	fileWritersMu     sync.Mutex
+	sharedFileWriters = make(map[string]zapcore.WriteSyncer)
+)
 
 func getOrCreateFileWriter(path string) zapcore.WriteSyncer {
+	fileWritersMu.Lock()
+	defer fileWritersMu.Unlock()
 	if w, ok := sharedFileWriters[path]; ok {
 		return w
 	}

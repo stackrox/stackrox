@@ -1,11 +1,13 @@
 package logging
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -156,6 +158,53 @@ func Test_withRotatingCore(t *testing.T) {
 		})
 	})
 
+}
+
+// Test_withRotatingCore_sharedPath verifies that multiple loggers writing to
+// the same file path do not lose lines. Without a shared writer, each logger
+// creates an independent lumberjack.Logger with its own file descriptor and
+// size counter. Concurrent writes through separate descriptors cause lines to
+// be silently dropped (~15% loss observed with 10 writers).
+func Test_withRotatingCore_sharedPath(t *testing.T) {
+	t.Setenv(env.LoggingMaxRotationFiles.EnvVar(), "1")
+	t.Setenv(env.LoggingMaxSizeMB.EnvVar(), "10")
+	logpath := filepath.Join(t.TempDir(), "shared.log")
+
+	cfg := config
+	cfg.OutputPaths = []string{}
+
+	const numLoggers = 10
+	const linesPerLogger = 1000
+
+	loggers := make([]*zap.Logger, numLoggers)
+	for i := range numLoggers {
+		core := withRotatingCores(&cfg, []string{logpath})
+		l, err := cfg.Build(zap.WrapCore(core))
+		require.NoError(t, err)
+		loggers[i] = l
+	}
+
+	var wg sync.WaitGroup
+	for id, l := range loggers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			marker := fmt.Sprintf("LOGGER-%02d", id)
+			for range linesPerLogger {
+				l.Info(marker)
+			}
+		}()
+	}
+	wg.Wait()
+	for _, l := range loggers {
+		require.NoError(t, l.Sync())
+	}
+
+	data, err := os.ReadFile(logpath)
+	require.NoError(t, err)
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	assert.Len(t, lines, numLoggers*linesPerLogger,
+		"all lines from all loggers must be present in the log file")
 }
 
 func TestForEachRotation(t *testing.T) {
