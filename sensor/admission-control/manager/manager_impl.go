@@ -64,7 +64,6 @@ type state struct {
 	eventOnlyK8sDetector   runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
-	enforcedOps                     map[admission.Operation]struct{}
 
 	centralConn *grpc.ClientConn
 }
@@ -80,11 +79,6 @@ func (s *state) clusterID() string {
 func (s *state) admissionTimeoutCtx() (context.Context, context.CancelFunc) {
 	timeout := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
 	return context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-}
-
-func (s *state) activeForOperation(op admission.Operation) bool {
-	_, active := s.enforcedOps[op]
-	return active
 }
 
 const (
@@ -400,13 +394,17 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		log.Debugf("Upserted policy %q (%s)", policy.GetName(), policy.GetId())
 	}
 
-	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
-	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
+	// Since 4.9, enforcement is controlled by a single "enforce" toggle that
+	// sets both Enabled and EnforceOnUpdates identically. The webhook is only
+	// registered when enforcement is on, and always for both CREATE and UPDATE.
+	// We use GetEnabled() as the canonical gate; GetEnforceOnUpdates() is
+	// no longer checked separately.
+	enforce := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 
 	// Manager implements both ClusterLabelProvider and NamespaceLabelProvider interfaces.
 	specOnlyPolicies := detection.NewPolicySet(m, m)
 	enrichmentRequiredPolicies := detection.NewPolicySet(m, m)
-	if enforceOnCreates || enforceOnUpdates {
+	if enforce {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 			if policyfields.AlertsOnMissingEnrichment(policy) &&
 				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
@@ -426,15 +424,6 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	enforcedOperations := make(map[admission.Operation]struct{})
-	if enforceOnCreates {
-		enforcedOperations[admission.Create] = struct{}{}
-	}
-
-	if enforceOnUpdates {
-		enforcedOperations[admission.Update] = struct{}{}
-	}
-
 	oldState := m.currentState()
 	newState := &state{
 		AdmissionControlSettings:         newSettings,
@@ -445,7 +434,6 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		eventOnlyK8sDetector:             runtime.NewDetector(k8sEventOnlyPolicies),
 		bypassForUsers:                   allowAlwaysUsers,
 		bypassForGroups:                  allowAlwaysGroups,
-		enforcedOps:                      enforcedOperations,
 	}
 
 	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {
