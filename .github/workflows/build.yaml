@@ -666,6 +666,7 @@ jobs:
                 "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
                 "--build-arg" "LABEL_VERSION=${{ env.BUILD_TAG }}"
                 "--build-arg" "LABEL_RELEASE=${{ env.SHORTCOMMIT }}"
+                "--build-arg" "QUAY_TAG_EXPIRATION=13w"
               )
               ;;
             roxctl)
