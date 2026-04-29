@@ -164,6 +164,13 @@ generate_and_migrate() {
   assert_output "null"
 }
 
+@test "migrate-to-operator: openshift pvc --openshift-monitoring=true has no monitoring section" {
+  generate_and_migrate openshift pvc --openshift-monitoring=true
+  run yq e '.spec.monitoring' "$cr_out"
+  assert_success
+  assert_output "null"
+}
+
 @test "migrate-to-operator: openshift pvc --openshift-monitoring=false sets monitoring.openshift.enabled=false" {
   generate_and_migrate openshift pvc --openshift-monitoring=false
   run yq e '.spec.monitoring.openshift.enabled' "$cr_out"
