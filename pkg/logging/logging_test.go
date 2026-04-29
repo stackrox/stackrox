@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -186,14 +186,12 @@ func Test_withRotatingCore_sharedPath(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for id, l := range loggers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			marker := fmt.Sprintf("LOGGER-%02d", id)
 			for range linesPerLogger {
 				l.Info(marker)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 	for _, l := range loggers {
