@@ -34,8 +34,10 @@ type Getter interface {
 // Initialization is lazy: the first call to Get triggers the initial fetch
 // and starts the background refresh goroutine.
 type Updater struct {
-	getter Getter
-	done   chan struct{}
+	getter          Getter
+	done            chan struct{}
+	defaultInterval time.Duration
+	failedInterval  time.Duration
 
 	initOnce     sync.Once
 	mu           sync.RWMutex
@@ -48,8 +50,10 @@ type Updater struct {
 // from the given Getter and caches it locally.
 func NewUpdater(getter Getter) *Updater {
 	return &Updater{
-		getter: getter,
-		done:   make(chan struct{}),
+		getter:          getter,
+		done:            make(chan struct{}),
+		defaultInterval: defaultRefreshInterval,
+		failedInterval:  failedRefreshInterval,
 	}
 }
 
@@ -76,9 +80,9 @@ func (u *Updater) init() {
 // refreshLoop periodically refreshes the mapping using conditional fetches.
 // It uses a shorter interval after a failed refresh.
 func (u *Updater) refreshLoop(ctx context.Context) {
-	interval := defaultRefreshInterval
+	interval := u.defaultInterval
 	if u.lastFailed.Load() {
-		interval = failedRefreshInterval
+		interval = u.failedInterval
 	}
 	timer := time.NewTimer(interval)
 	defer timer.Stop()
@@ -94,9 +98,9 @@ func (u *Updater) refreshLoop(ctx context.Context) {
 
 			if err := u.fetch(ctx, lastMod); err != nil {
 				zlog.Warn(ctx).Err(err).Msg("failed to refresh repo-to-CPE mapping")
-				timer.Reset(failedRefreshInterval)
+				timer.Reset(u.failedInterval)
 			} else {
-				timer.Reset(defaultRefreshInterval)
+				timer.Reset(u.defaultInterval)
 			}
 		}
 	}
@@ -136,15 +140,14 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 
 // Get returns the cached repository-to-CPE mapping.
 // On first call, it triggers initialization: fetching the mapping and starting
-// the background refresh goroutine. Returns an empty MappingFile if fetch fails.
-func (u *Updater) Get(_ context.Context) *repositorytocpe.MappingFile {
-	// Lazy initialization on first access.
+// the background refresh goroutine. Returns an error if no successful fetch has
+// ever occurred.
+func (u *Updater) Get(_ context.Context) (*repositorytocpe.MappingFile, error) {
 	u.initOnce.Do(u.init)
 
 	if v := u.value.Load(); v != nil {
-		return v
+		return v, nil
 	}
 
-	// Return empty mapping as fallback.
-	return &repositorytocpe.MappingFile{}
+	return nil, errNoSuccessfulFetch
 }
