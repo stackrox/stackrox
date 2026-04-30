@@ -1299,8 +1299,8 @@ github.com/quay/claircore/updater/driver v1.0.0 h1:w7dAUjO3GBK6RjNyTZ2Kwz0l/Wuic
 github.com/quay/claircore/updater/driver v1.0.0/go.mod h1:My5aY1wBpgxcWaHQZ0VoPmmj/EzuH7fq4ntzJbos4OI=
 github.com/quay/goval-parser v0.8.8 h1:Uf+f9iF2GIR5GPUY2pGoa9il2+4cdES44ZlM0mWm4cA=
 github.com/quay/goval-parser v0.8.8/go.mod h1:Y0NTNfPYOC7yxsYKzJOrscTWUPq1+QbtHw4XpPXWPMc=
-github.com/quay/zlog v1.1.9 h1:O9/vfCUcGGUs0ukqQ77xPCJBPqpZBJ00jt7IUMsRco8=
-github.com/quay/zlog v1.1.9/go.mod h1:O7OCW9oe7igrswhjKlyOvTo2+6FPsV7L0/owWEX6JHE=
+github.com/quay/zlog/v2 v2.1.1 h1:rGzC4IA1Km2JfF9LENRalWdiavPUFwSn9M5TfMaC6rc=
+github.com/quay/zlog/v2 v2.1.1/go.mod h1:+FmBwcNIbXOKRWfaIqHGPF+g9WW4hn+OiomLN7eC/dM=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.5.3 h1:1/BDligzCa40GTllkDnY3Y5DTHuKCONbB2JcRyIfl20=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.5.3/go.mod h1:3dZmcLn3Qw6FLlWASn1g4y+YO9ycEFUOM+bhBmzLVKQ=
 github.com/redis/go-redis/extra/redisotel/v9 v9.5.3 h1:kuvuJL/+MZIEdvtb/kTBRiRgYaOmx1l+lYJyVdrRUOs=
@@ -1316,8 +1316,6 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
-github.com/rs/zerolog v1.35.1 h1:m7xQeoiLIiV0BCEY4Hs+j2NG4Gp2o2KPKmhnnLiazKI=
-github.com/rs/zerolog v1.35.1/go.mod h1:EjML9kdfa/RMA7h/6z6pYmq1ykOuA8/mjWaEvGI+jcw=
 github.com/rubenv/sql-migrate v1.8.1 h1:EPNwCvjAowHI3TnZ+4fQu3a915OpnQoPAjTXCGOy2U0=
 github.com/rubenv/sql-migrate v1.8.1/go.mod h1:BTIKBORjzyxZDS6dzoiw6eAFYJ1iNlGAtjn4LGeVjS8=
 github.com/russellhaering/gosaml2 v0.11.0 h1:wlWm7dWMrpJBzh0xEOZof70nVen4f/2BEF8ZXaidJ9o=

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"time"
 
-	"github.com/quay/zlog"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
@@ -48,19 +48,17 @@ func main() {
 			}
 			const retries = 3
 			for attempt := 1; attempt <= retries; attempt++ {
-				zlog.Info(ctx).
-					Int("attempt", attempt).
-					Str("manual vulns URL", manualURL).
-					Str("output directory", outputDir).
-					Msg("exporting vulnerabilities")
+				slog.InfoContext(ctx, "exporting vulnerabilities",
+					"attempt", attempt,
+					"manual vulns URL", manualURL,
+					"output directory", outputDir)
 				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
-						zlog.Warn(ctx).
-							Err(err).
-							Int("attempt", attempt).
-							Int("retries", retries).
-							Msg("export failed; will retry if within retry limits")
+						slog.WarnContext(ctx, "export failed; will retry if within retry limits",
+							"reason", err,
+							"attempt", attempt,
+							"retries", retries)
 						continue
 					}
 					return fmt.Errorf("data export failed: %w", err)

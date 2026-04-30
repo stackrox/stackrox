@@ -19,8 +19,6 @@ import (
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
-	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -32,7 +30,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -47,15 +44,7 @@ const (
 )
 
 var (
-	log          = logging.LoggerForModule()
-	zerologLevel = map[zapcore.Level]zerolog.Level{
-		zapcore.DebugLevel: zerolog.DebugLevel,
-		zapcore.InfoLevel:  zerolog.InfoLevel,
-		zapcore.WarnLevel:  zerolog.WarnLevel,
-		zapcore.ErrorLevel: zerolog.ErrorLevel,
-		zapcore.PanicLevel: zerolog.PanicLevel,
-		zapcore.FatalLevel: zerolog.FatalLevel,
-	}
+	log = logging.LoggerForModule()
 
 	// layerDigest is a dummy digest solely meant as a workaround to use Claircore.
 	// Claircore indexing requires layers to have a digest, which is not stored,
@@ -67,17 +56,6 @@ var (
 	defaultClient    *http.Client
 	defaultClientErr error
 )
-
-func init() {
-	// Default to info level.
-	logLevel := zerolog.InfoLevel
-	if level, ok := zerologLevel[logging.GetGlobalLogLevel()]; ok {
-		logLevel = level
-	}
-	l := zerolog.New(os.Stderr).
-		Level(logLevel)
-	zlog.Set(&l)
-}
 
 func getDefaultClient() (*http.Client, error) {
 	clientOnce.Do(func() {

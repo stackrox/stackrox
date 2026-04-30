@@ -5,13 +5,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
@@ -256,12 +257,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 		return nil, false, errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "GetImageIndex",
-		"hash_id", hashID,
-	)
-
+	ctx = log.With(ctx, "hash_id", hashID)
 	options := makeCallOptions(callOpts...)
 
 	return c.getImageIndex(ctx, hashID, options)
@@ -273,12 +269,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "GetOrCreateImageIndex",
-		"image", ref.String(),
-	)
-
+	ctx = log.With(ctx, "image", ref.String())
 	options := makeCallOptions(callOpts...)
 
 	return c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
@@ -294,12 +285,7 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 		return nil, errMatcherNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "IndexAndScanImage",
-		"image", ref.String(),
-	)
-
+	ctx = log.With(ctx, "image", ref.String())
 	options := makeCallOptions(callOpts...)
 
 	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
@@ -377,12 +363,7 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 		return nil, errMatcherNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "GetVulnerabilities",
-		"image", ref.String(),
-	)
-
+	ctx = log.With(ctx, "image", ref.String())
 	options := makeCallOptions(callOpts...)
 
 	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents, options)
@@ -410,8 +391,6 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 		return nil, errMatcherNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
-
 	options := makeCallOptions(callOpts...)
 
 	var m *v4.Metadata
@@ -437,8 +416,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 		return errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreImageIndex")
-
+	ctx = log.With(ctx, "image", ref.String())
 	req := &v4.StoreIndexReportRequest{
 		HashId:         getImageManifestID(ref),
 		IndexerVersion: indexerVersion,
@@ -453,7 +431,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	if err != nil {
 		return fmt.Errorf("storing external index report: %w", err)
 	}
-	zlog.Debug(ctx).Err(err).Str("status", r.GetStatus()).Msg("received response from StoreIndexReport")
+	slog.DebugContext(ctx, "received response from StoreIndexReport", "status", r.GetStatus())
 
 	return nil
 }
@@ -465,7 +443,6 @@ func getImageManifestID(ref name.Digest) string {
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common
 // retryable gRPC codes.
 func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
-	ctx = zlog.ContextWithValues(ctx, "rpc", rpc)
 	f := func() error {
 		err := op()
 		if e, ok := status.FromError(err); ok {
@@ -480,7 +457,7 @@ func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op bac
 		return err
 	}
 	return backoff.RetryNotify(f, backoff.WithContext(b, ctx), func(err error, duration time.Duration) {
-		zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying gRPC call")
+		slog.DebugContext(ctx, "retrying gRPC call", "rpc", rpc, "reason", err, "duration", duration)
 	})
 }
 
