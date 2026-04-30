@@ -32,7 +32,7 @@ case "$github_login" in
 'charmik-redhat')   slack_user='U035YKHMXEW' ;;
 'clickboo')         slack_user='U01PFFU0YKD' ;;
 'dashrews78')       slack_user='U03FB5XE10V' ;;
-'davdhacs')          slack_user='U03H69TFKH9';;
+'davdhacs')         slack_user='U03H69TFKH9' ;;
 'dcaravel')         slack_user='U04DF45CXBJ' ;;
 'dvail')            slack_user='U032WL9RM53' ;;
 'ebensh')           slack_user='U01Q7HTJ126' ;;
