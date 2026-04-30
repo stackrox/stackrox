@@ -18,8 +18,8 @@ var kubeVirtInstallNamespaces = []string{"openshift-cnv", "kubevirt", "openshift
 
 const (
 	kvmCapacityResourceName    = coreV1.ResourceName("devices.kubevirt.io/kvm")
-	kvmWorkerNodeLabel         = "node-role.kubernetes.io/worker"
-	kvmWorkerNodeScope         = "worker-labeled nodes"
+	workerNodeLabel            = "node-role.kubernetes.io/worker"
+	workerNodeScope            = "worker-labeled nodes"
 	kvmAllSchedulableNodeScope = "all schedulable nodes"
 	kvmFallbackDiagnostic      = "No worker-labeled nodes found; checking all schedulable nodes for KVM capacity"
 )
@@ -72,7 +72,7 @@ func (r clusterKVMPreflightResult) Diagnostic() string {
 }
 
 func isWorkerNode(node coreV1.Node) bool {
-	_, ok := node.Labels[kvmWorkerNodeLabel]
+	_, ok := node.Labels[workerNodeLabel]
 	return ok
 }
 
@@ -96,7 +96,7 @@ func inspectClusterKVMReadiness(ctx context.Context, k8s kubernetes.Interface) (
 	}
 
 	result := clusterKVMPreflightResult{
-		Scope:        kvmWorkerNodeScope,
+		Scope:        workerNodeScope,
 		CheckedNodes: make([]kvmPreflightNode, 0, len(nodeList.Items)),
 	}
 
