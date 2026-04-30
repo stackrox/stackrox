@@ -881,7 +881,7 @@ func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cl
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, cluster.GetId()).
 		AddExactMatches(search.DeploymentName, "central")
-	deploys, err := g.deployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
+	deploys, err := g.activeDeployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
 	if err != nil {
 		return false, err
 	}
