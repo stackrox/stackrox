@@ -25,10 +25,7 @@ def _collect_issue_problems(
                 continue
 
             issue = jira_issues[jira_key]
-
-            if jira_key not in jira_to_prs:
-                jira_to_prs[jira_key] = []
-            jira_to_prs[jira_key].append(pr)
+            jira_to_prs.setdefault(jira_key, []).append(pr)
 
             has_fix = (
                 expected_version in issue.fix_versions
@@ -90,7 +87,6 @@ def _format_issue_line(
         status,
     ) = issue_info
 
-    # Apply strikethrough to closed Jira issues
     jira_display = f"~~{jira_key}~~" if status == "Closed" else jira_key
 
     pr_refs = jira_to_prs.get(jira_key, [])
@@ -137,7 +133,6 @@ def generate_markdown(
     lines = []
     lines.extend(("# Backport PR Audit Report", "", f"Generated: {timestamp}", ""))
 
-    # Sort branches by version
     sorted_branches = sorted(
         branches,
         key=lambda b: [int(x) for x in b.expected_version.split(".")],
@@ -147,7 +142,6 @@ def generate_markdown(
         prs = prs_by_branch.get(branch.name, [])
         orphaned = orphaned_issues.get(branch.name, [])
 
-        # Skip empty branches
         if not prs and not orphaned:
             continue
 
@@ -156,12 +150,9 @@ def generate_markdown(
             version_info += f", Current: {branch.current_version}"
         lines.extend((f"## {branch.name} ({version_info})", ""))
 
-        # PRs without Jira reference
         prs_no_jira = [pr for pr in prs if not pr.jira_keys]
         if prs_no_jira:
             lines.extend((f"### PRs Missing Jira Reference ({len(prs_no_jira)})", ""))
-
-            # Sort by author
             prs_no_jira.sort(key=lambda p: p.author)
 
             for pr in prs_no_jira:
@@ -188,7 +179,6 @@ def generate_markdown(
 
             lines.append("")
 
-        # Orphaned Jira issues
         if orphaned:
             lines.extend((f"### Orphaned Jira Issues ({len(orphaned)})", "", f"Issues with fixVersion={branch.expected_version} but no corresponding PR:", ""))
 

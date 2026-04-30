@@ -44,7 +44,6 @@ def _fetch_and_group_prs(
             continue
 
         author = resolve_author(pr_data, gh_client)
-        # Extract Jira keys from both title and body
         title_keys = extract_jira_keys(pr_data["title"])
         body_keys = extract_jira_keys(pr_data.get("body", ""))
         jira_keys = sorted(set(title_keys + body_keys))
@@ -60,9 +59,7 @@ def _fetch_and_group_prs(
             state=pr_data.get("state", "open"),
         )
 
-        if base_ref not in prs_by_branch:
-            prs_by_branch[base_ref] = []
-        prs_by_branch[base_ref].append(pr)
+        prs_by_branch.setdefault(base_ref, []).append(pr)
 
     return prs_by_branch, all_jira_keys
 
@@ -73,26 +70,18 @@ def _fetch_merged_prs_from_commits(
 ) -> tuple[dict[str, list[PR]], set[str]]:
     """Fetch merged PRs by parsing git commits after last tag.
 
-    Args:
-        gh_client: GitHub client for API calls
-        branches: List of release branches with tag info
-
-    Returns:
-        Tuple of (PRs grouped by branch, all Jira keys)
+    Uses latest_tag instead of current_version because current_version might be
+    an RC tag, which would hide most merged PRs for the release.
     """
     prs_by_branch: dict[str, list[PR]] = {}
     all_jira_keys = set()
 
     for branch in branches:
-        # Use latest_tag (last release) to show all merged commits for this release
-        # current_version might be an RC tag, which would hide most merged PRs
         base_ref = branch.latest_tag or branch.current_version
         if not base_ref:
-            # No tag yet, skip merged PR collection
             continue
 
         try:
-            # Fetch commits after last tag: hash|subject|author_name|author_email
             result = subprocess.run(
                 [
                     "git", "log",
@@ -115,7 +104,6 @@ def _fetch_merged_prs_from_commits(
 
                 commit_sha, author_name, author_email, subject = parts
 
-                # Extract PR number from commit message like "(#19752)"
                 pr_match = re.search(r"\(#(\d+)\)", subject)
                 if not pr_match:
                     print(f"WARNING: commit without PR number {commit_sha} {subject}", file=sys.stderr)
@@ -123,19 +111,16 @@ def _fetch_merged_prs_from_commits(
 
                 pr_number = int(pr_match.group(1))
 
-                # Try to fetch PR details from GitHub API
                 try:
                     pr_data = gh_client.get_pr_details(pr_number)
                     title = pr_data.get("title", subject)
                     author = pr_data.get("author", {}).get("login", author_name)
                     body = pr_data.get("body", "")
                 except GitHubError:
-                    # Fallback to git commit data
                     title = subject
                     author = author_name
                     body = ""
 
-                # Extract Jira keys from both title and body
                 title_keys = extract_jira_keys(title)
                 body_keys = extract_jira_keys(body)
                 jira_keys = sorted(set(title_keys + body_keys))
@@ -153,15 +138,11 @@ def _fetch_merged_prs_from_commits(
                     commit_sha=commit_sha,
                 )
 
-                if branch.name not in prs_by_branch:
-                    prs_by_branch[branch.name] = []
-                prs_by_branch[branch.name].append(pr)
+                prs_by_branch.setdefault(branch.name, []).append(pr)
 
         except subprocess.CalledProcessError:
-            # Git command failed, skip this branch
             continue
         except subprocess.TimeoutExpired:
-            # Git command timed out, skip this branch
             continue
 
     return prs_by_branch, all_jira_keys
@@ -264,19 +245,14 @@ def main() -> int:
 
         branches = [detect_release_version(name) for name in branch_names]
 
-        # Fetch open PRs
         prs_by_branch, all_jira_keys = _fetch_and_group_prs(gh_client, branch_names)
 
-        # Fetch merged PRs from git commits after last tag (for all latest 3 branches)
         merged_prs_by_branch, merged_jira_keys = _fetch_merged_prs_from_commits(
             gh_client, branches
         )
 
-        # Merge both sources
         for branch_name, merged_prs in merged_prs_by_branch.items():
-            if branch_name not in prs_by_branch:
-                prs_by_branch[branch_name] = []
-            prs_by_branch[branch_name].extend(merged_prs)
+            prs_by_branch.setdefault(branch_name, []).extend(merged_prs)
 
         all_jira_keys.update(merged_jira_keys)
 

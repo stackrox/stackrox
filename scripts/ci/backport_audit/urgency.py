@@ -81,30 +81,20 @@ def calculate_urgency(
 ) -> tuple[str, str]:
     """Calculate urgency level and indicator for a Jira issue.
 
-    Urgency is determined by deadlines and issue metadata per Patch Release Process:
-    - "Jira trackers with Due date or SLA Date — whatever is sooner"
-    - CVE severity affects urgency: Critical/Important CVEs require faster resolution
-    - Bug priority determines delivery target (Critical→immediate, Major→next Z-stream)
-
-    Args:
-        priority: Jira priority (Critical, Major, Normal, etc.)
-        severity: CVE severity (Critical, Important, Moderate, Low)
-        due_date: Due date string (YYYY-MM-DD)
-        sla_date: SLA date string (YYYY-MM-DD)
-        current_date: Current date for testing (defaults to now)
+    Urgency determined by:
+    - Deadlines (SLA Date > Due date per Patch Release Process)
+    - CVE severity (Critical/Important require faster resolution)
+    - Bug priority (Critical→immediate, Major→next Z-stream)
 
     Returns:
         Tuple of (urgency_level, icon)
         - urgency_level: 'overdue', 'critical', 'high', 'normal', 'low'
         - icon: Visual indicator (🔴, 🟡, 🟢, ⚪)
-
     """
     if current_date is None:
         current_date = datetime.now(tz=timezone.utc)
 
-    # Deadline priority: SLA Date (Red Hat legally binding) > Due date (internal)
-    # Per Patch Release Process: "SLA Date informs about the legally binding deadline
-    # for Red Hat; usually is Due date + some buffer"
+    # SLA Date is legally binding for Red Hat, takes precedence over Due date
     deadline = parse_date(sla_date) or parse_date(due_date)
     if deadline:
         if deadline < current_date:

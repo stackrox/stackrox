@@ -10,7 +10,6 @@ from urllib.request import Request, urlopen
 from .models import JiraIssue
 from .utils import github_error, github_warning
 
-# HTTP status codes
 HTTP_NOT_FOUND = 404
 
 

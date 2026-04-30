@@ -71,10 +71,8 @@ def github_warning(message: str, file: str | None = None, line: int | None = Non
         annotation += f",line={line}"
     print(f"{annotation}::{_escape_workflow_message(message)}", flush=True)
 
-# GitHub bot user logins
-# Note: gh CLI commands use different formats than REST API:
-# - gh pr list/view --json author returns "app/dependabot"
-# - gh api .../issues/{pr}/events returns "dependabot[bot]" in actor.login
+# gh CLI and REST API return different formats for bot logins:
+# CLI: "app/dependabot", API: "dependabot[bot]"
 DEPENDABOT_LOGIN_CLI = "app/dependabot"
 DEPENDABOT_LOGIN_API = "dependabot[bot]"
 RHACS_BOT_LOGIN = "rhacs-bot"
@@ -137,9 +135,7 @@ def resolve_author(pr_data: dict[str, Any], gh_client: GitHubClient) -> str:
     author = pr_data["author"]["login"]
     body = pr_data.get("body", "")
 
-    # Handle rhacs-bot
     if author == RHACS_BOT_LOGIN:
-        # Extract original PR number from body
         match = re.search(r"from #(\d+)", body)
         if match:
             original_pr_number = int(match.group(1))
@@ -147,13 +143,11 @@ def resolve_author(pr_data: dict[str, Any], gh_client: GitHubClient) -> str:
                 original_pr = gh_client.get_pr_details(original_pr_number)
                 author = original_pr["author"]["login"]
 
-                # If original author is also dependabot, find label adder
                 if author == DEPENDABOT_LOGIN_CLI:
                     author = find_backport_label_adder(original_pr_number, gh_client)
             except GitHubError:
                 pass
 
-    # Handle direct dependabot PRs
     elif author == DEPENDABOT_LOGIN_CLI:
         pr_number = pr_data["number"]
         author = find_backport_label_adder(pr_number, gh_client)
@@ -172,7 +166,6 @@ def detect_release_branches(branches_arg: str) -> list[str]:
 
     """
     if branches_arg == "all":
-        # Auto-detect from git remote branches
         try:
             result = subprocess.run(
                 ["git", "branch", "-r"],
@@ -187,7 +180,6 @@ def detect_release_branches(branches_arg: str) -> list[str]:
                 if match:
                     branches.append(match.group(1))
 
-            # Sort by version number (descending) and take latest 3
             unique_branches = sorted(
                 set(branches),
                 key=lambda b: [int(x) for x in b.replace("release-", "").split(".")],
@@ -201,7 +193,6 @@ def detect_release_branches(branches_arg: str) -> list[str]:
             msg = "Git command timed out"
             raise BackportAuditError(msg) from e
     else:
-        # Use provided branches
         return [b.strip() for b in branches_arg.split(",") if b.strip()]
 
 
@@ -223,7 +214,6 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
 
     base_version = match.group(1)
 
-    # Detect current version from branch HEAD (includes RC tags, excludes nightly)
     current_version = None
     try:
         result = subprocess.run(
@@ -233,7 +223,6 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
             check=True,
             timeout=10,
         )
-        # Collect tags matching version pattern (X.Y.Z or X.Y.Z-rc.N), excluding nightly
         pattern = f"^{re.escape(base_version)}\\." + r"\d+(-rc\.\d+)?$"
         matching_tags = [
             tag for tag in result.stdout.splitlines()
@@ -242,7 +231,7 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
 
         if matching_tags:
             def sort_key(tag: str) -> tuple[int, int, int, bool, int]:
-                """Sort key: prefer higher versions, then release over RC."""
+                """Prefer higher versions, then release over RC."""
                 match = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$', tag)
                 if not match:
                     return (0, 0, 0, False, 0)
@@ -251,7 +240,6 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
                 patch = int(match.group(3))
                 is_release = match.group(4) is None
                 rc_num = 0 if is_release else int(match.group(4))
-                # Sort: major desc, minor desc, patch desc, release first, then rc desc
                 return (major, minor, patch, is_release, rc_num)
 
             matching_tags.sort(key=sort_key, reverse=True)
@@ -260,7 +248,6 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
     except subprocess.CalledProcessError:
         pass
 
-    # Find latest release tag for this version (excludes RC/alpha/beta)
     try:
         result = subprocess.run(
             ["git", "tag"],
@@ -270,7 +257,6 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
             timeout=10,
         )
 
-        # Filter tags for this version (only release tags, no RC/alpha/beta)
         pattern = f"^{re.escape(base_version)}\\." + r"\d+$"
         matching_tags = [
             tag for tag in result.stdout.splitlines()
@@ -279,11 +265,9 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
 
         latest_tag = None
         if matching_tags:
-            # Sort by version (semantic sort)
             matching_tags.sort(key=lambda t: [int(x) for x in t.split(".")])
             latest_tag = matching_tags[-1]
 
-        # Calculate next version
         if latest_tag:
             patch = int(latest_tag.split(".")[-1])
             expected_version = f"{base_version}.{patch + 1}"

@@ -178,18 +178,12 @@ def _create_all_pr_rows(
     """Create table rows for all PRs, including those with and without issues."""
     all_rows = []
     jira_to_prs: dict[str, list[PR]] = {}
-
-    # Track which PRs we've already added
     processed_prs = set()
 
-    # First, add all PRs with Jira issues
     for pr in prs:
         for jira_key in pr.jira_keys:
-            if jira_key not in jira_to_prs:
-                jira_to_prs[jira_key] = []
-            jira_to_prs[jira_key].append(pr)
+            jira_to_prs.setdefault(jira_key, []).append(pr)
 
-    # Collect all issues (both complete and with problems)
     all_issues = []
     for pr in prs:
         for jira_key in pr.jira_keys:
@@ -207,7 +201,6 @@ def _create_all_pr_rows(
                 issue.sla_date,
             )
 
-            # Get PR title from first associated PR
             pr_refs = jira_to_prs.get(jira_key, [])
             pr_title = pr_refs[0].title if pr_refs else "—"
 
@@ -225,10 +218,8 @@ def _create_all_pr_rows(
             if issue_info not in all_issues:
                 all_issues.append(issue_info)
 
-    # Sort: problems first (incomplete), then by urgency
     all_issues.sort(key=lambda x: (x[8], URGENCY_ORDER.get(x[6], 99)))
 
-    # Create rows for all issues
     for issue_info in all_issues:
         (
             jira_key,
@@ -252,12 +243,10 @@ def _create_all_pr_rows(
                 if i > 0:
                     pr_elements.append({"type": "text", "text": ", "})
 
-                # Add PR status emoji if merged
                 if pr_obj.merged:
                     pr_elements.append({"type": "emoji", "name": "pr-merged"})
                     pr_elements.append({"type": "text", "text": " "})
 
-                # Create PR link with strikethrough if closed but not merged
                 pr_link: dict[str, Any] = {
                     "type": "link",
                     "url": f"https://github.com/stackrox/stackrox/pull/{pr_obj.number}",
@@ -274,14 +263,11 @@ def _create_all_pr_rows(
                 "elements": [{"type": "rich_text_section", "elements": pr_elements}],
             }
 
-            # Use assignee if complete and assigned, otherwise notify PR authors
             has_assignee = issue and issue.assignee
 
             if is_complete and has_assignee:
-                # Everything is correct and assigned - just show assignee
                 author_cell = _create_table_cell_text(issue.assignee)
             else:
-                # Notify PR authors about problems (missing metadata or unassigned)
                 author_elements = []
                 unique_authors = []
 
@@ -290,12 +276,10 @@ def _create_all_pr_rows(
                     if author_mention not in unique_authors:
                         unique_authors.append(author_mention)
 
-                # Build author elements with mentions
                 for i, author_mention in enumerate(unique_authors):
                     if i > 0:
                         author_elements.append({"type": "text", "text": ", "})
 
-                    # Parse author mention to create appropriate element
                     if author_mention.startswith("<@") and author_mention.endswith(">"):
                         user_id = author_mention[2:-1]
                         author_elements.append({"type": "user", "user_id": user_id})
@@ -305,7 +289,6 @@ def _create_all_pr_rows(
                     else:
                         author_elements.append({"type": "text", "text": author_mention})
 
-                # Add note if issue is unassigned
                 if is_complete and not has_assignee:
                     author_elements.append({"type": "text", "text": " (issue unassigned)"})
 
@@ -324,7 +307,6 @@ def _create_all_pr_rows(
         priority_emoji = priority_display.strip(":")
         severity_display = severity if severity else "—"
 
-        # Create Jira link with strikethrough if issue is closed
         jira_link_element: dict[str, Any] = {
             "type": "link",
             "url": f"https://redhat.atlassian.net/browse/{jira_key}",
@@ -350,11 +332,9 @@ def _create_all_pr_rows(
             _create_table_cell_text(severity_display),
         ])
 
-    # Add PRs without Jira reference at the TOP (prepend)
     prs_no_jira = [pr for pr in prs if not pr.jira_keys and pr.number not in processed_prs]
     no_jira_rows = []
     for pr in prs_no_jira:
-        # Build PR cell with optional merged icon and strikethrough for closed PRs
         pr_link_elements = []
         if pr.merged:
             pr_link_elements.append({"type": "emoji", "name": "pr-merged"})
@@ -392,7 +372,6 @@ def _create_all_pr_rows(
             _create_table_cell_text("—"),  # Severity
         ])
 
-    # Prepend No Jira PRs to put them at the top
     return no_jira_rows + all_rows
 
 
@@ -405,7 +384,6 @@ def _generate_branch_blocks(
     """Generate Slack blocks for a single branch."""
     blocks = []
 
-    # Branch header
     version_info = f"Expected: {branch.expected_version}"
     if branch.current_version:
         version_info += f", Current: {branch.current_version}"
@@ -419,11 +397,9 @@ def _generate_branch_blocks(
         }
     )
 
-    # Comprehensive table with all PRs and issues
     if prs:
         all_rows = _create_all_pr_rows(prs, jira_issues, branch.expected_version)
 
-        # Section header
         blocks.append(
             {
                 "type": "section",
@@ -434,9 +410,7 @@ def _generate_branch_blocks(
             }
         )
 
-        # Table with all issues and PRs
         table_rows = [
-            # Header row
             [
                 _create_table_cell_text("Urgency"),
                 _create_table_cell_text("PRs"),
@@ -450,7 +424,6 @@ def _generate_branch_blocks(
             ]
         ]
 
-        # Add all data rows
         table_rows.extend(all_rows)
 
         blocks.append({
@@ -469,7 +442,6 @@ def _generate_branch_blocks(
             ],
         })
 
-    # Orphaned Jira issues
     if orphaned:
         orphan_lines = [
             f"*Orphaned Jira Issues ({len(orphaned)})*",
@@ -602,7 +574,6 @@ def generate_slack_payload(
         branch_blocks = _generate_branch_blocks(branch, prs, orphaned, jira_issues)
         blocks.extend(branch_blocks)
 
-    # Add legend at the bottom as a context block
     blocks.append(
         {
             "type": "context",
