@@ -129,8 +129,8 @@ spec:
           value: "/var/run/secrets/stackrox.io/certs/"
         - name: FACT_HOST_MOUNT
           value: "/host"
-        - name: FACT_PATHS
-          value: "/etc/ssh/sshd_config:/etc/sudoers:/etc/passwd:/etc/shadow"
+        - name: FACT_HOTRELOAD
+          value: "true"
         {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
           {{- ._rox.collector._famResources | nindent 10 }}
@@ -156,6 +156,9 @@ spec:
           name: etc-ro
           readOnly: true
           mountPropagation: HostToContainer
+        - mountPath: /etc/stackrox
+          name: fact-config
+          readOnly: true
       {{- end }}
 
       [<- end >]
@@ -332,6 +335,10 @@ spec:
       - name: collector-config
         configMap:
           name: collector-config
+          optional: true
+      - name: fact-config
+        configMap:
+          name: fact-config
           optional: true
 
 {{- if ._rox.collector.exposeMonitoring }}
