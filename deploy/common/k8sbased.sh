@@ -415,7 +415,7 @@ function launch_central {
         )
       fi
 
-      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-}" != "false" ]]; then
+      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-false}" != "false" ]]; then
         helm_args+=(
           --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
         )
