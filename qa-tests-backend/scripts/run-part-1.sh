@@ -48,6 +48,11 @@ config_part_1() {
     image_prefetcher_system_await
 
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+
+    if [[ "${ROX_SCANNER_V4:-}" == "true" ]]; then
+        wait_for_scanner_v4_vuln_load
+    fi
+
     deploy_optional_e2e_components
     setup_workload_identities
 

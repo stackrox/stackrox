@@ -1206,6 +1206,60 @@ wait_for_scanner_V4() {
     wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$max_seconds"
 }
 
+# wait_for_scanner_v4_vuln_load waits until the Scanner V4 matcher has completed
+# its initial vulnerability load, verified via Central's integration health API.
+# This is distinct from wait_for_scanner_V4, which only waits for pod readiness
+# (i.e. database connectivity). Call this separately in jobs that verify scan
+# results, after deploy_stackrox has returned.
+wait_for_scanner_v4_vuln_load() {
+    local max_seconds="${SCANNER_V4_VULN_LOAD_TIMEOUT:-2400}"
+    info "Waiting for Scanner V4 to finish loading vulnerabilities..."
+
+    info "--- Available storage classes on this cluster ---"
+    kubectl describe storageclasses 2>/dev/null || true
+    info "SCANNER_V4_DB_STORAGE_CLASS=${SCANNER_V4_DB_STORAGE_CLASS:-<unset>}"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_ADMIN_PASSWORD"
+
+    local start_time elapsed
+    start_time="$(date '+%s')"
+    while true; do
+        # -w '\n%{http_code}' appends a newline and the HTTP status code after the
+        # response body, letting us capture both in a single variable.
+        local response http_code body
+        response=$(curl -sk \
+            --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
+            -w '\n%{http_code}' \
+            "https://${API_ENDPOINT}/v1/integrationhealth/vulndefinitions?component=SCANNER_V4")
+        # ##*$'\n' strips up to and including the last newline (leaving just the 3-digit code).
+        http_code="${response##*$'\n'}"
+        # %$'\n'* strips the trailing newline+code (leaving just the body).
+        body="${response%$'\n'*}"
+
+        elapsed=$(( $(date '+%s') - start_time ))
+
+        if [[ "${http_code}" != "200" ]]; then
+            # Try to extract the message field from a JSON error body; fall back to
+            # the raw body if it's not JSON or the field is absent.
+            local err_detail
+            err_detail=$(jq -r '.message // empty' <<< "${body}" 2>/dev/null)
+            info "Scanner V4 vuln load check: HTTP ${http_code} (${elapsed}s/${max_seconds}s): ${err_detail:-${body}}"
+        elif echo "${body}" | jq -e '.lastUpdatedTimestamp != null' >/dev/null 2>&1; then
+            info "Scanner V4 vulnerability loading complete (${elapsed}s elapsed)."
+            return
+        else
+            info "Scanner V4 vuln load check: HTTP 200, lastUpdatedTimestamp not set yet (${elapsed}s/${max_seconds}s)"
+        fi
+
+        if (( elapsed > max_seconds )); then
+            die "wait_for_scanner_v4_vuln_load() timed out after ${max_seconds}s."
+        fi
+
+        sleep 30
+    done
+}
+
 # shellcheck disable=SC2120
 wait_for_api() {
     local central_namespace=${1:-stackrox}
