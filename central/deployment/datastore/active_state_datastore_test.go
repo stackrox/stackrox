@@ -88,11 +88,13 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentFiltersDeleted() {
 	s.T().Setenv(features.DeploymentSoftDeletion.EnvVar(), "true")
 	testutils.MustUpdateFeature(s.T(), features.DeploymentSoftDeletion, true)
 
-	deleted := &storage.Deployment{
-		Id:    "d1",
-		State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
-	}
-	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(deleted, true, nil)
+	// SearchRawDeployments returns empty because the active filter excludes deleted deployments.
+	s.inner.EXPECT().SearchRawDeployments(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+			assertQueryContainsActiveFilter(s.T(), q)
+			return nil, nil
+		},
+	)
 
 	result, found, err := s.ds.GetDeployment(s.ctx, "d1")
 	require.NoError(s.T(), err)
@@ -108,7 +110,12 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentReturnsActive() {
 		Id:    "d1",
 		State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 	}
-	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(active, true, nil)
+	s.inner.EXPECT().SearchRawDeployments(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+			assertQueryContainsActiveFilter(s.T(), q)
+			return []*storage.Deployment{active}, nil
+		},
+	)
 
 	result, found, err := s.ds.GetDeployment(s.ctx, "d1")
 	require.NoError(s.T(), err)
@@ -120,7 +127,12 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentNotFound() {
 	s.T().Setenv(features.DeploymentSoftDeletion.EnvVar(), "true")
 	testutils.MustUpdateFeature(s.T(), features.DeploymentSoftDeletion, true)
 
-	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(nil, false, nil)
+	s.inner.EXPECT().SearchRawDeployments(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+			assertQueryContainsActiveFilter(s.T(), q)
+			return nil, nil
+		},
+	)
 
 	result, found, err := s.ds.GetDeployment(s.ctx, "d1")
 	require.NoError(s.T(), err)
@@ -132,12 +144,17 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentsFiltersDeleted() {
 	s.T().Setenv(features.DeploymentSoftDeletion.EnvVar(), "true")
 	testutils.MustUpdateFeature(s.T(), features.DeploymentSoftDeletion, true)
 
-	deployments := []*storage.Deployment{
+	// The active filter is applied in the query, so only active deployments are returned.
+	activeDeployments := []*storage.Deployment{
 		{Id: "d1", State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE},
-		{Id: "d2", State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED},
 		{Id: "d3", State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE},
 	}
-	s.inner.EXPECT().GetDeployments(s.ctx, []string{"d1", "d2", "d3"}).Return(deployments, nil)
+	s.inner.EXPECT().SearchRawDeployments(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+			assertQueryContainsActiveFilter(s.T(), q)
+			return activeDeployments, nil
+		},
+	)
 
 	result, err := s.ds.GetDeployments(s.ctx, []string{"d1", "d2", "d3"})
 	require.NoError(s.T(), err)
@@ -150,11 +167,13 @@ func (s *ActiveStateDatastoreTestSuite) TestListDeploymentFiltersDeleted() {
 	s.T().Setenv(features.DeploymentSoftDeletion.EnvVar(), "true")
 	testutils.MustUpdateFeature(s.T(), features.DeploymentSoftDeletion, true)
 
-	deleted := &storage.ListDeployment{
-		Id:    "d1",
-		State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
-	}
-	s.inner.EXPECT().ListDeployment(s.ctx, "d1").Return(deleted, true, nil)
+	// SearchListDeployments returns empty because the active filter excludes deleted deployments.
+	s.inner.EXPECT().SearchListDeployments(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
+			assertQueryContainsActiveFilter(s.T(), q)
+			return nil, nil
+		},
+	)
 
 	result, found, err := s.ds.ListDeployment(s.ctx, "d1")
 	require.NoError(s.T(), err)
@@ -173,7 +192,12 @@ func (s *ActiveStateDatastoreTestSuite) TestGetDeploymentNoFilterWhenFlagDisable
 		Id:    "d1",
 		State: storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
 	}
-	s.inner.EXPECT().GetDeployment(s.ctx, "d1").Return(deleted, true, nil)
+	s.inner.EXPECT().SearchRawDeployments(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+			assertQueryDoesNotContainActiveFilter(s.T(), q)
+			return []*storage.Deployment{deleted}, nil
+		},
+	)
 
 	result, found, err := s.ds.GetDeployment(s.ctx, "d1")
 	require.NoError(s.T(), err)
