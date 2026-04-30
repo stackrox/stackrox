@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scannerv4"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,6 +30,16 @@ var (
 	errIndexerNotConfigured = errors.New("indexer not configured")
 	errMatcherNotConfigured = errors.New("matcher not configured")
 )
+
+// Repo2CPEResult contains the result of a GetRepositoryToCPEMapping call.
+type Repo2CPEResult struct {
+	// Modified is true if the data has been modified since the ifModifiedSince time.
+	Modified bool
+	// LastModified is the timestamp to use for the next conditional request.
+	LastModified string
+	// Data is the mapping file (nil if Modified is false).
+	Data *repositorytocpe.MappingFile
+}
 
 // callOptions contains optional data and gRPC parameters for the underlying
 // Scanner calls.
@@ -98,6 +109,10 @@ type Scanner interface {
 	// hint to the Scanner whether it should overwrite the contents of ref
 	// if ref already exists in its datastore.
 	StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
+
+	// GetRepositoryToCPEMapping returns the repository-to-CPE mapping from the indexer.
+	// If ifModifiedSince is non-empty, returns Modified=false if data hasn't changed.
+	GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*Repo2CPEResult, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -456,6 +471,49 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	zlog.Debug(ctx).Err(err).Str("status", r.GetStatus()).Msg("received response from StoreIndexReport")
 
 	return nil
+}
+
+// GetRepositoryToCPEMapping calls the Indexer's gRPC endpoint GetRepositoryToCPEMapping.
+// If ifModifiedSince is non-empty, returns Modified=false if data hasn't changed.
+func (c *gRPCScanner) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*Repo2CPEResult, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetRepositoryToCPEMapping")
+
+	var resp *v4.GetRepositoryToCPEMappingResponse
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetRepositoryToCPEMapping", func() error {
+		var err error
+		resp, err = c.indexer.GetRepositoryToCPEMapping(ctx, &v4.GetRepositoryToCPEMappingRequest{
+			IfModifiedSince: ifModifiedSince,
+		})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("getting repository-to-CPE mapping: %w", err)
+	}
+
+	// If not modified, return early.
+	if !resp.GetModified() {
+		return &Repo2CPEResult{
+			Modified:     false,
+			LastModified: resp.GetLastModified(),
+		}, nil
+	}
+
+	// Convert proto response to MappingFile.
+	data := make(map[string]repositorytocpe.Repo, len(resp.GetMapping()))
+	for repo, info := range resp.GetMapping() {
+		data[repo] = repositorytocpe.Repo{CPEs: info.GetCpes()}
+	}
+
+	zlog.Debug(ctx).Int("entries", len(data)).Msg("received repo-to-CPE mapping")
+	return &Repo2CPEResult{
+		Modified:     true,
+		LastModified: resp.GetLastModified(),
+		Data:         &repositorytocpe.MappingFile{Data: data},
+	}, nil
 }
 
 func getImageManifestID(ref name.Digest) string {

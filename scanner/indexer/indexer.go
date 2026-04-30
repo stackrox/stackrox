@@ -150,6 +150,7 @@ type Indexer interface {
 	ReportGetter
 	ReportStorer
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
+	GetRepositoryToCPEMapping(context.Context, string) (*FetchResult, error)
 	Close(context.Context) error
 	Ready(context.Context) error
 }
@@ -167,6 +168,8 @@ type localIndexer struct {
 	manifestManager        *manifest.Manager
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
+
+	repositoryToCPEFetcher *RepositoryToCPEFetcher
 }
 
 // NewIndexer creates a new indexer.
@@ -284,6 +287,13 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		deleteIntervalDuration = minManifestDeleteDuration
 	}
 
+	var repo2cpeFetcher *RepositoryToCPEFetcher
+	if cfg.RepositoryToCPEURL != "" {
+		repo2cpeFetcher = NewRepositoryToCPEFetcher(client, cfg.RepositoryToCPEURL)
+	} else if features.SBOMScanning.Enabled() {
+		zlog.Error(ctx).Msg("unconfigured repository_to_cpe_url may lead to inaccurate SBOM scanning results")
+	}
+
 	success = true
 	return &localIndexer{
 		libIndex:        indexer,
@@ -297,6 +307,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		manifestManager:        manifestManager,
 		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
+
+		repositoryToCPEFetcher: repo2cpeFetcher,
 	}, nil
 }
 
@@ -382,6 +394,15 @@ func (i *localIndexer) Ready(ctx context.Context) error {
 		return fmt.Errorf("indexer DB ping failed: %w", err)
 	}
 	return nil
+}
+
+// GetRepositoryToCPEMapping fetches the repository-to-CPE mapping from upstream.
+// If ifModifiedSince is provided, returns Modified=false if data hasn't changed.
+func (i *localIndexer) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*FetchResult, error) {
+	if i.repositoryToCPEFetcher == nil {
+		return nil, errors.New("unsupported repository_to_cpe_url configuration")
+	}
+	return i.repositoryToCPEFetcher.Fetch(ctx, ifModifiedSince)
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
