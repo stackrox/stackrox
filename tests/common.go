@@ -291,7 +291,85 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 				}
 			}
 		case <-timer.C:
+			// Log what Central has for this deployment
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			finalList, err := service.ListDeployments(ctx, &v1.RawQuery{Query: qb.Query()})
+			cancel()
+			if err != nil {
+				t.Logf("Failed to query Central for diagnostics: %v", err)
+			} else if len(finalList.GetDeployments()) == 0 {
+				t.Logf("Deployment %q NOT found in Central at all", deploymentName)
+			} else {
+				deps, err := retrieveDeployments(service, finalList.GetDeployments())
+				if err != nil {
+					t.Logf("Failed to retrieve deployment from Central: %v", err)
+				} else {
+					for _, d := range deps {
+						t.Logf("Central deployment %q (id=%s, ns=%s):", d.GetName(), d.GetId(), d.GetNamespace())
+						t.Logf("  Containers: %d", len(d.GetContainers()))
+						for i, c := range d.GetContainers() {
+							img := c.GetImage()
+							t.Logf("  Container[%d] %q:", i, c.GetName())
+							t.Logf("    image.name.full_name=%q", img.GetName().GetFullName())
+							t.Logf("    image.id=%q", img.GetId())
+							t.Logf("    image.not_pullable=%v", img.GetNotPullable())
+							t.Logf("    image.is_cluster_local=%v", img.GetIsClusterLocal())
+						}
+					}
+				}
+			}
+
+			logPodStatusForDeployment(t, deploymentName, "")
 			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
+		}
+	}
+}
+
+// logPodStatusForDeployment logs diagnostic information about pods for a given deployment.
+// If namespace is empty, searches all namespaces.
+func logPodStatusForDeployment(t testutils.T, deploymentName, namespace string) {
+	client := createK8sClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// List pods with label matching deployment
+	pods, err := client.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{
+		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+	})
+	if err != nil {
+		t.Logf("Failed to list pods for deployment %s: %v", deploymentName, err)
+		return
+	}
+
+	if len(pods.Items) == 0 {
+		t.Logf("No pods found for deployment %s (searched in namespace: %q)", deploymentName, namespace)
+		return
+	}
+
+	t.Logf("Found %d pod(s) for deployment %s:", len(pods.Items), deploymentName)
+	for i, pod := range pods.Items {
+		t.Logf("Pod[%d]: %s/%s", i, pod.Namespace, pod.Name)
+		t.Logf("  Phase: %s", pod.Status.Phase)
+		t.Logf("  Conditions:")
+		for _, cond := range pod.Status.Conditions {
+			t.Logf("    - %s: %s (reason: %s, message: %s)",
+				cond.Type, cond.Status, cond.Reason, cond.Message)
+		}
+		t.Logf("  Container Statuses:")
+		for j, cs := range pod.Status.ContainerStatuses {
+			t.Logf("    Container[%d]: %s", j, cs.Name)
+			t.Logf("      Image: %s", cs.Image)
+			t.Logf("      ImageID: %q", cs.ImageID)
+			t.Logf("      Ready: %v", cs.Ready)
+			if cs.State.Waiting != nil {
+				t.Logf("      State: Waiting (reason: %s, message: %s)",
+					cs.State.Waiting.Reason, cs.State.Waiting.Message)
+			} else if cs.State.Running != nil {
+				t.Logf("      State: Running (started at: %v)", cs.State.Running.StartedAt)
+			} else if cs.State.Terminated != nil {
+				t.Logf("      State: Terminated (reason: %s, exit code: %d, message: %s)",
+					cs.State.Terminated.Reason, cs.State.Terminated.ExitCode, cs.State.Terminated.Message)
+			}
 		}
 	}
 }

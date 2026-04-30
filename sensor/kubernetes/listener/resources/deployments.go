@@ -122,6 +122,13 @@ func newDeploymentHandler(
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) *component.ResourceEvent {
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
+	if deploymentWrap != nil {
+		log.Infof("processWithType: deployment %s/%s (id=%s) action=%s type=%s containers=%d",
+			deploymentWrap.GetNamespace(), deploymentWrap.GetName(), deploymentWrap.GetId(), action, deploymentType, len(deploymentWrap.GetContainers()))
+		for i, c := range deploymentWrap.GetContainers() {
+			log.Infof("processWithType:   container[%d] image.id=%q image.name=%q", i, c.GetImage().GetId(), c.GetImage().GetName().GetFullName())
+		}
+	}
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
 	// either it's an object we don't track, or we track its parent.
 	// (For example, we don't track replicasets if they are owned by a deployment.)
@@ -280,6 +287,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction, rootEvent *component.ResourceEvent) {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
+		log.Infof("maybeUpdateParentsOfPod: skipping pod %s/%s (phase=%s, action=%s)", pod.Namespace, pod.Name, pod.Status.Phase, action)
 		return
 	}
 
@@ -292,6 +300,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 		// We care when pods are transitioning to running so ensure that the old pod status is not RUNNING
 		// In the cases of CREATES or UPDATES
 		if oldPod.Status.Phase == v1.PodRunning {
+			log.Infof("maybeUpdateParentsOfPod: skipping pod %s/%s (already running)", pod.Namespace, pod.Name)
 			return
 		}
 	}
@@ -300,6 +309,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
+	log.Infof("maybeUpdateParentsOfPod: pod %s/%s transitioning to running, found %d parent owners", pod.Namespace, pod.Name, len(owners))
 	for _, owner := range owners {
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
 		rootEvent.MergeResourceEvent(ev)
