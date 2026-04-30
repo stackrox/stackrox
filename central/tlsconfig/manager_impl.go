@@ -26,6 +26,8 @@ type providerData struct {
 type managerImpl struct {
 	mutex sync.RWMutex
 
+	namespace string
+
 	internalTrustRoots []*x509.Certificate
 	userTrustRoots     []*x509.Certificate
 
@@ -57,11 +59,13 @@ func newManager(namespace string) (*managerImpl, error) {
 
 	mgr := &managerImpl{
 		providerIDToProviderData: make(map[string]providerData),
+		namespace:                namespace,
 		internalTrustRoots:       trustRoots,
 		internalCerts:            internalCerts,
 	}
 
-	certwatch.WatchCertDir(DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
+	certwatch.WatchCertDir("default TLS", DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
+	certwatch.WatchCertDir("internal service", mtls.CertsPrefix, LoadInternalCertificateFromDirectory, mgr.UpdateInternalCertificate, certwatch.WithVerify(false))
 
 	return mgr, nil
 }
@@ -76,6 +80,23 @@ func (m *managerImpl) UpdateDefaultTLSCertificate(defaultCert *tls.Certificate) 
 		m.defaultCerts = []tls.Certificate{*defaultCert}
 	}
 
+	m.updateConfigurersNoLock()
+}
+
+func (m *managerImpl) UpdateInternalCertificate(cert *tls.Certificate) {
+	if cert == nil {
+		return
+	}
+
+	internalCerts, err := buildInternalCerts(cert, m.namespace)
+	if err != nil {
+		log.Errorf("Failed to build internal certificates (keeping previous certs): %v", err)
+		return
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.internalCerts = internalCerts
 	m.updateConfigurersNoLock()
 }
 

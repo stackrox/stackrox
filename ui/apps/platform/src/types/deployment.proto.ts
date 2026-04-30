@@ -22,7 +22,7 @@ export type Deployment = {
     type: string;
     namespace: string;
     namespaceId: string;
-    orchestratorComponent: boolean;
+    orchestratorComponent: boolean; // unused - favor `platformComponent` instead
     replicas: string; // int64
     labels: Record<string, string>;
     podLabels: Record<string, string>;
@@ -50,13 +50,13 @@ export type Deployment = {
 
 export type Container = {
     id: string;
-    config: ContainerConfig;
+    config: ContainerConfig | null;
     image: ContainerImage;
-    securityContext: ContainerSecurityContext;
+    securityContext: ContainerSecurityContext | null;
     volumes: ContainerVolume[];
     ports: PortConfig[];
     secrets: EmbeddedSecret[];
-    resources: ContainerResources;
+    resources: ContainerResources | null;
     name: string;
 };
 
