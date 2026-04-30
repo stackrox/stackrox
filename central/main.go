@@ -100,6 +100,7 @@ import (
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
+	imageExportServiceV2 "github.com/stackrox/rox/central/image/service/v2"
 	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -434,6 +435,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		helmcharts.NewService(),
 		iiService.Singleton(),
 		imageService.Singleton(),
+		imageExportServiceV2.Singleton(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
