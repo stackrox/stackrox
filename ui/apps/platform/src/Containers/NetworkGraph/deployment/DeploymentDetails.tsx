@@ -15,13 +15,13 @@ import {
 } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import type { Deployment } from 'types/deployment.proto';
 import type { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
 
-import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
-import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
+import DeploymentContainersCard from 'Components/DeploymentContainersCard';
 
 import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
 import EgressOnly from 'images/network-graph/egress-only.svg?react';
@@ -291,28 +291,11 @@ function DeploymentDetails({
                 </li>
                 <li>
                     <Divider className="pf-v6-u-mb-sm" />
-                    <DetailSection title="Container configurations">
-                        {deployment.containers.length ? (
-                            <Stack hasGutter>
-                                {deployment.containers.map((container) => {
-                                    return (
-                                        <StackItem key={container.id}>
-                                            <DeploymentContainerConfig
-                                                container={container}
-                                                getImageUrl={getImageUrl}
-                                            />
-                                        </StackItem>
-                                    );
-                                })}
-                            </Stack>
-                        ) : (
-                            <EmptyState
-                                headingLevel="h4"
-                                titleText="No containers available"
-                                variant="xs"
-                            ></EmptyState>
-                        )}
-                    </DetailSection>
+                    <DeploymentContainersCard
+                        containers={deployment.containers}
+                        title="Container configurations"
+                        getImageUrl={getImageUrl}
+                    />
                 </li>
             </ul>
         </div>
