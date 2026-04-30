@@ -16,12 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
+
+const rhelGuestOS = "Red Hat Enterprise Linux"
 
 var (
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
@@ -31,14 +34,20 @@ var (
 	errVirtualMachineNotFound = errors.New("virtual machine not found")
 )
 
+type indexReportRequest struct {
+	indexReport    *v1.IndexReport
+	discoveredData *v1.DiscoveredData
+}
+
 type handlerImpl struct {
+	clusterID    clusterIDGetter
 	centralReady concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC(), Send() [reader].
 	lock         *sync.RWMutex
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
 	toCompliance chan common.MessageToComplianceWithAddress
-	indexReports chan *v1.IndexReport
+	indexReports chan *indexReportRequest
 	store        VirtualMachineStore
 }
 
@@ -55,7 +64,11 @@ func (h *handlerImpl) ComplianceC() <-chan common.MessageToComplianceWithAddress
 	return h.toCompliance
 }
 
-func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (h *handlerImpl) Send(
+	ctx context.Context,
+	indexReport *v1.IndexReport,
+	discoveredData *v1.DiscoveredData,
+) error {
 	if h.stopper.Client().Stopped().IsDone() {
 		return errox.InvariantViolation.CausedBy(errInputChanClosed)
 	}
@@ -63,7 +76,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
 	if !h.centralReady.IsDone() {
-		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", vm.GetVsockCid())
+		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", indexReport.GetVsockCid())
 		metrics.IndexReportsSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
@@ -83,10 +96,14 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	}()
 
 	// Fast-path select to detect blocking on the channel for metrics
+	req := &indexReportRequest{
+		indexReport:    indexReport,
+		discoveredData: discoveredData,
+	}
 	select {
 	case <-ctx.Done():
 		// Handled in the next select statement
-	case h.indexReports <- vm:
+	case h.indexReports <- req:
 		return nil
 	default:
 		blocked = true
@@ -102,7 +119,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		}
 		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
-	case h.indexReports <- vm:
+	case h.indexReports <- req:
 		return nil
 	}
 }
@@ -167,7 +184,7 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.indexReports != nil || h.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
-	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.indexReports = make(chan *indexReportRequest, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
 	h.toCompliance = make(chan common.MessageToComplianceWithAddress, 1)
 	h.toCentral = h.run(h.indexReports)
 	return nil
@@ -196,7 +213,7 @@ func (h *handlerImpl) Stop() {
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run(indexReports <-chan *indexReportRequest) (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
@@ -208,12 +225,12 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 			select {
 			case <-h.stopper.Flow().StopRequested():
 				return
-			case indexReport, ok := <-indexReports:
+			case req, ok := <-indexReports:
 				if !ok {
 					h.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				h.handleIndexReport(ch2Central, indexReport)
+				h.handleIndexReport(ch2Central, req)
 			}
 		}
 	}()
@@ -297,7 +314,7 @@ func (h *handlerImpl) forwardToCompliance(
 
 func (h *handlerImpl) handleIndexReport(
 	toCentral chan *message.ExpiringMessage,
-	indexReport *v1.IndexReport,
+	req *indexReportRequest,
 ) {
 	startTime := time.Now()
 	outcome := metrics.IndexReportHandlingMessageToCentralSuccess
@@ -307,24 +324,28 @@ func (h *handlerImpl) handleIndexReport(
 			Observe(metrics.StartTimeToMS(startTime))
 	}()
 
-	if indexReport == nil {
+	if req == nil || req.indexReport == nil {
 		outcome = metrics.IndexReportHandlingMessageToCentralNilReport
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
+	indexReport := req.indexReport
 	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
 
-	msg, outcome, err := h.newMessageToCentral(indexReport)
+	msgs, outcome, err := h.newMessagesToCentral(req)
 	if err != nil {
 		// TODO: send a message the sensor relay to retry later if the VM was not found
 		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
 		return
 	}
-	h.sendIndexReportEvent(toCentral, msg)
+	for _, msg := range msgs {
+		h.sendIndexReportEvent(toCentral, msg)
+	}
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
-func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, string, error) {
+func (h *handlerImpl) newMessagesToCentral(req *indexReportRequest) ([]*message.ExpiringMessage, string, error) {
+	indexReport := req.indexReport
 	cid, err := strconv.ParseUint(indexReport.GetVsockCid(), 10, 32)
 	if err != nil {
 		return nil, metrics.IndexReportHandlingMessageToCentralInvalidCID, errors.Wrapf(err, "Received an invalid Vsock CID: %q", indexReport.GetVsockCid())
@@ -336,6 +357,18 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 		return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
 	}
 
+	msgs := make([]*message.ExpiringMessage, 0, 2)
+	if vmMsg := h.newVirtualMachineMessageToCentral(vmInfo, req.discoveredData); vmMsg != nil {
+		msgs = append(msgs, vmMsg)
+	}
+	msgs = append(msgs, h.newIndexReportMessageToCentral(vmInfo, indexReport))
+	return msgs, metrics.IndexReportHandlingMessageToCentralSuccess, nil
+}
+
+func (h *handlerImpl) newIndexReportMessageToCentral(
+	vmInfo *virtualmachine.Info,
+	indexReport *v1.IndexReport,
+) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -349,7 +382,44 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 				},
 			},
 		},
-	}), metrics.IndexReportHandlingMessageToCentralSuccess, nil
+	})
+}
+
+func (h *handlerImpl) newVirtualMachineMessageToCentral(
+	vmInfo *virtualmachine.Info,
+	discoveredData *v1.DiscoveredData,
+) *message.ExpiringMessage {
+	if discoveredData == nil {
+		return nil
+	}
+
+	vmInfo.AgentFacts = agentFactsFromDiscoveredData(discoveredData)
+	updatedVM := h.store.AddOrUpdate(vmInfo)
+	if updatedVM == nil {
+		return nil
+	}
+
+	vsockCID, vsockCIDSet := virtualMachineVSockCID(updatedVM)
+	return message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     string(updatedVM.ID),
+				Action: central.ResourceAction_UPDATE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &v1.VirtualMachine{
+						Id:          string(updatedVM.ID),
+						Namespace:   updatedVM.Namespace,
+						Name:        updatedVM.Name,
+						ClusterId:   h.clusterID.GetNoWait(),
+						Facts:       virtualmachine.Facts(updatedVM),
+						VsockCid:    vsockCID,
+						VsockCidSet: vsockCIDSet,
+						State:       virtualMachineState(updatedVM),
+					},
+				},
+			},
+		},
+	})
 }
 
 func (h *handlerImpl) sendIndexReportEvent(
@@ -369,4 +439,50 @@ func vmIDFromResourceID(resourceID string) string {
 		return resourceID[:i]
 	}
 	return resourceID
+}
+
+func agentFactsFromDiscoveredData(discoveredData *v1.DiscoveredData) map[string]string {
+	if discoveredData == nil {
+		return nil
+	}
+
+	facts := map[string]string{}
+	switch discoveredData.GetDetectedOs() {
+	case v1.DetectedOS_RHEL:
+		guestOS := rhelGuestOS
+		if osVersion := discoveredData.GetOsVersion(); osVersion != "" {
+			guestOS += " " + osVersion
+		}
+		facts[pkgVM.DetectedGuestOSKey] = guestOS
+	}
+	switch discoveredData.GetActivationStatus() {
+	case v1.ActivationStatus_ACTIVE:
+		facts[pkgVM.ActivationStatusKey] = pkgVM.ActivationStatusActive
+	case v1.ActivationStatus_INACTIVE:
+		facts[pkgVM.ActivationStatusKey] = pkgVM.ActivationStatusInactive
+	}
+	switch discoveredData.GetDnfMetadataStatus() {
+	case v1.DnfMetadataStatus_AVAILABLE:
+		facts[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusAvailable
+	case v1.DnfMetadataStatus_UNAVAILABLE:
+		facts[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusUnavailable
+	}
+	return facts
+}
+
+func virtualMachineState(vmInfo *virtualmachine.Info) v1.VirtualMachine_State {
+	if vmInfo == nil {
+		return v1.VirtualMachine_UNKNOWN
+	}
+	if vmInfo.Running {
+		return v1.VirtualMachine_RUNNING
+	}
+	return v1.VirtualMachine_STOPPED
+}
+
+func virtualMachineVSockCID(vmInfo *virtualmachine.Info) (int32, bool) {
+	if vmInfo == nil || vmInfo.VSOCKCID == nil {
+		return 0, false
+	}
+	return int32(*vmInfo.VSOCKCID), true
 }

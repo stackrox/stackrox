@@ -61,14 +61,12 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
 
-	// Log VM discovered data.
-	// This is temporary. In a followup, the data will be passed to Central instead of being logged.
 	data := req.GetDiscoveredData()
 	detectedOS := data.GetDetectedOs()
 	osVersion := data.GetOsVersion()
 	activationStatus := data.GetActivationStatus()
 	dnfMetadataStatus := data.GetDnfMetadataStatus()
-	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
+	log.Debugf("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
 		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
 
 	// Record metric for VM discovered data for cusomer data debugging purposes.
@@ -81,7 +79,7 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	metrics.IndexReportsReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
 	defer cancel()
-	if err := s.handler.Send(timeoutCtx, ir); err != nil {
+	if err := s.handler.Send(timeoutCtx, ir, data); err != nil {
 		return &sensor.UpsertVirtualMachineIndexReportResponse{
 			Success: false,
 		}, errors.Wrapf(err, "sending virtual machine index report with vsock_cid=%q to Central", ir.GetVsockCid())
