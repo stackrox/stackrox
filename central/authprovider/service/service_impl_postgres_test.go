@@ -48,7 +48,7 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 	authProviderDS := authProviderDataStore.GetTestPostgresDataStore(t, db)
 	groupDS := groupDataStore.GetTestPostgresDataStore(t, db, roleDS, nil)
 	userDS := userDataStore.GetTestDataStore(t)
-	mapperFactory := roleMapper.NewStoreBasedMapperFactory(groupDS, roleDS, userDS)
+	mapperFactory := roleMapper.NewStoreBasedMapperFactory(groupDS, roleDS, userDS, authProviderDS)
 	providerRegistry := authproviders.NewStoreBackedRegistry(
 		urlPathPrefix,
 		redirectURL,

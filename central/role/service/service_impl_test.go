@@ -528,6 +528,7 @@ func (s *roleServiceGetMyPermissionsTestSuite) SetupTest() {
 	s.svc = &serviceImpl{}
 
 	authProvider, err := authproviders.NewProvider(
+		s.T().Context(),
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
 		authproviders.WithName("Test Auth Provider"),

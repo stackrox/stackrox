@@ -71,8 +71,21 @@ function ClusterLabelsConfigurationStatusSummary({
                 </Alert>
             )}
             {selectedCluster.id && (
-                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                    <Title headingLevel="h2">Cluster labels</Title>
+                <Flex>
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsXs' }}
+                    >
+                        <div>
+                            <strong>Cluster ID:</strong> {selectedCluster.id}
+                        </div>
+                        {selectedCluster.status?.providerMetadata?.cluster?.id && (
+                            <div>
+                                <strong>Provider Cluster ID:</strong>{' '}
+                                {selectedCluster.status.providerMetadata.cluster.id}
+                            </div>
+                        )}
+                    </Flex>
                     {Object.keys(selectedCluster?.labels ?? {}).length === 0 ? (
                         <Content component="p">No labels</Content>
                     ) : (

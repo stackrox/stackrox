@@ -157,6 +157,7 @@ func (b *backend) idToAuthResponse(id *dexconnector.Identity) *authproviders.Aut
 		authproviders.UseridAttribute: {string(id.UserID)},
 		authproviders.NameAttribute:   {id.Username},
 		authproviders.GroupsAttribute: id.Groups,
+		"providerToken":               {string(id.ConnectorData)},
 	}
 
 	return &authproviders.AuthResponse{

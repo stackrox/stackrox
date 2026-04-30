@@ -29,5 +29,5 @@ type RoleStore interface {
 //
 //go:generate mockgen-wrapper
 type RoleMapperFactory interface {
-	GetRoleMapper(authProviderID string) RoleMapper
+	GetRoleMapper(ctx context.Context, authProviderID string) RoleMapper
 }
