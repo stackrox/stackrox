@@ -590,6 +590,7 @@ jobs:
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
       - name: Check debugger presence in the main image
+        if: github.event_name == 'push'
         run: make check-debugger
 
       - name: Build roxctl image
