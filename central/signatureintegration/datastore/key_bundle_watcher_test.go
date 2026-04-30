@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	storeMocks "github.com/stackrox/rox/central/signatureintegration/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -157,14 +159,89 @@ func TestWatcherStartStop(t *testing.T) {
 		interval: 50 * time.Millisecond,
 		siStore:  mockStore,
 		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 
 	w.Start()
 	time.Sleep(100 * time.Millisecond)
-	w.Stop()
+
+	done := make(chan struct{})
+	go func() {
+		w.Stop()
+		close(done)
+	}()
 	select {
-	case <-w.stopSig.Done():
+	case <-done:
 	case <-time.After(2 * time.Second):
 		t.Fatal("watcher did not stop within timeout")
 	}
+}
+
+func TestWatcherUpsertRetryOnFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "bundle.json")
+	content := []byte(validBundleJSON())
+	require.NoError(t, os.WriteFile(filePath, content, 0600))
+
+	firstCall := mockStore.EXPECT().
+		Upsert(gomock.Any(), redHatIntegrationMatcher()).
+		Return(errors.New("transient DB error")).
+		Times(1)
+	mockStore.EXPECT().
+		Upsert(gomock.Any(), redHatIntegrationMatcher()).
+		Return(nil).
+		Times(1).
+		After(firstCall)
+
+	w := newKeyBundleWatcher(filePath, 50*time.Millisecond, mockStore)
+
+	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
+
+	// First call: Upsert fails — hash must NOT be updated so the watcher retries.
+	w.checkAndUpsert()
+	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
+
+	// Second call: Upsert succeeds — hash is updated.
+	w.checkAndUpsert()
+	assert.Equal(t, sha256.Sum256(content), w.lastHash)
+}
+
+func TestWatcherClampsInterval(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+
+	w := newKeyBundleWatcher("/nonexistent", time.Millisecond, mockStore)
+	assert.GreaterOrEqual(t, w.interval, minWatchInterval)
+
+	w = newKeyBundleWatcher("/nonexistent", minWatchInterval, mockStore)
+	assert.Equal(t, minWatchInterval, w.interval)
+
+	longInterval := 2 * minWatchInterval
+	w = newKeyBundleWatcher("/nonexistent", longInterval, mockStore)
+	assert.Equal(t, longInterval, w.interval)
+}
+
+func TestWatcherOversizedFile(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+	// Upsert must NOT be called for an oversized file.
+
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "bundle.json")
+	oversizedContent := []byte(strings.Repeat("x", maxBundleFileSize+1))
+	require.NoError(t, os.WriteFile(filePath, oversizedContent, 0600))
+
+	w := newKeyBundleWatcher(filePath, 50*time.Millisecond, mockStore)
+	w.checkAndUpsert()
+
+	// Hash is set to a fingerprint so repeated polls don't re-warn.
+	firstHash := w.lastHash
+	assert.NotEqual(t, [sha256.Size]byte{}, firstHash)
+
+	// Second call with same oversized file — hash should remain the same (no re-warn).
+	w.checkAndUpsert()
+	assert.Equal(t, firstHash, w.lastHash)
 }

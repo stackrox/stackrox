@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -20,6 +21,7 @@ type keyBundleWatcher struct {
 	interval time.Duration
 	siStore  store.SignatureIntegrationStore
 	stopSig  concurrency.Signal
+	doneSig  concurrency.Signal
 	lastHash [sha256.Size]byte
 }
 
@@ -35,6 +37,7 @@ func newKeyBundleWatcher(filePath string, interval time.Duration, siStore store.
 		interval: interval,
 		siStore:  siStore,
 		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 }
 
@@ -44,11 +47,13 @@ func (w *keyBundleWatcher) Start() {
 
 func (w *keyBundleWatcher) Stop() {
 	w.stopSig.Signal()
+	<-w.doneSig.Done()
 }
 
 func (w *keyBundleWatcher) run() {
 	log.Info("Starting Red Hat signing key bundle watcher")
 	defer log.Info("Stopped Red Hat signing key bundle watcher")
+	defer w.doneSig.Signal()
 
 	w.checkAndUpsert()
 
@@ -65,18 +70,30 @@ func (w *keyBundleWatcher) run() {
 }
 
 func (w *keyBundleWatcher) checkAndUpsert() {
-	data, err := os.ReadFile(w.filePath)
+	info, err := os.Stat(w.filePath)
 	if errors.Is(err, os.ErrNotExist) {
 		log.Debugf("Key bundle file %q does not exist, skipping", w.filePath)
 		w.lastHash = [sha256.Size]byte{}
 		return
 	}
 	if err != nil {
-		log.Warnf("Failed to read key bundle file %q: %v", w.filePath, err)
+		log.Warnf("Failed to stat key bundle file %q: %v", w.filePath, err)
 		return
 	}
-	if len(data) > maxBundleFileSize {
-		log.Warnf("Key bundle file %q exceeds maximum size of %d bytes, skipping", w.filePath, maxBundleFileSize)
+	if info.Size() > int64(maxBundleFileSize) {
+		// Use a fingerprint based on size+mtime to suppress repeated warnings for the same oversized file.
+		fingerprint := sha256.Sum256([]byte(fmt.Sprintf("oversize:%d:%d", info.Size(), info.ModTime().UnixNano())))
+		if fingerprint != w.lastHash {
+			log.Warnf("Key bundle file %q exceeds maximum size (%d bytes > %d), skipping",
+				w.filePath, info.Size(), maxBundleFileSize)
+			w.lastHash = fingerprint
+		}
+		return
+	}
+
+	data, err := os.ReadFile(w.filePath)
+	if err != nil {
+		log.Warnf("Failed to read key bundle file %q: %v", w.filePath, err)
 		return
 	}
 
