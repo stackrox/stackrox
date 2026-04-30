@@ -151,12 +151,6 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		return nil, err
 	}
 
-	if retention := req.GetConfig().GetPrivateConfig().GetResourceRetentionConfig(); retention != nil {
-		if retention.GetDeploymentDurationDays() < 0 {
-			return nil, errors.Wrap(errox.InvalidArgs, "resource retention duration days must not be negative")
-		}
-	}
-
 	regexes := make([]*regexp.Regexp, 0)
 	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
 		for _, rule := range platformConfig.GetRules() {

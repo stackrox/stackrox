@@ -5764,7 +5764,7 @@ func (m *ResourceRetentionConfig) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DeploymentDurationDays |= int32(b&0x7F) << shift
+				m.DeploymentDurationDays |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -8923,7 +8923,7 @@ func (m *ResourceRetentionConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DeploymentDurationDays |= int32(b&0x7F) << shift
+				m.DeploymentDurationDays |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

@@ -894,8 +894,9 @@ func (x *AdministrationEventsConfig) GetRetentionDurationDays() uint32 {
 // ResourceRetentionConfig configures how long soft-deleted
 // resources are retained before being permanently removed.
 type ResourceRetentionConfig struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	DeploymentDurationDays int32                  `protobuf:"varint,1,opt,name=deployment_duration_days,json=deploymentDurationDays,proto3" json:"deployment_duration_days,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Retention of deleted deployments in days. Set to zero to disable pruning.
+	DeploymentDurationDays uint32 `protobuf:"varint,1,opt,name=deployment_duration_days,json=deploymentDurationDays,proto3" json:"deployment_duration_days,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -930,7 +931,7 @@ func (*ResourceRetentionConfig) Descriptor() ([]byte, []int) {
 	return file_storage_config_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *ResourceRetentionConfig) GetDeploymentDurationDays() int32 {
+func (x *ResourceRetentionConfig) GetDeploymentDurationDays() uint32 {
 	if x != nil {
 		return x.DeploymentDurationDays
 	}
@@ -1448,7 +1449,7 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x1aAdministrationEventsConfig\x126\n" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"S\n" +
 	"\x17ResourceRetentionConfig\x128\n" +
-	"\x18deployment_duration_days\x18\x01 \x01(\x05R\x16deploymentDurationDays\"@\n" +
+	"\x18deployment_duration_days\x18\x01 \x01(\rR\x16deploymentDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
 	"\aenabled\x18\x02 \x01(\bR\aenabledB.\n" +
