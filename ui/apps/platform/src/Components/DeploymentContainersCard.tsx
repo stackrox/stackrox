@@ -1,6 +1,6 @@
 import { Card, CardBody, CardTitle, Stack, StackItem } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import useContainerGroups from 'hooks/useContainerGroups';
 import type { Container } from 'types/deployment.proto';
 import DeploymentContainerConfig from './DeploymentContainerConfig';
 
@@ -33,12 +33,7 @@ function DeploymentContainersCard({
     title,
     getImageUrl,
 }: DeploymentContainersCardProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showInitContainers = isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT');
-
-    const allContainers = containers ?? [];
-    const regularContainers = allContainers.filter((c) => c.type !== 'INIT' || !showInitContainers);
-    const initContainers = allContainers.filter((c) => c.type === 'INIT' && showInitContainers);
+    const { regularContainers, initContainers } = useContainerGroups(containers);
 
     return (
         <Stack hasGutter>
