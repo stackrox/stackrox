@@ -51,12 +51,6 @@ Exit Codes:
     2: Unexpected error (bug)
 """
 
-# Quick Reference:
-# - Design spec: docs/superpowers/specs/2026-04-10-backport-audit-python-rewrite-design.md
-# - Implementation plan: docs/superpowers/plans/2026-04-10-backport-audit-python-implementation.md
-# - Original bash: scripts/ci/audit-backport-prs.sh (for comparison)
-# - Slack user mapping source: scripts/ci/get-slack-user-id.sh
-
 import sys
 from backport_audit.__main__ import main
 
