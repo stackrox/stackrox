@@ -72,12 +72,13 @@ runs:
           after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
-    - name: Clear test cache on default branch
-      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    - name: Clear test cache on non-PR runs
+      # TODO: temporarily forced for validation — restore condition before merge
+      if: true # github.event_name == 'push'
       run: |
-        # Master pushes always run tests from scratch to catch real failures.
-        # go clean -testcache removes cached test results while preserving
-        # the compilation cache (compiled .a files stay warm).
+        # Non-PR runs (master, release branches, nightlies) always run tests
+        # from scratch to catch real failures. go clean -testcache removes
+        # cached test results while preserving the compilation cache.
         go clean -testcache
         echo "Cleared test cache for fresh run"
       shell: bash
