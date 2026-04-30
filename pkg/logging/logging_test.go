@@ -200,9 +200,9 @@ func Test_withRotatingCore_sharedPath(t *testing.T) {
 
 	data, err := os.ReadFile(logpath)
 	require.NoError(t, err)
-	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	assert.Len(t, lines, numLoggers*linesPerLogger,
-		"all lines from all loggers must be present in the log file")
+	lineCount := len(strings.Split(strings.TrimSpace(string(data)), "\n"))
+	assert.Equalf(t, numLoggers*linesPerLogger, lineCount,
+		"expected %d lines but got %d", numLoggers*linesPerLogger, lineCount)
 }
 
 func TestForEachRotation(t *testing.T) {
