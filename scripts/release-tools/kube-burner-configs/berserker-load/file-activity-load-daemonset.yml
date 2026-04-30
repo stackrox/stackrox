@@ -1,0 +1,60 @@
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: file-activity-load-{{.Replica}}
+spec:
+  selector:
+    matchLabels:
+      app: file-activity-load-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: file-activity-load-{{.Replica}}
+    spec:
+      containers:
+      - command:
+        - berserker
+        args:
+        - -f
+        - /etc/berserker/workload.ber
+        image: quay.io/stackrox-io/berserker:1.0-88-gbc9a937d18
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "15m"
+          limits:
+            memory: "200Mi"
+            cpu: "15m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker"
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        name: berserker
+        env:
+        - name: RUST_LOG
+          value: "error"
+        downwardAPI:
+          items:
+            - path: "labels"
+              fieldRef:
+                fieldPath: metadata.labels
+      volumes:
+      - name: config
+        configMap:
+          name: {{.JobName}}-berserker-file-activity-config
+          items:
+          - key: workload.ber
+            path: workload.ber
+      # Add not-ready/unreachable tolerations for 15 minutes so that node
+      # failure doesn't trigger pod deletion.
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
