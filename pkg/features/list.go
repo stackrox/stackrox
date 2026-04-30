@@ -136,6 +136,9 @@ var (
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
+
+	// DeploymentSoftDeletion enables soft deletion for deployments instead of hard deletion.
+	DeploymentSoftDeletion = registerFeature("Enable soft deletion for deployments", "ROX_DEPLOYMENT_SOFT_DELETION")
 )
 
 // The following feature flags are related to Scanner V4.

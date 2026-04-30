@@ -120,6 +120,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 			Tolerations:                  []*storage.Toleration{},
 			ServiceAccount:               "default",
 			AutomountServiceAccountToken: true,
+			State:                        storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 			ImagePullSecrets:             []string{},
 			Containers: []*storage.Container{
 				{

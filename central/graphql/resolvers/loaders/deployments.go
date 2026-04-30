@@ -10,6 +10,7 @@ import (
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -94,9 +95,9 @@ func (idl *deploymentLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Q
 	return int32(count), nil
 }
 
-// CountFromQuery returns the total number of deployments.
+// CountAll returns the total number of deployments.
 func (idl *deploymentLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.CountDeployments(ctx)
+	count, err := idl.ds.Count(ctx, search.EmptyQuery())
 	return int32(count), err
 }
 
