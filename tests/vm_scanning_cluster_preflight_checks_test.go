@@ -253,6 +253,29 @@ func TestVerifyClusterVSOCKReadyPhases_ShouldGivePhaseTwoAFreshTimeoutAfterSlowP
 		"phase two should receive a fresh timeout budget instead of the leftovers from phase one")
 }
 
+func TestVerifyClusterVSOCKReadyPhases_ShouldReturnRefOnPhaseTwoFailure(t *testing.T) {
+	t.Parallel()
+
+	wantRef := kubeVirtVSOCKRef{Namespace: "openshift-cnv", Name: "kubevirt"}
+	wantDiag := "virt-handler volumes look wrong"
+	wantErr := errors.New("phase two verification failed")
+
+	ref, diag, err := verifyClusterVSOCKReadyPhases(
+		t.Context(),
+		time.Second,
+		time.Second,
+		func(context.Context) (kubeVirtVSOCKRef, error) {
+			return wantRef, nil
+		},
+		func(context.Context) (string, error) {
+			return wantDiag, wantErr
+		},
+	)
+	require.ErrorIs(t, err, wantErr)
+	require.Equal(t, wantRef, ref, "ref from phase one must be preserved on phase two failure")
+	require.Equal(t, wantDiag, diag, "diagnostic from phase two must be returned on failure")
+}
+
 func TestVerifyClusterVSOCKReadyPhases_ShouldStopBeforePhaseTwoWhenPhaseOneFails(t *testing.T) {
 	t.Parallel()
 
