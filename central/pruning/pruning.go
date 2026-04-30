@@ -652,7 +652,7 @@ func (g *garbageCollectorImpl) collectDeletedDeployments(config *storage.Private
 			AddExactMatches(search.DeploymentState, storage.DeploymentState_DEPLOYMENT_STATE_DELETED.String()).
 			ProtoQuery(),
 		search.NewQueryBuilder().
-			AddDays(search.Deleted, retentionDays).
+			AddDays(search.DeploymentDeleted, retentionDays).
 			ProtoQuery(),
 	)
 
