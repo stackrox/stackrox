@@ -73,8 +73,7 @@ runs:
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
     - name: Clear test cache on non-PR runs
-      # TODO: temporarily forced for validation — restore condition before merge
-      if: true # github.event_name == 'push'
+      if: github.event_name == 'push'
       run: |
         # Non-PR runs (master, release branches, nightlies) always run tests
         # from scratch to catch real failures. go clean -testcache removes
