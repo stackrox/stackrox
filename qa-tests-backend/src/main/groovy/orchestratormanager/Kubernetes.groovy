@@ -646,7 +646,7 @@ class Kubernetes {
                                     "Could not update env var. No container named " +
                                     "${containerName} in deployment ${ns}/${name}")
                         }
-                        List<EnvVar> envVars = containers.get(containerIndex).env
+                        List<EnvVar> envVars = containers.get(containerIndex).env ?: []
                         int index = envVars.findIndexOf { EnvVar e -> e.name == key }
                         if (index > -1) {
                             envVars.get(index).value = value
@@ -680,7 +680,7 @@ class Kubernetes {
                                     "Could not remove env var. No container named " +
                                     "${containerName} in deployment ${ns}/${name}")
                         }
-                        List<EnvVar> envVars = containers.get(containerIndex).env
+                        List<EnvVar> envVars = containers.get(containerIndex).env ?: []
                         envVars.removeIf { EnvVar e -> e.name == key }
                         new DeploymentBuilder(d)
                                 .editSpec()
