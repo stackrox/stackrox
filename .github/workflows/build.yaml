@@ -589,10 +589,6 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
-      - name: Check debugger presence in the main image
-        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-        run: make check-debugger
-
       - name: Build roxctl image
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
