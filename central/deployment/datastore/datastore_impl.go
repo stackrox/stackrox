@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -37,7 +38,20 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
+
+	// imageIDCacheTTL is the time-to-live for cached container image IDs.
+	// When a deployment update clears image IDs (e.g., because pods were
+	// terminated), the old IDs are saved in this cache so that a subsequent
+	// soft-delete can restore them. The TTL only needs to cover the window
+	// between the pod-removal update and the deployment REMOVE event.
+	imageIDCacheTTL = 5 * time.Minute
 )
+
+// containerImageIDs holds the image IDs for a single container, keyed by container name.
+type containerImageIDs struct {
+	id   string
+	idV2 string
+}
 
 type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
@@ -49,6 +63,11 @@ type datastoreImpl struct {
 	risks                  riskDS.DataStore
 	deletedDeploymentCache cache.DeletedDeployments
 	processFilter          filter.Filter
+
+	// imageIDCache temporarily stores container image IDs that were cleared
+	// by a deployment update triggered by pod removal. If a soft-delete
+	// follows shortly after, the image IDs can be restored from this cache.
+	imageIDCache expiringcache.Cache[string, map[string]containerImageIDs]
 
 	keyedMutex *concurrency.KeyedMutex
 
@@ -80,6 +99,7 @@ func newDatastoreImpl(
 		risks:                  risks,
 		keyedMutex:             concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		deletedDeploymentCache: deletedDeploymentCache,
+		imageIDCache:           expiringcache.NewExpiringCache[string, map[string]containerImageIDs](imageIDCacheTTL),
 		processFilter:          processFilter,
 
 		clusterRanker:    clusterRanker,
@@ -262,6 +282,25 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 	return ds.upsertDeployment(ctx, deployment)
 }
 
+// containerImageSummary returns a short string describing each container's
+// image ID state, useful for debug logging during deployment updates.
+func containerImageSummary(d *storage.Deployment) string {
+	if len(d.GetContainers()) == 0 {
+		return "<no containers>"
+	}
+	parts := make([]string, 0, len(d.GetContainers()))
+	for _, c := range d.GetContainers() {
+		id := c.GetImage().GetId()
+		if id == "" {
+			id = "<empty>"
+		} else if len(id) > 12 {
+			id = id[:12]
+		}
+		parts = append(parts, fmt.Sprintf("%s=%s", c.GetName(), id))
+	}
+	return strings.Join(parts, ", ")
+}
+
 func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
 	for _, c := range d.GetContainers() {
 		if c.GetImage().GetId() == "" {
@@ -314,7 +353,61 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 	return nil
 }
 
-// upsertDeployment inserts a deployment into deploymentStore
+// cacheImageIDs saves the container image IDs of the old deployment into the
+// expiring cache when the incoming deployment would clear them. This allows
+// RemoveDeployment to restore the IDs during soft-delete.
+func (ds *datastoreImpl) cacheImageIDs(ctx context.Context, deployment *storage.Deployment) {
+	if allImagesAreSpecifiedByDigest(deployment) {
+		return
+	}
+	oldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
+	if err != nil || !exists {
+		return
+	}
+	ids := make(map[string]containerImageIDs)
+	for _, c := range oldDeployment.GetContainers() {
+		if c.GetImage().GetId() != "" {
+			ids[c.GetName()] = containerImageIDs{
+				id:   c.GetImage().GetId(),
+				idV2: c.GetImage().GetIdV2(),
+			}
+		}
+	}
+	if len(ids) > 0 {
+		log.Infof("cacheImageIDs %s/%s: caching %d container image IDs (old: [%s], incoming: [%s])",
+			deployment.GetNamespace(), deployment.GetName(), len(ids),
+			containerImageSummary(oldDeployment), containerImageSummary(deployment))
+		ds.imageIDCache.Add(deployment.GetId(), ids)
+	}
+}
+
+// restoreImageIDs restores container image IDs from the expiring cache into
+// the deployment. This is used during soft-delete to recover image IDs that
+// were cleared by a pod-removal-triggered update.
+func (ds *datastoreImpl) restoreImageIDs(deployment *storage.Deployment) {
+	if allImagesAreSpecifiedByDigest(deployment) {
+		return
+	}
+	cached, ok := ds.imageIDCache.Get(deployment.GetId())
+	if !ok {
+		return
+	}
+	for _, container := range deployment.GetContainers() {
+		if isMissingImageID(container) {
+			if ids, found := cached[container.GetName()]; found {
+				if container.GetImage().GetName().GetFullName() == "" || ids.id == "" {
+					continue
+				}
+				container.GetImage().Id = ids.id
+				if features.FlattenImageData.Enabled() {
+					container.GetImage().IdV2 = imageUtils.NewImageV2ID(container.GetImage().GetName(), ids.id)
+				}
+			}
+		}
+	}
+}
+
+// upsertDeployment inserts a deployment into deploymentStore.
 func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -328,11 +421,19 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	// Acquire the keyed mutex to serialize read-modify-write operations against concurrent
 	// soft-delete updates in RemoveDeployment.
 	return ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
+		log.Infof("UpsertDeployment %s/%s: incoming image IDs: [%s]",
+			deployment.GetNamespace(), deployment.GetName(), containerImageSummary(deployment))
+
 		// Deployments that run intermittently and do not have images that are referenced by digest
 		// should maintain the digest of the last used image.
 		if err := ds.mergeCronJobs(ctx, deployment); err != nil {
 			return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 		}
+
+		// Save the old image IDs before they are overwritten. If the
+		// deployment is about to be soft-deleted, RemoveDeployment can
+		// restore them from the cache.
+		ds.cacheImageIDs(ctx, deployment)
 
 		if features.PlatformComponents.Enabled() {
 			match, err := ds.platformMatcher.MatchDeployment(deployment)
@@ -410,6 +511,13 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 			if !exists {
 				return nil
 			}
+			log.Infof("RemoveDeployment (soft-delete) %s/%s: image IDs before restore: [%s]",
+				deployment.GetNamespace(), deployment.GetName(), containerImageSummary(deployment))
+			// Restore image IDs that may have been cleared by a
+			// pod-removal-triggered update shortly before this delete.
+			ds.restoreImageIDs(deployment)
+			log.Infof("RemoveDeployment (soft-delete) %s/%s: image IDs after restore: [%s]",
+				deployment.GetNamespace(), deployment.GetName(), containerImageSummary(deployment))
 			deployment.Deleted = protocompat.TimestampNow()
 			deployment.State = storage.DeploymentState_DEPLOYMENT_STATE_DELETED
 			return ds.deploymentStore.Upsert(ctx, deployment)
