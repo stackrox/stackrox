@@ -30,7 +30,8 @@ func TestUpdaterSuccessfulDownload(t *testing.T) {
 		url:      server.URL,
 		filePath: filePath,
 		interval: time.Hour,
-		stopSig:  newStopSignal(),
+		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 
 	err := u.doDownload()
@@ -57,7 +58,8 @@ func TestUpdaterHTTPErrorDoesNotModifyFile(t *testing.T) {
 		url:      server.URL,
 		filePath: filePath,
 		interval: time.Hour,
-		stopSig:  newStopSignal(),
+		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 
 	err := u.doDownload()
@@ -84,7 +86,8 @@ func TestUpdaterOversizedResponseRejected(t *testing.T) {
 		url:      server.URL,
 		filePath: filePath,
 		interval: time.Hour,
-		stopSig:  newStopSignal(),
+		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 
 	err := u.doDownload()
@@ -115,7 +118,8 @@ func TestUpdaterSequentialDownloads(t *testing.T) {
 		url:      server.URL,
 		filePath: filePath,
 		interval: time.Hour,
-		stopSig:  newStopSignal(),
+		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 
 	require.NoError(t, u.doDownload())
@@ -143,7 +147,8 @@ func TestUpdaterStopSignal(t *testing.T) {
 		url:      server.URL,
 		filePath: filePath,
 		interval: 50 * time.Millisecond,
-		stopSig:  newStopSignal(),
+		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 
 	u.Start()
@@ -154,9 +159,14 @@ func TestUpdaterStopSignal(t *testing.T) {
 		return err == nil
 	}, 2*time.Second, 10*time.Millisecond, "updater did not write the file")
 
-	u.Stop()
-}
-
-func newStopSignal() concurrency.Signal {
-	return concurrency.NewSignal()
+	done := make(chan struct{})
+	go func() {
+		u.Stop()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("updater did not stop within timeout")
+	}
 }
