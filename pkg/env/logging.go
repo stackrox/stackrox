@@ -10,3 +10,9 @@ var (
 	// it gets rotated. It defaults to 20 megabytes.
 	LoggingMaxSizeMB = RegisterIntegerSetting("ROX_LOGGING_MAX_SIZE_MB", 20)
 )
+
+// LoggingToFile controls whether logs are written to a file in addition
+// to stdout/stderr. Disabling reduces goroutine count (one per logger
+// for log rotation) and file I/O. Container environments typically
+// collect logs from stdout via the container runtime.
+var LoggingToFile = RegisterBooleanSetting("ROX_LOGGING_TO_FILE", true)
