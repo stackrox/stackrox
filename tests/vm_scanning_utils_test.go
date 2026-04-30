@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -176,12 +177,11 @@ func generateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized st
 }
 
 func envTruthy(key string) bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
-	case "true", "1", "yes", "on":
-		return true
-	default:
-		return false
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if b, err := strconv.ParseBool(v); err == nil {
+		return b
 	}
+	return v == "yes" || v == "on"
 }
 
 func envOrDefault(key, defaultVal string) string {
