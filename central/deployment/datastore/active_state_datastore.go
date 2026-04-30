@@ -100,3 +100,7 @@ func (a *activeStateDatastore) RemoveDeployment(ctx context.Context, clusterID, 
 func (a *activeStateDatastore) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
 	return a.ds.GetImagesForDeployment(ctx, deployment)
 }
+
+func (a *activeStateDatastore) PurgeDeployments(ctx context.Context, q *v1.Query) (int, error) {
+	return a.ds.PurgeDeployments(ctx, q)
+}
