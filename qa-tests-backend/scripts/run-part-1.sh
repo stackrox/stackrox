@@ -37,21 +37,32 @@ config_part_1() {
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
     export_test_environment
 
     setup_gcp
     setup_deployment_env false false
-    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
     image_prefetcher_system_await
 
-    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    if [[ "$use_roxie_deploy" == "true" ]]; then
+        info "Using roxie-based config_part_1 for qa-tests-backend"
+        info "Roxie version: $(roxie version)"
+        if pr_has_label test-konflux-images; then
+            export USE_KONFLUX_IMAGES="true"
+        fi
+        deploy_stackrox_with_roxie_compat
+        setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    else
+        info "Using traditional config_part_1 for qa-tests-backend"
+        setup_podsecuritypolicies_config
+        deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+        deploy_default_psp
+    fi
     deploy_optional_e2e_components
     setup_workload_identities
-
-    deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
