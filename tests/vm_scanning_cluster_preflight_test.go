@@ -234,6 +234,7 @@ func summarizePodHostPathVolumes(pod *coreV1.Pod) string {
 		if n > 0 {
 			b.WriteString("; ")
 		}
+		// Fprintf to a Builder avoids the intermediate string allocation of Sprintf+WriteString.
 		fmt.Fprintf(&b, "%s->%q", vol.Name, vol.HostPath.Path)
 		n++
 	}
