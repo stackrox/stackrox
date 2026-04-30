@@ -11,9 +11,7 @@ check_policy_files() {
     # shellcheck disable=SC2016
     info '(If this fails, run `policyutil` on failed policies and commit the result.)'
 
-    make deps
-    make policyutil
-    "$(go env GOPATH)/bin/policyutil" upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
+    go run ./tools/policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
     diff --ignore-space-change pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff || true
 
     store_test_results /tmp/policies-diff policies-diff
