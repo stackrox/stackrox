@@ -91,9 +91,9 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 	default:
 		h.admCtrlSettingsMgr.InvalidateImageCache(req.GetImageKeys())
 
-		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
+		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys())*2)
 		for _, image := range req.GetImageKeys() {
-			keysToDelete = append(keysToDelete, cacheKeyFromImageKey(image))
+			keysToDelete = append(keysToDelete, cacheKeysFromImageKey(image)...)
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}
@@ -108,7 +108,7 @@ func (h *handlerImpl) ProcessRefreshImageCacheTTL(req *central.RefreshImageCache
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill refresh image cache TTL request")
 	default:
 		for _, image := range req.GetImageKeys() {
-			if key := cacheKeyFromImageKey(image); key != "" {
+			for _, key := range cacheKeysFromImageKey(image) {
 				h.imageCache.Touch(key)
 			}
 		}
@@ -116,19 +116,26 @@ func (h *handlerImpl) ProcessRefreshImageCacheTTL(req *central.RefreshImageCache
 	return nil
 }
 
-// cacheKeyFromImageKey resolves the cache key from an ImageKey
-// proto, applying the V2/V1/fullName precedence based on the FlattenImageData capability.
-func cacheKeyFromImageKey(imageKey *central.ImageKey) cache.Key {
-	var key string
+// cacheKeysFromImageKey returns all possible cache keys for an ImageKey.
+// Images may be cached under either a digest-derived key (V2 UUID5 or raw
+// digest) or the full image name, depending on whether the deployment's
+// container image had a digest when it was first cached. Both keys must
+// be invalidated to avoid stale entries.
+func cacheKeysFromImageKey(imageKey *central.ImageKey) []cache.Key {
+	var keys []cache.Key
 	if centralcaps.Has(centralsensor.FlattenImageData) {
-		key = imageKey.GetImageIdV2()
+		if id := imageKey.GetImageIdV2(); id != "" {
+			keys = append(keys, cache.Key(id))
+		}
 	} else {
-		key = imageKey.GetImageId()
+		if id := imageKey.GetImageId(); id != "" {
+			keys = append(keys, cache.Key(id))
+		}
 	}
-	if key == "" {
-		key = imageKey.GetImageFullName()
+	if fullName := imageKey.GetImageFullName(); fullName != "" {
+		keys = append(keys, cache.Key(fullName))
 	}
-	return cache.Key(key)
+	return keys
 }
 
 func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
