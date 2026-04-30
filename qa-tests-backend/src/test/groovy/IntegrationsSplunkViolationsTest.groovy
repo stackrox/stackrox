@@ -41,12 +41,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private SplunkDeployment splunkDeployment
 
     def setupSpec() {
-        Assume.assumeTrue(
-                "FACT container not found in collector DaemonSet",
-                isFactAvailable(orchestrator))
-
-        setFactEnv(orchestrator, "/tmp/**/*", true)
-
         orchestrator.deleteNamespace(TEST_NAMESPACE)
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
         addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
@@ -63,7 +57,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             tearDownSplunk(orchestrator, splunkDeployment)
         }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
-        removeFactEnv(orchestrator)
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
@@ -150,6 +143,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify Splunk violations: file access violations reach Splunk TA"() {
         given:
+        "Fact is available and configured to watch /tmp"
+        Assume.assumeTrue(
+                "FACT container not found in collector DaemonSet",
+                isFactAvailable(orchestrator))
+        setFactEnv(orchestrator, "/tmp/**/*", true)
+
+        and:
         "a file activity policy targeting a unique path"
         def path = "/tmp/fa-splunk-${UUID.randomUUID()}"
         def policyName = "FA-Splunk-${UUID.randomUUID()}"
@@ -205,6 +205,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         if (policyID) {
             PolicyService.deletePolicy(policyID)
         }
+        removeFactEnv(orchestrator)
     }
 
     private static void validateCimMappings(Map<String, String> result) {
