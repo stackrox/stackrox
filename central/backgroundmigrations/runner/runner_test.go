@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
 	"github.com/stackrox/rox/central/backgroundmigrations/types"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -123,6 +124,9 @@ func (s *RunnerTestSuite) TestUpToDate() {
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(0, seqNum)
+
+	s.Equal(0.0, testutil.ToFloat64(bgMigrationSeqNumGauge))
+	s.Equal(1.0, testutil.ToFloat64(bgMigrationCompleteGauge))
 }
 
 func (s *RunnerTestSuite) TestDetectsRollback() {
@@ -137,6 +141,9 @@ func (s *RunnerTestSuite) TestDetectsRollback() {
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(2, seqNum)
+
+	s.Equal(2.0, testutil.ToFloat64(bgMigrationSeqNumGauge))
+	s.Equal(1.0, testutil.ToFloat64(bgMigrationCompleteGauge))
 }
 
 func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
@@ -167,6 +174,9 @@ func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(3, seqNum)
+
+	s.Equal(3.0, testutil.ToFloat64(bgMigrationSeqNumGauge))
+	s.Equal(1.0, testutil.ToFloat64(bgMigrationCompleteGauge))
 }
 
 func (s *RunnerTestSuite) TestRetriesOnMigrationError() {
