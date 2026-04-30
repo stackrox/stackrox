@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -326,12 +328,31 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
 		// Build a map from container name to pod spec container for name-based lookup.
-		specContainersByName := make(map[string]v1.Container, len(p.Spec.Containers))
+		mapSize := len(p.Spec.Containers)
+		statusCount := len(p.Status.ContainerStatuses)
+		if features.InitContainerSupport.Enabled() {
+			mapSize += len(p.Spec.InitContainers)
+			statusCount += len(p.Status.InitContainerStatuses)
+		}
+
+		specContainersByName := make(map[string]v1.Container, mapSize)
 		for _, sc := range p.Spec.Containers {
 			specContainersByName[sc.Name] = sc
 		}
+		if features.InitContainerSupport.Enabled() {
+			for _, sc := range p.Spec.InitContainers {
+				specContainersByName[sc.Name] = sc
+			}
+		}
 
-		for _, c := range p.Status.ContainerStatuses {
+		// Process both regular and init container statuses.
+		allStatuses := make([]v1.ContainerStatus, 0, statusCount)
+		allStatuses = append(allStatuses, p.Status.ContainerStatuses...)
+		if features.InitContainerSupport.Enabled() {
+			allStatuses = append(allStatuses, p.Status.InitContainerStatuses...)
+		}
+
+		for _, c := range allStatuses {
 			deployContainer, found := containersByName[c.Name]
 			if !found {
 				log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), p.GetName())
@@ -481,11 +502,16 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
+	dep := w.GetDeployment().CloneVT()
+	if !centralcaps.Has(centralsensor.InitContainerSupport) {
+		dep.Containers = containers.FilterRegularContainers(dep.GetContainers())
+	}
+
 	return &central.SensorEvent{
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.GetDeployment().CloneVT(),
+			Deployment: dep,
 		},
 	}
 }
