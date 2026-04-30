@@ -123,13 +123,12 @@ func (s *generatorTestSuite) SetupTest() {
 	s.mockNetworkBaselineStore = networkBaselineMocks.NewMockDataStore(s.mockCtrl)
 
 	s.generator = &generator{
-		networkPolicies:       s.mocksNetworkPolicies,
-		deploymentStore:       s.mockDeployments,
-		activeDeploymentStore: s.mockDeployments,
-		networkTreeMgr:        s.mockNetTreeMgr,
-		globalFlowDataStore:   s.mockGlobalFlowDataStore,
-		namespacesStore:       s.mockNamespaceStore,
-		networkBaselines:      s.mockNetworkBaselineStore,
+		networkPolicies:     s.mocksNetworkPolicies,
+		deploymentStore:     s.mockDeployments,
+		networkTreeMgr:      s.mockNetTreeMgr,
+		globalFlowDataStore: s.mockGlobalFlowDataStore,
+		namespacesStore:     s.mockNamespaceStore,
+		networkBaselines:    s.mockNetworkBaselineStore,
 	}
 }
 

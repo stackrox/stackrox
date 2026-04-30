@@ -74,14 +74,13 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedNetworkGraphServiceServer
 
-	clusterFlows      networkFlowDS.ClusterDataStore
-	entityDS          networkEntityDS.EntityDataStore
-	networkTreeMgr    networktree.Manager
-	deployments       deploymentDS.DataStore
-	activeDeployments deploymentDS.DataStore
-	clusters          clusterDS.DataStore
-	networkPolicy     networkPolicyDS.DataStore
-	graphConfig       datastore.DataStore
+	clusterFlows   networkFlowDS.ClusterDataStore
+	entityDS       networkEntityDS.EntityDataStore
+	networkTreeMgr networktree.Manager
+	deployments    deploymentDS.DataStore
+	clusters       clusterDS.DataStore
+	networkPolicy  networkPolicyDS.DataStore
+	graphConfig    datastore.DataStore
 
 	clusterSACHelper sachelper.ClusterSacHelper
 }
@@ -350,7 +349,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if err != nil {
 		return nil, err
 	}
-	count, err := s.activeDeployments.Count(ctx, deploymentQuery)
+	count, err := s.deployments.Count(ctx, deploymentQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +363,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		)
 	}
 
-	deployments, err := s.activeDeployments.SearchListDeployments(ctx, deploymentQuery)
+	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +411,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 	}
 
 	// TODO(ROX-16312): Change this to a custom query once Postgres ships
-	deploymentObjects, err := s.activeDeployments.GetDeployments(ctx, deploymentIds)
+	deploymentObjects, err := s.deployments.GetDeployments(ctx, deploymentIds)
 	if err != nil {
 		return errors.Wrap(err, "fetching deployments")
 	}
@@ -763,7 +762,7 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to construct filter and scope queries")
 	}
-	count, err := s.activeDeployments.Count(ctx, deploymentQuery)
+	count, err := s.deployments.Count(ctx, deploymentQuery)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to count deployments")
 	}
@@ -777,7 +776,7 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 		)
 	}
 
-	deployments, err := s.activeDeployments.SearchListDeployments(ctx, deploymentQuery)
+	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to search list deployments")
 	}

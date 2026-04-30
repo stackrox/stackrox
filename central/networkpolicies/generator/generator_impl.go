@@ -45,13 +45,12 @@ func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
 }
 
 type generator struct {
-	networkPolicies       npDS.DataStore
-	deploymentStore       dDS.DataStore
-	activeDeploymentStore dDS.DataStore
-	networkTreeMgr        networktree.Manager
-	namespacesStore       nsDS.DataStore
-	globalFlowDataStore   nfDS.ClusterDataStore
-	networkBaselines      networkBaselineDataStore.ReadOnlyDataStore
+	networkPolicies     npDS.DataStore
+	deploymentStore     dDS.DataStore
+	networkTreeMgr      networktree.Manager
+	namespacesStore     nsDS.DataStore
+	globalFlowDataStore nfDS.ClusterDataStore
+	networkBaselines    networkBaselineDataStore.ReadOnlyDataStore
 }
 
 func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference) {
@@ -127,7 +126,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	if query.GetQuery() != nil {
 		deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, query)
 	}
-	deployments, err := g.activeDeploymentStore.SearchRawDeployments(ctx, deploymentsQuery)
+	deployments, err := g.deploymentStore.SearchRawDeployments(ctx, deploymentsQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain deployments for cluster %q", clusterID)
 	}
