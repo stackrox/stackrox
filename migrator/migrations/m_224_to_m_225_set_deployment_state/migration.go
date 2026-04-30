@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	startSeqNum = 223
+	startSeqNum = 224
 )
 
 var (

@@ -12,11 +12,16 @@ import (
 func migrate(database *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
 
-	// Add deleted and state columns if they do not already exist.
-	// No data backfill is needed because DEPLOYMENT_STATE_ACTIVE is the proto
-	// zero value (0). Existing serialized protos without a state field
-	// deserialize as ACTIVE, and the new integer column defaults to 0 in Go.
+	// Ensure the state and deleted columns exist before backfilling.
+	// The migrator applies schema changes automatically, but the migration
+	// sequence number may run before the schema is applied.
 	pgutils.CreateTableFromModel(ctx, database.GormDB, schema.CreateTableDeploymentsStmt)
 
-	return nil
+	// Backfill existing rows: the new state column defaults to NULL in
+	// PostgreSQL, but all pre-existing deployments are active. Set
+	// state = 0 (DEPLOYMENT_STATE_ACTIVE) for any row that was not
+	// explicitly set yet.
+	_, err := database.PostgresDB.Exec(ctx,
+		"UPDATE deployments SET state = 0 WHERE state IS NULL")
+	return err
 }
