@@ -175,6 +175,26 @@ func TestUpdater_fetch(t *testing.T) {
 		assert.Len(t, v.Data, 1)
 	})
 
+	t.Run("modified result with nil data returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
+				Modified:     true,
+				LastModified: "now",
+				Data:         nil,
+			}, nil)
+
+		u := NewUpdater(g)
+		defer u.Close()
+
+		err := u.fetch(context.Background(), "")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "nil data")
+		assert.Nil(t, u.value.Load())
+	})
+
 	t.Run("lastFailed cleared after successful fetch following failure", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		g := mocks.NewMockGetter(ctrl)
@@ -240,22 +260,86 @@ func TestUpdater_refreshLoop(t *testing.T) {
 }
 
 func TestUpdater_Close(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	g := mocks.NewMockGetter(ctrl)
-	g.EXPECT().
-		GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
-		Return(&indexer.FetchResult{
-			Modified: true,
-			Data:     &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
-		}, nil).
-		AnyTimes()
+	t.Run("does not panic", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
+				Modified: true,
+				Data:     &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
+			}, nil).
+			AnyTimes()
 
-	u := NewUpdater(g)
+		u := NewUpdater(g)
 
-	_, err := u.Get(context.Background())
-	require.NoError(t, err)
+		_, err := u.Get(context.Background())
+		require.NoError(t, err)
 
-	assert.NotPanics(t, func() {
+		assert.NotPanics(t, func() {
+			u.Close()
+		})
+	})
+
+	t.Run("multiple calls do not panic", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
+				Modified: true,
+				Data:     &repositorytocpe.MappingFile{Data: map[string]repositorytocpe.Repo{}},
+			}, nil).
+			AnyTimes()
+
+		u := NewUpdater(g)
+		_, err := u.Get(context.Background())
+		require.NoError(t, err)
+
+		assert.NotPanics(t, func() {
+			u.Close()
+			u.Close()
+			u.Close()
+		})
+	})
+
+	t.Run("Get after Close returns cached value", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+		g.EXPECT().
+			GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+			Return(&indexer.FetchResult{
+				Modified:     true,
+				LastModified: "now",
+				Data: &repositorytocpe.MappingFile{
+					Data: map[string]repositorytocpe.Repo{
+						"repo": {CPEs: []string{"cpe:1"}},
+					},
+				},
+			}, nil).
+			AnyTimes()
+
+		u := NewUpdater(g)
+		_, err := u.Get(context.Background())
+		require.NoError(t, err)
+
 		u.Close()
+
+		mf, err := u.Get(context.Background())
+		require.NoError(t, err)
+		require.NotNil(t, mf)
+		assert.Len(t, mf.Data, 1)
+	})
+
+	t.Run("Get after Close without init returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		g := mocks.NewMockGetter(ctrl)
+
+		u := NewUpdater(g)
+		u.Close()
+
+		mf, err := u.Get(context.Background())
+		assert.ErrorIs(t, err, errNoSuccessfulFetch)
+		assert.Nil(t, mf)
 	})
 }

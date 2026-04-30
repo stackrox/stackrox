@@ -66,7 +66,7 @@ func (f *RepositoryToCPEFetcher) Fetch(ctx context.Context, ifModifiedSince stri
 			LastModified: ifModifiedSince,
 		}, nil
 	default:
-		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code %d from %s", resp.StatusCode, f.url)
 	}
 
 	var mf repositorytocpe.MappingFile

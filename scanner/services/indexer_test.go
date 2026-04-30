@@ -345,7 +345,23 @@ func (s *indexerServiceTestSuite) Test_GetRepositoryToCPEMapping_error() {
 		Return(nil, errors.New("upstream error"))
 
 	resp, err := s.service.GetRepositoryToCPEMapping(s.ctx, &v4.GetRepositoryToCPEMappingRequest{})
-	s.ErrorContains(err, "upstream error")
+	s.ErrorContains(err, "fetching repository-to-CPE mapping")
+	s.Nil(resp)
+}
+
+func (s *indexerServiceTestSuite) Test_GetRepositoryToCPEMapping_nilData() {
+	s.indexerMock.
+		EXPECT().
+		GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+		Return(&indexer.FetchResult{
+			Modified:     true,
+			LastModified: "now",
+			Data:         nil,
+		}, nil)
+
+	resp, err := s.service.GetRepositoryToCPEMapping(s.ctx, &v4.GetRepositoryToCPEMappingRequest{})
+	s.Error(err)
+	s.ErrorContains(err, "no data")
 	s.Nil(resp)
 }
 

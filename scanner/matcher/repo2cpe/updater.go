@@ -33,15 +33,22 @@ type Getter interface {
 // It periodically refreshes the cached value using conditional fetches.
 // Initialization is lazy: the first call to Get triggers the initial fetch
 // and starts the background refresh goroutine.
+//
+// Close is safe to call multiple times; subsequent calls are no-ops.
+// After Close, calls to Get return the last cached value if available,
+// or errNoSuccessfulFetch if no data was ever cached.
 type Updater struct {
 	getter          Getter
 	done            chan struct{}
 	defaultInterval time.Duration
 	failedInterval  time.Duration
 
-	initOnce     sync.Once
-	mu           sync.RWMutex
-	value        atomic.Pointer[repositorytocpe.MappingFile]
+	closeOnce sync.Once
+	initOnce  sync.Once
+	closed    atomic.Bool
+	mu        sync.RWMutex
+	value     atomic.Pointer[repositorytocpe.MappingFile]
+
 	lastModified string
 	lastFailed   atomic.Bool
 }
@@ -106,9 +113,13 @@ func (u *Updater) refreshLoop(ctx context.Context) {
 	}
 }
 
-// Close stops the background refresh goroutine.
+// Close stops the background refresh goroutine. It is safe to call multiple
+// times; subsequent calls are no-ops.
 func (u *Updater) Close() {
-	close(u.done)
+	u.closeOnce.Do(func() {
+		u.closed.Store(true)
+		close(u.done)
+	})
 }
 
 // fetch retrieves the mapping from the indexer using a conditional fetch.
@@ -132,6 +143,10 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 		return nil
 	}
 
+	if result.Data == nil {
+		return errors.New("indexer returned modified=true with nil data")
+	}
+
 	u.value.Store(result.Data)
 	slog.InfoContext(ctx, "updated repo-to-CPE mapping cache", "entries", len(result.Data.Data))
 	return nil
@@ -140,8 +155,15 @@ func (u *Updater) fetch(ctx context.Context, ifModifiedSince string) error {
 // Get returns the cached repository-to-CPE mapping.
 // On first call, it triggers initialization: fetching the mapping and starting
 // the background refresh goroutine. Returns an error if no successful fetch has
-// ever occurred.
+// ever occurred or if the updater has been closed.
 func (u *Updater) Get(_ context.Context) (*repositorytocpe.MappingFile, error) {
+	if u.closed.Load() {
+		if v := u.value.Load(); v != nil {
+			return v, nil
+		}
+		return nil, errNoSuccessfulFetch
+	}
+
 	u.initOnce.Do(u.init)
 
 	if v := u.value.Load(); v != nil {
