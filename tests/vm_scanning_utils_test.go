@@ -97,6 +97,10 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	case cfg.SSHPublicKey == "":
 		return nil, errors.New("VM_SSH_PRIVATE_KEY is set but VM_SSH_PUBLIC_KEY is missing; provide both or neither")
 	}
+	trimmedKey := strings.TrimSpace(cfg.SSHPrivateKey)
+	if !strings.HasPrefix(trimmedKey, "-----BEGIN") || !strings.Contains(trimmedKey, "-----END") {
+		return nil, errors.New("VM_SSH_PRIVATE_KEY must contain complete PEM-encoded key content, not a file path")
+	}
 
 	cfg.NamespacePrefix = envOrDefault("VM_SCAN_NAMESPACE_PREFIX", defaultNamespacePrefix)
 	if cfg.ScanTimeout, err = parseEnvDurationOrDefault("VM_SCAN_TIMEOUT", defaultScanTimeout); err != nil {
@@ -272,6 +276,27 @@ func TestLoadVMScanConfig_InvalidOptionalOverrides(t *testing.T) {
 			_, err := loadVMScanConfig()
 			require.Error(t, err)
 			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
+}
+
+func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
+	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
+	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+
+	tests := map[string]string{
+		"should reject a file path":         "/home/user/.ssh/id_ed25519",
+		"should reject truncated PEM":       "-----BEGIN CERTIFICATE-----\nAAAA", // notsecret
+		"should reject arbitrary non-PEM":   "not-a-key-at-all",
+		"should reject value with only END": "-----END OPENSSH PRIVATE KEY-----",
+	}
+	for name, badKey := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("VM_SSH_PRIVATE_KEY", badKey)
+			t.Setenv("VM_SSH_PUBLIC_KEY", "ssh-ed25519 AAAA test@host")
+			_, err := loadVMScanConfig()
+			require.Error(t, err)
+			require.ErrorContains(t, err, "VM_SSH_PRIVATE_KEY must contain complete PEM-encoded key content")
 		})
 	}
 }
