@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -18,9 +17,8 @@ type activeStateDatastore struct {
 }
 
 // NewActiveStateDatastore returns a DataStore that only exposes active
-// deployments. Query-based methods automatically conjunct the caller's
-// query with ActiveDeploymentsQuery(). ID-based lookups filter out
-// non-active deployments when the soft-deletion feature flag is enabled.
+// deployments. All read methods automatically conjunct the caller's
+// query with ActiveDeploymentsQuery().
 func NewActiveStateDatastore(ds DataStore) DataStore {
 	return &activeStateDatastore{ds: ds}
 }
@@ -67,39 +65,26 @@ func (a *activeStateDatastore) GetContainerImageViews(ctx context.Context, q *v1
 // --- ID-based methods ---
 
 func (a *activeStateDatastore) GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error) {
-	deployment, found, err := a.ds.GetDeployment(ctx, id)
-	if err != nil || !found {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
+	results, err := a.SearchRawDeployments(ctx, q)
+	if err != nil || len(results) == 0 {
 		return nil, false, err
 	}
-	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() != storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE {
-		return nil, false, nil
-	}
-	return deployment, true, nil
+	return results[0], true, nil
 }
 
 func (a *activeStateDatastore) GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
-	deployments, err := a.ds.GetDeployments(ctx, ids)
-	if err != nil || !features.DeploymentSoftDeletion.Enabled() {
-		return deployments, err
-	}
-	filtered := deployments[:0]
-	for _, d := range deployments {
-		if d.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE {
-			filtered = append(filtered, d)
-		}
-	}
-	return filtered, nil
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, ids...).ProtoQuery()
+	return a.SearchRawDeployments(ctx, q)
 }
 
 func (a *activeStateDatastore) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
-	deployment, found, err := a.ds.ListDeployment(ctx, id)
-	if err != nil || !found {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
+	results, err := a.SearchListDeployments(ctx, q)
+	if err != nil || len(results) == 0 {
 		return nil, false, err
 	}
-	if features.DeploymentSoftDeletion.Enabled() && deployment.GetState() != storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE {
-		return nil, false, nil
-	}
-	return deployment, true, nil
+	return results[0], true, nil
 }
 
 // --- Pass-through methods ---
