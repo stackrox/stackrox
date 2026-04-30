@@ -124,7 +124,7 @@ func (v Virtctl) run(ctx context.Context, args []string) (stdout string, stderr 
 		stdoutStr := outBuf.String()
 		stderrStr := errBuf.String()
 		if v.Logf != nil {
-			v.Logf("remote command failed to start: %s (err=%v)", summary, err)
+			v.Logf("remote command could not start: %s (result=%v)", summary, err)
 		}
 		return stdoutStr, stderrStr, err
 	}
@@ -139,7 +139,7 @@ func (v Virtctl) run(ctx context.Context, args []string) (stdout string, stderr 
 	if v.Logf != nil {
 		elapsed := time.Since(start).Round(time.Second)
 		if err != nil {
-			v.Logf("remote command failed in %s: %s (outcome=%v stdout=%dB stderr=%dB)\n%s",
+			v.Logf("remote command not successful in %s: %s (result=%v stdout=%dB stderr=%dB)\n%s",
 				elapsed, summary, err, len(stdoutStr), len(stderrStr), formatRemoteCommandStreamsForInlineLog(stdoutStr, stderrStr))
 		} else {
 			if v.LogSuccessfulStreams {
