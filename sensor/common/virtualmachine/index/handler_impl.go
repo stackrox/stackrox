@@ -447,6 +447,7 @@ func agentFactsFromDiscoveredData(discoveredData *v1.DiscoveredData) map[string]
 	}
 
 	facts := map[string]string{}
+	// Currently only RHEL is reported by roxagent; other OS types are ignored until supported.
 	switch discoveredData.GetDetectedOs() {
 	case v1.DetectedOS_RHEL:
 		guestOS := rhelGuestOS
