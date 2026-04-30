@@ -16,7 +16,7 @@ slack_user=''
 # You can find Slack Member ID by clicking on the user profile in Slack, then three dots, then Copy member ID.
 # More info: https://api.slack.com/reference/surfaces/formatting#mentioning-users
 # Here you can find GitHub logins: https://github.com/orgs/stackrox/people
-# TODO: please keep the list in the alphabetic order. It is simpler to maintain it this way.
+# TODO: please keep the list in the alphabetic order (case sensitive). It is simpler to maintain it this way.
 case "$github_login" in
 'AlexVulaj')        slack_user='U03M3QKBES2' ;;
 'BradLugo')         slack_user='U042Z3TSZU3' ;;
