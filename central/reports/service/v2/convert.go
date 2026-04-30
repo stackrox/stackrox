@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -88,6 +89,9 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
 	}
 
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		ret.Query = filters.GetQuery()
+	}
 	for _, severity := range filters.GetSeverities() {
 		ret.Severities = append(ret.Severities, storage.VulnerabilitySeverity(severity))
 	}
@@ -122,10 +126,77 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 	}
 
 	ret := &storage.ResourceScope{}
-	if scope.GetCollectionScope() != nil {
-		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: scope.GetCollectionScope().GetCollectionId()}
+	switch ref := scope.GetScopeReference().(type) {
+	case *apiV2.ResourceScope_CollectionScope:
+		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: ref.CollectionScope.GetCollectionId()}
+	case *apiV2.ResourceScope_EntityScope:
+		if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			ret.ScopeReference = &storage.ResourceScope_EntityScope{EntityScope: convertV2EntityScopeToStorage(ref.EntityScope)}
+		}
 	}
 	return ret
+}
+
+// convertV2EntityScopeToStorage converts an apiV2.EntityScope into a storage.EntityScope.
+func convertV2EntityScopeToStorage(es *apiV2.EntityScope) *storage.EntityScope {
+	if es == nil {
+		return nil
+	}
+	rules := make([]*storage.EntityScopeRule, 0, len(es.GetRules()))
+	for _, rule := range es.GetRules() {
+		sr := &storage.EntityScopeRule{
+			Entity: v2EntityTypeToStorage(rule.GetEntity()),
+			Field:  v2EntityFieldToStorage(rule.GetField()),
+		}
+		for _, rv := range rule.GetValues() {
+			sr.Values = append(sr.Values, &storage.RuleValue{
+				Value:     rv.GetValue(),
+				MatchType: v2MatchTypeToStorage(rv.GetMatchType()),
+			})
+		}
+		rules = append(rules, sr)
+	}
+	return &storage.EntityScope{Rules: rules}
+}
+
+// v2EntityTypeToStorage converts an API ScopeEntity to the corresponding storage EntityType.
+func v2EntityTypeToStorage(e apiV2.ScopeEntity) storage.EntityType {
+	switch e {
+	case apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT:
+		return storage.EntityType_ENTITY_TYPE_DEPLOYMENT
+	case apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE:
+		return storage.EntityType_ENTITY_TYPE_NAMESPACE
+	case apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER:
+		return storage.EntityType_ENTITY_TYPE_CLUSTER
+	default:
+		return storage.EntityType_ENTITY_TYPE_UNSET
+	}
+}
+
+// v2EntityFieldToStorage converts an API ScopeField to the corresponding storage EntityField.
+func v2EntityFieldToStorage(f apiV2.ScopeField) storage.EntityField {
+	switch f {
+	case apiV2.ScopeField_FIELD_ID:
+		return storage.EntityField_FIELD_ID
+	case apiV2.ScopeField_FIELD_NAME:
+		return storage.EntityField_FIELD_NAME
+	case apiV2.ScopeField_FIELD_LABEL:
+		return storage.EntityField_FIELD_LABEL
+	case apiV2.ScopeField_FIELD_ANNOTATION:
+		return storage.EntityField_FIELD_ANNOTATION
+	default:
+		return storage.EntityField_FIELD_UNSET
+	}
+}
+
+// v2MatchTypeToStorage converts an API MatchType to the corresponding storage MatchType.
+func v2MatchTypeToStorage(m apiV2.MatchType) storage.MatchType {
+	switch m {
+	case apiV2.MatchType_REGEX:
+		return storage.MatchType_REGEX
+	default:
+		return storage.MatchType_EXACT
+	}
 }
 
 func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
@@ -228,6 +299,9 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
 		IncludeAdvisory:        filters.GetIncludeAdvisory(),
 	}
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		ret.Query = filters.GetQuery()
+	}
 
 	for _, severity := range filters.GetSeverities() {
 		ret.Severities = append(ret.Severities, apiV2.VulnerabilityReportFilters_VulnerabilitySeverity(severity))
@@ -263,25 +337,89 @@ func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope
 	}
 
 	ret := &apiV2.ResourceScope{}
-	if scope.GetScopeReference() != nil {
-		var collectionName string
-		collection, found, err := s.collectionDatastore.Get(allAccessCtx, scope.GetCollectionId())
+	switch ref := scope.GetScopeReference().(type) {
+	case *storage.ResourceScope_CollectionId:
+		collection, found, err := s.collectionDatastore.Get(allAccessCtx, ref.CollectionId)
 		if err != nil {
 			return nil, err
 		}
 		if !found {
-			return nil, errors.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
+			return nil, errors.Errorf("Collection with ID %s no longer exists", ref.CollectionId)
 		}
-		collectionName = collection.GetName()
-
 		ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
 			CollectionScope: &apiV2.CollectionReference{
-				CollectionId:   scope.GetCollectionId(),
-				CollectionName: collectionName,
+				CollectionId:   ref.CollectionId,
+				CollectionName: collection.GetName(),
 			},
+		}
+	case *storage.ResourceScope_EntityScope:
+		if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			ret.ScopeReference = &apiV2.ResourceScope_EntityScope{EntityScope: convertStorageEntityScopeToV2(ref.EntityScope)}
 		}
 	}
 	return ret, nil
+}
+
+// convertStorageEntityScopeToV2 converts a storage.EntityScope into an apiV2.EntityScope.
+func convertStorageEntityScopeToV2(es *storage.EntityScope) *apiV2.EntityScope {
+	if es == nil {
+		return nil
+	}
+	rules := make([]*apiV2.EntityScopeRule, 0, len(es.GetRules()))
+	for _, rule := range es.GetRules() {
+		ar := &apiV2.EntityScopeRule{
+			Entity: storageEntityTypeToV2(rule.GetEntity()),
+			Field:  storageEntityFieldToV2(rule.GetField()),
+		}
+		for _, rv := range rule.GetValues() {
+			ar.Values = append(ar.Values, &apiV2.RuleValue{
+				Value:     rv.GetValue(),
+				MatchType: storageMatchTypeToV2(rv.GetMatchType()),
+			})
+		}
+		rules = append(rules, ar)
+	}
+	return &apiV2.EntityScope{Rules: rules}
+}
+
+// storageEntityTypeToV2 converts a storage EntityType to the corresponding API ScopeEntity.
+func storageEntityTypeToV2(e storage.EntityType) apiV2.ScopeEntity {
+	switch e {
+	case storage.EntityType_ENTITY_TYPE_DEPLOYMENT:
+		return apiV2.ScopeEntity_SCOPE_ENTITY_DEPLOYMENT
+	case storage.EntityType_ENTITY_TYPE_NAMESPACE:
+		return apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE
+	case storage.EntityType_ENTITY_TYPE_CLUSTER:
+		return apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER
+	default:
+		return apiV2.ScopeEntity_SCOPE_ENTITY_UNSET
+	}
+}
+
+// storageEntityFieldToV2 converts a storage EntityField to the corresponding API ScopeField.
+func storageEntityFieldToV2(f storage.EntityField) apiV2.ScopeField {
+	switch f {
+	case storage.EntityField_FIELD_ID:
+		return apiV2.ScopeField_FIELD_ID
+	case storage.EntityField_FIELD_NAME:
+		return apiV2.ScopeField_FIELD_NAME
+	case storage.EntityField_FIELD_LABEL:
+		return apiV2.ScopeField_FIELD_LABEL
+	case storage.EntityField_FIELD_ANNOTATION:
+		return apiV2.ScopeField_FIELD_ANNOTATION
+	default:
+		return apiV2.ScopeField_FIELD_UNSET
+	}
+}
+
+// storageMatchTypeToV2 converts a storage MatchType to the corresponding API MatchType.
+func storageMatchTypeToV2(m storage.MatchType) apiV2.MatchType {
+	switch m {
+	case storage.MatchType_REGEX:
+		return apiV2.MatchType_REGEX
+	default:
+		return apiV2.MatchType_EXACT
+	}
 }
 
 // convertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration
@@ -433,6 +571,13 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 	}
 	v2snaps := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
 	for _, snapshot := range snapshots {
+		var resourceScope *apiV2.ResourceScope
+		if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+			resourceScope, err = s.convertProtoResourceScopeToV2(snapshot.GetResourceScope())
+			if err != nil {
+				return nil, err
+			}
+		}
 		snapshotv2 := &apiV2.ReportSnapshot{
 			ReportStatus:       s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
 			ReportConfigId:     snapshot.GetReportConfigurationId(),
@@ -448,6 +593,7 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
 				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
 			},
+			ResourceScope:       resourceScope,
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
 		}
 		for _, notifier := range snapshot.GetNotifiers() {

@@ -32,6 +32,10 @@ func (c *imageCVEFlatResponse) GetCVEIDs() []string {
 }
 
 func (c *imageCVEFlatResponse) GetSeverity() *storage.VulnerabilitySeverity {
+	if c.Severity == nil {
+		unknown := storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+		return &unknown
+	}
 	return c.Severity
 }
 
@@ -75,7 +79,13 @@ func (c *imageCVEFlatResponse) GetFirstImageOccurrence() *time.Time {
 	return c.FirstImageOccurrence
 }
 
-func (c *imageCVEFlatResponse) GetState() *storage.VulnerabilityState { return c.State }
+func (c *imageCVEFlatResponse) GetState() *storage.VulnerabilityState {
+	if c.State == nil {
+		observed := storage.VulnerabilityState_OBSERVED
+		return &observed
+	}
+	return c.State
+}
 
 type imageCVEFlatCount struct {
 	CVECount int `db:"cve_count"`

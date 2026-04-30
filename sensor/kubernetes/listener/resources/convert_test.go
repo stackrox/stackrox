@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -477,6 +479,55 @@ func TestPopulateImageMetadataWithInitContainers(t *testing.T) {
 	// Regular containers should have correct digests matched by name.
 	assert.Equal(t, "sha256:abc123", wrap.GetDeployment().GetContainers()[1].GetImage().GetId())
 	assert.Equal(t, "sha256:def456", wrap.GetDeployment().GetContainers()[2].GetImage().GetId())
+}
+
+func TestPopulateImageMetadataWithInitContainerStatuses(t *testing.T) {
+	t.Setenv(features.InitContainerSupport.EnvVar(), "true")
+	// Verifies that init container image digests are populated from
+	// pod.Status.InitContainerStatuses.
+	wrap := deploymentWrap{
+		Deployment: &storage.Deployment{},
+	}
+
+	initImg, err := imageUtils.GenerateImageFromString("docker.io/library/busybox:latest")
+	require.NoError(t, err)
+	nginxImg, err := imageUtils.GenerateImageFromString("docker.io/library/nginx:latest")
+	require.NoError(t, err)
+
+	wrap.Containers = []*storage.Container{
+		{Name: "init-setup", Image: initImg, Type: storage.ContainerType_INIT},
+		{Name: "nginx", Image: nginxImg},
+	}
+
+	pod := &v1.Pod{
+		Spec: v1.PodSpec{
+			InitContainers: []v1.Container{
+				{Name: "init-setup", Image: "docker.io/library/busybox:latest"},
+			},
+			Containers: []v1.Container{
+				{Name: "nginx", Image: "docker.io/library/nginx:latest"},
+			},
+		},
+		Status: v1.PodStatus{
+			InitContainerStatuses: []v1.ContainerStatus{
+				{
+					Name:    "init-setup",
+					ImageID: "docker-pullable://docker.io/library/busybox@sha256:initdigest123",
+				},
+			},
+			ContainerStatuses: []v1.ContainerStatus{
+				{
+					Name:    "nginx",
+					ImageID: "docker-pullable://docker.io/library/nginx@sha256:abc123",
+				},
+			},
+		},
+	}
+
+	wrap.populateImageMetadata(nil, pod)
+
+	assert.Equal(t, "sha256:initdigest123", wrap.GetDeployment().GetContainers()[0].GetImage().GetId())
+	assert.Equal(t, "sha256:abc123", wrap.GetDeployment().GetContainers()[1].GetImage().GetId())
 }
 
 func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
@@ -1409,6 +1460,47 @@ func TestConvert(t *testing.T) {
 				actual.StateTimestamp = 0
 			}
 			protoassert.Equal(t, c.expectedDeployment, actual)
+		})
+	}
+}
+
+func TestToEventInitContainerCompatibility(t *testing.T) {
+	cases := map[string]struct {
+		caps               []centralsensor.CentralCapability
+		expectedContainers []string
+	}{
+		"filters init containers when Central lacks capability": {
+			caps:               []centralsensor.CentralCapability{},
+			expectedContainers: []string{"main-app"},
+		},
+		"includes init containers when Central has capability": {
+			caps:               []centralsensor.CentralCapability{centralsensor.InitContainerSupport},
+			expectedContainers: []string{"init-setup", "main-app"},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.InitContainerSupport.EnvVar(), "true")
+			centralcaps.Set(tc.caps)
+			t.Cleanup(func() { centralcaps.Set(nil) })
+
+			wrap := &deploymentWrap{
+				Deployment: &storage.Deployment{
+					Id: "test-deploy",
+					Containers: []*storage.Container{
+						{Name: "init-setup", Type: storage.ContainerType_INIT},
+						{Name: "main-app", Type: storage.ContainerType_REGULAR},
+					},
+				},
+			}
+
+			event := wrap.toEvent(central.ResourceAction_CREATE_RESOURCE)
+			dep := event.GetDeployment()
+			require.Len(t, dep.GetContainers(), len(tc.expectedContainers))
+			for i, name := range tc.expectedContainers {
+				assert.Equal(t, name, dep.GetContainers()[i].GetName())
+			}
 		})
 	}
 }

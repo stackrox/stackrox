@@ -120,7 +120,7 @@ describe('Project Security Tabs', () => {
             }, 'Namespace');
         });
 
-        it.only('should display only the expected table columns for each entity type', () => {
+        it('should display only the expected table columns for each entity type', () => {
             visitProjectSecurityTabAndCheckColumns(() => {
                 visitFromConsoleLeftNavExpandable('Administration', 'Namespaces');
             }, 'Namespace');
