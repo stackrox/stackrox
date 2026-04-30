@@ -6,7 +6,8 @@ After=roxagent-prep.service
 
 [Container]
 # Replace with your StackRox main image tag
-Image=quay.io/stackrox-io/main:4.10.x-697-g3c843a274f
+Image=quay.io/stackrox-io/main:4.11.x-798-g8a5ad6ed58
+Pull=missing
 Exec=--host-path /host
 Network=host
 
