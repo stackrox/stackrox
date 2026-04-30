@@ -133,9 +133,8 @@ func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storag
 		AddExactMatches(search.Namespace, sa.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, sa.GetName()).
 		ProtoQuery()
-	psr := baseQuery
 
-	deploymentResults, err := s.deployments.SearchListDeployments(ctx, psr)
+	deploymentResults, err := s.deployments.SearchListDeployments(ctx, baseQuery)
 	if err != nil {
 		return nil
 	}
