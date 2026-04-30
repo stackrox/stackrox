@@ -117,6 +117,18 @@ deploy_stackrox_with_roxie() {
         cp "$provided_override_file" "$override_file"
     fi
 
+    # Downscale sensor, as being done here: https://github.com/stackrox/stackrox/blob/768451c8d876573b326d8a2093f9435b610e2e88/deploy/common/k8sbased.sh#L1036
+    # This can be removed once https://github.com/stackrox/roxie/pull/128 lands in the apollo-ci images used in CI.
+    merge_yaml "$override_file" <<EOF
+securedCluster:
+  spec:
+    sensor:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 500Mi
+EOF
+
     info "Creating admin password"
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.

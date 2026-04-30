@@ -51,6 +51,7 @@ securedCluster:
     processIndicators:
       excludeNamespaceRegex: namespace-without-persistence
 EOF
+
     roxie_override_from_environment_compat "$override_file" "$namespace"
 
     deploy_stackrox_with_roxie "$namespace" "$override_file"
