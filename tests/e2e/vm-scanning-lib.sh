@@ -13,12 +13,6 @@ ensure_vm_scanning_cluster_prereqs() {
     require_environment "KUBECONFIG"
     require_environment "VM_IMAGES"
 
-    # Self-discoverable: virtctl on $PATH, SSH keys generated on the fly.
-    # Override via env if the defaults are not suitable for the CI cluster.
-    # VIRTCTL_PATH          - defaults to $(command -v virtctl)
-    # VM_SSH_PRIVATE_KEY    - PEM content (not a path); ephemeral ed25519 key generated if unset
-    # VM_SSH_PUBLIC_KEY     - authorized_keys line (not a path); generated with private key if unset
-
     # Build a docker config JSON for pulling private container-disk images
     # (e.g. quay.io/rhacs-eng/vm-images/*) inside the VM test namespace.
     if [[ -n "${QUAY_RHACS_ENG_RO_USERNAME:-}" && -n "${QUAY_RHACS_ENG_RO_PASSWORD:-}" ]]; then
