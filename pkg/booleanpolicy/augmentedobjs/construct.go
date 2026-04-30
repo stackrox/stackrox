@@ -29,10 +29,7 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
 func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
-	// Filter before both ConstructDeployment and findMatchingContainerIdxForProcess
-	// so the index lookup matches the filtered container list.
-	deployment, images = filterInitContainers(deployment, images)
-	obj, err := ConstructDeployment(deployment, images, applied)
+	obj, filtered, err := constructDeployment(deployment, images, applied)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +38,7 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 		return nil, err
 	}
 
-	matchingContainerIdx, err := findMatchingContainerIdxForProcess(deployment, process)
+	matchingContainerIdx, err := findMatchingContainerIdxForProcess(filtered, process)
 	if err != nil {
 		return nil, err
 	}
@@ -221,16 +218,23 @@ func ConstructDeploymentWithNetworkFlowInfo(
 // It assumes that the given images are in the same order as the containers specified within the given deployment.
 // If there's a mismatch in the amount of containers on the deployment and the given images, an error will be returned.
 func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, error) {
+	obj, _, err := constructDeployment(deployment, images, applied)
+	return obj, err
+}
+
+// constructDeployment is the internal implementation that also returns the filtered deployment,
+// allowing callers like ConstructDeploymentWithProcess to use it for index lookups.
+func constructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, *storage.Deployment, error) {
 	deployment, images = filterInitContainers(deployment, images)
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
-		return nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
+		return nil, nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
 			deployment.GetNamespace(), deployment.GetName(), len(deployment.GetContainers()), len(images))
 	}
 
 	appliedPolicies := pathutil.NewAugmentedObj(applied)
 	if err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey)); err != nil {
-		return nil, utils.ShouldErr(err)
+		return nil, nil, utils.ShouldErr(err)
 	}
 
 	for i, image := range images {
@@ -239,14 +243,14 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 		containerImageFullName := deployment.GetContainers()[i].GetImage().GetName().GetFullName()
 		augmentedImg, err := ConstructImage(image, containerImageFullName)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		err = obj.AddAugmentedObjAt(
 			augmentedImg,
 			pathutil.FieldStep("Containers"), pathutil.IndexStep(i), pathutil.FieldStep(imageAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.ShouldErr(err)
+			return nil, nil, utils.ShouldErr(err)
 		}
 	}
 
@@ -260,12 +264,12 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 			)
 
 			if err != nil {
-				return nil, utils.ShouldErr(err)
+				return nil, nil, utils.ShouldErr(err)
 			}
 		}
 	}
 
-	return obj, nil
+	return obj, deployment, nil
 }
 
 // filterInitContainers returns a filtered deployment and image slice with init containers removed.
