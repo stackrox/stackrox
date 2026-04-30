@@ -1003,6 +1003,23 @@
       "default": "UNSET_ENFORCEMENT",
       "description": " - FAIL_KUBE_REQUEST_ENFORCEMENT: FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\n - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.\n - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
     },
+    "storageEvaluationFilter": {
+      "type": "object",
+      "properties": {
+        "skipContainerTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSkipContainerType"
+          },
+          "description": "Use Case 1: Container types to skip during evaluation. Empty list = evaluate all container types."
+        },
+        "skipImageLayers": {
+          "$ref": "#/definitions/storageSkipImageLayers",
+          "description": "Use Case 2: Image layers to skip. SKIP_NONE = evaluate all layers."
+        }
+      },
+      "description": "Hold filters to prune the objects to be evaluated in the policy."
+    },
     "storageEventSource": {
       "type": "string",
       "enum": [
@@ -1317,9 +1334,13 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "evaluationFilter": {
+          "$ref": "#/definitions/storageEvaluationFilter",
+          "description": "Controls which parts of a deployment or image the policy evaluates."
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "storagePolicyGroup": {
       "type": "object",
@@ -1615,6 +1636,24 @@
         "CRITICAL_SEVERITY"
       ],
       "default": "UNSET_SEVERITY"
+    },
+    "storageSkipContainerType": {
+      "type": "string",
+      "enum": [
+        "SKIP_INIT"
+      ],
+      "default": "SKIP_INIT",
+      "title": "SkipContainerType identifies container types that can be skipped during policy evaluation"
+    },
+    "storageSkipImageLayers": {
+      "type": "string",
+      "enum": [
+        "SKIP_NONE",
+        "SKIP_BASE",
+        "SKIP_APP"
+      ],
+      "default": "SKIP_NONE",
+      "description": "SkipImageLayers controls which image layers to skip during policy evaluation."
     },
     "storageTaintEffect": {
       "type": "string",

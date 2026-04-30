@@ -50,6 +50,11 @@ func NewPath(steps ...Step) *Path {
 	return &Path{steps: steps}
 }
 
+// Steps returns the steps in this path.
+func (p *Path) Steps() []Step {
+	return p.steps
+}
+
 func (p *Path) String() string {
 	keys := make([]string, len(p.steps))
 	for idx, step := range p.steps {
