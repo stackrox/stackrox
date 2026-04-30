@@ -19,7 +19,7 @@ setup_certs() {
     ca_name="${3:-Test CA}"
 
     [[ -d "$target_dir" ]] || mkdir "$target_dir"
-    chmod 0700 "$target_dir"
+    chmod 0755 "$target_dir"
 
     pushd "$target_dir"
 
@@ -54,6 +54,7 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 
     cat leaf.crt intermediate.crt ca.crt >tls.crt
     cp leaf.key tls.key
+    chmod 644 tls.crt tls.key
 
     openssl pkcs12 -export -inkey tls.key -in tls.crt -out keystore.p12 -passout pass:
 

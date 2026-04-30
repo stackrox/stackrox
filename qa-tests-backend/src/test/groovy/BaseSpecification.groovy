@@ -238,9 +238,24 @@ class BaseSpecification extends Specification {
     @Shared
     private long testSpecStartTimeMillis
 
+    @SuppressWarnings('SystemOutPrint')
+    private static void printGHAGroup(String name) {
+        System.out.println("::group::${name}")
+    }
+
+    @SuppressWarnings('SystemOutPrint')
+    private static void printGHAEndGroup() {
+        System.out.println("::endgroup::")
+    }
+
     def setupSpec() {
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
+
+        if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
+            printGHAGroup(this.class.getSimpleName())
+        }
+
         log.info("Starting testsuite")
 
         testSpecStartTimeMillis = System.currentTimeMillis()
@@ -333,6 +348,10 @@ class BaseSpecification extends Specification {
         if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
             log.info("Checking if cluster is healthy after test")
             waitForClusterHealthy()
+        }
+
+        if (Env.IN_CI && System.getenv("GITHUB_ACTIONS") == "true") {
+            printGHAEndGroup()
         }
 
         MDC.remove("specification")

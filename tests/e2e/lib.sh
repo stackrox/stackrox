@@ -80,6 +80,13 @@ deploy_stackrox() {
 
     if retrying_kubectl </dev/null -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
         wait_for_scanner_V4 "${central_namespace}"
+    else
+        # Wait for Scanner V2 when Scanner V4 is not deployed
+        if retrying_kubectl </dev/null -n "${central_namespace}" get deployment scanner-db >/dev/null 2>&1; then
+            info "Waiting for Scanner V2 to become ready..."
+            wait_for_ready_deployment "${central_namespace}" "scanner-db" 600
+            wait_for_ready_deployment "${central_namespace}" "scanner" 600
+        fi
     fi
 
     touch "${STATE_DEPLOYED}"
@@ -1179,6 +1186,10 @@ wait_for_ready_deployment() {
         if (( elapsed_seconds > max_seconds )); then
             retrying_kubectl </dev/null -n "${namespace}" get pod -o wide
             retrying_kubectl </dev/null -n "${namespace}" get deploy -o wide
+            info "Describing pods for deployment ${deployment_name}..."
+            retrying_kubectl </dev/null -n "${namespace}" describe pod -l "app=${deployment_name}" || true
+            info "Getting logs for deployment ${deployment_name} (including init containers)..."
+            retrying_kubectl </dev/null -n "${namespace}" logs -l "app=${deployment_name}" --all-containers=true --prefix=true --tail=100 || true
             die "wait_for_ready_deployment() timeout after $max_seconds seconds."
         fi
 
