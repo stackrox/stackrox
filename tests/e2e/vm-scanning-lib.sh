@@ -50,6 +50,7 @@ _use_existing_virtctl_binary_if_available() {
 ensure_virtctl_binary() {
     _use_existing_virtctl_binary_if_available && return
 
+    # CI Prow workers are always Linux x86_64 (n2-standard-8 machine type).
     local download_url
     download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
         -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
