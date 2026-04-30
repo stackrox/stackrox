@@ -64,6 +64,15 @@ func makeNode(name string, labels map[string]string, unschedulable bool, kvmCapa
 	}
 }
 
+func expectedNode(name string, unschedulable bool, kvmCapacity string) kvmPreflightNode {
+	return kvmPreflightNode{
+		Name:          name,
+		Unschedulable: unschedulable,
+		KVMCapacity:   kvmCapacity,
+		Eligible:      !unschedulable && kvmCapacity != "0" && kvmCapacity != "<unset>",
+	}
+}
+
 func TestInspectClusterKVMReadiness(t *testing.T) {
 	t.Parallel()
 
@@ -81,7 +90,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantUsable: true,
 			wantScope:  workerNodeScope,
 			wantChecked: []kvmPreflightNode{
-				{Name: "worker-a", Unschedulable: false, KVMCapacity: "1", Eligible: true},
+				expectedNode("worker-a", false, "1"),
 			},
 		},
 		"should fail when all worker nodes advertise zero KVM capacity": {
@@ -92,8 +101,8 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantUsable: false,
 			wantScope:  workerNodeScope,
 			wantChecked: []kvmPreflightNode{
-				{Name: "worker-a", Unschedulable: false, KVMCapacity: "0", Eligible: false},
-				{Name: "worker-b", Unschedulable: false, KVMCapacity: "0", Eligible: false},
+				expectedNode("worker-a", false, "0"),
+				expectedNode("worker-b", false, "0"),
 			},
 		},
 		"should fail when only unschedulable workers advertise KVM capacity": {
@@ -103,7 +112,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantUsable: false,
 			wantScope:  workerNodeScope,
 			wantChecked: []kvmPreflightNode{
-				{Name: "worker-a", Unschedulable: true, KVMCapacity: "1", Eligible: false},
+				expectedNode("worker-a", true, "1"),
 			},
 		},
 		"should fall back to all nodes when worker labels are absent": {
@@ -114,7 +123,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantScope:    kvmAllSchedulableNodeScope,
 			wantFallback: true,
 			wantChecked: []kvmPreflightNode{
-				{Name: "node-a", Unschedulable: false, KVMCapacity: "1", Eligible: true},
+				expectedNode("node-a", false, "1"),
 			},
 		},
 		"should skip unschedulable nodes in fallback scope": {
@@ -126,7 +135,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantScope:    kvmAllSchedulableNodeScope,
 			wantFallback: true,
 			wantChecked: []kvmPreflightNode{
-				{Name: "node-b", Unschedulable: false, KVMCapacity: "1", Eligible: true},
+				expectedNode("node-b", false, "1"),
 			},
 		},
 	}
@@ -162,8 +171,8 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 			result: clusterKVMPreflightResult{
 				Scope: workerNodeScope,
 				CheckedNodes: []kvmPreflightNode{
-					{Name: "worker-a", Unschedulable: false, KVMCapacity: "0", Eligible: false},
-					{Name: "worker-b", Unschedulable: true, KVMCapacity: "1", Eligible: false},
+					expectedNode("worker-a", false, "0"),
+					expectedNode("worker-b", true, "1"),
 				},
 			},
 			wantText: []string{
@@ -177,7 +186,7 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 				Scope:                           kvmAllSchedulableNodeScope,
 				UsedAllSchedulableNodesFallback: true,
 				CheckedNodes: []kvmPreflightNode{
-					{Name: "node-a", Unschedulable: false, KVMCapacity: "1", Eligible: true},
+					expectedNode("node-a", false, "1"),
 				},
 			},
 			wantText: []string{
