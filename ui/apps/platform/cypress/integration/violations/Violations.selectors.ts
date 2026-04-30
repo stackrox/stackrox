@@ -24,7 +24,7 @@ export const selectors = {
     deployment: {
         overview: `[aria-label="Deployment details"]:has('h3:contains("Deployment overview")')`,
         containerConfiguration: `[aria-label="Deployment details"]:has('h3:contains("Container configuration")')`,
-        securityContext: `[aria-label="Deployment details"]:has('h3:contains("Security context")')`,
+        securityContext: `[aria-label="Deployment details"] ${pf6.card}:contains("Security context")`,
         portConfiguration: `[aria-label="Deployment details"]:has('h3:contains("Port configuration")')`,
     },
 };
