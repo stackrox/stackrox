@@ -79,7 +79,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("worker-a", map[string]string{"node-role.kubernetes.io/worker": ""}, false, "1"),
 			},
 			wantUsable: true,
-			wantScope:  kvmWorkerNodeScope,
+			wantScope:  workerNodeScope,
 			wantChecked: []kvmPreflightNode{
 				{Name: "worker-a", Unschedulable: false, KVMCapacity: "1", Eligible: true},
 			},
@@ -90,7 +90,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("worker-b", map[string]string{"node-role.kubernetes.io/worker": ""}, false, "0"),
 			},
 			wantUsable: false,
-			wantScope:  kvmWorkerNodeScope,
+			wantScope:  workerNodeScope,
 			wantChecked: []kvmPreflightNode{
 				{Name: "worker-a", Unschedulable: false, KVMCapacity: "0", Eligible: false},
 				{Name: "worker-b", Unschedulable: false, KVMCapacity: "0", Eligible: false},
@@ -101,7 +101,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("worker-a", map[string]string{"node-role.kubernetes.io/worker": ""}, true, "1"),
 			},
 			wantUsable: false,
-			wantScope:  kvmWorkerNodeScope,
+			wantScope:  workerNodeScope,
 			wantChecked: []kvmPreflightNode{
 				{Name: "worker-a", Unschedulable: true, KVMCapacity: "1", Eligible: false},
 			},
@@ -160,7 +160,7 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 	}{
 		"should format failure diagnostics with checked nodes": {
 			result: clusterKVMPreflightResult{
-				Scope: kvmWorkerNodeScope,
+				Scope: workerNodeScope,
 				CheckedNodes: []kvmPreflightNode{
 					{Name: "worker-a", Unschedulable: false, KVMCapacity: "0", Eligible: false},
 					{Name: "worker-b", Unschedulable: true, KVMCapacity: "1", Eligible: false},
