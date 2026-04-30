@@ -101,7 +101,7 @@ func retryOnSSHTransport(ctx context.Context, logf func(string, ...any), desc st
 			return lastErr
 		}
 		if logf != nil {
-			logf("%s: SSH transport error (attempt %d), retrying in %s: %v",
+			logf("%s: SSH transport issue (attempt %d), retrying in %s: %v",
 				desc, attempt, sshTransportRetryInterval, lastErr)
 		}
 		timer := time.NewTimer(sshTransportRetryInterval)
@@ -153,7 +153,7 @@ func runSSHCommandWithFramework(ctx context.Context, virt Virtctl, namespace, vm
 		}
 
 		if virt.Logf != nil {
-			virt.Logf("%s on %s/%s: retryable SSH %s failure (attempt %d/%d): %s",
+			virt.Logf("%s on %s/%s: retryable SSH %s condition (attempt %d/%d): %s",
 				description, namespace, vm, category, attempt, attempts, formatGuestCommandOutputForError(stderr))
 		}
 

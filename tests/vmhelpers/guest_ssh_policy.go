@@ -73,7 +73,7 @@ type sshFailureCategory struct {
 
 var sshFailureCategories = []sshFailureCategory{
 	{
-		label:       "ssh authentication failed",
+		label:       "ssh auth not accepted",
 		matches:     func(stderr string, _ error) bool { return isSSHAuthenticationFailure(stderr) },
 		counter:     func(c *sshProbeCounters) *int { return &c.authFailures },
 		threshold:   func(p SSHReachabilityPolicy) int { return p.AuthFailureThreshold },
@@ -84,7 +84,7 @@ var sshFailureCategories = []sshFailureCategory{
 		},
 	},
 	{
-		label:       "ssh banner timeout",
+		label:       "ssh banner not received",
 		matches:     func(stderr string, _ error) bool { return isSSHBannerTimeoutFailure(stderr) },
 		counter:     func(c *sshProbeCounters) *int { return &c.bannerTimeoutFailures },
 		threshold:   func(p SSHReachabilityPolicy) int { return p.BannerTimeoutThreshold },
@@ -94,7 +94,7 @@ var sshFailureCategories = []sshFailureCategory{
 		},
 	},
 	{
-		label:       "ssh network unavailable",
+		label:       "ssh network not ready",
 		matches:     func(stderr string, _ error) bool { return isSSHNetworkUnreachableFailure(stderr) },
 		counter:     func(c *sshProbeCounters) *int { return &c.networkUnreachableFailures },
 		threshold:   func(p SSHReachabilityPolicy) int { return p.NetworkUnreachableThreshold },
@@ -104,7 +104,7 @@ var sshFailureCategories = []sshFailureCategory{
 		},
 	},
 	{
-		label:       "ssh probe timed out",
+		label:       "ssh probe deadline reached",
 		matches:     func(_ string, err error) bool { return isSSHProbeTimeoutFailure(err) },
 		counter:     func(c *sshProbeCounters) *int { return &c.probeTimeoutFailures },
 		threshold:   func(p SSHReachabilityPolicy) int { return p.ProbeTimeoutThreshold },

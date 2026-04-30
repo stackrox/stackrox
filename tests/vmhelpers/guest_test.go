@@ -424,7 +424,7 @@ func TestSSHReachabilityPolicy_ClassifyFailureStopsEarlyOnAuthThreshold(t *testi
 
 	require.Error(t, decision.terminalErr)
 	require.ErrorIs(t, decision.terminalErr, ErrSSHAuthenticationFailed)
-	require.Contains(t, decision.detail, "ssh authentication failed")
+	require.Contains(t, decision.detail, "ssh auth not accepted")
 }
 
 func TestSSHReachabilityPolicy_ClassifyFailureKeepsRetryingOnProbeTimeout(t *testing.T) {
@@ -435,7 +435,7 @@ func TestSSHReachabilityPolicy_ClassifyFailureKeepsRetryingOnProbeTimeout(t *tes
 	decision := policy.classifyFailure(counters, Virtctl{}, context.DeadlineExceeded, "")
 
 	require.NoError(t, decision.terminalErr)
-	require.Contains(t, decision.detail, "ssh probe timed out")
+	require.Contains(t, decision.detail, "ssh probe deadline reached")
 }
 
 func TestFormatGuestCommandOutputForError(t *testing.T) {
