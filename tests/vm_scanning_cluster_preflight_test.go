@@ -114,7 +114,6 @@ func inspectClusterKVMReadiness(ctx context.Context, k8s kubernetes.Interface) (
 	if len(result.CheckedNodes) == 0 {
 		result.Scope = kvmAllSchedulableNodeScope
 		result.UsedAllSchedulableNodesFallback = true
-		result.CheckedNodes = make([]kvmPreflightNode, 0, len(nodeList.Items))
 		for _, node := range nodeList.Items {
 			if node.Spec.Unschedulable {
 				continue
