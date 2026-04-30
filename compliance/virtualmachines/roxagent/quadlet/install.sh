@@ -13,11 +13,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 install_locally() {
     echo "Installing Quadlet units locally..."
 
-    sudo mkdir -p /run/lock/roxagent
-
     # Quadlet container file
     sudo mkdir -p /etc/containers/systemd/
     sudo cp "${SCRIPT_DIR}/roxagent.container" /etc/containers/systemd/
+    # restorecon resets SELinux labels so systemd/podman can read the new files.
     sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
 
     # Timer and prep service go in standard systemd directory
@@ -29,6 +28,7 @@ install_locally() {
     sudo mkdir -p /etc/tmpfiles.d/
     sudo cp "${SCRIPT_DIR}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
     sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
+    # systemd-tmpfiles --create applies the rule now (creates /run/lock/roxagent immediately).
     sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
 
     echo "Reloading systemd..."
@@ -55,11 +55,10 @@ install_remote() {
 
     # Install on remote
     ssh -p "${SSH_PORT}" "${REMOTE_HOST}" << 'EOF'
-        sudo mkdir -p /run/lock/roxagent
-
         # Quadlet container file
         sudo mkdir -p /etc/containers/systemd/
         sudo mv /tmp/roxagent.container /etc/containers/systemd/
+        # restorecon resets SELinux labels so systemd/podman can read the new files.
         sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
 
         # Timer and prep service go in standard systemd directory
@@ -71,6 +70,7 @@ install_remote() {
         sudo mkdir -p /etc/tmpfiles.d/
         sudo mv /tmp/roxagent-tmpfiles.conf /etc/tmpfiles.d/roxagent.conf
         sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
+        # systemd-tmpfiles --create applies the rule now (creates /run/lock/roxagent immediately).
         sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
 
         echo "Reloading systemd..."

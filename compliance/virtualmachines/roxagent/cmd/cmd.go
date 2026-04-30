@@ -84,29 +84,18 @@ func RootCmd(ctx context.Context) *cobra.Command {
 			return nil
 		}
 
-		res, release, lockErr := lock.TryLock(lock.DefaultLockPath)
-		switch res {
-		case lock.Acquired:
-			defer release()
-			if err := index.RunSingle(ctx, cfg, client); err != nil {
-				return fmt.Errorf("running indexer: %w", err)
-			}
-			return nil
-		case lock.Held:
+		scanFn := func() error { return index.RunSingle(ctx, cfg, client) }
+		onHeld := func() error {
 			return fmt.Errorf("roxagent is already running (lock file is held at %s); exiting", lock.DefaultLockPath)
-		case lock.Unavailable:
-			log.Warnf(
-				"could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load",
-				lock.DefaultLockPath,
-				lockErr,
-			)
-			if err := index.RunSingle(ctx, cfg, client); err != nil {
-				return fmt.Errorf("running indexer: %w", err)
-			}
-			return nil
-		default:
-			return fmt.Errorf("unexpected lock result: %d", res)
 		}
+		onUnavailable := func(lockErr error) error {
+			log.Warnf("could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load", lock.DefaultLockPath, lockErr)
+			return scanFn()
+		}
+		if err := lock.RunWithLock(lock.DefaultLockPath, scanFn, onHeld, onUnavailable); err != nil {
+			return fmt.Errorf("running indexer: %w", err)
+		}
+		return nil
 	}
 	return &cmd
 }

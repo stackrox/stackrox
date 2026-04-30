@@ -14,12 +14,9 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var log = logging.LoggerForModule()
-
-var daemonLockUnavailableWarnOnce sync.Once
 
 const (
 	mappingClientTimeout = 30 * time.Second
@@ -33,9 +30,16 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lo
 	}
 
 	scanFn := func() error { return RunSingle(ctx, cfg, client) }
-	tryLockFn := func() (lock.Result, func(), error) { return lock.TryLock(lockPath) }
+	onLockHeld := func() error {
+		log.Info("roxagent scan skipped because another agent is already running")
+		return nil
+	}
+	onLockUnavailable := func(lockErr error) error {
+		log.Warnf("could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load", lockPath, lockErr)
+		return scanFn()
+	}
 
-	if err := runWithLock(lockPath, scanFn, tryLockFn); err != nil {
+	if err := lock.RunWithLock(lockPath, scanFn, onLockHeld, onLockUnavailable); err != nil {
 		return fmt.Errorf("handling initial index: %w", err)
 	}
 
@@ -47,34 +51,10 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lo
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := runWithLock(lockPath, scanFn, tryLockFn); err != nil {
+			if err := lock.RunWithLock(lockPath, scanFn, onLockHeld, onLockUnavailable); err != nil {
 				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
-	}
-}
-
-// tryLockFn is injected so tests can stub lock outcomes without touching the filesystem.
-func runWithLock(lockPath string, scanFn func() error, tryLockFn func() (lock.Result, func(), error)) error {
-	res, release, lockErr := tryLockFn()
-	switch res {
-	case lock.Acquired:
-		defer release()
-		return scanFn()
-	case lock.Held:
-		log.Info("roxagent scan skipped because another agent is already running")
-		return nil
-	case lock.Unavailable:
-		daemonLockUnavailableWarnOnce.Do(func() {
-			log.Warnf(
-				"could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load",
-				lockPath,
-				lockErr,
-			)
-		})
-		return scanFn()
-	default:
-		return fmt.Errorf("unexpected lock result: %d", res)
 	}
 }
 
