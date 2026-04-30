@@ -31,12 +31,12 @@ type virtualMachineServiceSuite struct {
 func (s *virtualMachineServiceSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
-	s.service = &serviceImpl{handler: NewHandler(s.store)}
+	s.service = &serviceImpl{handler: NewHandler(staticClusterIDGetter("test-cluster"), s.store)}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewHandler(s.store))
+	svc := NewService(NewHandler(staticClusterIDGetter("test-cluster"), s.store))
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 
