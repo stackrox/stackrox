@@ -270,7 +270,29 @@ jobs:
                 scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
                 ;;
         esac
-        zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
+
+    - name: Authenticate with Google Cloud for bundle upload
+      if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK for bundle upload
+      if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Upload individual bundles to GCS
+      if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')
+      run: |
+        python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py upload \
+          --local-dir bundles \
+          --version "$SCANNER_BUNDLE_VERSION"
+
+    - name: Copy status to definitions
+      run: |
+        if [ -f bundles/status.json ]; then
+          cp bundles/status.json definitions/"$SCANNER_BUNDLE_VERSION"/
+        fi
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
@@ -332,6 +354,9 @@ jobs:
         name: nvd
         path: .
 
+    - name: Test aggregate script (unit tests)
+      run: python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate_test.py
+
     - name: Build updater
       run: |
         echo "Building updater for pull request ${{ env.PR_NAME }}..."
@@ -352,6 +377,22 @@ jobs:
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
+
+    - name: Test aggregate script (e2e with GCS test bucket)
+      run: |
+        test_version="test-${{ github.event.pull_request.number }}"
+        test_bucket="gs://scanner-v4-test/vulnerability-bundles"
+
+        python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py \
+          --backend gcs --bucket "$test_bucket" \
+          upload --local-dir bundles --version "$test_version"
+
+        python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py \
+          --backend gcs --bucket "$test_bucket" \
+          aggregate --version "$test_version" --output-dir /tmp/test-output
+
+        echo "Zip contents:"
+        unzip -l /tmp/test-output/vulnerabilities.zip
 
     # PR owner is responsible for verifying vulnerability bundles are generated
     - name: Upload PR vulnerabilities
@@ -380,6 +421,8 @@ jobs:
     - build-and-run
     if: ${{ (failure() || success()) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')) }}
     runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.get-versions.outputs.versions }}
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -393,6 +436,18 @@ jobs:
         path: definitions_files
         # Merge all artifacts (`<version>/<files>`) into the directory.
         merge-multiple: true
+
+    - name: Determine versions
+      id: get-versions
+      working-directory: ./definitions_files
+      run: |
+        # Collect directory names (strip trailing slash) as space-separated list
+        versions=""
+        for d in ./*/; do
+          versions="$versions $(basename "$d")"
+        done
+        echo "versions=$versions" >> "$GITHUB_OUTPUT"
+        echo "Versions: $versions"
 
     - name: Check vulnerability bundles
       working-directory: ./definitions_files
@@ -425,6 +480,7 @@ jobs:
                 case "$f" in
                     */vulnerabilities.zip) ;;
                     */vulns.json.zst) ;;
+                    */status.json) ;;
                     *) error "found unexpected file name in bundle version '$d/': $f" ;;
                 esac
                 [ -f "$f" ] || error "non-regular file in bundle version '$d/': $f"
@@ -440,13 +496,16 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
 
-    - name: Upload vulnerability bundles to GCS
-      working-directory: ./definitions_files
+    - name: Aggregate bundles from GCS and upload final zip
       run: |
-        # Upload all bundle directories (preserving the `<verions>/<file>` structure).
-        bucket="gs://definitions.stackrox.io/v4/vulnerability-bundles"
-        echo "Uploading all dir(s) to $bucket/"
-        gsutil -m cp -r . "$bucket/"
+        for version_dir in definitions_files/*/; do
+          version="$(basename "$version_dir")"
+          echo "=== Processing version: $version ==="
+
+          python3 .github/workflows/scripts/scanner-versioned-definitions-aggregate.py aggregate \
+            --version "$version" \
+            --output-dir "$version_dir"
+        done
 
     - name: Update downstream dev
       # Run on schedule or when dispatched to build "dev" (only possible if RC was not requested).
@@ -492,8 +551,28 @@ jobs:
     - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
-    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    if: ${{ always() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
     steps:
-    - name: Send Slack notification on workflow failure
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Checkout for scripts
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - name: Check for partial failures and notify
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        job_failed_flag=""
+        if [ "${{ needs.build-and-run.result }}" = "failure" ]; then
+          job_failed_flag="--job-failed"
+        fi
+
+        python3 .github/workflows/scripts/scanner-versioned-definitions-notify.py \
+          --webhook-url "${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}" \
+          --workflow-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          $job_failed_flag \
+          ${{ needs.upload-definitions.outputs.versions }}

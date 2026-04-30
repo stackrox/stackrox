@@ -19,11 +19,8 @@ func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOption
 	const timeout = 3 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	err := updater.Export(ctx, outputDir, opts)
-	if err != nil {
-		return err
-	}
-	return nil
+	exporter := updater.NewDefaultBundleExporter()
+	return updater.Export(ctx, outputDir, opts, exporter)
 }
 
 func main() {
@@ -53,7 +50,7 @@ func main() {
 					Str("manual vulns URL", manualURL).
 					Str("output directory", outputDir).
 					Msg("exporting vulnerabilities")
-				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
+				err = tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						zlog.Warn(ctx).
