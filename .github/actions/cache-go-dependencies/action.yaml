@@ -20,9 +20,6 @@ runs:
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
-        # Ensure go install binaries are on PATH (setup-go does this
-        # automatically, but the runner's pre-installed Go does not).
-        echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       shell: bash
 
     - name: Cache Go Build (save)
