@@ -67,6 +67,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
 import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
@@ -630,6 +631,69 @@ class Kubernetes {
                             .endSpec()
                             .build()
                 }
+    }
+
+    void updateDeploymentEnv(String ns, String name, String containerName, String key, String value) {
+        log.debug "Update env var in deployment ${ns}/${name}/${containerName}: ${key} = ${value}"
+        evaluateWithRetry(3, 1) {
+            client.apps().deployments().inNamespace(ns).withName(name)
+                    .edit { d ->
+                        List<Container> containers = d.spec.template.spec.containers
+                        int containerIndex = containers.findIndexOf { it.name == containerName }
+                        if (containerIndex == -1) {
+                            throw new RuntimeException(
+                                    "Could not update env var. No container named " +
+                                    "${containerName} in deployment ${ns}/${name}")
+                        }
+                        List<EnvVar> envVars = containers.get(containerIndex).env
+                        int index = envVars.findIndexOf { EnvVar e -> e.name == key }
+                        if (index > -1) {
+                            envVars.get(index).value = value
+                        } else {
+                            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+                        }
+                        new DeploymentBuilder(d)
+                                .editSpec()
+                                .editTemplate()
+                                .editSpec()
+                                .editContainer(containerIndex)
+                                .withEnv(envVars)
+                                .endContainer()
+                                .endSpec()
+                                .endTemplate()
+                                .endSpec()
+                                .build()
+                    }
+        }
+    }
+
+    void removeDeploymentEnv(String ns, String name, String containerName, String key) {
+        log.debug "Remove env var from deployment ${ns}/${name}/${containerName}: ${key}"
+        evaluateWithRetry(3, 1) {
+            client.apps().deployments().inNamespace(ns).withName(name)
+                    .edit { d ->
+                        List<Container> containers = d.spec.template.spec.containers
+                        int containerIndex = containers.findIndexOf { it.name == containerName }
+                        if (containerIndex == -1) {
+                            throw new RuntimeException(
+                                    "Could not remove env var. No container named " +
+                                    "${containerName} in deployment ${ns}/${name}")
+                        }
+                        List<EnvVar> envVars = containers.get(containerIndex).env
+                        envVars.removeIf { EnvVar e -> e.name == key }
+                        new DeploymentBuilder(d)
+                                .editSpec()
+                                .editTemplate()
+                                .editSpec()
+                                .editContainer(containerIndex)
+                                .withEnv(envVars)
+                                .endContainer()
+                                .endSpec()
+                                .endTemplate()
+                                .endSpec()
+                                .build()
+                    }
+        }
     }
 
     boolean deploymentReady(String ns, String name) {

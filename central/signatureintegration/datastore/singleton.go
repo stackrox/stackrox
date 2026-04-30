@@ -24,8 +24,16 @@ var (
 	once     sync.Once
 	instance DataStore
 
+	bundleUpdater Stoppable
 	bundleWatcher Stoppable
 )
+
+// KeyBundleUpdater returns the key bundle updater for shutdown registration.
+// Returns nil if the updater was not started (e.g. no URL configured).
+// Must only be called after Singleton().
+func KeyBundleUpdater() Stoppable {
+	return bundleUpdater
+}
 
 // KeyBundleWatcher returns the key bundle watcher for shutdown registration.
 // Must only be called after Singleton().
@@ -52,6 +60,21 @@ func seedRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
 	utils.Should(errors.Wrap(err, "seeding default Red Hat signature integration"))
 }
 
+func startKeyBundleUpdater() {
+	url := env.RedHatSigningKeyBundleURL.Setting()
+	if url == "" {
+		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
+		return
+	}
+
+	filePath := env.RedHatSigningKeyBundlePath.Setting()
+	interval := env.RedHatSigningKeyUpdateInterval.DurationSetting()
+
+	u := newKeyBundleUpdater(url, filePath, interval)
+	u.Start()
+	bundleUpdater = u
+}
+
 func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 	filePath := env.RedHatSigningKeyBundlePath.Setting()
 	interval := env.RedHatSigningKeyWatchInterval.DurationSetting()
@@ -68,6 +91,7 @@ func Singleton() DataStore {
 		seedRedHatSignatureIntegration(storage)
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
+		startKeyBundleUpdater()
 	})
 	return instance
 }
