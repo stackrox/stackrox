@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_set_deployment_state/test/schema"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_set_deployment_state/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"

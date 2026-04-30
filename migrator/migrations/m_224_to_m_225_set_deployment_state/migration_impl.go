@@ -3,7 +3,7 @@ package m223tom224
 import (
 	"context"
 
-	"github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_set_deployment_state/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_set_deployment_state/schema"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
