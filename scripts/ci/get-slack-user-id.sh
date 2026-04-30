@@ -16,22 +16,13 @@ slack_user=''
 # You can find Slack Member ID by clicking on the user profile in Slack, then three dots, then Copy member ID.
 # More info: https://api.slack.com/reference/surfaces/formatting#mentioning-users
 # Here you can find GitHub logins: https://github.com/orgs/stackrox/people
-# TODO: please keep the list in the alphabetic order. It is simpler to maintain it this way.
+# TODO: please keep the list in the alphabetic order (case-insensitive, like sort -f). It is simpler to maintain it this way.
 case "$github_login" in
-'0x656b694d')       slack_user='U02MJ72K1B5' ;;
-'BradLugo')         slack_user='U042Z3TSZU3' ;;
-'GrimmiMeloni')     slack_user='U048VH2JZ1C' ;;
-'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
-'Maddosaurus')      slack_user='U01Q5L5R0GJ' ;;
-'Molter73')         slack_user='U02A292NPV2' ;;
-'RTann')            slack_user='U01NZ6U730X' ;;
-'SimonBaeumer')     slack_user='U01Q5RMEHCK' ;;
-'Stringy')          slack_user='U02KJKREKPY' ;;
 'ajheflin')         slack_user='U087GT2H45Q' ;;
-'akameric')         slack_user='U076CG62KL4' ;;
-'AlexVulaj')        slack_user='U03M3QKBES2' ;;
 'alanonthegit')     slack_user='U01PZFFSZRB' ;;
+'AlexVulaj')        slack_user='U03M3QKBES2' ;;
 'alwayshooin')      slack_user='U01PLAWUU8N' ;;
+'BradLugo')         slack_user='U042Z3TSZU3' ;;
 'bradr5')           slack_user='U03UQ9DM44U' ;;
 'c-du')             slack_user='U02NE59PHT3' ;;
 'charmik-redhat')   slack_user='U035YKHMXEW' ;;
@@ -43,10 +34,12 @@ case "$github_login" in
 'ebensh')           slack_user='U01Q7HTJ126' ;;
 'erthalion')        slack_user='U02SV8VE3K3' ;;
 'gaurav-nelson')    slack_user='U01P6PMFGKF' ;;
+'GrimmiMeloni')     slack_user='U048VH2JZ1C' ;;
 'guzalv')           slack_user='U08NQKQJH4N' ;;
-'house-d')          slack_user='U03H69TFKH9' ;;
+'davdhacs')          slack_user='U03H69TFKH9' ;;
 'janisz')           slack_user='U0218FUVDMJ' ;;
 'johannes94')       slack_user='U03E2SD2ZPB' ;;
+'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
 'jschnath')         slack_user='U03AA9E6B09' ;;
 'jvdm')             slack_user='U02TTV416HY' ;;
 'kovayur')          slack_user='U033ZSBGEUQ' ;;
@@ -57,6 +50,7 @@ case "$github_login" in
 'lvalerom')         slack_user='U02SJTV567N' ;;
 'mclasmeier')       slack_user='U02DKH1LQ5N' ;;
 'mfosterrox')       slack_user='U01PMH71ACU' ;;
+'Molter73')         slack_user='U02A292NPV2' ;;
 'msugakov')         slack_user='U020QJZCQAH' ;;
 'mtodor')           slack_user='U039LQ48PT7' ;;
 'ovalenti')         slack_user='U03F2F9EXUL' ;;
@@ -69,6 +63,7 @@ case "$github_login" in
 'sachaudh')         slack_user='U01QLCGS0NM' ;;
 'stehessel')        slack_user='U02SDMERUFP' ;;
 'sthadka')          slack_user='U029PASTL5C' ;;
+'Stringy')          slack_user='U02KJKREKPY' ;;
 'tommartensen')     slack_user='U040F2EG19U' ;;
 'vikin91')          slack_user='U02L405V2GH' ;;
 'vjwilson')         slack_user='U01PKQQF0KY' ;;
