@@ -28,7 +28,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"registry.example.com/rhel9:latest", "registry.example.com/rhel10:latest"}, cfg.Images)
-	require.Equal(t, []string{defaultGuestUser, defaultGuestUser}, cfg.GuestUsers)
+	require.Empty(t, cfg.GuestUsers, "no padding; vmSpecs() defaults per-image")
 	require.Equal(t, defaultNamespacePrefix, cfg.NamespacePrefix)
 	require.Equal(t, defaultScanTimeout, cfg.ScanTimeout)
 	require.Equal(t, defaultDeleteTimeout, cfg.DeleteTimeout)
@@ -45,7 +45,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
-	require.Equal(t, []string{"alice", defaultGuestUser, defaultGuestUser}, cfg.GuestUsers)
+	require.Equal(t, []string{"alice"}, cfg.GuestUsers, "only explicit users; vmSpecs() pads with default")
 }
 
 func TestLoadVMScanConfig_InvalidOptionalOverrides(t *testing.T) {

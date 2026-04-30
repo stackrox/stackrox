@@ -75,10 +75,6 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 			cfg.GuestUsers = append(cfg.GuestUsers, strings.TrimSpace(u))
 		}
 	}
-	for len(cfg.GuestUsers) < len(cfg.Images) {
-		cfg.GuestUsers = append(cfg.GuestUsers, defaultGuestUser)
-	}
-
 	if cfg.VirtctlPath, err = discoverVirtctlPath(); err != nil {
 		return nil, err
 	}
