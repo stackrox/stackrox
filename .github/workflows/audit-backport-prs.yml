@@ -60,7 +60,7 @@ jobs:
       - name: Run backport audit
         env:
           JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
-          JIRA_TOKEN: "invalid"
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_BRANCHES: ${{ inputs.release_branches || 'all' }}
         run: |
