@@ -732,7 +732,7 @@ func (s *storeSuite) Test_RuntimeUpdatesShouldPreserveAgentFacts() {
 		pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
 	}
 
-	s.Run("AddOrUpdate", func() {
+	s.Run("AddOrUpdate preserves when nil", func() {
 		original := &virtualmachine.Info{
 			ID:         vmID,
 			Name:       vmName,
@@ -754,29 +754,77 @@ func (s *storeSuite) Test_RuntimeUpdatesShouldPreserveAgentFacts() {
 		assert.Equal(s.T(), agentFacts, actual.AgentFacts)
 	})
 
-	s.Run("UpdateStateOrCreate", func() {
-		original := &virtualmachine.Info{
+	s.Run("AddOrUpdate overrides when provided", func() {
+		originalFacts := map[string]string{"original": "value"}
+		updatedFacts := map[string]string{
+			pkgVM.ActivationStatusKey: pkgVM.ActivationStatusInactive,
+		}
+
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: originalFacts,
+		})
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: updatedFacts,
+		})
+
+		actual := s.store.Get(vmID)
+		s.Require().NotNil(actual)
+		assert.Equal(s.T(), updatedFacts, actual.AgentFacts)
+	})
+
+	s.Run("UpdateStateOrCreate preserves when nil", func() {
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
 			ID:         vmID,
 			Name:       vmName,
 			Namespace:  vmNamespace,
 			AgentFacts: agentFacts,
-		}
-		update := &virtualmachine.Info{
+		})
+		s.store.UpdateStateOrCreate(&virtualmachine.Info{
 			ID:        vmID,
 			Name:      vmName,
 			Namespace: vmNamespace,
 			Running:   true,
 			VSOCKCID:  newVSOCKCID(1),
 			GuestOS:   "Red Hat Enterprise Linux 9",
-		}
-
-		s.store = NewVirtualMachineStore()
-		s.store.AddOrUpdate(original)
-		s.store.UpdateStateOrCreate(update)
+		})
 
 		actual := s.store.Get(vmID)
 		s.Require().NotNil(actual)
 		assert.Equal(s.T(), agentFacts, actual.AgentFacts)
+	})
+
+	s.Run("UpdateStateOrCreate overrides when provided", func() {
+		originalFacts := map[string]string{"original": "value"}
+		updatedFacts := map[string]string{
+			pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
+		}
+
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: originalFacts,
+		})
+		s.store.UpdateStateOrCreate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			Running:    true,
+			AgentFacts: updatedFacts,
+		})
+
+		actual := s.store.Get(vmID)
+		s.Require().NotNil(actual)
+		assert.Equal(s.T(), updatedFacts, actual.AgentFacts)
 	})
 }
 
