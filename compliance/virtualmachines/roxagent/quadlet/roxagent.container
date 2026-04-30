@@ -31,7 +31,8 @@ Volume=/run/lock/roxagent:/run/lock/roxagent:rw
 
 [Service]
 Type=oneshot
-TimeoutStartSec=300
+# First start can take longer on slow VMs
+TimeoutStartSec=600
 
 [Install]
 WantedBy=
