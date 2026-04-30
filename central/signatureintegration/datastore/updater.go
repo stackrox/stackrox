@@ -25,6 +25,7 @@ type keyBundleUpdater struct {
 	filePath string
 	interval time.Duration
 	stopSig  concurrency.Signal
+	doneSig  concurrency.Signal
 }
 
 const minUpdateInterval = 1 * time.Minute
@@ -42,6 +43,7 @@ func newKeyBundleUpdater(url, filePath string, interval time.Duration) *keyBundl
 		filePath: filePath,
 		interval: interval,
 		stopSig:  concurrency.NewSignal(),
+		doneSig:  concurrency.NewSignal(),
 	}
 }
 
@@ -51,11 +53,13 @@ func (u *keyBundleUpdater) Start() {
 
 func (u *keyBundleUpdater) Stop() {
 	u.stopSig.Signal()
+	<-u.doneSig.Done()
 }
 
 func (u *keyBundleUpdater) run() {
 	log.Info("Starting Red Hat signing key bundle updater")
 	defer log.Info("Stopped Red Hat signing key bundle updater")
+	defer u.doneSig.Signal()
 
 	if err := os.MkdirAll(filepath.Dir(u.filePath), 0700); err != nil {
 		log.Errorf("Failed to create directory for key bundle file: %v", err)
