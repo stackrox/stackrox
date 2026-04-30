@@ -2,12 +2,15 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -31,7 +34,8 @@ var (
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
 
-	goldenKey = rhcc.RepositoryKey
+	goldenKey     = rhcc.RepositoryKey
+	repositoryKey = "rhel-dist-repo"
 )
 
 var (
@@ -623,4 +627,17 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 			},
 		},
 	}
+}
+
+func rhcosRepo(cpeRhcos string) (*claircore.Repository, error) {
+	wfn, err := cpe.Unbind(cpeRhcos)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse generated CPE %q: %w", cpeRhcos, err)
+	}
+
+	return &claircore.Repository{
+		Name: cpeRhcos, // Or a more human-readable name if preferred
+		Key:  repositoryKey,
+		CPE:  wfn,
+	}, nil
 }

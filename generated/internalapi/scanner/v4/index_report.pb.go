@@ -31,6 +31,7 @@ type IndexReport struct {
 	Success       bool                   `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
 	Err           string                 `protobuf:"bytes,4,opt,name=err,proto3" json:"err,omitempty"`
 	Contents      *Contents              `protobuf:"bytes,5,opt,name=contents,proto3" json:"contents,omitempty"`
+	Rhcoscpe      string                 `protobuf:"bytes,6,opt,name=rhcoscpe,proto3" json:"rhcoscpe,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -100,18 +101,26 @@ func (x *IndexReport) GetContents() *Contents {
 	return nil
 }
 
+func (x *IndexReport) GetRhcoscpe() string {
+	if x != nil {
+		return x.Rhcoscpe
+	}
+	return ""
+}
+
 var File_internalapi_scanner_v4_index_report_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_index_report_proto_rawDesc = "" +
 	"\n" +
 	")internalapi/scanner/v4/index_report.proto\x12\n" +
-	"scanner.v4\x1a#internalapi/scanner/v4/common.proto\"\x9a\x01\n" +
+	"scanner.v4\x1a#internalapi/scanner/v4/common.proto\"\xb6\x01\n" +
 	"\vIndexReport\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x18\n" +
 	"\asuccess\x18\x03 \x01(\bR\asuccess\x12\x10\n" +
 	"\x03err\x18\x04 \x01(\tR\x03err\x120\n" +
-	"\bcontents\x18\x05 \x01(\v2\x14.scanner.v4.ContentsR\bcontentsB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
+	"\bcontents\x18\x05 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\x12\x1a\n" +
+	"\brhcoscpe\x18\x06 \x01(\tR\brhcoscpeB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
 
 var (
 	file_internalapi_scanner_v4_index_report_proto_rawDescOnce sync.Once
