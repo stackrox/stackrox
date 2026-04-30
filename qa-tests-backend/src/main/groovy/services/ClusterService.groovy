@@ -3,12 +3,12 @@ package services
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
+import io.stackrox.proto.api.v1.ClusterService.ClusterConfig
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
-import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterMetadata.Type
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
@@ -21,11 +21,11 @@ class ClusterService extends BaseService {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static List<Cluster> getClusters() {
+    static List<ClusterConfig> getClusters() {
         return getClusterServiceClient().getClusters(null).clustersList
     }
 
-    static Cluster getCluster() {
+    static ClusterConfig getCluster() {
         String clusterId = getClusterId()
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
@@ -37,7 +37,7 @@ class ClusterService extends BaseService {
     }
 
     static createCluster(String name, String mainImage, String centralEndpoint) {
-        return getClusterServiceClient().postCluster(Cluster.newBuilder()
+        return getClusterServiceClient().postCluster(ClusterConfig.newBuilder()
                 .setName(name)
                 .setMainImage(mainImage)
                 .setCentralApiEndpoint(centralEndpoint)
@@ -50,13 +50,13 @@ class ClusterService extends BaseService {
     }
 
     static Boolean updateAdmissionController(AdmissionControllerConfig config) {
-        Cluster currentCluster = getCluster()
+        ClusterConfig currentCluster = getCluster()
         if (currentCluster == null) {
             return false
         }
-        Cluster.Builder builder = currentCluster.toBuilder()
+        ClusterConfig.Builder builder = currentCluster.toBuilder()
 
-        Cluster cluster = builder.setDynamicConfig(
+        ClusterConfig cluster = builder.setDynamicConfig(
                 DynamicClusterConfig.newBuilder()
                         .setAdmissionControllerConfig(config)
                         .build()
@@ -66,13 +66,13 @@ class ClusterService extends BaseService {
     }
 
     static Boolean updateAuditLogDynamicConfig(boolean disableAuditLogs) {
-        Cluster currentCluster = getCluster()
+        ClusterConfig currentCluster = getCluster()
         if (currentCluster == null) {
             return false
         }
-        Cluster.Builder builder = currentCluster.toBuilder()
+        ClusterConfig.Builder builder = currentCluster.toBuilder()
 
-        Cluster cluster = builder.setDynamicConfig(
+        ClusterConfig cluster = builder.setDynamicConfig(
                 DynamicClusterConfig.newBuilder()
                         .setDisableAuditLogs(disableAuditLogs)
                         .build()
@@ -81,7 +81,7 @@ class ClusterService extends BaseService {
         return updateCluster(cluster)
     }
 
-    static Boolean updateCluster(Cluster cluster) {
+    static Boolean updateCluster(ClusterConfig cluster) {
         try {
             getClusterServiceClient().putCluster(cluster)
             return true
@@ -102,7 +102,7 @@ class ClusterService extends BaseService {
     static Boolean isEKS() {
         try {
             return ClusterService.getClusters().every {
-                Cluster cluster ->
+                ClusterConfig cluster ->
                     cluster.getStatus().getProviderMetadata().hasAws() &&
                             cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
             }
@@ -115,7 +115,7 @@ class ClusterService extends BaseService {
     static Boolean isAzure() {
         try {
             return ClusterService.getClusters().every {
-                Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
+                ClusterConfig cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
             }
         } catch (Exception e) {
             log.error("Error getting cluster info", e)
@@ -126,7 +126,7 @@ class ClusterService extends BaseService {
     static Boolean isAKS() {
         try {
             return ClusterService.getClusters().every {
-                Cluster cluster -> cluster.getStatus().getProviderMetadata().getCluster().getType() == Type.AKS
+                ClusterConfig cluster -> cluster.getStatus().getProviderMetadata().getCluster().getType() == Type.AKS
             }
         } catch (Exception e) {
             log.error("Error getting cluster info", e)

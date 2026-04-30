@@ -86,10 +86,11 @@
         "parameters": [
           {
             "name": "body",
+            "description": "ClusterConfig is the API-specific representation of a cluster.\nIt is field-number-identical to storage.Cluster to maintain gRPC wire\ncompatibility with older clients that send storage.Cluster directly.\nThis decoupling allows the storage representation to evolve independently\nfrom the API contract in the future.\n\nNote: Server-managed fields (status, health_status, most_recent_sensor_id,\nsensor_capabilities, audit_log_state, helm_config, init_bundle_id) are\naccepted in create/update requests for backward compatibility, but their\nvalues are silently ignored by the server. The server always uses its own\nauthoritative values for these fields.\nNext tag: 33",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageCluster"
+              "$ref": "#/definitions/v1ClusterConfig"
             }
           }
         ],
@@ -278,16 +279,7 @@
         "type": {
           "$ref": "#/definitions/storageClusterType"
         },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
         "mainImage": {
-          "type": "string"
-        },
-        "collectorImage": {
           "type": "string"
         },
         "centralApiEndpoint": {
@@ -296,20 +288,18 @@
         "runtimeSupport": {
           "type": "boolean"
         },
-        "collectionMethod": {
-          "$ref": "#/definitions/storageCollectionMethod"
-        },
         "admissionController": {
           "type": "boolean"
         },
-        "admissionControllerUpdates": {
-          "type": "boolean"
-        },
-        "admissionControllerEvents": {
-          "type": "boolean"
-        },
         "status": {
-          "$ref": "#/definitions/storageClusterStatus"
+          "$ref": "#/definitions/storageClusterStatus",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server. The server populates this from its own state."
+        },
+        "collectorImage": {
+          "type": "string"
+        },
+        "collectionMethod": {
+          "$ref": "#/definitions/storageCollectionMethod"
         },
         "dynamicConfig": {
           "$ref": "#/definitions/storageDynamicClusterConfig"
@@ -321,29 +311,43 @@
           "type": "string",
           "format": "int64"
         },
+        "admissionControllerUpdates": {
+          "type": "boolean"
+        },
         "healthStatus": {
-          "$ref": "#/definitions/storageClusterHealthStatus"
+          "$ref": "#/definitions/storageClusterHealthStatus",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server. The server populates this from its own state."
         },
         "slimCollector": {
           "type": "boolean"
         },
         "helmConfig": {
           "$ref": "#/definitions/storageCompleteClusterConfig",
-          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "admissionControllerEvents": {
+          "type": "boolean"
         },
         "mostRecentSensorId": {
           "$ref": "#/definitions/storageSensorDeploymentIdentification",
-          "description": "most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any)."
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "auditLogState": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/storageAuditLogFileState"
           },
-          "description": "For internal use only."
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
         },
         "initBundleId": {
-          "type": "string"
+          "type": "string",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
@@ -352,13 +356,14 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
         },
         "admissionControllerFailOnError": {
           "type": "boolean"
         }
       },
-      "title": "Next tag: 33"
+      "description": "ClusterConfig is the API-specific representation of a cluster.\nIt is field-number-identical to storage.Cluster to maintain gRPC wire\ncompatibility with older clients that send storage.Cluster directly.\nThis decoupling allows the storage representation to evolve independently\nfrom the API contract in the future.\n\nNote: Server-managed fields (status, health_status, most_recent_sensor_id,\nsensor_capabilities, audit_log_state, helm_config, init_bundle_id) are\naccepted in create/update requests for backward compatibility, but their\nvalues are silently ignored by the server. The server always uses its own\nauthoritative values for these fields.\nNext tag: 33"
     },
     "DynamicClusterConfigProcessIndicatorsConfig": {
       "type": "object",
@@ -517,100 +522,6 @@
           "type": "string"
         }
       }
-    },
-    "storageCluster": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/storageClusterType"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "mainImage": {
-          "type": "string"
-        },
-        "collectorImage": {
-          "type": "string"
-        },
-        "centralApiEndpoint": {
-          "type": "string"
-        },
-        "runtimeSupport": {
-          "type": "boolean"
-        },
-        "collectionMethod": {
-          "$ref": "#/definitions/storageCollectionMethod"
-        },
-        "admissionController": {
-          "type": "boolean"
-        },
-        "admissionControllerUpdates": {
-          "type": "boolean"
-        },
-        "admissionControllerEvents": {
-          "type": "boolean"
-        },
-        "status": {
-          "$ref": "#/definitions/storageClusterStatus"
-        },
-        "dynamicConfig": {
-          "$ref": "#/definitions/storageDynamicClusterConfig"
-        },
-        "tolerationsConfig": {
-          "$ref": "#/definitions/storageTolerationsConfig"
-        },
-        "priority": {
-          "type": "string",
-          "format": "int64"
-        },
-        "healthStatus": {
-          "$ref": "#/definitions/storageClusterHealthStatus"
-        },
-        "slimCollector": {
-          "type": "boolean"
-        },
-        "helmConfig": {
-          "$ref": "#/definitions/storageCompleteClusterConfig",
-          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
-        },
-        "mostRecentSensorId": {
-          "$ref": "#/definitions/storageSensorDeploymentIdentification",
-          "description": "most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any)."
-        },
-        "auditLogState": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/storageAuditLogFileState"
-          },
-          "description": "For internal use only."
-        },
-        "initBundleId": {
-          "type": "string"
-        },
-        "managedBy": {
-          "$ref": "#/definitions/storageManagerType"
-        },
-        "sensorCapabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "admissionControllerFailOnError": {
-          "type": "boolean"
-        }
-      },
-      "title": "Next tag: 33"
     },
     "storageClusterCertExpiryStatus": {
       "type": "object",
@@ -1015,6 +926,104 @@
         }
       }
     },
+    "v1ClusterConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/storageClusterType"
+        },
+        "mainImage": {
+          "type": "string"
+        },
+        "centralApiEndpoint": {
+          "type": "string"
+        },
+        "runtimeSupport": {
+          "type": "boolean"
+        },
+        "admissionController": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/storageClusterStatus",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server. The server populates this from its own state."
+        },
+        "collectorImage": {
+          "type": "string"
+        },
+        "collectionMethod": {
+          "$ref": "#/definitions/storageCollectionMethod"
+        },
+        "dynamicConfig": {
+          "$ref": "#/definitions/storageDynamicClusterConfig"
+        },
+        "tolerationsConfig": {
+          "$ref": "#/definitions/storageTolerationsConfig"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "admissionControllerUpdates": {
+          "type": "boolean"
+        },
+        "healthStatus": {
+          "$ref": "#/definitions/storageClusterHealthStatus",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server. The server populates this from its own state."
+        },
+        "slimCollector": {
+          "type": "boolean"
+        },
+        "helmConfig": {
+          "$ref": "#/definitions/storageCompleteClusterConfig",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "admissionControllerEvents": {
+          "type": "boolean"
+        },
+        "mostRecentSensorId": {
+          "$ref": "#/definitions/storageSensorDeploymentIdentification",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "auditLogState": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/storageAuditLogFileState"
+          },
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "initBundleId": {
+          "type": "string",
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "managedBy": {
+          "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Server-managed: accepted in requests for backward compatibility but\nignored by the server."
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
+        }
+      },
+      "description": "ClusterConfig is the API-specific representation of a cluster.\nIt is field-number-identical to storage.Cluster to maintain gRPC wire\ncompatibility with older clients that send storage.Cluster directly.\nThis decoupling allows the storage representation to evolve independently\nfrom the API contract in the future.\n\nNote: Server-managed fields (status, health_status, most_recent_sensor_id,\nsensor_capabilities, audit_log_state, helm_config, init_bundle_id) are\naccepted in create/update requests for backward compatibility, but their\nvalues are silently ignored by the server. The server always uses its own\nauthoritative values for these fields.\nNext tag: 33"
+    },
     "v1ClusterDefaultsResponse": {
       "type": "object",
       "properties": {
@@ -1033,7 +1042,7 @@
       "type": "object",
       "properties": {
         "cluster": {
-          "$ref": "#/definitions/storageCluster"
+          "$ref": "#/definitions/v1ClusterConfig"
         },
         "clusterRetentionInfo": {
           "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
@@ -1047,7 +1056,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageCluster"
+            "$ref": "#/definitions/v1ClusterConfig"
           }
         },
         "clusterIdToRetentionInfo": {
