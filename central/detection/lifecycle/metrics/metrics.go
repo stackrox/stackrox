@@ -24,7 +24,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_indicators_not_persisted",
-		Help:      "Number of process indicators filtered out by PlatformMatcher and not persisted",
+		Help:      "Number of process indicators filtered out and not persisted",
 	})
 )
 
@@ -33,7 +33,7 @@ func ProcessFilterCounterInc(typ string) {
 	processFilterCounter.With(prometheus.Labels{"Type": typ}).Inc()
 }
 
-// ProcessIndicatorsNotPersistedInc increments the counter for process indicators filtered out by PlatformMatcher.
+// ProcessIndicatorsNotPersistedInc increments the counter for process indicators filtered out and not persisted.
 func ProcessIndicatorsNotPersistedInc() {
 	processIndicatorsNotPersisted.Inc()
 }
