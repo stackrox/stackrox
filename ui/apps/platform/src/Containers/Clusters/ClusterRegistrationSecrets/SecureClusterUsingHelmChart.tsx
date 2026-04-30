@@ -11,7 +11,11 @@ import {
     ListItem,
     Title,
 } from '@patternfly/react-core';
+
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useClipboardCopy from 'hooks/useClipboardCopy';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 
 import InstallMethodDeprecationAlert from '../Components/InstallMethodDeprecationAlert';
 
@@ -32,6 +36,7 @@ export type SecureClusterUsingHelmChartProps = {
 function SecureClusterUsingHelmChart({
     headingLevel,
 }: SecureClusterUsingHelmChartProps): ReactElement {
+    const { version } = useMetadata();
     const subHeadingLevel = headingLevel === 'h2' ? 'h3' : 'h4';
     const { wasCopied, copyToClipboard } = useClipboardCopy();
 
@@ -60,6 +65,38 @@ function SecureClusterUsingHelmChart({
                     }
                 />
             </FlexItem>
+            <Title headingLevel={headingLevel}>
+                Secure a cluster using Helm chart installation method
+            </Title>
+            {version && (
+                <>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-other-platforms#portal-generate-crs_init-bundle-other'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Generating and applying a cluster registration secret for RHACS on other
+                            platforms
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-other-platforms#install-secured-cluster-other'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Installing secured cluster services for RHACS on other platforms
+                        </a>
+                    </ExternalLink>
+                </>
+            )}
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
             <List component="ul">
                 <ListItem>
@@ -86,6 +123,9 @@ function SecureClusterUsingHelmChart({
                         Central service on.
                     </p>
                 </ListItem>
+            </List>
+            <Title headingLevel={subHeadingLevel}>Repeat for each secured cluster</Title>
+            <List component="ol">
                 <ListItem>
                     <Flex
                         direction={{ default: 'column' }}

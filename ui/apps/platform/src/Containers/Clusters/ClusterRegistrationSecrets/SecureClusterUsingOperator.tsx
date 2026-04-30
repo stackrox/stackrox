@@ -1,6 +1,10 @@
 import type { ReactElement } from 'react';
 import { ClipboardCopy, Flex, List, ListItem, Title } from '@patternfly/react-core';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
+
 export type SecureClusterUsingOperatorProps = {
     headingLevel: 'h2' | 'h3';
 };
@@ -11,10 +15,68 @@ const kubectlApplyCommand = 'kubectl create -f <cluster-registration-secret-file
 function SecureClusterUsingOperator({
     headingLevel,
 }: SecureClusterUsingOperatorProps): ReactElement {
+    const { version } = useMetadata();
     const subHeadingLevel = headingLevel === 'h2' ? 'h3' : 'h4';
 
     return (
         <Flex direction={{ default: 'column' }}>
+            <Title headingLevel={headingLevel}>
+                Secure a cluster using the Operator installation method
+            </Title>
+            {version && (
+                <>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-red-hat-openshift#generate-crs_init-bundle-ocp'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Generating and applying a cluster registration secret for RHACS on Red
+                            Hat OpenShift (OpenShift)
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-red-hat-openshift#install-secured-cluster-ocp'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Installing RHACS on secured clusters by using the Operator (OpenShift)
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-other-platforms#portal-generate-crs_init-bundle-other'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Generating and applying a cluster registration secret for RHACS on other
+                            platforms
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing-rhacs-on-other-platforms#install-secured-cluster-other'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Installing secured cluster services for RHACS on other platforms
+                        </a>
+                    </ExternalLink>
+                </>
+            )}
             <p>
                 You can install secured cluster services on your clusters using the{' '}
                 <strong>SecuredCluster</strong> custom resource.
@@ -45,9 +107,31 @@ function SecureClusterUsingOperator({
                         </ListItem>
                     </List>
                 </ListItem>
+            </List>
+            <Title headingLevel={subHeadingLevel}>Repeat for each secured cluster</Title>
+            <List component="ol">
                 <ListItem>
                     <p>Apply the cluster registration secret on the secured cluster.</p>
-                    <p>Apply it using one of the following methods:</p>
+                    <p>
+                        Applying the cluster registration secret provides the credentials that the
+                        secured cluster uses to register with RHACS. During registration, RHACS
+                        provisions the certificates that secured cluster services need to
+                        communicate. Apply it using one of the following methods:
+                    </p>
+                    {version && (
+                        <ExternalLink>
+                            <a
+                                href={getVersionedDocs(
+                                    version,
+                                    'rhacs_cloud_service/setting-up-rhacs-cloud-service-with-red-hat-openshift-secured-clusters#crs-apply-secured-cluster_init-bundle-cloud-ocp-apply'
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Applying the cluster registration secret on the secured cluster
+                            </a>
+                        </ExternalLink>
+                    )}
                     <List component="ul">
                         <ListItem>
                             <p>
