@@ -675,6 +675,10 @@
       "properties": {
         "disabled": {
           "type": "boolean"
+        },
+        "evaluationFilter": {
+          "$ref": "#/definitions/storageEvaluationFilter",
+          "description": "When set, replaces the policy's evaluation filter.\nAn empty EvaluationFilter clears all filters."
         }
       }
     },

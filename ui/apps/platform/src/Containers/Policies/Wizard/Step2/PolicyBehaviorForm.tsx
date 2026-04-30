@@ -20,7 +20,7 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMetadata from 'hooks/useMetadata';
-import type { ClientPolicy, PolicyEventSource } from 'types/policy.proto';
+import type { ClientPolicy, PolicyEventSource, SkipImageLayers } from 'types/policy.proto';
 import { getVersionedDocs } from 'utils/versioning';
 
 import {
@@ -338,6 +338,69 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         <FormHelperText>
                             <HelperText>
                                 <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    </FormGroup>
+                </div>
+                <Divider component="div" />
+                <div>
+                    <Title headingLevel="h2">Image layer filter</Title>
+                    <FormGroup
+                        fieldId="policy-evaluation-filter"
+                        label="Evaluate image layers"
+                    >
+                        <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                            <Radio
+                                label="All layers"
+                                isChecked={
+                                    !values.evaluationFilter?.skipImageLayers ||
+                                    values.evaluationFilter?.skipImageLayers === 'SKIP_NONE'
+                                }
+                                id="policy-layer-filter-all"
+                                name="skipImageLayers"
+                                onChange={() => {
+                                    setFieldValue('evaluationFilter', {
+                                        ...values.evaluationFilter,
+                                        skipImageLayers: 'SKIP_NONE' as SkipImageLayers,
+                                    });
+                                }}
+                            />
+                            <Radio
+                                label="Base image layers only"
+                                isChecked={
+                                    values.evaluationFilter?.skipImageLayers === 'SKIP_APP'
+                                }
+                                id="policy-layer-filter-base"
+                                name="skipImageLayers"
+                                onChange={() => {
+                                    setFieldValue('evaluationFilter', {
+                                        ...values.evaluationFilter,
+                                        skipImageLayers: 'SKIP_APP' as SkipImageLayers,
+                                    });
+                                }}
+                            />
+                            <Radio
+                                label="Application layers only"
+                                isChecked={
+                                    values.evaluationFilter?.skipImageLayers === 'SKIP_BASE'
+                                }
+                                id="policy-layer-filter-app"
+                                name="skipImageLayers"
+                                onChange={() => {
+                                    setFieldValue('evaluationFilter', {
+                                        ...values.evaluationFilter,
+                                        skipImageLayers: 'SKIP_BASE' as SkipImageLayers,
+                                    });
+                                }}
+                            />
+                        </Flex>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Restrict this policy to evaluate only base image layers or
+                                    application layers. Requires base image identification to be
+                                    enabled.
+                                </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
                     </FormGroup>

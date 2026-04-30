@@ -207,6 +207,15 @@ func (m *PatchPolicyRequest) CloneVT() *PatchPolicyRequest {
 			CloneVT() isPatchPolicyRequest_SetDisabled
 		}).CloneVT()
 	}
+	if rhs := m.EvaluationFilter; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.EvaluationFilter
+		}); ok {
+			r.EvaluationFilter = vtpb.CloneVT()
+		} else {
+			r.EvaluationFilter = proto.Clone(rhs).(*storage.EvaluationFilter)
+		}
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -806,6 +815,15 @@ func (this *PatchPolicyRequest) EqualVT(that *PatchPolicyRequest) bool {
 		}
 	}
 	if this.Id != that.Id {
+		return false
+	}
+	if equal, ok := interface{}(this.EvaluationFilter).(interface {
+		EqualVT(*storage.EvaluationFilter) bool
+	}); ok {
+		if !equal.EqualVT(that.EvaluationFilter) {
+			return false
+		}
+	} else if !proto.Equal(this.EvaluationFilter, that.EvaluationFilter) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1729,6 +1747,28 @@ func (m *PatchPolicyRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+	}
+	if m.EvaluationFilter != nil {
+		if vtmsg, ok := interface{}(m.EvaluationFilter).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.EvaluationFilter)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1a
 	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
@@ -2709,6 +2749,16 @@ func (m *PatchPolicyRequest) SizeVT() (n int) {
 	}
 	if vtmsg, ok := m.SetDisabled.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if m.EvaluationFilter != nil {
+		if size, ok := interface{}(m.EvaluationFilter).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.EvaluationFilter)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3919,6 +3969,50 @@ func (m *PatchPolicyRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.SetDisabled = &PatchPolicyRequest_Disabled{Disabled: b}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EvaluationFilter", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.EvaluationFilter == nil {
+				m.EvaluationFilter = &storage.EvaluationFilter{}
+			}
+			if unmarshal, ok := interface{}(m.EvaluationFilter).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.EvaluationFilter); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6427,6 +6521,50 @@ func (m *PatchPolicyRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.SetDisabled = &PatchPolicyRequest_Disabled{Disabled: b}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EvaluationFilter", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.EvaluationFilter == nil {
+				m.EvaluationFilter = &storage.EvaluationFilter{}
+			}
+			if unmarshal, ok := interface{}(m.EvaluationFilter).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.EvaluationFilter); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

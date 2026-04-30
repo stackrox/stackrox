@@ -31,6 +31,16 @@ export const policyEventSources = [
 
 export type PolicyEventSource = (typeof policyEventSources)[number];
 
+export const skipImageLayersValues = ['SKIP_NONE', 'SKIP_BASE', 'SKIP_APP'] as const;
+export type SkipImageLayers = (typeof skipImageLayersValues)[number];
+
+export type SkipContainerType = 'SKIP_INIT';
+
+export type EvaluationFilter = {
+    skipContainerTypes: SkipContainerType[];
+    skipImageLayers: SkipImageLayers;
+};
+
 export type BasePolicy = {
     rationale: string;
     remediation: string;
@@ -38,6 +48,7 @@ export type BasePolicy = {
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
+    evaluationFilter?: EvaluationFilter;
     SORTName: string; // For internal use only.
     SORTLifecycleStage: string; // For internal use only.
     SORTEnforcement: boolean; // For internal use only.

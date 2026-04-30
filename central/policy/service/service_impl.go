@@ -314,6 +314,9 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 	if request.SetDisabled != nil {
 		policy.Disabled = request.GetDisabled()
 	}
+	if request.EvaluationFilter != nil {
+		policy.EvaluationFilter = request.EvaluationFilter
+	}
 
 	return s.PutPolicy(ctx, policy)
 }

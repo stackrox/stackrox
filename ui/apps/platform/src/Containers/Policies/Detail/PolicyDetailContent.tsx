@@ -43,6 +43,7 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                         lifecycleStages={lifecycleStages}
                         eventSource={eventSource}
                         enforcementActions={enforcementActions}
+                        evaluationFilter={policy.evaluationFilter}
                     />
                 </Stack>
                 <Stack hasGutter>
