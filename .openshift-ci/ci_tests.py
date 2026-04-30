@@ -242,7 +242,7 @@ class VMScanningE2e(BaseTest):
 
     def run(self):
         print("Executing VM scanning e2e tests")
-        output_dir = tempfile.mkdtemp(prefix=self.TEST_OUTPUT_DIR_PREFIX, dir="/tmp")
+        output_dir = tempfile.mkdtemp(prefix=self.TEST_OUTPUT_DIR_PREFIX, dir=os.getenv("TMPDIR", "/tmp"))
 
         self.run_with_graceful_kill(
             ["tests/e2e/run-vm-scanning.sh", output_dir],
