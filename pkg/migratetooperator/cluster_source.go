@@ -20,6 +20,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
+const k8sRequestTimeout = 30 * time.Second
+
 type clusterSource struct {
 	typed     kubernetes.Interface
 	dynamic   dynamic.Interface
@@ -52,7 +54,7 @@ func NewClusterSource(namespace string) (*clusterSource, error) {
 }
 
 func (s *clusterSource) Deployment(name string) (*appsv1.Deployment, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), k8sRequestTimeout)
 	defer cancel()
 
 	dep, err := s.typed.AppsV1().Deployments(s.namespace).Get(ctx, name, metav1.GetOptions{})
@@ -66,7 +68,7 @@ func (s *clusterSource) Deployment(name string) (*appsv1.Deployment, error) {
 }
 
 func (s *clusterSource) Service(name string) (*corev1.Service, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), k8sRequestTimeout)
 	defer cancel()
 
 	svc, err := s.typed.CoreV1().Services(s.namespace).Get(ctx, name, metav1.GetOptions{})
@@ -80,7 +82,7 @@ func (s *clusterSource) Service(name string) (*corev1.Service, error) {
 }
 
 func (s *clusterSource) Secret(name string) (*corev1.Secret, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), k8sRequestTimeout)
 	defer cancel()
 
 	secret, err := s.typed.CoreV1().Secrets(s.namespace).Get(ctx, name, metav1.GetOptions{})
@@ -96,7 +98,7 @@ func (s *clusterSource) Secret(name string) (*corev1.Secret, error) {
 var routeGVR = schema.GroupVersionResource{Group: "route.openshift.io", Version: "v1", Resource: "routes"}
 
 func (s *clusterSource) Route(name string) (*unstructured.Unstructured, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), k8sRequestTimeout)
 	defer cancel()
 
 	obj, err := s.dynamic.Resource(routeGVR).Namespace(s.namespace).Get(ctx, name, metav1.GetOptions{})
@@ -110,7 +112,7 @@ func (s *clusterSource) Route(name string) (*unstructured.Unstructured, error) {
 }
 
 func (s *clusterSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), k8sRequestTimeout)
 	defer cancel()
 
 	ds, err := s.typed.AppsV1().DaemonSets(s.namespace).Get(ctx, name, metav1.GetOptions{})
@@ -124,7 +126,7 @@ func (s *clusterSource) DaemonSet(name string) (*appsv1.DaemonSet, error) {
 }
 
 func (s *clusterSource) ValidatingWebhookConfiguration(name string) (*admissionv1.ValidatingWebhookConfiguration, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), k8sRequestTimeout)
 	defer cancel()
 
 	vwc, err := s.typed.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
