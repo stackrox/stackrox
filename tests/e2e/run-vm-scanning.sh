@@ -21,7 +21,7 @@ test_vm_scanning_e2e() {
     info "Starting VM scanning e2e tests"
 
     export_test_environment
-    setup_deployment_env true false
+    setup_deployment_env true false # with docker login, no websockets
     ensure_vm_scanning_cluster_prereqs
     remove_existing_stackrox_resources
     setup_default_TLS_certs
