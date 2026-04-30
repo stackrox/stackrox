@@ -511,9 +511,12 @@
         "metrics": {
           "$ref": "#/definitions/storagePrometheusMetrics",
           "description": "This field defines groups of custom Prometheus metrics to be exposed by the\nbackend on the API endpoint."
+        },
+        "resourceRetentionConfig": {
+          "$ref": "#/definitions/storageResourceRetentionConfig"
         }
       },
-      "title": "next available tag: 10"
+      "title": "next available tag: 11"
     },
     "storagePrometheusMetrics": {
       "type": "object",
@@ -564,6 +567,16 @@
         }
       },
       "title": "next available tag: 4"
+    },
+    "storageResourceRetentionConfig": {
+      "type": "object",
+      "properties": {
+        "deploymentDurationDays": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ResourceRetentionConfig configures how long soft-deleted\nresources are retained before being permanently removed."
     },
     "storageTelemetryConfiguration": {
       "type": "object",

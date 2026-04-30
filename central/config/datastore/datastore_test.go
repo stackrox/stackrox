@@ -382,6 +382,7 @@ var (
 		ReportRetentionConfig:               customReportRetentionConfig,
 		VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 		AdministrationEventsConfig:          customAdministrationEventsConfig,
+		ResourceRetentionConfig:             customResourceRetentionConfig,
 	}
 
 	customVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
@@ -426,6 +427,10 @@ var (
 	customAdministrationEventsConfig = &storage.AdministrationEventsConfig{
 		RetentionDurationDays: DefaultAdministrationEventsRetention + 1,
 	}
+
+	customResourceRetentionConfig = &storage.ResourceRetentionConfig{
+		DeploymentDurationDays: DefaultResourceRetention + 1,
+	}
 )
 
 func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
@@ -459,6 +464,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               defaultReportRetentionConfig,
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
+					ResourceRetentionConfig:             defaultResourceRetentionConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
 			},
@@ -474,6 +480,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 			},
 			upsertedConfig: &storage.Config{
@@ -486,6 +493,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
 			},
@@ -501,6 +509,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               nil,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 			},
 			upsertedConfig: &storage.Config{
@@ -513,6 +522,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               defaultReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
 			},
@@ -528,6 +538,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
 			},
@@ -541,6 +552,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
 			},
@@ -557,6 +569,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          nil,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 			},
 			upsertedConfig: &storage.Config{
@@ -569,6 +582,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
+					ResourceRetentionConfig:             customResourceRetentionConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
 			},
