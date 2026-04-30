@@ -141,6 +141,7 @@ deploy_stackrox_with_roxie() {
         --resources=ci \
         --envrc "$roxie_envrc" \
         --single-namespace \
+        --central-wait=20m \
         --pause-reconciliation \
         --override <(yq eval '.central // {}' "$override_file")
 
@@ -163,6 +164,7 @@ deploy_stackrox_with_roxie() {
         --resources=ci \
         --envrc "$roxie_envrc" \
         --single-namespace \
+        --secured-cluster-wait=20m \
         --pause-reconciliation \
         --override <(yq eval '.securedCluster // {}' "$override_file")
 
