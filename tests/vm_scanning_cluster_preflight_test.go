@@ -199,7 +199,7 @@ func virtHandlerHostVsockVolumesLookUsable(ctx context.Context, t testing.TB, k8
 					continue
 				}
 				p := strings.ToLower(vol.HostPath.Path)
-				if strings.Contains(p, "vhost_vsock") || strings.Contains(p, "vsock") {
+				if strings.Contains(p, "vsock") {
 					hasExplicitVsockPath = true
 					break
 				}
