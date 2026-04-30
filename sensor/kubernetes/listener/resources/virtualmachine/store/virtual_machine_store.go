@@ -51,12 +51,12 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
 		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
 		vm.NodeName = oldVM.NodeName
-		if vm.AgentFacts == nil {
-			vm.AgentFacts = copyStringMap(oldVM.AgentFacts)
+		if vm.AgentFacts == nil && len(oldVM.AgentFacts) > 0 {
+			vm.AgentFacts = maps.Clone(oldVM.AgentFacts)
 		}
 	}
 	if vm.AgentFacts != nil {
-		vm.AgentFacts = copyStringMap(vm.AgentFacts)
+		vm.AgentFacts = maps.Clone(vm.AgentFacts)
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
@@ -179,7 +179,7 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
 	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
 	if updateInfo.AgentFacts != nil {
-		prev.AgentFacts = copyStringMap(updateInfo.AgentFacts)
+		prev.AgentFacts = maps.Clone(updateInfo.AgentFacts)
 	}
 }
 
@@ -261,11 +261,4 @@ func copyStringSlice(values []string) []string {
 		return nil
 	}
 	return append([]string(nil), values...)
-}
-
-func copyStringMap(values map[string]string) map[string]string {
-	if len(values) == 0 {
-		return nil
-	}
-	return maps.Clone(values)
 }

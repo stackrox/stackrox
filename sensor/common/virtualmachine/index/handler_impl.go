@@ -448,6 +448,9 @@ func agentFactsFromDiscoveredData(discoveredData *v1.DiscoveredData) map[string]
 	case v1.DnfMetadataStatus_UNAVAILABLE:
 		facts[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusUnavailable
 	}
+	if len(facts) == 0 {
+		return nil
+	}
 	return facts
 }
 
