@@ -51,7 +51,7 @@ func ListDeploymentViewSelects() []*v1.QuerySelect {
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.Created).Proto(),
-		search.NewQuerySelect(search.Deleted).Proto(),
+		search.NewQuerySelect(search.DeploymentDeleted).Proto(),
 		search.NewQuerySelect(search.DeploymentState).Proto(),
 	}
 }
