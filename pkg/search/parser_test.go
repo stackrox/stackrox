@@ -243,3 +243,70 @@ func TestQueryFromFieldValuesMaxParametersExceeded(t *testing.T) {
 		}, "Expected queryFromFieldValues to not panic on release builds")
 	}
 }
+
+func FuzzParseQuery(f *testing.F) {
+	// Seed corpus from existing tests
+	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
+	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod,hello+hi+New Deployment Label:value")
+	f.Add("Deployment:field1,\"field12+some:thing\",field13+Category:\"field2+something\"")
+	f.Add("Deployment:field1,\"field12+some,thi:ng\",field13+Category:\"field2+some,thing\"")
+	f.Add("Deployment Label:label")
+	f.Add("Deployment Label:label,label")
+	f.Add("Deployment Label:label+label")
+	f.Add("Deployment Label:")
+	f.Add("")
+	f.Add("INVALIDQUERY")
+	f.Add("Deployment Name:field1,field12+Category:field2")
+	f.Add("  Deployment Label :  label+label  ")
+	f.Add("Deployment Label:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
+	f.Add("Deployment Label:label1,label2,")
+
+	f.Fuzz(func(_ *testing.T, query string) {
+		_, _ = ParseQuery(query)
+		_, _ = ParseQuery(query, MatchAllIfEmpty())
+		_, _ = ParseQuery(query, ExcludeFieldLabel(DeploymentName))
+	})
+}
+
+func FuzzParseQueryForAutocomplete(f *testing.F) {
+	// Seed corpus from existing tests
+	f.Add("Deployment Name:field1,field12+Category:field2")
+	f.Add("")
+	f.Add("INVALIDQUERY")
+	f.Add("Deployment:field1,\"field12+some:thing\",field13 + Category:\"field2+something\"")
+	f.Add("Deployment:field1,\"field12+some,thi:ng\",field13 + Category:\"field2+some,thing\"")
+	f.Add("Deployment Label:label")
+	f.Add("Deployment Label:label,label")
+	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
+	f.Add("Category:test+Deployment:value")
+
+	f.Fuzz(func(_ *testing.T, query string) {
+		_, _, _ = ParseQueryForAutocomplete(query)
+	})
+}
+
+func FuzzGetValueAndModifiersFromString(f *testing.F) {
+	// Seed corpus from existing tests and known patterns
+	f.Add("test")
+	f.Add("\"test\"")
+	f.Add("\"\"")
+	f.Add("\"")
+	f.Add("\"test")
+	f.Add("!negated")
+	f.Add("!!atleastone")
+	f.Add("r/regex")
+	f.Add("!r/negated-regex")
+	f.Add("!!r/atleastone-regex")
+	f.Add("\"exact\"")
+	f.Add("!\"negated-exact\"")
+	f.Add("!!\"atleastone-exact\"")
+	f.Add("r/test.*pattern")
+	f.Add("!!!")
+	f.Add("r/")
+	f.Add("!")
+	f.Add("!!")
+
+	f.Fuzz(func(_ *testing.T, value string) {
+		_, _ = GetValueAndModifiersFromString(value)
+	})
+}
