@@ -28,6 +28,7 @@ EOF
     fi
 }
 
+# Priority: explicit VIRTCTL_PATH override > implicit PATH discovery.
 _use_existing_virtctl_binary_if_available() {
     if [[ -n "${VIRTCTL_PATH:-}" ]]; then
         [[ -x "$VIRTCTL_PATH" ]] || die "VIRTCTL_PATH is not executable: ${VIRTCTL_PATH}"
