@@ -208,8 +208,9 @@ func parseEnvDurationOrDefault(key string, defaultVal time.Duration) (time.Durat
 
 func TestLoadVMScanConfig_MissingImages(t *testing.T) {
 	t.Setenv("VM_IMAGES", "")
-	_, err := loadVMScanConfig()
+	cfg, err := loadVMScanConfig()
 	require.ErrorContains(t, err, "VM_IMAGES")
+	require.Nil(t, cfg)
 }
 
 func TestLoadVMScanConfig_Defaults(t *testing.T) {
@@ -273,8 +274,9 @@ func TestLoadVMScanConfig_InvalidOptionalOverrides(t *testing.T) {
 			t.Setenv("VM_SCAN_TIMEOUT", "")
 			t.Setenv("VM_DELETE_TIMEOUT", "")
 			t.Setenv(tc.envKey, tc.envValue)
-			_, err := loadVMScanConfig()
+			cfg, err := loadVMScanConfig()
 			require.Error(t, err)
+			require.Nil(t, cfg)
 			require.ErrorContains(t, err, tc.expectErr)
 		})
 	}
@@ -294,8 +296,9 @@ func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("VM_SSH_PRIVATE_KEY", badKey)
 			t.Setenv("VM_SSH_PUBLIC_KEY", "ssh-ed25519 AAAA test@host")
-			_, err := loadVMScanConfig()
+			cfg, err := loadVMScanConfig()
 			require.Error(t, err)
+			require.Nil(t, cfg)
 			require.ErrorContains(t, err, "VM_SSH_PRIVATE_KEY must contain complete PEM-encoded key content")
 		})
 	}
