@@ -418,7 +418,9 @@ func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceA
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
 		dispatchACK(c.umhNodeIndex, "node index", ack.GetAction(), ack.GetReason())
 	case sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT:
-		// TODO: Implement basic handling of VM_INDEX_REPORT ACK/NACK messages in ROX-33555.
+		// TODO: Implement VM_INDEX_REPORT ACK/NACK handling.
+		// ResourceId uses "vmID:vsockCID" format — extract the CID part after ":"
+		// to correlate with the relay's vsock-keyed state.
 	default:
 		log.Errorf("Unknown ComplianceACK message type: %s", ack.GetMessageType())
 	}
