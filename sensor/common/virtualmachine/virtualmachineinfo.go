@@ -1,5 +1,7 @@
 package virtualmachine
 
+import "maps"
+
 type VMID string
 
 // Info information about a VirtualMachine
@@ -22,6 +24,8 @@ type Info struct {
 	BootOrder []string
 	// CDRomDisks lists disk names with CD-ROM devices.
 	CDRomDisks []string
+	// AgentFacts are roxagent-derived facts that should be merged into the VM facts map.
+	AgentFacts map[string]string
 }
 
 // Copy returns a copy of the VirtualMachineInfo
@@ -54,6 +58,9 @@ func (v *Info) Copy() *Info {
 	}
 	if len(v.CDRomDisks) > 0 {
 		ret.CDRomDisks = append([]string(nil), v.CDRomDisks...)
+	}
+	if v.AgentFacts != nil {
+		ret.AgentFacts = maps.Clone(v.AgentFacts)
 	}
 	return ret
 }

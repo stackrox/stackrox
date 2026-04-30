@@ -1,8 +1,6 @@
 package dispatcher
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
@@ -42,31 +40,7 @@ func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 }
 
 func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
-	facts := map[string]string{
-		pkgVM.GuestOSKey: pkgVM.UnknownGuestOS,
-	}
-	if vm.GuestOS != "" {
-		facts[pkgVM.GuestOSKey] = vm.GuestOS
-	}
-	if vm.Description != "" {
-		facts[pkgVM.DescriptionKey] = vm.Description
-	}
-	if vm.NodeName != "" {
-		facts[pkgVM.NodeNameKey] = vm.NodeName
-	}
-	if len(vm.IPAddresses) > 0 {
-		facts[pkgVM.IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
-	}
-	if len(vm.ActivePods) > 0 {
-		facts[pkgVM.ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
-	}
-	if len(vm.BootOrder) > 0 {
-		facts[pkgVM.BootOrderKey] = strings.Join(vm.BootOrder, ", ")
-	}
-	if len(vm.CDRomDisks) > 0 {
-		facts[pkgVM.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
-	}
-	return facts
+	return sensorVirtualMachine.Facts(vm)
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
