@@ -10,4 +10,6 @@ import (
 //go:generate mockgen-wrapper
 type VirtualMachineEnricher interface {
 	EnrichVirtualMachineWithVulnerabilities(vm *storage.VirtualMachine, indexReport *v4.IndexReport) error
+	UpsertVirtualMachineIntegration(integration *storage.ImageIntegration) error
+	RemoveVirtualMachineIntegration(id string)
 }
