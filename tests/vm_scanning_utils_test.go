@@ -10,25 +10,26 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
 
-// Defaults for environment variables that can be self-discovered or have sensible values.
 const (
-	// defaultNamespacePrefix is the prefix for the namespace to provision the VMs in.
-	defaultNamespacePrefix = "vm-scan-e2e"
-	// defaultScanTimeout is the timeout for the scan to complete.
-	defaultScanTimeout = 20 * time.Minute
-	// defaultDeleteTimeout is the timeout for the delete to complete.
+	// Hardcoded because registerDurationSetting in pkg/env is unexported.
+	// This is acceptable since adjusting these values requires a code change anyway.
+	defaultScanTimeout   = 20 * time.Minute
 	defaultDeleteTimeout = 5 * time.Minute
-	// defaultGuestUser is the user to use for the guest.
-	defaultGuestUser = "cloud-user"
+	defaultGuestUser     = "cloud-user"
+)
+
+var (
+	vmScanNamespacePrefix = env.RegisterSetting("VM_SCAN_NAMESPACE_PREFIX", env.WithDefault("vm-scan-e2e"))
+	vmScanSkipCleanup     = env.RegisterBooleanSetting("VM_SCAN_SKIP_CLEANUP", false)
 )
 
 // vmSpec describes a VM to provision: container-disk image and guest SSH user.
@@ -99,15 +100,10 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 		return nil, errors.New("VM_SSH_PRIVATE_KEY must contain complete PEM-encoded key content, not a file path")
 	}
 
-	cfg.NamespacePrefix = envOrDefault("VM_SCAN_NAMESPACE_PREFIX", defaultNamespacePrefix)
-	if cfg.ScanTimeout, err = parseEnvDurationOrDefault("VM_SCAN_TIMEOUT", defaultScanTimeout); err != nil {
-		return nil, err
-	}
-	if cfg.DeleteTimeout, err = parseEnvDurationOrDefault("VM_DELETE_TIMEOUT", defaultDeleteTimeout); err != nil {
-		return nil, err
-	}
-
-	cfg.SkipCleanup = envTruthy("VM_SCAN_SKIP_CLEANUP")
+	cfg.NamespacePrefix = vmScanNamespacePrefix.Setting()
+	cfg.ScanTimeout = defaultScanTimeout
+	cfg.DeleteTimeout = defaultDeleteTimeout
+	cfg.SkipCleanup = vmScanSkipCleanup.BooleanSetting()
 	cfg.ImagePullSecretPath = strings.TrimSpace(os.Getenv("VM_IMAGE_PULL_SECRET_PATH"))
 
 	return cfg, nil
@@ -170,36 +166,6 @@ func generateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized st
 	authorizedKey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPub)))
 
 	return string(pemData), authorizedKey, nil
-}
-
-func envTruthy(key string) bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
-	if b, err := strconv.ParseBool(v); err == nil {
-		return b
-	}
-	return v == "yes" || v == "on"
-}
-
-func envOrDefault(key, defaultVal string) string {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-		return v
-	}
-	return defaultVal
-}
-
-func parseEnvDurationOrDefault(key string, defaultVal time.Duration) (time.Duration, error) {
-	v := strings.TrimSpace(os.Getenv(key))
-	if v == "" {
-		return defaultVal, nil
-	}
-	d, err := time.ParseDuration(v)
-	if err != nil {
-		return 0, fmt.Errorf("environment variable %s: invalid duration %q: %w", key, v, err)
-	}
-	if d <= 0 {
-		return 0, fmt.Errorf("environment variable %s: duration must be > 0, got %q", key, v)
-	}
-	return d, nil
 }
 
 func mustFindExecutable(t *testing.T, name string) string {

@@ -5,6 +5,7 @@ package tests
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -20,18 +21,14 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest,registry.example.com/rhel10:latest")
 	t.Setenv("VM_USERS", "")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
-	for _, key := range []string{
-		"VM_SCAN_NAMESPACE_PREFIX", "VM_SCAN_TIMEOUT", "VM_DELETE_TIMEOUT",
-	} {
-		t.Setenv(key, "")
-	}
+	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"registry.example.com/rhel9:latest", "registry.example.com/rhel10:latest"}, cfg.Images)
 	require.Empty(t, cfg.GuestUsers, "no padding; vmSpecs() defaults per-image")
-	require.Equal(t, defaultNamespacePrefix, cfg.NamespacePrefix)
-	require.Equal(t, defaultScanTimeout, cfg.ScanTimeout)
-	require.Equal(t, defaultDeleteTimeout, cfg.DeleteTimeout)
+	require.Equal(t, "vm-scan-e2e", cfg.NamespacePrefix)
+	require.Equal(t, 20*time.Minute, cfg.ScanTimeout)
+	require.Equal(t, 5*time.Minute, cfg.DeleteTimeout)
 
 	specs := cfg.vmSpecs()
 	require.Len(t, specs, 2)
@@ -46,43 +43,6 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"alice"}, cfg.GuestUsers, "only explicit users; vmSpecs() pads with default")
-}
-
-func TestLoadVMScanConfig_InvalidOptionalOverrides(t *testing.T) {
-	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
-	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
-
-	testCases := []struct {
-		name      string
-		envKey    string
-		envValue  string
-		expectErr string
-	}{
-		{
-			name:      "negative duration",
-			envKey:    "VM_SCAN_TIMEOUT",
-			envValue:  "-1s",
-			expectErr: "VM_SCAN_TIMEOUT",
-		},
-		{
-			name:      "zero duration",
-			envKey:    "VM_DELETE_TIMEOUT",
-			envValue:  "0s",
-			expectErr: "VM_DELETE_TIMEOUT",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("VM_SCAN_TIMEOUT", "")
-			t.Setenv("VM_DELETE_TIMEOUT", "")
-			t.Setenv(tc.envKey, tc.envValue)
-			cfg, err := loadVMScanConfig()
-			require.Error(t, err)
-			require.Nil(t, cfg)
-			require.ErrorContains(t, err, tc.expectErr)
-		})
-	}
 }
 
 func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
