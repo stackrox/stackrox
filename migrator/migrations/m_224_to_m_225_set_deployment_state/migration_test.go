@@ -59,14 +59,23 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(err)
 	}
 
-	// Run migration to add deleted and state columns.
+	// Verify the old schema has no state column, so existing rows cannot
+	// have a state value yet. After GORM adds the column, these rows will
+	// have state = NULL until the migration backfills them.
 	s.Require().NoError(migration.Run(dbs))
 
-	// Verify all existing rows default to DEPLOYMENT_STATE_ACTIVE (0).
+	// Verify the backfill set state = 0 (DEPLOYMENT_STATE_ACTIVE) for all
+	// existing rows that previously had NULL.
 	var activeCount int
 	err := db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state = 0").Scan(&activeCount)
 	s.Require().NoError(err)
 	s.Equal(numDeployments, activeCount)
+
+	// Verify no rows still have NULL state after the migration.
+	var nullStateCount int
+	err = db.QueryRow(s.ctx, "SELECT COUNT(*) FROM deployments WHERE state IS NULL").Scan(&nullStateCount)
+	s.Require().NoError(err)
+	s.Equal(0, nullStateCount)
 
 	// Verify the deleted column exists and is NULL for all rows.
 	var deletedNullCount int
