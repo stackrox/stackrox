@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -550,10 +551,24 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
-		// Setup the image watch.
-		resp, err := service.WatchImage(ctx, &v1.WatchImageRequest{Name: ts.ubi9Image.TagRef()})
-		require.NoError(t, err)
-		require.Zero(t, resp.GetErrorType(), "expected no error")
+		// Setup the image watch, retrying on SCAN_FAILED which can occur when the
+		// Scanner V4 matcher is still loading its vulnerability database.
+		var resp *v1.WatchImageResponse
+		retryFunc := func() error {
+			var watchErr error
+			resp, watchErr = service.WatchImage(ctx, &v1.WatchImageRequest{Name: ts.ubi9Image.TagRef()})
+			if watchErr != nil {
+				return watchErr
+			}
+			if resp.GetErrorType() == v1.WatchImageResponse_SCAN_FAILED {
+				return retry.MakeRetryable(errors.New("WatchImage returned SCAN_FAILED"))
+			}
+			if resp.GetErrorType() != v1.WatchImageResponse_NO_ERROR {
+				return fmt.Errorf("WatchImage returned error type %v", resp.GetErrorType())
+			}
+			return nil
+		}
+		require.NoError(t, ts.withRetries(retryFunc, "WatchImage failed"))
 		require.Equal(t, ts.ubi9Image.TagRef(), resp.GetNormalizedName())
 		t.Cleanup(func() { _, _ = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: ts.ubi9Image.TagRef()}) })
 
@@ -901,9 +916,16 @@ func (ts *DelegatedScanningSuite) getImageWithRetries(ctx context.Context, servi
 			if ok && s.Code() == codes.NotFound {
 				return retry.MakeRetryable(err)
 			}
+			return err
 		}
 
-		return err
+		// Retry when image exists but scan data is missing, which can occur when
+		// Scanner V4 matcher is still loading its vulnerability database.
+		if img.GetScan() == nil {
+			return retry.MakeRetryable(fmt.Errorf("image %q has no scan data yet", req.GetId()))
+		}
+
+		return nil
 	}
 
 	err = ts.withRetries(retryFunc, "Image not found")
@@ -957,6 +979,14 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		// ex:
 		// - http: non-successful response (status=502 body="<!doctype html>...<HTML HERE>...")
 		"non-successful response (status=502",
+
+		// Scanner V4 matcher may still be loading its vulnerability database when scans are
+		// attempted shortly after deployment. This is a transient condition that resolves once
+		// the initial load completes.
+		//
+		// ex:
+		// - the matcher is not initialized: initial load for the vulnerability store is in progress
+		"matcher is not initialized",
 	}
 
 	retryFunc := func() error {
