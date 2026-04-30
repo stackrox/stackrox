@@ -30,7 +30,6 @@ set_custom_env() {
 
     local path=".${component}.spec.customize.envVars"
 
-    info "  ${name}=${value}"
     # Needs to be initialized to list first, if doesn't exist.
     init_yaml_path_as_list "$override_file" "$path"
     patch_yaml "$override_file" "${path} += {\"name\": \"${name}\", \"value\": \"${value}\"}"
@@ -48,7 +47,6 @@ set_overlay_env() {
 
     local overlays=".${component}.spec.overlays"
 
-    info "  ${name}=${value} for ${kind}/${resource_name}"
     # Initialize the overlays list if it doesn't exist.
     init_yaml_path_as_list "$override_file" "$overlays"
     # Add a new overlay element for the given api_version/kind/name if it doesn't already exist.
@@ -71,7 +69,8 @@ init_yaml_path_as_list() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
-        die "When invoked at the command line a method is required."
+        echo >&2 "Error: When invoked at the command line a method is required."
+        exit 1
     fi
     fn="$1"
     shift

@@ -122,6 +122,7 @@ roxie_override_from_environment_compat() {
     } | while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
+        info "  ${name}=${value}"
         set_custom_env "$override_file" "central" "$name" "$value"
         ci_export "$name" "$value"
     done
@@ -137,6 +138,7 @@ roxie_override_from_environment_compat() {
     } | while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
+        info "  ${name}=${value}"
         set_custom_env "$override_file" "securedCluster" "$name" "$value"
         ci_export "$name" "$value"
     done
@@ -156,6 +158,7 @@ roxie_override_from_environment_compat() {
     } | while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
+        info "  ${name}=${value} for DaemonSet/collector"
         set_overlay_env "$override_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
         ci_export "$name" "$value"
     done
