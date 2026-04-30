@@ -641,6 +641,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 		name        string
 		cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 		expected    *storage.EmbeddedVulnerability
+		link        string
 		wantErr     bool
 	}{
 		{
@@ -1156,11 +1157,19 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name:        "use back up link when metrics is missing",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+			link:        "https://osv.dev/vulnerability/CVE-7654-321",
+			expected: &storage.EmbeddedVulnerability{
+				Link: "https://osv.dev/vulnerability/CVE-7654-321",
+			},
 		}}
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			vuln := &storage.EmbeddedVulnerability{}
-			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics)
+			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics, testcase.link)
 			if testcase.wantErr {
 				assert.Error(t, err)
 				return
