@@ -10,7 +10,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 func init() {
 	booleanpolicy.RegisterFilterPlugin[storage.SkipImageLayers](
@@ -45,6 +48,7 @@ func imageLayerPlugin(f *storage.EvaluationFilter) booleanpolicy.ValueFilterFact
 	if skip == storage.SkipImageLayers_SKIP_NONE {
 		return nil
 	}
+	log.Infof("imageLayerPlugin: compiling filter with skip_image_layers=%v", skip)
 	return func(data interface{}) pathutil.ValueFilter {
 		images, ok := data.([]*storage.Image)
 		if !ok || len(images) == 0 {
@@ -62,9 +66,9 @@ func imageLayerPlugin(f *storage.EvaluationFilter) booleanpolicy.ValueFilterFact
 // one takeSliceMetaStep loop, both lookups run once per slice rather than per element.
 // The closure is fresh per Match* call so the cache is never shared across concurrent calls.
 func imageLayerValueFilter(images []*storage.Image, skip storage.SkipImageLayers) pathutil.ValueFilter {
-	var cachedSlice    pathutil.AugmentedValue
+	var cachedSlice pathutil.AugmentedValue
 	var cachedMaxLayer int32
-	var cachedHasMax   bool
+	var cachedHasMax bool
 
 	return func(v pathutil.AugmentedValue, i int) bool {
 		if v != cachedSlice {

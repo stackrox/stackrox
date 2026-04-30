@@ -32,6 +32,7 @@ func containerTypePlugin(f *storage.EvaluationFilter) booleanpolicy.ValueFilterF
 	if len(skipTypes) == 0 {
 		return nil
 	}
+	log.Infof("containerTypePlugin: compiling filter to skip %d container type(s)", len(skipTypes))
 	return func(data interface{}) pathutil.ValueFilter {
 		containers, ok := data.([]*storage.Container)
 		if !ok || len(containers) == 0 {

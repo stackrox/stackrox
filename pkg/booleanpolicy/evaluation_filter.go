@@ -80,11 +80,13 @@ func CompileEvaluationFilter(f *storage.EvaluationFilter) CompiledEvaluationFilt
 	}
 	var result CompiledEvaluationFilter
 	for i := 0; i < evaluationFilterType.NumField(); i++ {
-		p, ok := filterPluginRegistry[evaluationFilterType.Field(i).Type]
+		fieldType := evaluationFilterType.Field(i)
+		p, ok := filterPluginRegistry[fieldType.Type]
 		if !ok {
 			continue
 		}
 		if factory := p.plugin(f); factory != nil {
+			log.Infof("EvaluationFilter: plugin produced factory for field %q", fieldType.Name)
 			result = append(result, compiledFactory{factory: factory, extractors: p.extractors})
 		}
 	}
@@ -121,6 +123,9 @@ func combineValueFilters(factories []ValueFilterFactory, matchData interface{}) 
 		if f := factory(matchData); f != nil {
 			active = append(active, f)
 		}
+	}
+	if len(active) > 0 {
+		log.Infof("EvaluationFilter: %d active filter(s) for this match invocation", len(active))
 	}
 	switch len(active) {
 	case 0:

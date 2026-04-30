@@ -315,6 +315,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 		policy.Disabled = request.GetDisabled()
 	}
 	if request.EvaluationFilter != nil {
+		log.Infof("PatchPolicy: setting evaluation_filter on policy %q: %v", policy.GetName(), request.EvaluationFilter)
 		policy.EvaluationFilter = request.EvaluationFilter
 	}
 
