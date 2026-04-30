@@ -1,6 +1,7 @@
 package booleanpolicy
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -220,7 +221,7 @@ func GetPolicyGroupFromSearchTerms(fieldLabel search.FieldLabel, searchTerms []s
 	}
 	for _, value := range fieldValues {
 		group.Values = append(group.GetValues(), &storage.PolicyValue{
-			Value: value,
+			Value: regexp.QuoteMeta(value),
 		})
 	}
 	return group, fieldsDropped, true

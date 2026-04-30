@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -873,6 +874,7 @@ func (s *serviceImpl) parsePolicy(ctx context.Context, searchString string) (*st
 
 func getFieldMapFromQueryString(searchString string) (map[search.FieldLabel][]string, error) {
 	fieldMap, err := search.ParseFieldMap(searchString)
+	fmt.Println(fieldMap)
 	if err != nil {
 		return nil, err
 	}
@@ -886,6 +888,7 @@ func getFieldMapFromQueryString(searchString string) (map[search.FieldLabel][]st
 		}
 		fieldMap[fieldLabel] = filteredV
 	}
+	fmt.Println(fieldMap)
 	return fieldMap, nil
 }
 
