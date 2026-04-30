@@ -12,9 +12,10 @@ import SecurityContext from 'Components/SecurityContext';
 
 type DeploymentContainerConfigProps = {
     container: Container;
+    getImageUrl: (imageId: string) => string;
 };
 
-function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps) {
+function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContainerConfigProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const onToggle = (_isExpanded: boolean) => {
@@ -28,17 +29,18 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
             toggleText={toggleText}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             isExpanded={isExpanded}
-            displaySize="lg"
             isWidthLimited
             data-testid="deployment-container-config"
         >
             <Stack hasGutter>
                 <StackItem>
-                    <ContainerImageInfo image={container.image} />
+                    <ContainerImageInfo image={container.image} getImageUrl={getImageUrl} />
                 </StackItem>
-                <StackItem>
-                    <ContainerResourcesInfo resources={container.resources} />
-                </StackItem>
+                {container.resources && (
+                    <StackItem>
+                        <ContainerResourcesInfo resources={container.resources} />
+                    </StackItem>
+                )}
                 <StackItem>
                     <ContainerVolumesInfo volumes={container.volumes} />
                 </StackItem>
@@ -46,14 +48,16 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
                     <ContainerSecretsInfo secrets={container.secrets} />
                 </StackItem>
                 <StackItem>
-                    <ContainerArgumentsInfo args={container.config.args} />
+                    <ContainerArgumentsInfo args={container.config?.args ?? []} />
                 </StackItem>
                 <StackItem>
-                    <ContainerCommandInfo command={container.config.command} />
+                    <ContainerCommandInfo command={container.config?.command ?? []} />
                 </StackItem>
-                <StackItem>
-                    <SecurityContext securityContext={container.securityContext} />
-                </StackItem>
+                {container.securityContext && (
+                    <StackItem>
+                        <SecurityContext securityContext={container.securityContext} />
+                    </StackItem>
+                )}
             </Stack>
         </ExpandableSection>
     );

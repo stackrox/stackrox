@@ -34,6 +34,7 @@ export type ImageMetadataContext = {
 export const imageMetadataContextFragment = gql`
     fragment ImageMetadataContext on Image {
         id
+        digest
         name {
             registry
             remote

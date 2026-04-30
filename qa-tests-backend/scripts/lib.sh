@@ -46,6 +46,11 @@ surface_spec_logs() {
         return
     fi
 
+    if ! is_OPENSHIFT_CI; then
+        info "This is not OpenShiftCI, no need to create HTML summary for spec logs."
+        return
+    fi
+
     if [[ ! -d "${ARTIFACT_DIR}/spec-logs" ]]; then
         info "No spec-logs stored"
         return

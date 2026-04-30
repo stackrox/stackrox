@@ -49,9 +49,6 @@ jobs:
       - objectTemplate: service.yml
         replicas: 10
 
-      - objectTemplate: secret.yml
-        replicas: 10
-
       - objectTemplate: berserker-configmap-endpoints-zipf.yml
         replicas: 10
 

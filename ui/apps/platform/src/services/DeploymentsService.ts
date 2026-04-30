@@ -94,7 +94,6 @@ export function listDeployments(
  * Changes from the 'legacy' version of this same function:
  * - returns a 'cancel' function to abort the request
  * - uses the new `SearchFilter` type instead of `RestSearchOption`
- * - Does not implicitly read the value of "shouldHideOrchestratorComponents"
  */
 export function fetchDeploymentsWithProcessInfo(
     searchFilter: SearchFilter,

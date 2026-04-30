@@ -125,6 +125,7 @@ $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, RATCHET_BIN, github.com/sethvargo/ratchet, tools/linters)
+$(call go-tool, ACTIONLINT_BIN, github.com/rhysd/actionlint/cmd/actionlint, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
@@ -207,6 +208,11 @@ update-shellcheck-skip:
 	@echo "+ $@"
 	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
+
+.PHONY: github-actions-lint
+github-actions-lint: $(ACTIONLINT_BIN)
+	@echo "+ $@"
+	$(ACTIONLINT_BIN) -color -config-file .github/actionlint.yaml .github/workflows/*.yaml .github/workflows/*.yml
 
 .PHONY: github-actions-pin-check
 github-actions-pin-check: $(RATCHET_BIN)

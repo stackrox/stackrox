@@ -38,12 +38,22 @@ type VsockIndexReportStream struct {
 // New creates a VsockIndexReportStream with a vsock listener.
 // Concurrency limits are read from env vars VirtualMachinesMaxConcurrentVsockConnections
 // and VirtualMachinesConcurrencyTimeout.
+//
+// Bind-failure return path: vsock.NewListener() performs a one-shot bind. If vsock support is unavailable
+// (e.g. KubeVirt not yet installed), the error propagates to the caller. Retry policy lives above this
+// constructor; relay.RunWithRetry wraps the relay operation and retries retriable startup failures.
 func New() (*VsockIndexReportStream, error) {
 	listener, err := vsock.NewListener()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vsock listener")
 	}
+	return newWithListener(listener), nil
+}
 
+// newWithListener constructs a VsockIndexReportStream from a pre-existing listener,
+// reading concurrency and size limits from env vars. Separated from New to allow
+// tests to inject a custom listener without requiring vsock kernel support.
+func newWithListener(listener net.Listener) *VsockIndexReportStream {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
@@ -56,7 +66,7 @@ func New() (*VsockIndexReportStream, error) {
 		connectionReadTimeout:    10 * time.Second,
 		waitAfterFailedAccept:    time.Second,
 		maxSizeBytes:             maxSizeBytes,
-	}, nil
+	}
 }
 
 // Start begins accepting vsock connections and returns a channel of validated reports.
@@ -65,7 +75,7 @@ func New() (*VsockIndexReportStream, error) {
 func (p *VsockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VMReport, error) {
 	log.Info("Starting report stream")
 
-	if p.listener == nil {
+	if p.currentListener() == nil {
 		return nil, errors.New("listener is nil")
 	}
 
@@ -88,10 +98,17 @@ func (p *VsockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VMReport
 
 func (p *VsockIndexReportStream) acceptLoop(ctx context.Context, reportChan chan<- *v1.VMReport) {
 	for {
-		// Accept() is blocking, but it will return when ctx is cancelled and the goroutine in Start() calls p.stop()
-		conn, err := p.listener.Accept()
+		listener := p.currentListener()
+		if listener == nil {
+			log.Info("Stopping report stream")
+			return
+		}
+
+		// Accept() is blocking, but it will return when ctx is cancelled and the goroutine in Start() calls p.stop().
+		// Explicit Close() also shuts down the listener and causes the loop to exit cleanly.
+		conn, err := listener.Accept()
 		if err != nil {
-			if ctx.Err() != nil {
+			if ctx.Err() != nil || p.currentListener() == nil {
 				log.Info("Stopping report stream")
 				return
 			}
@@ -216,19 +233,36 @@ func validateReportedVsockCID(vmReport *v1.VMReport, connVsockCID uint32) error 
 	return nil
 }
 
-func (p *VsockIndexReportStream) stop() {
+// Close stops the listener and releases associated resources. It is safe to
+// call multiple times, including while the accept loop is blocked in Accept.
+// Normal shutdown goes through context cancellation (which calls Close
+// internally); this method also supports explicit cleanup when context plumbing
+// is unavailable, e.g. between retries.
+func (p *VsockIndexReportStream) Close() error {
 	p.listenerMu.Lock()
 	defer p.listenerMu.Unlock()
 
 	if p.listener == nil {
-		return
+		return nil
 	}
 
+	err := p.listener.Close()
+	p.listener = nil
+	return err
+}
+
+func (p *VsockIndexReportStream) stop() {
 	log.Info("Stopping index report stream")
-	if err := p.listener.Close(); err != nil {
+	if err := p.Close(); err != nil {
 		log.Errorf("Error closing listener: %v", err)
 	}
-	p.listener = nil
+}
+
+func (p *VsockIndexReportStream) currentListener() net.Listener {
+	p.listenerMu.Lock()
+	defer p.listenerMu.Unlock()
+
+	return p.listener
 }
 
 func (p *VsockIndexReportStream) acquireSemaphore(parentCtx context.Context) error {

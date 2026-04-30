@@ -77,6 +77,20 @@ var (
 		Help:      "Current number of container entries waiting in the process-enrichment LRU cache",
 	})
 
+	fileActivityBufferDrops = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "file_activity_buffer_drops",
+		Help:      "Count of file activities dropped due to buffer limits or expiration",
+	})
+
+	fileActivityBufferSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "file_activity_buffer_size",
+		Help:      "Current number of file activities buffered waiting for process enrichment",
+	})
+
 	sensorIndicatorChannelFullCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -477,6 +491,21 @@ const (
 func SetProcessPipelineMode(mode string) {
 	processPipelineModeGauge.Reset()
 	processPipelineModeGauge.WithLabelValues(mode).Set(1)
+}
+
+// IncrementFileActivityBufferDrops increments the number of file activities dropped.
+func IncrementFileActivityBufferDrops() {
+	fileActivityBufferDrops.Inc()
+}
+
+// IncrementFileActivityBufferDropsBy increments the number of file activities dropped by the given count.
+func IncrementFileActivityBufferDropsBy(count int) {
+	fileActivityBufferDrops.Add(float64(count))
+}
+
+// SetFileActivityBufferSize sets the file activity buffer size.
+func SetFileActivityBufferSize(size int) {
+	fileActivityBufferSize.Set(float64(size))
 }
 
 // IncK8sEventCount increments the number of objects we're receiving from k8s

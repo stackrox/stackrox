@@ -69,8 +69,8 @@ test_ui_e2e() {
     deploy_optional_e2e_components
     deploy_stackrox
 
-    # Enable the console plugin for OpenShift
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+    # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
         enable_console_plugin
     fi
 
@@ -101,6 +101,10 @@ run_ui_e2e_tests() {
     make -C ui test-e2e || touch FAIL
 
     store_test_results "ui/test-results/reports/cypress/integration/." "cy-reps"
+    # OCP console plugin tests write to a separate directory; only present on OpenShift runs
+    if [[ -d "ui/test-results/reports/cypress/integration-ocp" ]]; then
+        store_test_results "ui/test-results/reports/cypress/integration-ocp/." "cy-reps/consolePlugin"
+    fi
 
     if is_OPENSHIFT_CI; then
         cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true

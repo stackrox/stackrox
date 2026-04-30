@@ -36,14 +36,7 @@ import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
 
-import {
-    clusterSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    namespaceSearchFilterConfig,
-} from '../../searchFilterConfig';
+import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
 import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
 import {
@@ -284,19 +277,10 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
-    const searchFilterConfigWithFeatureFlagDependency = [
-        clusterSearchFilterConfig,
-        imageCVESearchFilterConfig,
-        deploymentSearchFilterConfig,
-        imageSearchFilterConfig,
-        imageComponentSearchFilterConfig,
-        namespaceSearchFilterConfig,
-    ];
-
+    // Keep getSearchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
         isFeatureFlagEnabled,
-        searchFilterConfigWithFeatureFlagDependency
+        searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport
     );
 
     // Report-specific state management
