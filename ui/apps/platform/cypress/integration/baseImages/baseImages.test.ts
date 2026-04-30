@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
@@ -7,12 +6,6 @@ import { addBaseImage, visitBaseImages, visitBaseImagesFromLeftNav } from './bas
 
 describe('Base Images', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_BASE_IMAGE_DETECTION')) {
-            this.skip();
-        }
-    });
 
     it('should navigate to Base Images page from left nav', () => {
         visitBaseImagesFromLeftNav();
