@@ -78,12 +78,12 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved
 func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 
-	if excludeResolved {
-		q = applyDefaultState(q)
-	}
-
 	if q == nil {
 		q = search.EmptyQuery()
+	}
+
+	if excludeResolved {
+		q = applyDefaultState(q)
 	}
 
 	if env.ListAlertUseLegacyQuery.BooleanSetting() {
