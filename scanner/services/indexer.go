@@ -226,7 +226,7 @@ func (s *indexerService) GetRepositoryToCPEMapping(ctx context.Context, req *v4.
 	}
 
 	if fetchResult.Data == nil {
-		zlog.Error(ctx).Msg("indexer returned modified=true with nil data")
+		slog.ErrorContext(ctx, "indexer returned modified=true with nil data")
 		return nil, errox.InvariantViolation.New("indexer returned modified result with no data")
 	}
 

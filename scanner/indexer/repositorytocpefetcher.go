@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/utils"
@@ -14,16 +15,45 @@ import (
 // RepositoryToCPEFetcher fetches repository-to-CPE mapping data from an upstream URL.
 // It acts as a simple proxy with no caching - each call fetches from upstream.
 type RepositoryToCPEFetcher struct {
-	url    string
-	client *http.Client
+	url         string
+	client      *http.Client
+	initialData *repositorytocpe.MappingFile
 }
 
 // NewRepositoryToCPEFetcher creates a new fetcher for the repository-to-CPE mapping.
-func NewRepositoryToCPEFetcher(client *http.Client, url string) *RepositoryToCPEFetcher {
-	return &RepositoryToCPEFetcher{
+// If filePath is non-empty, the file is loaded as seed data accessible via InitialData.
+func NewRepositoryToCPEFetcher(client *http.Client, url, filePath string) (*RepositoryToCPEFetcher, error) {
+	f := &RepositoryToCPEFetcher{
 		url:    url,
 		client: client,
 	}
+	if filePath != "" {
+		data, err := loadMappingFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("loading initial mapping file: %w", err)
+		}
+		f.initialData = data
+	}
+	return f, nil
+}
+
+// InitialData returns the seed mapping data loaded from file, or nil if none was configured.
+func (f *RepositoryToCPEFetcher) InitialData() *repositorytocpe.MappingFile {
+	return f.initialData
+}
+
+func loadMappingFile(path string) (*repositorytocpe.MappingFile, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("opening file: %w", err)
+	}
+	defer utils.IgnoreError(file.Close)
+
+	var mf repositorytocpe.MappingFile
+	if err := json.NewDecoder(file).Decode(&mf); err != nil {
+		return nil, fmt.Errorf("decoding file: %w", err)
+	}
+	return &mf, nil
 }
 
 // FetchResult contains the result of a Fetch operation.

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/quay/claircore/test"
@@ -67,7 +69,8 @@ func TestRepositoryToCPEFetcher_Fetch(t *testing.T) {
 			defer srv.Close()
 
 			ctx := test.Logging(t)
-			fetcher := NewRepositoryToCPEFetcher(srv.Client(), srv.URL)
+			fetcher, fErr := NewRepositoryToCPEFetcher(srv.Client(), srv.URL, "")
+			require.NoError(t, fErr)
 			result, err := fetcher.Fetch(ctx, tt.ifModifiedSince)
 
 			if tt.wantErr != "" {
@@ -95,7 +98,8 @@ func TestRepositoryToCPEFetcher_Fetch(t *testing.T) {
 		defer srv.Close()
 
 		ctx := test.Logging(t)
-		fetcher := NewRepositoryToCPEFetcher(srv.Client(), srv.URL)
+		fetcher, fErr := NewRepositoryToCPEFetcher(srv.Client(), srv.URL, "")
+		require.NoError(t, fErr)
 		_, err := fetcher.Fetch(ctx, "Tue, 01 Jan 2025 00:00:00 GMT")
 		require.NoError(t, err)
 		assert.Equal(t, "Tue, 01 Jan 2025 00:00:00 GMT", receivedHeader)
@@ -111,9 +115,60 @@ func TestRepositoryToCPEFetcher_Fetch(t *testing.T) {
 		defer srv.Close()
 
 		ctx := test.Logging(t)
-		fetcher := NewRepositoryToCPEFetcher(srv.Client(), srv.URL)
+		fetcher, fErr := NewRepositoryToCPEFetcher(srv.Client(), srv.URL, "")
+		require.NoError(t, fErr)
 		_, err := fetcher.Fetch(ctx, "")
 		require.NoError(t, err)
 		assert.False(t, hasHeader)
 	})
+}
+
+func TestRepositoryToCPEFetcher_InitialData(t *testing.T) {
+	sampleMapping := repositorytocpe.MappingFile{
+		Data: map[string]repositorytocpe.Repo{
+			"rhel-8-server": {CPEs: []string{"cpe:/o:redhat:rhel:8"}},
+		},
+	}
+
+	t.Run("no file returns nil initial data", func(t *testing.T) {
+		fetcher, err := NewRepositoryToCPEFetcher(http.DefaultClient, "http://example.com", "")
+		require.NoError(t, err)
+		assert.Nil(t, fetcher.InitialData())
+	})
+
+	t.Run("valid file loads initial data", func(t *testing.T) {
+		path := writeMappingFile(t, sampleMapping)
+
+		fetcher, err := NewRepositoryToCPEFetcher(http.DefaultClient, "http://example.com", path)
+		require.NoError(t, err)
+		require.NotNil(t, fetcher.InitialData())
+		assert.Len(t, fetcher.InitialData().Data, 1)
+		cpes, ok := fetcher.InitialData().GetCPEs("rhel-8-server")
+		assert.True(t, ok)
+		assert.Equal(t, []string{"cpe:/o:redhat:rhel:8"}, cpes)
+	})
+
+	t.Run("nonexistent file returns error", func(t *testing.T) {
+		_, err := NewRepositoryToCPEFetcher(http.DefaultClient, "http://example.com", "/nonexistent/path.json")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "loading initial mapping file")
+	})
+
+	t.Run("malformed file returns error", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "bad.json")
+		require.NoError(t, os.WriteFile(path, []byte("{invalid json"), 0644))
+
+		_, err := NewRepositoryToCPEFetcher(http.DefaultClient, "http://example.com", path)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "decoding file")
+	})
+}
+
+func writeMappingFile(t *testing.T, mf repositorytocpe.MappingFile) string {
+	t.Helper()
+	data, err := json.Marshal(mf)
+	require.NoError(t, err)
+	path := filepath.Join(t.TempDir(), "repo2cpe.json")
+	require.NoError(t, os.WriteFile(path, data, 0644))
+	return path
 }
