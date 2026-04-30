@@ -33,7 +33,7 @@ export type ImageDetails = {
 
 export const imageDetailsFragment = gql`
     fragment ImageDetails on Image {
-        deploymentCount
+        deploymentCount(query: $deploymentQuery)
         operatingSystem
         metadata {
             v1 {
@@ -67,7 +67,7 @@ export const imageDetailsFragment = gql`
 
 export const imageV2DetailsFragment = gql`
     fragment ImageV2Details on ImageV2 {
-        deploymentCount
+        deploymentCount(query: $deploymentQuery)
         operatingSystem
         metadata {
             v1 {

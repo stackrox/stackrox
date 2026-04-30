@@ -103,6 +103,9 @@ function VulnerabilitiesOverview({
 
     const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
 
+    // The deployment state filter (active vs deleted) is applied upstream via
+    // baseSearchFilter in WorkloadCvesPage, so the counts query uses the same
+    // scoped query string for all entity types.
     const { data } = useQuery<{
         imageCount: number;
         imageCVECount: number;
