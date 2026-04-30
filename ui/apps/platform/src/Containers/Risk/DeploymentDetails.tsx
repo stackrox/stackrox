@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Alert } from '@patternfly/react-core';
+import { Alert, Stack } from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import { getDateTime } from 'utils/dateUtils';
 import { portExposureLabels } from 'messages/common';
-import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
 import KeyValuePairs from './KeyValuePairs';
 import type { Deployment, PortConfig } from 'types/deployment.proto';
@@ -63,7 +62,7 @@ function DeploymentDetails({ deployment }: DeploymentDetailsProps) {
     }, [deployment.id, setRelatedDeployment]);
 
     return (
-        <div className="w-full pb-5">
+        <Stack hasGutter>
             {!relatedDeployment && (
                 <Alert
                     variant="warning"
@@ -72,19 +71,16 @@ function DeploymentDetails({ deployment }: DeploymentDetailsProps) {
                     component="p"
                 />
             )}
-            <div className="px-3 pt-5">
-                <CollapsibleCard title="Overview">
-                    <div className="h-full px-3 word-break">
-                        <KeyValuePairs
-                            data={relatedDeployment || deployment}
-                            keyValueMap={deploymentDetailsMap}
-                        />
-                    </div>
-                </CollapsibleCard>
-            </div>
+            <CollapsibleCard title="Overview">
+                <div className="h-full px-3 word-break">
+                    <KeyValuePairs
+                        data={relatedDeployment || deployment}
+                        keyValueMap={deploymentDetailsMap}
+                    />
+                </div>
+            </CollapsibleCard>
             <ContainerConfigurations deployment={relatedDeployment || deployment} />
-            <SecurityContext deployment={relatedDeployment || deployment} />
-        </div>
+        </Stack>
     );
 }
 

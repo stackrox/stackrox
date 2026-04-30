@@ -1,0 +1,150 @@
+package descriptor
+
+import (
+	"sort"
+	"strings"
+
+	"github.com/pkg/errors"
+	"helm.sh/helm/v3/pkg/chartutil"
+)
+
+// FixCSVDescriptorsMap processes all CRDs in a CSV and fixes their specDescriptors.
+func FixCSVDescriptorsMap(csvDoc chartutil.Values) error {
+	// Navigate to spec.customresourcedefinitions.owned
+	ownedRaw, err := csvDoc.PathValue("spec.customresourcedefinitions.owned")
+	if err != nil {
+		return errors.Wrap(err, "spec.customresourcedefinitions.owned")
+	}
+
+	owned, ok := ownedRaw.([]any)
+	if !ok {
+		return errors.New("spec.customresourcedefinitions.owned is not a list")
+	}
+
+	// Process each CRD
+	for _, crdItem := range owned {
+		crd, ok := crdItem.(map[string]any)
+		if !ok {
+			return errors.Errorf("item in owned CRD list is not a map: %T", crdItem)
+		}
+
+		if err := processSpecDescriptorsMap(crd); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// processSpecDescriptorsMap processes specDescriptors for a single CRD.
+func processSpecDescriptorsMap(crd map[string]any) error {
+	descs, ok := crd["specDescriptors"]
+	if !ok {
+		// No specDescriptors, that's OK
+		return nil
+	}
+
+	descriptors, ok := descs.([]any)
+	if !ok {
+		return errors.New("specDescriptors is not a list")
+	}
+
+	fixDescriptorOrderMap(descriptors)
+	if err := allowRelativeFieldDependenciesMap(descriptors); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// fixDescriptorOrderMap performs a stable sort based on the parent path.
+// This ensures children always come after their parents.
+// Mimics Python: descriptors.sort(key=lambda d: f'.{d["path"]}'.rsplit('.', 1)[0])
+func fixDescriptorOrderMap(descriptors []any) {
+	sort.SliceStable(descriptors, func(i, j int) bool {
+		parentI := getDescriptorParentPath(descriptors[i])
+		parentJ := getDescriptorParentPath(descriptors[j])
+		return parentI < parentJ
+	})
+}
+
+// getParentPath extracts the parent path from a descriptor path.
+// Returns everything before the last '.', or empty string if no '.' exists.
+func getParentPath(path string) string {
+	lastDot := strings.LastIndex(path, ".")
+	if lastDot == -1 {
+		return ""
+	}
+	return path[:lastDot]
+}
+
+// getDescriptorParentPath extracts the 'path' field from a descriptor map.
+func getDescriptorParentPath(desc any) string {
+	descMap, ok := desc.(map[string]any)
+	if !ok {
+		return ""
+	}
+	path, ok := descMap["path"].(string)
+	if !ok {
+		return ""
+	}
+	return getParentPath(path)
+}
+
+// allowRelativeFieldDependenciesMap converts relative field dependency paths to absolute.
+func allowRelativeFieldDependenciesMap(descriptors []any) error {
+	for _, desc := range descriptors {
+		descMap, ok := desc.(map[string]any)
+		if !ok {
+			return errors.Errorf("descriptor is not a map: %T", desc)
+		}
+
+		path, ok := descMap["path"].(string)
+		if !ok {
+			return errors.Errorf("descriptor path is not a string: %T", descMap["path"])
+		}
+		xDescsRaw, ok := descMap["x-descriptors"]
+		if !ok {
+			continue
+		}
+
+		xDescs, ok := xDescsRaw.([]any)
+		if !ok {
+			return errors.Errorf("x-descriptors is not a list: %T", xDescsRaw)
+		}
+
+		// Process each x-descriptor
+		for i, xDescRaw := range xDescs {
+			xDesc, ok := xDescRaw.(string)
+			if !ok {
+				return errors.Errorf("x-descriptor entry is not a string: %T", xDescRaw)
+			}
+
+			const fieldDepPrefix = "urn:alm:descriptor:com.tectonic.ui:fieldDependency:"
+			if !strings.HasPrefix(xDesc, fieldDepPrefix) {
+				continue
+			}
+
+			// Strip prefix and split into field and value
+			fieldVal := strings.SplitN(xDesc[len(fieldDepPrefix):], ":", 2)
+			if len(fieldVal) != 2 {
+				continue
+			}
+
+			field, val := fieldVal[0], fieldVal[1]
+
+			// Check if field starts with '.' (relative path)
+			if !strings.HasPrefix(field, ".") {
+				continue
+			}
+
+			// Convert relative to absolute
+			parentPath := getParentPath(path)
+			absoluteField := parentPath + field
+
+			// Reconstruct the x-descriptor
+			xDescs[i] = fieldDepPrefix + absoluteField + ":" + val
+		}
+	}
+	return nil
+}
