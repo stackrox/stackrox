@@ -27,11 +27,24 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// MitreAttackService can be used to retrieve information about MITRE ATT&CK matrix.
+// MitreAttackService provides read access to the MITRE ATT&CK framework knowledge base.
+//
+// The MITRE ATT&CK matrix describes adversary tactics (high-level goals) and techniques
+// (specific methods). StackRox policies can be tagged with MITRE ATT&CK tactic and technique
+// IDs to indicate which attack behaviors they detect.
+//
+// Authentication: all endpoints require an authenticated user. Anonymous access is denied
+// to reduce the DoS surface, as the full vector list response is approximately 1 MB.
 type MitreAttackServiceClient interface {
 	// ListMitreAttackVectors returns all MITRE ATT&CK vectors.
+	//
+	// Each vector represents a tactic (e.g. "Initial Access") and includes all its associated
+	// techniques. The response is approximately 1 MB. Requires an authenticated session.
 	ListMitreAttackVectors(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListMitreAttackVectorsResponse, error)
 	// GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
+	//
+	// The id field must be a valid MITRE ATT&CK tactic ID (e.g. "TA0001").
+	// Returns NOT_FOUND if no tactic with the given ID exists in the local knowledge base.
 	GetMitreAttackVector(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetMitreVectorResponse, error)
 }
 
@@ -67,11 +80,24 @@ func (c *mitreAttackServiceClient) GetMitreAttackVector(ctx context.Context, in 
 // All implementations should embed UnimplementedMitreAttackServiceServer
 // for forward compatibility.
 //
-// MitreAttackService can be used to retrieve information about MITRE ATT&CK matrix.
+// MitreAttackService provides read access to the MITRE ATT&CK framework knowledge base.
+//
+// The MITRE ATT&CK matrix describes adversary tactics (high-level goals) and techniques
+// (specific methods). StackRox policies can be tagged with MITRE ATT&CK tactic and technique
+// IDs to indicate which attack behaviors they detect.
+//
+// Authentication: all endpoints require an authenticated user. Anonymous access is denied
+// to reduce the DoS surface, as the full vector list response is approximately 1 MB.
 type MitreAttackServiceServer interface {
 	// ListMitreAttackVectors returns all MITRE ATT&CK vectors.
+	//
+	// Each vector represents a tactic (e.g. "Initial Access") and includes all its associated
+	// techniques. The response is approximately 1 MB. Requires an authenticated session.
 	ListMitreAttackVectors(context.Context, *Empty) (*ListMitreAttackVectorsResponse, error)
 	// GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
+	//
+	// The id field must be a valid MITRE ATT&CK tactic ID (e.g. "TA0001").
+	// Returns NOT_FOUND if no tactic with the given ID exists in the local knowledge base.
 	GetMitreAttackVector(context.Context, *ResourceByID) (*GetMitreVectorResponse, error)
 }
 

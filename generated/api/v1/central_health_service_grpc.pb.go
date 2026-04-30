@@ -25,7 +25,18 @@ const (
 // CentralHealthServiceClient is the client API for CentralHealthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// CentralHealthService exposes Central's upgrade and rollback readiness.
+//
+// This service allows operators and tooling to check whether Central can safely be rolled back
+// after an upgrade, and to which version. Useful during upgrade workflows and health monitoring.
+//
+// Authentication: requires a valid API token with the Admin role.
 type CentralHealthServiceClient interface {
+	// GetUpgradeStatus returns the current Central version and rollback capabilities.
+	//
+	// Reports the running version, the minimum DB version that can be safely rolled back to,
+	// and whether rollback after the current upgrade is supported.
 	GetUpgradeStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetUpgradeStatusResponse, error)
 }
 
@@ -50,7 +61,18 @@ func (c *centralHealthServiceClient) GetUpgradeStatus(ctx context.Context, in *E
 // CentralHealthServiceServer is the server API for CentralHealthService service.
 // All implementations should embed UnimplementedCentralHealthServiceServer
 // for forward compatibility.
+//
+// CentralHealthService exposes Central's upgrade and rollback readiness.
+//
+// This service allows operators and tooling to check whether Central can safely be rolled back
+// after an upgrade, and to which version. Useful during upgrade workflows and health monitoring.
+//
+// Authentication: requires a valid API token with the Admin role.
 type CentralHealthServiceServer interface {
+	// GetUpgradeStatus returns the current Central version and rollback capabilities.
+	//
+	// Reports the running version, the minimum DB version that can be safely rolled back to,
+	// and whether rollback after the current upgrade is supported.
 	GetUpgradeStatus(context.Context, *Empty) (*GetUpgradeStatusResponse, error)
 }
 

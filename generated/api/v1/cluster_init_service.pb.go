@@ -25,17 +25,22 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// InitBundleMeta holds metadata for an init bundle used to authenticate a new secured cluster.
+// Deprecated: use CRSMeta instead. Init bundles are superseded by Cluster Registration Secrets (CRS).
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleMeta struct {
-	state            protoimpl.MessageState            `protogen:"open.v1"`
-	Id               string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name             string                            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// impacted_clusters lists the clusters currently authenticated with this init bundle.
 	ImpactedClusters []*InitBundleMeta_ImpactedCluster `protobuf:"bytes,6,rep,name=impacted_clusters,json=impactedClusters,proto3" json:"impacted_clusters,omitempty"`
 	CreatedAt        *timestamppb.Timestamp            `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	CreatedBy        *storage.User                     `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	ExpiresAt        *timestamppb.Timestamp            `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// expires_at is the time after which this init bundle is no longer valid.
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InitBundleMeta) Reset() {
@@ -110,16 +115,23 @@ func (x *InitBundleMeta) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// CRSMeta holds metadata for a Cluster Registration Secret (CRS).
 type CRSMeta struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	Id                     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                   string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	CreatedBy              *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	ExpiresAt              *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	MaxRegistrations       uint64                 `protobuf:"varint,7,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
-	RegistrationsInitiated []string               `protobuf:"bytes,8,rep,name=registrations_initiated,json=registrationsInitiated,proto3" json:"registrations_initiated,omitempty"`
-	RegistrationsCompleted []string               `protobuf:"bytes,9,rep,name=registrations_completed,json=registrationsCompleted,proto3" json:"registrations_completed,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedBy *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	// expires_at is the time after which this CRS is no longer valid for new registrations.
+	// Zero value means the CRS does not expire.
+	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// max_registrations is the maximum number of clusters that may register using this CRS.
+	// Zero value means no limit.
+	MaxRegistrations uint64 `protobuf:"varint,7,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	// registrations_initiated lists cluster IDs for which a registration was started but not yet completed.
+	RegistrationsInitiated []string `protobuf:"bytes,8,rep,name=registrations_initiated,json=registrationsInitiated,proto3" json:"registrations_initiated,omitempty"`
+	// registrations_completed lists cluster IDs that have successfully registered using this CRS.
+	RegistrationsCompleted []string `protobuf:"bytes,9,rep,name=registrations_completed,json=registrationsCompleted,proto3" json:"registrations_completed,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -210,14 +222,19 @@ func (x *CRSMeta) GetRegistrationsCompleted() []string {
 	return nil
 }
 
+// InitBundleGenResponse is the response for generating an init bundle.
+// Deprecated: use CRSGenResponse instead.
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleGenResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Meta             *InitBundleMeta        `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
-	HelmValuesBundle []byte                 `protobuf:"bytes,2,opt,name=helm_values_bundle,json=helmValuesBundle,proto3" json:"helm_values_bundle,omitempty"`
-	KubectlBundle    []byte                 `protobuf:"bytes,3,opt,name=kubectl_bundle,json=kubectlBundle,proto3" json:"kubectl_bundle,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Meta  *InitBundleMeta        `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
+	// helm_values_bundle contains the Helm values YAML for deploying a secured cluster with this bundle.
+	HelmValuesBundle []byte `protobuf:"bytes,2,opt,name=helm_values_bundle,json=helmValuesBundle,proto3" json:"helm_values_bundle,omitempty"`
+	// kubectl_bundle contains the Kubernetes Secret manifests for deploying a secured cluster with this bundle.
+	KubectlBundle []byte `protobuf:"bytes,3,opt,name=kubectl_bundle,json=kubectlBundle,proto3" json:"kubectl_bundle,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InitBundleGenResponse) Reset() {
@@ -271,10 +288,12 @@ func (x *InitBundleGenResponse) GetKubectlBundle() []byte {
 	return nil
 }
 
+// CRSGenResponse is returned when generating a new Cluster Registration Secret.
 type CRSGenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Meta          *CRSMeta               `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
-	Crs           []byte                 `protobuf:"bytes,2,opt,name=crs,proto3" json:"crs,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Meta  *CRSMeta               `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
+	// crs contains the Kubernetes Secret manifest (YAML) to be applied in the secured cluster.
+	Crs           []byte `protobuf:"bytes,2,opt,name=crs,proto3" json:"crs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -323,9 +342,11 @@ func (x *CRSGenResponse) GetCrs() []byte {
 	return nil
 }
 
+// GetCAConfigResponse contains the Central CA configuration as a Helm values bundle.
 type GetCAConfigResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	HelmValuesBundle []byte                 `protobuf:"bytes,1,opt,name=helm_values_bundle,json=helmValuesBundle,proto3" json:"helm_values_bundle,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// helm_values_bundle contains the CA certificate rendered as a Helm values YAML snippet.
+	HelmValuesBundle []byte `protobuf:"bytes,1,opt,name=helm_values_bundle,json=helmValuesBundle,proto3" json:"helm_values_bundle,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -367,6 +388,9 @@ func (x *GetCAConfigResponse) GetHelmValuesBundle() []byte {
 	return nil
 }
 
+// InitBundleMetasResponse is the response listing all init bundles.
+// Deprecated: use CRSMetasResponse instead.
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleMetasResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -412,6 +436,7 @@ func (x *InitBundleMetasResponse) GetItems() []*InitBundleMeta {
 	return nil
 }
 
+// CRSMetasResponse is the response listing all Cluster Registration Secrets.
 type CRSMetasResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*CRSMeta             `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -456,10 +481,14 @@ func (x *CRSMetasResponse) GetItems() []*CRSMeta {
 	return nil
 }
 
+// InitBundleGenRequest is the request to generate a new init bundle.
+// Deprecated: use CRSGenRequest instead.
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleGenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is a human-readable label for the init bundle. Must be unique across all init bundles.
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,9 +530,11 @@ func (x *InitBundleGenRequest) GetName() string {
 	return ""
 }
 
+// CRSGenRequest is the request to generate a new Cluster Registration Secret with default settings.
 type CRSGenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is a human-readable label for the CRS. Must be unique across all CRSs.
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -545,12 +576,18 @@ func (x *CRSGenRequest) GetName() string {
 	return ""
 }
 
+// CRSGenRequestExtended is the request to generate a new Cluster Registration Secret
+// with optional expiry and registration limits.
 type CRSGenRequestExtended struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is a human-readable label for the CRS. Must be unique across all CRSs.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// valid_until sets an absolute expiry time. Mutually exclusive with valid_for.
 	ValidUntil *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
-	ValidFor   *durationpb.Duration   `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
+	// valid_for sets a relative validity duration from time of creation. Mutually exclusive with valid_until.
+	ValidFor *durationpb.Duration `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
 	// 4 was int32 max_registrations
+	// max_registrations limits how many clusters may register with this CRS. Zero means unlimited.
 	MaxRegistrations uint64 `protobuf:"varint,5,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -614,11 +651,17 @@ func (x *CRSGenRequestExtended) GetMaxRegistrations() uint64 {
 	return 0
 }
 
+// InitBundleRevokeRequest is the request to revoke one or more init bundles.
+// Deprecated: use CRSRevokeRequest instead.
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleRevokeRequest struct {
-	state                      protoimpl.MessageState `protogen:"open.v1"`
-	Ids                        []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
-	ConfirmImpactedClustersIds []string               `protobuf:"bytes,2,rep,name=confirm_impacted_clusters_ids,json=confirmImpactedClustersIds,proto3" json:"confirm_impacted_clusters_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ids lists the IDs of the init bundles to revoke.
+	Ids []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	// confirm_impacted_clusters_ids must contain the IDs of all clusters currently using the
+	// bundles being revoked. The request fails if any impacted cluster ID is not confirmed.
+	ConfirmImpactedClustersIds []string `protobuf:"bytes,2,rep,name=confirm_impacted_clusters_ids,json=confirmImpactedClustersIds,proto3" json:"confirm_impacted_clusters_ids,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -667,9 +710,11 @@ func (x *InitBundleRevokeRequest) GetConfirmImpactedClustersIds() []string {
 	return nil
 }
 
+// CRSRevokeRequest is the request to revoke one or more Cluster Registration Secrets.
 type CRSRevokeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ids           []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ids lists the IDs of the CRSs to revoke.
+	Ids           []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -711,6 +756,9 @@ func (x *CRSRevokeRequest) GetIds() []string {
 	return nil
 }
 
+// InitBundleRevokeResponse reports the outcome of an init bundle revocation.
+// Deprecated: use CRSRevokeResponse instead.
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleRevokeResponse struct {
 	state                      protoimpl.MessageState                                `protogen:"open.v1"`
@@ -764,6 +812,7 @@ func (x *InitBundleRevokeResponse) GetInitBundleRevokedIds() []string {
 	return nil
 }
 
+// CRSRevokeResponse reports the outcome of a CRS revocation request.
 type CRSRevokeResponse struct {
 	state               protoimpl.MessageState                  `protogen:"open.v1"`
 	CrsRevocationErrors []*CRSRevokeResponse_CRSRevocationError `protobuf:"bytes,2,rep,name=crs_revocation_errors,json=crsRevocationErrors,proto3" json:"crs_revocation_errors,omitempty"`
@@ -816,6 +865,7 @@ func (x *CRSRevokeResponse) GetRevokedIds() []string {
 	return nil
 }
 
+// ImpactedCluster identifies a cluster that was registered using this init bundle.
 type InitBundleMeta_ImpactedCluster struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -868,10 +918,12 @@ func (x *InitBundleMeta_ImpactedCluster) GetId() string {
 	return ""
 }
 
+// InitBundleRevocationError describes a revocation failure for a single init bundle.
 type InitBundleRevokeResponse_InitBundleRevocationError struct {
-	state            protoimpl.MessageState            `protogen:"open.v1"`
-	Id               string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Error            string                            `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Error string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	// impacted_clusters lists the clusters still using this bundle, which must be confirmed before revoking.
 	ImpactedClusters []*InitBundleMeta_ImpactedCluster `protobuf:"bytes,3,rep,name=impacted_clusters,json=impactedClusters,proto3" json:"impacted_clusters,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -928,6 +980,7 @@ func (x *InitBundleRevokeResponse_InitBundleRevocationError) GetImpactedClusters
 	return nil
 }
 
+// CRSRevocationError describes a revocation failure for a single CRS.
 type CRSRevokeResponse_CRSRevocationError struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

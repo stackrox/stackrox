@@ -13,13 +13,22 @@ import "storage/network_flow.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// NetworkBaselinePeerEntity identifies a network entity (deployment, external
+// source, etc.) as a peer in a baseline connection check.
 message NetworkBaselinePeerEntity {
+  // id is the unique identifier of the peer entity.
   string id = 1;
+  // type is the entity type (DEPLOYMENT, EXTERNAL_SOURCE, INTERNET, etc.).
   storage.NetworkEntityInfo.Type type = 2;
+  // name is the display name of the peer entity.
   string name = 3;
+  // discovered is true if this entity was automatically discovered (e.g. a
+  // discovered external CIDR block) rather than user-defined.
   bool discovered = 4;
 }
 
+// NetworkBaselineStatusPeer describes a single peer connection to be checked
+// against a deployment's network baseline.
 message NetworkBaselineStatusPeer {
   // The peer entity of the connection. This can be constructed from the
   // entity object of the networkgraph API. Only the ID and type are required.
@@ -38,6 +47,8 @@ message NetworkBaselineStatusPeer {
   bool ingress = 4;
 }
 
+// NetworkBaselinePeerStatus pairs a peer connection with its baseline status
+// (BASELINE or ANOMALOUS) relative to the deployment's network baseline.
 message NetworkBaselinePeerStatus {
   // Status of this peer connection. As of now we only have two statuses:
   //   - BASELINE: the connection is in the current deployment baseline
@@ -51,35 +62,77 @@ message NetworkBaselinePeerStatus {
   Status status = 2;
 }
 
+// NetworkBaselineStatusRequest describes a batch of peer connections to check
+// against a deployment's network baseline.
 message NetworkBaselineStatusRequest {
+  // deployment_id is the ID of the deployment whose baseline to check against. Required.
   string deployment_id = 1;
+  // peers is the list of peer connections to classify as BASELINE or ANOMALOUS.
   repeated NetworkBaselineStatusPeer peers = 2;
 }
 
 message NetworkBaselineStatusResponse {
+  // statuses contains the classification result for each input peer, in the same order.
   repeated NetworkBaselinePeerStatus statuses = 1;
 }
 
+// NetworkBaselineExternalStatusRequest retrieves the baseline status of
+// observed external network flows for a deployment within a time window.
 message NetworkBaselineExternalStatusRequest {
+  // deployment_id is the ID of the deployment to query. Required.
   string deployment_id = 1;
+  // query additionally filters external entities using StackRox search syntax.
   string query = 2;
+  // since restricts flows to those observed after this timestamp.
+  // Defaults to 1 hour before the current time if unset.
   google.protobuf.Timestamp since = 3;
+  // pagination controls offset and limit for both the anomalous and baseline result lists.
   Pagination pagination = 4;
 }
 
+// NetworkBaselineExternalStatusResponse classifies observed external flows for
+// a deployment as anomalous or baseline, with pagination.
 message NetworkBaselineExternalStatusResponse {
+  // anomalous is the paginated list of external peer connections not in the baseline.
   repeated NetworkBaselinePeerStatus anomalous = 1;
+  // total_anomalous is the total number of anomalous peers before pagination.
   int32 total_anomalous = 2;
+  // baseline is the paginated list of external peer connections that match the baseline.
   repeated NetworkBaselinePeerStatus baseline = 3;
+  // total_baseline is the total number of baseline peers before pagination.
   int32 total_baseline = 4;
 }
 
+// ModifyBaselineStatusForPeersRequest adds or removes peer connections from a
+// deployment's network baseline.
 message ModifyBaselineStatusForPeersRequest {
+  // deployment_id is the ID of the deployment whose baseline to modify. Required.
   string deployment_id = 1;
+  // peers is the list of peer connections with their desired status
+  // (BASELINE to add, ANOMALOUS to remove from baseline).
   repeated NetworkBaselinePeerStatus peers = 2;
 }
 
+// NetworkBaselineService manages network baselines for deployments.
+//
+// A network baseline is the set of peer connections (port, protocol, direction,
+// and peer entity) that are expected for a deployment. Connections that do not
+// match the baseline are classified as anomalous and may trigger alerts.
+//
+// Baselines are created automatically on first access if they do not exist.
+// They can be locked to prevent further automatic updates, and modified
+// manually to add or remove peer connections.
+//
+// Authentication: read endpoints require View access to the DeploymentExtension
+// resource. Write endpoints (modify, lock, unlock) require Modify access to
+// DeploymentExtension.
 service NetworkBaselineService {
+  // GetNetworkBaselineStatusForFlows classifies a batch of peer connections
+  // as BASELINE or ANOMALOUS relative to the given deployment's network baseline.
+  //
+  // If no baseline exists for the deployment, one is created automatically
+  // before classification. Discovered external peers (e.g. dynamic CIDR blocks)
+  // are anonymized to the INTERNET entity for comparison purposes.
   rpc GetNetworkBaselineStatusForFlows(NetworkBaselineStatusRequest) returns (NetworkBaselineStatusResponse) {
     option (google.api.http) = {
       post: "/v1/networkbaseline/{deployment_id}/status"
@@ -87,14 +140,36 @@ service NetworkBaselineService {
     };
   }
 
+  // GetNetworkBaselineStatusForExternalFlows returns the baseline status of
+  // observed external network flows for a deployment, paginated and split into
+  // anomalous and baseline groups.
+  //
+  // Flows are fetched from the network graph for the given time window (default:
+  // last 1 hour). Results are sorted by peer entity name before pagination.
+  //
+  // If no baseline exists for the deployment, one is created automatically.
   rpc GetNetworkBaselineStatusForExternalFlows(NetworkBaselineExternalStatusRequest) returns (NetworkBaselineExternalStatusResponse) {
     option (google.api.http) = {get: "/v1/networkbaseline/{deployment_id}/status/external"};
   }
 
+  // GetNetworkBaseline returns the network baseline for the given deployment ID.
+  //
+  // If no baseline exists, one is created automatically. The baseline contains
+  // all peer connections (port, protocol, direction) currently marked as expected.
+  //
+  // Returns INVALID_ARGUMENT if the deployment ID is empty.
+  // Returns NOT_FOUND if the deployment does not exist and a baseline cannot
+  // be created.
   rpc GetNetworkBaseline(ResourceByID) returns (storage.NetworkBaseline) {
     option (google.api.http) = {get: "/v1/networkbaseline/{id}"};
   }
 
+  // ModifyBaselineStatusForPeers adds or removes peer connections from a
+  // deployment's network baseline.
+  //
+  // Peers with status BASELINE are added to the baseline; peers with status
+  // ANOMALOUS are removed. Changes are persisted and propagated to Sensor so
+  // that new observations are classified correctly.
   rpc ModifyBaselineStatusForPeers(ModifyBaselineStatusForPeersRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/networkbaseline/{deployment_id}/peers"
@@ -102,6 +177,12 @@ service NetworkBaselineService {
     };
   }
 
+  // LockNetworkBaseline locks a deployment's network baseline to prevent
+  // further automatic updates.
+  //
+  // Once locked, new observed connections are not automatically added to the
+  // baseline and will be classified as anomalous. The baseline can still be
+  // modified manually via ModifyBaselineStatusForPeers.
   rpc LockNetworkBaseline(ResourceByID) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/networkbaseline/{id}/lock"
@@ -109,6 +190,8 @@ service NetworkBaselineService {
     };
   }
 
+  // UnlockNetworkBaseline unlocks a deployment's network baseline, allowing
+  // new observed connections to be added automatically.
   rpc UnlockNetworkBaseline(ResourceByID) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/networkbaseline/{id}/unlock"

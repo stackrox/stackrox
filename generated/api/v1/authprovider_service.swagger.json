@@ -18,6 +18,8 @@
   "paths": {
     "/v1/authProviders": {
       "get": {
+        "summary": "GetAuthProviders returns all auth providers, optionally filtered by name and/or type.",
+        "description": "Both filters are optional and exact-match. Results are sorted by name;\nthe built-in basic provider appears last.\nRequires read access to the Access resource.",
         "operationId": "AuthProviderService_GetAuthProviders",
         "responses": {
           "200": {
@@ -36,12 +38,14 @@
         "parameters": [
           {
             "name": "name",
+            "description": "name filters results to providers whose name exactly matches this value.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "type",
+            "description": "type filters results to providers of this type (e.g. \"oidc\", \"saml2\", \"userpki\", \"iap\", \"openshift\").",
             "in": "query",
             "required": false,
             "type": "string"
@@ -52,6 +56,8 @@
         ]
       },
       "post": {
+        "summary": "PostAuthProvider creates a new auth provider.",
+        "description": "The provider.id and provider.login_url fields must be empty; they are assigned by the server.\nThe provider.name must be non-empty. The built-in \"basic\" provider type cannot be created.\nReturns INVALID_ARGUMENT if validation fails.\nRequires write access to the Access resource.",
         "operationId": "AuthProviderService_PostAuthProvider",
         "responses": {
           "200": {
@@ -70,6 +76,7 @@
         "parameters": [
           {
             "name": "provider",
+            "description": "provider holds the new auth provider to create. The id and login_url fields must be empty;\nthey are assigned by the server.",
             "in": "body",
             "required": true,
             "schema": {
@@ -84,6 +91,8 @@
     },
     "/v1/authProviders/exchangeToken": {
       "post": {
+        "summary": "ExchangeToken exchanges an external identity provider token for a Central access token.",
+        "description": "Used as part of the browser login flow after an OAuth/OIDC callback. The external_token,\ntype, and state from the IdP callback are submitted here. On success a Central JWT is returned.\nWhen state contains an internal test-mode marker, the response returns the resolved user auth\nstatus instead of a token, allowing preview of role assignments without issuing a credential.\nThis endpoint is publicly accessible (no authentication required).",
         "operationId": "AuthProviderService_ExchangeToken",
         "responses": {
           "200": {
@@ -102,6 +111,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "ExchangeTokenRequest carries the external identity provider token to be exchanged for a Central token.",
             "in": "body",
             "required": true,
             "schema": {
@@ -116,6 +126,8 @@
     },
     "/v1/authProviders/{id}": {
       "get": {
+        "summary": "GetAuthProvider returns the auth provider with the given ID.",
+        "description": "Returns NOT_FOUND if no provider with the specified ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.\nRequires read access to the Access resource.",
         "operationId": "AuthProviderService_GetAuthProvider",
         "responses": {
           "200": {
@@ -134,6 +146,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the unique identifier of the auth provider to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -144,6 +157,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteAuthProvider removes an auth provider and all its associated group mappings.",
+        "description": "The built-in \"basic\" provider cannot be deleted.\nWhen force is false, deletion is blocked if the provider has associated group mappings.\nReturns NOT_FOUND if no provider with the specified ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.\nRequires write access to the Access resource.",
         "operationId": "AuthProviderService_DeleteAuthProvider",
         "responses": {
           "200": {
@@ -178,6 +193,8 @@
         ]
       },
       "put": {
+        "summary": "PutAuthProvider fully replaces an existing auth provider.",
+        "description": "The request body must include the full provider definition including id.\nConfig fields omitted from the request are merged from the existing provider.\nThe built-in \"basic\" provider cannot be modified.\nReturns NOT_FOUND if no provider with the specified ID exists.\nReturns INVALID_ARGUMENT if the ID is empty or validation fails.\nRequires write access to the Access resource.",
         "operationId": "AuthProviderService_PutAuthProvider",
         "responses": {
           "200": {
@@ -214,6 +231,8 @@
         ]
       },
       "patch": {
+        "summary": "UpdateAuthProvider partially updates an existing auth provider's name or enabled status.",
+        "description": "Only the name and enabled fields can be modified via this endpoint. For full replacement,\nuse PutAuthProvider. The built-in \"basic\" provider cannot be modified.\nReturns NOT_FOUND if no provider with the specified ID exists.\nReturns INVALID_ARGUMENT if the ID is empty or validation fails.\nRequires write access to the Access resource.",
         "operationId": "AuthProviderService_UpdateAuthProvider",
         "responses": {
           "200": {
@@ -232,6 +251,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the unique identifier of the auth provider to update.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -252,6 +272,8 @@
     },
     "/v1/availableAuthProviders": {
       "get": {
+        "summary": "ListAvailableProviderTypes returns the auth provider types that can be created on this installation.",
+        "description": "The list is derived from registered backend factories. The built-in \"basic\" provider type\nis excluded. Results are sorted alphabetically by type name.\nThis endpoint is publicly accessible (no authentication required).",
         "operationId": "AuthProviderService_ListAvailableProviderTypes",
         "responses": {
           "200": {
@@ -274,6 +296,8 @@
     },
     "/v1/login/authproviders": {
       "get": {
+        "summary": "GetLoginAuthProviders returns the minimal auth provider information needed to render the login screen.",
+        "description": "Only returns enabled, visible providers that have a registered backend factory.\nResults are sorted by name; the built-in basic provider appears last.\nThis endpoint is publicly accessible (no authentication required).",
         "operationId": "AuthProviderService_GetLoginAuthProviders",
         "responses": {
           "200": {
@@ -376,26 +400,32 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name sets a new display name for the auth provider."
         },
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enabled enables or disables the auth provider for login."
         }
-      }
+      },
+      "description": "UpdateAuthProviderRequest updates specific mutable fields of an existing auth provider.\nOnly name and enabled can be changed via this endpoint; use PutAuthProvider for full replacement."
     },
     "AvailableProviderTypesResponseAuthProviderType": {
       "type": "object",
       "properties": {
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "type is the identifier of the provider type (e.g. \"oidc\", \"saml2\", \"userpki\")."
         },
         "suggestedAttributes": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "suggested_attributes is the sorted list of token claim attributes that are commonly mapped\nfor this provider type."
         }
-      }
+      },
+      "description": "AuthProviderType describes a single creatable auth provider type."
     },
     "GetLoginAuthProvidersResponseLoginAuthProvider": {
       "type": "object",
@@ -407,12 +437,15 @@
           "type": "string"
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "type identifies the provider type (e.g. \"oidc\", \"saml2\")."
         },
         "loginUrl": {
-          "type": "string"
+          "type": "string",
+          "description": "login_url is the URL the client should redirect to in order to initiate the login flow."
         }
-      }
+      },
+      "description": "LoginAuthProvider carries the subset of auth provider fields needed to render a login button."
     },
     "UserInfoResourceToAccess": {
       "type": "object",
@@ -669,36 +702,44 @@
       "type": "object",
       "properties": {
         "userId": {
-          "type": "string"
+          "type": "string",
+          "description": "user_id is the unique identifier of the human user, present when authenticated via an auth provider."
         },
         "serviceId": {
-          "$ref": "#/definitions/storageServiceIdentity"
+          "$ref": "#/definitions/storageServiceIdentity",
+          "description": "service_id identifies an internal service (e.g. Sensor) authenticated via mTLS."
         },
         "expires": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "expires is the UTC timestamp at which the current credential (token or certificate) expires."
         },
         "refreshUrl": {
-          "type": "string"
+          "type": "string",
+          "description": "refresh_url is the URL the client should call to refresh the token before it expires.\nOnly set when the auth provider backend supports token refresh."
         },
         "authProvider": {
-          "$ref": "#/definitions/storageAuthProvider"
+          "$ref": "#/definitions/storageAuthProvider",
+          "description": "auth_provider is the auth provider used to authenticate the caller.\nThe provider's sensitive config fields are stripped from this response."
         },
         "userInfo": {
-          "$ref": "#/definitions/storageUserInfo"
+          "$ref": "#/definitions/storageUserInfo",
+          "description": "user_info contains the display name, username, and aggregated permissions of the caller."
         },
         "userAttributes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1UserAttribute"
-          }
+          },
+          "description": "user_attributes holds raw claim attributes from the identity provider token."
         },
         "idpToken": {
           "type": "string",
           "description": "Token returned to ACS by the underlying identity provider. This field is set only in a few,\nspecific contexts. Do not rely on this field being present in the response."
         }
-      }
+      },
+      "description": "AuthStatus describes the authentication state of the caller that made the request."
     },
     "v1AvailableProviderTypesResponse": {
       "type": "object",
@@ -708,9 +749,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/AvailableProviderTypesResponseAuthProviderType"
-          }
+          },
+          "description": "auth_provider_types is the list of available provider types, sorted by type name.\nThe built-in \"basic\" provider type is excluded."
         }
-      }
+      },
+      "description": "AvailableProviderTypesResponse lists auth provider types that can be created on this installation."
     },
     "v1Empty": {
       "type": "object"
@@ -723,29 +766,37 @@
           "description": "The external authentication token. The server will mask the value of this credential in responses and logs."
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "type identifies the auth provider type that issued the token (e.g. \"oidc\")."
         },
         "state": {
-          "type": "string"
+          "type": "string",
+          "description": "state is the opaque state value returned by the identity provider during the OAuth/OIDC callback."
         }
-      }
+      },
+      "description": "ExchangeTokenRequest carries the external identity provider token to be exchanged for a Central token."
     },
     "v1ExchangeTokenResponse": {
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "token is the Central access token issued after a successful exchange. Empty in test mode."
         },
         "clientState": {
-          "type": "string"
+          "type": "string",
+          "description": "client_state is the opaque state passed back from the identity provider, stripped of internal markers."
         },
         "test": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "test is true when the exchange was triggered in test mode; in this case token is empty and user is set."
         },
         "user": {
-          "$ref": "#/definitions/v1AuthStatus"
+          "$ref": "#/definitions/v1AuthStatus",
+          "description": "user contains the resolved auth status when test is true, used to preview what role the user would receive."
         }
-      }
+      },
+      "description": "ExchangeTokenResponse contains either a Central access token (normal login) or auth status (test mode)."
     },
     "v1GetAuthProvidersResponse": {
       "type": "object",
@@ -767,23 +818,28 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/GetLoginAuthProvidersResponseLoginAuthProvider"
-          }
+          },
+          "description": "auth_providers is the list of enabled, visible providers available for login, sorted by name\nwith the basic provider last."
         }
-      }
+      },
+      "description": "GetLoginAuthProvidersResponse contains the minimal provider information needed to render the login screen."
     },
     "v1UserAttribute": {
       "type": "object",
       "properties": {
         "key": {
-          "type": "string"
+          "type": "string",
+          "description": "key is the attribute name as returned by the identity provider (e.g. \"groups\", \"email\")."
         },
         "values": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values holds one or more values for this attribute key."
         }
-      }
+      },
+      "description": "UserAttribute represents a single key/multi-value attribute attached to an authenticated user,\nsourced from the identity provider's token claims."
     }
   }
 }

@@ -11,45 +11,88 @@ import "storage/api_token.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// GenerateTokenRequest specifies the parameters for creating a new API token.
 message GenerateTokenRequest {
+  // name is a human-readable label for the token. Must be non-empty.
   string name = 1;
+  // role is deprecated; use roles instead. If set, it is treated as a single-element roles list.
+  // Specifying both role and roles returns INVALID_ARGUMENT.
   string role = 2 [deprecated = true];
+  // roles is the list of role names to assign to the generated token.
+  // All roles must exist and the caller must not request roles with more permissions than they hold
+  // (privilege escalation is rejected with NOT_AUTHORIZED).
   repeated string roles = 3;
+  // expiration is the optional UTC timestamp at which the token should expire.
+  // If not set, the token does not expire.
   google.protobuf.Timestamp expiration = 4;
 }
 
+// GenerateTokenResponse contains the newly generated API token and its metadata.
 message GenerateTokenResponse {
+  // token is the raw API token value. This is the only time it is returned; store it securely.
   string token = 1;
+  // metadata contains the token ID, name, roles, and expiration. Use the ID to revoke the token.
   storage.TokenMetadata metadata = 2;
 }
 
+// GetAPITokensRequest optionally filters tokens by revocation status.
 message GetAPITokensRequest {
   oneof revoked_oneof {
+    // revoked filters tokens by their revocation status.
+    // Set to true to return only revoked tokens; false to return only active tokens.
+    // Omit to return all tokens.
     bool revoked = 1;
   }
 }
 
 message GetAPITokensResponse {
+  // tokens is the list of token metadata records matching the request filter.
   repeated storage.TokenMetadata tokens = 1;
 }
 
+// ListAllowedTokenRolesResponse contains the role names the caller may assign to a new API token.
 message ListAllowedTokenRolesResponse {
+  // roleNames is the sorted list of role names the caller is permitted to use when generating a token.
+  // The "None" role is excluded as it provides no permissions.
   repeated string roleNames = 1;
 }
 
-// APITokenService APIs can be used to manage API tokens.
+// APITokenService manages long-lived API tokens used to authenticate programmatic access to Central.
+//
+// API tokens are scoped to one or more roles and optionally have an expiration time.
+// Tokens can be listed, retrieved by ID, generated, and revoked.
+//
+// Authentication requirements:
+// - GetAPIToken, GetAPITokens: require read access to the Integration resource.
+// - RevokeToken: requires write access to the Integration resource.
+// - GenerateToken: requires read access to the Access resource AND write access to the Integration resource.
+// - ListAllowedTokenRoles: requires read access to the Access resource.
 service APITokenService {
-  // GetAPIToken returns API token metadata for a given id.
+  // GetAPIToken returns the metadata for the API token with the given ID.
+  //
+  // Note: the raw token value is never returned; only metadata is available after creation.
+  // Returns INVALID_ARGUMENT if the ID is empty or no token with that ID exists.
+  // Requires read access to the Integration resource.
   rpc GetAPIToken(ResourceByID) returns (storage.TokenMetadata) {
     option (google.api.http) = {get: "/v1/apitokens/{id}"};
   }
 
-  // GetAPITokens returns all the API tokens.
+  // GetAPITokens returns metadata for all API tokens, optionally filtered by revocation status.
+  //
+  // Use the revoked field to filter for active or revoked tokens only.
+  // Requires read access to the Integration resource.
   rpc GetAPITokens(GetAPITokensRequest) returns (GetAPITokensResponse) {
     option (google.api.http) = {get: "/v1/apitokens"};
   }
 
-  // GenerateToken generates API token for a given user and role.
+  // GenerateToken creates a new API token assigned to one or more roles.
+  //
+  // The token name must be non-empty. All requested roles must exist and must not exceed
+  // the caller's own permissions (privilege escalation prevention).
+  // The raw token value is returned only in this response; it cannot be retrieved later.
+  // Returns INVALID_ARGUMENT if the name is empty, both role and roles are set, or a role does not exist.
+  // Returns NOT_AUTHORIZED if any requested role has more permissions than the caller.
+  // Requires read access to the Access resource and write access to the Integration resource.
   rpc GenerateToken(GenerateTokenRequest) returns (GenerateTokenResponse) {
     option (google.api.http) = {
       post: "/v1/apitokens/generate"
@@ -57,12 +100,20 @@ service APITokenService {
     };
   }
 
-  // RevokeToken removes the API token for a given id.
+  // RevokeToken marks the API token with the given ID as revoked, immediately invalidating it.
+  //
+  // Revocation is permanent; revoked tokens cannot be reinstated.
+  // Returns an error if the ID is empty or no token with that ID exists.
+  // Requires write access to the Integration resource.
   rpc RevokeToken(ResourceByID) returns (Empty) {
     option (google.api.http) = {patch: "/v1/apitokens/revoke/{id}"};
   }
 
-  // GetAllowedTokenRoles return roles that user is allowed to request for API token.
+  // ListAllowedTokenRoles returns the role names the caller is permitted to assign to a new API token.
+  //
+  // Roles with more permissions than the caller holds are excluded (privilege escalation prevention).
+  // The built-in "None" role is excluded. Results are sorted alphabetically.
+  // Requires read access to the Access resource.
   rpc ListAllowedTokenRoles(Empty) returns (ListAllowedTokenRolesResponse) {
     option (google.api.http) = {get: "/v1/apitokens/generate/allowed-roles"};
   }

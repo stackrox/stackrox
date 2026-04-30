@@ -18,6 +18,8 @@
   "paths": {
     "/v1/networkpolicies": {
       "get": {
+        "summary": "GetNetworkPolicies returns all NetworkPolicies in a cluster, optionally\nfiltered by namespace or by the set of deployments they apply to.",
+        "description": "When deployment_query is provided, only policies that are selected by at\nleast one matching deployment are returned. YAML is populated for all\nreturned policies.\n\nReturns NOT_FOUND if the cluster does not exist.\nReturns INVALID_ARGUMENT if deployment_query syntax is malformed.",
         "operationId": "NetworkPolicyService_GetNetworkPolicies",
         "responses": {
           "200": {
@@ -36,18 +38,21 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id restricts results to policies in this cluster. Required.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "deploymentQuery",
+            "description": "deployment_query is an optional StackRox search query; when set, only\npolicies that apply to at least one matching deployment are returned.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "namespace",
+            "description": "namespace restricts results to policies in this Kubernetes namespace.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -60,6 +65,8 @@
     },
     "/v1/networkpolicies/allowedpeers/{id}": {
       "get": {
+        "summary": "GetAllowedPeersFromCurrentPolicyForDeployment returns all peers\n(deployments and external entities) that are currently permitted to\ncommunicate with the given deployment based on active NetworkPolicies.",
+        "description": "Each peer entry includes the port, protocol, and direction (ingress/egress).\nReturns INVALID_ARGUMENT if the deployment is not found.",
         "operationId": "NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment",
         "responses": {
           "200": {
@@ -90,6 +97,8 @@
     },
     "/v1/networkpolicies/apply/deployment/{deploymentId}": {
       "post": {
+        "summary": "ApplyNetworkPolicyYamlForDeployment applies a network policy modification\nto the cluster of the specified deployment and records an undo record keyed\nby deployment ID.",
+        "description": "Behaves like ApplyNetworkPolicy but stores the undo record per deployment\nrather than per cluster.\nReturns NOT_FOUND if the deployment does not exist.\nReturns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.",
         "operationId": "NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment",
         "responses": {
           "200": {
@@ -108,6 +117,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is used to look up the target cluster and to key the undo record.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -128,6 +138,8 @@
     },
     "/v1/networkpolicies/apply/{clusterId}": {
       "post": {
+        "summary": "ApplyNetworkPolicy applies a NetworkPolicy modification to a cluster via\nthe connected Sensor and stores an undo record.",
+        "description": "The modification must be non-empty and all policies must have non-empty\nnamespaces. Changes to the stackrox and kube-system namespaces are\nforbidden and will return INVALID_ARGUMENT. The caller must have write\naccess to all namespaces referenced in the modification.\n\nReturns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.",
         "operationId": "NetworkPolicyService_ApplyNetworkPolicy",
         "responses": {
           "200": {
@@ -146,12 +158,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to apply the modification to. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "modification",
+            "description": "modification describes the policies to create/update and the policies to delete.",
             "in": "body",
             "required": true,
             "schema": {
@@ -166,6 +180,8 @@
     },
     "/v1/networkpolicies/baselinecomparison/{id}": {
       "get": {
+        "summary": "GetDiffFlowsBetweenPolicyAndBaselineForDeployment compares the peers\ncurrently allowed by active NetworkPolicies against those that would be\nallowed by the baseline-generated NetworkPolicy for the deployment.",
+        "description": "Returns added (newly allowed), removed (no longer allowed), and reconciled\n(present in both, with per-property diffs) peer groups.",
         "operationId": "NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment",
         "responses": {
           "200": {
@@ -196,6 +212,8 @@
     },
     "/v1/networkpolicies/cluster/{clusterId}": {
       "get": {
+        "summary": "GetNetworkGraph returns a policy-based network connectivity graph for a\ncluster, showing which deployments are permitted to communicate based on\nthe active NetworkPolicies (not observed flows).",
+        "description": "Returns NOT_FOUND if the cluster does not exist or is not visible.\nReturns INVALID_ARGUMENT if cluster_id is empty.",
         "operationId": "NetworkPolicyService_GetNetworkGraph",
         "responses": {
           "200": {
@@ -214,12 +232,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to generate the graph for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query filters deployments shown as query-match nodes using StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -233,6 +253,7 @@
           },
           {
             "name": "scope.query",
+            "description": "query filters the scope using StackRox search syntax (e.g. \"Namespace:production\").",
             "in": "query",
             "required": false,
             "type": "string"
@@ -245,6 +266,8 @@
     },
     "/v1/networkpolicies/generate/baseline/{deploymentId}": {
       "post": {
+        "summary": "GetBaselineGeneratedNetworkPolicyForDeployment generates a NetworkPolicy\nfor a specific deployment based on its network baseline (the set of\nconnections marked as expected).",
+        "description": "The result is a NetworkPolicyModification ready to be previewed or applied.\nReturns INVALID_ARGUMENT if deployment_id is empty.\nRequires View access to NetworkPolicy and DeploymentExtension.",
         "operationId": "NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment",
         "responses": {
           "200": {
@@ -263,6 +286,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment to generate the policy for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -283,6 +307,8 @@
     },
     "/v1/networkpolicies/generate/{clusterId}": {
       "get": {
+        "summary": "GenerateNetworkPolicies auto-generates Kubernetes NetworkPolicies for\ndeployments in a cluster based on observed network flows.",
+        "description": "The result is a NetworkPolicyModification containing YAML for the generated\npolicies and references to existing policies to delete (per delete_existing\nmode). Flows are restricted to those after network_data_since if set.\n\nReturns INVALID_ARGUMENT if cluster_id is empty.\nRequires View access to NetworkPolicy and NetworkGraph.",
         "operationId": "NetworkPolicyService_GenerateNetworkPolicies",
         "responses": {
           "200": {
@@ -301,19 +327,21 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to generate policies for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query filters the deployments whose observed flows are used for generation,\nusing StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "deleteExisting",
-            "description": " - NONE: Do not delete any existing network policies.\n - GENERATED_ONLY: Delete any existing *auto-generated* network policies.\n - ALL: Delete all existing network policies in the respective namespace.",
+            "description": "delete_existing controls whether existing policies are deleted before applying\nthe generated ones. Defaults to NONE if UNKNOWN.\n\n - NONE: Do not delete any existing network policies.\n - GENERATED_ONLY: Delete any existing *auto-generated* network policies.\n - ALL: Delete all existing network policies in the respective namespace.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -327,6 +355,7 @@
           },
           {
             "name": "networkDataSince",
+            "description": "network_data_since restricts flows used for generation to those observed\nafter this timestamp.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -334,6 +363,7 @@
           },
           {
             "name": "includePorts",
+            "description": "include_ports controls whether per-port connection details are reflected in\nthe generated policy rules.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -346,6 +376,8 @@
     },
     "/v1/networkpolicies/graph/epoch": {
       "get": {
+        "summary": "GetNetworkGraphEpoch returns the current epoch counter for the network\npolicy graph of a cluster.",
+        "description": "The epoch increments whenever the network policy state changes. Clients\ncan poll this lightweight endpoint to detect when a full graph refresh\nis needed.",
         "operationId": "NetworkPolicyService_GetNetworkGraphEpoch",
         "responses": {
           "200": {
@@ -364,6 +396,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id identifies the cluster whose epoch to retrieve. Required.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -376,6 +409,8 @@
     },
     "/v1/networkpolicies/simulate/{clusterId}": {
       "post": {
+        "summary": "SimulateNetworkGraph previews how the network connectivity graph would\nchange if the proposed NetworkPolicy modification were applied.",
+        "description": "Returns the simulated graph and the status of each affected policy.\nWhen include_node_diff is true, also returns the sets of added and removed\nconnectivity edges.\n\nModifications to the stackrox or kube-system namespaces are rejected\nunless the policy content is identical to the existing policy.\nReturns NOT_FOUND if the cluster does not exist.",
         "operationId": "NetworkPolicyService_SimulateNetworkGraph",
         "responses": {
           "200": {
@@ -394,12 +429,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to simulate against. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "modification",
+            "description": "modification describes the network policies to add, modify, or delete in\nthe simulation. Must be non-empty and must not affect restricted namespaces\n(stackrox, kube-system).",
             "in": "body",
             "required": true,
             "schema": {
@@ -408,6 +445,7 @@
           },
           {
             "name": "query",
+            "description": "query filters deployments shown as query-match nodes using StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -421,12 +459,14 @@
           },
           {
             "name": "includeNodeDiff",
+            "description": "include_node_diff controls whether added/removed edge diffs between the\ncurrent and simulated graphs are computed and returned. When false, only\nthe simulated graph and policy list are returned.",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
             "name": "scope.query",
+            "description": "query filters the scope using StackRox search syntax (e.g. \"Namespace:production\").",
             "in": "query",
             "required": false,
             "type": "string"
@@ -439,6 +479,8 @@
     },
     "/v1/networkpolicies/simulate/{clusterId}/notify": {
       "post": {
+        "summary": "SendNetworkPolicyYAML delivers the proposed network policy modification\nYAML to one or more configured notifiers (e.g. Slack, email).",
+        "description": "The cluster and all specified notifiers must exist. The modification must\nbe non-empty. Returns INVALID_ARGUMENT if any required field is missing.\nRequires Modify access to the Integration resource.",
         "operationId": "NetworkPolicyService_SendNetworkPolicyYAML",
         "responses": {
           "200": {
@@ -457,12 +499,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id identifies the target cluster. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "modification",
+            "description": "modification is the network policy change to send. Must be non-empty.",
             "in": "body",
             "required": true,
             "schema": {
@@ -471,6 +515,7 @@
           },
           {
             "name": "notifierIds",
+            "description": "notifier_ids is the list of notifier IDs to send the YAML to. Required.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -487,6 +532,8 @@
     },
     "/v1/networkpolicies/undo/deployment/{id}": {
       "get": {
+        "summary": "GetUndoModificationForDeployment returns the undo record for the most\nrecent network policy application associated with a specific deployment.",
+        "description": "Returns NOT_FOUND if the deployment does not exist or has no undo record.",
         "operationId": "NetworkPolicyService_GetUndoModificationForDeployment",
         "responses": {
           "200": {
@@ -517,6 +564,8 @@
     },
     "/v1/networkpolicies/undo/{clusterId}": {
       "get": {
+        "summary": "GetUndoModification returns the undo record for the most recent network\npolicy application to a cluster.",
+        "description": "The undo record contains the original modification and the modification\nneeded to revert it.\n\nReturns NOT_FOUND if no undo record exists for the cluster.",
         "operationId": "NetworkPolicyService_GetUndoModification",
         "responses": {
           "200": {
@@ -535,6 +584,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id identifies the cluster whose undo record to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -547,6 +597,8 @@
     },
     "/v1/networkpolicies/undobaselinecomparison/{id}": {
       "get": {
+        "summary": "GetDiffFlowsFromUndoModificationForDeployment compares the peers currently\nallowed by active NetworkPolicies against those that would be allowed if\nthe last deployment-level undo modification were applied.",
+        "description": "Returns NOT_FOUND if the deployment has no stored undo record.",
         "operationId": "NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment",
         "responses": {
           "200": {
@@ -577,6 +629,8 @@
     },
     "/v1/networkpolicies/{id}": {
       "get": {
+        "summary": "GetNetworkPolicy returns a single NetworkPolicy by ID.",
+        "description": "The YAML representation of the policy is populated in the response.\nReturns NOT_FOUND if no policy with the given ID exists.",
         "operationId": "NetworkPolicyService_GetNetworkPolicy",
         "responses": {
           "200": {
@@ -704,20 +758,25 @@
       "type": "object",
       "properties": {
         "modification": {
-          "$ref": "#/definitions/storageNetworkPolicyModification"
+          "$ref": "#/definitions/storageNetworkPolicyModification",
+          "description": "modification describes the policies to create/update and the policies to delete."
         }
-      }
+      },
+      "description": "ApplyNetworkPolicyYamlForDeploymentRequest applies a network policy\nmodification to the cluster of the specified deployment and records an\nundo record keyed by deployment ID."
     },
     "NetworkPolicyServiceGetBaselineGeneratedNetworkPolicyForDeploymentBody": {
       "type": "object",
       "properties": {
         "deleteExisting": {
-          "$ref": "#/definitions/GenerateNetworkPoliciesRequestDeleteExistingPoliciesMode"
+          "$ref": "#/definitions/GenerateNetworkPoliciesRequestDeleteExistingPoliciesMode",
+          "description": "delete_existing controls whether any existing baseline-generated policy for\nthis deployment is included in the modification's delete list."
         },
         "includePorts": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "include_ports controls whether per-port details are reflected in the generated rules."
         }
-      }
+      },
+      "description": "GetBaselineGeneratedPolicyForDeploymentRequest requests auto-generation of\na NetworkPolicy for a specific deployment based on its network baseline."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -1060,10 +1119,11 @@
       "type": "object",
       "properties": {
         "modification": {
-          "$ref": "#/definitions/storageNetworkPolicyModification"
+          "$ref": "#/definitions/storageNetworkPolicyModification",
+          "description": "modification contains the YAML for newly generated policies and references\nto policies that should be deleted, per the delete_existing mode."
         }
       },
-      "title": "Next available tag: 2"
+      "description": "Next available tag: 2\nGenerateNetworkPoliciesResponse contains the generated NetworkPolicy YAML\nmodification ready to be applied or previewed."
     },
     "v1GetAllowedPeersFromCurrentPolicyForDeploymentResponse": {
       "type": "object",
@@ -1073,61 +1133,73 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselineStatusPeer"
-          }
+          },
+          "description": "allowed_peers is the list of permitted peer connections, including port,\nprotocol, and ingress/egress direction for each peer."
         }
-      }
+      },
+      "description": "GetAllowedPeersFromCurrentPolicyForDeploymentResponse lists all network\npeers that are currently permitted to communicate with a deployment based\non the active NetworkPolicies."
     },
     "v1GetBaselineGeneratedPolicyForDeploymentResponse": {
       "type": "object",
       "properties": {
         "modification": {
-          "$ref": "#/definitions/storageNetworkPolicyModification"
+          "$ref": "#/definitions/storageNetworkPolicyModification",
+          "description": "modification contains the generated policy YAML and any policies to delete."
         }
-      }
+      },
+      "description": "GetBaselineGeneratedPolicyForDeploymentResponse contains the generated\nNetworkPolicy modification for a specific deployment."
     },
     "v1GetDiffFlowsGroupedFlow": {
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageNetworkEntityInfo"
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "description": "entity is the peer network entity."
         },
         "properties": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselineConnectionProperties"
-          }
+          },
+          "description": "properties are the connection properties (port, protocol, direction) for this peer."
         }
-      }
+      },
+      "description": "GetDiffFlowsGroupedFlow groups connection properties for a single peer in\none of the two compared policy states (added or removed)."
     },
     "v1GetDiffFlowsReconciledFlow": {
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageNetworkEntityInfo"
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "description": "entity is the peer network entity."
         },
         "added": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselineConnectionProperties"
-          }
+          },
+          "description": "added lists connection properties that would be newly permitted in the new state."
         },
         "removed": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselineConnectionProperties"
-          }
+          },
+          "description": "removed lists connection properties that would no longer be permitted."
         },
         "unchanged": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselineConnectionProperties"
-          }
+          },
+          "description": "unchanged lists connection properties permitted in both states."
         }
-      }
+      },
+      "description": "GetDiffFlowsReconciledFlow captures the connection-level diff for a single\npeer between two network policy states."
     },
     "v1GetDiffFlowsResponse": {
       "type": "object",
@@ -1137,56 +1209,69 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1GetDiffFlowsGroupedFlow"
-          }
+          },
+          "description": "added contains peers that are permitted in the new state but not in the current state."
         },
         "removed": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1GetDiffFlowsGroupedFlow"
-          }
+          },
+          "description": "removed contains peers that are permitted in the current state but not in the new state."
         },
         "reconciled": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1GetDiffFlowsReconciledFlow"
-          }
+          },
+          "description": "reconciled contains peers present in both states, with per-connection property diffs."
         }
-      }
+      },
+      "description": "GetDiffFlowsResponse describes the diff between two sets of allowed peers\nfor a deployment (e.g. current policy vs. baseline-generated policy, or\ncurrent policy vs. undo state)."
     },
     "v1GetUndoModificationForDeploymentResponse": {
       "type": "object",
       "properties": {
         "undoRecord": {
-          "$ref": "#/definitions/storageNetworkPolicyApplicationUndoRecord"
+          "$ref": "#/definitions/storageNetworkPolicyApplicationUndoRecord",
+          "description": "undo_record describes the original modification and the change needed to revert it."
         }
-      }
+      },
+      "description": "GetUndoModificationForDeploymentResponse contains the undo record for the\nlast network policy modification applied via ApplyNetworkPolicyYamlForDeployment."
     },
     "v1GetUndoModificationResponse": {
       "type": "object",
       "properties": {
         "undoRecord": {
-          "$ref": "#/definitions/storageNetworkPolicyApplicationUndoRecord"
+          "$ref": "#/definitions/storageNetworkPolicyApplicationUndoRecord",
+          "description": "undo_record describes the original modification and the modification\nneeded to revert it."
         }
-      }
+      },
+      "description": "GetUndoModificationResponse contains the undo record for the last applied\nnetwork policy modification to a cluster."
     },
     "v1NetworkBaselinePeerEntity": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier of the peer entity."
         },
         "type": {
-          "$ref": "#/definitions/storageNetworkEntityInfoType"
+          "$ref": "#/definitions/storageNetworkEntityInfoType",
+          "description": "type is the entity type (DEPLOYMENT, EXTERNAL_SOURCE, INTERNET, etc.)."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the display name of the peer entity."
         },
         "discovered": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "discovered is true if this entity was automatically discovered (e.g. a\ndiscovered external CIDR block) rather than user-defined."
         }
-      }
+      },
+      "description": "NetworkBaselinePeerEntity identifies a network entity (deployment, external\nsource, etc.) as a peer in a baseline connection check."
     },
     "v1NetworkBaselineStatusPeer": {
       "type": "object",
@@ -1207,23 +1292,28 @@
           "type": "boolean",
           "description": "A boolean representing whether the query is for an ingress or egress\nconnection. This is defined with respect to the current deployment.\nThus:\n  - If the connection in question is in the outEdges of the current deployment,\n    this should be false.\n  - If it is in the outEdges of the peer deployment, this\n    should be true."
         }
-      }
+      },
+      "description": "NetworkBaselineStatusPeer describes a single peer connection to be checked\nagainst a deployment's network baseline."
     },
     "v1NetworkEdgeProperties": {
       "type": "object",
       "properties": {
         "port": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "port is the destination port of the connection."
         },
         "protocol": {
-          "$ref": "#/definitions/storageL4Protocol"
+          "$ref": "#/definitions/storageL4Protocol",
+          "description": "protocol is the Layer-4 protocol (TCP, UDP, etc.) of the connection."
         },
         "lastActiveTimestamp": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "last_active_timestamp is the most recent time this connection was observed."
         }
-      }
+      },
+      "description": "NetworkEdgeProperties describes a single observed connection on a specific\nport and protocol."
     },
     "v1NetworkEdgePropertiesBundle": {
       "type": "object",
@@ -1235,23 +1325,27 @@
             "$ref": "#/definitions/v1NetworkEdgeProperties"
           }
         }
-      }
+      },
+      "description": "NetworkEdgePropertiesBundle groups all connection properties observed on a\nsingle directed edge between two network nodes."
     },
     "v1NetworkGraph": {
       "type": "object",
       "properties": {
         "epoch": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "epoch is a monotonically increasing counter that increments whenever the\nunderlying network policy graph changes. Clients can compare epochs to\ndetect staleness without re-fetching the full graph."
         },
         "nodes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkNode"
-          }
+          },
+          "description": "nodes is the list of network entities in the graph. Edge indices in\nout_edges refer to positions in this list."
         }
-      }
+      },
+      "description": "NetworkGraph is the response to GetNetworkGraph, containing a snapshot of\nobserved network flows within a cluster."
     },
     "v1NetworkGraphDiff": {
       "type": "object",
@@ -1266,58 +1360,72 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1NetworkNodeDiff"
-          }
+          },
+          "description": "node_diffs maps a node ID to the connectivity changes for that node."
         }
-      }
+      },
+      "description": "NetworkGraphDiff summarizes which edges were added or removed between two\nnetwork graph states."
     },
     "v1NetworkGraphEpoch": {
       "type": "object",
       "properties": {
         "epoch": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "epoch is a monotonically increasing counter. Clients can poll this to\ndetect when the graph needs to be refreshed."
         }
-      }
+      },
+      "description": "NetworkGraphEpoch is a version counter for the network policy graph of a\ncluster. It increments whenever the underlying network policies change."
     },
     "v1NetworkGraphScope": {
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "query filters the scope using StackRox search syntax (e.g. \"Namespace:production\")."
         }
-      }
+      },
+      "description": "NetworkGraphScope restricts the network graph to a subset of deployments\nmatching the given search query."
     },
     "v1NetworkNode": {
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageNetworkEntityInfo"
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "description": "entity identifies the network entity (deployment, CIDR block, internet, etc.)."
         },
         "internetAccess": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "internet_access is true if this node has observed flows to/from the internet."
         },
         "policyIds": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "policy_ids lists the IDs of NetworkPolicies that select this deployment.\nPopulated only when include_policies is set in the request."
         },
         "nonIsolatedIngress": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "non_isolated_ingress is true when no ingress NetworkPolicy selects this deployment,\nmeaning all ingress traffic is allowed."
         },
         "nonIsolatedEgress": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "non_isolated_egress is true when no egress NetworkPolicy selects this deployment,\nmeaning all egress traffic is allowed."
         },
         "queryMatch": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "query_match is true if this node matched the filter query in the request\n(as opposed to appearing only as a neighbor of a matching node)."
         },
         "outEdges": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1NetworkEdgePropertiesBundle"
-          }
+          },
+          "description": "out_edges maps the index of a destination node in the nodes list to the\nset of observed connection properties on that edge."
         }
-      }
+      },
+      "description": "NetworkNode represents a single entity (deployment, external source, or\ninternet) in the network graph."
     },
     "v1NetworkNodeDiff": {
       "type": "object",
@@ -1326,7 +1434,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "policy_ids lists NetworkPolicy IDs that select this deployment in the new state."
         },
         "DEPRECATEDOutEdges": {
           "type": "object",
@@ -1338,15 +1447,19 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1NetworkEdgePropertiesBundle"
-          }
+          },
+          "description": "out_edges maps a destination node ID to the edge properties in the new state."
         },
         "nonIsolatedIngress": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "non_isolated_ingress is true when no ingress policy selects this node in the new state."
         },
         "nonIsolatedEgress": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "non_isolated_egress is true when no egress policy selects this node in the new state."
         }
-      }
+      },
+      "description": "NetworkNodeDiff captures the change to a single network node's connectivity\nbetween two graph states (e.g. current vs. simulated)."
     },
     "v1NetworkPoliciesResponse": {
       "type": "object",
@@ -1364,16 +1477,19 @@
       "type": "object",
       "properties": {
         "policy": {
-          "$ref": "#/definitions/storageNetworkPolicy"
+          "$ref": "#/definitions/storageNetworkPolicy",
+          "description": "policy is the network policy in its simulated state (nil if DELETED)."
         },
         "status": {
-          "$ref": "#/definitions/v1NetworkPolicyInSimulationStatus"
+          "$ref": "#/definitions/v1NetworkPolicyInSimulationStatus",
+          "description": "status indicates how this policy is affected by the proposed modification."
         },
         "oldPolicy": {
           "$ref": "#/definitions/storageNetworkPolicy",
-          "description": "if status is MODIFIED or DELETED, this contains the previous network policy."
+          "description": "old_policy is the current (pre-simulation) version of the policy.\nPopulated when status is MODIFIED or DELETED.\n\nif status is MODIFIED or DELETED, this contains the previous network policy."
         }
-      }
+      },
+      "description": "NetworkPolicyInSimulation represents a single network policy in the context\nof a simulation, annotated with whether it is unchanged, added, modified,\nor deleted by the proposed modification."
     },
     "v1NetworkPolicyInSimulationStatus": {
       "type": "string",
@@ -1384,28 +1500,34 @@
         "ADDED",
         "DELETED"
       ],
-      "default": "INVALID"
+      "default": "INVALID",
+      "description": " - UNCHANGED: UNCHANGED means this policy is not affected by the proposed modification.\n - MODIFIED: MODIFIED means this policy is replaced by a new version in the simulation.\n - ADDED: ADDED means this policy does not currently exist and would be created.\n - DELETED: DELETED means this policy would be removed by the modification."
     },
     "v1SimulateNetworkGraphResponse": {
       "type": "object",
       "properties": {
         "simulatedGraph": {
-          "$ref": "#/definitions/v1NetworkGraph"
+          "$ref": "#/definitions/v1NetworkGraph",
+          "description": "simulated_graph is the network connectivity graph after applying the\nproposed modification."
         },
         "policies": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkPolicyInSimulation"
-          }
+          },
+          "description": "policies is the full list of network policies in the simulation with their\nchange status (UNCHANGED, ADDED, MODIFIED, DELETED)."
         },
         "added": {
-          "$ref": "#/definitions/v1NetworkGraphDiff"
+          "$ref": "#/definitions/v1NetworkGraphDiff",
+          "description": "added contains nodes and edges that would be added by the modification.\nOnly populated when include_node_diff is true and the modification has changes."
         },
         "removed": {
-          "$ref": "#/definitions/v1NetworkGraphDiff"
+          "$ref": "#/definitions/v1NetworkGraphDiff",
+          "description": "removed contains nodes and edges that would be removed by the modification.\nOnly populated when include_node_diff is true and the modification has changes."
         }
-      }
+      },
+      "description": "SimulateNetworkGraphResponse contains the results of a network policy\nsimulation, including the simulated graph, the policy states, and optional\nedge diffs."
     }
   }
 }

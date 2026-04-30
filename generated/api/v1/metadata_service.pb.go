@@ -183,11 +183,15 @@ func (CentralServicesCapabilities_CapabilityStatus) EnumDescriptor() ([]byte, []
 	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6, 0}
 }
 
+// Metadata contains basic build and version information about the running Central instance.
 type Metadata struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	Version      string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	BuildFlavor  string                 `protobuf:"bytes,2,opt,name=build_flavor,json=buildFlavor,proto3" json:"build_flavor,omitempty"`
-	ReleaseBuild bool                   `protobuf:"varint,3,opt,name=release_build,json=releaseBuild,proto3" json:"release_build,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// version is the Central version string (e.g. "4.5.0"). Only returned to authenticated callers.
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	// build_flavor describes the build variant (e.g. "release", "development").
+	BuildFlavor string `protobuf:"bytes,2,opt,name=build_flavor,json=buildFlavor,proto3" json:"build_flavor,omitempty"`
+	// release_build is true if this is an official release build.
+	ReleaseBuild bool `protobuf:"varint,3,opt,name=release_build,json=releaseBuild,proto3" json:"release_build,omitempty"`
 	// Do not use this field. It will always contain "VALID"
 	//
 	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
@@ -255,17 +259,18 @@ func (x *Metadata) GetLicenseStatus() Metadata_LicenseStatus {
 	return Metadata_NONE
 }
 
+// TrustInfo contains the certificate chains and challenge tokens used in the TLS challenge handshake.
 type TrustInfo struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// holds the certificate chain held by Central
+	// cert_chain holds the certificate chain presented by Central (leaf + CA), in DER format.
 	CertChain [][]byte `protobuf:"bytes,1,rep,name=cert_chain,json=certChain,proto3" json:"cert_chain,omitempty"`
-	// Sensor challenge string
+	// sensor_challenge is the base64-encoded challenge token provided by the caller (Sensor).
 	SensorChallenge string `protobuf:"bytes,2,opt,name=sensor_challenge,json=sensorChallenge,proto3" json:"sensor_challenge,omitempty"`
-	// Central challenge string
+	// central_challenge is a randomly generated nonce produced by Central to prevent replay attacks.
 	CentralChallenge string `protobuf:"bytes,3,opt,name=central_challenge,json=centralChallenge,proto3" json:"central_challenge,omitempty"`
-	// additional CA certs configured in Central in DER format
+	// additional_cas contains any extra CA certificates configured in Central (e.g. load balancer CAs), in DER format.
 	AdditionalCas [][]byte `protobuf:"bytes,4,rep,name=additional_cas,json=additionalCas,proto3" json:"additional_cas,omitempty"`
-	// an optional certificate chain, if Central has a secondary CA
+	// secondary_cert_chain is an optional certificate chain if Central has a secondary CA (e.g. during CA rotation).
 	SecondaryCertChain [][]byte `protobuf:"bytes,5,rep,name=secondary_cert_chain,json=secondaryCertChain,proto3" json:"secondary_cert_chain,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -336,13 +341,15 @@ func (x *TrustInfo) GetSecondaryCertChain() [][]byte {
 	return nil
 }
 
+// TLSChallengeResponse is the signed response to a TLS challenge request.
 type TLSChallengeResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// signed data which is returned to the caller, is validated against the signature
+	// trust_info_serialized is the serialized TrustInfo proto, signed by Central's leaf certificate key.
 	TrustInfoSerialized []byte `protobuf:"bytes,1,opt,name=trust_info_serialized,json=trustInfoSerialized,proto3" json:"trust_info_serialized,omitempty"`
-	// primary signature (by key from TrustInfo.cert_chain[0])
+	// signature is the cryptographic signature over trust_info_serialized using Central's primary leaf certificate.
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-	// optional signature by key from TrustInfo.secondary_cert_chain[0].
+	// signature_secondary_ca is an optional additional signature by the secondary CA leaf certificate,
+	// present during CA rotation.
 	SignatureSecondaryCa []byte `protobuf:"bytes,3,opt,name=signature_secondary_ca,json=signatureSecondaryCa,proto3" json:"signature_secondary_ca,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -399,9 +406,11 @@ func (x *TLSChallengeResponse) GetSignatureSecondaryCa() []byte {
 	return nil
 }
 
+// TLSChallengeRequest is the request for the TLS certificate discovery challenge.
 type TLSChallengeRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// generated challenge token by the service asking for TLS certs
+	// challenge_token is a base64-encoded random token generated by the caller (Sensor).
+	// Must decode to exactly the expected number of bytes to prevent replay attacks.
 	ChallengeToken string `protobuf:"bytes,1,opt,name=challenge_token,json=challengeToken,proto3" json:"challenge_token,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -444,15 +453,17 @@ func (x *TLSChallengeRequest) GetChallengeToken() string {
 	return ""
 }
 
+// DatabaseStatus reports Central's connectivity and configuration with its backing database.
 type DatabaseStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// indicates whether or not central can communicate with the database
+	// database_available indicates whether Central can currently communicate with the database.
 	DatabaseAvailable bool `protobuf:"varint,1,opt,name=database_available,json=databaseAvailable,proto3" json:"database_available,omitempty"`
-	// type of database serving central
+	// database_type identifies the type of database serving Central. Only returned to authenticated callers.
 	DatabaseType DatabaseStatus_DatabaseType `protobuf:"varint,2,opt,name=database_type,json=databaseType,proto3,enum=v1.DatabaseStatus_DatabaseType" json:"database_type,omitempty"`
-	// version of the database
-	DatabaseVersion    string `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
-	DatabaseIsExternal bool   `protobuf:"varint,4,opt,name=database_is_external,json=databaseIsExternal,proto3" json:"database_is_external,omitempty"`
+	// database_version is the version string of the database engine. Only returned to authenticated callers.
+	DatabaseVersion string `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
+	// database_is_external indicates whether Central is using an externally managed database instance.
+	DatabaseIsExternal bool `protobuf:"varint,4,opt,name=database_is_external,json=databaseIsExternal,proto3" json:"database_is_external,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -515,6 +526,7 @@ func (x *DatabaseStatus) GetDatabaseIsExternal() bool {
 	return false
 }
 
+// DatabaseBackupStatus contains information about the most recent database backup.
 type DatabaseBackupStatus struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	BackupInfo    *storage.BackupInfo    `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo,proto3" json:"backup_info,omitempty"`

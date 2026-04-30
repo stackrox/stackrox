@@ -35,17 +35,98 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ConfigService APIs can be used to manage Central config.
+// ConfigService manages system-wide configuration for Central, including public UI settings,
+// private data-retention policies, vulnerability exception options, and platform component rules.
+//
+// Configuration is divided into three sub-configs:
+//   - PublicConfig: settings readable without authentication (login banners, telemetry opt-in).
+//   - PrivateConfig: operational settings readable only by administrators (data retention
+//     durations for alerts, images, reports, decommissioned clusters, and admin events;
+//     Prometheus metrics configuration).
+//   - PlatformComponentConfig: namespace-matching rules that classify workloads as platform
+//     components vs. user workloads (feature-flagged; see CustomizablePlatformComponents).
+//
+// Authentication:
+//   - GetPublicConfig: no authentication required (anonymous access).
+//   - GetVulnerabilityExceptionConfig: requires View on VulnerabilityManagementRequests OR Administration.
+//   - All other read endpoints: require View on Administration.
+//   - All write endpoints: require Modify on Administration.
 type ConfigServiceClient interface {
+	// GetPublicConfig returns the public portion of Central's configuration.
+	//
+	// Public config includes UI banners (header/footer), the login-page notice, and the
+	// telemetry opt-in status. This endpoint is intentionally unauthenticated so that banners
+	// can be displayed on the login page before the user has a session.
 	GetPublicConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PublicConfig, error)
+	// GetPrivateConfig returns the private (admin-only) portion of Central's configuration.
+	//
+	// Private config contains all data-retention settings: alert retention durations (by type),
+	// image scan retention, expired vulnerability request retention, decommissioned cluster
+	// retention, report history and downloadable-report retention, administration event retention,
+	// and custom Prometheus metrics configuration.
+	//
+	// Requires View on the Administration resource.
 	GetPrivateConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PrivateConfig, error)
+	// GetVulnerabilityExceptionConfig returns the current vulnerability exception (deferral/false-positive)
+	// configuration, which controls which expiry options are offered when users create exception requests.
+	//
+	// Requires View on VulnerabilityManagementRequests OR View on Administration.
 	GetVulnerabilityExceptionConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityExceptionConfigResponse, error)
+	// UpdateVulnerabilityExceptionConfig replaces the vulnerability exception configuration.
+	//
+	// Validates that:
+	//   - at least one DayOption is provided and at least one expiry option is enabled overall,
+	//   - all enabled DayOptions have unique num_days values >= 1,
+	//   - fixable_cve_options is present.
+	//
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires Modify on Administration.
 	UpdateVulnerabilityExceptionConfig(ctx context.Context, in *UpdateVulnerabilityExceptionConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityExceptionConfigResponse, error)
+	// GetPlatformComponentConfig returns the current platform component classification rules.
+	//
+	// Platform component rules are namespace-matching regexes used to label workloads as
+	// platform (infrastructure) rather than user workloads. This endpoint is only available
+	// when the CustomizablePlatformComponents feature flag is enabled; returns an error otherwise.
+	//
+	// Requires View on Administration.
 	GetPlatformComponentConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error)
+	// UpdatePlatformComponentConfig replaces the platform component namespace-matching rules.
+	//
+	// Each rule must have a non-empty name and a valid RE2 regex for namespace matching.
+	// After a successful update, platform component classification is re-evaluated for all
+	// known workloads asynchronously.
+	//
+	// Returns INVALID_ARGUMENT if any rule has an empty name, empty regex, or an invalid regex pattern.
+	// Returns an error if the CustomizablePlatformComponents feature flag is disabled.
+	// Requires Modify on Administration.
 	UpdatePlatformComponentConfig(ctx context.Context, in *PutPlatformComponentConfigRequest, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error)
+	// GetConfig returns the complete Central configuration, including public config, private config,
+	// and platform component config.
+	//
+	// Requires View on Administration.
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error)
+	// PutConfig replaces the entire Central configuration in a single write.
+	//
+	// Both public_config and private_config must be present in the request; omitting either
+	// returns INVALID_ARGUMENT. Platform component rules (if provided) are validated for
+	// non-empty names and valid RE2 regex patterns. The vulnerability exception config embedded
+	// in private_config is also validated.
+	//
+	// Side effects on success:
+	//   - Telemetry collection is enabled or disabled based on public_config.telemetry.enabled.
+	//   - Platform component classification is re-evaluated for all workloads asynchronously.
+	//   - Custom Prometheus metrics aggregation is reconfigured.
+	//
+	// Returns INVALID_ARGUMENT if required sub-configs are missing or any validation fails.
+	// Requires Modify on Administration.
 	PutConfig(ctx context.Context, in *PutConfigRequest, opts ...grpc.CallOption) (*storage.Config, error)
 	// GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
+	//
+	// This regex is the built-in pattern used to identify namespaces belonging to Red Hat layered
+	// products (e.g. OpenShift operators). It can be used as a starting point when configuring
+	// custom platform component rules via UpdatePlatformComponentConfig.
+	//
+	// Requires View on Administration.
 	GetDefaultRedHatLayeredProductsRegex(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDefaultRedHatLayeredProductsRegexResponse, error)
 }
 
@@ -151,17 +232,98 @@ func (c *configServiceClient) GetDefaultRedHatLayeredProductsRegex(ctx context.C
 // All implementations should embed UnimplementedConfigServiceServer
 // for forward compatibility.
 //
-// ConfigService APIs can be used to manage Central config.
+// ConfigService manages system-wide configuration for Central, including public UI settings,
+// private data-retention policies, vulnerability exception options, and platform component rules.
+//
+// Configuration is divided into three sub-configs:
+//   - PublicConfig: settings readable without authentication (login banners, telemetry opt-in).
+//   - PrivateConfig: operational settings readable only by administrators (data retention
+//     durations for alerts, images, reports, decommissioned clusters, and admin events;
+//     Prometheus metrics configuration).
+//   - PlatformComponentConfig: namespace-matching rules that classify workloads as platform
+//     components vs. user workloads (feature-flagged; see CustomizablePlatformComponents).
+//
+// Authentication:
+//   - GetPublicConfig: no authentication required (anonymous access).
+//   - GetVulnerabilityExceptionConfig: requires View on VulnerabilityManagementRequests OR Administration.
+//   - All other read endpoints: require View on Administration.
+//   - All write endpoints: require Modify on Administration.
 type ConfigServiceServer interface {
+	// GetPublicConfig returns the public portion of Central's configuration.
+	//
+	// Public config includes UI banners (header/footer), the login-page notice, and the
+	// telemetry opt-in status. This endpoint is intentionally unauthenticated so that banners
+	// can be displayed on the login page before the user has a session.
 	GetPublicConfig(context.Context, *Empty) (*storage.PublicConfig, error)
+	// GetPrivateConfig returns the private (admin-only) portion of Central's configuration.
+	//
+	// Private config contains all data-retention settings: alert retention durations (by type),
+	// image scan retention, expired vulnerability request retention, decommissioned cluster
+	// retention, report history and downloadable-report retention, administration event retention,
+	// and custom Prometheus metrics configuration.
+	//
+	// Requires View on the Administration resource.
 	GetPrivateConfig(context.Context, *Empty) (*storage.PrivateConfig, error)
+	// GetVulnerabilityExceptionConfig returns the current vulnerability exception (deferral/false-positive)
+	// configuration, which controls which expiry options are offered when users create exception requests.
+	//
+	// Requires View on VulnerabilityManagementRequests OR View on Administration.
 	GetVulnerabilityExceptionConfig(context.Context, *Empty) (*GetVulnerabilityExceptionConfigResponse, error)
+	// UpdateVulnerabilityExceptionConfig replaces the vulnerability exception configuration.
+	//
+	// Validates that:
+	//   - at least one DayOption is provided and at least one expiry option is enabled overall,
+	//   - all enabled DayOptions have unique num_days values >= 1,
+	//   - fixable_cve_options is present.
+	//
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires Modify on Administration.
 	UpdateVulnerabilityExceptionConfig(context.Context, *UpdateVulnerabilityExceptionConfigRequest) (*UpdateVulnerabilityExceptionConfigResponse, error)
+	// GetPlatformComponentConfig returns the current platform component classification rules.
+	//
+	// Platform component rules are namespace-matching regexes used to label workloads as
+	// platform (infrastructure) rather than user workloads. This endpoint is only available
+	// when the CustomizablePlatformComponents feature flag is enabled; returns an error otherwise.
+	//
+	// Requires View on Administration.
 	GetPlatformComponentConfig(context.Context, *Empty) (*storage.PlatformComponentConfig, error)
+	// UpdatePlatformComponentConfig replaces the platform component namespace-matching rules.
+	//
+	// Each rule must have a non-empty name and a valid RE2 regex for namespace matching.
+	// After a successful update, platform component classification is re-evaluated for all
+	// known workloads asynchronously.
+	//
+	// Returns INVALID_ARGUMENT if any rule has an empty name, empty regex, or an invalid regex pattern.
+	// Returns an error if the CustomizablePlatformComponents feature flag is disabled.
+	// Requires Modify on Administration.
 	UpdatePlatformComponentConfig(context.Context, *PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error)
+	// GetConfig returns the complete Central configuration, including public config, private config,
+	// and platform component config.
+	//
+	// Requires View on Administration.
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
+	// PutConfig replaces the entire Central configuration in a single write.
+	//
+	// Both public_config and private_config must be present in the request; omitting either
+	// returns INVALID_ARGUMENT. Platform component rules (if provided) are validated for
+	// non-empty names and valid RE2 regex patterns. The vulnerability exception config embedded
+	// in private_config is also validated.
+	//
+	// Side effects on success:
+	//   - Telemetry collection is enabled or disabled based on public_config.telemetry.enabled.
+	//   - Platform component classification is re-evaluated for all workloads asynchronously.
+	//   - Custom Prometheus metrics aggregation is reconfigured.
+	//
+	// Returns INVALID_ARGUMENT if required sub-configs are missing or any validation fails.
+	// Requires Modify on Administration.
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
 	// GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
+	//
+	// This regex is the built-in pattern used to identify namespaces belonging to Red Hat layered
+	// products (e.g. OpenShift operators). It can be used as a starting point when configuring
+	// custom platform component rules via UpdatePlatformComponentConfig.
+	//
+	// Requires View on Administration.
 	GetDefaultRedHatLayeredProductsRegex(context.Context, *Empty) (*GetDefaultRedHatLayeredProductsRegexResponse, error)
 }
 

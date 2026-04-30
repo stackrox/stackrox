@@ -78,21 +78,33 @@ func (ComplianceProfile_OperatorKind) EnumDescriptor() ([]byte, []int) {
 }
 
 // Next Tag: 13
+// ComplianceProfile represents a compliance profile sourced from the Compliance Operator.
+// A profile defines a set of rules and benchmarks that are evaluated during a compliance scan.
 type ComplianceProfile struct {
-	state          protoimpl.MessageState         `protogen:"open.v1"`
-	Id             string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name           string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ProfileVersion string                         `protobuf:"bytes,3,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
-	ProductType    string                         `protobuf:"bytes,4,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
-	Description    string                         `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
-	Rules          []*ComplianceRule              `protobuf:"bytes,7,rep,name=rules,proto3" json:"rules,omitempty"`
-	Product        string                         `protobuf:"bytes,8,opt,name=product,proto3" json:"product,omitempty"`
-	Title          string                         `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
-	Values         []string                       `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
-	Standards      []*ComplianceBenchmark         `protobuf:"bytes,11,rep,name=standards,proto3" json:"standards,omitempty"`
-	OperatorKind   ComplianceProfile_OperatorKind `protobuf:"varint,12,opt,name=operator_kind,json=operatorKind,proto3,enum=v2.ComplianceProfile_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// profile_version is the version string of this profile (e.g. "1.4.0").
+	ProfileVersion string `protobuf:"bytes,3,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
+	// product_type describes the target product category (e.g. "Platform", "Node").
+	ProductType string `protobuf:"bytes,4,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
+	// description is the human-readable description of the profile's purpose and scope.
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	// rules lists the compliance rules that are part of this profile.
+	Rules []*ComplianceRule `protobuf:"bytes,7,rep,name=rules,proto3" json:"rules,omitempty"`
+	// product is the name of the product this profile applies to (e.g. "OpenShift").
+	Product string `protobuf:"bytes,8,opt,name=product,proto3" json:"product,omitempty"`
+	// title is the display name of the profile (e.g. "CIS Red Hat OpenShift Container Platform 4 Benchmark").
+	Title string `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
+	// values lists the variable values applied to this profile's checks.
+	Values []string `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
+	// standards lists the compliance benchmarks (e.g. CIS, NIST) that this profile maps to.
+	Standards []*ComplianceBenchmark `protobuf:"bytes,11,rep,name=standards,proto3" json:"standards,omitempty"`
+	// operator_kind indicates whether this profile originates from a Compliance Operator
+	// Profile or TailoredProfile resource.
+	OperatorKind  ComplianceProfile_OperatorKind `protobuf:"varint,12,opt,name=operator_kind,json=operatorKind,proto3,enum=v2.ComplianceProfile_OperatorKind" json:"operator_kind,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceProfile) Reset() {
@@ -204,9 +216,10 @@ func (x *ComplianceProfile) GetOperatorKind() ComplianceProfile_OperatorKind {
 
 // ListComplianceProfilesResponse provides a list of profiles
 type ListComplianceProfilesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Profiles      []*ComplianceProfile   `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Profiles []*ComplianceProfile   `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	// total_count is the total number of profiles matching the query, before pagination.
+	TotalCount    int32 `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -257,9 +270,10 @@ func (x *ListComplianceProfilesResponse) GetTotalCount() int32 {
 
 // ListComplianceProfileSummaryResponse provides a list of profiles summaries
 type ListComplianceProfileSummaryResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Profiles      []*ComplianceProfileSummary `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
-	TotalCount    int32                       `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	state    protoimpl.MessageState      `protogen:"open.v1"`
+	Profiles []*ComplianceProfileSummary `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	// total_count is the total number of distinct profile names matching the query, before pagination.
+	TotalCount    int32 `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -308,10 +322,13 @@ func (x *ListComplianceProfileSummaryResponse) GetTotalCount() int32 {
 	return 0
 }
 
+// ProfilesForClusterRequest filters profiles to those available on a specific cluster.
 type ProfilesForClusterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is required and restricts results to profiles installed on this cluster.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query further filters results using StackRox search syntax. Supports pagination.
+	Query         *RawQuery `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -360,10 +377,13 @@ func (x *ProfilesForClusterRequest) GetQuery() *RawQuery {
 	return nil
 }
 
+// ClustersProfileSummaryRequest requests profile summaries across multiple clusters.
 type ClustersProfileSummaryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterIds    []string               `protobuf:"bytes,1,rep,name=cluster_ids,json=clusterIds,proto3" json:"cluster_ids,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_ids is required; at least one cluster ID must be provided.
+	ClusterIds []string `protobuf:"bytes,1,rep,name=cluster_ids,json=clusterIds,proto3" json:"cluster_ids,omitempty"`
+	// query further filters and paginates the results using StackRox search syntax.
+	Query         *RawQuery `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -18,8 +18,8 @@
   "paths": {
     "/v1/export/vuln-mgmt/workloads": {
       "get": {
-        "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.",
-        "description": "The response is structured as:\n{\"result\": {\"deployment\": {...}, \"images\": [...]}}\n...\n{\"result\": {\"deployment\": {...}, \"images\": [...]}}",
+        "summary": "VulnMgmtExportWorkloads streams vulnerability data for all deployments\nmatching the request filter.",
+        "description": "Each stream message contains one deployment, its deduplicated container\nimages with full CVE scan data, and the number of live pods. The entire\nexport runs within a single read transaction, so all messages represent a\nconsistent snapshot of the database at the time the call was made.\n\nImages are cached in an LRU cache (capacity 1000) during a single call so\nthat images shared across multiple deployments are fetched from the\ndatabase only once.\n\nThe HTTP response body is a newline-delimited sequence of JSON objects:\n  {\"result\": {\"deployment\": {...}, \"images\": [...], \"livePods\": N}}\n  {\"result\": {\"deployment\": {...}, \"images\": [...], \"livePods\": N}}\n\nReturns INVALID_ARGUMENT if the query string cannot be parsed.\nReturns PERMISSION_DENIED if the caller lacks read access to Deployment\nor Image resources.",
         "operationId": "VulnMgmtService_VulnMgmtExportWorkloads",
         "responses": {
           "200": {
@@ -47,7 +47,7 @@
         "parameters": [
           {
             "name": "timeout",
-            "description": "Request timeout in seconds.",
+            "description": "timeout is the maximum duration in seconds to wait for the export to\ncomplete. When set, the server cancels the streaming operation after the\ngiven number of seconds. When 0 or unset, no timeout is applied beyond\nthe underlying connection deadline.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -55,7 +55,7 @@
           },
           {
             "name": "query",
-            "description": "Query to constrain the deployments for which vulnerability data is returned.\nThe queries contain pairs of `Search Option:Value` separated by `+` signs.\nFor HTTP requests the query should be quoted. For example\n> curl \"$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox\"\nqueries vulnerability data for all scanner deployments in the stackrox namespace.\nSee https://docs.openshift.com/acs/operating/search-filter.html for more information.",
+            "description": "query constrains which deployments are included in the export using\nStackRox search syntax. Pairs of `Search Option:Value` are joined by `+`.\nWhen empty, all deployments visible to the caller are exported.\n\nExample (URL-encoded):\n  curl \"$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox\"\n\nSupported search fields include Deployment, Namespace, Cluster, Label,\nand any other field accepted by the deployment search index.\n\nSee https://docs.openshift.com/acs/operating/search-filter.html for\nthe full query syntax reference.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -1616,21 +1616,24 @@
       "type": "object",
       "properties": {
         "deployment": {
-          "$ref": "#/definitions/storageDeployment"
+          "$ref": "#/definitions/storageDeployment",
+          "description": "deployment is the full deployment record, including container specs,\nresource configuration, labels, and risk metadata."
         },
         "images": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageImage"
-          }
+          },
+          "description": "images contains the deduplicated set of container images referenced by\nthis deployment. Each image includes the full vulnerability scan with\nembedded components and CVEs. Images absent from the image store are\nsilently omitted from this list."
         },
         "livePods": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "live_pods is the count of pods belonging to this deployment that currently\nhave at least one running container instance (i.e., pods with a live\ncontainer image digest recorded in the pod store)."
         }
       },
-      "description": "The workloads response contains the full image details including the\nvulnerability data."
+      "description": "VulnMgmtExportWorkloadsResponse contains vulnerability data for a single\ndeployment. Each stream message corresponds to one deployment together with\nits deduplicated container images (including full scan and CVE data) and the\nnumber of currently running pods."
     }
   }
 }

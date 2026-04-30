@@ -18,6 +18,7 @@
   "paths": {
     "/v1/grpc-preferences": {
       "get": {
+        "summary": "Get returns the gRPC preferences for this Central instance, including the\nmaximum receive message size in bytes.",
         "operationId": "GRPCPreferencesService_Get",
         "responses": {
           "200": {

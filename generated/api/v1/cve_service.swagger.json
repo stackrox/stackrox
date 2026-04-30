@@ -21,7 +21,8 @@
   "paths": {
     "/v1/clustercves/suppress": {
       "patch": {
-        "summary": "SuppressCVE suppresses cluster cves.",
+        "summary": "SuppressCVEs snoozes the given cluster-infrastructure CVEs for the specified\nduration.",
+        "description": "Suppression sets the CVE state to snoozed, hiding it from vulnerability\nmanagement views until the snooze duration elapses or UnsuppressCVEs is\ncalled. Because cluster CVEs are not part of the policy workflow, suppression\ndoes not affect policy violations or risk reprocessing.\n\nReturns INVALID_ARGUMENT if no CVE identifiers are provided.\nReturns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.",
         "operationId": "ClusterCVEService_SuppressCVEs",
         "responses": {
           "200": {
@@ -40,6 +41,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "SuppressCVERequest is the request message for suppressing (snoozeing) one or more CVEs.",
             "in": "body",
             "required": true,
             "schema": {
@@ -54,7 +56,8 @@
     },
     "/v1/clustercves/unsuppress": {
       "patch": {
-        "summary": "UnsuppressCVE unsuppresses cluster cves.",
+        "summary": "UnsuppressCVEs lifts the snooze from the given cluster-infrastructure CVEs,\nreturning them to the OBSERVED state immediately regardless of any remaining\nsnooze duration.",
+        "description": "Returns INVALID_ARGUMENT if no CVE identifiers are provided.\nReturns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.",
         "operationId": "ClusterCVEService_UnsuppressCVEs",
         "responses": {
           "200": {
@@ -73,6 +76,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "UnsuppressCVERequest is the request message for lifting suppression from one or more CVEs.",
             "in": "body",
             "required": true,
             "schema": {
@@ -87,7 +91,8 @@
     },
     "/v1/nodecves/suppress": {
       "patch": {
-        "summary": "SuppressCVE suppresses node cves.",
+        "summary": "SuppressCVEs snoozes the given node CVEs for the specified duration.",
+        "description": "Suppression sets the CVE state to snoozed, hiding it from vulnerability\nmanagement views until the snooze duration elapses or UnsuppressCVEs is\ncalled. Because nodes are not part of the policy workflow, suppression does\nnot affect policy violations or risk reprocessing.\n\nReturns INVALID_ARGUMENT if no CVE identifiers are provided.\nReturns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.",
         "operationId": "NodeCVEService_SuppressCVEs",
         "responses": {
           "200": {
@@ -106,6 +111,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "SuppressCVERequest is the request message for suppressing (snoozeing) one or more CVEs.",
             "in": "body",
             "required": true,
             "schema": {
@@ -120,7 +126,8 @@
     },
     "/v1/nodecves/unsuppress": {
       "patch": {
-        "summary": "UnsuppressCVE unsuppresses node cves.",
+        "summary": "UnsuppressCVEs lifts the snooze from the given node CVEs, returning them to\nthe OBSERVED state immediately regardless of any remaining snooze duration.",
+        "description": "Returns INVALID_ARGUMENT if no CVE identifiers are provided.\nReturns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.",
         "operationId": "NodeCVEService_UnsuppressCVEs",
         "responses": {
           "200": {
@@ -139,6 +146,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "UnsuppressCVERequest is the request message for lifting suppression from one or more CVEs.",
             "in": "body",
             "required": true,
             "schema": {
@@ -194,13 +202,14 @@
           "items": {
             "type": "string"
           },
-          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
+          "description": "cves is the list of NVD vulnerability identifiers to suppress.\nThese are the `cve` field values of `storage.CVE` (e.g. \"CVE-2021-44832\"),\nand *not* the internal `id` field."
         },
         "duration": {
           "type": "string",
-          "description": "In JSON format, the Duration type is encoded as a string rather than an object,\nwhere the string ends in the suffix \"s\" (indicating seconds) and is preceded by the number of seconds,\nwith nanoseconds expressed as fractional seconds.\nFor example, 3 seconds with 0 nanoseconds should be encoded in JSON format as \"3s\",\nwhile 3 seconds and 1 nanosecond should be expressed in JSON format as \"3.000000001s\",\nand 3 seconds and 1 microsecond should be expressed in JSON format as \"3.000001s\"."
+          "description": "duration specifies how long the CVE should remain suppressed (snoozed).\nAfter this duration elapses, the CVE returns to the OBSERVED state automatically.\nIn JSON format, encode as a string with a trailing \"s\" suffix representing seconds;\nnanoseconds are expressed as fractional seconds (e.g. \"3s\", \"3.000000001s\", \"3.000001s\")."
         }
-      }
+      },
+      "description": "SuppressCVERequest is the request message for suppressing (snoozeing) one or more CVEs."
     },
     "v1UnsuppressCVERequest": {
       "type": "object",
@@ -210,9 +219,10 @@
           "items": {
             "type": "string"
           },
-          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
+          "description": "cves is the list of NVD vulnerability identifiers to unsuppress.\nThese are the `cve` field values of `storage.CVE` (e.g. \"CVE-2021-44832\"),\nand *not* the internal `id` field."
         }
-      }
+      },
+      "description": "UnsuppressCVERequest is the request message for lifting suppression from one or more CVEs."
     }
   }
 }

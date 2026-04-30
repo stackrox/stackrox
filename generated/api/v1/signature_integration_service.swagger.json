@@ -18,6 +18,7 @@
   "paths": {
     "/v1/signatureintegrations": {
       "get": {
+        "summary": "ListSignatureIntegrations returns all configured signature integrations,\nsorted alphabetically by name.",
         "operationId": "SignatureIntegrationService_ListSignatureIntegrations",
         "responses": {
           "200": {
@@ -38,7 +39,8 @@
         ]
       },
       "post": {
-        "summary": "Integration id should not be set.\nReturns signature integration with id filled.",
+        "summary": "PostSignatureIntegration creates a new signature integration.",
+        "description": "The id field must not be set; a new ID is assigned and returned. If this\nis the first signature integration added, Central immediately triggers a\nfull reprocessing of signature verifications for all images.\n\nReturns INVALID_ARGUMENT if the id field is set or if validation fails.",
         "operationId": "SignatureIntegrationService_PostSignatureIntegration",
         "responses": {
           "200": {
@@ -71,6 +73,8 @@
     },
     "/v1/signatureintegrations/{id}": {
       "get": {
+        "summary": "GetSignatureIntegration returns the signature integration with the given ID.",
+        "description": "Returns NOT_FOUND if no integration with the given ID exists.",
         "operationId": "SignatureIntegrationService_GetSignatureIntegration",
         "responses": {
           "200": {
@@ -99,6 +103,7 @@
         ]
       },
       "delete": {
+        "summary": "DeleteSignatureIntegration removes the signature integration with the\ngiven ID and triggers reprocessing of signature verification results for\nall images.",
         "operationId": "SignatureIntegrationService_DeleteSignatureIntegration",
         "responses": {
           "200": {
@@ -127,6 +132,8 @@
         ]
       },
       "put": {
+        "summary": "PutSignatureIntegration replaces an existing signature integration.",
+        "description": "If the verification configuration (e.g. public keys) has changed, Central\ntriggers reprocessing of signature verification results for all images.\nIf the configuration is unchanged, no reprocessing is triggered.",
         "operationId": "SignatureIntegrationService_PutSignatureIntegration",
         "responses": {
           "200": {
@@ -391,7 +398,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageSignatureIntegration"
-          }
+          },
+          "description": "integrations contains all signature integrations, sorted by name."
         }
       }
     }

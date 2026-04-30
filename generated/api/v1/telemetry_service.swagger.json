@@ -18,6 +18,8 @@
   "paths": {
     "/v1/telemetry/config": {
       "get": {
+        "summary": "GetConfig returns the current phone-home telemetry client configuration\nfor the authenticated user.",
+        "description": "The response includes a hashed user ID derived from the caller's auth\nidentity, the telemetry endpoint URL, and a storage key (empty when\nthe telemetry client is disabled).",
         "operationId": "TelemetryService_GetConfig",
         "responses": {
           "200": {
@@ -40,6 +42,7 @@
     },
     "/v1/telemetry/config/reload": {
       "post": {
+        "summary": "PostConfigReload triggers Central to re-read its telemetry configuration\nfrom the environment and reconfigure the phone-home client accordingly.",
         "operationId": "TelemetryService_PostConfigReload",
         "responses": {
           "200": {
@@ -62,6 +65,8 @@
     },
     "/v1/telemetry/configure": {
       "get": {
+        "summary": "GetTelemetryConfiguration is deprecated and returns enabled=false\nunconditionally. It was previously used to check whether periodic\ntelemetry collection was enabled.",
+        "description": "Deprecated: use GetConfig instead.",
         "operationId": "TelemetryService_GetTelemetryConfiguration",
         "responses": {
           "200": {
@@ -82,6 +87,8 @@
         ]
       },
       "put": {
+        "summary": "ConfigureTelemetry is deprecated and has no effect. It was previously\nused to enable or disable periodic telemetry collection.",
+        "description": "Deprecated: use PostConfigReload instead.",
         "operationId": "TelemetryService_ConfigureTelemetry",
         "responses": {
           "200": {
@@ -177,7 +184,8 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enabled is deprecated and has no effect."
         }
       }
     },

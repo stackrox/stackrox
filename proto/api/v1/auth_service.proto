@@ -14,20 +14,34 @@ import "storage/user.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// UserAttribute represents a single key/multi-value attribute attached to an authenticated user,
+// sourced from the identity provider's token claims.
 message UserAttribute {
+  // key is the attribute name as returned by the identity provider (e.g. "groups", "email").
   string key = 1;
+  // values holds one or more values for this attribute key.
   repeated string values = 2;
 }
 
+// AuthStatus describes the authentication state of the caller that made the request.
 message AuthStatus {
   oneof id {
+    // user_id is the unique identifier of the human user, present when authenticated via an auth provider.
     string user_id = 1;
+    // service_id identifies an internal service (e.g. Sensor) authenticated via mTLS.
     storage.ServiceIdentity service_id = 2;
   }
+  // expires is the UTC timestamp at which the current credential (token or certificate) expires.
   google.protobuf.Timestamp expires = 3;
+  // refresh_url is the URL the client should call to refresh the token before it expires.
+  // Only set when the auth provider backend supports token refresh.
   string refresh_url = 4;
+  // auth_provider is the auth provider used to authenticate the caller.
+  // The provider's sensitive config fields are stripped from this response.
   storage.AuthProvider auth_provider = 5;
+  // user_info contains the display name, username, and aggregated permissions of the caller.
   storage.UserInfo user_info = 6;
+  // user_attributes holds raw claim attributes from the identity provider token.
   repeated UserAttribute user_attributes = 7;
   // Token returned to ACS by the underlying identity provider. This field is set only in a few,
   // specific contexts. Do not rely on this field being present in the response.
@@ -117,23 +131,48 @@ message ExchangeAuthMachineToMachineTokenResponse {
   string access_token = 1;
 }
 
+// AuthService provides authentication status and machine-to-machine (M2M) token exchange
+// configuration for Central.
+//
+// GetAuthStatus can be called by any authenticated client (including anonymous callers, who
+// will receive HTTP 401). The M2M config management endpoints require the Access resource:
+// read access for list/get, write access for add/update/delete.
+// ExchangeAuthMachineToMachineToken is open to anonymous callers and exchanges a third-party
+// OIDC token for a Central access token based on configured M2M rules.
 service AuthService {
-  // GetAuthStatus returns the status for the current client.
+  // GetAuthStatus returns the authentication status of the caller making the request.
+  //
+  // The response includes the caller's identity (user ID or service identity), token expiry,
+  // associated auth provider (with sensitive config fields stripped), resolved roles and
+  // permissions, and raw identity-provider attributes.
+  //
+  // This endpoint allows anonymous calls; unauthenticated requests receive HTTP 401.
   rpc GetAuthStatus(Empty) returns (AuthStatus) {
     option (google.api.http) = {get: "/v1/auth/status"};
   }
 
-  // ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.
+  // ListAuthMachineToMachineConfigs returns all configured machine-to-machine token exchange rules.
+  //
+  // Requires read access to the Access resource.
   rpc ListAuthMachineToMachineConfigs(Empty) returns (ListAuthMachineToMachineConfigResponse) {
     option (google.api.http) = {get: "/v1/auth/m2m"};
   }
 
-  // GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.
+  // GetAuthMachineToMachineConfig returns the machine-to-machine config with the given ID.
+  //
+  // Returns NOT_FOUND if no config with the specified ID exists.
+  // Requires read access to the Access resource.
   rpc GetAuthMachineToMachineConfig(ResourceByID) returns (GetAuthMachineToMachineConfigResponse) {
     option (google.api.http) = {get: "/v1/auth/m2m/{id}"};
   }
 
-  // AddAuthMachineToMachineConfig creates a new auth machine to machine config.
+  // AddAuthMachineToMachineConfig creates a new machine-to-machine token exchange config.
+  //
+  // The config.id field must be empty; a UUID is assigned by the server.
+  // Validates token_expiration_duration (1 minute to 24 hours), issuer URL (must use HTTPS),
+  // and that all mapping value_expression fields are valid RE2 regular expressions.
+  // Returns INVALID_ARGUMENT if validation fails.
+  // Requires write access to the Access resource.
   rpc AddAuthMachineToMachineConfig(AddAuthMachineToMachineConfigRequest) returns (AddAuthMachineToMachineConfigResponse) {
     option (google.api.http) = {
       post: "/v1/auth/m2m"
@@ -141,8 +180,13 @@ service AuthService {
     };
   }
 
-  // UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
+  // UpdateAuthMachineToMachineConfig updates an existing machine-to-machine token exchange config.
   // In case the auth machine to machine config does not exist, a new one will be created.
+  //
+  // The config.id field must be set to the ID of the config to update.
+  // Applies the same validation as AddAuthMachineToMachineConfig.
+  // Returns INVALID_ARGUMENT if validation fails.
+  // Requires write access to the Access resource.
   rpc UpdateAuthMachineToMachineConfig(UpdateAuthMachineToMachineConfigRequest) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/auth/m2m/{config.id}"
@@ -150,14 +194,23 @@ service AuthService {
     };
   }
 
-  // DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+  // DeleteAuthMachineToMachineConfig removes the machine-to-machine config with the given ID.
   // In case a specified auth machine to machine config does not exist is deleted, no error will be returned.
+  //
+  // Requires write access to the Access resource.
   rpc DeleteAuthMachineToMachineConfig(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/auth/m2m/{id}"};
   }
 
-  // ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on
-  // configured auth machine to machine configs.
+  // ExchangeAuthMachineToMachineToken exchanges a third-party OIDC identity token for a
+  // Central access token, based on configured machine-to-machine rules.
+  //
+  // The issuer of the provided id_token is extracted and matched against configured M2M configs.
+  // Token claim values are then evaluated against the configured mappings to resolve a role.
+  // At least one mapping must match for a Central access token to be issued.
+  //
+  // Returns NO_CREDENTIALS if no M2M config is registered for the token's issuer.
+  // This endpoint allows anonymous calls (no prior authentication required).
   rpc ExchangeAuthMachineToMachineToken(ExchangeAuthMachineToMachineTokenRequest) returns (ExchangeAuthMachineToMachineTokenResponse) {
     option (google.api.http) = {
       post: "/v1/auth/m2m/exchange"

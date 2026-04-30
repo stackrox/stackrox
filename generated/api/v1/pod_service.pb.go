@@ -23,6 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PodsResponse is the response for a list pods request.
 type PodsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Pods          []*storage.Pod         `protobuf:"bytes,1,rep,name=pods,proto3" json:"pods,omitempty"`
@@ -67,10 +68,14 @@ func (x *PodsResponse) GetPods() []*storage.Pod {
 	return nil
 }
 
+// ExportPodRequest is the request message for streaming a bulk pod export.
 type ExportPodRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// timeout is the maximum number of seconds to wait for the export stream to complete.
+	// Zero means no timeout.
+	Timeout int32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// query filters pods using StackRox search syntax. If empty, all pods are exported.
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,6 +124,7 @@ func (x *ExportPodRequest) GetQuery() string {
 	return ""
 }
 
+// ExportPodResponse is a single streamed item in a bulk pod export.
 type ExportPodResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Pod           *storage.Pod           `protobuf:"bytes,1,opt,name=pod,proto3" json:"pod,omitempty"`

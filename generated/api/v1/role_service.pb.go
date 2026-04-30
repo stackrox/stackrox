@@ -23,12 +23,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Detail controls the verbosity of the computed effective access scope response.
 type ComputeEffectiveAccessScopeRequest_Detail int32
 
 const (
+	// STANDARD lists all known clusters and namespaces with INCLUDED/PARTIAL/EXCLUDED state and their names.
 	ComputeEffectiveAccessScopeRequest_STANDARD ComputeEffectiveAccessScopeRequest_Detail = 0
-	ComputeEffectiveAccessScopeRequest_MINIMAL  ComputeEffectiveAccessScopeRequest_Detail = 1
-	ComputeEffectiveAccessScopeRequest_HIGH     ComputeEffectiveAccessScopeRequest_Detail = 2
+	// MINIMAL lists only the roots of included subtrees by ID; useful for low-latency checks.
+	ComputeEffectiveAccessScopeRequest_MINIMAL ComputeEffectiveAccessScopeRequest_Detail = 1
+	// HIGH augments every cluster and namespace with additional metadata.
+	ComputeEffectiveAccessScopeRequest_HIGH ComputeEffectiveAccessScopeRequest_Detail = 2
 )
 
 // Enum value maps for ComputeEffectiveAccessScopeRequest_Detail.
@@ -72,10 +76,13 @@ func (ComputeEffectiveAccessScopeRequest_Detail) EnumDescriptor() ([]byte, []int
 	return file_api_v1_role_service_proto_rawDescGZIP(), []int{9, 0}
 }
 
+// Permission pairs a resource name with the access level granted to a caller.
 type Permission struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Resource      string                 `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
-	Access        storage.Access         `protobuf:"varint,2,opt,name=access,proto3,enum=storage.Access" json:"access,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// resource is the name of the ACS resource (e.g. "Alert", "Deployment", "Access").
+	Resource string `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	// access is the access level granted for this resource.
+	Access        storage.Access `protobuf:"varint,2,opt,name=access,proto3,enum=storage.Access" json:"access,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -124,9 +131,11 @@ func (x *Permission) GetAccess() storage.Access {
 	return storage.Access(0)
 }
 
+// GetRolesResponse contains all non-ephemeral roles defined in Central.
 type GetRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Roles         []*storage.Role        `protobuf:"bytes,1,rep,name=roles,proto3" json:"roles,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// roles is the list of roles, sorted alphabetically by name. Ephemeral (internal) roles are excluded.
+	Roles         []*storage.Role `protobuf:"bytes,1,rep,name=roles,proto3" json:"roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -171,7 +180,9 @@ func (x *GetRolesResponse) GetRoles() []*storage.Role {
 // GetPermissionsResponse is wire-compatible with the old format of the Role
 // message and represents a collection of aggregated permissions.
 type GetPermissionsResponse struct {
-	state            protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// resource_to_access maps each ACS resource name to the highest access level
+	// the caller holds across all their assigned roles.
 	ResourceToAccess map[string]storage.Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -214,9 +225,11 @@ func (x *GetPermissionsResponse) GetResourceToAccess() map[string]storage.Access
 	return nil
 }
 
+// GetResourcesResponse lists all resource names recognised by the RBAC system.
 type GetResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Resources     []string               `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// resources is the complete list of ACS resource names that can be referenced in permission sets.
+	Resources     []string `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -258,8 +271,11 @@ func (x *GetResourcesResponse) GetResources() []string {
 	return nil
 }
 
+// ListPermissionSetsResponse contains all non-ephemeral permission sets.
 type ListPermissionSetsResponse struct {
-	state          protoimpl.MessageState   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// permission_sets is the list of permission sets, sorted alphabetically by name.
+	// Ephemeral (internal) permission sets are excluded.
 	PermissionSets []*storage.PermissionSet `protobuf:"bytes,1,rep,name=permission_sets,json=permissionSets,proto3" json:"permission_sets,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -302,8 +318,11 @@ func (x *ListPermissionSetsResponse) GetPermissionSets() []*storage.PermissionSe
 	return nil
 }
 
+// ListSimpleAccessScopesResponse contains all non-ephemeral access scopes.
 type ListSimpleAccessScopesResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// access_scopes is the list of simple access scopes, sorted alphabetically by name.
+	// Ephemeral (internal) access scopes are excluded.
 	AccessScopes  []*storage.SimpleAccessScope `protobuf:"bytes,1,rep,name=access_scopes,json=accessScopes,proto3" json:"access_scopes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -349,9 +368,11 @@ func (x *ListSimpleAccessScopesResponse) GetAccessScopes() []*storage.SimpleAcce
 // ScopeObject represents an ID, name pair, which can apply to any
 // entity that takes part in an access scope (so far Cluster and Namespace).
 type ScopeObject struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the cluster or namespace.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is the display name of the cluster or namespace.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -400,9 +421,12 @@ func (x *ScopeObject) GetName() string {
 	return ""
 }
 
+// GetClustersForPermissionsResponse contains clusters accessible to the caller.
 type GetClustersForPermissionsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Clusters      []*ScopeObject         `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// clusters is the list of (id, name) pairs for clusters the caller can read
+	// for at least one of the requested permissions.
+	Clusters      []*ScopeObject `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -444,9 +468,12 @@ func (x *GetClustersForPermissionsResponse) GetClusters() []*ScopeObject {
 	return nil
 }
 
+// GetNamespacesForClusterAndPermissionsResponse contains namespaces accessible to the caller.
 type GetNamespacesForClusterAndPermissionsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Namespaces    []*ScopeObject         `protobuf:"bytes,1,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// namespaces is the list of (id, name) pairs for namespaces the caller can read
+	// for at least one of the requested permissions within the specified cluster.
+	Namespaces    []*ScopeObject `protobuf:"bytes,1,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -488,9 +515,12 @@ func (x *GetNamespacesForClusterAndPermissionsResponse) GetNamespaces() []*Scope
 	return nil
 }
 
+// ComputeEffectiveAccessScopeRequest specifies access scope rules and the desired response verbosity.
 type ComputeEffectiveAccessScopeRequest struct {
-	state         protoimpl.MessageState                      `protogen:"open.v1"`
-	Detail        ComputeEffectiveAccessScopeRequest_Detail   `protobuf:"varint,1,opt,name=detail,proto3,enum=v1.ComputeEffectiveAccessScopeRequest_Detail" json:"detail,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// detail controls how much information is returned per cluster/namespace. Defaults to STANDARD.
+	Detail ComputeEffectiveAccessScopeRequest_Detail `protobuf:"varint,1,opt,name=detail,proto3,enum=v1.ComputeEffectiveAccessScopeRequest_Detail" json:"detail,omitempty"`
+	// access_scope holds the rules to evaluate against the current cluster/namespace inventory.
 	AccessScope   *ComputeEffectiveAccessScopeRequest_Payload `protobuf:"bytes,2,opt,name=access_scope,json=accessScope,proto3" json:"access_scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -543,9 +573,11 @@ func (x *ComputeEffectiveAccessScopeRequest) GetAccessScope() *ComputeEffectiveA
 // CreateRoleRequest unites name we take from the URL path and role body in the same structure.
 // This way we can verify that name in the path and name in the body are identical.
 type CreateRoleRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Role          *storage.Role          `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the role name taken from the URL path; it must match role.name if role.name is set.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// role is the role definition to create.
+	Role          *storage.Role `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -594,10 +626,15 @@ func (x *CreateRoleRequest) GetRole() *storage.Role {
 	return nil
 }
 
+// GetClustersForPermissionsRequest specifies which permissions to check when filtering clusters.
 type GetClustersForPermissionsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pagination    *Pagination            `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
-	Permissions   []string               `protobuf:"bytes,2,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// pagination controls the page size and offset for the returned cluster list.
+	Pagination *Pagination `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	// permissions is the list of ACS resource names to check. Only permissions with cluster scope
+	// or narrower are considered; global-scoped permissions are ignored.
+	// If empty, all cluster-scoped permissions are considered.
+	Permissions   []string `protobuf:"bytes,2,rep,name=permissions,proto3" json:"permissions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -646,10 +683,15 @@ func (x *GetClustersForPermissionsRequest) GetPermissions() []string {
 	return nil
 }
 
+// GetNamespaceForClusterAndPermissionsRequest specifies the cluster and permissions to check.
 type GetNamespaceForClusterAndPermissionsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Permissions   []string               `protobuf:"bytes,3,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the ID of the cluster whose namespaces to filter.
+	ClusterId string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// permissions is the list of ACS resource names to check. Only permissions with namespace scope
+	// or narrower are considered; global and cluster-scoped permissions are ignored.
+	// If empty, all namespace-scoped permissions are considered.
+	Permissions   []string `protobuf:"bytes,3,rep,name=permissions,proto3" json:"permissions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -698,6 +740,7 @@ func (x *GetNamespaceForClusterAndPermissionsRequest) GetPermissions() []string 
 	return nil
 }
 
+// Payload holds the access scope rules to evaluate.
 type ComputeEffectiveAccessScopeRequest_Payload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Other definitions of access scope rules is science fiction for now;
@@ -762,6 +805,7 @@ type isComputeEffectiveAccessScopeRequest_Payload_RulesOpt interface {
 }
 
 type ComputeEffectiveAccessScopeRequest_Payload_SimpleRules struct {
+	// simple_rules defines cluster and namespace label selectors for the access scope.
 	SimpleRules *storage.SimpleAccessScope_Rules `protobuf:"bytes,1,opt,name=simple_rules,json=simpleRules,proto3,oneof"`
 }
 

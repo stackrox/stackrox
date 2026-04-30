@@ -24,10 +24,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Component identifies which scanner's vulnerability definitions to query.
 type VulnDefinitionsInfoRequest_Component int32
 
 const (
-	VulnDefinitionsInfoRequest_SCANNER    VulnDefinitionsInfoRequest_Component = 0
+	// SCANNER refers to the legacy StackRox Scanner (Clairify).
+	VulnDefinitionsInfoRequest_SCANNER VulnDefinitionsInfoRequest_Component = 0
+	// SCANNER_V4 refers to the StackRox Scanner V4.
 	VulnDefinitionsInfoRequest_SCANNER_V4 VulnDefinitionsInfoRequest_Component = 1
 )
 
@@ -71,7 +74,8 @@ func (VulnDefinitionsInfoRequest_Component) EnumDescriptor() ([]byte, []int) {
 }
 
 type GetIntegrationHealthResponse struct {
-	state             protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// integrationHealth contains the health status for each configured integration.
 	IntegrationHealth []*storage.IntegrationHealth `protobuf:"bytes,1,rep,name=integrationHealth,proto3" json:"integrationHealth,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -115,7 +119,8 @@ func (x *GetIntegrationHealthResponse) GetIntegrationHealth() []*storage.Integra
 }
 
 type VulnDefinitionsInfoRequest struct {
-	state         protoimpl.MessageState               `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// component selects which scanner's vulnerability definition metadata to return.
 	Component     VulnDefinitionsInfoRequest_Component `protobuf:"varint,1,opt,name=component,proto3,enum=v1.VulnDefinitionsInfoRequest_Component" json:"component,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -159,7 +164,9 @@ func (x *VulnDefinitionsInfoRequest) GetComponent() VulnDefinitionsInfoRequest_C
 }
 
 type VulnDefinitionsInfo struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// last_updated_timestamp is the time at which the vulnerability definitions
+	// database was last updated for the selected scanner component.
 	LastUpdatedTimestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=last_updated_timestamp,json=lastUpdatedTimestamp,proto3" json:"last_updated_timestamp,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache

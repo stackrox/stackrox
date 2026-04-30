@@ -1,0 +1,6125 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "API Reference",
+    "version": "2",
+    "description": "API reference for the StackRox Security Platform"
+  },
+  "tags": [
+    {
+      "name": "VulnerabilityExceptionService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/baseimages": {
+      "get": {
+        "summary": "GetBaseImageReferences returns all base image references.",
+        "operationId": "BaseImageServiceV2_GetBaseImageReferences",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2GetBaseImageReferenceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      },
+      "post": {
+        "summary": "CreateBaseImageReference creates a new base image reference.",
+        "operationId": "BaseImageServiceV2_CreateBaseImageReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CreateBaseImageReferenceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2CreateBaseImageReferenceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      }
+    },
+    "/v2/baseimages/{id}": {
+      "delete": {
+        "summary": "DeleteBaseImageReference deletes a base image reference.",
+        "operationId": "BaseImageServiceV2_DeleteBaseImageReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      },
+      "put": {
+        "summary": "UpdateBaseImageTagPattern updates the tag pattern of an existing base image reference.",
+        "operationId": "BaseImageServiceV2_UpdateBaseImageTagPattern",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BaseImageServiceV2UpdateBaseImageTagPatternBody"
+            }
+          }
+        ],
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      }
+    },
+    "/v2/compliance/integrations": {
+      "get": {
+        "summary": "ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters",
+        "operationId": "ComplianceIntegrationService_ListComplianceIntegrations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceIntegrationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceIntegrationService"
+        ]
+      }
+    },
+    "/v2/compliance/profile/{id}": {
+      "get": {
+        "summary": "GetComplianceProfile retrieves the specified compliance profile by ID.",
+        "description": "Returns the full profile including its rules and associated benchmark standards.\n\nReturns NOT_FOUND if no profile with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
+        "operationId": "ComplianceProfileService_GetComplianceProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceProfile"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceProfileService"
+        ]
+      }
+    },
+    "/v2/compliance/profiles/cluster": {
+      "get": {
+        "summary": "ListComplianceProfiles returns profiles matching given request",
+        "description": "Returns all compliance profiles available on the specified cluster, including\ntheir full rule lists and benchmark mappings. The cluster_id is required.\nSupports pagination and search query filtering.\n\nReturns INVALID_ARGUMENT if cluster_id is empty or the query is malformed.",
+        "operationId": "ComplianceProfileService_ListComplianceProfiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "cluster_id is required and restricts results to profiles installed on this cluster.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceProfileService"
+        ]
+      }
+    },
+    "/v2/compliance/profiles/summary": {
+      "get": {
+        "summary": "ListProfileSummaries returns profiles matching each cluster and the given query",
+        "description": "Returns a deduplicated list of profile summaries across the specified clusters.\nResults are sorted by profile name. At least one cluster ID is required.\nSupports pagination; total_count reflects distinct profile names, not raw rows.\n\nReturns INVALID_ARGUMENT if no cluster IDs are provided or the query is malformed.",
+        "operationId": "ComplianceProfileService_ListProfileSummaries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfileSummaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterIds",
+            "description": "cluster_ids is required; at least one cluster ID must be provided.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceProfileService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/result/{id}": {
+      "get": {
+        "summary": "GetComplianceScanCheckResult returns the specific result by ID.",
+        "description": "Returns the full cross-cluster check status including per-cluster outcomes,\nremediation instructions, rationale, and mapped compliance controls.\n\nReturns NOT_FOUND if no result with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
+        "operationId": "ComplianceResultsService_GetComplianceScanCheckResult",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceClusterCheckStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results": {
+      "get": {
+        "summary": "GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "description": "Returns INVALID_ARGUMENT if the query syntax is malformed.",
+        "operationId": "ComplianceResultsService_GetComplianceScanResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceResultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results/profiles/{profileName}/checks": {
+      "get": {
+        "summary": "GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.",
+        "description": "Returns per-check result counts grouped by check name for the specified profile.\nThe profile_name field is required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name is empty or the query is malformed.",
+        "operationId": "ComplianceResultsService_GetComplianceProfileResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfileResults"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results/profiles/{profileName}/checks/{checkName}": {
+      "get": {
+        "summary": "GetComplianceProfileCheckResult lists status of a check per cluster.",
+        "description": "Returns the per-cluster pass/fail status for a specific check within a profile.\nBoth profile_name and check_name are required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name or check_name is empty.",
+        "operationId": "ComplianceResultsService_GetComplianceProfileCheckResult",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceCheckClusterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "checkName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results/profiles/{profileName}/checks/{checkName}/details": {
+      "get": {
+        "summary": "GetComplianceProfileCheckDetails returns normalized details of a check across all clusters.",
+        "description": "Returns a single ComplianceClusterCheckStatus that aggregates the check's description,\ninstructions, rationale, and per-cluster outcomes. Since check names are versioned\nvia the profile, the rule definition is consistent across clusters.\n\nReturns INVALID_ARGUMENT if profile_name or check_name is empty.",
+        "operationId": "ComplianceResultsService_GetComplianceProfileCheckDetails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceClusterCheckStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "description": "profile_name is required; the compliance profile this check belongs to.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "checkName",
+            "description": "check_name is required; the name of the check to retrieve details for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results/profiles/{profileName}/clusters/{clusterId}": {
+      "get": {
+        "summary": "GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster.",
+        "description": "Returns all check results for the profile/cluster combination, including\nper-check remediation details and mapped controls. The last_scan_time reflects\nwhen the most recent scan completed on this cluster.\n\nReturns INVALID_ARGUMENT if profile_name or cluster_id is empty.",
+        "operationId": "ComplianceResultsService_GetComplianceProfileClusterResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceCheckResultResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "description": "profile_name is required; the compliance profile to retrieve results for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "clusterId",
+            "description": "cluster_id is required; the cluster to retrieve results from.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results/{scanConfigName}": {
+      "get": {
+        "summary": "GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.",
+        "description": "Filters results to those produced by the named scan configuration. The\nscan_config_name field is required. Additional query filters are ANDed in.\n\nReturns INVALID_ARGUMENT if scan_config_name is empty or the query is malformed.",
+        "operationId": "ComplianceResultsService_GetComplianceScanConfigurationResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceResultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scanConfigName",
+            "description": "scan_config_name is required; identifies the scan configuration to retrieve results for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/overall/cluster": {
+      "get": {
+        "summary": "Deprecated in favor of GetComplianceClusterStats",
+        "operationId": "ComplianceResultsStatsService_GetComplianceOverallClusterStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterOverallStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/profiles": {
+      "get": {
+        "summary": "GetComplianceProfileScanStats lists current scan stats grouped by profile\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "description": "Returns check status counts for all profiles matching the query, across all clusters.\nSupports pagination; total_count reflects distinct profile names.\n\nReturns INVALID_ARGUMENT if the query is malformed.",
+        "operationId": "ComplianceResultsStatsService_GetComplianceProfilesStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfileScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/profiles/clusters/{clusterId}": {
+      "get": {
+        "summary": "GetComplianceProfilesClusterStats lists cluster stats grouped by profile.",
+        "description": "Returns check status counts per profile for the specified cluster.\nThe cluster_id field is required; returns INVALID_ARGUMENT if the cluster is not found.\nSupports pagination; total_count reflects distinct profile names.\n\nReturns INVALID_ARGUMENT if cluster_id is empty or the cluster does not exist.",
+        "operationId": "ComplianceResultsStatsService_GetComplianceProfilesClusterStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterProfileStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "cluster_id is required; the cluster to retrieve stats for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/profiles/{profileName}": {
+      "get": {
+        "summary": "GetComplianceProfileStats lists current scan stats grouped by profile\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "description": "Returns check status counts for the specified profile across all clusters.\nThe profile_name field is required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name is empty or the query is malformed.",
+        "operationId": "ComplianceResultsStatsService_GetComplianceProfileStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfileScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/profiles/{profileName}/checks/{checkName}": {
+      "get": {
+        "summary": "GetComplianceProfileCheckStats lists current stats for a specific cluster check.",
+        "description": "Returns per-cluster check status counts for a specific check within a profile.\nBoth profile_name and check_name are required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name or check_name is empty.",
+        "operationId": "ComplianceResultsStatsService_GetComplianceProfileCheckStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfileResults"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "checkName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/profiles/{profileName}/clusters": {
+      "get": {
+        "summary": "GetComplianceClusterStats lists overall compliance check stats per cluster for a given profile.",
+        "description": "Returns pass/fail/error counts per cluster filtered to the specified profile.\nAlso includes Compliance Operator integration status errors per cluster.\nThe profile_name field is required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name is empty or the query is malformed.",
+        "operationId": "ComplianceResultsStatsService_GetComplianceClusterStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterOverallStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/stats/configurations/clusters/{clusterId}": {
+      "get": {
+        "summary": "GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration.",
+        "description": "Returns check status counts per scan configuration for the specified cluster.\nThe cluster_id field is required. The scan_config_id is resolved from the scan configuration name.\nSupports pagination; total_count reflects distinct scan configuration names.\n\nReturns INVALID_ARGUMENT if cluster_id is empty.",
+        "operationId": "ComplianceResultsStatsService_GetComplianceClusterScanStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "cluster_id is required; the cluster to retrieve stats for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
+    "/v2/compliance/rule/summary/{ruleName}": {
+      "get": {
+        "summary": "GetComplianceRule returns rule matching given request.",
+        "description": "Looks up the rule by name and returns its full definition including severity,\ndescription, rationale, fix instructions, and mapped compliance standards.\nReturns the first matching rule if multiple exist; returns nil if none are found.\n\nReturns INVALID_ARGUMENT if rule_name is empty or the query is malformed.",
+        "operationId": "ComplianceRuleService_GetComplianceRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRule"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ruleName",
+            "description": "rule_name is required; the name of the Compliance Operator rule to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceRuleService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations": {
+      "get": {
+        "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "post": {
+        "summary": "CreateComplianceScanConfiguration creates a compliance scan configuration",
+        "operationId": "ComplianceScanConfigurationService_CreateComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/clusters/{clusterId}/profiles/collection": {
+      "get": {
+        "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanConfigsClusterProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/profiles/collection": {
+      "get": {
+        "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigProfiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanConfigsProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/reports/run": {
+      "post": {
+        "summary": "RunReport runs an on demand compliance report for the scan configuration",
+        "operationId": "ComplianceScanConfigurationService_RunReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRunReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRunReportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/reports/{id}": {
+      "delete": {
+        "summary": "DeleteReport deletes a given snapshot (scan execution).",
+        "operationId": "ComplianceScanConfigurationService_DeleteReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}": {
+      "get": {
+        "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
+        "operationId": "ComplianceScanConfigurationService_GetComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name",
+        "operationId": "ComplianceScanConfigurationService_DeleteComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateComplianceScanConfiguration updates a compliance scan configuration",
+        "operationId": "ComplianceScanConfigurationService_UpdateComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/reports/history": {
+      "get": {
+        "summary": "GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.",
+        "operationId": "ComplianceScanConfigurationService_GetReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/reports/my-history": {
+      "get": {
+        "summary": "GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.",
+        "operationId": "ComplianceScanConfigurationService_GetMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/run": {
+      "post": {
+        "summary": "RunComplianceScanConfiguration launches scan for the specified scan\nconfiguration, which will invoke scans to run for the applicable\nprofiles across the configured clusters.",
+        "operationId": "ComplianceScanConfigurationService_RunComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/reports/configuration-count": {
+      "get": {
+        "summary": "CountReportConfigurations returns the number of report configurations.",
+        "operationId": "ReportService_CountReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CountReportConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations": {
+      "get": {
+        "summary": "ListReportConfigurations returns report configurations matching given query",
+        "operationId": "ReportService_ListReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListReportConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      },
+      "post": {
+        "summary": "PostReportConfiguration creates a report configuration",
+        "operationId": "ReportService_PostReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations/{id}": {
+      "get": {
+        "summary": "GetReportConfiguration returns the report configuration with given ID",
+        "operationId": "ReportService_GetReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteReportConfiguration removes the report configuration with given ID",
+        "operationId": "ReportService_DeleteReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateReportConfiguration updates a report configuration",
+        "operationId": "ReportService_UpdateReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReportServiceUpdateReportConfigurationBody"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations/{id}/history": {
+      "get": {
+        "summary": "GetReportHistory returns the full report job history for a report configuration with the specified ID.",
+        "operationId": "ReportService_GetReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations/{id}/my-history": {
+      "get": {
+        "summary": "GetMyReportHistory returns the requester's report job history for a report configuration with the specified ID.",
+        "operationId": "ReportService_GetMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/jobs/{id}/cancel": {
+      "delete": {
+        "summary": "Cancels a queued report job for the given report id. If the job is not active, it is a noop.\nIf a report is already being prepared, it won't be cancelled.",
+        "operationId": "ReportService_CancelReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/jobs/{id}/delete": {
+      "delete": {
+        "summary": "Deletes a generated report for the given report id",
+        "operationId": "ReportService_DeleteReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/jobs/{id}/status": {
+      "get": {
+        "summary": "GetReportStatus returns report status for the given report id",
+        "operationId": "ReportService_GetReportStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/run": {
+      "post": {
+        "summary": "Submits a new report generation request if the user requesting this report does not have another waiting or preparing\nreport for the same report configuration.",
+        "operationId": "ReportService_RunReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2RunReportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/history": {
+      "get": {
+        "summary": "GetViewBasedReportHistory returns the report generation history for all view-based reports.",
+        "operationId": "ReportService_GetViewBasedReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/my-history": {
+      "get": {
+        "summary": "GetViewBasedMyReportHistory returns the report generation history for the calling user's view-based reports.",
+        "operationId": "ReportService_GetViewBasedMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/run": {
+      "post": {
+        "summary": "PostViewBasedReport submits a view-based vulnerability report for generation.",
+        "operationId": "ReportService_PostViewBasedReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponseViewBased"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportRequestViewBased"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/virtualmachines": {
+      "get": {
+        "summary": "ListVirtualMachines returns virtual machines matching the specified query.",
+        "operationId": "VirtualMachineService_ListVirtualMachines",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVirtualMachinesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineService"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{id}": {
+      "get": {
+        "summary": "GetVirtualMachine returns the virtual machine with the specified ID, including its latest scan results.",
+        "operationId": "VirtualMachineService_GetVirtualMachine",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2VirtualMachine"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "stripDescription",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions": {
+      "get": {
+        "summary": "ListVulnerabilityExceptions returns a list of vulnerability exceptions.",
+        "operationId": "VulnerabilityExceptionService_ListVulnerabilityExceptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVulnerabilityExceptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/deferral": {
+      "post": {
+        "summary": "CreateDeferVulnerabilityException creates an exception request to defer specified vulnerabilities.\nOnce an exception is created, it remains in the PENDING state until the approval. The exception is enforced\nonly after it is approved. Once the exception expires, it is garbage collected as per the retention configuration\n`.expiredVulnReqRetentionDurationDays` (GET`/v1/config/`)",
+        "operationId": "VulnerabilityExceptionService_CreateDeferVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CreateDeferVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2CreateDeferVulnerabilityExceptionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/false-positive": {
+      "post": {
+        "summary": "CreateFalsePositiveVulnerabilityException creates an exception request to mark specified vulnerabilities as false positive.\nOnce an exception is created, it remains in the PENDING state until the approval. The exception is enforced only after it is approved.",
+        "operationId": "VulnerabilityExceptionService_CreateFalsePositiveVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CreateFalsePositiveVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateFalsePositiveVulnerabilityExceptionRequest contains the fields needed\nto create a false-positive exception. All fields are required.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2CreateFalsePositiveVulnerabilityExceptionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}": {
+      "get": {
+        "summary": "GetVulnerabilityException returns the vulnerability exception with specified ID.",
+        "operationId": "VulnerabilityExceptionService_GetVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2GetVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteVulnerabilityException deletes a vulnerability exception. Only pending exceptions and pending updates\nto an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained\nin the system according to the retention configuration.",
+        "operationId": "VulnerabilityExceptionService_DeleteVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      },
+      "patch": {
+        "summary": "UpdateVulnerabilityException updates an existing vulnerability exception. The update is enforced only once it is approved.\nCurrently only the following can be updated:\n- CVEs and expiry of the deferral exceptions\n- CVEs of the false positive exception",
+        "operationId": "VulnerabilityExceptionService_UpdateVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2UpdateVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "REQUIRED. The ID of vulnerability exception to be updated.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}/approve": {
+      "post": {
+        "summary": "ApproveVulnerabilityException approves a vulnerability exception. Once approved, the exception is enforced.\nThe associated vulnerabilities are excluded from policy evaluation and risk evaluation, and the vulnerabilities\nmay not appear in certain APIs responses by default.",
+        "operationId": "VulnerabilityExceptionService_ApproveVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ApproveVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "REQUIRED. The ID of vulnerability exception to be approved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}/cancel": {
+      "post": {
+        "summary": "CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, an approved exception is no longer\nenforced. Cancelled exceptions are garbage collected as per the retention configuration\n`.expiredVulnReqRetentionDurationDays` (GET `/v1/config/`).",
+        "operationId": "VulnerabilityExceptionService_CancelVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CancelVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    },
+    "/v2/vulnerability-exceptions/{id}/deny": {
+      "post": {
+        "summary": "DenyVulnerabilityException denies a vulnerability exception. Denied exceptions are inactive and are garbage\ncollected as per the retention configuration `.expiredVulnReqRetentionDurationDays` (GET`/v1/config/`)",
+        "operationId": "VulnerabilityExceptionService_DenyVulnerabilityException",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2DenyVulnerabilityExceptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "REQUIRED. The ID of vulnerability exception to be denied.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityExceptionService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "BaseImageServiceV2UpdateBaseImageTagPatternBody": {
+      "type": "object",
+      "properties": {
+        "baseImageTagPattern": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2BaseImageReference": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "baseImageRepoPath": {
+          "type": "string"
+        },
+        "baseImageTagPattern": {
+          "type": "string"
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        }
+      }
+    },
+    "v2CreateBaseImageReferenceRequest": {
+      "type": "object",
+      "properties": {
+        "baseImageRepoPath": {
+          "type": "string"
+        },
+        "baseImageTagPattern": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CreateBaseImageReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "baseImageReference": {
+          "$ref": "#/definitions/v2BaseImageReference"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2GetBaseImageReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "baseImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2BaseImageReference"
+          }
+        }
+      }
+    },
+    "v2SlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2COStatus": {
+      "type": "string",
+      "enum": [
+        "HEALTHY",
+        "UNHEALTHY"
+      ],
+      "default": "HEALTHY",
+      "title": "Represents the status of compliance operator"
+    },
+    "v2ClusterPlatformType": {
+      "type": "string",
+      "enum": [
+        "GENERIC_CLUSTER",
+        "KUBERNETES_CLUSTER",
+        "OPENSHIFT_CLUSTER",
+        "OPENSHIFT4_CLUSTER"
+      ],
+      "default": "GENERIC_CLUSTER"
+    },
+    "v2ClusterProviderType": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "AKS",
+        "ARO",
+        "EKS",
+        "GKE",
+        "OCP",
+        "OSD",
+        "ROSA"
+      ],
+      "default": "UNSPECIFIED"
+    },
+    "v2ComplianceIntegration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "statusErrors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Collection of errors that occurred while trying to obtain compliance operator health info."
+        },
+        "operatorInstalled": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/v2COStatus"
+        },
+        "clusterPlatformType": {
+          "$ref": "#/definitions/v2ClusterPlatformType"
+        },
+        "clusterProviderType": {
+          "$ref": "#/definitions/v2ClusterProviderType"
+        }
+      },
+      "title": "Next Tag: 11"
+    },
+    "v2ListComplianceIntegrationsResponse": {
+      "type": "object",
+      "properties": {
+        "integrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceIntegration"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "ComplianceRuleFix": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": "string"
+        },
+        "disruption": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ComplianceBenchmark": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "shortName": {
+          "type": "string",
+          "title": "This is extracted from the annotation.\nExample: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP"
+        }
+      }
+    },
+    "v2ComplianceProfile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "profileVersion": {
+          "type": "string",
+          "description": "profile_version is the version string of this profile (e.g. \"1.4.0\")."
+        },
+        "productType": {
+          "type": "string",
+          "description": "product_type describes the target product category (e.g. \"Platform\", \"Node\")."
+        },
+        "description": {
+          "type": "string",
+          "description": "description is the human-readable description of the profile's purpose and scope."
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceRule"
+          },
+          "description": "rules lists the compliance rules that are part of this profile."
+        },
+        "product": {
+          "type": "string",
+          "description": "product is the name of the product this profile applies to (e.g. \"OpenShift\")."
+        },
+        "title": {
+          "type": "string",
+          "description": "title is the display name of the profile (e.g. \"CIS Red Hat OpenShift Container Platform 4 Benchmark\")."
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "values lists the variable values applied to this profile's checks."
+        },
+        "standards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceBenchmark"
+          },
+          "description": "standards lists the compliance benchmarks (e.g. CIS, NIST) that this profile maps to."
+        },
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileOperatorKind",
+          "description": "operator_kind indicates whether this profile originates from a Compliance Operator\nProfile or TailoredProfile resource."
+        }
+      },
+      "description": "Next Tag: 13\nComplianceProfile represents a compliance profile sourced from the Compliance Operator.\nA profile defines a set of rules and benchmarks that are evaluated during a compliance scan."
+    },
+    "v2ComplianceProfileOperatorKind": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_KIND_UNSPECIFIED",
+        "PROFILE",
+        "TAILORED_PROFILE"
+      ],
+      "default": "OPERATOR_KIND_UNSPECIFIED",
+      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceProfile` was sourced from. ACS represents both Compliance\nOperator `Profiles` and `TailoredProfiles` as compliance profiles.\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - PROFILE: The kind is `Profile`.\n - TAILORED_PROFILE: The kind is `TailoredProfile`."
+    },
+    "v2ComplianceProfileSummary": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "productType": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "ruleCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "profileVersion": {
+          "type": "string"
+        },
+        "standards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceBenchmark"
+          }
+        },
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileSummaryOperatorKind"
+        }
+      },
+      "title": "Next Tag: 9"
+    },
+    "v2ComplianceProfileSummaryOperatorKind": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_KIND_UNSPECIFIED",
+        "PROFILE",
+        "TAILORED_PROFILE"
+      ],
+      "default": "OPERATOR_KIND_UNSPECIFIED",
+      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceProfileSummary` was sourced from. ACS represents both Compliance\nOperator `Profiles` and `TailoredProfiles` as compliance profiles.\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - PROFILE: The kind is `Profile`.\n - TAILORED_PROFILE: The kind is `TailoredProfile`."
+    },
+    "v2ComplianceRule": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "ruleType": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "fixes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ComplianceRuleFix"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "ruleId": {
+          "type": "string"
+        },
+        "parentRule": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string"
+        },
+        "warning": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ListComplianceProfileSummaryResponse": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileSummary"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of distinct profile names matching the query, before pagination."
+        }
+      },
+      "title": "ListComplianceProfileSummaryResponse provides a list of profiles summaries"
+    },
+    "v2ListComplianceProfilesResponse": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfile"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of profiles matching the query, before pagination."
+        }
+      },
+      "title": "ListComplianceProfilesResponse provides a list of profiles"
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v2ClusterCheckStatus": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster",
+          "description": "cluster identifies the cluster where this check result was recorded."
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus",
+          "description": "status is the pass/fail/error outcome of this check on the cluster."
+        },
+        "createdTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "created_time is when this check result was first recorded."
+        },
+        "checkUid": {
+          "type": "string",
+          "description": "check_uid is the unique identifier assigned by the Compliance Operator to this result."
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "last_scan_time is the time the most recent scan that produced this result completed."
+        }
+      },
+      "title": "ClusterCheckStatus groups the result of the check by cluster"
+    },
+    "v2ComplianceCheckData": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string",
+          "description": "cluster_id identifies the cluster where this check was evaluated."
+        },
+        "scanName": {
+          "type": "string",
+          "description": "scan_name identifies the compliance scan configuration that produced this result."
+        },
+        "result": {
+          "$ref": "#/definitions/v2ComplianceCheckResult"
+        }
+      },
+      "description": "ComplianceCheckData associates a check result with its cluster and scan context."
+    },
+    "v2ComplianceCheckResult": {
+      "type": "object",
+      "properties": {
+        "checkId": {
+          "type": "string"
+        },
+        "checkName": {
+          "type": "string"
+        },
+        "checkUid": {
+          "type": "string",
+          "description": "check_uid is the unique identifier assigned by the Compliance Operator to this result."
+        },
+        "description": {
+          "type": "string",
+          "description": "description explains what the check validates."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "instructions describes remediation steps when the check fails."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "rationale explains why this check is important."
+        },
+        "valuesUsed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "valuesUsed lists the variable values applied when this check was evaluated."
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "warnings contains any non-fatal warnings generated during check evaluation."
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus",
+          "description": "status is the pass/fail/error outcome of this check."
+        },
+        "ruleName": {
+          "type": "string",
+          "description": "rule_name is the name of the Compliance Operator rule that produced this result."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceControl"
+          },
+          "description": "controls lists the compliance framework controls (e.g. CIS, NIST) this check maps to."
+        }
+      },
+      "title": "ComplianceCheckResult details of an instance of a compliance check result"
+    },
+    "v2ComplianceCheckResultStatusCount": {
+      "type": "object",
+      "properties": {
+        "checkName": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "ruleName": {
+          "type": "string"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceControl"
+          }
+        }
+      },
+      "title": "Group the number of occurrences by status"
+    },
+    "v2ComplianceCheckStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET_CHECK_STATUS",
+        "PASS",
+        "FAIL",
+        "ERROR",
+        "INFO",
+        "MANUAL",
+        "NOT_APPLICABLE",
+        "INCONSISTENT"
+      ],
+      "default": "UNSET_CHECK_STATUS"
+    },
+    "v2ComplianceCheckStatusCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus"
+        }
+      },
+      "title": "Group the number of occurrences by status"
+    },
+    "v2ComplianceClusterCheckStatus": {
+      "type": "object",
+      "properties": {
+        "checkId": {
+          "type": "string"
+        },
+        "checkName": {
+          "type": "string"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ClusterCheckStatus"
+          },
+          "description": "clusters lists the per-cluster status of this check."
+        },
+        "description": {
+          "type": "string",
+          "description": "description explains what the check validates."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "instructions describes remediation steps when the check fails."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "rationale explains why this check is important."
+        },
+        "valuesUsed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "valuesUsed lists the variable values applied when this check was evaluated."
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "warnings contains any non-fatal warnings generated during check evaluation."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceControl"
+          },
+          "description": "controls lists the compliance framework controls this check maps to."
+        }
+      },
+      "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
+    },
+    "v2ComplianceControl": {
+      "type": "object",
+      "properties": {
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ComplianceScanCluster": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ListComplianceCheckClusterResponse": {
+      "type": "object",
+      "properties": {
+        "checkResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ClusterCheckStatus"
+          },
+          "description": "check_results lists the per-cluster status for this check."
+        },
+        "profileName": {
+          "type": "string",
+          "description": "profile_name is the profile that defines this check."
+        },
+        "checkName": {
+          "type": "string",
+          "description": "check_name is the name of the check being summarized."
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of cluster results, before pagination."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceControl"
+          },
+          "description": "controls lists the compliance framework controls this check maps to."
+        }
+      },
+      "title": "ListComplianceCheckClusterResponse provides stats per cluster"
+    },
+    "v2ListComplianceCheckResultResponse": {
+      "type": "object",
+      "properties": {
+        "checkResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckResult"
+          }
+        },
+        "profileName": {
+          "type": "string",
+          "description": "profile_name is the profile applied during the scan."
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "cluster_id identifies the cluster these results are from."
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of check results, before pagination."
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "last_scan_time is the time the most recent scan completed on this cluster."
+        }
+      },
+      "description": "ListComplianceCheckResultResponse provides check results for a profile on a single cluster."
+    },
+    "v2ListComplianceProfileResults": {
+      "type": "object",
+      "properties": {
+        "profileResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckResultStatusCount"
+          }
+        },
+        "profileName": {
+          "type": "string"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "ListComplianceProfileResults provides scan stats overview based on profile"
+    },
+    "v2ListComplianceResultsResponse": {
+      "type": "object",
+      "properties": {
+        "scanResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckData"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of check results matching the query, before pagination."
+        }
+      },
+      "title": "ListComplianceResultsResponse provides the complete scan results"
+    },
+    "v2ComplianceClusterOverallStats": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        },
+        "clusterErrors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastScanTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "ComplianceClusterOverallStats provides overall stats for cluster"
+    },
+    "v2ComplianceClusterScanStats": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "$ref": "#/definitions/v2ComplianceScanStatsShim",
+          "description": "scan_stats contains the check status counts and scan metadata for this cluster/scan pair."
+        },
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster",
+          "description": "cluster identifies the cluster these stats are for."
+        }
+      },
+      "title": "ComplianceClusterScanStats provides scan stats overview based on cluster"
+    },
+    "v2ComplianceProfileScanStats": {
+      "type": "object",
+      "properties": {
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          },
+          "description": "check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.) for this profile."
+        },
+        "profileName": {
+          "type": "string",
+          "description": "profile_name is the name of the compliance profile these stats are for."
+        },
+        "title": {
+          "type": "string",
+          "description": "title is the human-readable display name of the profile."
+        },
+        "version": {
+          "type": "string",
+          "description": "version is the version string of the profile (e.g. \"1.4.0\")."
+        },
+        "benchmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceBenchmark"
+          },
+          "description": "benchmarks lists the compliance frameworks (e.g. CIS, NIST) this profile maps to."
+        }
+      },
+      "title": "ComplianceProfileScanStats provides scan stats overview based on profile"
+    },
+    "v2ComplianceScanStatsShim": {
+      "type": "object",
+      "properties": {
+        "scanName": {
+          "type": "string",
+          "description": "scan_name is the name of the scan configuration these stats are for."
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          },
+          "description": "check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.)."
+        },
+        "lastScan": {
+          "type": "string",
+          "format": "date-time",
+          "description": "last_scan is when the most recent scan for this configuration completed."
+        },
+        "scanConfigId": {
+          "type": "string",
+          "description": "scan_config_id is the ID of the scan configuration."
+        }
+      },
+      "title": "ComplianceScanStatsShim models statistics of checks for a given scan configuration"
+    },
+    "v2ListComplianceClusterOverallStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceClusterOverallStats"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
+    },
+    "v2ListComplianceClusterProfileStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileScanStats"
+          },
+          "description": "scan_stats lists per-profile check status counts for the requested cluster."
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "cluster_id identifies the cluster these stats are scoped to."
+        },
+        "clusterName": {
+          "type": "string",
+          "description": "cluster_name is the human-readable name of the cluster."
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of distinct profiles matching the query, before pagination."
+        }
+      },
+      "title": "ListComplianceClusterProfileStatsResponse provides stats for the profiles within the scans"
+    },
+    "v2ListComplianceClusterScanStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceClusterScanStats"
+          },
+          "description": "scan_stats lists per-scan-configuration check status counts for the requested cluster."
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of scan configurations matching the query, before pagination."
+        }
+      },
+      "title": "ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans"
+    },
+    "v2ListComplianceProfileScanStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileScanStats"
+          },
+          "description": "scan_stats lists per-profile check status counts."
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "total_count is the total number of distinct profiles matching the query, before pagination."
+        }
+      },
+      "title": "ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans"
+    },
+    "ClusterScanStatusSuiteStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "lastTransitionTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "Additional scan status gathered from ComplianceSuite"
+    },
+    "ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 5"
+    },
+    "v2BaseComplianceScanConfigurationSettings": {
+      "type": "object",
+      "properties": {
+        "oneTimeScan": {
+          "type": "boolean"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scanSchedule": {
+          "$ref": "#/definitions/v2Schedule"
+        },
+        "description": {
+          "type": "string"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      },
+      "title": "Next available tag: 5"
+    },
+    "v2ClusterScanStatus": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "suiteStatus": {
+          "$ref": "#/definitions/ClusterScanStatusSuiteStatus"
+        }
+      },
+      "title": "ClusterScanStatus holds status based on cluster in the event that a scan configuration\nwas successfully applied to some clusters but not others.\nNext available tag: 5"
+    },
+    "v2ComplianceReportHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "complianceReportSnapshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceReportSnapshot"
+          }
+        }
+      }
+    },
+    "v2ComplianceReportSnapshot": {
+      "type": "object",
+      "properties": {
+        "reportJobId": {
+          "type": "string"
+        },
+        "scanConfigId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "reportStatus": {
+          "$ref": "#/definitions/v2ComplianceReportStatus"
+        },
+        "reportData": {
+          "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "isDownloadAvailable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2ComplianceReportStatus": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/v2ComplianceReportStatusRunState"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        },
+        "reportRequestType": {
+          "$ref": "#/definitions/v2ComplianceReportStatusReportMethod"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        },
+        "failedClusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2FailedCluster"
+          }
+        }
+      }
+    },
+    "v2ComplianceReportStatusReportMethod": {
+      "type": "string",
+      "enum": [
+        "ON_DEMAND",
+        "SCHEDULED"
+      ],
+      "default": "ON_DEMAND"
+    },
+    "v2ComplianceReportStatusRunState": {
+      "type": "string",
+      "enum": [
+        "WAITING",
+        "PREPARING",
+        "GENERATED",
+        "DELIVERED",
+        "FAILURE",
+        "PARTIAL_ERROR",
+        "PARTIAL_SCAN_ERROR_DOWNLOAD",
+        "PARTIAL_SCAN_ERROR_EMAIL"
+      ],
+      "default": "WAITING"
+    },
+    "v2ComplianceRunReportRequest": {
+      "type": "object",
+      "properties": {
+        "scanConfigId": {
+          "type": "string"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2ComplianceRunReportResponse": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/v2ComplianceRunReportResponseRunState"
+        },
+        "submittedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ComplianceRunReportResponseRunState": {
+      "type": "string",
+      "enum": [
+        "SUBMITTED",
+        "ERROR"
+      ],
+      "default": "SUBMITTED"
+    },
+    "v2ComplianceScanConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 5"
+    },
+    "v2ComplianceScanConfigurationStatus": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusterStatus": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ClusterScanStatus"
+          }
+        },
+        "createdTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUpdatedTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modifiedBy": {
+          "$ref": "#/definitions/v2SlimUser",
+          "title": "Most recent user to update the scan settings"
+        },
+        "lastExecutedTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "Next available tag: 9"
+    },
+    "v2EmailNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "mailingLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customSubject": {
+          "type": "string"
+        },
+        "customBody": {
+          "type": "string"
+        }
+      }
+    },
+    "v2FailedCluster": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "operatorVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ListComplianceScanConfigsClusterProfileResponse": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileSummary"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListComplianceScanConfigsProfileResponse": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileSummary"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListComplianceScanConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "configurations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2NotificationMethod": {
+      "type": "string",
+      "enum": [
+        "EMAIL",
+        "DOWNLOAD"
+      ],
+      "default": "EMAIL"
+    },
+    "v2NotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "emailConfig": {
+          "$ref": "#/definitions/v2EmailNotifierConfiguration"
+        },
+        "notifierName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2Schedule": {
+      "type": "object",
+      "properties": {
+        "intervalType": {
+          "$ref": "#/definitions/v2ScheduleIntervalType"
+        },
+        "hour": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minute": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/v2ScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/v2ScheduleDaysOfMonth"
+        }
+      }
+    },
+    "v2ScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "v2ScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "v2ScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "WEEKLY",
+        "MONTHLY",
+        "DAILY"
+      ],
+      "default": "UNSET"
+    },
+    "ReportServiceUpdateReportConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      }
+    },
+    "VulnerabilityReportFiltersFixability": {
+      "type": "string",
+      "enum": [
+        "BOTH",
+        "FIXABLE",
+        "NOT_FIXABLE"
+      ],
+      "default": "BOTH"
+    },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
+    "v2CollectionReference": {
+      "type": "object",
+      "properties": {
+        "collectionId": {
+          "type": "string"
+        },
+        "collectionName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CollectionSnapshot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CountReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ReportConfiguration"
+          }
+        }
+      }
+    },
+    "v2ReportConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      }
+    },
+    "v2ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
+    "v2ReportHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "reportSnapshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ReportSnapshot"
+          }
+        }
+      }
+    },
+    "v2ReportRequestViewBased": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportRequestViewBasedReportType"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "areaOfConcern": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ReportRequestViewBasedReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
+    "v2ReportSchedule": {
+      "type": "object",
+      "properties": {
+        "intervalType": {
+          "$ref": "#/definitions/v2ReportScheduleIntervalType"
+        },
+        "hour": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minute": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/v2ReportScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/v2ReportScheduleDaysOfMonth"
+        }
+      }
+    },
+    "v2ReportScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "v2ReportScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "v2ReportScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "WEEKLY",
+        "MONTHLY",
+        "DAILY"
+      ],
+      "default": "UNSET"
+    },
+    "v2ReportSnapshot": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportJobId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "collectionSnapshot": {
+          "$ref": "#/definitions/v2CollectionSnapshot"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "reportStatus": {
+          "$ref": "#/definitions/v2ReportStatus"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "isDownloadAvailable": {
+          "type": "boolean"
+        },
+        "areaOfConcern": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ReportStatus": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/v2ReportStatusRunState"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        },
+        "reportRequestType": {
+          "$ref": "#/definitions/v2ReportStatusReportMethod"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2ReportStatusReportMethod": {
+      "type": "string",
+      "enum": [
+        "ON_DEMAND",
+        "SCHEDULED"
+      ],
+      "default": "ON_DEMAND"
+    },
+    "v2ReportStatusResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v2ReportStatus"
+        }
+      }
+    },
+    "v2ReportStatusRunState": {
+      "type": "string",
+      "enum": [
+        "WAITING",
+        "PREPARING",
+        "GENERATED",
+        "DELIVERED",
+        "FAILURE"
+      ],
+      "default": "WAITING"
+    },
+    "v2ResourceScope": {
+      "type": "object",
+      "properties": {
+        "collectionScope": {
+          "$ref": "#/definitions/v2CollectionReference"
+        }
+      }
+    },
+    "v2RunReportRequest": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2RunReportResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportId": {
+          "type": "string"
+        }
+      }
+    },
+    "v2RunReportResponseViewBased": {
+      "type": "object",
+      "properties": {
+        "reportID": {
+          "type": "string"
+        },
+        "requestName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ViewBasedVulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "title": "filter for ondemand view based reports"
+    },
+    "v2VulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "fixability": {
+          "$ref": "#/definitions/VulnerabilityReportFiltersFixability"
+        },
+        "severities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2VulnerabilityReportFiltersVulnerabilitySeverity"
+          }
+        },
+        "imageTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+          }
+        },
+        "allVuln": {
+          "type": "boolean"
+        },
+        "sinceLastSentScheduledReport": {
+          "type": "boolean"
+        },
+        "sinceStartDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "includeNvdCvss": {
+          "type": "boolean"
+        },
+        "includeEpssProbability": {
+          "type": "boolean"
+        },
+        "includeAdvisory": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2VulnerabilityReportFiltersVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "CVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
+    "VirtualMachineState": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "STOPPED",
+        "RUNNING"
+      ],
+      "default": "UNKNOWN"
+    },
+    "v2Advisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/v2Source"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/v2CVSSV3"
+        }
+      }
+    },
+    "v2CVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/CVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/v2CVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/CVSSV3Severity"
+        }
+      }
+    },
+    "v2CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "v2EPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
+    },
+    "v2EmbeddedVulnerability": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "epss": {
+          "$ref": "#/definitions/v2EPSS"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
+        }
+      }
+    },
+    "v2ListVirtualMachinesResponse": {
+      "type": "object",
+      "properties": {
+        "virtualMachines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VirtualMachine"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ScanComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "vulns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2EmbeddedVulnerability"
+          }
+        },
+        "source": {
+          "$ref": "#/definitions/v2SourceType"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ScanComponentNote"
+          }
+        }
+      }
+    },
+    "v2ScanComponentNote": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "UNSCANNED"
+      ],
+      "default": "UNSPECIFIED",
+      "description": "Note specifies a conditional status of the scan component.\n\n - UNSCANNED: Scan components remain unscanned if the corresponding package is not\nassociated with a valid Common Platform Enumeration (CPE)."
+    },
+    "v2Source": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
+    "v2SourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "GO",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
+    },
+    "v2VirtualMachine": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vsockCid": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "state": {
+          "$ref": "#/definitions/VirtualMachineState"
+        },
+        "scan": {
+          "$ref": "#/definitions/v2VirtualMachineScan"
+        }
+      }
+    },
+    "v2VirtualMachineScan": {
+      "type": "object",
+      "properties": {
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2VirtualMachineScanNote"
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ScanComponent"
+          }
+        }
+      }
+    },
+    "v2VirtualMachineScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "OS_UNKNOWN",
+        "OS_UNSUPPORTED"
+      ],
+      "default": "UNSET"
+    },
+    "v2VulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "ExceptionExpiryExpiryType": {
+      "type": "string",
+      "enum": [
+        "TIME",
+        "ALL_CVE_FIXABLE",
+        "ANY_CVE_FIXABLE"
+      ],
+      "default": "TIME"
+    },
+    "ScopeImage": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string",
+          "description": "Container registry (e.g., \"docker.io\", \"quay.io\")."
+        },
+        "remote": {
+          "type": "string",
+          "description": "Image repository name (e.g., \"library/nginx\")."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag (e.g., \"latest\", \"1.25\")."
+        }
+      },
+      "description": "Image identifies a specific container image by registry, repository, and tag."
+    },
+    "VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for approving the exception."
+        }
+      },
+      "description": "ApproveVulnerabilityExceptionRequest identifies the exception to approve and\nrequires a comment explaining the approval rationale."
+    },
+    "VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for denying the exception."
+        }
+      },
+      "description": "DenyVulnerabilityExceptionRequest identifies the exception to deny and\nrequires a comment explaining the denial rationale."
+    },
+    "VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for updating the exception."
+        },
+        "deferralUpdate": {
+          "$ref": "#/definitions/v2DeferralUpdate",
+          "description": "Use this field to update a deferral exception."
+        },
+        "falsePositiveUpdate": {
+          "$ref": "#/definitions/v2FalsePositiveUpdate",
+          "description": "Use this field to update a false-positive exception."
+        }
+      },
+      "description": "UpdateVulnerabilityExceptionRequest modifies an existing exception.\nExactly one of deferral_update or false_positive_update must be set."
+    },
+    "v2ApproveVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "ApproveVulnerabilityExceptionResponse wraps the approved exception."
+    },
+    "v2CancelVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "CancelVulnerabilityExceptionResponse wraps the cancelled exception."
+    },
+    "v2Comment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the comment."
+        },
+        "message": {
+          "type": "string",
+          "description": "The comment text. Required for all request actions."
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser",
+          "description": "User who created the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the comment was created."
+        }
+      },
+      "description": "Comment represents a user comment on a vulnerability exception request.\nComments are required for all request actions (create, approve, deny, update)\nand provide an audit trail for the exception lifecycle."
+    },
+    "v2CreateDeferVulnerabilityExceptionRequest": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "REQUIRED. The CVEs to which the exception should be applied."
+        },
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for creating the exception."
+        },
+        "scope": {
+          "$ref": "#/definitions/v2VulnerabilityExceptionScope",
+          "description": "REQUIRED. The scope of enforcement of the exception."
+        },
+        "exceptionExpiry": {
+          "$ref": "#/definitions/v2ExceptionExpiry",
+          "description": "REQUIRED. The type of expiry to be enforced for the request."
+        }
+      },
+      "title": "CreateDeferVulnerabilityExceptionRequest contains the fields needed to create\na deferral exception. All fields are required.\nnext available tag: 6"
+    },
+    "v2CreateDeferVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "CreateDeferVulnerabilityExceptionResponse wraps the newly created deferral exception."
+    },
+    "v2CreateFalsePositiveVulnerabilityExceptionRequest": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "REQUIRED. The CVEs to which the exception should be applied."
+        },
+        "scope": {
+          "$ref": "#/definitions/v2VulnerabilityExceptionScope",
+          "description": "REQUIRED. The scope of enforcement of the exception."
+        },
+        "comment": {
+          "type": "string",
+          "description": "REQUIRED. The rationale for creating the exception."
+        }
+      },
+      "description": "CreateFalsePositiveVulnerabilityExceptionRequest contains the fields needed\nto create a false-positive exception. All fields are required."
+    },
+    "v2CreateFalsePositiveVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "CreateFalsePositiveVulnerabilityExceptionResponse wraps the newly created false-positive exception."
+    },
+    "v2DeferralRequest": {
+      "type": "object",
+      "properties": {
+        "expiry": {
+          "$ref": "#/definitions/v2ExceptionExpiry",
+          "description": "REQUIRED. Expiry configuration for the deferral."
+        }
+      },
+      "description": "DeferralRequest holds the expiry configuration for a deferral exception."
+    },
+    "v2DeferralUpdate": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Use this field to update the CVEs of a deferral exception."
+        },
+        "expiry": {
+          "$ref": "#/definitions/v2ExceptionExpiry",
+          "description": "Use this field to update the exception expiry."
+        }
+      }
+    },
+    "v2DenyVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "DenyVulnerabilityExceptionResponse wraps the denied exception."
+    },
+    "v2ExceptionExpiry": {
+      "type": "object",
+      "properties": {
+        "expiryType": {
+          "$ref": "#/definitions/ExceptionExpiryExpiryType",
+          "description": "This field can be used only for deferral requests. It indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable."
+        },
+        "expiresOn": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME."
+        }
+      }
+    },
+    "v2ExceptionStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "DENIED",
+        "APPROVED_PENDING_UPDATE"
+      ],
+      "default": "PENDING",
+      "description": "Indicates the status of a request.\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial."
+    },
+    "v2FalsePositiveRequest": {
+      "type": "object",
+      "description": "FalsePositiveRequest marks vulnerabilities as false positive. False-positive\nexceptions are permanent and have no expiry configuration."
+    },
+    "v2FalsePositiveUpdate": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Use this field to update the CVEs of a false-positive exception."
+        }
+      }
+    },
+    "v2GetVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "GetVulnerabilityExceptionResponse wraps a single vulnerability exception."
+    },
+    "v2ListVulnerabilityExceptionsResponse": {
+      "type": "object",
+      "properties": {
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VulnerabilityException"
+          }
+        }
+      },
+      "description": "ListVulnerabilityExceptionsResponse wraps the list of vulnerability exceptions."
+    },
+    "v2UpdateVulnerabilityExceptionResponse": {
+      "type": "object",
+      "properties": {
+        "exception": {
+          "$ref": "#/definitions/v2VulnerabilityException"
+        }
+      },
+      "description": "UpdateVulnerabilityExceptionResponse wraps the updated exception."
+    },
+    "v2VulnerabilityException": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the exception (auto-generated)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Auto-generated display name of the exception."
+        },
+        "targetState": {
+          "$ref": "#/definitions/v2VulnerabilityState",
+          "description": "Indicates the state that the vulnerabilities will move to once the exception is enforced."
+        },
+        "status": {
+          "$ref": "#/definitions/v2ExceptionStatus",
+          "description": "Indicates the status of the exception."
+        },
+        "expired": {
+          "type": "boolean",
+          "description": "If set to `true`, this field indicates that the exception is no longer enforced."
+        },
+        "requester": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "approvers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SlimUser"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2Comment"
+          }
+        },
+        "scope": {
+          "$ref": "#/definitions/v2VulnerabilityExceptionScope",
+          "description": "Indicates the scope of enforcement of the exception."
+        },
+        "deferralRequest": {
+          "$ref": "#/definitions/v2DeferralRequest"
+        },
+        "falsePositiveRequest": {
+          "$ref": "#/definitions/v2FalsePositiveRequest"
+        },
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Indicates the CVEs to which the exception applies."
+        },
+        "deferralUpdate": {
+          "$ref": "#/definitions/v2DeferralUpdate",
+          "description": "If set, indicates the update to be applied to the original deferral exception."
+        },
+        "falsePositiveUpdate": {
+          "$ref": "#/definitions/v2FalsePositiveUpdate",
+          "description": "If set, indicates the update to be applied to the original false-positive exception."
+        }
+      },
+      "title": "VulnerabilityException represents a vulnerability exception such as deferral and false-positive.\nExceptions suppress specific CVEs from policy evaluation and risk scoring.\nNext available tag: 16"
+    },
+    "v2VulnerabilityExceptionScope": {
+      "type": "object",
+      "properties": {
+        "imageScope": {
+          "$ref": "#/definitions/ScopeImage",
+          "description": "Applies the exception to a specific container image."
+        }
+      },
+      "description": "Scope defines where the exception is enforced."
+    },
+    "v2VulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n\n[Default state]\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
+    }
+  }
+}

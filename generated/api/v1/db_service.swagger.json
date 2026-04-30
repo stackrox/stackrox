@@ -18,6 +18,7 @@
   "paths": {
     "/v1/db/exportcaps": {
       "get": {
+        "summary": "GetExportCapabilities returns the database export formats and encoding\ntypes supported by this Central instance. Used to determine which format\nto request when initiating a restore.",
         "operationId": "DBService_GetExportCapabilities",
         "responses": {
           "200": {
@@ -40,6 +41,8 @@
     },
     "/v1/db/interruptrestore/{processId}/{attemptId}": {
       "post": {
+        "summary": "InterruptRestoreProcess pauses the active restore process at the current\nbyte position, allowing it to be resumed later.",
+        "description": "Returns the byte offset (resume_info) at which the restore was paused.\nReturns FAILED_PRECONDITION if no restore is active or if the provided\nprocess_id does not match the active process.",
         "operationId": "DBService_InterruptRestoreProcess",
         "responses": {
           "200": {
@@ -58,12 +61,14 @@
         "parameters": [
           {
             "name": "processId",
+            "description": "process_id identifies the restore process to interrupt.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "attemptId",
+            "description": "attempt_id identifies the specific attempt to interrupt.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -76,6 +81,7 @@
     },
     "/v1/db/restore": {
       "get": {
+        "summary": "GetActiveRestoreProcess returns the status of the currently active\ndatabase restore process, if any. Returns an empty response if no restore\nis currently in progress.",
         "operationId": "DBService_GetActiveRestoreProcess",
         "responses": {
           "200": {
@@ -98,6 +104,8 @@
     },
     "/v1/db/restore/{id}": {
       "delete": {
+        "summary": "CancelRestoreProcess permanently cancels the active database restore\nprocess identified by the given ID and waits for it to terminate.",
+        "description": "Returns FAILED_PRECONDITION if no restore is active or if the provided\nID does not match the active process.",
         "operationId": "DBService_CancelRestoreProcess",
         "responses": {
           "200": {
@@ -143,9 +151,11 @@
       "properties": {
         "pos": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "pos is the byte position in the restore data stream at which to resume."
         }
-      }
+      },
+      "description": "ResumeInfo contains the byte offset from which a paused restore can be\nresumed."
     },
     "DBRestoreRequestHeaderLocalFileInfo": {
       "type": "object",
@@ -196,14 +206,16 @@
       "type": "object",
       "properties": {
         "formatName": {
-          "type": "string"
+          "type": "string",
+          "description": "format_name is the human-readable identifier for this export format."
         },
         "files": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1DBExportFormatFile"
-          }
+          },
+          "description": "files lists all files that are part of this export format."
         }
       },
       "description": "DBExportFormat describes a format (= a collection of files) for the database export."
@@ -212,10 +224,12 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the identifier for the file within the export format."
         },
         "optional": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "optional, when true, indicates that the file need not be present in a\nrestore body that uses this format."
         }
       }
     },
@@ -227,7 +241,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1DBExportManifestFile"
-          }
+          },
+          "description": "files lists every file that must be present and consumed in the restore\nbody, in the order they appear in the byte stream."
         }
       },
       "description": "A DB export manifest describes the file contents of a restore request. To prevent data loss, a manifest is always\ninterpreted as binding, i.e., the server must ensure that it will read and make use of every file listed in the\nmanifest, otherwise it must reject the request."
@@ -240,15 +255,18 @@
           "description": "The name of the file. This may or may not be a (relative) file path and up to the server to interpret.\nFor databases exported as ZIP files, this is the path relative to the root of the archive."
         },
         "encoding": {
-          "$ref": "#/definitions/DBExportManifestEncodingType"
+          "$ref": "#/definitions/DBExportManifestEncodingType",
+          "description": "encoding specifies how the file data is encoded in the restore body."
         },
         "encodedSize": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "encoded_size is the size of the encoded file data in bytes."
         },
         "decodedSize": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "decoded_size is the expected size of the file after decoding."
         },
         "decodedCrc32": {
           "type": "integer",
@@ -285,31 +303,34 @@
       "type": "object",
       "properties": {
         "metadata": {
-          "$ref": "#/definitions/v1DBRestoreProcessMetadata"
+          "$ref": "#/definitions/v1DBRestoreProcessMetadata",
+          "description": "metadata contains the static metadata for this restore process."
         },
         "attemptId": {
-          "type": "string"
+          "type": "string",
+          "description": "attempt_id identifies the current restore attempt (a process may be\ninterrupted and resumed multiple times)."
         },
         "state": {
-          "$ref": "#/definitions/v1DBRestoreProcessStatusState"
+          "$ref": "#/definitions/v1DBRestoreProcessStatusState",
+          "description": "state is the current lifecycle state of the restore process."
         },
         "resumeInfo": {
           "$ref": "#/definitions/DBRestoreProcessStatusResumeInfo",
-          "title": "only populated if state is PAUSED"
+          "description": "resume_info is only populated when state is PAUSED and contains the\nbyte offset at which the process can be resumed.\n\nonly populated if state is PAUSED"
         },
         "error": {
           "type": "string",
-          "title": "only populated when state is COMPLETED"
+          "description": "error is only populated when state is COMPLETED and the restore was\nunsuccessful.\n\nonly populated when state is COMPLETED"
         },
         "bytesRead": {
           "type": "string",
           "format": "int64",
-          "title": "Payload bytes read so far (approximate)"
+          "description": "bytes_read is an approximate count of payload bytes consumed so far.\n\nPayload bytes read so far (approximate)"
         },
         "filesProcessed": {
           "type": "string",
           "format": "int64",
-          "title": "Files processed so far (approximate)"
+          "description": "files_processed is an approximate count of manifest files applied so far.\n\nFiles processed so far (approximate)"
         }
       }
     },
@@ -323,7 +344,7 @@
         "COMPLETED"
       ],
       "default": "UNKNOWN",
-      "title": "- COMPLETED: successful if error is empty, unsuccessful otherwise"
+      "description": "State describes the lifecycle stage of a database restore process.\n\n - NOT_STARTED: NOT_STARTED indicates the restore has been registered but not yet begun.\n - IN_PROGRESS: IN_PROGRESS indicates the restore is actively reading and applying data.\n - PAUSED: PAUSED indicates the restore was interrupted and can be resumed.\n - COMPLETED: COMPLETED indicates the restore finished; check the error field to\ndetermine success or failure.\n\nsuccessful if error is empty, unsuccessful otherwise"
     },
     "v1DBRestoreRequestHeader": {
       "type": "object",
@@ -349,7 +370,8 @@
       "type": "object",
       "properties": {
         "activeStatus": {
-          "$ref": "#/definitions/v1DBRestoreProcessStatus"
+          "$ref": "#/definitions/v1DBRestoreProcessStatus",
+          "description": "active_status is the status of the currently active restore process,\nor empty if no restore is in progress."
         }
       }
     },
@@ -361,13 +383,15 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1DBExportFormat"
-          }
+          },
+          "description": "formats lists the export formats supported by this Central instance."
         },
         "supportedEncodings": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/DBExportManifestEncodingType"
-          }
+          },
+          "description": "supported_encodings lists the encoding types (e.g. deflate) accepted\nfor file data in restore request bodies."
         }
       }
     },
@@ -375,7 +399,8 @@
       "type": "object",
       "properties": {
         "resumeInfo": {
-          "$ref": "#/definitions/DBRestoreProcessStatusResumeInfo"
+          "$ref": "#/definitions/DBRestoreProcessStatusResumeInfo",
+          "description": "resume_info contains the byte offset from which the interrupted restore\ncan be resumed."
         }
       }
     }

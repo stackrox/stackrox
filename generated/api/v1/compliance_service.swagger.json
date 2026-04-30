@@ -18,6 +18,8 @@
   "paths": {
     "/v1/compliance/aggregatedresults": {
       "get": {
+        "summary": "GetAggregatedResults returns compliance check pass/fail counts aggregated\nacross the fleet according to the requested grouping and granularity.",
+        "description": "The `unit` field controls granularity (what each result row counts):\nCHECK gives one row per individual check, CONTROL per control, etc.\nThe `group_by` field adds breakdown dimensions such as CLUSTER, STANDARD,\nNAMESPACE, NODE, DEPLOYMENT, CATEGORY, or CONTROL.\nThe `where` field filters results using StackRox search query syntax\n(e.g. \"Cluster:production+Standard:CIS\").\n\nStandards with hideScanResults=true are excluded from the response.\nRequires View permission on the Compliance resource.",
         "operationId": "ComplianceService_GetAggregatedResults",
         "responses": {
           "200": {
@@ -36,6 +38,7 @@
         "parameters": [
           {
             "name": "groupBy",
+            "description": "group_by adds breakdown dimensions to the aggregation result.\nEach scope in this list becomes an additional key in every result row.\nExample: [CLUSTER, STANDARD] groups results by cluster and standard.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -57,6 +60,7 @@
           },
           {
             "name": "unit",
+            "description": "unit specifies the granularity of each result row — the entity type that\nnum_passing, num_failing, and num_skipped counts refer to.\nDefaults to CHECK when unset or UNKNOWN.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -75,6 +79,7 @@
           },
           {
             "name": "where.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -132,6 +137,8 @@
     },
     "/v1/compliance/runresults": {
       "get": {
+        "summary": "GetRunResults returns the compliance scan results for a specific cluster\nand standard.",
+        "description": "By default, returns the most recent successful run's results along with\nmetadata for any failed runs. Specify run_id to retrieve results for a\nspecific historical run; note that bypassing the cache may increase\nmemory pressure on the server.\n\nRequires View permission on the Compliance resource.",
         "operationId": "ComplianceService_GetRunResults",
         "responses": {
           "200": {
@@ -150,12 +157,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the ID of the secured cluster whose results to return.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "standardId",
+            "description": "standard_id is the compliance standard whose results to return\n(e.g. \"CIS_Kubernetes_v1_5_0\").",
             "in": "query",
             "required": false,
             "type": "string"
@@ -175,6 +184,8 @@
     },
     "/v1/compliance/standards": {
       "get": {
+        "summary": "GetStandards returns the list of compliance standards active on at least\none secured cluster.",
+        "description": "Only standards that the compliance operator manager considers active are\nreturned. For each standard, the hideScanResults flag reflects the current\nconfiguration set via UpdateComplianceStandardConfig.\n\nRequires View permission on the Compliance resource.",
         "operationId": "ComplianceService_GetStandards",
         "responses": {
           "200": {
@@ -197,6 +208,8 @@
     },
     "/v1/compliance/standards/{id}": {
       "get": {
+        "summary": "GetStandard returns the full definition of a compliance standard by ID,\nincluding all control groups and individual controls.",
+        "description": "Returns NOT_FOUND if the standard ID does not exist.\nRequires View permission on the Compliance resource.",
         "operationId": "ComplianceService_GetStandard",
         "responses": {
           "200": {
@@ -225,6 +238,8 @@
         ]
       },
       "patch": {
+        "summary": "UpdateComplianceStandardConfig updates display configuration for a\ncompliance standard, currently limited to the hideScanResults flag.",
+        "description": "When hideScanResults is true, the standard's results are suppressed in\nGetAggregatedResults responses. The standard itself remains visible via\nGetStandards and GetStandard.\n\nReturns NOT_FOUND if the standard ID does not exist.\nRequires Modify permission on the Compliance resource.",
         "operationId": "ComplianceService_UpdateComplianceStandardConfig",
         "responses": {
           "200": {
@@ -243,6 +258,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the compliance standard ID to update (e.g. the standard's short name).",
             "in": "path",
             "required": true,
             "type": "string"
@@ -390,9 +406,11 @@
       "type": "object",
       "properties": {
         "hideScanResults": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "hideScanResults controls whether scan results for this standard are\nsuppressed in aggregated compliance views across the platform."
         }
-      }
+      },
+      "description": "UpdateComplianceRequest configures display settings for a compliance standard."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -640,12 +658,15 @@
           "type": "string"
         },
         "implemented": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "implemented indicates this control has an automated check in StackRox.\nControls where implemented=false are informational only and will not\nappear in scan results."
         },
         "interpretationText": {
-          "type": "string"
+          "type": "string",
+          "description": "interpretation_text explains how StackRox evaluates this control and what\nevidence is collected. Only present when implemented=true."
         }
-      }
+      },
+      "description": "ComplianceControl represents a single requirement or check within a\ncompliance standard (e.g. CIS Kubernetes 1.1.1 or NIST 800-53 AC-2)."
     },
     "v1ComplianceControlGroup": {
       "type": "object",
@@ -664,9 +685,11 @@
         },
         "numImplementedChecks": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "num_implemented_checks is the count of controls in this group that have\nautomated checks implemented in this StackRox version."
         }
-      }
+      },
+      "description": "ComplianceControlGroup is a logical grouping of related controls within a\ncompliance standard (e.g. a section or chapter)."
     },
     "v1ComplianceStandard": {
       "type": "object",
@@ -688,7 +711,8 @@
             "$ref": "#/definitions/v1ComplianceControl"
           }
         }
-      }
+      },
+      "description": "ComplianceStandard is the full definition of a compliance standard,\nincluding its metadata, control groups, and individual controls."
     },
     "v1ComplianceStandardMetadata": {
       "type": "object",
@@ -704,21 +728,26 @@
         },
         "numImplementedChecks": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "num_implemented_checks is the count of controls that have automated checks\nimplemented in this StackRox version."
         },
         "scopes": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1ComplianceStandardMetadataScope"
-          }
+          },
+          "description": "scopes lists the entity types (CLUSTER, NAMESPACE, DEPLOYMENT, NODE) that\nthis standard evaluates. Controls within this standard may target any\nsubset of these scopes."
         },
         "dynamic": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "dynamic indicates the standard is provided by an external compliance\noperator (e.g. OpenShift Compliance Operator) rather than built into\nStackRox. Dynamic standards may not have full scan result support."
         },
         "hideScanResults": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "hideScanResults controls whether scan results for this standard are\nsuppressed in aggregated views. Set via UpdateComplianceStandardConfig."
         }
-      }
+      },
+      "description": "ComplianceStandardMetadata describes a compliance standard registered in\nStackRox, such as CIS Kubernetes, NIST 800-53, NIST 800-190, PCI DSS 3.2,\nor HIPAA 164."
     },
     "v1ComplianceStandardMetadataScope": {
       "type": "string",
@@ -729,7 +758,8 @@
         "DEPLOYMENT",
         "NODE"
       ],
-      "default": "UNSET"
+      "default": "UNSET",
+      "description": "Scope enumerates the Kubernetes entity types that a compliance standard\nevaluates. A standard may target multiple scopes simultaneously.\n\n - CLUSTER: CLUSTER indicates the standard evaluates cluster-level configuration.\n - NAMESPACE: NAMESPACE indicates the standard evaluates namespace-level resources.\n - DEPLOYMENT: DEPLOYMENT indicates the standard evaluates workload deployments.\n - NODE: NODE indicates the standard evaluates individual cluster nodes."
     },
     "v1Empty": {
       "type": "object"
@@ -738,22 +768,26 @@
       "type": "object",
       "properties": {
         "results": {
-          "$ref": "#/definitions/storageComplianceRunResults"
+          "$ref": "#/definitions/storageComplianceRunResults",
+          "description": "results contains the most recent successful run's per-entity check results,\nbroken down by cluster, node, deployment, and machine config."
         },
         "failedRuns": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageComplianceRunMetadata"
-          }
+          },
+          "description": "failed_runs lists metadata for any runs that failed before or after the\nmost recent successful run. Useful for diagnosing scan errors."
         }
-      }
+      },
+      "description": "GetComplianceRunResultsResponse contains the results of a compliance scan\nrun for a specific cluster and standard."
     },
     "v1GetComplianceStandardResponse": {
       "type": "object",
       "properties": {
         "standard": {
-          "$ref": "#/definitions/v1ComplianceStandard"
+          "$ref": "#/definitions/v1ComplianceStandard",
+          "description": "standard is the full compliance standard definition including all control\ngroups and individual controls."
         }
       }
     },
@@ -765,7 +799,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ComplianceStandardMetadata"
-          }
+          },
+          "description": "standards is the list of active compliance standards. Only standards that\nare active for at least one secured cluster are included."
         }
       }
     },
@@ -797,10 +832,12 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\""
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "pagination controls page size and sort order for list results."
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."

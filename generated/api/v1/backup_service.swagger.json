@@ -19,6 +19,7 @@
     "/v1/externalbackups": {
       "get": {
         "summary": "GetExternalBackups returns all external backup configurations.",
+        "description": "Sensitive credential fields are replaced with a placeholder in each\nreturned configuration. The response is not paginated.",
         "operationId": "ExternalBackupService_GetExternalBackups",
         "responses": {
           "200": {
@@ -39,7 +40,8 @@
         ]
       },
       "post": {
-        "summary": "PostExternalBackup creates an external backup configuration.",
+        "summary": "PostExternalBackup creates a new external backup configuration.",
+        "description": "The id field must be empty; a new ID is assigned. The configuration is\nvalidated (name, schedule, backups_to_keep) and registered with the\nintegration health reporter before being persisted.\n\nReturns INVALID_ARGUMENT if the id field is set, if required fields are\nmissing or invalid, or if the schedule expression is malformed.",
         "operationId": "ExternalBackupService_PostExternalBackup",
         "responses": {
           "200": {
@@ -72,7 +74,8 @@
     },
     "/v1/externalbackups/test": {
       "post": {
-        "summary": "TestExternalBackup tests an external backup configuration.",
+        "summary": "TestExternalBackup verifies that the given backup configuration is\nreachable and correctly set up, treating all credential fields as\nauthoritative (no stored credential reconciliation).",
+        "description": "Returns INVALID_ARGUMENT if validation or the connectivity test fails.",
         "operationId": "ExternalBackupService_TestExternalBackup",
         "responses": {
           "200": {
@@ -105,7 +108,8 @@
     },
     "/v1/externalbackups/test/updated": {
       "post": {
-        "summary": "TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.",
+        "summary": "TestUpdatedExternalBackup verifies that the given external backup\nconfiguration is reachable with optional stored credential reconciliation.",
+        "description": "When update_password is false, credential fields in the request are\nreplaced with the stored credentials before the test is performed.\nWhen update_password is true, the provided credentials are used directly.\n\nReturns INVALID_ARGUMENT if validation or the connectivity test fails.\nReturns NOT_FOUND if update_password is false and the configuration does\nnot exist.",
         "operationId": "ExternalBackupService_TestUpdatedExternalBackup",
         "responses": {
           "200": {
@@ -138,7 +142,8 @@
     },
     "/v1/externalbackups/{externalBackup.id}": {
       "patch": {
-        "summary": "UpdateExternalBackup modifies a given external backup, with optional stored credential reconciliation.",
+        "summary": "UpdateExternalBackup modifies an existing external backup configuration\nwith optional stored credential reconciliation.",
+        "description": "When update_password is false, credential fields in the request are\nignored and the stored credentials are preserved. When update_password\nis true, credentials in the request replace stored credentials.\n\nReturns INVALID_ARGUMENT if the id field is empty, if validation fails,\nor if update_password is false and the configuration does not exist.",
         "operationId": "ExternalBackupService_UpdateExternalBackup",
         "responses": {
           "200": {
@@ -177,7 +182,8 @@
     },
     "/v1/externalbackups/{id}": {
       "get": {
-        "summary": "GetExternalBackup returns the external backup configuration given its ID.",
+        "summary": "GetExternalBackup returns the external backup configuration with the given\nID.",
+        "description": "Sensitive credential fields are replaced with a placeholder.\nReturns NOT_FOUND if no configuration with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ExternalBackupService_GetExternalBackup",
         "responses": {
           "200": {
@@ -206,7 +212,8 @@
         ]
       },
       "delete": {
-        "summary": "DeleteExternalBackup removes an external backup configuration given its ID.",
+        "summary": "DeleteExternalBackup removes the external backup configuration with the\ngiven ID and deregisters it from the integration health reporter.",
+        "description": "Returns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ExternalBackupService_DeleteExternalBackup",
         "responses": {
           "200": {
@@ -235,7 +242,8 @@
         ]
       },
       "post": {
-        "summary": "TriggerExternalBackup initiates an external backup for the given configuration.",
+        "summary": "TriggerExternalBackup initiates an on-demand backup using the\nconfiguration identified by the given ID.",
+        "description": "Returns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ExternalBackupService_TriggerExternalBackup",
         "responses": {
           "200": {
@@ -264,7 +272,8 @@
         ]
       },
       "put": {
-        "summary": "PutExternalBackup modifies a given external backup, without using stored credential reconciliation.",
+        "summary": "PutExternalBackup replaces an existing external backup configuration,\ntreating all credential fields in the request as authoritative (no stored\ncredential reconciliation). Prefer UpdateExternalBackup for\ncredential-preserving updates.",
+        "description": "Returns INVALID_ARGUMENT if the id field is empty or if validation fails.",
         "operationId": "ExternalBackupService_PutExternalBackup",
         "responses": {
           "200": {
@@ -366,6 +375,7 @@
               "type": "boolean"
             }
           },
+          "description": "external_backup contains the updated backup configuration. The id field\nmust be set.",
           "title": "Next available tag: 10"
         },
         "updatePassword": {
@@ -605,7 +615,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageExternalBackup"
-          }
+          },
+          "description": "external_backups contains all configured external backup configurations,\nwith sensitive credential fields replaced by a placeholder."
         }
       }
     },
@@ -613,7 +624,8 @@
       "type": "object",
       "properties": {
         "externalBackup": {
-          "$ref": "#/definitions/storageExternalBackup"
+          "$ref": "#/definitions/storageExternalBackup",
+          "description": "external_backup contains the updated backup configuration. The id field\nmust be set."
         },
         "updatePassword": {
           "type": "boolean",

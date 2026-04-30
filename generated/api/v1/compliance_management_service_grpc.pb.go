@@ -27,9 +27,38 @@ const (
 // ComplianceManagementServiceClient is the client API for ComplianceManagementService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ComplianceManagementService manages the execution of compliance scans across clusters.
+//
+// Compliance runs are triggered per cluster/standard pair. The service supports
+// wildcard targeting (cluster "*" or standard "*") to fan out runs to all applicable
+// combinations. Run results are stored separately and queried via ComplianceService.
+//
+// Authentication: GetRecentRuns and GetRunStatuses require read access to the
+// Compliance resource. TriggerRuns requires write access.
 type ComplianceManagementServiceClient interface {
+	// GetRecentRuns returns compliance runs matching the optional cluster, standard, and time filters.
+	//
+	// Results are sorted by start time ascending. All filter fields are optional;
+	// omitting them returns all recent runs across all clusters and standards.
+	//
+	// Requires read access to the Compliance resource.
 	GetRecentRuns(ctx context.Context, in *GetRecentComplianceRunsRequest, opts ...grpc.CallOption) (*GetRecentComplianceRunsResponse, error)
+	// TriggerRuns starts new compliance runs for the specified cluster/standard selection.
+	//
+	// The selection supports wildcard values ("*") to trigger runs across all clusters
+	// or all standards. Returns the list of ComplianceRun objects that were started.
+	//
+	// Returns INVALID_ARGUMENT if the cluster or standard selection cannot be resolved.
+	// Requires write access to the Compliance resource.
 	TriggerRuns(ctx context.Context, in *TriggerComplianceRunsRequest, opts ...grpc.CallOption) (*TriggerComplianceRunsResponse, error)
+	// GetRunStatuses returns the current status for specified run IDs or the latest runs.
+	//
+	// Set latest=true to retrieve the most recent run per cluster/standard pair without
+	// specifying IDs. Setting both latest=true and run_ids returns INVALID_ARGUMENT.
+	// IDs in the request that do not match any run are returned in invalid_run_ids.
+	//
+	// Requires read access to the Compliance resource.
 	GetRunStatuses(ctx context.Context, in *GetComplianceRunStatusesRequest, opts ...grpc.CallOption) (*GetComplianceRunStatusesResponse, error)
 }
 
@@ -74,9 +103,38 @@ func (c *complianceManagementServiceClient) GetRunStatuses(ctx context.Context, 
 // ComplianceManagementServiceServer is the server API for ComplianceManagementService service.
 // All implementations should embed UnimplementedComplianceManagementServiceServer
 // for forward compatibility.
+//
+// ComplianceManagementService manages the execution of compliance scans across clusters.
+//
+// Compliance runs are triggered per cluster/standard pair. The service supports
+// wildcard targeting (cluster "*" or standard "*") to fan out runs to all applicable
+// combinations. Run results are stored separately and queried via ComplianceService.
+//
+// Authentication: GetRecentRuns and GetRunStatuses require read access to the
+// Compliance resource. TriggerRuns requires write access.
 type ComplianceManagementServiceServer interface {
+	// GetRecentRuns returns compliance runs matching the optional cluster, standard, and time filters.
+	//
+	// Results are sorted by start time ascending. All filter fields are optional;
+	// omitting them returns all recent runs across all clusters and standards.
+	//
+	// Requires read access to the Compliance resource.
 	GetRecentRuns(context.Context, *GetRecentComplianceRunsRequest) (*GetRecentComplianceRunsResponse, error)
+	// TriggerRuns starts new compliance runs for the specified cluster/standard selection.
+	//
+	// The selection supports wildcard values ("*") to trigger runs across all clusters
+	// or all standards. Returns the list of ComplianceRun objects that were started.
+	//
+	// Returns INVALID_ARGUMENT if the cluster or standard selection cannot be resolved.
+	// Requires write access to the Compliance resource.
 	TriggerRuns(context.Context, *TriggerComplianceRunsRequest) (*TriggerComplianceRunsResponse, error)
+	// GetRunStatuses returns the current status for specified run IDs or the latest runs.
+	//
+	// Set latest=true to retrieve the most recent run per cluster/standard pair without
+	// specifying IDs. Setting both latest=true and run_ids returns INVALID_ARGUMENT.
+	// IDs in the request that do not match any run are returned in invalid_run_ids.
+	//
+	// Requires read access to the Compliance resource.
 	GetRunStatuses(context.Context, *GetComplianceRunStatusesRequest) (*GetComplianceRunStatusesResponse, error)
 }
 

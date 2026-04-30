@@ -9,72 +9,144 @@ import "storage/config.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// PutConfigRequest carries the full Central configuration to replace in a single write.
 message PutConfigRequest {
+  // config is the complete Central configuration, including both public and private sub-configs.
+  // Both public_config and private_config must be set; omitting either returns INVALID_ARGUMENT.
   storage.Config config = 1;
 }
 
+// DayOption defines a selectable number-of-days duration that administrators can enable
+// as a pre-set expiry option for vulnerability exception requests.
 message DayOption {
+  // num_days is the duration in days for this expiry option. Must be >= 1 when enabled is true.
   uint32 num_days = 1;
+  // enabled controls whether this duration is offered as an expiry choice in the UI.
   bool enabled = 2;
 }
 
+// VulnerabilityExceptionConfig controls which expiry options are available when users
+// create vulnerability deferral or false-positive exception requests.
 message VulnerabilityExceptionConfig {
+  // FixableCVEOptions defines expiry conditions based on whether vulnerabilities become fixable.
   message FixableCVEOptions {
-    // This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
-    // in the requests become fixable.
+    // all_fixable, when true, expires the deferral request only when **all** vulnerabilities
+    // in the request become fixable.
     bool all_fixable = 1;
-    // This options allows users to expire the vulnerability deferral request if **any** vulnerability
-    // in the requests become fixable.
+    // any_fixable, when true, expires the deferral request as soon as **any** vulnerability
+    // in the request becomes fixable.
     bool any_fixable = 2;
   }
 
+  // ExpiryOptions defines the full set of expiry modes presented to users when creating
+  // a vulnerability exception. At least one option must be enabled.
   message ExpiryOptions {
-    // This allows users to set expiry interval based on number of days.
+    // day_options lists the pre-set day-count durations offered as expiry choices.
+    // At least one DayOption must be provided; at least one must be enabled.
+    // All enabled entries must have a unique num_days value >= 1.
     repeated DayOption day_options = 1;
-    // This allows users to set vulnerability request expiry based on the CVEs.
+    // fixable_cve_options configures expiry conditions tied to CVE fixability status.
+    // Must be present; at least one of all_fixable or any_fixable should be true.
     FixableCVEOptions fixable_cve_options = 2;
-    // This option, if true, allows UI to show a custom date picker for setting expiry date.
+    // custom_date, when true, allows the UI to display a date picker so users can
+    // specify an arbitrary expiry date for the exception.
     bool custom_date = 3;
+    // indefinite, when true, allows users to create exceptions with no expiry date.
     bool indefinite = 4;
   }
 
+  // expiry_options defines the expiry modes available when creating vulnerability exceptions.
   ExpiryOptions expiry_options = 1;
 }
 
 message GetVulnerabilityExceptionConfigResponse {
+  // config is the current vulnerability exception configuration.
   VulnerabilityExceptionConfig config = 1;
 }
 
+// UpdateVulnerabilityExceptionConfigRequest carries the desired vulnerability exception
+// configuration to store. All expiry_options validation rules apply.
 message UpdateVulnerabilityExceptionConfigRequest {
+  // config is the new vulnerability exception configuration to apply.
+  // Must be non-nil and pass all validation rules (see VulnerabilityExceptionConfig).
   VulnerabilityExceptionConfig config = 1;
 }
 
 message UpdateVulnerabilityExceptionConfigResponse {
+  // config is the vulnerability exception configuration as stored after the update.
   VulnerabilityExceptionConfig config = 1;
 }
 
+// PutPlatformComponentConfigRequest carries the namespace-matching rules used to classify
+// workloads as platform components rather than user workloads.
 message PutPlatformComponentConfigRequest {
+  // rules is the ordered list of namespace-matching rules. Each rule must have a non-empty
+  // name and a valid RE2 namespace regex. Returns INVALID_ARGUMENT for empty names, empty
+  // regexes, or malformed regex patterns.
   repeated storage.PlatformComponentConfig.Rule rules = 1;
 }
 
 message GetDefaultRedHatLayeredProductsRegexResponse {
+  // regex is the built-in default RE2 pattern used to match namespaces that belong to
+  // Red Hat layered products (e.g. OpenShift operators).
   string regex = 1;
 }
 
-// ConfigService APIs can be used to manage Central config.
+// ConfigService manages system-wide configuration for Central, including public UI settings,
+// private data-retention policies, vulnerability exception options, and platform component rules.
+//
+// Configuration is divided into three sub-configs:
+//   - PublicConfig: settings readable without authentication (login banners, telemetry opt-in).
+//   - PrivateConfig: operational settings readable only by administrators (data retention
+//     durations for alerts, images, reports, decommissioned clusters, and admin events;
+//     Prometheus metrics configuration).
+//   - PlatformComponentConfig: namespace-matching rules that classify workloads as platform
+//     components vs. user workloads (feature-flagged; see CustomizablePlatformComponents).
+//
+// Authentication:
+//   - GetPublicConfig: no authentication required (anonymous access).
+//   - GetVulnerabilityExceptionConfig: requires View on VulnerabilityManagementRequests OR Administration.
+//   - All other read endpoints: require View on Administration.
+//   - All write endpoints: require Modify on Administration.
 service ConfigService {
+  // GetPublicConfig returns the public portion of Central's configuration.
+  //
+  // Public config includes UI banners (header/footer), the login-page notice, and the
+  // telemetry opt-in status. This endpoint is intentionally unauthenticated so that banners
+  // can be displayed on the login page before the user has a session.
   rpc GetPublicConfig(Empty) returns (storage.PublicConfig) {
     option (google.api.http) = {get: "/v1/config/public"};
   }
 
+  // GetPrivateConfig returns the private (admin-only) portion of Central's configuration.
+  //
+  // Private config contains all data-retention settings: alert retention durations (by type),
+  // image scan retention, expired vulnerability request retention, decommissioned cluster
+  // retention, report history and downloadable-report retention, administration event retention,
+  // and custom Prometheus metrics configuration.
+  //
+  // Requires View on the Administration resource.
   rpc GetPrivateConfig(Empty) returns (storage.PrivateConfig) {
     option (google.api.http) = {get: "/v1/config/private"};
   }
 
+  // GetVulnerabilityExceptionConfig returns the current vulnerability exception (deferral/false-positive)
+  // configuration, which controls which expiry options are offered when users create exception requests.
+  //
+  // Requires View on VulnerabilityManagementRequests OR View on Administration.
   rpc GetVulnerabilityExceptionConfig(Empty) returns (GetVulnerabilityExceptionConfigResponse) {
     option (google.api.http) = {get: "/v1/config/private/exception/vulnerabilities"};
   }
 
+  // UpdateVulnerabilityExceptionConfig replaces the vulnerability exception configuration.
+  //
+  // Validates that:
+  //   - at least one DayOption is provided and at least one expiry option is enabled overall,
+  //   - all enabled DayOptions have unique num_days values >= 1,
+  //   - fixable_cve_options is present.
+  //
+  // Returns INVALID_ARGUMENT if validation fails.
+  // Requires Modify on Administration.
   rpc UpdateVulnerabilityExceptionConfig(UpdateVulnerabilityExceptionConfigRequest) returns (UpdateVulnerabilityExceptionConfigResponse) {
     option (google.api.http) = {
       put: "/v1/config/private/exception/vulnerabilities"
@@ -82,10 +154,26 @@ service ConfigService {
     };
   }
 
+  // GetPlatformComponentConfig returns the current platform component classification rules.
+  //
+  // Platform component rules are namespace-matching regexes used to label workloads as
+  // platform (infrastructure) rather than user workloads. This endpoint is only available
+  // when the CustomizablePlatformComponents feature flag is enabled; returns an error otherwise.
+  //
+  // Requires View on Administration.
   rpc GetPlatformComponentConfig(Empty) returns (storage.PlatformComponentConfig) {
     option (google.api.http) = {get: "/v1/config/platformcomponent"};
   }
 
+  // UpdatePlatformComponentConfig replaces the platform component namespace-matching rules.
+  //
+  // Each rule must have a non-empty name and a valid RE2 regex for namespace matching.
+  // After a successful update, platform component classification is re-evaluated for all
+  // known workloads asynchronously.
+  //
+  // Returns INVALID_ARGUMENT if any rule has an empty name, empty regex, or an invalid regex pattern.
+  // Returns an error if the CustomizablePlatformComponents feature flag is disabled.
+  // Requires Modify on Administration.
   rpc UpdatePlatformComponentConfig(PutPlatformComponentConfigRequest) returns (storage.PlatformComponentConfig) {
     option (google.api.http) = {
       put: "/v1/config/platformcomponent"
@@ -93,10 +181,28 @@ service ConfigService {
     };
   }
 
+  // GetConfig returns the complete Central configuration, including public config, private config,
+  // and platform component config.
+  //
+  // Requires View on Administration.
   rpc GetConfig(Empty) returns (storage.Config) {
     option (google.api.http) = {get: "/v1/config"};
   }
 
+  // PutConfig replaces the entire Central configuration in a single write.
+  //
+  // Both public_config and private_config must be present in the request; omitting either
+  // returns INVALID_ARGUMENT. Platform component rules (if provided) are validated for
+  // non-empty names and valid RE2 regex patterns. The vulnerability exception config embedded
+  // in private_config is also validated.
+  //
+  // Side effects on success:
+  //   - Telemetry collection is enabled or disabled based on public_config.telemetry.enabled.
+  //   - Platform component classification is re-evaluated for all workloads asynchronously.
+  //   - Custom Prometheus metrics aggregation is reconfigured.
+  //
+  // Returns INVALID_ARGUMENT if required sub-configs are missing or any validation fails.
+  // Requires Modify on Administration.
   rpc PutConfig(PutConfigRequest) returns (storage.Config) {
     option (google.api.http) = {
       put: "/v1/config"
@@ -105,6 +211,12 @@ service ConfigService {
   }
 
   // GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
+  //
+  // This regex is the built-in pattern used to identify namespaces belonging to Red Hat layered
+  // products (e.g. OpenShift operators). It can be used as a starting point when configuring
+  // custom platform component rules via UpdatePlatformComponentConfig.
+  //
+  // Requires View on Administration.
   rpc GetDefaultRedHatLayeredProductsRegex(Empty) returns (GetDefaultRedHatLayeredProductsRegexResponse) {
     option (google.api.http) = {get: "/v1/config/platformcomponent/rhlp/default"};
   }

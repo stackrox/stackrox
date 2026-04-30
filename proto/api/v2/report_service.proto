@@ -334,6 +334,7 @@ service ReportService {
     option (google.api.http) = {delete: "/v2/reports/jobs/{id}/delete"};
   }
 
+  // PostViewBasedReport submits a view-based vulnerability report for generation.
   rpc PostViewBasedReport(ReportRequestViewBased) returns (RunReportResponseViewBased) {
     option (google.api.http) = {
       post: "/v2/reports/view-based/run"
@@ -341,10 +342,12 @@ service ReportService {
     };
   }
 
+  // GetViewBasedMyReportHistory returns the report generation history for the calling user's view-based reports.
   rpc GetViewBasedMyReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 
+  // GetViewBasedReportHistory returns the report generation history for all view-based reports.
   rpc GetViewBasedReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }

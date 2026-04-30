@@ -18,6 +18,7 @@
   "paths": {
     "/v1/declarative-config/health": {
       "get": {
+        "summary": "GetDeclarativeConfigHealths returns the health status of all declaratively\nconfigured resources, including any errors encountered during the last\nreconciliation pass.",
         "operationId": "DeclarativeConfigHealthService_GetDeclarativeConfigHealths",
         "responses": {
           "200": {

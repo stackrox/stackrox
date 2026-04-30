@@ -12,7 +12,13 @@ message Preferences {
   uint64 max_grpc_receive_size_bytes = 1;
 }
 
+// GRPCPreferencesService returns gRPC transport settings advertised by Central.
+// Clients use these settings to configure gRPC stream buffer sizes.
+//
+// Authentication: no authentication required.
 service GRPCPreferencesService {
+  // Get returns the gRPC preferences for this Central instance, including the
+  // maximum receive message size in bytes.
   rpc Get(Empty) returns (Preferences) {
     option (google.api.http) = {get: "/v1/grpc-preferences"};
   }

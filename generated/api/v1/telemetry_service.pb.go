@@ -26,6 +26,8 @@ const (
 
 type ConfigureTelemetryRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// enabled is deprecated and has no effect.
+	//
 	// Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
 	Enabled       bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields

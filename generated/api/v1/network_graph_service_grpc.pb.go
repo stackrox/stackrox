@@ -34,15 +34,89 @@ const (
 // NetworkGraphServiceClient is the client API for NetworkGraphService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NetworkGraphService provides APIs for viewing and managing the network graph,
+// external network entities, and network graph configuration.
+//
+// The network graph represents observed network flows between deployments in a
+// cluster, including flows to/from external CIDR blocks or the internet.
+// Users can define custom external network entities (CIDR blocks) to group
+// external traffic in the graph.
+//
+// Authentication: read endpoints require View access to the NetworkGraph
+// resource. Write endpoints (create, patch, delete external entities) require
+// Modify access to NetworkGraph. The network graph configuration endpoints
+// require View/Modify access to the Administration resource.
 type NetworkGraphServiceClient interface {
+	// GetNetworkGraph returns a snapshot of observed network flows for all
+	// deployments in the given cluster.
+	//
+	// Flows are filtered to those observed after the `since` timestamp (default:
+	// 5 minutes ago). The result graph includes deployment nodes, external source
+	// nodes, and directed edges with per-port connection metadata when
+	// `include_ports` is true.
+	//
+	// Deployments invisible to the caller due to Scoped Access Control are masked
+	// (replaced with anonymized nodes) rather than omitted, to preserve graph
+	// topology. Flows between two invisible deployments are omitted entirely.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or the number of matching
+	// deployments exceeds the configured maximum.
+	// Returns NOT_FOUND if the cluster does not exist or is not visible.
 	GetNetworkGraph(ctx context.Context, in *NetworkGraphRequest, opts ...grpc.CallOption) (*NetworkGraph, error)
+	// GetExternalNetworkEntities returns the user-defined external network
+	// entities (CIDR blocks) visible for the given cluster, optionally filtered
+	// by the search query.
+	//
+	// Results include both cluster-scoped entities and global (cluster-agnostic)
+	// entities. Returns INVALID_ARGUMENT if the query is malformed.
 	GetExternalNetworkEntities(ctx context.Context, in *GetExternalNetworkEntitiesRequest, opts ...grpc.CallOption) (*GetExternalNetworkEntitiesResponse, error)
+	// GetExternalNetworkFlows returns the observed network flows between cluster
+	// deployments and a specific external network entity.
+	//
+	// Flows are paginated and sorted by source entity ID for deterministic
+	// pagination. Only flows involving at least one deployment visible to the
+	// caller are returned.
+	//
+	// Returns NOT_FOUND if the external entity does not exist.
 	GetExternalNetworkFlows(ctx context.Context, in *GetExternalNetworkFlowsRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsResponse, error)
+	// GetExternalNetworkFlowsMetadata returns per-entity flow counts for all
+	// external network entities that have observed flows in the cluster.
+	//
+	// Results are sorted by entity ID and support pagination. Useful for
+	// building summary views without fetching full flow details.
 	GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsMetadataRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error)
+	// CreateExternalNetworkEntity creates a new user-defined external network
+	// entity (CIDR block) scoped to the given cluster.
+	//
+	// The entity ID is derived deterministically from the cluster ID and CIDR
+	// block. Returns INVALID_ARGUMENT if the cluster ID or CIDR is invalid.
+	// Returns NOT_FOUND if the cluster does not exist or is not visible.
 	CreateExternalNetworkEntity(ctx context.Context, in *CreateNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
+	// PatchExternalNetworkEntity renames an existing user-defined external
+	// network entity.
+	//
+	// Only user-created entities can be updated; StackRox-generated default
+	// entities are immutable and will return PERMISSION_DENIED.
+	// Returns INVALID_ARGUMENT if the entity ID is empty.
+	// Returns NOT_FOUND if the entity does not exist.
 	PatchExternalNetworkEntity(ctx context.Context, in *PatchNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
+	// DeleteExternalNetworkEntity removes a user-defined external network entity.
+	//
+	// Only user-created entities can be deleted; StackRox-generated default
+	// entities are immutable and will return PERMISSION_DENIED.
+	// Returns NOT_FOUND if the entity does not exist.
 	DeleteExternalNetworkEntity(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// GetNetworkGraphConfig returns the current network graph display configuration.
+	//
+	// The configuration controls settings such as whether default external
+	// network sources are hidden in the graph. Requires View access to
+	// the Administration resource.
 	GetNetworkGraphConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.NetworkGraphConfig, error)
+	// PutNetworkGraphConfig replaces the network graph display configuration.
+	//
+	// Returns INVALID_ARGUMENT if the config body is missing.
+	// Requires Modify access to the Administration resource.
 	PutNetworkGraphConfig(ctx context.Context, in *PutNetworkGraphConfigRequest, opts ...grpc.CallOption) (*storage.NetworkGraphConfig, error)
 }
 
@@ -147,15 +221,89 @@ func (c *networkGraphServiceClient) PutNetworkGraphConfig(ctx context.Context, i
 // NetworkGraphServiceServer is the server API for NetworkGraphService service.
 // All implementations should embed UnimplementedNetworkGraphServiceServer
 // for forward compatibility.
+//
+// NetworkGraphService provides APIs for viewing and managing the network graph,
+// external network entities, and network graph configuration.
+//
+// The network graph represents observed network flows between deployments in a
+// cluster, including flows to/from external CIDR blocks or the internet.
+// Users can define custom external network entities (CIDR blocks) to group
+// external traffic in the graph.
+//
+// Authentication: read endpoints require View access to the NetworkGraph
+// resource. Write endpoints (create, patch, delete external entities) require
+// Modify access to NetworkGraph. The network graph configuration endpoints
+// require View/Modify access to the Administration resource.
 type NetworkGraphServiceServer interface {
+	// GetNetworkGraph returns a snapshot of observed network flows for all
+	// deployments in the given cluster.
+	//
+	// Flows are filtered to those observed after the `since` timestamp (default:
+	// 5 minutes ago). The result graph includes deployment nodes, external source
+	// nodes, and directed edges with per-port connection metadata when
+	// `include_ports` is true.
+	//
+	// Deployments invisible to the caller due to Scoped Access Control are masked
+	// (replaced with anonymized nodes) rather than omitted, to preserve graph
+	// topology. Flows between two invisible deployments are omitted entirely.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or the number of matching
+	// deployments exceeds the configured maximum.
+	// Returns NOT_FOUND if the cluster does not exist or is not visible.
 	GetNetworkGraph(context.Context, *NetworkGraphRequest) (*NetworkGraph, error)
+	// GetExternalNetworkEntities returns the user-defined external network
+	// entities (CIDR blocks) visible for the given cluster, optionally filtered
+	// by the search query.
+	//
+	// Results include both cluster-scoped entities and global (cluster-agnostic)
+	// entities. Returns INVALID_ARGUMENT if the query is malformed.
 	GetExternalNetworkEntities(context.Context, *GetExternalNetworkEntitiesRequest) (*GetExternalNetworkEntitiesResponse, error)
+	// GetExternalNetworkFlows returns the observed network flows between cluster
+	// deployments and a specific external network entity.
+	//
+	// Flows are paginated and sorted by source entity ID for deterministic
+	// pagination. Only flows involving at least one deployment visible to the
+	// caller are returned.
+	//
+	// Returns NOT_FOUND if the external entity does not exist.
 	GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error)
+	// GetExternalNetworkFlowsMetadata returns per-entity flow counts for all
+	// external network entities that have observed flows in the cluster.
+	//
+	// Results are sorted by entity ID and support pagination. Useful for
+	// building summary views without fetching full flow details.
 	GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsMetadataRequest) (*GetExternalNetworkFlowsMetadataResponse, error)
+	// CreateExternalNetworkEntity creates a new user-defined external network
+	// entity (CIDR block) scoped to the given cluster.
+	//
+	// The entity ID is derived deterministically from the cluster ID and CIDR
+	// block. Returns INVALID_ARGUMENT if the cluster ID or CIDR is invalid.
+	// Returns NOT_FOUND if the cluster does not exist or is not visible.
 	CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error)
+	// PatchExternalNetworkEntity renames an existing user-defined external
+	// network entity.
+	//
+	// Only user-created entities can be updated; StackRox-generated default
+	// entities are immutable and will return PERMISSION_DENIED.
+	// Returns INVALID_ARGUMENT if the entity ID is empty.
+	// Returns NOT_FOUND if the entity does not exist.
 	PatchExternalNetworkEntity(context.Context, *PatchNetworkEntityRequest) (*storage.NetworkEntity, error)
+	// DeleteExternalNetworkEntity removes a user-defined external network entity.
+	//
+	// Only user-created entities can be deleted; StackRox-generated default
+	// entities are immutable and will return PERMISSION_DENIED.
+	// Returns NOT_FOUND if the entity does not exist.
 	DeleteExternalNetworkEntity(context.Context, *ResourceByID) (*Empty, error)
+	// GetNetworkGraphConfig returns the current network graph display configuration.
+	//
+	// The configuration controls settings such as whether default external
+	// network sources are hidden in the graph. Requires View access to
+	// the Administration resource.
 	GetNetworkGraphConfig(context.Context, *Empty) (*storage.NetworkGraphConfig, error)
+	// PutNetworkGraphConfig replaces the network graph display configuration.
+	//
+	// Returns INVALID_ARGUMENT if the config body is missing.
+	// Requires Modify access to the Administration resource.
 	PutNetworkGraphConfig(context.Context, *PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error)
 }
 

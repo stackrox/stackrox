@@ -27,9 +27,63 @@ const (
 // SearchServiceClient is the client API for SearchService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SearchService provides global search and query-assistance APIs across all
+// StackRox resource types.
+//
+// The StackRox search query syntax is:
+//
+//	"<field>:<value>[,<value>...][+<field>:<value>...]"
+//
+// Examples:
+//
+//	"Severity:CRITICAL"                          — alerts with critical severity
+//	"Severity:CRITICAL+Cluster:production"       — critical alerts in the production cluster
+//	"Deployment:central,sensor+Namespace:stackrox" — two deployments in stackrox namespace
+//	"Image Tag:r/.*-dev"                         — images whose tag matches a regex
+//
+// Use the Options RPC to discover the available field names for each category.
+// Use the Autocomplete RPC to interactively build valid query strings.
+//
+// Authentication: all three RPCs require an authenticated user or API token.
+// No additional resource-level permissions are required beyond authentication;
+// each search function applies its own data-store–level access controls.
 type SearchServiceClient interface {
+	// Search performs a global search across one or more resource categories
+	// and returns matched resources sorted by relevance score.
+	//
+	// Accepts the StackRox query syntax (e.g. "Severity:CRITICAL+Cluster:production").
+	// When categories is empty, all supported searchable categories are queried
+	// (ALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,
+	// SERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, POLICY_CATEGORIES).
+	//
+	// For ALERTS, results are only returned when the query explicitly filters on
+	// an alert field (e.g. "Severity", "Policy"); otherwise the category is skipped
+	// and its count is reported as 0.
+	//
+	// Returns INVALID_ARGUMENT if the query string cannot be parsed or if an
+	// unsupported category is requested.
 	Search(ctx context.Context, in *RawSearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
+	// Options returns the list of valid search field names for the requested
+	// categories. Use these field names as the left-hand side of query expressions
+	// (e.g. "Severity", "Cluster", "Image Tag").
+	//
+	// When categories is empty, field names for all searchable categories are
+	// returned. The response list is alphabetically sorted and deduplicated across
+	// categories.
 	Options(ctx context.Context, in *SearchOptionsRequest, opts ...grpc.CallOption) (*SearchOptionsResponse, error)
+	// Autocomplete returns up to 10 candidate values for the incomplete field
+	// in the query string, enabling interactive query-builder UIs.
+	//
+	// The query must contain an incomplete field expression — the final token
+	// is treated as the field being completed. For example, querying
+	// "Cluster:prod" with category CLUSTERS returns cluster names that start
+	// with "prod". Candidates are deduplicated and sorted by relevance score.
+	//
+	// When categories is empty, all autocomplete-capable categories are searched
+	// (includes COMPLIANCE in addition to the standard search categories).
+	//
+	// Returns INVALID_ARGUMENT if the query is empty or cannot be parsed.
 	Autocomplete(ctx context.Context, in *RawSearchRequest, opts ...grpc.CallOption) (*AutocompleteResponse, error)
 }
 
@@ -74,9 +128,63 @@ func (c *searchServiceClient) Autocomplete(ctx context.Context, in *RawSearchReq
 // SearchServiceServer is the server API for SearchService service.
 // All implementations should embed UnimplementedSearchServiceServer
 // for forward compatibility.
+//
+// SearchService provides global search and query-assistance APIs across all
+// StackRox resource types.
+//
+// The StackRox search query syntax is:
+//
+//	"<field>:<value>[,<value>...][+<field>:<value>...]"
+//
+// Examples:
+//
+//	"Severity:CRITICAL"                          — alerts with critical severity
+//	"Severity:CRITICAL+Cluster:production"       — critical alerts in the production cluster
+//	"Deployment:central,sensor+Namespace:stackrox" — two deployments in stackrox namespace
+//	"Image Tag:r/.*-dev"                         — images whose tag matches a regex
+//
+// Use the Options RPC to discover the available field names for each category.
+// Use the Autocomplete RPC to interactively build valid query strings.
+//
+// Authentication: all three RPCs require an authenticated user or API token.
+// No additional resource-level permissions are required beyond authentication;
+// each search function applies its own data-store–level access controls.
 type SearchServiceServer interface {
+	// Search performs a global search across one or more resource categories
+	// and returns matched resources sorted by relevance score.
+	//
+	// Accepts the StackRox query syntax (e.g. "Severity:CRITICAL+Cluster:production").
+	// When categories is empty, all supported searchable categories are queried
+	// (ALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,
+	// SERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, POLICY_CATEGORIES).
+	//
+	// For ALERTS, results are only returned when the query explicitly filters on
+	// an alert field (e.g. "Severity", "Policy"); otherwise the category is skipped
+	// and its count is reported as 0.
+	//
+	// Returns INVALID_ARGUMENT if the query string cannot be parsed or if an
+	// unsupported category is requested.
 	Search(context.Context, *RawSearchRequest) (*SearchResponse, error)
+	// Options returns the list of valid search field names for the requested
+	// categories. Use these field names as the left-hand side of query expressions
+	// (e.g. "Severity", "Cluster", "Image Tag").
+	//
+	// When categories is empty, field names for all searchable categories are
+	// returned. The response list is alphabetically sorted and deduplicated across
+	// categories.
 	Options(context.Context, *SearchOptionsRequest) (*SearchOptionsResponse, error)
+	// Autocomplete returns up to 10 candidate values for the incomplete field
+	// in the query string, enabling interactive query-builder UIs.
+	//
+	// The query must contain an incomplete field expression — the final token
+	// is treated as the field being completed. For example, querying
+	// "Cluster:prod" with category CLUSTERS returns cluster names that start
+	// with "prod". Candidates are deduplicated and sorted by relevance score.
+	//
+	// When categories is empty, all autocomplete-capable categories are searched
+	// (includes COMPLIANCE in addition to the standard search categories).
+	//
+	// Returns INVALID_ARGUMENT if the query is empty or cannot be parsed.
 	Autocomplete(context.Context, *RawSearchRequest) (*AutocompleteResponse, error)
 }
 

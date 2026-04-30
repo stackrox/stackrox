@@ -18,6 +18,8 @@
   "paths": {
     "/v1/group": {
       "get": {
+        "summary": "GetGroup returns the single group matching the given group properties.",
+        "description": "Returns NOT_FOUND if no group matches the specified properties.\nRequires read access to the Access resource.",
         "operationId": "GroupService_GetGroup",
         "responses": {
           "200": {
@@ -111,6 +113,8 @@
     },
     "/v1/groups": {
       "get": {
+        "summary": "GetGroups returns all groups, optionally filtered by auth provider ID, attribute key,\nattribute value, and/or group ID.",
+        "description": "All specified filters are ANDed. Omitting all filters returns all groups.\nRequires read access to the Access resource.",
         "operationId": "GroupService_GetGroups",
         "responses": {
           "200": {
@@ -129,24 +133,28 @@
         "parameters": [
           {
             "name": "authProviderId",
+            "description": "auth_provider_id filters groups to those belonging to the specified auth provider.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "key",
+            "description": "key filters groups by the attribute key used for membership matching (e.g. \"groups\").",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "value",
+            "description": "value filters groups by the attribute value used for membership matching.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "id",
+            "description": "id filters groups by their unique group ID.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -157,6 +165,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteGroup removes the group identified by the given properties.",
+        "description": "Requires write access to the Access resource.",
         "operationId": "GroupService_DeleteGroup",
         "responses": {
           "200": {
@@ -175,31 +185,35 @@
         "parameters": [
           {
             "name": "authProviderId",
-            "description": "We copy over parameters from storage.GroupProperties for seamless HTTP API migration.",
+            "description": "We copy over parameters from storage.GroupProperties for seamless HTTP API migration.\nauth_provider_id identifies the auth provider the group belongs to.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "key",
+            "description": "key is the attribute key of the group properties to match.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "value",
+            "description": "value is the attribute value of the group properties to match.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "id",
+            "description": "id is the unique identifier of the group to delete.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "force",
+            "description": "force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -210,6 +224,8 @@
         ]
       },
       "post": {
+        "summary": "CreateGroup creates a new group mapping an auth provider attribute triple to a role.",
+        "description": "Requires write access to the Access resource.",
         "operationId": "GroupService_CreateGroup",
         "responses": {
           "200": {
@@ -241,6 +257,8 @@
         ]
       },
       "put": {
+        "summary": "UpdateGroup replaces the role assigned by an existing group.",
+        "description": "The group.props.id must be set and must match an existing group.\nReturns INVALID_ARGUMENT if validation fails or the group does not exist.\nRequires write access to the Access resource.",
         "operationId": "GroupService_UpdateGroup",
         "responses": {
           "200": {
@@ -259,6 +277,7 @@
         "parameters": [
           {
             "name": "group",
+            "description": "group is the updated group definition. The group ID must be set and must match an existing group.",
             "in": "body",
             "required": true,
             "schema": {
@@ -267,6 +286,7 @@
           },
           {
             "name": "force",
+            "description": "force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -279,6 +299,8 @@
     },
     "/v1/groupsbatch": {
       "post": {
+        "summary": "BatchUpdate applies an atomic diff between previous_groups and required_groups in a single transaction.",
+        "description": "Groups in previous_groups but not required_groups are deleted.\nGroups in both are updated if they differ.\nGroups in required_groups without an ID are added (duplicates by (props, role) are deduplicated).\nReturns INVALID_ARGUMENT if any group fails validation.\nRequires write access to the Access resource.",
         "operationId": "GroupService_BatchUpdate",
         "responses": {
           "200": {
@@ -437,7 +459,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageGroup"
-          }
+          },
+          "description": "groups is the list of groups matching the request filter."
         }
       },
       "title": "API for updating Groups and getting users.\nNext Available Tag: 2"
@@ -462,7 +485,8 @@
           "description": "Required groups are the groups we want to mutate the previous groups into."
         },
         "force": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups)."
         }
       },
       "title": "GroupBatchUpdateRequest is an in transaction batch update to the groups present.\nNext Available Tag: 3"

@@ -24,7 +24,8 @@ const (
 )
 
 type ListSignatureIntegrationsResponse struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// integrations contains all signature integrations, sorted by name.
 	Integrations  []*storage.SignatureIntegration `protobuf:"bytes,1,rep,name=integrations,proto3" json:"integrations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

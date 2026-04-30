@@ -18,6 +18,8 @@
   "paths": {
     "/v1/export/images": {
       "get": {
+        "summary": "ExportImages streams all images matching the query as a sequence of full image objects.",
+        "description": "Each response message in the stream contains one fully-enriched storage.Image.\nThis endpoint is intended for bulk export use cases where the full vulnerability\ndetail of every matching image is needed. Use ListImages for interactive queries.\n\nAn optional timeout (in seconds) can be set; the stream will be canceled if the\nexport takes longer than the specified duration.\n\nRequires View Image permission.",
         "operationId": "ImageService_ExportImages",
         "responses": {
           "200": {
@@ -45,6 +47,7 @@
         "parameters": [
           {
             "name": "timeout",
+            "description": "timeout is the maximum number of seconds the export may run before being canceled.\nA value of 0 means no timeout.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -52,6 +55,7 @@
           },
           {
             "name": "query",
+            "description": "query filters the exported images using StackRox search query syntax.\nAn empty query exports all images.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -64,7 +68,8 @@
     },
     "/v1/images": {
       "get": {
-        "summary": "ListImages returns all the images that match the input query.",
+        "summary": "ListImages returns lightweight image summaries matching the query.",
+        "description": "Returns storage.ListImage objects (slim form) which include name, scan time,\ncomponent count, CVE count, and risk score, but omit per-component vulnerability\ndetails. Use GetImage to retrieve the full scan data for a specific image.\n\nSupports StackRox search query syntax and pagination. Results are capped at\n1000 images per request.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "ImageService_ListImages",
         "responses": {
           "200": {
@@ -83,6 +88,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -138,7 +144,8 @@
         ]
       },
       "delete": {
-        "summary": "DeleteImage removes the images based on a query",
+        "summary": "DeleteImages removes images matching the query from Central's datastore and\nbroadcasts an invalidation message to all connected Sensors.",
+        "description": "The request requires a non-nil query; an empty query targets all images.\nWhen confirm=false the response reports the number of images that would be\ndeleted without making any changes (dry run). Set confirm=true to perform\nthe actual deletion.\n\nRequires Modify Image permission.\nReturns INVALID_ARGUMENT if no query is provided or the query syntax is malformed.",
         "operationId": "ImageService_DeleteImages",
         "responses": {
           "200": {
@@ -157,6 +164,7 @@
         "parameters": [
           {
             "name": "query.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -208,6 +216,7 @@
           },
           {
             "name": "confirm",
+            "description": "confirm must be set to true to perform the actual deletion.\nIf false, the response reflects the number of images that would be deleted\nwithout making any changes (dry run).",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -220,7 +229,8 @@
     },
     "/v1/images/cache/invalidate": {
       "get": {
-        "summary": "InvalidateScanAndRegistryCaches removes the image metadata cache.",
+        "summary": "InvalidateScanAndRegistryCaches clears the in-memory image metadata cache used to\navoid redundant registry and scanner calls.",
+        "description": "After invalidation, the next scan or enrichment request for any image will re-fetch\nmetadata from the registry and re-run the scanner. This is useful after adding or\nupdating image integrations.\n\nRequires Modify Image permission.",
         "operationId": "ImageService_InvalidateScanAndRegistryCaches",
         "responses": {
           "200": {
@@ -243,7 +253,8 @@
     },
     "/v1/images/scan": {
       "post": {
-        "summary": "ScanImage scans a single image and returns the result",
+        "summary": "ScanImage triggers an on-demand scan of the named image and returns the full result.",
+        "description": "Central contacts the configured image registry to fetch metadata, then runs the\nimage through the configured scanner (Clairify or Scanner V4) to produce vulnerability\ndata. The enriched image is persisted to Central's datastore.\n\nBy default the scan may be served from the metadata cache; set force=true to bypass\nthe cache and fetch fresh data from the registry and scanner. The scan can be\ndelegated to a specific secured cluster by providing the cluster name or ID.\n\nRequires Modify Image permission.\nReturns INVALID_ARGUMENT if the image name cannot be resolved.",
         "operationId": "ImageService_ScanImage",
         "responses": {
           "200": {
@@ -262,6 +273,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "ScanImageRequest is the request message for ScanImage.",
             "in": "body",
             "required": true,
             "schema": {
@@ -276,7 +288,8 @@
     },
     "/v1/images/{id}": {
       "get": {
-        "summary": "GetImage returns the image given its ID.",
+        "summary": "GetImage returns the full image record for the given SHA digest, including all\nper-component vulnerability details.",
+        "description": "Unlike ListImages (which returns slim objects), GetImage returns the complete\nstorage.Image including the embedded scan with all components and CVEs.\nSnoozed CVEs are excluded by default; set include_snoozed=true to include them.\nCVE descriptions are included by default; set strip_description=true to omit them.\n\nReturns INVALID_ARGUMENT if id is empty.\nReturns NOT_FOUND if no image with the given SHA exists.",
         "operationId": "ImageService_GetImage",
         "responses": {
           "200": {
@@ -295,18 +308,21 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the image SHA (digest). Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "includeSnoozed",
+            "description": "include_snoozed controls whether CVEs that have been snoozed (suppressed)\nare included in the returned scan data. Defaults to false (snoozed CVEs are excluded).",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
             "name": "stripDescription",
+            "description": "strip_description removes verbose CVE description text from the response,\nreducing payload size when description details are not needed.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -319,7 +335,8 @@
     },
     "/v1/imagescount": {
       "get": {
-        "summary": "CountImages returns a count of images that match the input query.",
+        "summary": "CountImages returns the number of images matching the query.",
+        "description": "Accepts StackRox search query syntax (e.g. \"Image:nginx+CVE:CVE-2021-44228\").\nAn empty query counts all images visible to the caller.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "ImageService_CountImages",
         "responses": {
           "200": {
@@ -338,6 +355,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -396,6 +414,7 @@
     "/v1/watchedimages": {
       "get": {
         "summary": "GetWatchedImages returns the list of image names that are currently\nbeing watched.",
+        "description": "Requires View WatchedImage permission.",
         "operationId": "ImageService_GetWatchedImages",
         "responses": {
           "200": {
@@ -416,7 +435,8 @@
         ]
       },
       "delete": {
-        "summary": "UnwatchImage marks an image name to no longer be watched.\nIt returns successfully if the image is no longer being watched\nafter the call, irrespective of whether the image was already being watched.",
+        "summary": "UnwatchImage removes an image name from the watched list.",
+        "description": "Returns successfully if the image is no longer being watched\nafter the call, irrespective of whether the image was already being watched.\n\nRequires Modify WatchedImage permission.",
         "operationId": "ImageService_UnwatchImage",
         "responses": {
           "200": {
@@ -446,7 +466,8 @@
         ]
       },
       "post": {
-        "summary": "WatchImage marks an image name as to be watched.",
+        "summary": "WatchImage registers an image name for continuous monitoring and triggers an\nimmediate scan.",
+        "description": "Central will periodically re-scan watched images so that vulnerability data\nstays current even when no deployment currently references them. The image name\nmust be fully qualified including a tag but must NOT include a digest (SHA).\n\nThe response always returns HTTP 200; scan failure is signaled via the error_type\nand error_message fields rather than an HTTP error code.\n\nRequires Modify WatchedImage permission.",
         "operationId": "ImageService_WatchImage",
         "responses": {
           "200": {
@@ -465,6 +486,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "WatchImageRequest is the request message for WatchImage.",
             "in": "body",
             "required": true,
             "schema": {
@@ -552,7 +574,8 @@
         "NO_VALID_INTEGRATION",
         "SCAN_FAILED"
       ],
-      "default": "NO_ERROR"
+      "default": "NO_ERROR",
+      "description": "ErrorType classifies the reason a WatchImage request could not be completed.\n\n - NO_ERROR: NO_ERROR indicates the image was scanned and registered for watching successfully.\n - INVALID_IMAGE_NAME: INVALID_IMAGE_NAME indicates the provided name could not be parsed as a valid\nimage reference, or the name included a digest (which is not supported for watch).\n - NO_VALID_INTEGRATION: NO_VALID_INTEGRATION indicates that no configured registry or scanner integration\nwas able to scan the image.\n - SCAN_FAILED: SCAN_FAILED indicates that image enrichment was attempted but failed."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -1493,7 +1516,8 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the number of images matching the query."
         }
       }
     },
@@ -1502,10 +1526,12 @@
       "properties": {
         "numDeleted": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "num_deleted is the number of images deleted (or that would be deleted in a dry run)."
         },
         "dryRun": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "dry_run is true when confirm was not set in the request, meaning no images were deleted."
         }
       }
     },
@@ -1516,7 +1542,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageImage"
+          "$ref": "#/definitions/storageImage",
+          "description": "image is one fully-enriched image object in the stream."
         }
       }
     },
@@ -1528,7 +1555,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageWatchedImage"
-          }
+          },
+          "description": "watched_images is the list of image names currently registered for continuous watching."
         }
       }
     },
@@ -1540,7 +1568,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageListImage"
-          }
+          },
+          "description": "images is a list of images in slim (ListImage) form, omitting per-component\nvulnerability details. Use GetImage to retrieve the full scan data for a specific image."
         }
       }
     },
@@ -1572,10 +1601,12 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\""
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "pagination controls page size and sort order for list results."
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
@@ -1584,13 +1615,16 @@
       "type": "object",
       "properties": {
         "imageName": {
-          "type": "string"
+          "type": "string",
+          "description": "image_name is the fully-qualified image reference to scan, including registry,\nrepository, and tag (e.g. \"docker.io/library/nginx:latest\"). Required."
         },
         "force": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "force bypasses the scan cache and triggers a fresh fetch of image metadata\nand vulnerability data even if a recent scan result already exists."
         },
         "includeSnoozed": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "include_snoozed controls whether snoozed CVEs are included in the returned\nscan result. Defaults to false (snoozed CVEs are excluded)."
         },
         "cluster": {
           "type": "string",
@@ -1600,7 +1634,8 @@
           "type": "string",
           "description": "Namespace on the secured cluster from which to read context information\nwhen delegating image scans, specifically pull secrets to access the image\nregistry."
         }
-      }
+      },
+      "description": "ScanImageRequest is the request message for ScanImage."
     },
     "v1SortOption": {
       "type": "object",
@@ -1624,7 +1659,8 @@
           "type": "string",
           "description": "The name of the image.\nThis must be fully qualified, including a tag,\nbut must NOT include a SHA."
         }
-      }
+      },
+      "description": "WatchImageRequest is the request message for WatchImage."
     },
     "v1WatchImageResponse": {
       "type": "object",
@@ -1634,13 +1670,15 @@
           "title": "If the image was scanned successfully, this returns the normalized name of the image.\nThis depends on what we get from the registry.\nFor example, \"docker.io/wordpress:latest\" -> \"docker.io/library/wordpress:latest\""
         },
         "errorType": {
-          "$ref": "#/definitions/WatchImageResponseErrorType"
+          "$ref": "#/definitions/WatchImageResponseErrorType",
+          "description": "error_type classifies the failure when the watch operation did not succeed."
         },
         "errorMessage": {
           "type": "string",
           "description": "Only set if error_type is NOT equal to \"NO_ERROR\"."
         }
-      }
+      },
+      "description": "WatchImageResponse is the response message for WatchImage."
     }
   }
 }

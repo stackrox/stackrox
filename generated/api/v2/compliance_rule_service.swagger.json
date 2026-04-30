@@ -18,7 +18,8 @@
   "paths": {
     "/v2/compliance/rule/summary/{ruleName}": {
       "get": {
-        "summary": "GetComplianceRule returns rule matching given request",
+        "summary": "GetComplianceRule returns rule matching given request.",
+        "description": "Looks up the rule by name and returns its full definition including severity,\ndescription, rationale, fix instructions, and mapped compliance standards.\nReturns the first matching rule if multiple exist; returns nil if none are found.\n\nReturns INVALID_ARGUMENT if rule_name is empty or the query is malformed.",
         "operationId": "ComplianceRuleService_GetComplianceRule",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "ruleName",
+            "description": "rule_name is required; the name of the Compliance Operator rule to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
