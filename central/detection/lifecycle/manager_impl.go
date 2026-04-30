@@ -268,7 +268,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 
 			indicatorSlice = append(indicatorSlice, indicator)
 		} else {
-			metrics.MatcherProcessIndicatorsInc()
+			metrics.ProcessIndicatorsNotPersistedInc()
 		}
 	}
 

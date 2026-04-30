@@ -8,7 +8,7 @@ import (
 func init() {
 	prometheus.MustRegister(
 		processFilterCounter,
-		matcherProcessIndicators,
+		processIndicatorsNotPersisted,
 	)
 }
 
@@ -20,11 +20,11 @@ var (
 		Help:      "Process filter hits and misses",
 	}, []string{"Type"})
 
-	matcherProcessIndicators = prometheus.NewCounter(prometheus.CounterOpts{
+	processIndicatorsNotPersisted = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "matcher_process_indicators",
-		Help:      "Number of process indicators filtered out by PlatformMatcher",
+		Name:      "process_indicators_not_persisted",
+		Help:      "Number of process indicators filtered out by PlatformMatcher and not persisted",
 	})
 )
 
@@ -33,7 +33,7 @@ func ProcessFilterCounterInc(typ string) {
 	processFilterCounter.With(prometheus.Labels{"Type": typ}).Inc()
 }
 
-// MatcherProcessIndicatorsInc increments the counter for process indicators filtered out by PlatformMatcher.
-func MatcherProcessIndicatorsInc() {
-	matcherProcessIndicators.Inc()
+// ProcessIndicatorsNotPersistedInc increments the counter for process indicators filtered out by PlatformMatcher.
+func ProcessIndicatorsNotPersistedInc() {
+	processIndicatorsNotPersisted.Inc()
 }
