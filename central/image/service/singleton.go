@@ -4,6 +4,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiterv2"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
@@ -31,6 +32,7 @@ func initialize() {
 		watchedImageDataStore.Singleton(),
 		manager.Singleton(),
 		connection.ManagerSingleton(),
+		deploymentDatastore.Singleton(),
 		enrichment.ImageEnricherSingleton(),
 		enrichment.ImageEnricherV2Singleton(),
 		cache.ImageMetadataCacheSingleton(),

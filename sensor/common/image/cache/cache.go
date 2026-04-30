@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -38,6 +39,21 @@ func GetKey(provider KeyProvider) Key {
 		return Key(id)
 	}
 	return Key(provider.GetName().GetFullName())
+}
+
+// KeyFromImageKey derives the canonical cache key from an ImageKey proto,
+// applying V2/V1/fullName precedence based on the FlattenImageData capability.
+func KeyFromImageKey(k *central.ImageKey) Key {
+	if centralcaps.Has(centralsensor.FlattenImageData) {
+		if id := k.GetImageIdV2(); id != "" {
+			return Key(id)
+		}
+	} else {
+		if id := k.GetImageId(); id != "" {
+			return Key(id)
+		}
+	}
+	return Key(k.GetImageFullName())
 }
 
 // CompareKeys given two KeyProvider, compares if they're equal

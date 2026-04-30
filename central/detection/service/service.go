@@ -4,11 +4,13 @@ import (
 	"context"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -37,8 +39,10 @@ func New(
 	imageEnricher enricher.ImageEnricher,
 	imageEnricherV2 enricher.ImageEnricherV2,
 	imageDatastore imageDatastore.DataStore,
+	imageV2DS imageV2Datastore.DataStore,
 	riskManager manager.Manager,
 	deploymentEnricher enrichment.Enricher,
+	deploymentDS deploymentDatastore.DataStore,
 	buildTimeDetector buildTimeDetection.Detector,
 	notifications notifier.Processor,
 	detector deploytime.Detector,
@@ -54,8 +58,10 @@ func New(
 		imageEnricher:      imageEnricher,
 		imageEnricherV2:    imageEnricherV2,
 		imageDatastore:     imageDatastore,
+		imageV2Datastore:   imageV2DS,
 		riskManager:        riskManager,
 		deploymentEnricher: deploymentEnricher,
+		deploymentDS:       deploymentDS,
 		buildTimeDetector:  buildTimeDetector,
 		detector:           detector,
 		policySet:          policySet,

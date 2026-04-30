@@ -15,17 +15,21 @@ import (
 	"github.com/stackrox/rox/central/administration/events"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imageUtils "github.com/stackrox/rox/central/image/utils"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -103,8 +107,10 @@ type serviceImpl struct {
 	imageEnricher      enricher.ImageEnricher
 	imageEnricherV2    enricher.ImageEnricherV2
 	imageDatastore     imageDatastore.DataStore
+	imageV2Datastore   imageV2Datastore.DataStore
 	riskManager        manager.Manager
 	deploymentEnricher enrichment.Enricher
+	deploymentDS       deploymentDatastore.DataStore
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
 	namespaces         namespaceDatastore.DataStore
@@ -211,6 +217,21 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 			}
 		}
 		utils.FilterSuppressedCVEsNoCloneV2(imgV2)
+
+		if req.GetForce() && imgV2.GetDigest() != "" {
+			// Clone after CVE filtering so Sensor receives the same
+			// filtered image it would get via ScanImageInternal.
+			imgForCache := utils.ConvertToV1(imgV2)
+			go imageUtils.UpdateImageCaches(
+				s.connManager, s.deploymentDS, s.imageV2Datastore,
+				imgForCache, &central.ImageKey{
+					ImageId:       imgV2.GetDigest(),
+					ImageIdV2:     imgV2.GetId(),
+					ImageFullName: imgV2.GetName().GetFullName(),
+				},
+			)
+		}
+
 		img = utils.ConvertToV1(imgV2)
 	} else {
 		img = types.ToImage(image)
@@ -234,6 +255,19 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 			}
 		}
 		utils.FilterSuppressedCVEsNoClone(img)
+
+		if req.GetForce() && img.GetId() != "" {
+			// Clone after CVE filtering so Sensor receives the same
+			// filtered image it would get via ScanImageInternal.
+			imgForCache := img.CloneVT()
+			go imageUtils.UpdateImageCaches(
+				s.connManager, s.deploymentDS, s.imageV2Datastore,
+				imgForCache, &central.ImageKey{
+					ImageId:       img.GetId(),
+					ImageFullName: img.GetName().GetFullName(),
+				},
+			)
+		}
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(req.GetPolicyCategories())
