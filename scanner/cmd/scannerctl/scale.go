@@ -209,7 +209,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 
 		httpClient := &http.Client{
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //#nosec G402 -- scale testing tool, not production code
 			},
 		}
 

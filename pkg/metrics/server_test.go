@@ -173,6 +173,7 @@ func fakeTLSConfig() (*tls.Config, error) {
 		Certificates: []tls.Certificate{cert},
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS12,
 	}
 	return tlsConfig, nil
 }
@@ -184,7 +185,7 @@ func testClient() (*http.Client, error) {
 	}
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
+		TLSClientConfig: &tls.Config{ //#nosec G402 -- test code with self-signed certs
 			Certificates: []tls.Certificate{cert},
 			// We are using a self-signed certificate for testing.
 			InsecureSkipVerify: true,

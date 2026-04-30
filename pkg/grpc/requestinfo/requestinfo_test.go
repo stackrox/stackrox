@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-var insecureTLSConfig = &tls.Config{InsecureSkipVerify: true}
+var insecureTLSConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- test code
 var insecureSkipVerify = credentials.NewTLS(insecureTLSConfig)
 
 const userAgentKey = "User-Agent"
@@ -90,7 +90,7 @@ func Test_gRPCGateway(t *testing.T) {
 	serviceInstance := &pingService{}
 
 	cert := testutils.IssueSelfSignedCert(t, "*.example.com", "*.example.com")
-	creds := credentials.NewTLS(&tls.Config{
+	creds := credentials.NewTLS(&tls.Config{ //#nosec G402 -- test code
 		InsecureSkipVerify: true,
 		Certificates:       []tls.Certificate{cert},
 	})

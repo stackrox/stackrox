@@ -30,7 +30,7 @@ func NewHTTPClient() *http.Client {
 func NewInsecureHTTPClient() *http.Client {
 	return &http.Client{
 		Transport: proxy.RoundTripper(
-			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}), //#nosec G402 -- intentional for IdP URLs with +insecure scheme suffix
 		),
 		Timeout: defaultTimeout,
 	}

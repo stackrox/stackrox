@@ -59,7 +59,7 @@ func asyncWithWaitGroup(function func() error, wg *concurrency.WaitGroup) {
 func getHTTPClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
+			TLSClientConfig: &tls.Config{ //#nosec G402 -- test code
 				InsecureSkipVerify: true,
 			},
 		},

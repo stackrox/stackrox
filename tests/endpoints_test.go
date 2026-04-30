@@ -79,7 +79,8 @@ type endpointsTestContext struct {
 
 func (c *endpointsTestContext) tlsConfig(clientCert *tls.Certificate, serverName string, useSNI bool) *tls.Config {
 	tlsConf := &tls.Config{
-		RootCAs: c.certPool,
+		RootCAs:    c.certPool,
+		MinVersion: tls.VersionTLS12,
 	}
 	if clientCert != nil {
 		tlsConf.Certificates = []tls.Certificate{*clientCert}

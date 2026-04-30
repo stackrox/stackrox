@@ -149,6 +149,7 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 	if tlsClientConf == nil {
 		tlsClientConf = &tls.Config{
 			ServerName: host,
+			MinVersion: tls.VersionTLS12,
 		}
 	} else if tlsClientConf.ServerName == "" {
 		tlsClientConf = tlsClientConf.Clone()

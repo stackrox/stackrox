@@ -126,9 +126,9 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 	}()
 	if insecure {
 		if tr.TLSClientConfig == nil {
-			tr.TLSClientConfig = &tls.Config{}
+			tr.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 		}
-		tr.TLSClientConfig.InsecureSkipVerify = true
+		tr.TLSClientConfig.InsecureSkipVerify = true //#nosec G402 -- intentional for insecure registry connections
 	}
 	return tr
 }

@@ -47,7 +47,7 @@ func (s *HTTPServer) RunForever() {
 	httpServer := &http.Server{
 		Addr:    s.Address,
 		Handler: s.mux,
-		TLSConfig: &tls.Config{
+		TLSConfig: &tls.Config{ //nolint:gosec // G402: MinVersion governed by TLS profile configuration
 			MinVersion:   tlsprofile.MinVersion(),
 			CipherSuites: tlsprofile.CipherSuites(),
 		},

@@ -71,6 +71,7 @@ func (s *misdirectedRequestSuite) SetupSuite() {
 	cert := testutils.IssueSelfSignedCert(s.T(), "*.example.com", "*.example.com")
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
 	}
 	s.tlsConfigurer = verifier.TLSConfigurerFunc(func() (*tls.Config, error) {
 		return tlsConfig, nil
@@ -216,7 +217,7 @@ func (s *misdirectedRequestSuite) TestAll() {
 }
 
 func makeRequestWithSNI(t *testing.T, endpoint net.Addr, targetURL, serverName string, useHTTP2 bool) *http.Response {
-	tlsConfig := &tls.Config{
+	tlsConfig := &tls.Config{ //#nosec G402 -- test code
 		InsecureSkipVerify: true,
 		ServerName:         serverName,
 	}

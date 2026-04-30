@@ -82,7 +82,7 @@ func NewClient(endpoint string) (*Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining client certificate")
 	}
-	tlsConf := &tls.Config{
+	tlsConf := &tls.Config{ //nolint:gosec // G402: Sensor-to-Central uses mTLS, hostname verification unnecessary
 		InsecureSkipVerify: true,
 		Certificates: []tls.Certificate{
 			clientCert,
