@@ -45,24 +45,9 @@ _use_existing_virtctl_binary_if_available() {
     return 1
 }
 
-# Downloads virtctl from ConsoleCLIDownload using verified TLS only.
-# This function intentionally does not use curl -k fallback.
-ensure_virtctl_binary() {
-    _use_existing_virtctl_binary_if_available && return
-
-    # CI Prow workers are always Linux x86_64 (n2-standard-8 machine type).
-    local download_url
-    download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
-        -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
-    if [[ -z "$download_url" ]]; then
-        die "virtctl not found on PATH and ConsoleCLIDownload resource not available"
-    fi
-    info "Downloading virtctl from ${download_url}"
-    local dest="/usr/local/bin"
-    if [[ ! -w "$dest" ]]; then
-        dest="$(mktemp -d)"
-        export PATH="${dest}:${PATH}"
-    fi
+# Retrieves the cluster ingress CA bundle and prints its path to stdout.
+# Dies if no trust material is available.
+_fetch_cluster_ingress_ca() {
     local ca_bundle
     ca_bundle="$(mktemp)"
     if oc get configmap -n openshift-config-managed default-ingress-cert \
@@ -75,19 +60,49 @@ ensure_virtctl_binary() {
         info "Using ingress CA from router-ca secret"
     else
         rm -f "$ca_bundle"
-        die "Cluster ingress CA not available for verified virtctl download from ${download_url}"
+        die "Cluster ingress CA not available"
+    fi
+    echo "$ca_bundle"
+}
+
+# Downloads and installs virtctl using the provided curl TLS arguments.
+# Usage: _download_and_install_virtctl [curl_tls_args...]
+# Example: _download_and_install_virtctl --cacert /path/to/ca.pem
+#          _download_and_install_virtctl -k
+_download_and_install_virtctl() {
+    # CI Prow workers are always Linux x86_64 (n2-standard-8 machine type).
+    local download_url
+    download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
+        -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
+    if [[ -z "$download_url" ]]; then
+        die "virtctl not found on PATH and ConsoleCLIDownload resource not available"
     fi
 
-    if ! curl -sSL --cacert "$ca_bundle" "$download_url" | tar xz -C "$dest" virtctl; then
-        rm -f "$ca_bundle"
-        die "Failed to download virtctl with verified TLS from ${download_url}"
+    local dest="/usr/local/bin"
+    if [[ ! -w "$dest" ]]; then
+        dest="$(mktemp -d)"
+        export PATH="${dest}:${PATH}"
     fi
-    rm -f "$ca_bundle"
+
+    info "Downloading virtctl from ${download_url}"
+    if ! curl -sSL "$@" "$download_url" | tar xz -C "$dest" virtctl; then
+        die "Failed to download virtctl from ${download_url}"
+    fi
     if [[ ! -f "${dest}/virtctl" ]]; then
         die "Downloaded archive from ${download_url} does not contain virtctl"
     fi
     chmod +x "${dest}/virtctl"
     info "virtctl installed at ${dest}/virtctl"
+}
+
+# Downloads virtctl from ConsoleCLIDownload using verified TLS only.
+ensure_virtctl_binary() {
+    _use_existing_virtctl_binary_if_available && return
+
+    local ca_bundle
+    ca_bundle="$(_fetch_cluster_ingress_ca)"
+    _download_and_install_virtctl --cacert "$ca_bundle"
+    rm -f "$ca_bundle"
 }
 
 # Downloads virtctl from ConsoleCLIDownload with curl -k.
@@ -99,26 +114,5 @@ ensure_virtctl_binary() {
 # - Never use this helper for persistent/shared environments.
 ensure_virtctl_binary_insecure() {
     _use_existing_virtctl_binary_if_available && return
-
-    local download_url
-    download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
-        -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
-    if [[ -z "$download_url" ]]; then
-        die "virtctl not found on PATH and ConsoleCLIDownload resource not available"
-    fi
-    info "Downloading virtctl from ${download_url} with TLS verification disabled (insecure mode)"
-    local dest="/usr/local/bin"
-    if [[ ! -w "$dest" ]]; then
-        dest="$(mktemp -d)"
-        export PATH="${dest}:${PATH}"
-    fi
-
-    if ! curl -sSLk "$download_url" | tar xz -C "$dest" virtctl; then
-        die "Failed to download virtctl from ${download_url} in insecure mode"
-    fi
-    if [[ ! -f "${dest}/virtctl" ]]; then
-        die "Downloaded archive from ${download_url} does not contain virtctl"
-    fi
-    chmod +x "${dest}/virtctl"
-    info "virtctl installed at ${dest}/virtctl (insecure download mode)"
+    _download_and_install_virtctl -k
 }
