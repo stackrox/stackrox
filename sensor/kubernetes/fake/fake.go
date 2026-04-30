@@ -251,6 +251,15 @@ func (w *WorkloadManager) Client() client.Interface {
 	return w.client
 }
 
+// OfflineModeInterval returns how often local-sensor should trigger a synthetic
+// offline→online state transition, or 0 if disabled.
+func (w *WorkloadManager) OfflineModeInterval() time.Duration {
+	if w == nil || w.workload == nil {
+		return 0
+	}
+	return w.workload.OfflineModeInterval
+}
+
 // NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
 func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	data, err := os.ReadFile(config.workloadFile)
@@ -297,7 +306,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr.initializePreexistingResources()
 
 	if warn := validateWorkload(&workload); warn != nil {
-		log.Warnf("Validaing workload: %s", warn)
+		log.Warnf("Validating workload: %s", warn)
 	}
 
 	log.Info("Created Workload manager for workload")
@@ -307,6 +316,10 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 }
 
 func validateWorkload(workload *Workload) error {
+	if workload.OfflineModeInterval < 0 {
+		workload.OfflineModeInterval = 0
+		log.Warn("negative offlineModeInterval in workload; clamped to 0")
+	}
 	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
 		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))
 		workload.NetworkWorkload.OpenPortReuseProbability = corrected
