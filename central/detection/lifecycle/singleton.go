@@ -30,7 +30,7 @@ func initialize() {
 		deploytime.SingletonDetector(),
 		runtime.SingletonDetector(),
 		clusterDatastore.Singleton(),
-		deploymentDatastore.Singleton(),
+		deploymentDatastore.NewActiveStateDatastore(deploymentDatastore.Singleton()),
 		processDatastore.Singleton(),
 		baselineDataStore.Singleton(),
 		alertmanager.Singleton(),

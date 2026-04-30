@@ -122,8 +122,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Errorf("could not obtain flow store for cluster %q", clusterID)
 	}
 
-	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	deploymentsQuery := clusterIDQuery
+	deploymentsQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	if query.GetQuery() != nil {
 		deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, query)
 	}

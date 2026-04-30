@@ -188,3 +188,18 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	s.NoError(err)
 	s.Equal(initialCfg.GetPrivateConfig().GetImageRetentionDurationDays(), pCfg.GetImageRetentionDurationDays())
 }
+
+func (s *configServiceTestSuite) TestPutConfigRejectsNegativeResourceRetention() {
+	cfg := &storage.Config{
+		PublicConfig: &storage.PublicConfig{},
+		PrivateConfig: &storage.PrivateConfig{
+			VulnerabilityExceptionConfig: defaultExceptionCfg,
+			ResourceRetentionConfig: &storage.ResourceRetentionConfig{
+				DeploymentDurationDays: -1,
+			},
+		},
+	}
+	_, err := s.srv.PutConfig(s.ctx, &v1.PutConfigRequest{Config: cfg})
+	s.Error(err)
+	s.Contains(err.Error(), "resource retention duration days must not be negative")
+}

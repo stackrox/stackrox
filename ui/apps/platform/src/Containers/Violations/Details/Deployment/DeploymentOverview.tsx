@@ -49,6 +49,12 @@ function DeploymentOverview({
                             deployment.created ? getDateTime(deployment.created) : 'not available'
                         }
                     />
+                    {deployment.deleted && (
+                        <DescriptionListItem
+                            term="Deleted"
+                            desc={getDateTime(deployment.deleted)}
+                        />
+                    )}
                     <DescriptionListItem
                         term="Labels"
                         desc={<FlatObjectDescriptionList data={deployment.labels} />}

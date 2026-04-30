@@ -101,7 +101,7 @@ message PrometheusMetrics {
   Group node_vulnerabilities = 3;
 }
 
-// next available tag: 10
+// next available tag: 11
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -120,6 +120,8 @@ message PrivateConfig {
   // This field defines groups of custom Prometheus metrics to be exposed by the
   // backend on the API endpoint.
   PrometheusMetrics metrics = 9;
+
+  ResourceRetentionConfig resource_retention_config = 10;
 }
 
 message PlatformComponentConfig {
@@ -158,6 +160,12 @@ message VulnerabilityExceptionConfig {
 
 message AdministrationEventsConfig {
   uint32 retention_duration_days = 1;
+}
+
+// ResourceRetentionConfig configures how long soft-deleted
+// resources are retained before being permanently removed.
+message ResourceRetentionConfig {
+  int32 deployment_duration_days = 1;
 }
 
 message DayOption {

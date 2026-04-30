@@ -45,7 +45,7 @@ func New(storage npDS.DataStore,
 	sensorConnMgr connection.Manager) Service {
 	return &serviceImpl{
 		sensorConnMgr:    sensorConnMgr,
-		deployments:      deployments,
+		deployments:      deploymentDataStore.NewActiveStateDatastore(deployments),
 		externalSrcs:     externalSrcs,
 		graphConfig:      graphConfig,
 		networkBaselines: networkBaselines,

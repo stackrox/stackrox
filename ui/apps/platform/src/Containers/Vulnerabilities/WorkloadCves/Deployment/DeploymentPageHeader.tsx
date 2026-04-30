@@ -10,6 +10,7 @@ export type DeploymentMetadata = {
     namespace: string;
     clusterName: string;
     created: string | null;
+    deleted: string | null;
     imageCount: number;
 };
 
@@ -20,6 +21,7 @@ export const deploymentMetadataFragment = gql`
         namespace
         clusterName
         created
+        deleted
         imageCount
     }
 `;
@@ -34,12 +36,13 @@ function DeploymentPageHeader({ data }: DeploymentPageHeaderProps) {
             <Title headingLevel="h1" className="pf-v6-u-mb-sm">
                 {data.name}
             </Title>
-            <LabelGroup numLabels={3}>
+            <LabelGroup numLabels={4}>
                 <Label>
                     In: {data.clusterName}/{data.namespace}
                 </Label>
                 <Label>Images: {data.imageCount}</Label>
                 {data.created && <Label>Created: {getDateTime(data.created)}</Label>}
+                {data.deleted && <Label color="red">Deleted: {getDateTime(data.deleted)}</Label>}
             </LabelGroup>
         </Flex>
     ) : (

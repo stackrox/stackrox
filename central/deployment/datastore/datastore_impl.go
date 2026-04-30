@@ -23,12 +23,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -36,7 +38,20 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
+
+	// imageIDCacheTTL is the time-to-live for cached container image IDs.
+	// When a deployment update clears image IDs (e.g., because pods were
+	// terminated), the old IDs are saved in this cache so that a subsequent
+	// soft-delete can restore them. The TTL only needs to cover the window
+	// between the pod-removal update and the deployment REMOVE event.
+	imageIDCacheTTL = 5 * time.Minute
 )
+
+// containerImageIDs holds the image IDs for a single container, keyed by container name.
+type containerImageIDs struct {
+	id   string
+	idV2 string
+}
 
 type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
@@ -48,6 +63,11 @@ type datastoreImpl struct {
 	risks                  riskDS.DataStore
 	deletedDeploymentCache cache.DeletedDeployments
 	processFilter          filter.Filter
+
+	// imageIDCache temporarily stores container image IDs that were cleared
+	// by a deployment update triggered by pod removal. If a soft-delete
+	// follows shortly after, the image IDs can be restored from this cache.
+	imageIDCache expiringcache.Cache[string, map[string]containerImageIDs]
 
 	keyedMutex *concurrency.KeyedMutex
 
@@ -79,6 +99,7 @@ func newDatastoreImpl(
 		risks:                  risks,
 		keyedMutex:             concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		deletedDeploymentCache: deletedDeploymentCache,
+		imageIDCache:           expiringcache.NewExpiringCache[string, map[string]containerImageIDs](imageIDCacheTTL),
 		processFilter:          processFilter,
 
 		clusterRanker:    clusterRanker,
@@ -95,8 +116,9 @@ func (ds *datastoreImpl) initializeRanker() {
 
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
-	// The store search function does not use select fields, only views do. Hence empty query is used in the walk below
-	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(deployment *storage.Deployment) error {
+	// The store search function does not use select fields, only views do.
+	// Filter to active deployments only — deleted deployments should not contribute to risk rankings.
+	err := ds.deploymentStore.WalkByQuery(readCtx, ActiveDeploymentsQuery(), func(deployment *storage.Deployment) error {
 		riskScore := deployment.GetRiskScore()
 		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
 
@@ -245,14 +267,6 @@ func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*s
 	return deployments, nil
 }
 
-// CountDeployments
-func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
-	if _, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	}
-	return ds.Count(ctx, pkgSearch.EmptyQuery())
-}
-
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error {
 	wrappedFn := func(deployment *storage.Deployment) error {
 		ds.updateDeploymentPriority(deployment)
@@ -266,6 +280,25 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
 	return ds.upsertDeployment(ctx, deployment)
+}
+
+// containerImageSummary returns a short string describing each container's
+// image ID state, useful for debug logging during deployment updates.
+func containerImageSummary(d *storage.Deployment) string {
+	if len(d.GetContainers()) == 0 {
+		return "<no containers>"
+	}
+	parts := make([]string, 0, len(d.GetContainers()))
+	for _, c := range d.GetContainers() {
+		id := c.GetImage().GetId()
+		if id == "" {
+			id = "<empty>"
+		} else if len(id) > 12 {
+			id = id[:12]
+		}
+		parts = append(parts, fmt.Sprintf("%s=%s", c.GetName(), id))
+	}
+	return strings.Join(parts, ", ")
 }
 
 func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
@@ -320,7 +353,61 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 	return nil
 }
 
-// upsertDeployment inserts a deployment into deploymentStore
+// cacheImageIDs saves the container image IDs of the old deployment into the
+// expiring cache when the incoming deployment would clear them. This allows
+// RemoveDeployment to restore the IDs during soft-delete.
+func (ds *datastoreImpl) cacheImageIDs(ctx context.Context, deployment *storage.Deployment) {
+	if allImagesAreSpecifiedByDigest(deployment) {
+		return
+	}
+	oldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
+	if err != nil || !exists {
+		return
+	}
+	ids := make(map[string]containerImageIDs)
+	for _, c := range oldDeployment.GetContainers() {
+		if c.GetImage().GetId() != "" {
+			ids[c.GetName()] = containerImageIDs{
+				id:   c.GetImage().GetId(),
+				idV2: c.GetImage().GetIdV2(),
+			}
+		}
+	}
+	if len(ids) > 0 {
+		log.Infof("cacheImageIDs %s/%s: caching %d container image IDs (old: [%s], incoming: [%s])",
+			deployment.GetNamespace(), deployment.GetName(), len(ids),
+			containerImageSummary(oldDeployment), containerImageSummary(deployment))
+		ds.imageIDCache.Add(deployment.GetId(), ids)
+	}
+}
+
+// restoreImageIDs restores container image IDs from the expiring cache into
+// the deployment. This is used during soft-delete to recover image IDs that
+// were cleared by a pod-removal-triggered update.
+func (ds *datastoreImpl) restoreImageIDs(deployment *storage.Deployment) {
+	if allImagesAreSpecifiedByDigest(deployment) {
+		return
+	}
+	cached, ok := ds.imageIDCache.Get(deployment.GetId())
+	if !ok {
+		return
+	}
+	for _, container := range deployment.GetContainers() {
+		if isMissingImageID(container) {
+			if ids, found := cached[container.GetName()]; found {
+				if container.GetImage().GetName().GetFullName() == "" || ids.id == "" {
+					continue
+				}
+				container.GetImage().Id = ids.id
+				if features.FlattenImageData.Enabled() {
+					container.GetImage().IdV2 = imageUtils.NewImageV2ID(container.GetImage().GetName(), ids.id)
+				}
+			}
+		}
+	}
+}
+
+// upsertDeployment inserts a deployment into deploymentStore.
 func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -331,24 +418,36 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
 
-	// Deployments that run intermittently and do not have images that are referenced by digest
-	// should maintain the digest of the last used image
-	if err := ds.mergeCronJobs(ctx, deployment); err != nil {
-		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
-	}
+	// Acquire the keyed mutex to serialize read-modify-write operations against concurrent
+	// soft-delete updates in RemoveDeployment.
+	return ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
+		log.Infof("UpsertDeployment %s/%s: incoming image IDs: [%s]",
+			deployment.GetNamespace(), deployment.GetName(), containerImageSummary(deployment))
 
-	if features.PlatformComponents.Enabled() {
-		match, err := ds.platformMatcher.MatchDeployment(deployment)
-		if err != nil {
-			return err
+		// Deployments that run intermittently and do not have images that are referenced by digest
+		// should maintain the digest of the last used image.
+		if err := ds.mergeCronJobs(ctx, deployment); err != nil {
+			return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 		}
-		deployment.PlatformComponent = match
-	}
 
-	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
-		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
-	}
-	return nil
+		// Save the old image IDs before they are overwritten. If the
+		// deployment is about to be soft-deleted, RemoveDeployment can
+		// restore them from the cache.
+		ds.cacheImageIDs(ctx, deployment)
+
+		if features.PlatformComponents.Enabled() {
+			match, err := ds.platformMatcher.MatchDeployment(deployment)
+			if err != nil {
+				return err
+			}
+			deployment.PlatformComponent = match
+		}
+
+		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
+			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
+		}
+		return nil
+	})
 }
 
 // RemoveDeployment removes an alert from the deploymentStore
@@ -372,6 +471,10 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	// We still want to ensure it is properly cleared when the deployment is deleted.
 	ds.processFilter.Delete(id)
 
+	// Related objects (risks, baselines, network flows) are intentionally hard-deleted
+	// even during soft-deletion. Risks become irrelevant for deleted deployments, process
+	// baselines are no longer needed, and stale network flows should be cleaned up.
+	// The deployment row itself is preserved via soft-delete for historical queries.
 	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -397,18 +500,52 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
+	// Delete the deployment from the store using either soft or hard deletion.
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
-			return err
+		if features.DeploymentSoftDeletion.Enabled() {
+			// Soft delete: set deleted and transition state to DEPLOYMENT_STATE_DELETED.
+			deployment, exists, err := ds.deploymentStore.Get(ctx, id)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return nil
+			}
+			log.Infof("RemoveDeployment (soft-delete) %s/%s: image IDs before restore: [%s]",
+				deployment.GetNamespace(), deployment.GetName(), containerImageSummary(deployment))
+			// Restore image IDs that may have been cleared by a
+			// pod-removal-triggered update shortly before this delete.
+			ds.restoreImageIDs(deployment)
+			log.Infof("RemoveDeployment (soft-delete) %s/%s: image IDs after restore: [%s]",
+				deployment.GetNamespace(), deployment.GetName(), containerImageSummary(deployment))
+			deployment.Deleted = protocompat.TimestampNow()
+			deployment.State = storage.DeploymentState_DEPLOYMENT_STATE_DELETED
+			return ds.deploymentStore.Upsert(ctx, deployment)
 		}
-		return nil
+		// Hard delete: remove the deployment row from the database.
+		return ds.deploymentStore.Delete(ctx, id)
 	})
 	if err != nil {
 		errorList.AddError(err)
 	}
 
 	return errorList.ToError()
+}
+
+// PurgeDeployments permanently removes soft-deleted deployments matching the
+// query from the store. Related objects (risks, baselines, network flows) are
+// already cleaned up during the preceding soft-delete.
+func (ds *datastoreImpl) PurgeDeployments(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	ids, err := ds.deploymentStore.DeleteByQueryWithIDs(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return len(ids), nil
 }
 
 // TODO: ROX-30948 Make this return []*storage.ImageV2
@@ -479,8 +616,12 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 	}
 }
 
-func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error) {
-	return ds.deploymentStore.GetIDs(ctx)
+func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	results, err := ds.deploymentStore.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	return pkgSearch.ResultsToIDs(results), nil
 }
 
 func (ds *datastoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
