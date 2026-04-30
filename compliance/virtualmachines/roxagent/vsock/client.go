@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mdlayher/vsock"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/internal/discovery"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -34,7 +35,7 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	}
 
 	// Discover VM data from host system
-	discovered := DiscoverVMData(c.HostPath)
+	discovered := discovery.DiscoverVMData(c.HostPath)
 
 	// Create VMReport with discovered data values.
 	vmReport := &v1.VMReport{
@@ -75,7 +76,8 @@ func (c *Client) writeVMReport(conn net.Conn, report *v1.VMReport) error {
 		return fmt.Errorf("writing VM report: %w", err)
 	}
 
-	numPackages := len(report.GetIndexReport().GetIndexV4().GetContents().GetPackages())
-	log.Infof("Sent message with index report containing %d packages to host", numPackages)
+	contents := report.GetIndexReport().GetIndexV4().GetContents()
+	log.Infof("Sent message with index report containing %d packages, %d repositories, and %d environments to host",
+		len(contents.GetPackages()), len(contents.GetRepositories()), len(contents.GetEnvironments()))
 	return nil
 }

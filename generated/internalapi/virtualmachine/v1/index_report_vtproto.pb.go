@@ -48,6 +48,11 @@ func (m *DiscoveredData) CloneVT() *DiscoveredData {
 	r.OsVersion = m.OsVersion
 	r.ActivationStatus = m.ActivationStatus
 	r.DnfMetadataStatus = m.DnfMetadataStatus
+	if rhs := m.DnfStatus; rhs != nil {
+		tmpContainer := make([]DnfStatusFlag, len(rhs))
+		copy(tmpContainer, rhs)
+		r.DnfStatus = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -140,6 +145,15 @@ func (this *DiscoveredData) EqualVT(that *DiscoveredData) bool {
 	}
 	if this.DnfMetadataStatus != that.DnfMetadataStatus {
 		return false
+	}
+	if len(this.DnfStatus) != len(that.DnfStatus) {
+		return false
+	}
+	for i, vx := range this.DnfStatus {
+		vy := that.DnfStatus[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -281,6 +295,27 @@ func (m *DiscoveredData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.DnfStatus) > 0 {
+		var pksize2 int
+		for _, num := range m.DnfStatus {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
+		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.DnfStatus {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.DnfMetadataStatus != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DnfMetadataStatus))
@@ -455,6 +490,13 @@ func (m *DiscoveredData) SizeVT() (n int) {
 	}
 	if m.DnfMetadataStatus != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.DnfMetadataStatus))
+	}
+	if len(m.DnfStatus) > 0 {
+		l = 0
+		for _, e := range m.DnfStatus {
+			l += protohelpers.SizeOfVarint(uint64(e))
+		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
 	}
 	n += len(m.unknownFields)
 	return n
@@ -742,6 +784,75 @@ func (m *DiscoveredData) UnmarshalVT(dAtA []byte) error {
 				if b < 0x80 {
 					break
 				}
+			}
+		case 5:
+			if wireType == 0 {
+				var v DnfStatusFlag
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= DnfStatusFlag(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.DnfStatus = append(m.DnfStatus, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.DnfStatus) == 0 {
+					m.DnfStatus = make([]DnfStatusFlag, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v DnfStatusFlag
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= DnfStatusFlag(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.DnfStatus = append(m.DnfStatus, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field DnfStatus", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -1255,6 +1366,75 @@ func (m *DiscoveredData) UnmarshalVTUnsafe(dAtA []byte) error {
 				if b < 0x80 {
 					break
 				}
+			}
+		case 5:
+			if wireType == 0 {
+				var v DnfStatusFlag
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= DnfStatusFlag(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.DnfStatus = append(m.DnfStatus, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.DnfStatus) == 0 {
+					m.DnfStatus = make([]DnfStatusFlag, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v DnfStatusFlag
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= DnfStatusFlag(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.DnfStatus = append(m.DnfStatus, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field DnfStatus", wireType)
 			}
 		default:
 			iNdEx = preIndex
