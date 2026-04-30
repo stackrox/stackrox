@@ -6,6 +6,7 @@ Available tests
 
 import os
 import subprocess
+import tempfile
 
 from common import popen_graceful_kill
 
@@ -232,6 +233,21 @@ class NonGroovyE2e(BaseTest):
             ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
             self.TEST_TIMEOUT,
             output_dir=self.TEST_OUTPUT_DIR,
+        )
+
+
+class VMScanningE2e(BaseTest):
+    TEST_TIMEOUT = 2 * 60 * 60
+    TEST_OUTPUT_DIR_PREFIX = "vm-scanning-test-logs-"
+
+    def run(self):
+        print("Executing VM scanning e2e tests")
+        output_dir = tempfile.mkdtemp(prefix=self.TEST_OUTPUT_DIR_PREFIX, dir="/tmp")
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-vm-scanning.sh", output_dir],
+            self.TEST_TIMEOUT,
+            output_dir=output_dir,
         )
 
 

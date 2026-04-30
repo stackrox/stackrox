@@ -374,6 +374,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
+        customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
+        customize_envVars+=$'\n        value: "true"'
+    fi
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
@@ -490,6 +494,10 @@ deploy_sensor_via_operator() {
     fi
 
     customize_envVars=""
+    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
+        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES'
+        customize_envVars+=$'\n      value: "true"'
+    fi
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
@@ -576,6 +584,12 @@ deploy_optional_e2e_components() {
     else
         info "Skipping the compliance operator install"
     fi
+
+    if [[ "${INSTALL_CNV_OPERATOR:-false}" == "true" ]]; then
+        install_the_cnv_operator
+    else
+        info "Skipping the CNV operator install"
+    fi
 }
 
 install_the_compliance_operator() {
@@ -596,6 +610,116 @@ install_the_compliance_operator() {
 
     wait_for_profile_bundles_to_be_ready
     oc get csv -n openshift-compliance
+}
+
+install_the_cnv_operator() {
+    local csv
+    csv=$(oc get csv -n openshift-cnv -o json 2>/dev/null | jq -r '.items[] | select(.metadata.name | test("kubevirt-hyperconverged")).metadata.name // empty')
+    if [[ -z "$csv" ]]; then
+        info "Installing the OpenShift Virtualization (CNV) operator"
+        oc apply -f "${ROOT}/tests/e2e/yaml/cnv-operator/namespace.yaml"
+        oc apply -f "${ROOT}/tests/e2e/yaml/cnv-operator/operator-group.yaml"
+        oc apply -f "${ROOT}/tests/e2e/yaml/cnv-operator/subscription.yaml"
+        # VM-scanning E2E intentionally uses longer, explicit wait budgets here to
+        # tolerate slower CNV reconciliation in CI.
+        info "Waiting for CNV operator deployment (this may take several minutes)..."
+        wait_for_object_to_appear openshift-cnv deploy/hco-operator 900
+        oc rollout status deploy/hco-operator -n openshift-cnv --timeout=300s
+        info "Waiting for hco-webhook-service endpoints before creating HyperConverged CR..."
+        wait_for_service_endpoints openshift-cnv hco-webhook-service 300
+        info "Creating HyperConverged CR..."
+        oc apply -f "${ROOT}/tests/e2e/yaml/cnv-operator/hyperconverged.yaml"
+        info "Waiting for virt-operator deployment..."
+        wait_for_object_to_appear openshift-cnv deploy/virt-operator 600
+        oc rollout status deploy/virt-operator -n openshift-cnv --timeout=300s
+        info "Waiting for virt-handler daemonset..."
+        wait_for_object_to_appear openshift-cnv ds/virt-handler 600
+        oc rollout status ds/virt-handler -n openshift-cnv --timeout=600s
+    else
+        info "Reusing existing CNV operator deployment from $csv subscription"
+        wait_for_object_to_appear openshift-cnv deploy/hco-operator 900
+        oc rollout status deploy/hco-operator -n openshift-cnv --timeout=300s
+        wait_for_object_to_appear openshift-cnv deploy/virt-operator 600
+        oc rollout status deploy/virt-operator -n openshift-cnv --timeout=300s
+        wait_for_object_to_appear openshift-cnv ds/virt-handler 600
+        oc rollout status ds/virt-handler -n openshift-cnv --timeout=600s
+        if ! oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv >/dev/null 2>&1; then
+            info "Creating missing HyperConverged CR..."
+            wait_for_service_endpoints openshift-cnv hco-webhook-service 300
+            oc apply -f "${ROOT}/tests/e2e/yaml/cnv-operator/hyperconverged.yaml"
+        fi
+    fi
+
+    # Ensure VSOCK feature gate via annotation on the HyperConverged CR.
+    # The HC operator reconciles the KubeVirt CR, so patching KubeVirt
+    # directly is ephemeral. The jsonpatch annotation is the supported way
+    # to inject custom feature gates into the managed KubeVirt CR.
+    local vsock_patch='[{"op":"add","path":"/spec/configuration/developerConfiguration/featureGates/-","value":"VSOCK"}]'
+    local kv_gates
+    kv_gates=$(oc get kubevirt -n openshift-cnv \
+        -o jsonpath='{.items[0].spec.configuration.developerConfiguration.featureGates}' 2>/dev/null || true)
+    if [[ "$kv_gates" != *"VSOCK"* ]]; then
+        info "Annotating HyperConverged CR to add VSOCK feature gate..."
+        oc annotate hyperconverged kubevirt-hyperconverged -n openshift-cnv --overwrite \
+            "kubevirt.kubevirt.io/jsonpatch=${vsock_patch}"
+        info "Waiting for VSOCK to appear in KubeVirt CR feature gates..."
+        local attempts=0
+        while (( attempts < 60 )); do
+            kv_gates=$(oc get kubevirt -n openshift-cnv \
+                -o jsonpath='{.items[0].spec.configuration.developerConfiguration.featureGates}' 2>/dev/null || true)
+            if [[ "$kv_gates" == *"VSOCK"* ]]; then
+                break
+            fi
+            (( attempts++ ))
+            sleep 5
+        done
+        if [[ "$kv_gates" != *"VSOCK"* ]]; then
+            die "KubeVirt CR still missing VSOCK after 5 minutes"
+        fi
+        info "Waiting for virt-handler rollout after VSOCK enablement..."
+        oc rollout status ds/virt-handler -n openshift-cnv --timeout=600s
+    else
+        info "KubeVirt CR already has VSOCK feature gate"
+    fi
+    oc get csv -n openshift-cnv
+}
+
+wait_for_service_endpoints() {
+    if [[ "$#" -lt 2 ]]; then
+        die "missing args. usage: wait_for_service_endpoints <namespace> <service> [<delay>]"
+    fi
+
+    local namespace="$1"
+    local service="$2"
+    local delay="${3:-600}"
+    local wait_interval=5
+    local tries=$(( delay / wait_interval ))
+    local count=0
+
+    while true; do
+        # Service object may exist before backing pods become Ready; for webhook-backed
+        # API calls we need at least one resolved endpoint address.
+        local endpoints_json
+        endpoints_json="$(retrying_kubectl </dev/null -n "$namespace" get endpoints "$service" -o json 2>/dev/null || true)"
+        local address_count
+        address_count="$(jq -r '[.subsets[]?.addresses[]?] | length' <<< "$endpoints_json" 2>/dev/null || echo 0)"
+
+        if [[ "$address_count" =~ ^[0-9]+$ ]] && (( address_count > 0 )); then
+            info "${namespace} svc/${service} has ${address_count} endpoint address(es)"
+            return 0
+        fi
+
+        count=$((count + 1))
+        if [[ $count -ge "$tries" ]]; then
+            info "Service endpoints did not become ready after ${count} tries: ${namespace} svc/${service}"
+            retrying_kubectl </dev/null -n "$namespace" get svc "$service" -o wide || true
+            retrying_kubectl </dev/null -n "$namespace" get endpoints "$service" -o wide || true
+            return 1
+        fi
+
+        info "Waiting for endpoints of ${namespace} svc/${service} (${count}/${tries})"
+        sleep "$wait_interval"
+    done
 }
 
 setup_client_CA_auth_provider() {
