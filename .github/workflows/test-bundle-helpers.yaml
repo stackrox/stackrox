@@ -9,11 +9,23 @@ on:
     branches:
     - master
     - release-*
+    paths:
+    - '.github/**'
+    - 'operator/**'
+    - 'go.mod'
+    - 'go.sum'
+    - 'scripts/ci/**'
   pull_request:
     types:
     - opened
     - reopened
     - synchronize
+    paths:
+    - '.github/**'
+    - 'operator/**'
+    - 'go.mod'
+    - 'go.sum'
+    - 'scripts/ci/**'
 
 env:
  ROX_PRODUCT_BRANDING: RHACS_BRANDING
