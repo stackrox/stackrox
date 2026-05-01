@@ -149,12 +149,14 @@ jobs:
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
             --set sensor.image.tag="${TAG}" \
-            --set collector.enabled=false \
-            --set admissionControl.enabled=false \
+            --set collector.collectionMethod=NO_COLLECTION \
+            --set admissionControl.replicas=0 \
+            --set admissionControl.listenOnCreates=false \
+            --set admissionControl.listenOnUpdates=false \
             -f sensor-init-bundle.yaml
 
           echo "Waiting for Sensor..."
-          kubectl -n stackrox rollout status deploy/sensor --timeout=3m
+          kubectl -n stackrox rollout status deploy/sensor --timeout=5m
 
       - name: Resource snapshot (pre-test)
         run: |
