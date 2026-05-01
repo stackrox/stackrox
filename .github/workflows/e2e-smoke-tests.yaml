@@ -199,11 +199,6 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Compile Groovy tests
-        run: |
-          cd qa-tests-backend
-          make compile
-
       - name: Run smoke tests
         env:
           API_HOSTNAME: localhost
@@ -211,6 +206,7 @@ jobs:
           CLUSTER: K8S
         run: |
           cd qa-tests-backend
+          scripts/copy_scanner_protos.sh
           ./gradlew testSMOKE
 
       - name: Resource snapshot (post-test)
