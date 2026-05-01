@@ -12,6 +12,20 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Activate pre-cached Go
+      run: |
+        case "$(uname -m)" in
+          x86_64)  tc_arch="x64" ;;
+          aarch64) tc_arch="arm64" ;;
+          *)       tc_arch="$(uname -m)" ;;
+        esac
+        go_dir=$(ls -d "/opt/hostedtoolcache/go/*/$tc_arch" 2>/dev/null | sort -V | tail -1)
+        if [[ -n "$go_dir" ]]; then
+          echo "$go_dir/bin" >> "$GITHUB_PATH"
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+        fi
+      shell: bash
+
     - name: Determine Go cache paths
       id: cache-paths
       run: |
