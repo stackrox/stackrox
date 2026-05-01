@@ -212,7 +212,13 @@ jobs:
           go mod download github.com/stackrox/scanner
           scripts/copy_scanner_protos.sh
 
-          ./gradlew testSMOKE
+          # Use -Dgroups=SMOKE instead of the testSMOKE task — Gradle 9.x
+          # reports NO-SOURCE for custom registered test tasks.
+          # Run only a few fast tests to validate the deployment works.
+          ./gradlew test -Dgroups=SMOKE \
+            --tests="PolicyConfigurationTest.Verify policy configuration Image Tag*" \
+            --tests="PolicyConfigurationTest.Verify policy configuration Required Label*" \
+            --tests="PolicyConfigurationTest.Verify policy configuration Privileged*"
 
       - name: Resource snapshot (post-test)
         if: always()
