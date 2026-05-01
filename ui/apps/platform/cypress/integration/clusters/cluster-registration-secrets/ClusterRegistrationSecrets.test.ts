@@ -1,6 +1,7 @@
 import withAuth from '../../../helpers/basicAuth';
 import { readFileFromDownloads } from '../../../helpers/file';
-import { getInputByLabel } from '../../../helpers/formHelpers';
+import { getDescriptionListGroup, getInputByLabel } from '../../../helpers/formHelpers';
+import pf6 from '../../../selectors/pf6';
 
 import { visitClusters } from '../Clusters.helpers';
 
@@ -31,16 +32,33 @@ describe('Cluster registration secrets', () => {
         cy.get(crsLinkInTableSelector).should('not.exist');
 
         // Create a new CRS and verify that the YAML is downloaded and the secret appears in the table
-        // TODO dv 2025-04-01
-        // From a user's point of view, this is a "button". It would be nice if we had a unified way to
-        // click a button without needing to know the underlying HTML element used by the component.
-        cy.get('a:contains("Create cluster registration secret")').click();
+        cy.get(`${pf6.button}:contains("Create cluster registration secret")`).click();
 
         cy.get('button:contains("Download")').should('be.disabled');
         getInputByLabel('Name').clear().type(testCrsName);
+
+        // Set validity to "By date" and enter a date 30 days from now
+        cy.get('label:contains("By date")').click();
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 30);
+        const formattedDate = futureDate.toISOString().split('T')[0]; // Extract YYYY-MM-DD
+        cy.get('input[placeholder="YYYY-MM-DD"]').type(formattedDate);
+
+        getInputByLabel('Max registrations').clear().type('5');
+
         cy.get('button:contains("Download")').click();
 
         readFileFromDownloads(`${testCrsName}-cluster-registration-secret.yaml`).should('exist');
+
+        // Click through to the detail page and verify fields
+        cy.get('table');
+        cy.get(crsLinkInTableSelector).click();
+
+        getDescriptionListGroup('Max registrations', '5').should('exist');
+        getDescriptionListGroup('Expires at', formattedDate).should('exist');
+
+        // Go back to the table
+        cy.go('back');
 
         // Revoke the secret
         cy.get('table');
