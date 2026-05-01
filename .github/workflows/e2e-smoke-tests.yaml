@@ -40,6 +40,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
       - name: Create KinD cluster
         run: |
           kind create cluster --name "$CLUSTER_NAME" --wait 60s
@@ -80,6 +86,11 @@ jobs:
           docker exec "$NODE" ctr -n k8s.io images tag \
             "${IMAGE_REGISTRY}/central-db:${TAG}" "docker.io/stackrox/central-db:${TAG}"
 
+      - name: Build roxctl
+        run: |
+          make roxctl_linux-amd64
+          echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
+
       - name: Deploy StackRox
         run: |
           export LOCAL_DEPLOYMENT=true
@@ -99,7 +110,6 @@ jobs:
           export MAIN_IMAGE_TAG="${TAG}"
           export MAIN_IMAGE="stackrox/main:${TAG}"
           export CENTRAL_DB_IMAGE="stackrox/central-db:${TAG}"
-          export USE_LOCAL_ROXCTL=true
 
           deploy/k8s/deploy-local.sh
 
@@ -142,6 +152,40 @@ jobs:
           echo "## Docker memory"
           docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
 
+      - name: Start resource monitor
+        run: |
+          NODE="${CLUSTER_NAME}-control-plane"
+          (
+            echo "=== Resource monitor started $(date) ==="
+            echo "Memory limit: ${KIND_MEMORY_LIMIT}"
+            PEAK_MB=0
+            while true; do
+              ts=$(date +%H:%M:%S)
+              mem_raw=$(docker stats --no-stream --format "{{.MemUsage}}" "$NODE" 2>/dev/null || echo "?")
+              central=$(kubectl -n stackrox top pod -l app=central --no-headers 2>/dev/null | awk '{print $3}' || echo "?")
+              sensor=$(kubectl -n stackrox top pod -l app=sensor --no-headers 2>/dev/null | awk '{print $3}' || echo "?")
+              centraldb=$(kubectl -n stackrox top pod -l app=central-db --no-headers 2>/dev/null | awk '{print $3}' || echo "?")
+              restarts=$(kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.metadata.name}={.status.containerStatuses[0].restartCount} {end}' 2>/dev/null)
+              echo "${ts} | docker=${mem_raw} | central=${central} centraldb=${centraldb} sensor=${sensor} | restarts: ${restarts}"
+
+              # Track peak
+              mem_val=$(echo "$mem_raw" | grep -oE '^[0-9.]+' || echo 0)
+              mem_unit=$(echo "$mem_raw" | grep -oE '(MiB|GiB)' | head -1)
+              if [ "$mem_unit" = "GiB" ]; then
+                mem_mb=$(awk "BEGIN{printf \"%d\", $mem_val * 1024}")
+              else
+                mem_mb="${mem_val%.*}"
+              fi
+              if [ "$mem_mb" -gt "$PEAK_MB" ] 2>/dev/null; then
+                PEAK_MB="$mem_mb"
+                echo "${ts} | NEW PEAK: ${PEAK_MB}MB"
+              fi
+
+              sleep 15
+            done
+          ) > /tmp/resource-monitor.log 2>&1 &
+          echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
+
       - name: Set up Java
         uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # ratchet:actions/setup-java@v4
         with:
@@ -177,6 +221,14 @@ jobs:
           echo ""
           echo "## OOM check"
           kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{range .status.containerStatuses[*]}{.lastState.terminated.reason}{end}{"\n"}{end}' | grep -i oom || echo "No OOM kills detected"
+          echo ""
+          echo "## Resource monitor summary"
+          kill "$MONITOR_PID" 2>/dev/null || true
+          echo "Peak memory and alerts:"
+          grep -E "NEW PEAK|WARNING|OOM|RESTARTS" /tmp/resource-monitor.log 2>/dev/null || echo "(none)"
+          echo ""
+          echo "Last 10 samples:"
+          tail -10 /tmp/resource-monitor.log 2>/dev/null || true
 
       - name: Collect logs
         if: always()
@@ -192,6 +244,9 @@ jobs:
           # Groovy test results
           cp -r qa-tests-backend/build/reports/tests/testSMOKE/ "${ARTIFACT_DIR}/test-report/" 2>/dev/null || true
           cp -r qa-tests-backend/build/test-results/testSMOKE/ "${ARTIFACT_DIR}/test-results/" 2>/dev/null || true
+
+          # Resource monitor log
+          cp /tmp/resource-monitor.log "${ARTIFACT_DIR}/resource-monitor.log" 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
