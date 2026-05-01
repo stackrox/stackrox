@@ -236,6 +236,12 @@ jobs:
           echo "## Pod status and restarts"
           kubectl -n stackrox get pods -o custom-columns='NAME:.metadata.name,STATUS:.status.phase,RESTARTS:.status.containerStatuses[0].restartCount'
           echo ""
+          echo "## Pending pod details"
+          for pod in $(kubectl -n stackrox get pods --field-selector=status.phase=Pending -o name 2>/dev/null); do
+            echo "--- $(basename "$pod") ---"
+            kubectl -n stackrox describe "$pod" | tail -20
+          done
+          echo ""
           echo "## Per-pod metrics"
           kubectl -n stackrox top pods --containers 2>/dev/null || true
           echo ""
