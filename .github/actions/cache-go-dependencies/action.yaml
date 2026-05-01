@@ -21,6 +21,12 @@ runs:
         esac
         go_dir=$(ls -d "/opt/hostedtoolcache/go/*/$tc_arch" 2>/dev/null | sort -V | tail -1 || true)
         echo "PATH before: $PATH"
+        echo "hostedtoolcache contents: $(ls /opt/hostedtoolcache/ 2>/dev/null || echo 'dir not found')"
+        echo "hostedtoolcache/go: $(ls -d /opt/hostedtoolcache/go/*/ 2>/dev/null || echo 'no go versions')"
+        echo "System go: $(which go 2>/dev/null || echo 'not in PATH') -> $(go version 2>/dev/null || echo 'N/A')"
+        find /opt/hostedtoolcache/go -maxdepth 3 -name 'go' -type f 2>/dev/null || echo "No go binary found in hostedtoolcache"
+        find /usr/local/go -maxdepth 1 -name 'go' -type f 2>/dev/null && echo "Found /usr/local/go" || true
+        ls -la /usr/local/go/bin/go 2>/dev/null || true
         if [[ -n "$go_dir" ]]; then
           echo "Activating $("$go_dir/bin/go" version) from $go_dir"
           echo "$go_dir/bin" >> "$GITHUB_PATH"
@@ -28,7 +34,7 @@ runs:
             echo "$HOME/go/bin" >> "$GITHUB_PATH"
           fi
         else
-          echo "No pre-cached Go found in hostedtoolcache, using system $(go version 2>/dev/null || echo 'go (not found)')"
+          echo "No pre-cached Go found at /opt/hostedtoolcache/go/*/$tc_arch"
         fi
       shell: bash
 
