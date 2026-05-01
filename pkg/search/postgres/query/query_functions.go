@@ -116,12 +116,20 @@ func matchFieldQuery(qualifiedColName string, sqlDataType postgres.DataType, fie
 func handleExistenceQueries(ctx *queryAndFieldContext, transformFn func(interface{}) interface{}) *QueryEntry {
 	switch ctx.value {
 	case pkgSearch.WildcardString:
+		query := fmt.Sprintf("%s is not null", ctx.qualifiedColumnName)
+		if ctx.sqlDataType == postgres.String {
+			query = fmt.Sprintf("(%s is not null AND %s != '')", ctx.qualifiedColumnName, ctx.qualifiedColumnName)
+		}
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
-			Query: fmt.Sprintf("%s is not null", ctx.qualifiedColumnName),
+			Query: query,
 		}, transformFn)
 	case pkgSearch.NullString:
+		query := fmt.Sprintf("%s is null", ctx.qualifiedColumnName)
+		if ctx.sqlDataType == postgres.String {
+			query = fmt.Sprintf("(%s is null OR %s = '')", ctx.qualifiedColumnName, ctx.qualifiedColumnName)
+		}
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
-			Query: fmt.Sprintf("%s is null", ctx.qualifiedColumnName),
+			Query: query,
 		}, transformFn)
 	default:
 		log.Fatalf("existence query for value %s is not currently handled", ctx.value)
