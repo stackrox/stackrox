@@ -110,8 +110,7 @@ jobs:
           # is the real ceiling. Monitor tracks actual usage.
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
-            --set central.image.tag="${TAG}" \
-            --set central.db.image.tag="${TAG}" \
+            --set image.tag="${TAG}" \
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
             --set central.resources.requests.memory=100Mi \
             --set central.resources.requests.cpu=50m \
@@ -154,9 +153,9 @@ jobs:
 
           helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
+            --set image.tag="${TAG}" \
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
-            --set sensor.image.tag="${TAG}" \
             --set sensor.resources.requests.memory=100Mi \
             --set sensor.resources.requests.cpu=50m \
             --set sensor.resources.limits=null \
