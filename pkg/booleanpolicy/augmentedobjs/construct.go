@@ -273,9 +273,20 @@ func constructDeployment(deployment *storage.Deployment, images []*storage.Image
 }
 
 // filterInitContainers returns a filtered deployment and image slice with init containers removed.
-// TODO(ROX-33067): Remove this filter when policy evaluation supports init containers.
+// TODO(ROX-33067): Make this filter conditional on policy evaluation settings.
 func filterInitContainers(deployment *storage.Deployment, images []*storage.Image) (*storage.Deployment, []*storage.Image) {
 	if !features.InitContainerSupport.Enabled() {
+		return deployment, images
+	}
+
+	hasInit := false
+	for _, c := range deployment.GetContainers() {
+		if c.GetType() == storage.ContainerType_INIT {
+			hasInit = true
+			break
+		}
+	}
+	if !hasInit {
 		return deployment, images
 	}
 
