@@ -29,6 +29,8 @@ function ClusterRegistrationSecretDescription({
     clusterRegistrationSecret,
 }: ClusterRegistrationSecretDescriptionProps): ReactElement {
     const groupedAttributes = groupAttributesByKey(clusterRegistrationSecret.createdBy.attributes);
+    const maxRegistrations = parseInt(clusterRegistrationSecret.maxRegistrations, 10) || 0;
+    const completedSet = new Set(clusterRegistrationSecret.registrationsCompleted);
 
     return (
         <Flex direction={{ default: 'column' }} gap={{ default: 'gapLg' }}>
@@ -61,7 +63,43 @@ function ClusterRegistrationSecretDescription({
                         {clusterRegistrationSecret.expiresAt}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Max registrations</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {maxRegistrations === 0 ? 'Unlimited' : maxRegistrations}
+                    </DescriptionListDescription>
+                </DescriptionListGroup>
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Used registrations</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {clusterRegistrationSecret.registrationsInitiated.length}
+                    </DescriptionListDescription>
+                </DescriptionListGroup>
             </DescriptionList>
+            {clusterRegistrationSecret.registrationsInitiated.length > 0 && (
+                <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+                    <Title headingLevel="h2">
+                        {clusterRegistrationSecret.registrationsInitiated.length === 1
+                            ? 'Registered cluster'
+                            : 'Registered clusters'}
+                    </Title>
+                    <List isPlain>
+                        {clusterRegistrationSecret.registrationsInitiated.map((clusterName) => {
+                            const isComplete = completedSet.has(clusterName);
+                            return (
+                                <ListItem
+                                    key={clusterName}
+                                    className={isComplete ? '' : 'pf-v6-u-text-color-subtle'}
+                                >
+                                    {isComplete
+                                        ? clusterName
+                                        : `${clusterName} (registration not yet complete)`}
+                                </ListItem>
+                            );
+                        })}
+                    </List>
+                </Flex>
+            )}
             {groupedAttributes.size > 0 && (
                 <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
                     <Title headingLevel="h2">Attributes</Title>
