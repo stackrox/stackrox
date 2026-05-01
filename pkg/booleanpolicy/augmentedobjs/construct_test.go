@@ -104,7 +104,108 @@ func TestConstructDeploymentFiltersInitContainers(t *testing.T) {
 }
 
 func TestConstructDeploymentWithProcessFiltersInitContainers(t *testing.T) {
-	t.Setenv(features.InitContainerSupport.EnvVar(), "true")
+	cases := map[string]struct {
+		containers       []*storage.Container
+		images           []*storage.Image
+		processContainer string
+		expectError      bool
+	}{
+		"single init + single regular, process on regular": {
+			containers: []*storage.Container{
+				{Name: "init", Type: storage.ContainerType_INIT},
+				{Name: "main", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "init-img"}, {Id: "main-img"}},
+			processContainer: "main",
+		},
+		"init between two regular containers, process on second regular": {
+			containers: []*storage.Container{
+				{Name: "app", Type: storage.ContainerType_REGULAR},
+				{Name: "init-setup", Type: storage.ContainerType_INIT},
+				{Name: "sidecar", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "app-img"}, {Id: "init-img"}, {Id: "sidecar-img"}},
+			processContainer: "sidecar",
+		},
+		"init between two regular containers, process on first regular": {
+			containers: []*storage.Container{
+				{Name: "app", Type: storage.ContainerType_REGULAR},
+				{Name: "init-setup", Type: storage.ContainerType_INIT},
+				{Name: "sidecar", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "app-img"}, {Id: "init-img"}, {Id: "sidecar-img"}},
+			processContainer: "app",
+		},
+		"multiple init containers before multiple regular containers": {
+			containers: []*storage.Container{
+				{Name: "init-db", Type: storage.ContainerType_INIT},
+				{Name: "init-config", Type: storage.ContainerType_INIT},
+				{Name: "api", Type: storage.ContainerType_REGULAR},
+				{Name: "worker", Type: storage.ContainerType_REGULAR},
+				{Name: "sidecar", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "init-db-img"}, {Id: "init-config-img"}, {Id: "api-img"}, {Id: "worker-img"}, {Id: "sidecar-img"}},
+			processContainer: "sidecar",
+		},
+		"multiple init containers + single regular, process on regular": {
+			containers: []*storage.Container{
+				{Name: "init-db", Type: storage.ContainerType_INIT},
+				{Name: "init-config", Type: storage.ContainerType_INIT},
+				{Name: "main", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "init-db-img"}, {Id: "init-config-img"}, {Id: "main-img"}},
+			processContainer: "main",
+		},
+		"process on filtered init container returns error": {
+			containers: []*storage.Container{
+				{Name: "init", Type: storage.ContainerType_INIT},
+				{Name: "main", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "init-img"}, {Id: "main-img"}},
+			processContainer: "init",
+			expectError:      true,
+		},
+		"no init containers, multiple regular, process on last": {
+			containers: []*storage.Container{
+				{Name: "app", Type: storage.ContainerType_REGULAR},
+				{Name: "sidecar", Type: storage.ContainerType_REGULAR},
+				{Name: "proxy", Type: storage.ContainerType_REGULAR},
+			},
+			images:           []*storage.Image{{Id: "app-img"}, {Id: "sidecar-img"}, {Id: "proxy-img"}},
+			processContainer: "proxy",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.InitContainerSupport.EnvVar(), "true")
+
+			deployment := &storage.Deployment{
+				Id:         "deploy-1",
+				Name:       "test-deploy",
+				Namespace:  "default",
+				ClusterId:  "cluster-1",
+				Containers: tc.containers,
+			}
+			process := &storage.ProcessIndicator{
+				ContainerName: tc.processContainer,
+				Signal:        &storage.ProcessSignal{ExecFilePath: "/bin/sh"},
+			}
+
+			obj, err := ConstructDeploymentWithProcess(deployment, tc.images, &NetworkPoliciesApplied{}, process, false)
+			if tc.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "not found")
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, obj)
+			}
+		})
+	}
+}
+
+func TestConstructDeploymentWithProcessFlagOff(t *testing.T) {
+	t.Setenv(features.InitContainerSupport.EnvVar(), "false")
 
 	deployment := &storage.Deployment{
 		Id:        "deploy-1",
@@ -112,51 +213,35 @@ func TestConstructDeploymentWithProcessFiltersInitContainers(t *testing.T) {
 		Namespace: "default",
 		ClusterId: "cluster-1",
 		Containers: []*storage.Container{
-			{Name: "init", Type: storage.ContainerType_INIT},
-			{Name: "main", Type: storage.ContainerType_REGULAR},
+			{Name: "init-db", Type: storage.ContainerType_INIT},
+			{Name: "init-config", Type: storage.ContainerType_INIT},
+			{Name: "api", Type: storage.ContainerType_REGULAR},
+			{Name: "sidecar", Type: storage.ContainerType_REGULAR},
 		},
 	}
 	images := []*storage.Image{
-		{Id: "init-image"},
-		{Id: "main-image"},
-	}
-	process := &storage.ProcessIndicator{
-		ContainerName: "main",
-		Signal: &storage.ProcessSignal{
-			ExecFilePath: "/bin/sh",
-		},
+		{Id: "init-db-img"},
+		{Id: "init-config-img"},
+		{Id: "api-img"},
+		{Id: "sidecar-img"},
 	}
 
+	// With flag off, init containers are NOT filtered. Process on a regular container
+	// should still resolve correctly against the full unfiltered list.
+	process := &storage.ProcessIndicator{
+		ContainerName: "sidecar",
+		Signal:        &storage.ProcessSignal{ExecFilePath: "/bin/sh"},
+	}
 	obj, err := ConstructDeploymentWithProcess(deployment, images, &NetworkPoliciesApplied{}, process, false)
 	require.NoError(t, err)
 	require.NotNil(t, obj)
-}
 
-func TestConstructDeploymentWithProcessForInitContainerReturnsError(t *testing.T) {
-	t.Setenv(features.InitContainerSupport.EnvVar(), "true")
-
-	deployment := &storage.Deployment{
-		Id:        "deploy-1",
-		Name:      "test-deploy",
-		Namespace: "default",
-		ClusterId: "cluster-1",
-		Containers: []*storage.Container{
-			{Name: "init", Type: storage.ContainerType_INIT},
-			{Name: "main", Type: storage.ContainerType_REGULAR},
-		},
+	// Process on an init container should also resolve when flag is off (no filtering).
+	processOnInit := &storage.ProcessIndicator{
+		ContainerName: "init-db",
+		Signal:        &storage.ProcessSignal{ExecFilePath: "/bin/sh"},
 	}
-	images := []*storage.Image{
-		{Id: "init-image"},
-		{Id: "main-image"},
-	}
-	process := &storage.ProcessIndicator{
-		ContainerName: "init",
-		Signal: &storage.ProcessSignal{
-			ExecFilePath: "/bin/sh",
-		},
-	}
-
-	_, err := ConstructDeploymentWithProcess(deployment, images, &NetworkPoliciesApplied{}, process, false)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not found")
+	obj, err = ConstructDeploymentWithProcess(deployment, images, &NetworkPoliciesApplied{}, processOnInit, false)
+	require.NoError(t, err)
+	require.NotNil(t, obj)
 }
