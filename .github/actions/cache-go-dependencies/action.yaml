@@ -19,7 +19,7 @@ runs:
           aarch64) tc_arch="arm64" ;;
           *)       tc_arch="$(uname -m)" ;;
         esac
-        go_dir=$(ls -d "/opt/hostedtoolcache/go/*/$tc_arch" 2>/dev/null | sort -V | tail -1)
+        go_dir=$(ls -d "/opt/hostedtoolcache/go/*/$tc_arch" 2>/dev/null | sort -V | tail -1 || true)
         echo "PATH before: $PATH"
         if [[ -n "$go_dir" ]]; then
           echo "Activating $("$go_dir/bin/go" version) from $go_dir"
@@ -42,8 +42,9 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
+    # TODO: revert always-save back to default-branch-only after experiment
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: inputs.save == 'true'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -51,7 +52,7 @@ runs:
         restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ inputs.save != 'true' }}
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
