@@ -206,7 +206,12 @@ jobs:
           CLUSTER: K8S
         run: |
           cd qa-tests-backend
+
+          # copy_scanner_protos.sh uses `go list -m` to find scanner proto files
+          # in the Go module cache. Download just that module first.
+          go mod download github.com/stackrox/scanner
           scripts/copy_scanner_protos.sh
+
           ./gradlew testSMOKE
 
       - name: Resource snapshot (post-test)
