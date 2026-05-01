@@ -149,6 +149,10 @@ jobs:
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
             --set sensor.image.tag="${TAG}" \
+            --set sensor.resources.requests.memory=500Mi \
+            --set sensor.resources.requests.cpu=500m \
+            --set sensor.resources.limits.memory=2Gi \
+            --set sensor.resources.limits.cpu=1 \
             --set collector.collectionMethod=NO_COLLECTION \
             --set admissionControl.replicas=0 \
             --set admissionControl.listenOnCreates=false \
