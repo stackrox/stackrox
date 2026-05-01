@@ -186,7 +186,11 @@ func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]
 		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.VirtualMachineID.String()},
+		Fields: []string{
+			search.VirtualMachineID.String(),
+			search.VirtualMachineName.String(),
+			search.GuestOS.String(),
+		},
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
