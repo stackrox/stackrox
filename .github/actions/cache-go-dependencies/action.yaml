@@ -20,6 +20,7 @@ runs:
           *)       tc_arch="$(uname -m)" ;;
         esac
         go_dir=$(ls -d "/opt/hostedtoolcache/go/*/$tc_arch" 2>/dev/null | sort -V | tail -1)
+        echo "PATH before: $PATH"
         if [[ -n "$go_dir" ]]; then
           echo "Activating $("$go_dir/bin/go" version) from $go_dir"
           echo "$go_dir/bin" >> "$GITHUB_PATH"
