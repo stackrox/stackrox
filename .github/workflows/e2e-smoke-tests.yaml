@@ -1,0 +1,208 @@
+name: E2E Smoke Tests
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Image tag to test (e.g., 4.11.x-831-g8f262d83ee)"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to test"
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  kind-smoke-tests:
+    name: "Smoke tests on KinD"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLUSTER_NAME: kind-smoke-${{ github.run_id }}
+      IMAGE_REGISTRY: quay.io/rhacs-eng
+      TAG: ${{ inputs.tag }}
+      KIND_MEMORY_LIMIT: 6g
+      ARTIFACT_DIR: ./test-artifacts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Create KinD cluster
+        run: |
+          kind create cluster --name "$CLUSTER_NAME" --wait 60s
+          kubectl cluster-info --context "kind-${CLUSTER_NAME}"
+
+      - name: Set memory limit on KinD container
+        run: |
+          docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" \
+            "${CLUSTER_NAME}-control-plane"
+
+      - name: Install metrics-server
+        run: |
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+          kubectl -n kube-system patch deployment metrics-server --type=json \
+            -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+
+      - name: Load images into KinD
+        run: |
+          # Pull images directly inside KinD node to avoid multi-arch issues
+          # with "kind load docker-image" (same approach as sensor-integration-tests).
+          NODE="${CLUSTER_NAME}-control-plane"
+          for img in \
+            "${IMAGE_REGISTRY}/main:${TAG}" \
+            "${IMAGE_REGISTRY}/central-db:${TAG}"; do
+            echo "Pulling $img into KinD node..."
+            docker exec "$NODE" ctr -n k8s.io images pull \
+              --platform linux/amd64 \
+              "$img"
+          done
+
+          # Tag to the names deploy scripts expect
+          docker exec "$NODE" ctr -n k8s.io images tag \
+            "${IMAGE_REGISTRY}/main:${TAG}" "docker.io/stackrox/main:${TAG}"
+          docker exec "$NODE" ctr -n k8s.io images tag \
+            "${IMAGE_REGISTRY}/central-db:${TAG}" "docker.io/stackrox/central-db:${TAG}"
+
+      - name: Deploy StackRox
+        run: |
+          export LOCAL_DEPLOYMENT=true
+          export SCANNER_SUPPORT=false
+          export ROX_SCANNER_V4=false
+          export SENSOR_SCANNER_SUPPORT=false
+          export SENSOR_SCANNER_V4_SUPPORT=false
+          export ADMISSION_CONTROLLER=false
+          export ADMISSION_CONTROLLER_UPDATES=false
+          export COLLECTION_METHOD=NO_COLLECTION
+          export LOAD_BALANCER=none
+          export STORAGE=none
+          export MONITORING_SUPPORT=false
+          export OUTPUT_FORMAT=helm
+          export ORCHESTRATOR_FLAVOR=k8s
+          export POD_SECURITY_POLICIES=false
+          export MAIN_IMAGE_TAG="${TAG}"
+          export MAIN_IMAGE="stackrox/main:${TAG}"
+          export CENTRAL_DB_IMAGE="stackrox/central-db:${TAG}"
+          export USE_LOCAL_ROXCTL=true
+
+          deploy/k8s/deploy-local.sh
+
+          echo "Waiting for Central..."
+          kubectl -n stackrox rollout status deploy/central --timeout=5m
+
+          echo "Waiting for Sensor..."
+          kubectl -n stackrox rollout status deploy/sensor --timeout=3m || true
+
+          # Scale down components that deploy despite env vars
+          kubectl -n stackrox scale deploy/admission-control --replicas=0 || true
+          kubectl -n stackrox delete daemonset/collector || true
+
+      - name: Wait for Central API
+        run: |
+          ROX_ADMIN_PASSWORD="$(cat deploy/k8s/central-deploy/password)"
+          echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+
+          kubectl -n stackrox port-forward svc/central 8000:443 &
+          echo "PF_PID=$!" >> "$GITHUB_ENV"
+
+          for i in $(seq 1 60); do
+            if curl -sk "https://localhost:8000/v1/metadata" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 5
+          done
+
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/metadata" | jq .
+
+      - name: Resource snapshot (pre-test)
+        run: |
+          echo "## Pod status"
+          kubectl -n stackrox get pods
+          echo ""
+          echo "## Per-pod metrics"
+          kubectl -n stackrox top pods --containers 2>/dev/null || echo "(metrics not yet available)"
+          echo ""
+          echo "## Docker memory"
+          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
+
+      - name: Set up Java
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # ratchet:actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Compile Groovy tests
+        run: |
+          cd qa-tests-backend
+          make compile
+
+      - name: Run smoke tests
+        env:
+          API_HOSTNAME: localhost
+          API_PORT: "8000"
+          CLUSTER: K8S
+        run: |
+          cd qa-tests-backend
+          ./gradlew testSMOKE
+
+      - name: Resource snapshot (post-test)
+        if: always()
+        run: |
+          echo "## Pod status and restarts"
+          kubectl -n stackrox get pods -o custom-columns='NAME:.metadata.name,STATUS:.status.phase,RESTARTS:.status.containerStatuses[0].restartCount'
+          echo ""
+          echo "## Per-pod metrics"
+          kubectl -n stackrox top pods --containers 2>/dev/null || true
+          echo ""
+          echo "## Docker memory"
+          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
+          echo ""
+          echo "## OOM check"
+          kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{range .status.containerStatuses[*]}{.lastState.terminated.reason}{end}{"\n"}{end}' | grep -i oom || echo "No OOM kills detected"
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p "$ARTIFACT_DIR"
+
+          # StackRox pod logs
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            pod_name=$(basename "$pod")
+            kubectl -n stackrox logs "$pod" --all-containers > "${ARTIFACT_DIR}/${pod_name}.log" 2>&1 || true
+          done
+
+          # Groovy test results
+          cp -r qa-tests-backend/build/reports/tests/testSMOKE/ "${ARTIFACT_DIR}/test-report/" 2>/dev/null || true
+          cp -r qa-tests-backend/build/test-results/testSMOKE/ "${ARTIFACT_DIR}/test-results/" 2>/dev/null || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        if: always()
+        with:
+          name: kind-smoke-test-artifacts-${{ github.run_id }}
+          path: ${{ env.ARTIFACT_DIR }}
+          retention-days: 7
+
+      - name: Publish test summary
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: test-artifacts/test-results/*.xml
+          show: all
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kill "$PF_PID" 2>/dev/null || true
+          kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true

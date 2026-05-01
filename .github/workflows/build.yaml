@@ -784,6 +784,16 @@ jobs:
         message-id: build-images-ready
         message-path: build-comment.md
 
+  e2e-smoke-tests:
+    needs:
+    - define-job-matrix
+    - push-main-manifests
+    if: ${{ !cancelled() && needs.push-main-manifests.result == 'success' }}
+    uses: ./.github/workflows/e2e-smoke-tests.yaml
+    with:
+      tag: ${{ needs.define-job-matrix.outputs.build-tag }}
+    secrets: inherit
+
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
