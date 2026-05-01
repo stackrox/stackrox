@@ -84,57 +84,49 @@ jobs:
           QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          # Pull the main image on the host (already in KinD, but we need it locally for extraction)
           echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
           docker pull "${IMAGE_REGISTRY}/main:${TAG}"
-          # Extract roxctl binary from the image
           container_id=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
           mkdir -p bin
           docker cp "${container_id}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl
           docker rm "${container_id}"
           chmod +x bin/roxctl
           echo "$(pwd)/bin" >> "$GITHUB_PATH"
-          echo "roxctl version: $(bin/roxctl version)"
+          bin/roxctl version
 
-      - name: Deploy StackRox
+      - name: Deploy StackRox via Helm
         run: |
-          export LOCAL_DEPLOYMENT=true
-          export SCANNER_SUPPORT=false
-          export ROX_SCANNER_V4=false
-          export SENSOR_SCANNER_SUPPORT=false
-          export SENSOR_SCANNER_V4_SUPPORT=false
-          export ADMISSION_CONTROLLER=false
-          export ADMISSION_CONTROLLER_UPDATES=false
-          export COLLECTION_METHOD=NO_COLLECTION
-          export LOAD_BALANCER=none
-          export STORAGE=none
-          export MONITORING_SUPPORT=false
-          export OUTPUT_FORMAT=helm
-          export ORCHESTRATOR_FLAVOR=k8s
-          export POD_SECURITY_POLICIES=false
-          export MAIN_IMAGE_TAG="${TAG}"
-          export MAIN_IMAGE="stackrox/main:${TAG}"
-          export CENTRAL_DB_IMAGE="stackrox/central-db:${TAG}"
-          export USE_LOCAL_ROXCTL=true
+          # Generate the helm chart bundle using roxctl (replaces the entire
+          # deploy-local.sh → deploy.sh → k8sbased.sh script chain).
+          roxctl helm output central-services --image-defaults opensource --output-dir central-chart
 
-          deploy/k8s/deploy-local.sh
+          kubectl create namespace stackrox
 
-          echo "Waiting for Central..."
-          kubectl -n stackrox rollout status deploy/central --timeout=5m
-
-          echo "Waiting for Sensor..."
-          kubectl -n stackrox rollout status deploy/sensor --timeout=3m || true
-
-          # Scale down components that deploy despite env vars
-          kubectl -n stackrox scale deploy/admission-control --replicas=0 || true
-          kubectl -n stackrox delete daemonset/collector || true
-
-      - name: Wait for Central API
-        run: |
-          ROX_ADMIN_PASSWORD="$(cat deploy/k8s/central-deploy/password)"
+          # Generate an admin password
+          ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
+          # Deploy central-services with minimal resources, no scanner, no collector
+          helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
+            -f deploy/common/local-dev-values.yaml \
+            --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+            --set central.image.tag="${TAG}" \
+            --set central.image.registry="${IMAGE_REGISTRY}" \
+            --set central.db.image.tag="${TAG}" \
+            --set central.db.image.registry="${IMAGE_REGISTRY}" \
+            --set central.persistence.none=true \
+            --set scanner.disable=true \
+            --set scannerV4.disable=true \
+            --set system.enablePodSecurityPolicies=false \
+            --set central.telemetry.enabled=false
+
+          echo "Waiting for Central..."
+          kubectl -n stackrox rollout status deploy/central --timeout=5m
+          kubectl -n stackrox rollout status deploy/central-db --timeout=5m
+
+      - name: Wait for Central API
+        run: |
           kubectl -n stackrox port-forward svc/central 8000:443 &
           echo "PF_PID=$!" >> "$GITHUB_ENV"
 
@@ -144,8 +136,29 @@ jobs:
             fi
             sleep 5
           done
-
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/metadata" | jq .
+
+      - name: Deploy Sensor via Helm
+        run: |
+          roxctl helm output secured-cluster-services --image-defaults opensource --output-dir sensor-chart
+
+          # Generate init bundle (requires Central API)
+          roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
+            --insecure-skip-tls-verify --insecure \
+            central init-bundles generate kind-smoke \
+            --output sensor-init-bundle.yaml
+
+          helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
+            --set clusterName=kind-smoke \
+            --set centralEndpoint=central.stackrox.svc:443 \
+            --set sensor.image.registry="${IMAGE_REGISTRY}" \
+            --set sensor.image.tag="${TAG}" \
+            --set collector.enabled=false \
+            --set admissionControl.enabled=false \
+            -f sensor-init-bundle.yaml
+
+          echo "Waiting for Sensor..."
+          kubectl -n stackrox rollout status deploy/sensor --timeout=3m
 
       - name: Resource snapshot (pre-test)
         run: |
@@ -212,10 +225,9 @@ jobs:
           go mod download github.com/stackrox/scanner
           scripts/copy_scanner_protos.sh
 
-          # Use -Dgroups=SMOKE instead of the testSMOKE task — Gradle 9.x
-          # reports NO-SOURCE for custom registered test tasks.
-          # Run only a few fast tests to validate the deployment works.
-          ./gradlew test -Dgroups=SMOKE \
+          # Run 3 fast deploy-time policy tests to validate the deployment.
+          # These trigger within seconds (no violation wait timeouts).
+          ./gradlew test \
             --tests="PolicyConfigurationTest.Verify policy configuration Image Tag*" \
             --tests="PolicyConfigurationTest.Verify policy configuration Required Label*" \
             --tests="PolicyConfigurationTest.Verify policy configuration Privileged*"
