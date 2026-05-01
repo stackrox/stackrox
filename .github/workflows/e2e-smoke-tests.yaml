@@ -104,13 +104,21 @@ jobs:
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
-          # Deploy central-services with minimal resources, no scanner
+          # Deploy central-services. No scanner, no persistence.
+          # Resource requests set to minimal so pods always schedule.
+          # No per-pod limits — the docker container cap (KIND_MEMORY_LIMIT)
+          # is the real ceiling. Monitor tracks actual usage.
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
-            -f deploy/common/local-dev-values.yaml \
             --set image.registry="${IMAGE_REGISTRY}" \
             --set central.image.tag="${TAG}" \
             --set central.db.image.tag="${TAG}" \
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+            --set central.resources.requests.memory=100Mi \
+            --set central.resources.requests.cpu=50m \
+            --set central.resources.limits=null \
+            --set central.db.resources.requests.memory=100Mi \
+            --set central.db.resources.requests.cpu=50m \
+            --set central.db.resources.limits=null \
             --set central.persistence.none=true \
             --set scanner.disable=true \
             --set scannerV4.disable=true \
@@ -149,10 +157,9 @@ jobs:
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
             --set sensor.image.tag="${TAG}" \
-            --set sensor.resources.requests.memory=500Mi \
-            --set sensor.resources.requests.cpu=500m \
-            --set sensor.resources.limits.memory=2Gi \
-            --set sensor.resources.limits.cpu=1 \
+            --set sensor.resources.requests.memory=100Mi \
+            --set sensor.resources.requests.cpu=50m \
+            --set sensor.resources.limits=null \
             --set collector.collectionMethod=NO_COLLECTION \
             --set admissionControl.replicas=0 \
             --set admissionControl.listenOnCreates=false \
