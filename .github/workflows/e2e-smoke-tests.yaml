@@ -73,11 +73,8 @@ jobs:
               "$img"
           done
 
-          # Tag to the names deploy scripts expect
-          docker exec "$NODE" ctr -n k8s.io images tag \
-            "${IMAGE_REGISTRY}/main:${TAG}" "docker.io/stackrox/main:${TAG}"
-          docker exec "$NODE" ctr -n k8s.io images tag \
-            "${IMAGE_REGISTRY}/central-db:${TAG}" "docker.io/stackrox/central-db:${TAG}"
+          # Verify images are loaded
+          docker exec "$NODE" crictl images | grep -E "main|central-db" || true
 
       - name: Extract roxctl from main image
         env:
@@ -107,14 +104,13 @@ jobs:
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
-          # Deploy central-services with minimal resources, no scanner, no collector
+          # Deploy central-services with minimal resources, no scanner
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
             -f deploy/common/local-dev-values.yaml \
-            --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+            --set image.registry="${IMAGE_REGISTRY}" \
             --set central.image.tag="${TAG}" \
-            --set central.image.registry="${IMAGE_REGISTRY}" \
             --set central.db.image.tag="${TAG}" \
-            --set central.db.image.registry="${IMAGE_REGISTRY}" \
+            --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
             --set central.persistence.none=true \
             --set scanner.disable=true \
             --set scannerV4.disable=true \
@@ -149,9 +145,9 @@ jobs:
             --output sensor-init-bundle.yaml
 
           helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
+            --set image.registry="${IMAGE_REGISTRY}" \
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
-            --set sensor.image.registry="${IMAGE_REGISTRY}" \
             --set sensor.image.tag="${TAG}" \
             --set collector.enabled=false \
             --set admissionControl.enabled=false \
