@@ -241,34 +241,98 @@ jobs:
             --tests="PolicyConfigurationTest.Verify policy configuration Required Label*" \
             --tests="PolicyConfigurationTest.Verify policy configuration Privileged*"
 
-      - name: Resource snapshot (post-test)
+      - name: Resource report
         if: always()
         run: |
-          echo "## Pod status and restarts"
-          kubectl -n stackrox get pods -o custom-columns='NAME:.metadata.name,STATUS:.status.phase,RESTARTS:.status.containerStatuses[0].restartCount'
-          echo ""
-          echo "## Pending pod details"
-          for pod in $(kubectl -n stackrox get pods --field-selector=status.phase=Pending -o name 2>/dev/null); do
-            echo "--- $(basename "$pod") ---"
-            kubectl -n stackrox describe "$pod" | tail -20
-          done
-          echo ""
-          echo "## Per-pod metrics"
-          kubectl -n stackrox top pods --containers 2>/dev/null || true
-          echo ""
-          echo "## Docker memory"
-          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
-          echo ""
-          echo "## OOM check"
-          kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{range .status.containerStatuses[*]}{.lastState.terminated.reason}{end}{"\n"}{end}' | grep -i oom || echo "No OOM kills detected"
-          echo ""
-          echo "## Resource monitor summary"
           kill "$MONITOR_PID" 2>/dev/null || true
-          echo "Peak memory and alerts:"
-          grep -E "NEW PEAK|WARNING|OOM|RESTARTS" /tmp/resource-monitor.log 2>/dev/null || echo "(none)"
-          echo ""
-          echo "Last 10 samples:"
-          tail -10 /tmp/resource-monitor.log 2>/dev/null || true
+          NODE="${CLUSTER_NAME}-control-plane"
+
+          {
+            echo "## Resource Report"
+            echo ""
+            echo "### Pod Status"
+            echo ""
+            echo "| Pod | Status | Restarts |"
+            echo "|-----|--------|----------|"
+            kubectl -n stackrox get pods --no-headers 2>/dev/null | while read name ready status restarts age; do
+              echo "| ${name} | ${status} | ${restarts} |"
+            done
+            echo ""
+
+            echo "### Per-Pod Resource Usage (final snapshot)"
+            echo ""
+            echo "| Pod | Container | CPU | Memory |"
+            echo "|-----|-----------|-----|--------|"
+            kubectl -n stackrox top pods --containers --no-headers 2>/dev/null | while read pod container cpu mem; do
+              echo "| ${pod} | ${container} | ${cpu} | ${mem} |"
+            done || echo "| (metrics-server not available) | | | |"
+            echo ""
+
+            echo "### KinD Container Total"
+            echo ""
+            docker_mem=$(docker stats --no-stream --format "{{.MemUsage}}" "$NODE" 2>/dev/null || echo "N/A")
+            docker_cpu=$(docker stats --no-stream --format "{{.CPUPerc}}" "$NODE" 2>/dev/null || echo "N/A")
+            echo "- **Memory**: ${docker_mem}"
+            echo "- **CPU**: ${docker_cpu}"
+            echo "- **Limit**: ${KIND_MEMORY_LIMIT}"
+            echo ""
+
+            echo "### Monitor Timeline (peak and alerts)"
+            echo ""
+            peaks=$(grep "NEW PEAK" /tmp/resource-monitor.log 2>/dev/null || echo "")
+            if [ -n "$peaks" ]; then
+              echo '```'
+              echo "$peaks"
+              echo '```'
+              peak_val=$(echo "$peaks" | tail -1 | grep -oE '[0-9]+MB' || echo "unknown")
+              echo ""
+              echo "**Peak memory: ${peak_val}**"
+            else
+              echo "No peak data recorded."
+            fi
+            echo ""
+
+            echo "### Health Checks"
+            echo ""
+            oom=$(kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{range .status.containerStatuses[*]}{.lastState.terminated.reason}{end}{end}' 2>/dev/null)
+            if echo "$oom" | grep -qi "oom"; then
+              echo "- :x: **OOM kills detected**"
+            else
+              echo "- :white_check_mark: No OOM kills"
+            fi
+            any_restarts=$(kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.status.containerStatuses[0].restartCount}{" "}{end}' 2>/dev/null | tr ' ' '\n' | grep -v '^0$' | grep -v '^$' || true)
+            if [ -n "$any_restarts" ]; then
+              echo "- :x: **Pod restarts detected**"
+            else
+              echo "- :white_check_mark: No pod restarts"
+            fi
+            pending=$(kubectl -n stackrox get pods --field-selector=status.phase=Pending --no-headers 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$pending" -gt 0 ]; then
+              echo "- :warning: **${pending} pods Pending**"
+              echo ""
+              echo "<details><summary>Pending pod events</summary>"
+              echo ""
+              echo '```'
+              for pod in $(kubectl -n stackrox get pods --field-selector=status.phase=Pending -o name 2>/dev/null); do
+                echo "--- $(basename "$pod") ---"
+                kubectl -n stackrox describe "$pod" 2>/dev/null | grep -A5 "Events:" || true
+              done
+              echo '```'
+              echo "</details>"
+            else
+              echo "- :white_check_mark: No Pending pods"
+            fi
+            echo ""
+
+            echo "### Monitor Log (last 10 samples)"
+            echo ""
+            echo '```'
+            tail -10 /tmp/resource-monitor.log 2>/dev/null || echo "(empty)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Also print to stdout for the log
+          cat "$GITHUB_STEP_SUMMARY"
 
       - name: Collect logs
         if: always()
