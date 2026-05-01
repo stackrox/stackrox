@@ -177,7 +177,10 @@ func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]
 		search.NewQuerySelect(search.VirtualMachineID).Proto(),
 		search.NewQuerySelect(search.VirtualMachineName).Proto(),
 		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.Fixable).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.Fixable).AggrFunc(aggregatefunc.Count).
+			Filter("fixable_count",
+				search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
 		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.GuestOS).Proto(),
 		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),

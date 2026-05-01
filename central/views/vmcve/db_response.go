@@ -180,7 +180,7 @@ type affectedVMResponse struct {
 	VMID                   string  `db:"virtual_machine_id"`
 	VMName                 string  `db:"virtual_machine_name"`
 	MaxSeverity            int32   `db:"severity_max"`
-	IsFixable              bool    `db:"fixable_max"`
+	FixableCount           int     `db:"fixable_count"`
 	MaxCVSS                float32 `db:"cvss_max"`
 	GuestOS                string  `db:"guest_os"`
 	AffectedComponentCount int     `db:"component_id_count"`
@@ -189,7 +189,7 @@ type affectedVMResponse struct {
 func (r *affectedVMResponse) GetVMID() string                { return r.VMID }
 func (r *affectedVMResponse) GetVMName() string              { return r.VMName }
 func (r *affectedVMResponse) GetMaxSeverity() int32          { return r.MaxSeverity }
-func (r *affectedVMResponse) GetIsFixable() bool             { return r.IsFixable }
+func (r *affectedVMResponse) GetIsFixable() bool             { return r.FixableCount > 0 }
 func (r *affectedVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
 func (r *affectedVMResponse) GetGuestOS() string             { return r.GuestOS }
 func (r *affectedVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
