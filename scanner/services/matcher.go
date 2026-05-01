@@ -9,7 +9,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/quay/claircore"
-	ccsbom "github.com/quay/claircore/sbom"
 	"github.com/quay/claircore/toolkit/log"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
@@ -42,11 +41,9 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 type matcherService struct {
 	v4.UnimplementedMatcherServer
 	// indexer is used to retrieve index reports.
-	indexer indexer.ReportGetter
+	indexer indexer.ReportProvider
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
-	// sbomDecoder decodes SBOM documents into claircore index reports.
-	sbomDecoder ccsbom.Decoder
 	// disableEmptyContents allows the vulnerability matching API to reject requests with empty contents.
 	disableEmptyContents bool
 	// anonymousAuthEnabled specifies if the service should allow for traffic from anonymous users.
@@ -55,11 +52,10 @@ type matcherService struct {
 
 // NewMatcherService creates a new vulnerability matcher gRPC service, to enable
 // empty content in enrich requests, pass a non-nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportProvider) *matcherService {
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
-		sbomDecoder:          scannersbom.NewSPDXDecoder(scannersbom.NewPURLRegistry()),
 		disableEmptyContents: indexer == nil,
 		anonymousAuthEnabled: env.ScannerV4AnonymousAuth.BooleanSetting(),
 	}
@@ -223,7 +219,7 @@ func (s *matcherService) ScanSBOM(ctx context.Context, req *v4.ScanSBOMRequest) 
 		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
 	}
 
-	ir, err := s.sbomDecoder.Decode(ctx, bytes.NewReader(req.GetSbom()))
+	ir, err := s.matcher.DecodeSBOM(ctx, bytes.NewReader(req.GetSbom()))
 	if err != nil {
 		slog.ErrorContext(ctx, "decoding SBOM", "reason", err)
 		return nil, errox.InvalidArgs.CausedBy(err)

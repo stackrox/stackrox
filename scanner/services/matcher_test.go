@@ -433,6 +433,9 @@ func (s *matcherServiceTestSuite) Test_matcherService_ScanSBOM() {
 
 	s.Run("error on invalid sbom content", func() {
 		s.matcherMock.EXPECT().Initialized(gomock.Any()).Return(nil)
+		s.matcherMock.EXPECT().
+			DecodeSBOM(gomock.Any(), gomock.Any()).
+			Return(nil, errors.New("decode error"))
 		srv := NewMatcherService(s.matcherMock, nil)
 		_, err := srv.ScanSBOM(s.ctx, &v4.ScanSBOMRequest{
 			Sbom:      []byte("not valid json"),
@@ -443,6 +446,9 @@ func (s *matcherServiceTestSuite) Test_matcherService_ScanSBOM() {
 
 	s.Run("success", func() {
 		s.matcherMock.EXPECT().Initialized(gomock.Any()).Return(nil)
+		s.matcherMock.EXPECT().
+			DecodeSBOM(gomock.Any(), gomock.Any()).
+			Return(&claircore.IndexReport{}, nil)
 		s.matcherMock.EXPECT().
 			GetVulnerabilities(gomock.Any(), gomock.Any()).
 			Return(&claircore.VulnerabilityReport{}, nil)

@@ -79,6 +79,7 @@ message SensorEvent {
     storage.Secret secret = 7;
     storage.Node node = 9;
     storage.NodeInventory node_inventory = 25;
+
     scanner.v4.IndexReport index_report = 34;
     storage.ServiceAccount service_account = 14;
     storage.K8sRole role = 15;
