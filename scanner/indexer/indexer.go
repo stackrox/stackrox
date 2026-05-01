@@ -133,9 +133,10 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 	return tr
 }
 
-// ReportGetter can get index reports from an Indexer.
-type ReportGetter interface {
+// ReportProvider provides index reports and repository-to-CPE mappings from an Indexer.
+type ReportProvider interface {
 	GetIndexReport(context.Context, string, bool) (*claircore.IndexReport, bool, error)
+	GetRepositoryToCPEMapping(context.Context, string) (*FetchResult, error)
 }
 
 // ReportStorer stores a claircore.IndexReport.
@@ -147,10 +148,9 @@ type ReportStorer interface {
 //
 //go:generate mockgen-wrapper
 type Indexer interface {
-	ReportGetter
+	ReportProvider
 	ReportStorer
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
-	GetRepositoryToCPEMapping(context.Context, string) (*FetchResult, error)
 	Close(context.Context) error
 	Ready(context.Context) error
 }

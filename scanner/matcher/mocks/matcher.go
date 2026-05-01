@@ -11,6 +11,7 @@ package mocks
 
 import (
 	context "context"
+	io "io"
 	reflect "reflect"
 	time "time"
 
@@ -55,6 +56,21 @@ func (m *MockMatcher) Close(ctx context.Context) error {
 func (mr *MockMatcherMockRecorder) Close(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockMatcher)(nil).Close), ctx)
+}
+
+// DecodeSBOM mocks base method.
+func (m *MockMatcher) DecodeSBOM(ctx context.Context, data io.Reader) (*claircore.IndexReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecodeSBOM", ctx, data)
+	ret0, _ := ret[0].(*claircore.IndexReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecodeSBOM indicates an expected call of DecodeSBOM.
+func (mr *MockMatcherMockRecorder) DecodeSBOM(ctx, data any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecodeSBOM", reflect.TypeOf((*MockMatcher)(nil).DecodeSBOM), ctx, data)
 }
 
 // GetKnownDistributions mocks base method.

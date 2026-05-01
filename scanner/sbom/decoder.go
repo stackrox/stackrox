@@ -4,6 +4,8 @@ import (
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/gobin"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
@@ -17,11 +19,11 @@ import (
 	"github.com/quay/claircore/ubuntu"
 )
 
-func NewPURLRegistry() *purl.Registry {
+func NewPURLRegistry(rhelTransformFuncs ...purl.TransformerFunc) *purl.Registry {
 	reg := purl.NewRegistry()
 
 	// Distro-based ecosystems with fixed namespaces.
-	reg.RegisterPurlType(rhel.PURLType, rhel.PURLNamespace, rhel.ParseRPMPURL)
+	reg.RegisterPurlType(rhel.PURLType, rhel.PURLNamespace, rhel.ParseRPMPURL, rhelTransformFuncs...)
 	reg.RegisterPurlType(suse.PURLType, suse.PURLNamespace, suse.ParsePURL)
 	reg.RegisterPurlType(oracle.PURLType, oracle.PURLNamespace, oracle.ParsePURL)
 	reg.RegisterPurlType(photon.PURLType, photon.PURLNamespace, photon.ParsePURL)
@@ -35,10 +37,10 @@ func NewPURLRegistry() *purl.Registry {
 	reg.RegisterPurlType(nodejs.PURLType, purl.NoneNamespace, nodejs.ParsePURL)
 	reg.RegisterPurlType(ruby.PURLType, purl.NoneNamespace, ruby.ParsePURL)
 	reg.RegisterPurlType(rhcc.PURLType, purl.NoneNamespace, rhcc.ParseOCIPURL)
-
-	// NOTE: golang and maven PURLs use variable namespaces (domain, groupId)
-	// that cannot be pre-registered with the current purl.Registry key scheme.
-	// These PURLs are gracefully skipped by the decoder.
+	// Language ecosystems with dynamic namespaces. Claricore purl.Registry's
+	// Parse function will use the purl.NoneNamespace as a fallback.
+	reg.RegisterPurlType(gobin.PURLType, purl.NoneNamespace, gobin.ParsePURL)
+	reg.RegisterPurlType(java.PURLType, purl.NoneNamespace, java.ParsePURL)
 
 	return reg
 }
