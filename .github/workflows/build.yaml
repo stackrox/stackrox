@@ -771,7 +771,14 @@ jobs:
         with:
           driver: docker
 
+      - name: Install gobuildcache
+        run: go install github.com/richardartoul/gobuildcache@latest
+
       - name: Build Go binaries
+        env:
+          GOCACHEPROG: gobuildcache
+          GOBUILDCACHE_BACKEND_TYPE: gcs
+          GOBUILDCACHE_GCS_BUCKET: stackrox-gocache-experiment-20260502
         run: |
           ARCH="${{ matrix.arch }}"
           CGO=0
