@@ -754,10 +754,33 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Activate pre-cached Go
+        run: |
+          go_dir=$(ls -d /opt/hostedtoolcache/go/*/x64 /opt/hostedtoolcache/go/*/arm64 /opt/hostedtoolcache/go/*/ 2>/dev/null | sort -V | tail -1 || true)
+          go_dir="${go_dir%/}"
+          if [[ -n "$go_dir" ]] && [[ -x "$go_dir/bin/go" ]]; then
+            echo "Activating $("$go_dir/bin/go" version) from $go_dir"
+            echo "$go_dir/bin" >> "$GITHUB_PATH"
+          fi
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
+      - name: Install gobuildcache
+        run: |
+          case "${{ matrix.arch }}" in
+            amd64) sha="1f60cdc10753fd1a566586b9d3013795c302a1c7989aa816b9604091905de428" ;;
+            arm64) sha="2eed6075ca78f9a3407a890a7fa218b54807f7c5c0c749f7baa28109f0392aec" ;;
+          esac
+          url="https://github.com/richardartoul/gobuildcache/releases/download/v1.5.0/gobuildcache_1.5.0_linux_${{ matrix.arch }}.tar.gz"
+          curl -fsSL "$url" -o /tmp/gobuildcache.tar.gz
+          echo "${sha}  /tmp/gobuildcache.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/gobuildcache.tar.gz -C /usr/local/bin gobuildcache
+
+      - name: Restore gobuildcache L1
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
+        with:
+          path: /tmp/gobuildcache/cache
+          key: gobuildcache-v1-${{ matrix.arch }}-${{ github.sha }}
+          restore-keys: gobuildcache-v1-${{ matrix.arch }}-
 
       - name: Login to docker.io
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
@@ -771,24 +794,12 @@ jobs:
         with:
           driver: docker
 
-      - name: Install gobuildcache
-        run: |
-          case "${{ matrix.arch }}" in
-            amd64) sha="1f60cdc10753fd1a566586b9d3013795c302a1c7989aa816b9604091905de428" ;;
-            arm64) sha="2eed6075ca78f9a3407a890a7fa218b54807f7c5c0c749f7baa28109f0392aec" ;;
-          esac
-          arch="${{ matrix.arch }}"
-          url="https://github.com/richardartoul/gobuildcache/releases/download/v1.5.0/gobuildcache_1.5.0_linux_${arch}.tar.gz"
-          curl -fsSL "$url" -o /tmp/gobuildcache.tar.gz
-          echo "${sha}  /tmp/gobuildcache.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/gobuildcache.tar.gz -C /usr/local/bin gobuildcache
-          gobuildcache --help | head -1
-
       - name: Build Go binaries
         env:
           GOCACHEPROG: gobuildcache
           GOBUILDCACHE_BACKEND_TYPE: gcs
           GOBUILDCACHE_GCS_BUCKET: stackrox-gocache-experiment-20260502
+          GOBUILDCACHE_CACHE_DIR: /tmp/gobuildcache/cache
         run: |
           ARCH="${{ matrix.arch }}"
           CGO=0
