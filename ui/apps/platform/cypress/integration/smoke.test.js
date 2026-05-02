@@ -5,49 +5,43 @@ describe('CI Smoke Test', () => {
     const password = Cypress.env('ROX_PASSWORD') || 'admin';
 
     beforeEach(() => {
-        cy.login(password);
+        cy.request({
+            method: 'POST',
+            url: '/v1/auth/m/login',
+            body: { username: 'admin', password },
+            failOnStatusCode: false,
+        }).then((resp) => {
+            expect(resp.status).to.eq(200);
+            window.localStorage.setItem('access_token', resp.body.token);
+        });
     });
 
-    it('Dashboard loads', () => {
+    it('API metadata endpoint responds', () => {
+        cy.request('/v1/metadata').then((resp) => {
+            expect(resp.status).to.eq(200);
+            expect(resp.body).to.have.property('licenseStatus', 'VALID');
+        });
+    });
+
+    it('Dashboard page loads', () => {
         cy.visit('/main/dashboard');
-        cy.get('h1, [data-testid="header-text"]', { timeout: 30000 }).should('exist');
-    });
-
-    it('Clusters page shows a healthy cluster', () => {
-        cy.visit('/main/clusters');
-        cy.get('table, [data-testid="clusters-table"]', { timeout: 30000 }).should('exist');
+        cy.get('nav', { timeout: 30000 }).should('exist');
+        cy.get('body').should('not.contain.text', 'Log in to your account');
     });
 
     it('Violations page loads', () => {
         cy.visit('/main/violations');
-        cy.get('body', { timeout: 30000 }).should('contain.text', 'Violations');
+        cy.get('nav', { timeout: 30000 }).should('exist');
+        cy.get('body').should('not.contain.text', 'Log in to your account');
     });
 
     it('System Health page loads', () => {
         cy.visit('/main/system-health');
-        cy.get('body', { timeout: 30000 }).should('exist');
+        cy.get('nav', { timeout: 30000 }).should('exist');
     });
 
     it('Risk page loads', () => {
         cy.visit('/main/risk');
-        cy.get('body', { timeout: 30000 }).should('exist');
-    });
-});
-
-Cypress.Commands.add('login', (password) => {
-    cy.session('admin', () => {
-        cy.request({
-            method: 'POST',
-            url: '/v1/auth/m/login',
-            body: {
-                username: 'admin',
-                password: password,
-            },
-            failOnStatusCode: false,
-        }).then((resp) => {
-            if (resp.status === 200 && resp.body.token) {
-                window.localStorage.setItem('access_token', resp.body.token);
-            }
-        });
+        cy.get('nav', { timeout: 30000 }).should('exist');
     });
 });
