@@ -479,9 +479,9 @@ jobs:
           QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          set -x
           NODE="${CLUSTER_NAME}-control-plane"
           echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
+          set -x
 
           # Phase 1 (parallel): KinD + npm install + patch chart tags
           kind create cluster --name "$CLUSTER_NAME" --wait 60s &
@@ -505,17 +505,22 @@ jobs:
           docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
 
           # Phase 2 (parallel): Pull all images into KinD concurrently
+          set +x  # Don't log registry credentials
           for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
                      "${IMAGE_REGISTRY}/scanner-v4:${TAG}" "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
+            echo "Pulling $img into KinD..."
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
           done
           wait
+          set -x
 
           # Phase 3: Deploy central — don't wait for rollout, just submit
           kubectl create namespace stackrox
+          set +x  # Don't log password generation
           ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+          set -x
 
           helm upgrade --install -n stackrox stackrox-central-services "${CENTRAL_CHART}" \
             --set image.registry="${IMAGE_REGISTRY}" \
@@ -540,6 +545,7 @@ jobs:
             curl -sk https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
             sleep 2
           done
+          set +x  # Don't log admin password in curl
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/metadata" | jq -c .
 
           # Phase 5: Deploy sensor via API init bundle (no roxctl needed)
@@ -547,6 +553,7 @@ jobs:
           INIT_BUNDLE=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://localhost:8000/v1/cluster-init/init-bundles" \
             -X POST -d "{\"name\":\"shard-${{ strategy.job-index }}\"}")
+          set -x
           echo "$INIT_BUNDLE" | jq -r '.helmValuesBundle' | base64 -d > sensor-init-bundle.yaml
           if [ ! -s sensor-init-bundle.yaml ]; then
             echo "Init bundle generation failed. API response:"
