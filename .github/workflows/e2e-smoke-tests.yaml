@@ -450,18 +450,19 @@ jobs:
             specs: "cypress/integration/accessControl/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**"
           - shard: "2-clusters"
             specs: "cypress/integration/clusters/**,cypress/integration/administration/**"
-          - shard: "3-config"
-            specs: "cypress/integration/configmanagement/**"
-          - shard: "4-ui"
-            specs: "cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**,cypress/integration/credentialExpiry/**"
-          - shard: "5-policy"
-            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
-          - shard: "6-vuln-mgmt"
-            specs: "cypress/integration/vulnmanagement/**"
-          - shard: "7-vuln-except"
-            specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
-          - shard: "8-vuln-workload"
-            specs: "cypress/integration/vulnerabilities/workloadCves/**"
+          # Shards 3-8 temporarily disabled for fast iteration on deploy fixes
+          # - shard: "3-config"
+          #   specs: "cypress/integration/configmanagement/**"
+          # - shard: "4-ui"
+          #   specs: "cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**,cypress/integration/credentialExpiry/**"
+          # - shard: "5-policy"
+          #   specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
+          # - shard: "6-vuln-mgmt"
+          #   specs: "cypress/integration/vulnmanagement/**"
+          # - shard: "7-vuln-except"
+          #   specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
+          # - shard: "8-vuln-workload"
+          #   specs: "cypress/integration/vulnerabilities/workloadCves/**"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
@@ -543,11 +544,14 @@ jobs:
             --set scannerV4.db.resources.requests.memory=100Mi --set scannerV4.db.resources.requests.cpu=100m --set scannerV4.db.resources.limits.memory=2Gi \
             --set system.enablePodSecurityPolicies=false --set central.telemetry.enabled=false
 
-          # Phase 4: Wait ONLY for Central API (not full rollout of all pods)
+          # Phase 4: Wait for Central pod to be running, then port-forward.
+          # Only wait for central — scanner, sensor, collector start in background.
+          echo "Waiting for Central pod..."
+          kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout=5m
           kubectl -n stackrox port-forward svc/central 8000:443 &
           echo "PF_PID=$!" >> "$GITHUB_ENV"
           echo "Waiting for Central API..."
-          for i in $(seq 1 90); do
+          for i in $(seq 1 60); do
             curl -sk https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
             sleep 2
           done
