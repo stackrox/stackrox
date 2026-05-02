@@ -735,9 +735,15 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable ldflags: identical binaries across commits when source hasn't changed.
+      # The real version is stamped into VERSION files (COPY --link *VERSION /)
+      # which are independent Docker layers and don't trigger Go recompilation.
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+      # Real tag for Docker image tags and VERSION files
+      REAL_BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      REAL_SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -843,12 +849,12 @@ jobs:
             # Prepare build context
             GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
             cp -f ./*VERSION image/rhel/
-            echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
+            echo "${{ env.REAL_BUILD_TAG }}" > image/rhel/VERSION
 
             REGISTRY="$(registry_from_branding "${brand}")"
             registry_rw_login "${REGISTRY}"
 
-            TAG="${{ env.BUILD_TAG }}"
+            TAG="${{ env.REAL_BUILD_TAG }}"
             NL=$'\n'
 
             for IMAGE in main roxctl central-db; do
@@ -870,7 +876,7 @@ jobs:
                     "--build-arg" "TARGET_ARCH=${ARCH}"
                     "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
                     "--build-arg" "LABEL_VERSION=${TAG}"
-                    "--build-arg" "LABEL_RELEASE=${{ env.SHORTCOMMIT }}"
+                    "--build-arg" "LABEL_RELEASE=${{ env.REAL_SHORTCOMMIT }}"
                     "--build-arg" "QUAY_TAG_EXPIRATION=13w"
                   )
                   ;;
