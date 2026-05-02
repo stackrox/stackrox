@@ -111,6 +111,7 @@ jobs:
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
             --set image.tag="${TAG}" \
+            --set imagePullSecrets.allowNone=true \
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
             --set central.resources.requests.memory=100Mi \
             --set central.resources.requests.cpu=50m \
@@ -154,6 +155,7 @@ jobs:
           helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
             --set image.tag="${TAG}" \
+            --set imagePullSecrets.allowNone=true \
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
             --set sensor.resources.requests.memory=100Mi \
