@@ -245,16 +245,11 @@ jobs:
 
       - name: Run full Cypress e2e suite (excluding scanner-dependent tests)
         if: success()
-        uses: cypress-io/github-action@v6
-        with:
-          working-directory: ui/apps/platform
-          install: false
-          browser: chrome
-          command: >
-            npx cypress run
-            --browser chrome
-            --config baseUrl=https://localhost:8000,video=false,screenshotOnRunFailure=false
-            --spec 'cypress/integration/*.test.{js,ts},cypress/integration/accessControl/**/*.test.{js,ts},cypress/integration/clusters/**/*.test.{js,ts},cypress/integration/collections/**/*.test.{js,ts},cypress/integration/compliance/**/*.test.{js,ts},cypress/integration/compliance-enhanced/**/*.test.{js,ts},cypress/integration/configmanagement/**/*.test.{js,ts},cypress/integration/credentialExpiry/**/*.test.{js,ts},cypress/integration/dashboard/**/*.test.{js,ts},cypress/integration/exceptionConfiguration/**/*.test.{js,ts},cypress/integration/integrations/**/*.test.{js,ts},cypress/integration/listeningEndpoints/**/*.test.{js,ts},cypress/integration/main/**/*.test.{js,ts},cypress/integration/networkGraph/**/*.test.{js,ts},cypress/integration/policies/**/*.test.{js,ts},cypress/integration/risk/**/*.test.{js,ts},cypress/integration/systemConfig/**/*.test.{js,ts},cypress/integration/systemHealth/**/*.test.{js,ts},cypress/integration/violations/**/*.test.{js,ts}'
+        working-directory: ui/apps/platform
+        run: |
+          npx cypress run \
+            --browser chrome \
+            --config 'baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},excludeSpecPattern=[**/vulnerabilities/**,**/vulnmanagement/**],video=false,screenshotOnRunFailure=false'
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
