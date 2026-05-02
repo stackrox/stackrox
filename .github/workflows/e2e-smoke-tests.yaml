@@ -96,9 +96,9 @@ jobs:
           # Generate the helm chart bundle using roxctl (replaces the entire
           # deploy-local.sh → deploy.sh → k8sbased.sh script chain).
           roxctl helm output central-services --image-defaults opensource --output-dir central-chart
-          # roxctl dev builds hardcode 0.0.0 as the image tag throughout the chart.
-          # Replace all occurrences with the actual tag.
-          find central-chart/ -name "*.yaml" -exec sed -i "s/0\.0\.0/${TAG}/g" {} +
+          # roxctl dev builds hardcode 0.0.0 as image tags in internal/defaults.yaml.
+          # Only patch tag: fields, not Chart.yaml version (must be valid SemVer).
+          sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" central-chart/internal/defaults.yaml
           echo "Central chart image tags patched to ${TAG}"
 
           kubectl create namespace stackrox
@@ -150,7 +150,7 @@ jobs:
       - name: Deploy Sensor via Helm
         run: |
           roxctl helm output secured-cluster-services --image-defaults opensource --output-dir sensor-chart
-          find sensor-chart/ -name "*.yaml" -exec sed -i "s/0\.0\.0/${TAG}/g" {} +
+          sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" sensor-chart/internal/defaults.yaml
           echo "Sensor chart image tags patched to ${TAG}"
 
           # Generate init bundle (requires Central API)
