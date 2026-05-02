@@ -243,8 +243,11 @@ jobs:
           go mod download github.com/stackrox/scanner
           scripts/copy_scanner_protos.sh
 
+          # Compile first — Gradle 9 skips test proto generation when
+          # --tests filter is used and it thinks no tests match.
+          ./gradlew testClasses
+
           # Run 3 fast deploy-time policy tests to validate the deployment.
-          # These trigger within seconds (no violation wait timeouts).
           ./gradlew test \
             --tests="PolicyConfigurationTest.Verify policy configuration Image Tag*" \
             --tests="PolicyConfigurationTest.Verify policy configuration Required Label*" \
