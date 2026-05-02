@@ -377,6 +377,30 @@ jobs:
           # Also print to stdout for the log
           cat "$GITHUB_STEP_SUMMARY"
 
+      - name: Check resource thresholds
+        if: always()
+        run: |
+          # Fail if peak memory exceeded 80% of KIND_MEMORY_LIMIT.
+          # This catches memory leaks, GC thrashing, or unexpectedly hungry pods
+          # before they cause OOM kills or starve other processes on the runner.
+          LIMIT_MB=$(echo "${KIND_MEMORY_LIMIT}" | sed 's/g$//' | awk '{print $1 * 1024}')
+          THRESHOLD_MB=$(awk "BEGIN{printf \"%d\", $LIMIT_MB * 0.8}")
+          PEAK_MB=$(grep "NEW PEAK" /tmp/resource-monitor.log 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo 0)
+
+          echo "Memory limit: ${LIMIT_MB}MB, threshold (80%): ${THRESHOLD_MB}MB, peak: ${PEAK_MB}MB"
+
+          if [ "${PEAK_MB:-0}" -gt "$THRESHOLD_MB" ] 2>/dev/null; then
+            echo "::error::Peak memory ${PEAK_MB}MB exceeded 80% threshold (${THRESHOLD_MB}MB of ${LIMIT_MB}MB limit)"
+            exit 1
+          fi
+          echo "Memory OK: peak ${PEAK_MB}MB is within 80% of ${LIMIT_MB}MB limit"
+
+          # Warn (but don't fail) if any pod restarted — likely OOM or crash
+          restarts=$(kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.metadata.name}={.status.containerStatuses[0].restartCount}{" "}{end}' 2>/dev/null)
+          if echo "$restarts" | tr ' ' '\n' | grep -v '=0$' | grep -q '='; then
+            echo "::warning::Pod restarts detected: $restarts"
+          fi
+
       - name: Collect logs
         if: always()
         run: |
@@ -407,6 +431,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          kill "$MONITOR_PID" 2>/dev/null || true
           kill "$PF_PID" 2>/dev/null || true
           kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
 
@@ -522,6 +547,21 @@ jobs:
           echo "Deployment complete. Pods:"
           kubectl -n stackrox get pods
 
+          # Start background resource monitor for threshold checks
+          (
+            NODE="${CLUSTER_NAME}-control-plane"
+            PEAK_MB=0
+            while true; do
+              mem_raw=$(docker stats --no-stream --format "{{.MemUsage}}" "$NODE" 2>/dev/null || echo "0MiB")
+              mem_val=$(echo "$mem_raw" | grep -oE '^[0-9.]+' || echo 0)
+              mem_unit=$(echo "$mem_raw" | grep -oE '(MiB|GiB)' | head -1)
+              [ "$mem_unit" = "GiB" ] && mem_mb=$(awk "BEGIN{printf \"%d\", $mem_val * 1024}") || mem_mb="${mem_val%.*}"
+              [ "${mem_mb:-0}" -gt "$PEAK_MB" ] 2>/dev/null && PEAK_MB="$mem_mb" && echo "$(date +%H:%M:%S) | NEW PEAK: ${PEAK_MB}MB"
+              sleep 15
+            done
+          ) > /tmp/resource-monitor.log 2>&1 &
+          echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
+
       - name: Generate auth token
         run: |
           ROX_AUTH_TOKEN=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
@@ -558,6 +598,20 @@ jobs:
             echo "**Docker total: ${mem}**"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check resource thresholds
+        if: always()
+        run: |
+          # Fail if peak memory exceeded 80% of KIND_MEMORY_LIMIT
+          LIMIT_MB=$(echo "${KIND_MEMORY_LIMIT}" | sed 's/g$//' | awk '{print $1 * 1024}')
+          THRESHOLD_MB=$(awk "BEGIN{printf \"%d\", $LIMIT_MB * 0.8}")
+          PEAK_MB=$(grep "NEW PEAK" /tmp/resource-monitor.log 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo 0)
+          echo "Memory limit: ${LIMIT_MB}MB, threshold (80%): ${THRESHOLD_MB}MB, peak: ${PEAK_MB}MB"
+          if [ "${PEAK_MB:-0}" -gt "$THRESHOLD_MB" ] 2>/dev/null; then
+            echo "::error::Peak memory ${PEAK_MB}MB exceeded 80% threshold (${THRESHOLD_MB}MB of ${LIMIT_MB}MB limit)"
+            exit 1
+          fi
+          echo "Memory OK: peak ${PEAK_MB}MB is within 80% of ${LIMIT_MB}MB limit"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
         if: always()
@@ -569,5 +623,6 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          kill "$MONITOR_PID" 2>/dev/null || true
           kill "$PF_PID" 2>/dev/null || true
           kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
