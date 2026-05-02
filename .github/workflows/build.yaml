@@ -773,11 +773,34 @@ jobs:
 
       - name: Build Go binaries
         run: |
-          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
-          else
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+          ARCH="${{ matrix.arch }}"
+          CGO=0
+          LDFLAGS_EXTRA=""
+          if [[ "$ARCH" == "amd64" ]]; then
+            CGO=1
+            LDFLAGS_EXTRA="-linkmode=external"
           fi
+
+          mkdir -p "bin/linux_${ARCH}"
+
+          GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
+            go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
+            -ldflags "-s -w ${LDFLAGS_EXTRA} \
+              -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
+              -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}" \
+            -tags "${GOTAGS}" \
+            ./central \
+            ./compliance/cmd/compliance \
+            ./config-controller \
+            ./migrator \
+            ./operator/cmd \
+            ./roxctl \
+            ./sensor/admission-control \
+            ./sensor/kubernetes \
+            ./sensor/upgrader \
+            ./sensor/init-tls-certs
+
+          mv "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator"
 
       - uses: ./.github/actions/download-artifact-with-retry
         id: download-cli
