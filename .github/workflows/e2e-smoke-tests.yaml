@@ -42,7 +42,7 @@ jobs:
 
       - name: Create KinD cluster
         run: |
-          kind create cluster --name "$CLUSTER_NAME" --wait 60s
+          kind create cluster --name "$CLUSTER_NAME"  # No --wait: saves ~15s, kubectl wait handles readiness later
           kubectl cluster-info --context "kind-${CLUSTER_NAME}"
 
       - name: Set memory limit on KinD container
@@ -484,7 +484,7 @@ jobs:
           echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
 
           # Phase 1 (parallel): KinD + docker pull (for roxctl) + npm install
-          kind create cluster --name "$CLUSTER_NAME" --wait 60s &
+          kind create cluster --name "$CLUSTER_NAME"  # No --wait: saves ~15s, kubectl wait handles readiness later &
           PID_KIND=$!
           docker pull "${IMAGE_REGISTRY}/main:${TAG}" &
           PID_DOCKER=$!
