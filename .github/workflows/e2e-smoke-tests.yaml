@@ -96,6 +96,9 @@ jobs:
           # Generate the helm chart bundle using roxctl (replaces the entire
           # deploy-local.sh → deploy.sh → k8sbased.sh script chain).
           roxctl helm output central-services --image-defaults opensource --output-dir central-chart
+          # roxctl dev builds generate charts with appVersion 0.0.0.
+          # Patch to use the actual image tag since the chart derives image tags from appVersion.
+          sed -i "s/^appVersion:.*/appVersion: ${TAG}/" central-chart/Chart.yaml
 
           kubectl create namespace stackrox
 
@@ -110,7 +113,8 @@ jobs:
           # is the real ceiling. Monitor tracks actual usage.
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
-            --set image.tag="${TAG}" \
+
+
             --set imagePullSecrets.allowNone=true \
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
             --set central.resources.requests.memory=100Mi \
@@ -145,6 +149,7 @@ jobs:
       - name: Deploy Sensor via Helm
         run: |
           roxctl helm output secured-cluster-services --image-defaults opensource --output-dir sensor-chart
+          sed -i "s/^appVersion:.*/appVersion: ${TAG}/" sensor-chart/Chart.yaml
 
           # Generate init bundle (requires Central API)
           roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
@@ -154,7 +159,8 @@ jobs:
 
           helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
-            --set image.tag="${TAG}" \
+
+
             --set imagePullSecrets.allowNone=true \
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
