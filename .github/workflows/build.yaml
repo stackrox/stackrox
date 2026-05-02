@@ -779,7 +779,10 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
         with:
           path: /tmp/gobuildcache/cache
-          key: gobuildcache-v1-${{ matrix.arch }}-${{ github.sha }}
+          # Key on go.sum hash — only changes when dependencies change.
+          # Exact match skips save (actions/cache won't re-upload identical content).
+          # GCS L2 handles any misses from code changes between go.sum updates.
+          key: gobuildcache-v1-${{ matrix.arch }}-${{ hashFiles('go.sum') }}
           restore-keys: gobuildcache-v1-${{ matrix.arch }}-
 
       - name: Login to docker.io
