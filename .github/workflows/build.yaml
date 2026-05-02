@@ -721,7 +721,9 @@ jobs:
             --cache-to type=inline \
             "$CONTEXT"
 
-  # Experimental: combined Go build + image build+push to eliminate artifact overhead.
+  # Experimental: combined Go build + image build+push with buildID caching.
+  # Three scenarios: (1) no changes → re-tag only, (2) few changes → partial rebuild,
+  # (3) major changes → full rebuild.
   build-and-push-combined:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
@@ -735,13 +737,9 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     env:
-      # Stable ldflags: identical binaries across commits when source hasn't changed.
-      # The real version is stamped into VERSION files (COPY --link *VERSION /)
-      # which are independent Docker layers and don't trigger Go recompilation.
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-      # Real tag for Docker image tags and VERSION files
       REAL_BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       REAL_SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     steps:
@@ -754,55 +752,21 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Activate pre-cached Go
-        run: |
-          go_dir=$(ls -d /opt/hostedtoolcache/go/*/x64 /opt/hostedtoolcache/go/*/arm64 /opt/hostedtoolcache/go/*/ 2>/dev/null | sort -V | tail -1 || true)
-          go_dir="${go_dir%/}"
-          if [[ -n "$go_dir" ]] && [[ -x "$go_dir/bin/go" ]]; then
-            echo "Activating $("$go_dir/bin/go" version) from $go_dir"
-            echo "$go_dir/bin" >> "$GITHUB_PATH"
-          fi
-          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+      - name: Cache Go dependencies
+        env:
+          GOARCH: ${{ matrix.arch }}
+        uses: ./.github/actions/cache-go-dependencies
 
-      - name: Install gobuildcache
-        run: |
-          case "${{ matrix.arch }}" in
-            amd64) sha="1f60cdc10753fd1a566586b9d3013795c302a1c7989aa816b9604091905de428" ;;
-            arm64) sha="2eed6075ca78f9a3407a890a7fa218b54807f7c5c0c749f7baa28109f0392aec" ;;
-          esac
-          url="https://github.com/richardartoul/gobuildcache/releases/download/v1.5.0/gobuildcache_1.5.0_linux_${{ matrix.arch }}.tar.gz"
-          curl -fsSL "$url" -o /tmp/gobuildcache.tar.gz
-          echo "${sha}  /tmp/gobuildcache.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/gobuildcache.tar.gz -C /usr/local/bin gobuildcache
-
-      - name: Restore gobuildcache L1
+      - name: Restore cached binaries
+        id: binary-cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
         with:
-          path: /tmp/gobuildcache/cache
-          # Key on go.sum hash — only changes when dependencies change.
-          # Exact match skips save (actions/cache won't re-upload identical content).
-          # GCS L2 handles any misses from code changes between go.sum updates.
-          key: gobuildcache-v1-${{ matrix.arch }}-${{ hashFiles('go.sum') }}
-          restore-keys: gobuildcache-v1-${{ matrix.arch }}-
+          path: bin/linux_${{ matrix.arch }}
+          key: go-binaries-v1-${{ matrix.arch }}-${{ hashFiles('go.sum') }}
+          restore-keys: go-binaries-v1-${{ matrix.arch }}-
 
-      - name: Login to docker.io
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
-        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
-        with:
-          driver: docker
-
-      - name: Build Go binaries
-        env:
-          GOCACHEPROG: gobuildcache
-          GOBUILDCACHE_BACKEND_TYPE: gcs
-          GOBUILDCACHE_GCS_BUCKET: stackrox-gocache-experiment-20260502
-          GOBUILDCACHE_CACHE_DIR: /tmp/gobuildcache/cache
+      - name: Go build (skips unchanged binaries via buildID check)
+        id: go-build
         run: |
           ARCH="${{ matrix.arch }}"
           CGO=0
@@ -811,8 +775,13 @@ jobs:
             CGO=1
             LDFLAGS_EXTRA="-linkmode=external"
           fi
-
           mkdir -p "bin/linux_${ARCH}"
+
+          # Record pre-build state (for change detection)
+          before=""
+          for f in bin/linux_${ARCH}/*; do
+            [[ -f "$f" ]] && before="${before}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
+          done
 
           GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
             go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
@@ -831,7 +800,33 @@ jobs:
             ./sensor/upgrader \
             ./compliance/virtualmachines/roxagent
 
-          mv "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator"
+          mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
+
+          # Record post-build state
+          after=""
+          for f in bin/linux_${ARCH}/*; do
+            [[ -f "$f" ]] && after="${after}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
+          done
+
+          if [[ "$before" == "$after" ]] && [[ -n "$before" ]]; then
+            echo "go_changed=false" >> "$GITHUB_OUTPUT"
+            echo "No binaries changed (all buildIDs match)"
+          else
+            echo "go_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Binaries changed — will rebuild Docker images"
+          fi
+
+      - name: Login to docker.io
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        with:
+          driver: docker
 
       - uses: ./.github/actions/download-artifact-with-retry
         id: download-cli
@@ -844,13 +839,12 @@ jobs:
           if [[ -f cli-build.tgz ]]; then
             tar xzf cli-build.tgz
           else
-            echo "CLI artifact not available, creating stubs"
             mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
             for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
-              echo "stub: CLI not built for this PR" > "bin/${arch}/roxctl"
+              echo "stub" > "bin/${arch}/roxctl"
               cp "bin/${arch}/roxctl" "bin/${arch}/roxagent"
             done
-            echo "stub: CLI not built for this PR" > bin/windows_amd64/roxctl.exe
+            echo "stub" > bin/windows_amd64/roxctl.exe
           fi
 
       - uses: ./.github/actions/download-artifact-with-retry
@@ -875,8 +869,42 @@ jobs:
           name: ui-STACKROX_BRANDING-build
           path: ui-STACKROX_BRANDING
 
-      - name: Build and push all images
-        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      - name: Re-tag images (no changes)
+        if: |
+          steps.go-build.outputs.go_changed == 'false'
+            && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        run: |
+          source ./scripts/ci/lib.sh
+          ARCH="${{ matrix.arch }}"
+          TAG="${{ env.REAL_BUILD_TAG }}"
+
+          for brand in RHACS_BRANDING STACKROX_BRANDING; do
+            REGISTRY="$(registry_from_branding "${brand}")"
+            registry_rw_login "${REGISTRY}"
+
+            for IMAGE in main roxctl central-db; do
+              SRC="${REGISTRY}/${IMAGE}:cache-${ARCH}"
+              DST="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
+
+              if skopeo inspect "docker://${SRC}" &>/dev/null; then
+                echo "Re-tagging ${IMAGE} (${brand}): ${SRC} → ${DST}"
+                skopeo copy "docker://${SRC}" "docker://${DST}"
+              else
+                echo "::warning::No cached image ${SRC} — will need full build"
+                echo "go_changed=true" >> "$GITHUB_OUTPUT"
+              fi
+            done
+          done
+
+      - name: Build and push images (changes detected)
+        if: |
+          steps.go-build.outputs.go_changed == 'true'
+            && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         env:
           SOURCE_DATE_EPOCH: 0
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -896,14 +924,11 @@ jobs:
             echo "::group::${brand} images"
             export ROX_PRODUCT_BRANDING="${brand}"
 
-            # Swap branding-specific UI
             rm -rf ui/build
             cp -a "ui-${brand}/build" ui/build
 
-            # Prepare build context
             GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
             cp -f ./*VERSION image/rhel/
-            echo "${{ env.REAL_BUILD_TAG }}" > image/rhel/VERSION
 
             REGISTRY="$(registry_from_branding "${brand}")"
             registry_rw_login "${REGISTRY}"
@@ -947,7 +972,6 @@ jobs:
                   ;;
               esac
 
-              echo "Building ${IMAGE} (${brand})"
               docker buildx build \
                 --file "$DOCKERFILE" \
                 --platform "linux/${ARCH}" \
