@@ -483,13 +483,11 @@ jobs:
           NODE="${CLUSTER_NAME}-control-plane"
           echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
 
-          # Phase 1 (parallel): KinD + docker pull (for roxctl) + npm install
-          kind create cluster --name "$CLUSTER_NAME"  # No --wait: saves ~15s, kubectl wait handles readiness later &
+          # Phase 1 (parallel): KinD + docker pull (for roxctl extraction)
+          kind create cluster --name "$CLUSTER_NAME" &
           PID_KIND=$!
           docker pull "${IMAGE_REGISTRY}/main:${TAG}" &
           PID_DOCKER=$!
-          (cd ui/apps/platform && npm ci --prefer-offline) &
-          PID_NPM=$!
 
           wait $PID_KIND
           docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
@@ -574,7 +572,7 @@ jobs:
           # Seed data + wait for npm — both in background, don't block
           kubectl create namespace qa-test 2>/dev/null || true
           kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 &
-          wait $PID_NPM 2>/dev/null || true
+          # npm install handled by cypress-io/github-action (install: true)
 
           kubectl -n stackrox get pods
           echo "Deploy complete"
@@ -605,7 +603,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           working-directory: ui/apps/platform
-          install: false
+          install: true
           browser: chrome
           spec: ${{ matrix.specs }}
           config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false
