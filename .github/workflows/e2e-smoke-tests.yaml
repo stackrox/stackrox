@@ -488,11 +488,17 @@ jobs:
           (cd ui/apps/platform && npm ci --prefer-offline 2>/dev/null) &
           PID_NPM=$!
 
-          # Patch in-repo chart tags while KinD creates (no roxctl needed)
-          CENTRAL_CHART="deploy/k8s/central-deploy/helm/chart"
-          SENSOR_CHART="deploy/k8s/sensor-deploy/chart"
-          sed -i "s/tag: [0-9a-z._-]*/tag: ${TAG}/g" "${CENTRAL_CHART}/internal/defaults.yaml"
-          find "${SENSOR_CHART}/internal" -name "*.yaml" -exec sed -i "s/tag: [0-9a-z._-]*/tag: ${TAG}/g" {} +
+          # Copy in-repo charts and patch tags (no roxctl needed).
+          # Must copy first — can't modify checked-out files in-place.
+          cp -r deploy/k8s/central-deploy/helm/chart central-chart
+          cp -r deploy/k8s/sensor-deploy/chart sensor-chart
+          CENTRAL_CHART=central-chart
+          SENSOR_CHART=sensor-chart
+          # Replace tag values — the in-repo tags look like "4.11.0-7-g448ded18ab-fast"
+          sed -i "s/tag: .*/tag: ${TAG}/g" "${CENTRAL_CHART}/internal/defaults.yaml"
+          find "${SENSOR_CHART}/internal" -name "*.yaml" -exec sed -i "s/tag: .*/tag: ${TAG}/g" {} +
+          echo "Patched chart tags to ${TAG}"
+          grep "tag:" "${CENTRAL_CHART}/internal/defaults.yaml" | head -3
 
           wait $PID_KIND
           docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
@@ -536,10 +542,16 @@ jobs:
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/metadata" | jq -c .
 
           # Phase 5: Deploy sensor via API init bundle (no roxctl needed)
+          echo "Generating init bundle via API..."
           INIT_BUNDLE=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://localhost:8000/v1/cluster-init/init-bundles" \
             -X POST -d "{\"name\":\"shard-${{ strategy.job-index }}\"}")
           echo "$INIT_BUNDLE" | jq -r '.helmValuesBundle' | base64 -d > sensor-init-bundle.yaml
+          if [ ! -s sensor-init-bundle.yaml ]; then
+            echo "Init bundle generation failed. API response:"
+            echo "$INIT_BUNDLE" | jq .
+            exit 1
+          fi
 
           helm upgrade --install -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART}" \
             --set image.registry="${IMAGE_REGISTRY}" --set imagePullSecrets.allowNone=true \
