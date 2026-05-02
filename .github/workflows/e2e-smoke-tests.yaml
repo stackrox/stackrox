@@ -223,35 +223,17 @@ jobs:
           ) > /tmp/resource-monitor.log 2>&1 &
           echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
 
-      - name: Set up Java
-        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # ratchet:actions/setup-java@v4
+      - name: Run Cypress smoke tests
+        uses: cypress-io/github-action@v6
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-
-      - name: Run smoke tests
+          working-directory: ui/apps/platform
+          install: true
+          browser: chrome
+          headless: true
+          spec: cypress/integration/smoke.test.js
+          config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts}
         env:
-          API_HOSTNAME: localhost
-          API_PORT: "8000"
-          CLUSTER: K8S
-        run: |
-          cd qa-tests-backend
-
-          # copy_scanner_protos.sh uses `go list -m` to find scanner proto files
-          # in the Go module cache. Download just that module first.
-          go mod download github.com/stackrox/scanner
-          scripts/copy_scanner_protos.sh
-
-          # Compile first — Gradle 9 skips test proto generation when
-          # --tests filter is used and it thinks no tests match.
-          ./gradlew testClasses
-
-          # Run 3 fast deploy-time policy tests to validate the deployment.
-          ./gradlew test \
-            --tests="PolicyConfigurationTest.Verify policy configuration Image Tag*" \
-            --tests="PolicyConfigurationTest.Verify policy configuration Required Label*" \
-            --tests="PolicyConfigurationTest.Verify policy configuration Privileged*"
+          CYPRESS_ROX_PASSWORD: ${{ env.ROX_ADMIN_PASSWORD }}
 
       - name: Resource report
         if: always()
@@ -357,9 +339,10 @@ jobs:
             kubectl -n stackrox logs "$pod" --all-containers > "${ARTIFACT_DIR}/${pod_name}.log" 2>&1 || true
           done
 
-          # Groovy test results
-          cp -r qa-tests-backend/build/reports/tests/testSMOKE/ "${ARTIFACT_DIR}/test-report/" 2>/dev/null || true
-          cp -r qa-tests-backend/build/test-results/testSMOKE/ "${ARTIFACT_DIR}/test-results/" 2>/dev/null || true
+          # Cypress artifacts (screenshots, videos)
+          cp -r ui/apps/platform/cypress/test-results/ "${ARTIFACT_DIR}/cypress-results/" 2>/dev/null || true
+          cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
+          cp -r ui/apps/platform/cypress/videos/ "${ARTIFACT_DIR}/cypress-videos/" 2>/dev/null || true
 
           # Resource monitor log
           cp /tmp/resource-monitor.log "${ARTIFACT_DIR}/resource-monitor.log" 2>/dev/null || true
@@ -371,13 +354,6 @@ jobs:
           name: kind-smoke-test-artifacts-${{ github.run_id }}
           path: ${{ env.ARTIFACT_DIR }}
           retention-days: 7
-
-      - name: Publish test summary
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
-        if: always()
-        with:
-          paths: test-artifacts/test-results/*.xml
-          show: all
 
       - name: Cleanup
         if: always()
