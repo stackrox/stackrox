@@ -113,16 +113,16 @@ jobs:
           # is the real ceiling. Monitor tracks actual usage.
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
-
-
             --set imagePullSecrets.allowNone=true \
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
             --set central.resources.requests.memory=100Mi \
-            --set central.resources.requests.cpu=50m \
-            --set central.resources.limits=null \
+            --set central.resources.requests.cpu=100m \
+            --set central.resources.limits.memory=4Gi \
+            --set central.resources.limits.cpu=2 \
             --set central.db.resources.requests.memory=100Mi \
-            --set central.db.resources.requests.cpu=50m \
-            --set central.db.resources.limits=null \
+            --set central.db.resources.requests.cpu=100m \
+            --set central.db.resources.limits.memory=4Gi \
+            --set central.db.resources.limits.cpu=2 \
             --set central.persistence.none=true \
             --set scanner.disable=true \
             --set scannerV4.disable=true \
@@ -159,14 +159,13 @@ jobs:
 
           helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
-
-
             --set imagePullSecrets.allowNone=true \
             --set clusterName=kind-smoke \
             --set centralEndpoint=central.stackrox.svc:443 \
             --set sensor.resources.requests.memory=100Mi \
-            --set sensor.resources.requests.cpu=50m \
-            --set sensor.resources.limits=null \
+            --set sensor.resources.requests.cpu=100m \
+            --set sensor.resources.limits.memory=4Gi \
+            --set sensor.resources.limits.cpu=2 \
             --set collector.collectionMethod=NO_COLLECTION \
             --set admissionControl.replicas=0 \
             --set admissionControl.listenOnCreates=false \
