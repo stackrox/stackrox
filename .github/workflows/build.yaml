@@ -894,13 +894,12 @@ jobs:
               SRC="${REGISTRY}/${IMAGE}:cache-${ARCH}"
               DST="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
 
-              if skopeo inspect "docker://${SRC}" &>/dev/null; then
-                echo "Re-tagging ${IMAGE} (${brand}): ${SRC} → ${DST}"
-                skopeo copy "docker://${SRC}" "docker://${DST}"
-              else
-                echo "::warning::No cached image ${SRC} — will need full build"
+              echo "Re-tagging ${IMAGE} (${brand}): ${SRC} → ${DST}"
+              # Server-side tag — no layer transfer, just manifest copy
+              docker buildx imagetools create --tag "${DST}" "${SRC}" || {
+                echo "::warning::Re-tag failed for ${SRC} — falling back to full build"
                 echo "go_changed=true" >> "$GITHUB_OUTPUT"
-              fi
+              }
             done
           done
 
