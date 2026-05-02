@@ -150,7 +150,8 @@ jobs:
       - name: Deploy Sensor via Helm
         run: |
           roxctl helm output secured-cluster-services --image-defaults opensource --output-dir sensor-chart
-          sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" sensor-chart/internal/defaults.yaml
+          # Sensor chart stores defaults in internal/defaults/*.yaml (directory, not single file)
+          find sensor-chart/internal -name "*.yaml" -exec sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" {} +
           echo "Sensor chart image tags patched to ${TAG}"
 
           # Generate init bundle (requires Central API)
