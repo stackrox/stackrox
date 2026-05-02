@@ -223,17 +223,25 @@ jobs:
           ) > /tmp/resource-monitor.log 2>&1 &
           echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
 
+      - name: Generate auth token for Cypress
+        run: |
+          # Generate an API token using basic auth, same as cypress.sh/get-auth-token.sh
+          ROX_AUTH_TOKEN=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://localhost:8000/v1/apitokens/generate" \
+            -X POST -d '{"name":"ci-smoke","role":"Admin"}' | jq -r '.token')
+          echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_AUTH_TOKEN}"
+
       - name: Run Cypress smoke tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: ui/apps/platform
           install: true
           browser: chrome
-          headless: true
           spec: cypress/integration/smoke.test.js
           config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts}
         env:
-          CYPRESS_ROX_PASSWORD: ${{ env.ROX_ADMIN_PASSWORD }}
+          CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
 
       - name: Resource report
         if: always()
