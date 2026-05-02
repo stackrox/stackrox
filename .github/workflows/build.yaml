@@ -762,8 +762,10 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
         with:
           path: bin/linux_${{ matrix.arch }}
-          key: go-binaries-v1-${{ matrix.arch }}-${{ hashFiles('go.sum') }}
-          restore-keys: go-binaries-v1-${{ matrix.arch }}-
+          # Must use same key prefix as GOCACHE so both come from the same build.
+          # BuildIDs are only valid for the GOCACHE that produced them.
+          key: go-binaries-v1-build-and-push-combined-${{ matrix.arch }}-${{ github.sha }}
+          restore-keys: go-binaries-v1-build-and-push-combined-${{ matrix.arch }}-
 
       - name: Go build (skips unchanged binaries via buildID check)
         id: go-build
