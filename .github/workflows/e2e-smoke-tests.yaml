@@ -446,17 +446,17 @@ jobs:
       matrix:
         include:
           - shard: "1-core"
-            # accessControl, clusters, collections, compliance, compliance-enhanced
-            specs: "cypress/integration/accessControl/**,cypress/integration/clusters/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**"
+            # ~15 min: accessControl(5), clusters(11), collections(4), compliance(4), vulnmanagement(13)
+            specs: "cypress/integration/accessControl/**,cypress/integration/clusters/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**,cypress/integration/vulnmanagement/**"
           - shard: "2-config"
-            # configmanagement, credentialExpiry, dashboard, integrations, systemConfig, systemHealth
+            # ~15 min: configmanagement(12), credentialExpiry(1), dashboard(1), integrations(8), systemConfig(1), systemHealth(8)
             specs: "cypress/integration/configmanagement/**,cypress/integration/credentialExpiry/**,cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**"
           - shard: "3-policy"
-            # policies, risk, violations, networkGraph, listeningEndpoints, exceptionConfiguration, main, top-level
-            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
+            # ~15 min: policies(6), risk(4), violations(3), networkGraph(2), listeningEndpoints(1), exceptionConfig(1), main(1), top-level(7), vulnerabilities/exceptionManagement(7), vulnerabilities/nodeCves(2), vulnerabilities/platformCves(2)
+            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts},cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/snooze*"
           - shard: "4-vuln"
-            # vulnerabilities, vulnmanagement (scanner-dependent)
-            specs: "cypress/integration/vulnerabilities/**,cypress/integration/vulnmanagement/**"
+            # ~15 min: vulnerabilities/workloadCves(12), vulnerabilities/VulnerabilityReporting(3)
+            specs: "cypress/integration/vulnerabilities/workloadCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
@@ -569,6 +569,28 @@ jobs:
             -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token')
           echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_AUTH_TOKEN}"
+
+      - name: Seed test data
+        run: |
+          # Deploy a known vulnerable image so scanner has CVEs to index.
+          # This is needed by: vulnerabilities/exceptionManagement/* (create deferral
+          # requests on CVEs), vulnerabilities/workloadCves/* (CVE detail pages),
+          # vulnmanagement/* (legacy CVE tables).
+          kubectl create namespace qa-test 2>/dev/null || true
+          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1
+          kubectl -n qa-test rollout status deployment/nginx --timeout=2m || true
+
+          # Wait for scanner to pick up the deployment and start indexing
+          echo "Waiting for scanner to index the deployment..."
+          for i in $(seq 1 30); do
+            count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
+            if [ "$count" -gt 5 ]; then
+              echo "Scanner has indexed $count deployments"
+              break
+            fi
+            sleep 5
+          done
 
       - name: Run Cypress shard
         uses: cypress-io/github-action@v6
