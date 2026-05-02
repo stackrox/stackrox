@@ -721,6 +721,188 @@ jobs:
             --cache-to type=inline \
             "$CONTEXT"
 
+  # Experimental: combined Go build + image build+push to eliminate artifact overhead.
+  build-and-push-combined:
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    needs:
+      - define-job-matrix
+      - pre-build-docs
+      - pre-build-oss-notice
+      - pre-build-ui
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        env:
+          GOARCH: ${{ matrix.arch }}
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Login to docker.io
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        with:
+          driver: docker
+
+      - name: Build Go binaries
+        run: |
+          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+          else
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+          fi
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        id: download-cli
+        continue-on-error: true
+        with:
+          name: cli-build
+
+      - name: Unpack cli build or create stubs
+        run: |
+          if [[ -f cli-build.tgz ]]; then
+            tar xzf cli-build.tgz
+          else
+            echo "CLI artifact not available, creating stubs"
+            mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
+            for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
+              echo "stub: CLI not built for this PR" > "bin/${arch}/roxctl"
+              cp "bin/${arch}/roxctl" "bin/${arch}/roxagent"
+            done
+            echo "stub: CLI not built for this PR" > bin/windows_amd64/roxctl.exe
+          fi
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: docs-build
+          path: image/rhel/docs
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
+
+      - name: Download RHACS UI
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: ui-RHACS_BRANDING-build
+          path: ui-RHACS_BRANDING
+
+      - name: Download STACKROX UI
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: ui-STACKROX_BRANDING-build
+          path: ui-STACKROX_BRANDING
+
+      - name: Build and push all images
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          SOURCE_DATE_EPOCH: 0
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        run: |
+          source ./scripts/ci/lib.sh
+          ARCH="${{ matrix.arch }}"
+
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+
+          for brand in RHACS_BRANDING STACKROX_BRANDING; do
+            echo "::group::${brand} images"
+            export ROX_PRODUCT_BRANDING="${brand}"
+
+            # Swap branding-specific UI
+            rm -rf ui/build
+            cp -a "ui-${brand}/build" ui/build
+
+            # Prepare build context
+            GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
+            cp -f ./*VERSION image/rhel/
+            echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
+
+            REGISTRY="$(registry_from_branding "${brand}")"
+            registry_rw_login "${REGISTRY}"
+
+            TAG="${{ env.BUILD_TAG }}"
+            NL=$'\n'
+
+            for IMAGE in main roxctl central-db; do
+              TAGS="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
+              TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:cache-${ARCH}"
+              if [[ "$push_context" == "merge-to-master" ]]; then
+                TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:latest-${ARCH}"
+              fi
+
+              TAG_FLAGS=()
+              while read -r t; do [[ -n "$t" ]] && TAG_FLAGS+=("--tag=$t"); done <<< "$TAGS"
+
+              case "$IMAGE" in
+                main)
+                  DOCKERFILE=image/rhel/Dockerfile
+                  CONTEXT=image/rhel
+                  BUILD_ARGS=(
+                    "--build-arg" "ROX_PRODUCT_BRANDING=${brand}"
+                    "--build-arg" "TARGET_ARCH=${ARCH}"
+                    "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
+                    "--build-arg" "LABEL_VERSION=${TAG}"
+                    "--build-arg" "LABEL_RELEASE=${{ env.SHORTCOMMIT }}"
+                    "--build-arg" "QUAY_TAG_EXPIRATION=13w"
+                  )
+                  ;;
+                roxctl)
+                  cp -f "bin/linux_${ARCH}/roxctl" image/roxctl/roxctl-linux
+                  DOCKERFILE=image/roxctl/Dockerfile
+                  CONTEXT=image/roxctl
+                  BUILD_ARGS=()
+                  ;;
+                central-db)
+                  DOCKERFILE=image/postgres/Dockerfile
+                  CONTEXT=image/postgres
+                  BUILD_ARGS=("--build-arg" "MAIN_IMAGE_TAG=${TAG}")
+                  ;;
+              esac
+
+              echo "Building ${IMAGE} (${brand})"
+              docker buildx build \
+                --file "$DOCKERFILE" \
+                --platform "linux/${ARCH}" \
+                --output "type=image,push=true,rewrite-timestamp=true" \
+                --provenance=false \
+                "${TAG_FLAGS[@]}" \
+                "${BUILD_ARGS[@]}" \
+                --cache-from "type=registry,ref=${REGISTRY}/${IMAGE}:cache-${ARCH}" \
+                --cache-to type=inline \
+                "$CONTEXT"
+            done
+
+            echo "::endgroup::"
+          done
+
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
     needs:
