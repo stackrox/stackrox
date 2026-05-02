@@ -491,34 +491,27 @@ jobs:
           (
             NODE="${CLUSTER_NAME}-control-plane"
 
-            # Phase 1 (all parallel): KinD create + pull ALL images to host Docker
-            # Images download from quay.io while KinD creates — overlaps ~20s of network I/O
+            # Phase 1: KinD create + docker pull main (for roxctl) — parallel
             kind create cluster --name "$CLUSTER_NAME" &
             PID_KIND=$!
-            for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
-                       "${IMAGE_REGISTRY}/scanner-v4:${TAG}" "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
-              docker pull "$img" &
-            done
+            docker pull "${IMAGE_REGISTRY}/main:${TAG}" &
+            PID_DOCKER=$!
 
             wait $PID_KIND
             docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
-            wait  # Wait for all docker pulls to finish
 
-            # Phase 2: Extract roxctl + move images into KinD (local I/O only, no network)
+            # Extract roxctl from host docker image
+            wait $PID_DOCKER
             cid=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
             mkdir -p bin && docker cp "${cid}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl && docker rm "${cid}"
             chmod +x bin/roxctl
             export PATH="$(pwd)/bin:$PATH"
 
-            # Save all images to a single tar and import into KinD's containerd
-            docker save \
-              "${IMAGE_REGISTRY}/main:${TAG}" \
-              "${IMAGE_REGISTRY}/central-db:${TAG}" \
-              "${IMAGE_REGISTRY}/scanner-v4:${TAG}" \
-              "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}" \
-              | docker exec -i "$NODE" ctr --namespace=k8s.io images import - 2>/dev/null
-
-            # Generate charts (parallel with nothing — fast, ~3s each)
+            # Phase 2: Pull images directly into KinD + generate charts (all parallel)
+            for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
+                       "${IMAGE_REGISTRY}/scanner-v4:${TAG}" "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
+              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
+            done
             CENTRAL_CHART=central-chart
             SENSOR_CHART=sensor-chart
             roxctl helm output central-services --image-defaults opensource --output-dir "$CENTRAL_CHART" &
