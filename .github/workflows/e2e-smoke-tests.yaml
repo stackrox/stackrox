@@ -548,17 +548,11 @@ jobs:
           done
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/metadata" | jq -c .
 
-          # Phase 5: Deploy sensor via API init bundle (no roxctl needed)
-          echo "Generating init bundle via API..."
-          INIT_BUNDLE=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://localhost:8000/v1/cluster-init/init-bundles" \
-            -X POST -d "{\"name\":\"shard-${{ strategy.job-index }}\"}")
-          echo "$INIT_BUNDLE" | jq -r '.helmValuesBundle' | base64 -d > sensor-init-bundle.yaml
-          if [ ! -s sensor-init-bundle.yaml ]; then
-            echo "Init bundle generation failed. API response:"
-            echo "$INIT_BUNDLE" | jq .
-            exit 1
-          fi
+          # Phase 5: Deploy sensor — use roxctl for init bundle (proven, API format TBD)
+          roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
+            --insecure-skip-tls-verify --insecure \
+            central init-bundles generate "shard-${{ strategy.job-index }}" \
+            --output sensor-init-bundle.yaml
 
           helm upgrade --install -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART}" \
             --set image.registry="${IMAGE_REGISTRY}" --set imagePullSecrets.allowNone=true \
