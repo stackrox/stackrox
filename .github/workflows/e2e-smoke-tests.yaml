@@ -25,7 +25,7 @@ jobs:
   kind-smoke-tests:
     name: "Smoke tests on KinD"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     env:
       CLUSTER_NAME: kind-smoke-${{ github.run_id }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
@@ -232,7 +232,7 @@ jobs:
           echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_AUTH_TOKEN}"
 
-      - name: Run Cypress smoke tests
+      - name: Run Cypress smoke test (fast validation)
         uses: cypress-io/github-action@v6
         with:
           working-directory: ui/apps/platform
@@ -242,6 +242,18 @@ jobs:
           config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts}
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+
+      - name: Run full Cypress e2e suite
+        if: success()
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: ui/apps/platform
+          install: false
+          browser: chrome
+          config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false
+        env:
+          CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+          CYPRESS_ORCHESTRATOR_FLAVOR: k8s
 
       - name: Resource report
         if: always()
