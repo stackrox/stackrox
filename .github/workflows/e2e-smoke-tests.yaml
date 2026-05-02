@@ -435,28 +435,32 @@ jobs:
           kill "$PF_PID" 2>/dev/null || true
           kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
 
-  # Experiment: parallel matrix shards — each shard deploys its own KinD cluster
-  # and runs a subset of test directories. Tests wall-clock reduction.
+  # 8-shard matrix: each shard deploys its own KinD + full StackRox stack
+  # and runs a subset of test specs. Deploy is parallelized for speed.
   kind-e2e-sharded:
     name: "Shard ${{ matrix.shard }}"
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
-          - shard: "1-core"
-            # ~15 min: accessControl(5), clusters(11), collections(4), compliance(4), vulnmanagement(13)
-            specs: "cypress/integration/accessControl/**,cypress/integration/clusters/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**,cypress/integration/vulnmanagement/**"
-          - shard: "2-config"
-            # ~15 min: configmanagement(12), credentialExpiry(1), dashboard(1), integrations(8), systemConfig(1), systemHealth(8)
-            specs: "cypress/integration/configmanagement/**,cypress/integration/credentialExpiry/**,cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**"
-          - shard: "3-policy"
-            # ~15 min: policies(6), risk(4), violations(3), networkGraph(2), listeningEndpoints(1), exceptionConfig(1), main(1), top-level(7), vulnerabilities/exceptionManagement(7), vulnerabilities/nodeCves(2), vulnerabilities/platformCves(2)
-            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts},cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/snooze*"
-          - shard: "4-vuln"
-            # ~15 min: vulnerabilities/workloadCves(12), vulnerabilities/VulnerabilityReporting(3)
-            specs: "cypress/integration/vulnerabilities/workloadCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**"
+          - shard: "1-access"
+            specs: "cypress/integration/accessControl/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**"
+          - shard: "2-clusters"
+            specs: "cypress/integration/clusters/**,cypress/integration/administration/**"
+          - shard: "3-config"
+            specs: "cypress/integration/configmanagement/**"
+          - shard: "4-ui"
+            specs: "cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**,cypress/integration/credentialExpiry/**"
+          - shard: "5-policy"
+            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
+          - shard: "6-vuln-mgmt"
+            specs: "cypress/integration/vulnmanagement/**"
+          - shard: "7-vuln-except"
+            specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
+          - shard: "8-vuln-workload"
+            specs: "cypress/integration/vulnerabilities/workloadCves/**"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
@@ -470,37 +474,50 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Create KinD cluster and deploy StackRox
+      - name: Deploy StackRox on KinD (parallelized)
         env:
           QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          # Create cluster
-          kind create cluster --name "$CLUSTER_NAME" --wait 60s
-          docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "${CLUSTER_NAME}-control-plane"
-
-          # Load images
           NODE="${CLUSTER_NAME}-control-plane"
-          for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" "${IMAGE_REGISTRY}/scanner-v4:${TAG}" "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img"
-          done
-
-          # Extract roxctl
           echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
-          docker pull "${IMAGE_REGISTRY}/main:${TAG}"
+
+          # Phase 1: KinD cluster + extract roxctl + npm install — all in parallel
+          kind create cluster --name "$CLUSTER_NAME" --wait 60s &
+          PID_KIND=$!
+
+          docker pull "${IMAGE_REGISTRY}/main:${TAG}" &
+          PID_PULL=$!
+
+          cd ui/apps/platform && npm ci --prefer-offline 2>/dev/null &
+          PID_NPM=$!
+          cd "$GITHUB_WORKSPACE"
+
+          wait $PID_KIND
+          docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
+
+          wait $PID_PULL
           cid=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
           mkdir -p bin && docker cp "${cid}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl && docker rm "${cid}"
           chmod +x bin/roxctl
           export PATH="$(pwd)/bin:$PATH"
           echo "$(pwd)/bin" >> "$GITHUB_PATH"
 
-          # Generate and patch charts
-          roxctl helm output central-services --image-defaults opensource --output-dir central-chart
+          # Phase 2: Load images into KinD + generate charts — in parallel
+          for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
+                     "${IMAGE_REGISTRY}/scanner-v4:${TAG}" "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
+            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
+          done
+
+          roxctl helm output central-services --image-defaults opensource --output-dir central-chart &
+          roxctl helm output secured-cluster-services --image-defaults opensource --output-dir sensor-chart &
+          wait
+
+          # Patch chart tags
           sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" central-chart/internal/defaults.yaml
-          roxctl helm output secured-cluster-services --image-defaults opensource --output-dir sensor-chart
           find sensor-chart/internal -name "*.yaml" -exec sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" {} +
 
-          # Deploy central
+          # Phase 3: Deploy central (sequential — needs cluster + charts)
           kubectl create namespace stackrox
           ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
@@ -524,12 +541,11 @@ jobs:
           kubectl -n stackrox rollout status deploy/central --timeout=5m
           kubectl -n stackrox rollout status deploy/central-db --timeout=5m
 
-          # Port-forward and wait for API
+          # Phase 4: Port-forward + sensor deploy + seed data — overlap where possible
           kubectl -n stackrox port-forward svc/central 8000:443 &
           echo "PF_PID=$!" >> "$GITHUB_ENV"
           for i in $(seq 1 60); do curl -sk https://localhost:8000/v1/metadata >/dev/null 2>&1 && break; sleep 5; done
 
-          # Deploy sensor
           roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" --insecure-skip-tls-verify --insecure \
             central init-bundles generate shard-${{ strategy.job-index }} --output sensor-init-bundle.yaml
 
@@ -542,14 +558,21 @@ jobs:
             --set admissionControl.replicas=1 --set admissionControl.resources.requests.memory=100Mi --set admissionControl.resources.requests.cpu=50m \
             -f sensor-init-bundle.yaml
 
+          # Seed test data: deploy vulnerable image for scanner to index
+          # (needed by exceptionManagement, workloadCves, vulnmanagement tests)
+          kubectl create namespace qa-test 2>/dev/null || true
+          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 &
+
           kubectl -n stackrox rollout status deploy/sensor --timeout=5m || true
+
+          # Wait for npm install to finish
+          wait $PID_NPM 2>/dev/null || true
 
           echo "Deployment complete. Pods:"
           kubectl -n stackrox get pods
 
-          # Start background resource monitor for threshold checks
+          # Start resource monitor
           (
-            NODE="${CLUSTER_NAME}-control-plane"
             PEAK_MB=0
             while true; do
               mem_raw=$(docker stats --no-stream --format "{{.MemUsage}}" "$NODE" 2>/dev/null || echo "0MiB")
@@ -570,33 +593,11 @@ jobs:
           echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_AUTH_TOKEN}"
 
-      - name: Seed test data
-        run: |
-          # Deploy a known vulnerable image so scanner has CVEs to index.
-          # This is needed by: vulnerabilities/exceptionManagement/* (create deferral
-          # requests on CVEs), vulnerabilities/workloadCves/* (CVE detail pages),
-          # vulnmanagement/* (legacy CVE tables).
-          kubectl create namespace qa-test 2>/dev/null || true
-          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1
-          kubectl -n qa-test rollout status deployment/nginx --timeout=2m || true
-
-          # Wait for scanner to pick up the deployment and start indexing
-          echo "Waiting for scanner to index the deployment..."
-          for i in $(seq 1 30); do
-            count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
-            if [ "$count" -gt 5 ]; then
-              echo "Scanner has indexed $count deployments"
-              break
-            fi
-            sleep 5
-          done
-
       - name: Run Cypress shard
         uses: cypress-io/github-action@v6
         with:
           working-directory: ui/apps/platform
-          install: true
+          install: false
           browser: chrome
           spec: ${{ matrix.specs }}
           config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false
@@ -623,7 +624,6 @@ jobs:
       - name: Check resource thresholds
         if: always()
         run: |
-          # Fail if peak memory exceeded 80% of KIND_MEMORY_LIMIT
           LIMIT_MB=$(echo "${KIND_MEMORY_LIMIT}" | sed 's/g$//' | awk '{print $1 * 1024}')
           THRESHOLD_MB=$(awk "BEGIN{printf \"%d\", $LIMIT_MB * 0.8}")
           PEAK_MB=$(grep "NEW PEAK" /tmp/resource-monitor.log 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo 0)
@@ -633,14 +633,6 @@ jobs:
             exit 1
           fi
           echo "Memory OK: peak ${PEAK_MB}MB is within 80% of ${LIMIT_MB}MB limit"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
-        if: always()
-        with:
-          name: shard-${{ matrix.shard }}-${{ github.run_id }}
-          path: ${{ env.ARTIFACT_DIR }}
-          retention-days: 3
 
       - name: Cleanup
         if: always()
