@@ -188,7 +188,7 @@ jobs:
             --set sensor.resources.requests.cpu=100m \
             --set sensor.resources.limits.memory=4Gi \
             --set sensor.resources.limits.cpu=2 \
-            --set collector.collectionMethod=NO_COLLECTION \
+            --set collector.collectionMethod=CORE_BPF \
             --set collector.resources.requests.memory=100Mi \
             --set collector.resources.requests.cpu=50m \
             --set collector.resources.limits.memory=1Gi \
