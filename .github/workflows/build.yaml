@@ -796,11 +796,10 @@ jobs:
             ./config-controller \
             ./migrator \
             ./operator/cmd \
-            ./roxctl \
             ./sensor/admission-control \
             ./sensor/kubernetes \
-            ./sensor/upgrader \
-            ./compliance/virtualmachines/roxagent
+            ./sensor/upgrader
+          # roxctl and roxagent come from cli-build artifact, not built here
 
           mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
 
