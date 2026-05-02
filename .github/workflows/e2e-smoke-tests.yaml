@@ -541,41 +541,47 @@ jobs:
             --set scannerV4.db.resources.requests.memory=100Mi --set scannerV4.db.resources.requests.cpu=100m --set scannerV4.db.resources.limits.memory=2Gi \
             --set system.enablePodSecurityPolicies=false --set central.telemetry.enabled=false
 
-          # Phase 4: Wait for Central pod to be running, then port-forward.
-          # Only wait for central — scanner, sensor, collector start in background.
-          echo "Waiting for Central pod..."
-          kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout=5m
-          kubectl -n stackrox port-forward svc/central 8000:443 &
+          # Phase 4: Start port-forward immediately — don't wait for pod ready.
+          # Port-forward retries automatically when the pod isn't ready yet.
+          # Central takes ~20s to start; Cypress install takes ~30s.
+          # By the time Cypress runs the first test, Central is ready.
+          (
+            # Retry port-forward until Central pod exists and accepts connections
+            for i in $(seq 1 60); do
+              kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null && break
+              sleep 2
+            done
+          ) &
           echo "PF_PID=$!" >> "$GITHUB_ENV"
-          echo "Waiting for Central API..."
-          for i in $(seq 1 60); do
-            curl -sk https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
-            sleep 2
-          done
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/metadata" | jq -c .
 
-          # Phase 5: Deploy sensor — use roxctl for init bundle (proven, API format TBD)
-          roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
-            --insecure-skip-tls-verify --insecure \
-            central init-bundles generate "shard-${{ strategy.job-index }}" \
-            --output sensor-init-bundle.yaml
+          # Phase 5: Background — wait for Central API, generate auth token, deploy sensor.
+          # All of this runs while cypress-io/github-action installs deps (~30s).
+          (
+            for i in $(seq 1 90); do curl -sk https://localhost:8000/v1/metadata >/dev/null 2>&1 && break; sleep 2; done
 
-          helm upgrade --install -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART}" \
-            --set image.registry="${IMAGE_REGISTRY}" --set imagePullSecrets.allowNone=true \
-            --set clusterName=remote --set centralEndpoint=central.stackrox.svc:443 \
-            --set sensor.resources.requests.memory=100Mi --set sensor.resources.requests.cpu=100m --set sensor.resources.limits.memory=4Gi \
-            --set collector.collectionMethod=CORE_BPF \
-            --set collector.resources.requests.memory=100Mi --set collector.resources.requests.cpu=50m --set collector.resources.limits.memory=1Gi \
-            --set admissionControl.replicas=1 --set admissionControl.resources.requests.memory=100Mi --set admissionControl.resources.requests.cpu=50m \
-            -f sensor-init-bundle.yaml
+            # Generate auth token — write to file, read by auth step
+            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8000/v1/apitokens/generate" \
+              -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
 
-          # Seed data + wait for npm — both in background, don't block
-          kubectl create namespace qa-test 2>/dev/null || true
-          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 &
-          # npm install handled by cypress-io/github-action (install: true)
+            # Deploy sensor
+            roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
+              --insecure-skip-tls-verify --insecure \
+              central init-bundles generate "shard-${{ strategy.job-index }}" \
+              --output sensor-init-bundle.yaml 2>/dev/null
+            helm upgrade --install -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART}" \
+              --set image.registry="${IMAGE_REGISTRY}" --set imagePullSecrets.allowNone=true \
+              --set clusterName=remote --set centralEndpoint=central.stackrox.svc:443 \
+              --set sensor.resources.requests.memory=100Mi --set sensor.resources.requests.cpu=100m --set sensor.resources.limits.memory=4Gi \
+              --set collector.collectionMethod=CORE_BPF \
+              --set collector.resources.requests.memory=100Mi --set collector.resources.requests.cpu=50m --set collector.resources.limits.memory=1Gi \
+              --set admissionControl.replicas=1 --set admissionControl.resources.requests.memory=100Mi --set admissionControl.resources.requests.cpu=50m \
+              -f sensor-init-bundle.yaml >/dev/null 2>&1
+            kubectl create namespace qa-test 2>/dev/null || true
+            kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null
+          ) &
 
-          kubectl -n stackrox get pods
-          echo "Deploy complete"
+          echo "Helm submitted. Central + sensor starting in background. Proceeding to Cypress install..."
 
           # Start resource monitor
           (
@@ -591,13 +597,19 @@ jobs:
           ) > /tmp/resource-monitor.log 2>&1 &
           echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
 
-      - name: Generate auth token
+      - name: Wait for auth token (generated in background)
         run: |
-          ROX_AUTH_TOKEN=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://localhost:8000/v1/apitokens/generate" \
-            -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token')
+          # Auth token is generated by the background process in the deploy step.
+          # Wait for the file to appear (Central API ready + token generated).
+          echo "Waiting for auth token..."
+          for i in $(seq 1 90); do
+            [ -s /tmp/rox-auth-token ] && break
+            sleep 2
+          done
+          ROX_AUTH_TOKEN=$(cat /tmp/rox-auth-token)
           echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_AUTH_TOKEN}"
+          echo "Auth token ready"
 
       - name: Run Cypress shard
         uses: cypress-io/github-action@v6
