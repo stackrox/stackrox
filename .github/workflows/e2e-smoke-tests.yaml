@@ -65,7 +65,9 @@ jobs:
           NODE="${CLUSTER_NAME}-control-plane"
           for img in \
             "${IMAGE_REGISTRY}/main:${TAG}" \
-            "${IMAGE_REGISTRY}/central-db:${TAG}"; do
+            "${IMAGE_REGISTRY}/central-db:${TAG}" \
+            "${IMAGE_REGISTRY}/scanner-v4:${TAG}" \
+            "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
             echo "Pulling $img into KinD node..."
             docker exec "$NODE" ctr -n k8s.io images pull \
               --user "${QUAY_USER}:${QUAY_PASS}" \
@@ -74,7 +76,7 @@ jobs:
           done
 
           # Verify images are loaded
-          docker exec "$NODE" crictl images | grep -E "main|central-db" || true
+          docker exec "$NODE" crictl images | grep -E "main|central-db|scanner" || true
 
       - name: Extract roxctl from main image
         env:
@@ -108,10 +110,9 @@ jobs:
           echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
-          # Deploy central-services. No scanner, no persistence.
+          # Deploy full central-services stack including scanner-v4.
           # Resource requests set to minimal so pods always schedule.
-          # No per-pod limits — the docker container cap (KIND_MEMORY_LIMIT)
-          # is the real ceiling. Monitor tracks actual usage.
+          # The docker container cap (KIND_MEMORY_LIMIT) is the real ceiling.
           helm upgrade --install -n stackrox stackrox-central-services central-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
             --set imagePullSecrets.allowNone=true \
@@ -126,13 +127,31 @@ jobs:
             --set central.db.resources.limits.cpu=2 \
             --set central.persistence.none=true \
             --set scanner.disable=true \
-            --set scannerV4.disable=true \
+            --set scannerV4.disable=false \
+            --set scannerV4.indexer.replicas=1 \
+            --set scannerV4.indexer.resources.requests.memory=100Mi \
+            --set scannerV4.indexer.resources.requests.cpu=100m \
+            --set scannerV4.indexer.resources.limits.memory=2Gi \
+            --set scannerV4.indexer.resources.limits.cpu=2 \
+            --set scannerV4.matcher.replicas=1 \
+            --set scannerV4.matcher.resources.requests.memory=100Mi \
+            --set scannerV4.matcher.resources.requests.cpu=100m \
+            --set scannerV4.matcher.resources.limits.memory=2Gi \
+            --set scannerV4.matcher.resources.limits.cpu=2 \
+            --set scannerV4.db.resources.requests.memory=100Mi \
+            --set scannerV4.db.resources.requests.cpu=100m \
+            --set scannerV4.db.resources.limits.memory=2Gi \
+            --set scannerV4.db.resources.limits.cpu=2 \
             --set system.enablePodSecurityPolicies=false \
             --set central.telemetry.enabled=false
 
           echo "Waiting for Central..."
           kubectl -n stackrox rollout status deploy/central --timeout=5m
           kubectl -n stackrox rollout status deploy/central-db --timeout=5m
+          echo "Waiting for Scanner V4..."
+          kubectl -n stackrox rollout status deploy/scanner-v4-indexer --timeout=5m || true
+          kubectl -n stackrox rollout status deploy/scanner-v4-matcher --timeout=5m || true
+          kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=5m || true
 
       - name: Wait for Central API
         run: |
@@ -163,20 +182,31 @@ jobs:
           helm upgrade --install -n stackrox stackrox-secured-cluster-services sensor-chart/ \
             --set image.registry="${IMAGE_REGISTRY}" \
             --set imagePullSecrets.allowNone=true \
-            --set clusterName=kind-smoke \
+            --set clusterName=remote \
             --set centralEndpoint=central.stackrox.svc:443 \
             --set sensor.resources.requests.memory=100Mi \
             --set sensor.resources.requests.cpu=100m \
             --set sensor.resources.limits.memory=4Gi \
             --set sensor.resources.limits.cpu=2 \
             --set collector.collectionMethod=NO_COLLECTION \
-            --set admissionControl.replicas=0 \
-            --set admissionControl.listenOnCreates=false \
-            --set admissionControl.listenOnUpdates=false \
+            --set collector.resources.requests.memory=100Mi \
+            --set collector.resources.requests.cpu=50m \
+            --set collector.resources.limits.memory=1Gi \
+            --set collector.resources.limits.cpu=1 \
+            --set collector.complianceResources.requests.memory=100Mi \
+            --set collector.complianceResources.requests.cpu=50m \
+            --set collector.complianceResources.limits.memory=1Gi \
+            --set collector.complianceResources.limits.cpu=1 \
+            --set admissionControl.replicas=1 \
+            --set admissionControl.resources.requests.memory=100Mi \
+            --set admissionControl.resources.requests.cpu=50m \
+            --set admissionControl.resources.limits.memory=500Mi \
+            --set admissionControl.resources.limits.cpu=500m \
             -f sensor-init-bundle.yaml
 
           echo "Waiting for Sensor..."
           kubectl -n stackrox rollout status deploy/sensor --timeout=5m
+          kubectl -n stackrox rollout status deploy/admission-control --timeout=3m || true
 
       - name: Resource snapshot (pre-test)
         run: |
@@ -243,13 +273,13 @@ jobs:
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
 
-      - name: Run full Cypress e2e suite (excluding scanner-dependent tests)
+      - name: Run full Cypress e2e suite
         if: success()
         working-directory: ui/apps/platform
         run: |
           npx cypress run \
             --browser chrome \
-            --config 'baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},excludeSpecPattern=[**/vulnerabilities/**,**/vulnmanagement/**],video=false,screenshotOnRunFailure=false'
+            --config 'baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false'
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
