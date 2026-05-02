@@ -810,12 +810,29 @@ jobs:
             [[ -f "$f" ]] && after="${after}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
           done
 
-          if [[ "$before" == "$after" ]] && [[ -n "$before" ]]; then
+          echo "=== BuildID comparison ==="
+          echo "BEFORE: $before"
+          echo "AFTER:  $after"
+
+          # Compare per-binary
+          changed_binaries=()
+          while IFS=: read -r name id; do
+            [[ -z "$name" ]] && continue
+            after_id=$(echo "$after" | grep -oP "(?<=${name}:)[^;]+")
+            if [[ "$id" != "$after_id" ]]; then
+              changed_binaries+=("$name")
+              echo "CHANGED: $name"
+              echo "  was: $id"
+              echo "  now: $after_id"
+            fi
+          done < <(echo "$before" | tr ';' '\n')
+
+          if [[ ${#changed_binaries[@]} -eq 0 ]] && [[ -n "$before" ]]; then
             echo "go_changed=false" >> "$GITHUB_OUTPUT"
             echo "No binaries changed (all buildIDs match)"
           else
             echo "go_changed=true" >> "$GITHUB_OUTPUT"
-            echo "Binaries changed — will rebuild Docker images"
+            echo "Changed binaries: ${changed_binaries[*]:-all (no cached binaries)}"
           fi
 
       - name: Login to docker.io
