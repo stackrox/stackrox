@@ -846,6 +846,8 @@ jobs:
 
       - name: Build UI if changed
         id: ui-build
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           ARCH="${{ matrix.arch }}"
           # UI changes are detected by checking the ui/ directory
