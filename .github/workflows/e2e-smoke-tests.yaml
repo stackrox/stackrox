@@ -447,35 +447,10 @@ jobs:
       matrix:
         include:
           # === FAST SHARDS — no data dependencies, ~60s startup ===
-          - shard: "1-access"
-            specs: "cypress/integration/accessControl/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**"
-            needs_data: "false"
+          # Only running fastest shard for startup optimization iterations
           - shard: "2-clusters"
             specs: "cypress/integration/clusters/**,cypress/integration/administration/**"
             needs_data: "false"
-          - shard: "3-config"
-            specs: "cypress/integration/configmanagement/**"
-            needs_data: "false"
-          - shard: "4-ui"
-            specs: "cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**,cypress/integration/credentialExpiry/**"
-            needs_data: "false"
-          - shard: "5-policy"
-            # policies, violations, main, top-level — all pass without extra data
-            specs: "cypress/integration/policies/**,cypress/integration/violations/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
-            needs_data: "false"
-          # === COLLECTOR-DEPENDENT — needs network flows + process events ===
-          # Tests: risk/deploymentTimeline (looks for 'collector' in risk list),
-          #        networkGraph/* (topology nodes), listeningEndpoints/* (network data)
-          - shard: "6-collector-data"
-            specs: "cypress/integration/risk/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**"
-            needs_data: "true"
-          # === NO SCANNER V4 — matching Prow config (ROX_SCANNER_V4=false) ===
-          # Prow UI e2e tests disable scanner V4. These tests run without CVE data
-          # and rely on UI rendering/navigation, not vulnerability scan results.
-          # Failures here match what Prow sees (tests designed for no-scanner-v4).
-          - shard: "7-vuln"
-            specs: "cypress/integration/vulnmanagement/**,cypress/integration/vulnerabilities/**"
-            needs_data: "true"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
