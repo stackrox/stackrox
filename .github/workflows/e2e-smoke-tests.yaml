@@ -464,34 +464,17 @@ jobs:
             specs: "cypress/integration/policies/**,cypress/integration/violations/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
             needs_data: "false"
           # === COLLECTOR-DEPENDENT — needs network flows + process events ===
-          # FIX: tests assume collector has reported data. Needs busybox workload
-          # generating traffic + time for collector to observe and report.
-          # Tests: risk/deploymentTimeline (looks for 'collector' deployment in risk list),
-          #        networkGraph/* (expects sensor/scanner nodes in topology),
-          #        listeningEndpoints/* (expects central-db listening endpoints),
-          #        risk/filteredWorkflowViews, risk/riskSearchToPolicy
+          # Tests: risk/deploymentTimeline (looks for 'collector' in risk list),
+          #        networkGraph/* (topology nodes), listeningEndpoints/* (network data)
           - shard: "6-collector-data"
             specs: "cypress/integration/risk/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**"
             needs_data: "true"
-          # === SCANNER-DEPENDENT — needs CVE data from auto-scanned StackRox images ===
-          # Scanner-v4 auto-scans images from deployed workloads. In Prow, tests run
-          # after 2+ hours giving scanner time to index. Here we seed nginx:1.12 and
-          # wait, but scanner needs 5-10 min to index CVEs.
-          # Tests expect CVE data from built-in platform components (central, sensor).
-          # Split into 3 shards for parallelism and to identify which tests pass
-          # with limited scanner data vs which need full indexing.
-          - shard: "7-scanner-vulnmgmt"
-            # Legacy vuln management tables — need CVE data in old react-table format
-            specs: "cypress/integration/vulnmanagement/**"
-            needs_data: "true"
-          - shard: "8-scanner-exceptions"
-            # Exception management — needs CVEs to create deferral/false-positive requests
-            # Also: nodeCves, platformCves, VulnerabilityReporting, snoozeWorkflow
-            specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
-            needs_data: "true"
-          - shard: "9-scanner-workload"
-            # Workload CVE pages — need scanner to have indexed deployment images
-            specs: "cypress/integration/vulnerabilities/workloadCves/**"
+          # === NO SCANNER V4 — matching Prow config (ROX_SCANNER_V4=false) ===
+          # Prow UI e2e tests disable scanner V4. These tests run without CVE data
+          # and rely on UI rendering/navigation, not vulnerability scan results.
+          # Failures here match what Prow sees (tests designed for no-scanner-v4).
+          - shard: "7-vuln"
+            specs: "cypress/integration/vulnmanagement/**,cypress/integration/vulnerabilities/**"
             needs_data: "true"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
@@ -521,8 +504,9 @@ jobs:
 
           (
             NODE="${CLUSTER_NAME}-control-plane"
-            echo "$(date +%T) Deploy started"
-            echo "Filesystem info:" && df -Th /tmp /dev/shm 2>/dev/null || true
+
+            # Matching Prow UI e2e config: NO Scanner V4 (ROX_SCANNER_V4=false).
+            # Only 2 images needed: main + central-db. Saves ~1GB memory + 20s pull time.
 
             # Phase 1: KinD create + docker pull main (for roxctl) — parallel
             kind create cluster --name "$CLUSTER_NAME" &
@@ -531,20 +515,16 @@ jobs:
             PID_DOCKER=$!
 
             wait $PID_KIND
-            echo "$(date +%T) KinD ready"
             docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
 
-            # Extract roxctl from host docker
             wait $PID_DOCKER
-            echo "$(date +%T) Main image pulled"
             cid=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
             mkdir -p bin && docker cp "${cid}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl && docker rm "${cid}"
             chmod +x bin/roxctl
             export PATH="$(pwd)/bin:$PATH"
 
-            # Phase 2: ctr pull directly into KinD (fastest proven method — compressed download)
-            for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
-                       "${IMAGE_REGISTRY}/scanner-v4:${TAG}" "${IMAGE_REGISTRY}/scanner-v4-db:${TAG}"; do
+            # Phase 2: Pull only main + central-db into KinD + generate charts
+            for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}"; do
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
             done
             CENTRAL_CHART=central-chart
@@ -555,7 +535,7 @@ jobs:
             sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" "${CENTRAL_CHART}/internal/defaults.yaml"
             find "${SENSOR_CHART}/internal" -name "*.yaml" -exec sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" {} +
 
-            # Deploy central
+            # Phase 3: Deploy central — no scanner V4 (matching Prow gke_ui_e2e_tests.py)
             kubectl create namespace stackrox
             helm upgrade --install -n stackrox stackrox-central-services "${CENTRAL_CHART}" \
               --set image.registry="${IMAGE_REGISTRY}" \
@@ -566,11 +546,10 @@ jobs:
               --set central.db.resources.requests.memory=100Mi --set central.db.resources.requests.cpu=100m \
               --set central.db.resources.limits.memory=4Gi --set central.db.resources.limits.cpu=2 \
               --set central.persistence.none=true \
-              --set scanner.disable=true --set scannerV4.disable=false \
-              --set scannerV4.indexer.replicas=1 --set scannerV4.indexer.resources.requests.memory=100Mi --set scannerV4.indexer.resources.requests.cpu=100m --set scannerV4.indexer.resources.limits.memory=2Gi \
-              --set scannerV4.matcher.replicas=1 --set scannerV4.matcher.resources.requests.memory=100Mi --set scannerV4.matcher.resources.requests.cpu=100m --set scannerV4.matcher.resources.limits.memory=2Gi \
-              --set scannerV4.db.resources.requests.memory=100Mi --set scannerV4.db.resources.requests.cpu=100m --set scannerV4.db.resources.limits.memory=2Gi \
-              --set system.enablePodSecurityPolicies=false --set central.telemetry.enabled=false >/dev/null
+              --set scanner.disable=true \
+              --set scannerV4.disable=true \
+              --set system.enablePodSecurityPolicies=false \
+              --set central.telemetry.enabled=false >/dev/null
 
             # Port-forward with retry
             while true; do
@@ -583,7 +562,7 @@ jobs:
               "https://localhost:8000/v1/apitokens/generate" \
               -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
 
-            # Deploy sensor
+            # Deploy sensor with collector
             roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
               --insecure-skip-tls-verify --insecure \
               central init-bundles generate "shard-${{ strategy.job-index }}" \
@@ -597,32 +576,17 @@ jobs:
               --set admissionControl.replicas=1 --set admissionControl.resources.requests.memory=100Mi --set admissionControl.resources.requests.cpu=50m \
               -f sensor-init-bundle.yaml >/dev/null 2>&1
 
-            # Seed test data
+            # Seed workloads for collector data (risk, networkGraph tests)
             kubectl create namespace qa-test 2>/dev/null || true
-            kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=2 2>/dev/null
+            kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null
             kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
               sh -c 'while true; do wget -q -O /dev/null http://central.stackrox:443 2>/dev/null; sleep 5; done' 2>/dev/null
 
-            # Force-scan the nginx image via API — don't wait for auto-scan.
-            # This triggers immediate scanner indexing instead of waiting for the
-            # periodic scan cycle. Tests need CVE data from this image.
-            echo "Triggering image scan via API..."
-            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8000/v1/images/scan" \
-              -X POST -d '{"imageName":"docker.io/library/nginx:1.12","force":true}' \
-              > /tmp/scan-result.json 2>/dev/null
-            cve_count=$(jq '.scan.components | map(.vulns // [] | length) | add // 0' /tmp/scan-result.json 2>/dev/null || echo 0)
-            echo "Scan complete: $cve_count CVEs found"
-
             # Wait for sensor to report deployments
-            echo "Waiting for deployments..."
             for i in $(seq 1 60); do
               dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
                 "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
-              if [ "${dep_count:-0}" -gt 5 ]; then
-                echo "Ready: $dep_count deployments"
-                break
-              fi
+              [ "${dep_count:-0}" -gt 5 ] && break
               sleep 3
             done
             touch /tmp/data-ready
