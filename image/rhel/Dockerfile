@@ -97,8 +97,8 @@ COPY --link bin/roxctl*            /assets/downloads/cli/
 
 COPY --link *VERSION /
 
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
-    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
+RUN ln -sf /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
+    ln -sf /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
 
 EXPOSE 8443
 
