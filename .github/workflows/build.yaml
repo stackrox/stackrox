@@ -976,19 +976,32 @@ jobs:
                       [roxagent]="/stackrox/bin/roxagent"
                     )
 
+                    # Convert unchanged components to --from=cached
+                    # Binaries: check stub vs real
                     for bin_name in "${!BIN_MAP[@]}"; do
                       dest="${BIN_MAP[$bin_name]}"
                       src_file="bin/${bin_name}"
-                      local_file="image/rhel/bin/${bin_name}"
+                      local_bin="bin/linux_${ARCH}/${bin_name}"
 
-                      # Check if local binary is a stub (<2MB) or real (>50MB)
-                      if [[ -f "$local_file" ]] && [[ $(stat -c%s "$local_file" 2>/dev/null || echo 0) -gt 2000000 ]]; then
+                      if [[ -f "$local_bin" ]] && [[ $(stat -c%s "$local_bin" 2>/dev/null || echo 0) -gt 2000000 ]]; then
                         echo "  ${bin_name}: changed → COPY from build context"
                       else
                         echo "  ${bin_name}: unchanged → COPY --from=cached"
-                        sed -i "s|COPY --link ${src_file} .*${dest}|COPY --link --from=cached ${dest} ${dest}|" /tmp/Dockerfile.optimized
+                        sed -i "s|COPY --link ${src_file} .*|COPY --link --from=cached ${dest} ${dest}|" /tmp/Dockerfile.optimized
                       fi
                     done
+
+                    # Non-binary layers: use --from=cached for all
+                    # (UI, docs, OSS notices, roxctl CLIs, VERSION)
+                    sed -i 's|COPY --link ui /ui|COPY --link --from=cached /ui /ui|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link ./docs/api/v1/swagger.json .*|COPY --link --from=cached /stackrox/static-data/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link ./docs/api/v2/swagger.json .*|COPY --link --from=cached /stackrox/static-data/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link THIRD_PARTY_NOTICES .*|COPY --link --from=cached /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link bin/roxctl\*.*|COPY --link --from=cached /assets/downloads/cli /assets/downloads/cli|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link \*VERSION /|COPY --link --from=cached /VERSION /VERSION|' /tmp/Dockerfile.optimized
+
+                    echo "Generated Dockerfile.optimized:"
+                    grep -n 'COPY --link' /tmp/Dockerfile.optimized
 
                     # Copy only changed binaries to build context
                     mkdir -p image/rhel/bin
