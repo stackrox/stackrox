@@ -765,7 +765,7 @@ jobs:
           key: go-buildids-v1-build-and-push-combined-${{ matrix.arch }}-${{ github.sha }}
           restore-keys: go-buildids-v1-build-and-push-combined-${{ matrix.arch }}-
 
-      - name: Detect Go changes and build
+      - name: Go build with buildID caching
         id: go-build
         run: |
           ARCH="${{ matrix.arch }}"
@@ -781,26 +781,9 @@ jobs:
             -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
             -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}"
 
-          # Fast path: check if any Go source changed since the cached build.
-          # If not, stubs + re-tag is safe (Docker never sees the stubs).
-          # If yes, do a full go build to produce real binaries for Docker.
-          go_files_changed=true
-          if [[ -f /tmp/buildid-cache/buildids.txt && -f /tmp/buildid-cache/commit_sha ]]; then
-            cached_sha=$(cat /tmp/buildid-cache/commit_sha)
-            changed_files=$(git diff --name-only "$cached_sha" HEAD -- '*.go' 'go.mod' 'go.sum' 2>/dev/null || echo "UNKNOWN")
-            if [[ -z "$changed_files" ]]; then
-              go_files_changed=false
-              echo "No Go files changed since ${cached_sha:0:10}"
-            else
-              echo "Go files changed since ${cached_sha:0:10}:"
-              echo "$changed_files" | head -10
-            fi
-          else
-            echo "No cached buildIDs — full build required"
-          fi
-
-          if [[ "$go_files_changed" == "false" ]]; then
-            # FAST PATH: no Go changes → create stubs for buildID verification
+          # Create stub binaries from cached buildIDs.
+          # Go's buildID check skips unchanged binaries in ~0.1s each.
+          if [[ -f /tmp/buildid-cache/buildids.txt ]]; then
             echo "Creating stub binaries from cached buildIDs"
             echo 'package main; func main(){}' > /tmp/stub.go
             GOOS=linux GOARCH="$ARCH" go build -ldflags="-s -w" -trimpath -o /tmp/stub-template /tmp/stub.go
@@ -808,53 +791,48 @@ jobs:
 
             while read -r name bid; do
               [[ -z "$name" || -z "$bid" ]] && continue
-              out="bin/linux_${ARCH}/${name}"
-              cp /tmp/stub-template "$out"
-              python3 -c "import sys; d=open(sys.argv[1],'rb').read(); open(sys.argv[1],'wb').write(d.replace(sys.argv[2].encode(),sys.argv[3].encode(),1))" "$out" "$STUB_ID" "$bid"
+              cp /tmp/stub-template "bin/linux_${ARCH}/${name}"
+              python3 -c "import sys; d=open(sys.argv[1],'rb').read(); open(sys.argv[1],'wb').write(d.replace(sys.argv[2].encode(),sys.argv[3].encode(),1))" "bin/linux_${ARCH}/${name}" "$STUB_ID" "$bid"
             done < /tmp/buildid-cache/buildids.txt
-
-            # Verify with go build — should skip all in ~1s
-            GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
-              go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
-              -ldflags "${LDFLAGS}" -tags "${GOTAGS}" \
-              ./central ./compliance/cmd/compliance ./config-controller \
-              ./migrator ./operator/cmd ./sensor/admission-control \
-              ./sensor/kubernetes ./sensor/upgrader
-            mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
-
-            # Check: did Go rebuild anything? (file size > 2MB = real binary, not stub)
-            any_rebuilt=false
-            for f in bin/linux_${ARCH}/*; do
-              [[ -f "$f" ]] && size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f") && \
-                [[ $size -gt 2000000 ]] && any_rebuilt=true && echo "Rebuilt: $(basename "$f") (${size} bytes)"
-            done
-
-            if [[ "$any_rebuilt" == "true" ]]; then
-              echo "::warning::BuildID stubs didn't match — unexpected. Falling back to full build."
-              go_files_changed=true
-            else
-              echo "go_changed=false" >> "$GITHUB_OUTPUT"
-              echo "main_changed=false" >> "$GITHUB_OUTPUT"
-              echo "All buildIDs matched — stubs confirmed no changes"
-            fi
+            echo "Created $(wc -l < /tmp/buildid-cache/buildids.txt) stubs"
           fi
 
-          if [[ "$go_files_changed" == "true" ]]; then
-            # FULL PATH: Go files changed → build real binaries for Docker
-            rm -f bin/linux_${ARCH}/*  # Remove any stubs
+          # Single go build: checks each binary's buildID independently.
+          # Stubs with matching IDs skip instantly. Changed binaries rebuild.
+          GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
+            go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
+            -ldflags "${LDFLAGS}" -tags "${GOTAGS}" \
+            ./central ./compliance/cmd/compliance ./config-controller \
+            ./migrator ./operator/cmd ./sensor/admission-control \
+            ./sensor/kubernetes ./sensor/upgrader
+          mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
 
-            GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
-              go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
-              -ldflags "${LDFLAGS}" -tags "${GOTAGS}" \
-              ./central ./compliance/cmd/compliance ./config-controller \
-              ./migrator ./operator/cmd ./sensor/admission-control \
-              ./sensor/kubernetes ./sensor/upgrader
-            mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
+          # Detect what changed: stubs are ~1.2MB, real binaries are >50MB
+          changed=()
+          for f in bin/linux_${ARCH}/*; do
+            [[ -f "$f" ]] || continue
+            size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+            if [[ $size -gt 2000000 ]]; then
+              changed+=("$(basename "$f")")
+            fi
+          done
 
+          if [[ ${#changed[@]} -eq 0 ]] && [[ -f /tmp/buildid-cache/buildids.txt ]]; then
+            echo "go_changed=false" >> "$GITHUB_OUTPUT"
+            echo "main_changed=false" >> "$GITHUB_OUTPUT"
+            echo "No binaries changed (all stubs preserved)"
+          else
             echo "go_changed=true" >> "$GITHUB_OUTPUT"
             echo "main_changed=true" >> "$GITHUB_OUTPUT"
-            echo "Built real binaries for Docker"
+            echo "Changed binaries: ${changed[*]:-all (no cached buildIDs)}"
           fi
+
+          # Save buildIDs for next run
+          mkdir -p /tmp/buildid-cache
+          for f in bin/linux_${ARCH}/*; do
+            [[ -f "$f" ]] && echo "$(basename "$f") $(go tool buildid "$f")"
+          done > /tmp/buildid-cache/buildids.txt
+          echo "Saved $(wc -l < /tmp/buildid-cache/buildids.txt) buildIDs"
 
           # Save buildIDs + commit SHA for next run
           mkdir -p /tmp/buildid-cache
