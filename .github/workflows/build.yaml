@@ -833,13 +833,6 @@ jobs:
             [[ -f "$f" ]] && echo "$(basename "$f") $(go tool buildid "$f")"
           done > /tmp/buildid-cache/buildids.txt
           echo "Saved $(wc -l < /tmp/buildid-cache/buildids.txt) buildIDs"
-
-          # Save buildIDs + commit SHA for next run
-          mkdir -p /tmp/buildid-cache
-          for f in bin/linux_${ARCH}/*; do
-            [[ -f "$f" ]] && echo "$(basename "$f") $(go tool buildid "$f")"
-          done > /tmp/buildid-cache/buildids.txt
-          echo "${{ github.sha }}" > /tmp/buildid-cache/commit_sha
           echo "Saved $(wc -l < /tmp/buildid-cache/buildids.txt) buildIDs at ${{ github.sha }}"
 
       - name: Login to docker.io
@@ -913,14 +906,6 @@ jobs:
             push_context="merge-to-master"
           fi
 
-          # Prepare build context once (only needed if main image will be built)
-          if [[ "$MAIN_CHANGED" == "true" ]]; then
-            rm -rf ui/build
-            cp -a "ui-RHACS_BRANDING/build" ui/build
-            GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
-            cp -f ./*VERSION image/rhel/
-          fi
-
           for brand in RHACS_BRANDING STACKROX_BRANDING; do
             echo "::group::${brand} images"
             export ROX_PRODUCT_BRANDING="${brand}"
@@ -952,13 +937,6 @@ jobs:
               fi
 
               if [[ "$need_build" == "true" ]]; then
-                # Swap UI for this branding if not already done
-                if [[ "$IMAGE" == "main" ]]; then
-                  rm -rf ui/build
-                  cp -a "ui-${brand}/build" ui/build
-                  GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
-                fi
-
                 TAGS="${DST}${NL}${SRC}"
                 if [[ "$push_context" == "merge-to-master" ]]; then
                   TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:latest-${ARCH}"
@@ -969,7 +947,66 @@ jobs:
 
                 case "$IMAGE" in
                   main)
-                    DOCKERFILE=image/rhel/Dockerfile
+                    # Swap UI for this branding
+                    rm -rf ui/build
+                    cp -a "ui-${brand}/build" ui/build
+                    cp -f ./*VERSION image/rhel/
+
+                    # Generate optimized Dockerfile: unchanged binaries use COPY --from=cached
+                    # (references existing registry layer, no local file needed).
+                    # Changed binaries use COPY --link from build context.
+                    # Only copy changed binaries to image dir (not all).
+                    CACHED="${SRC}"
+                    cp image/rhel/Dockerfile /tmp/Dockerfile.optimized
+
+                    # Add cached image stage after the FROM lines
+                    sed -i "1i ARG CACHED_IMAGE=${CACHED}" /tmp/Dockerfile.optimized
+                    sed -i "/^FROM ubi-micro-base$/a FROM \${CACHED_IMAGE} AS cached" /tmp/Dockerfile.optimized
+
+                    # For each binary: if stub (unchanged), use --from=cached
+                    declare -A BIN_MAP=(
+                      [central]="/stackrox/central"
+                      [migrator]="/stackrox/bin/migrator"
+                      [compliance]="/stackrox/bin/compliance"
+                      [kubernetes-sensor]="/stackrox/bin/kubernetes-sensor"
+                      [sensor-upgrader]="/stackrox/bin/sensor-upgrader"
+                      [admission-control]="/stackrox/bin/admission-control"
+                      [config-controller]="/stackrox/bin/config-controller"
+                      [roxagent]="/stackrox/bin/roxagent"
+                    )
+
+                    for bin_name in "${!BIN_MAP[@]}"; do
+                      dest="${BIN_MAP[$bin_name]}"
+                      src_file="bin/${bin_name}"
+                      local_file="image/rhel/bin/${bin_name}"
+
+                      # Check if local binary is a stub (<2MB) or real (>50MB)
+                      if [[ -f "$local_file" ]] && [[ $(stat -c%s "$local_file" 2>/dev/null || echo 0) -gt 2000000 ]]; then
+                        echo "  ${bin_name}: changed → COPY from build context"
+                      else
+                        echo "  ${bin_name}: unchanged → COPY --from=cached"
+                        sed -i "s|COPY --link ${src_file} .*${dest}|COPY --link --from=cached ${dest} ${dest}|" /tmp/Dockerfile.optimized
+                      fi
+                    done
+
+                    # Copy only changed binaries to build context
+                    mkdir -p image/rhel/bin
+                    for f in bin/linux_${ARCH}/*; do
+                      [[ -f "$f" ]] || continue
+                      size=$(stat -c%s "$f" 2>/dev/null || echo 0)
+                      if [[ $size -gt 2000000 ]]; then
+                        name=$(basename "$f")
+                        # Apply renaming (kubernetes→kubernetes-sensor, etc.)
+                        case "$name" in
+                          kubernetes) cp "$f" image/rhel/bin/kubernetes-sensor ;;
+                          upgrader) cp "$f" image/rhel/bin/sensor-upgrader ;;
+                          *) cp "$f" "image/rhel/bin/${name}" ;;
+                        esac
+                      fi
+                    done
+                    find image/rhel/bin -type f -exec chmod +x {} \;
+
+                    DOCKERFILE=/tmp/Dockerfile.optimized
                     CONTEXT=image/rhel
                     BUILD_ARGS=(
                       "--build-arg" "ROX_PRODUCT_BRANDING=${brand}"
