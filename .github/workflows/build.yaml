@@ -808,12 +808,9 @@ jobs:
 
             while read -r name bid; do
               [[ -z "$name" || -z "$bid" ]] && continue
-              cp /tmp/stub-template "bin/linux_${ARCH}/${name}"
-              python3 -c "
-with open('bin/linux_${ARCH}/${name}', 'rb') as f: data = f.read()
-patched = data.replace(b'${STUB_ID}', b'${bid}', 1)
-with open('bin/linux_${ARCH}/${name}', 'wb') as f: f.write(patched)
-"
+              out="bin/linux_${ARCH}/${name}"
+              cp /tmp/stub-template "$out"
+              python3 -c "import sys; d=open(sys.argv[1],'rb').read(); open(sys.argv[1],'wb').write(d.replace(sys.argv[2].encode(),sys.argv[3].encode(),1))" "$out" "$STUB_ID" "$bid"
             done < /tmp/buildid-cache/buildids.txt
 
             # Verify with go build — should skip all in ~1s
