@@ -597,34 +597,35 @@ jobs:
               --set admissionControl.replicas=1 --set admissionControl.resources.requests.memory=100Mi --set admissionControl.resources.requests.cpu=50m \
               -f sensor-init-bundle.yaml >/dev/null 2>&1
 
-            # Seed test data — create workloads that exercise StackRox features:
-            # - nginx:1.12 has known CVEs → scanner indexes them → exception mgmt tests work
-            # - busybox runs processes + network connections → collector reports to sensor
-            #   → risk/deploymentTimeline, networkGraph, listeningEndpoints tests get data
+            # Seed test data
             kubectl create namespace qa-test 2>/dev/null || true
             kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=2 2>/dev/null
-            kubectl -n qa-test run busybox --image=busybox --restart=Always -- sh -c 'while true; do wget -q -O /dev/null http://central.stackrox:443 2>/dev/null; sleep 5; done' 2>/dev/null
+            kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
+              sh -c 'while true; do wget -q -O /dev/null http://central.stackrox:443 2>/dev/null; sleep 5; done' 2>/dev/null
 
-            # Wait for sensor to report deployments AND scanner to index images.
-            # Tests need:
-            # - risk/* tests: deployments visible in risk list (sensor → central)
-            # - vulnerabilities/* tests: CVE data from scanned images (scanner)
-            # - networkGraph/* tests: network flow data (collector)
-            echo "Waiting for deployments and image scans..."
-            for i in $(seq 1 90); do
+            # Force-scan the nginx image via API — don't wait for auto-scan.
+            # This triggers immediate scanner indexing instead of waiting for the
+            # periodic scan cycle. Tests need CVE data from this image.
+            echo "Triggering image scan via API..."
+            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8000/v1/images/scan" \
+              -X POST -d '{"imageName":"docker.io/library/nginx:1.12","force":true}' \
+              > /tmp/scan-result.json 2>/dev/null
+            cve_count=$(jq '.scan.components | map(.vulns // [] | length) | add // 0' /tmp/scan-result.json 2>/dev/null || echo 0)
+            echo "Scan complete: $cve_count CVEs found"
+
+            # Wait for sensor to report deployments
+            echo "Waiting for deployments..."
+            for i in $(seq 1 60); do
               dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
                 "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
-              img_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-                "https://localhost:8000/v1/imagecount" 2>/dev/null | jq -r '.count // 0')
-              if [ "${dep_count:-0}" -gt 5 ] && [ "${img_count:-0}" -gt 0 ]; then
-                echo "Ready: $dep_count deployments, $img_count images indexed"
-                touch /tmp/data-ready
+              if [ "${dep_count:-0}" -gt 5 ]; then
+                echo "Ready: $dep_count deployments"
                 break
               fi
-              echo "  deployments=$dep_count images=$img_count (waiting...)"
-              sleep 5
+              sleep 3
             done
-            touch /tmp/data-ready  # Signal even on timeout so tests can proceed
+            touch /tmp/data-ready
           ) > /tmp/deploy.log 2>&1 &
 
           echo "Deploy started in background (PID $!). Proceeding to Cypress install..."
