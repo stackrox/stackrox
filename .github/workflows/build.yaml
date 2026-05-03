@@ -855,7 +855,10 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           if [[ -n "$PR_NUMBER" ]]; then
             echo "Checking PR #${PR_NUMBER} for UI file changes..."
-            if gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null | grep -q '^ui/'; then
+            pr_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>&1)
+            echo "PR files (first 20):"
+            echo "$pr_files" | head -20
+            if echo "$pr_files" | grep -q '^ui/'; then
               ui_changed=true
             fi
           else
