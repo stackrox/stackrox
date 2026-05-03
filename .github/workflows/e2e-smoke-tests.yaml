@@ -524,6 +524,7 @@ jobs:
             export PATH="$(pwd)/bin:$PATH"
 
             # Phase 2: Pull only main + central-db into KinD + generate charts
+            # Pull main + central-db only (no scanner — scanner tag differs from main tag)
             for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}"; do
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
             done
