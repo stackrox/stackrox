@@ -523,9 +523,11 @@ jobs:
             chmod +x bin/roxctl
             export PATH="$(pwd)/bin:$PATH"
 
-            # Phase 2: Pull only main + central-db into KinD + generate charts
-            # Pull main + central-db only (no scanner — scanner tag differs from main tag)
-            for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}"; do
+            # Phase 2: Pull images into KinD + generate charts
+            # Scanner uses its own version from SCANNER_VERSION file
+            SCANNER_TAG=$(cat SCANNER_VERSION)
+            for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
+                       "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}"; do
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
             done
             CENTRAL_CHART=central-chart
@@ -536,7 +538,7 @@ jobs:
             sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" "${CENTRAL_CHART}/internal/defaults.yaml"
             find "${SENSOR_CHART}/internal" -name "*.yaml" -exec sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" {} +
 
-            # Phase 3: Deploy central — no scanner V4 (matching Prow gke_ui_e2e_tests.py)
+            # Phase 3: Deploy central with legacy scanner (matching Prow: ROX_SCANNER_V4=false, SENSOR_SCANNER_SUPPORT=true)
             kubectl create namespace stackrox
             helm upgrade --install -n stackrox stackrox-central-services "${CENTRAL_CHART}" \
               --set image.registry="${IMAGE_REGISTRY}" \
@@ -547,7 +549,12 @@ jobs:
               --set central.db.resources.requests.memory=100Mi --set central.db.resources.requests.cpu=100m \
               --set central.db.resources.limits.memory=4Gi --set central.db.resources.limits.cpu=2 \
               --set central.persistence.none=true \
-              --set scanner.disable=true \
+              --set scanner.disable=false \
+              --set scanner.replicas=1 \
+              --set scanner.resources.requests.memory=100Mi --set scanner.resources.requests.cpu=100m \
+              --set scanner.resources.limits.memory=2Gi \
+              --set scanner.dbResources.requests.memory=100Mi --set scanner.dbResources.requests.cpu=100m \
+              --set scanner.dbResources.limits.memory=2Gi \
               --set scannerV4.disable=true \
               --set system.enablePodSecurityPolicies=false \
               --set central.telemetry.enabled=false >/dev/null
