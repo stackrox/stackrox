@@ -959,9 +959,10 @@ jobs:
                     CACHED="${SRC}"
                     cp image/rhel/Dockerfile /tmp/Dockerfile.optimized
 
-                    # Add cached image stage after the FROM lines
+                    # Add cached image as a stage before the final FROM
                     sed -i "1i ARG CACHED_IMAGE=${CACHED}" /tmp/Dockerfile.optimized
-                    sed -i "/^FROM ubi-micro-base$/a FROM \${CACHED_IMAGE} AS cached" /tmp/Dockerfile.optimized
+                    awk '/^FROM ubi-micro-base$/{print "FROM ${CACHED_IMAGE} AS cached"}1' /tmp/Dockerfile.optimized > /tmp/Dockerfile.tmp
+                    mv /tmp/Dockerfile.tmp /tmp/Dockerfile.optimized
 
                     # For each binary: if stub (unchanged), use --from=cached
                     declare -A BIN_MAP=(
