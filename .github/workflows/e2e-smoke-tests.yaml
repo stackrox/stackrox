@@ -587,11 +587,13 @@ jobs:
                 "https://localhost:8000/v1/imagecount" 2>/dev/null | jq -r '.count // 0')
               if [ "${dep_count:-0}" -gt 5 ] && [ "${img_count:-0}" -gt 0 ]; then
                 echo "Ready: $dep_count deployments, $img_count images indexed"
+                touch /tmp/data-ready
                 break
               fi
               echo "  deployments=$dep_count images=$img_count (waiting...)"
               sleep 5
             done
+            touch /tmp/data-ready  # Signal even on timeout so tests can proceed
           ) > /tmp/deploy.log 2>&1 &
 
           echo "Deploy started in background (PID $!). Proceeding to Cypress install..."
@@ -623,6 +625,17 @@ jobs:
           echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
           echo "::add-mask::${ROX_AUTH_TOKEN}"
           echo "Auth token ready"
+
+      - name: Wait for test data (scanner + sensor)
+        run: |
+          echo "Waiting for scanner to index images and sensor to report deployments..."
+          for i in $(seq 1 120); do
+            [ -f /tmp/data-ready ] && echo "Data ready" && break
+            sleep 2
+          done
+          # Show what's available
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -c .
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/imagecount" 2>/dev/null | jq -c .
 
       - name: Run Cypress shard
         uses: cypress-io/github-action@v6
