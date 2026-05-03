@@ -1,0 +1,67 @@
+{{- include "srox.init" . -}}
+
+{{ if ._rox.network.enableNetworkPolicies }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ext-to-central
+  namespace: {{.Release.Namespace}}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "allow-ext-to-central") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "allow-ext-to-central") | nindent 4 }}
+spec:
+  ingress:
+    {{- toYaml ._rox.central._netPolIngressRules | nindent 4 }}
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress
+
+{{ if ._rox.central.exposeMonitoring }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "central-monitoring") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "central-monitoring") | nindent 4 }}
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+    - Ingress
+{{ end }}
+
+{{- if ._rox.monitoring.openshift.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "central-monitoring-tls") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "central-monitoring-tls") | nindent 4 }}
+spec:
+  ingress:
+    - ports:
+      - port: 9091
+        protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+    - Ingress
+{{- end }}
+{{- end }}

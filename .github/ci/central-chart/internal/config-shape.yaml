@@ -1,0 +1,190 @@
+licenseKey: null # string
+imagePullSecrets:
+  username: null # string
+  password: null # string
+  allowNone: null # bool
+  useExisting: null # string | [string]
+  useFromDefaultServiceAccount: null # bool
+image:
+  registry: null # string
+env:
+  installMethod: null # string
+  openshift: null # bool
+  istio: null # bool
+  platform: null # string
+  offlineMode: null # bool
+  proxyConfig: null # string | dict
+  storageClasses:
+    all: {} # dict
+    default: null # string
+  pvcs:
+    names: null # [string]
+ca:
+  cert: null # string
+  key: null # string
+  generate: null # bool
+additionalCAs: null # string | [string] | dict
+central:
+  telemetry:
+    enabled: null # bool
+    storage:
+      endpoint: null # string
+      key: null # string
+  config: null # string | dict
+  dbConfig: null # string | dict
+  endpointsConfig: null # string | dict
+  nodeSelector: null # string | dict
+  tolerations: null # [dict]
+  hostAliases: null # [dict]
+  affinity: null # dict
+  priorityClassName: null # string
+  exposeMonitoring: null # bool
+  jwtSigner:
+    key: null # string
+    generate: null # bool
+  serviceTLS:
+    cert: null # string
+    key: null # string
+    generate: null # bool
+  defaultTLS:
+    cert: null # string
+    key: null # string
+    reference: null # string
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  adminPassword:
+    value: null # string
+    generate: null # bool
+    htpasswd: null # string
+  resources: null # string | dict
+  exposure:
+    loadBalancer:
+      enabled: null # bool
+      port: null # int
+      ip: null # string
+    nodePort:
+      enabled: null # bool
+      port: null # int
+    route:
+      enabled: null # bool
+      host: null # string
+  declarativeConfiguration:
+    mounts:
+      configMaps: null # [string]
+      secrets: null # [string]
+  extraMounts: null # [dict]
+  db:
+    nodeSelector: null # string | dict
+    tolerations: null # [dict]
+    hostAliases: null # [dict]
+    priorityClassName: null # string
+    source:
+      connectionString: null # string
+      minConns: null # int
+      maxConns: null # int
+      statementTimeoutMs: null #int
+    configOverride: null # string
+    password:
+      value: null # string
+      generate: null # bool
+    serviceTLS:
+      cert: null # string
+      key: null # string
+      generate: null # bool
+    image:
+      registry: null # string
+      name: null # string
+      tag: null # string
+      fullRef: null # string
+    resources: null # string | dict
+    persistence:
+      hostPath: null # string
+      persistentVolumeClaim:
+        claimName: null # string
+        createClaim: null # bool
+        storageClass: null # string
+        size: null # int | string
+        volume:
+          volumeSpec: null # dict
+      none: null # bool
+    extraMounts: null # [dict]
+customize:
+  labels: {} # dict
+  annotations: {} # dict
+  podLabels: {} # dict
+  podAnnotations: {} # dict
+  envVars: {} # dict
+  central:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+    db:
+      labels: {} # dict
+      annotations: {} # dict
+      podLabels: {} # dict
+      podAnnotations: {} # dict
+      envVars: {} # dict
+  config-controller:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-db:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-indexer:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-matcher:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-db:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  other: {} # dict
+allowNonstandardNamespace: null # bool
+allowNonstandardReleaseName: null # bool
+allowUnsupportedHelmVersion: null # bool
+enableOpenShiftMonitoring: null # bool
+configAsCode:
+  enabled: null # bool
+monitoring:
+  openshift:
+    enabled: null # bool
+meta:
+  useLookup: null # bool
+  fileOverrides: {} # dict
+  apiServer:
+    version: null # string
+    overrideAPIResources: null # [string]
+    extraAPIResources: null # [string]
+  noCreateStorageClass: null # bool
+globalPrefix: null # string
+network:
+  enableNetworkPolicies: null # bool
+system:
+  enablePodSecurityPolicies: null # bool

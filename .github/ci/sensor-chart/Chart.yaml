@@ -1,0 +1,8 @@
+apiVersion: v2 
+name: stackrox-secured-cluster-services
+icon: https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png
+description: Helm Chart for StackRox Secured Clusters
+type: application
+
+version: 400.7.0-rc.1
+appVersion: CI_TAG

@@ -1,0 +1,158 @@
+# Upgrading from the `sensor` Helm chart
+
+There are differences between the `sensor` Helm chart that was part of the
+StackRox Kubernetes Security Platform version 3.0.54 and the Secured Cluster
+Services Helm chart in the StackRox Kubernetes Security Platform version 3.0.55.
+
+Therefore, if you are using the StackRox Kubernetes Security Platform version 3.0.54
+or older, and you've used the `sensor` Helm chart, you must verify (and change)
+the following additional options to upgrade to the new Helm charts for the
+StackRox Kubernetes Security Platform version 3.0.55.
+
+## Namespace
+
+|Version 3.0.54 and older |Version 3.0.55 and newer |
+|-------------------------|-------------------------|
+|The `sensor` Helm chart creates all Kubernetes resources in the `stackrox` namespace, even if you've used the `-n`/`--namespace` flag to the `helm install` command.|The Secured Cluster Services Helm chart creates all resources in the namespace you specify by using the `-n`/`--namespace` flag. However, we recommend that you always install the chart in the `stackrox` namespace.|
+
+If you've previously installed the `sensor` Helm chart into a namespace other
+than `stackrox`, you **must** set the namespace override option to `stackrox`.
+
+To do this, either:
+- pass the `--set meta.namespaceOverride=stackrox` flag, or
+- add the following section in your configuration file:
+  ```yaml
+  meta:
+    namespaceOverride: stackrox
+  ```
+
+## Configuration file
+
+|Version 3.0.54 and older |Version 3.0.55 and newer  |
+|-------------------------|--------------------------|
+|Installation using the `sensor` Helm chart requires adding your customizations in the `values.yaml` file that is part of the chart.|The Secured Cluster Services Helm chart uses a separate configuration file.|
+
+> **IMPORTANT**
+>
+> If you are using the Secured Cluster Services Helm chart, **do not** modify
+> the `values.yaml` file that is part of the chart.
+
+We recommend that you always store the configuration in separate files:
+
+- `values-public.yaml`: include all non-sensitive configuration options in this
+  file.
+- `values-private.yaml`: include all sensitive configuration options such as
+  image pull secrets or certificates and keys.
+
+You can also use a separate file for the cluster init bundle. For more
+information, see the main [README.md](README.md) file.
+
+## Secrets injection
+
+|Version 3.0.54 and older |Version 3.0.55 and newer  |
+|-------------------------|--------------------------|
+|The `sensor` Helm chart downloads certificates and private keys specific to a single cluster and stores them in the `secrets/` directory.|The Secured Cluster Services Helm chart uses cluster init bundles. For more information, see the main [README.md](README.md) file.|
+
+To upgrade,
+1. Copy the `values.yaml` you used for the most recent installation or upgrade of the
+   `sensor` Helm chart and store it as `sensor-values.yaml`.
+1. Connect to the Kubernetes cluster on which you've previously installed the
+   `sensor` Helm chart.
+1. Run `./scripts/fetch-secrets.sh`. The `fetch-secrets.sh` script shows a YAML
+   file as output, which contains all secrets. Store the output of this command
+   in a file (you can use `./scripts/fetch-secrets.sh >secrets.yaml` to directly
+   write the command output to a file called `secrets.yaml`).
+1. Run the `helm upgrade` command and pass the YAML (from the previous step) file by
+   using the `-f` option:
+   ```sh
+   helm upgrade -n stackrox sensor stackrox/secured-cluster-services \
+       --reuse-values -f sensor-values.yaml -f <fetch-secrets-output.yaml> ...
+   ```
+   The above command assumes that you have added the https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/ Helm
+   chart repository to your local Helm installation. See the main [README.md](README.md)
+   for instructions on how to set this up.
+   If you want to use this chart from a local directory, replace
+   `stackrox/secured-cluster-services` with the path to the chart directory.
+
+> **NOTE**
+>
+> Although you can copy the `secrets` directory from your old `sensor` Helm
+> chart instead, we **do not** recommend doing it.
+
+
+## Helm-managed clusters
+
+When you use the Secured Cluster Services Helm chart, the clusters it creates
+are treated as Helm-managed by default. It means that whenever you run the
+`helm upgrade` command afterward, it applies the configuration changes specified
+in your Helm configuration file, overwriting any changes to settings you've done
+through the StackRox portal.
+
+Additionally, because of the differences between the Helm upgrade and the
+StackRox Kubernetes Security Platform automatic upgrade, you can't use
+the automatic upgrades option from the StackRox portal.
+
+If you don't want an upgraded cluster to be treated as Helm-managed, set the
+`helmManaged` configuration option to `false`.
+
+## Configuration format
+
+There are differences between the configuration format that the sensor Helm
+chart uses and the Secured Cluster Services Helm chart's uses. We recommend that
+you migrate to the new configuration format.
+
+Here is the list of old and new configuration options:
+
+|Old configuration option |New configuration option |
+|-------------------------|-------------------------|
+| `cluster.name` | `clusterName` |
+| `cluster.type` | Set `env.openshift` to `true` for `cluster.type=OPENSHIFT_CLUSTER` and `false` for `cluster.type=KUBERNETES_CLUSTER`. Leave unset to automatically detect (recommended). |
+| `endpoint.central` | `centralEndpoint` |
+| `endpoint.advertised` | `sensor.endpoint` |
+| `image.repository.main` | `image.main.name` |
+| `image.repository.collector` | `image.collector.name` |
+| `image.registry.main` | `image.main.registry` |
+| `image.registry.collector` | `image.collector.registry` |
+| `image.pullPolicy.main` | `image.main.pullPolicy` |
+| `image.pullPolicy.collector` | `image.collector.pullPolicy` |
+| `image.tag.main` | `image.main.tag` |
+| `image.tag.collector` | `image.collector.tag` |
+| `config.collectionMethod` | `collector.collectionMethod` |
+| `config.admissionControl.createService` | `admissionControl.listenOnCreates` |
+| `config.admissionControl.listenOnUpdates` | `admissionControl.listenOnUpdates` |
+| `config.admissionControl.enableService` | `admissionControl.dynamic.enforceOnCreates` |
+| `config.admissionControl.enforceOnUpdates` | `admissionControl.dynamic.enforceOnUpdates` |
+| `config.admissionControl.scanInline` | `admissionControl.dynamic.scanInline` |
+| `config.admissionControl.disableBypass` | `admissionControl.dynamic.disableBypass` |
+| `config.admissionControl.timeout` | `admissionControl.dynamic.timeout` |
+| `config.registryOverride` | `registryOverride` |
+| `config.disableTaintTolerations` | `collector.disableTaintTolerations` |
+| `config.createUpgraderServiceAccount` | `createUpgraderServiceAccount` |
+| `config.createSecrets` | `createSecrets` |
+| `config.offlineMode` | This option has no effect and will be removed. |
+| `config.sensorResources` | `sensor.resources` |
+| `config.admissionControlResources` | `admissionControl.resources` |
+| `config.collectorResources` | `collector.resources` |
+| `config.complianceResources` | `collector.complianceResources` |
+| `config.exposeMonitoring` | `exposeMonitoring` |
+| `envVars` | See example below |
+
+**Custom environment variables:** The old format for custom environment variable settings was
+```yaml
+envVars:
+- name: ENV_VAR1
+  value: "value1"
+- name: ENV_VAR2
+  value: "value2"
+...
+```
+
+In the new configuration format, rewrite this as:
+```yaml
+customize:
+  envVars:
+    ENV_VAR1: "value1"
+    ENV_VAR2: "value2"
+```
+You can find out more about customizing object labels, annotations, and environment variables in the main
+[README.md](README.md).

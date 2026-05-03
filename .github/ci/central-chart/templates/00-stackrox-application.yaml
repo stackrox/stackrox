@@ -1,0 +1,124 @@
+{{- include "srox.init" . -}}
+
+{{- if has "app.k8s.io/v1beta1/Application" ._rox._apiServer.apiResources -}}
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: stackrox
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "application" "stackrox") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "application" "stackrox") | nindent 4 }}
+    {{ if eq ._rox.image.registry "quay.io/stackrox-io" }}
+    kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/StackRox_icon.png" | b64enc }}"
+    {{ else }}
+    kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/Red_Hat-Hat_icon.png" | b64enc }}"
+    {{ end }}
+spec:
+  descriptor:
+    type: StackRox
+    version: {{ .Chart.AppVersion | quote }}
+    description: |-
+      StackRox Kubernetes Security Platform
+
+      Version {{ .Chart.AppVersion }}
+
+      ## Thank you for installing StackRox!
+
+      <br>
+
+      #### Support
+
+      [Email support@stackrox.com](mailto:support@stackrox.com?cc=sales@stackrox.com&Subject=StackRox%20Support%20Question&Body=Dear%20StackRox%20support,)
+
+      ## Connecting to StackRox
+
+      <br>
+
+      #### Directly using a Load Balancer
+
+      When deploying StackRox with the `Load Balancer` network configuration, the service can be accessed directly.
+
+      $CONNECT
+
+      #### Tunneling via Port Forward
+
+      When deploying StackRox with the `Node Port` or `None` network configuration, the service must be accessed using a port forward tunnel.
+
+      - Step 1 - Start the port forward tunnel to the StackRox Central service.
+
+      ```
+      $ kubectl -n stackrox port-forward svc/central 8443:443
+      ```
+
+      - Step 2 - In a browser, [visit https://localhost:8443](https://localhost:8443) to access StackRox.
+
+    keywords:
+      - "stackrox"
+      - "kube"
+      - "security"
+    maintainers:
+      - name: StackRox, Inc.
+        url: https://stackrox.com
+    owners:
+      - name: StackRox, Inc.
+        url: https://stackrox.com
+    links:
+      - description: StackRox Help Documentation
+        url: "https://help.stackrox.com"
+
+  info:
+    - name: StackRox namespace
+      value: stackrox
+    - name: StackRox admin username
+      value: "admin"
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stackrox
+
+  componentKinds:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: PersistentVolumeClaim
+    - group: ''
+      kind: PersistentVolume
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apps
+      kind: Deployment
+{{- if ._rox.network.enableNetworkPolicies }}
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+{{- end }}
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: route.openshift.io
+      kind: Route
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: storage.k8s.io
+      kind: StorageClass
+    - group: networking.istio.io
+      kind: DestinationRule
+{{- if ._rox.system.enablePodSecurityPolicies }}
+    - group: policy
+      kind: PodSecurityPolicy
+{{- end }}
+{{- end }}

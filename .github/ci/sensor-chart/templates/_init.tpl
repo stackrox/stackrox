@@ -1,0 +1,380 @@
+{{/*
+    srox.init $
+
+    Initialization template for the internal data structures.
+    This template is designed to be included in every template file, but will only be executed
+    once by leveraging state sharing between templates.
+   */}}
+{{ define "srox.init" }}
+
+{{ $ := . }}
+
+{{/*
+    On first(!) instantiation, set up the $._rox structure, containing everything required by
+    the resource template files.
+   */}}
+{{ if not $._rox }}
+
+{{/*
+    Calculate the fingerprint of the input config.
+   */}}
+{{ $configFP := (.Values | toJson | sha256sum) }}
+
+{{/*
+    Initial Setup
+   */}}
+
+{{ $values := deepCopy $.Values }}
+{{ include "srox.applyCompatibilityTranslation" (list $ $values) }}
+
+{{/*
+    $rox / ._rox is the dictionary in which _all_ data that is modified by the init logic
+    is stored.
+    We ensure that it has the required shape, and then right after merging the user-specified
+    $.Values, we apply some bootstrap defaults.
+   */}}
+{{ $rox := deepCopy $values }}
+{{ $_ := set $ "_rox" $rox }}
+
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+{{/* Only merge scanner config shapes if kubectl output is disabled */}}
+  {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
+  {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
+  {{/* Only merge scanner-v4 config shapes if kubectl output is disabled and feature flag is enabled */}}
+  {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
+  {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
+
+{{ $_ = include "srox.mergeInto" (list $rox $configShape) }}
+{{ $_ = set $._rox "_configShape" $configShape }}
+
+{{/* Set the config fingerprint as computed or overridden via values. */}}
+{{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
+{{ $_ = set $._rox "_configFP" $configFP }}
+
+{{/* Global state (accessed from sub-templates) */}}
+{{ $state := dict }}
+{{ $_ = set $state "generated" dict }}
+{{ $_ = set $state "notes" list }}
+{{ $_ = set $state "warnings" list }}
+{{ $_ = set $state "referencedImages" dict }}
+{{ $_ = set $state "referencedStorageClasses" list }}
+{{ $_ = set $._rox "_state" $state }}
+
+{{- include "srox.checkVersionRequirements" $ -}}
+
+{{/* Sanity checks.*/}}
+{{- if not (kindIs "invalid" ._rox.clusterLabels) }}
+  {{- if not (kindIs "map" ._rox.clusterLabels) }}
+    {{ include "srox.fail" (printf "type mismatch: clusterLabels is a %s, but must be a dict" (kindOf ._rox.clusterLabels)) }}
+  {{- end }}
+  {{- range $key, $val := ._rox.clusterLabels }}
+    {{- if not (kindIs "string" $key) }}
+      {{ include "srox.fail" (printf "type mismatch: clusterLabels contains the key %v of type %s, but only string keys are allowed" $key (kindOf $key)) }}
+    {{- end }}
+    {{- if not (kindIs "string" $val) }}
+      {{ include "srox.fail" (printf "type mismatch: clusterLabels.%v is of type %s, but only string values are allowed" $key (kindOf $val)) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/*
+    API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not
+    allow setting overrides for those when using `helm template` or `--dry-run`. Thus,
+    if we rely on `.Capabilities.APIVersions` directly, we lose flexibility for our chart
+    in these settings. Therefore, we use custom fields such that a user in principle has
+    the option to inject via `--set`/`-f` everything we rely upon.
+   */}}
+{{ $apiResources := list }}
+{{ if not (kindIs "invalid" $._rox.meta.apiServer.overrideAPIResources) }}
+  {{ $apiResources = $._rox.meta.apiServer.overrideAPIResources }}
+{{ else }}
+  {{ range $apiResource := $.Capabilities.APIVersions }}
+    {{ $apiResources = append $apiResources $apiResource }}
+  {{ end }}
+{{ end }}
+{{ if $._rox.meta.apiServer.extraAPIResources }}
+  {{ $apiResources = concat $apiResources $._rox.meta.apiServer.extraAPIResources }}
+{{ end }}
+{{ $apiServerVersion := coalesce $._rox.meta.apiServer.version $.Capabilities.KubeVersion.Version }}
+{{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
+{{ $_ = set $._rox "_apiServer" $apiServer }}
+
+{{/*
+   Environment setup
+*/}}
+
+{{/* Detect openshift version */}}
+{{ include "srox.autoSenseOpenshiftVersion" (list $) }}
+
+{{/* Openshift monitoring */}}
+{{ if $._rox.enableOpenShiftMonitoring }}
+  {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
+{{ end }}
+{{/* Default `monitoring.openshift.enabled = true` unless `env.openshift != 4`. */}}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.enabled }}
+{{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" (eq $._rox.env.openshift 4))) }}
+{{ end }}
+{{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
+{{ end }}
+{{/* Detect enablePodSecurityPolicies */}}
+{{ include "srox.autoSensePodSecurityPolicies" (list $) }}
+
+{{ include "srox.setInstallMethod" (list $) }}
+
+{{ include "srox.applyDefaults" $ }}
+{{ include "srox.ensureCentralEndpointContainsPort" $ }}
+
+{{ include "srox.getStorageClasses" (list $) }}
+{{ include "srox.getPVCs" (list $) }}
+
+{{/* Expand applicable config values */}}
+{{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
+{{ include "srox.expandAll" (list $ $rox $expandables) }}
+
+{{ $_ = include "srox.loadAnnotationTemplates" $ }}
+
+{{/*
+    General validation of effective settings.
+   */}}
+
+{{ if not $.Release.IsUpgrade }}
+{{ if ne $._rox._namespace "stackrox" }}
+  {{ if $._rox.allowNonstandardNamespace }}
+    {{ include "srox.note" (list $ (printf "You have chosen to deploy to namespace '%s'." $._rox._namespace)) }}
+  {{ else }}
+    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true." $._rox._namespace) }}
+  {{ end }}
+{{ end }}
+{{ end }}
+
+{{/* If a cluster name should change the confirmNewClusterName value must match clusterName. */}}
+{{ if and $._rox.confirmNewClusterName (ne $._rox.confirmNewClusterName $._rox.clusterName) }}
+    {{ include "srox.fail"  (printf "Failed to change cluster name. Values for confirmNewClusterName '%s' did not match clusterName '%s'." $._rox.confirmNewClusterName $._rox.clusterName) }}
+{{ end }}
+
+
+{{ if not $.Release.IsUpgrade }}
+{{ if ne $.Release.Name $.Chart.Name }}
+  {{ if $._rox.allowNonstandardReleaseName }}
+    {{ include "srox.warn" (list $ (printf "You have chosen a release name of '%s', not '%s'. Accompanying scripts and commands in documentation might require adjustments." $.Release.Name $.Chart.Name)) }}
+  {{ else }}
+    {{ include "srox.fail" (printf "You have chosen a release name of '%s', not '%s'. We strongly recommend using the standard release name. If you must use a different name, set the 'allowNonstandardReleaseName' configuration option to true." $.Release.Name $.Chart.Name) }}
+  {{ end }}
+{{ end }}
+{{ end }}
+
+
+
+
+
+{{ if and (not $._rox.auditLogs.disableCollection) (ne $._rox.env.openshift 4) }}
+  {{ include "srox.fail" "'auditLogs.disableCollection' is set to false, but the chart is not being deployed in OpenShift 4 mode. Set 'env.openshift' to '4' in order to enable OpenShift 4 features." }}
+{{ end }}
+
+
+{{ if and $._rox.admissionControl.dynamic.enforceOnCreates (not $._rox.admissionControl.listenOnCreates) }}
+  {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnCreates' is set to true, while `admissionControl.listenOnCreates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
+{{ end }}
+
+{{ if and $._rox.admissionControl.dynamic.enforceOnUpdates (not $._rox.admissionControl.listenOnUpdates) }}
+  {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnUpdates' is set to true, while `admissionControl.listenOnUpdates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
+{{ end }}
+
+{{ if and (eq $._rox.env.openshift 3) $._rox.admissionControl.listenOnEvents }}
+  {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
+{{ end }}
+
+{{ if $._rox.collector.slimMode }}
+  {{ include "srox.warn" (list $ "collector.slimMode is set to true, but it has been removed in 4.7 after being deprecated since 4.5. This setting will be ignored.") }}
+{{ end }}
+
+{{/* Initial image pull secret setup. */}}
+{{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
+{{ include "srox.mergeInto" (list $._rox.collectorImagePullSecrets $._rox.imagePullSecrets) }}
+
+{{/* Additional CAs. */}}
+{{ $additionalCAList := list }}
+{{ if kindIs "string" $._rox.additionalCAs }}
+  {{ if $._rox.additionalCAs }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" "ca.crt" "contents" $._rox.additionalCAs) }}
+  {{ end }}
+{{ else if kindIs "slice" $._rox.additionalCAs }}
+  {{ range $contents := $._rox.additionalCAs }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" "ca.crt" "contents" $contents) }}
+  {{ end }}
+{{ else if kindIs "map" $._rox.additionalCAs }}
+  {{ range $name := keys $._rox.additionalCAs | sortAlpha }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" $name "contents" (get $._rox.additionalCAs $name)) }}
+  {{ end }}
+{{ else if not (kindIs "invalid" $._rox.additionalCAs) }}
+  {{ include "srox.fail" (printf "Invalid kind %s for additionalCAs" (kindOf $._rox.additionalCAs)) }}
+{{ end }}
+{{ range $path, $contents := .Files.Glob "secrets/additional-cas/**" }}
+  {{ $name := trimPrefix "secrets/additional-cas/" $path }}
+  {{ $additionalCAList = append $additionalCAList (dict "name" $name "contents" (toString $contents)) }}
+{{ end }}
+{{ $additionalCAs := dict }}
+{{ range $idx, $elem := $additionalCAList }}
+  {{ if not (kindIs "string" $elem.contents) }}
+    {{ include "srox.fail" (printf "Invalid non-string contents kind %s at index %d (%q) of additionalCAs" (kindOf $elem.contents) $idx $elem.name) }}
+  {{ end }}
+  {{/* In a k8s secret, no characters other than alphanumeric, '.', '_' and '-' are allowed. Also, for the
+       update-ca-certificates script to work, the file names must end in '.crt'. */}}
+
+  {{ $normalizedName := printf "%02d-%s.crt" $idx (regexReplaceAll "[^[:alnum:]._-]" $elem.name "-" | trimSuffix ".crt") }}
+  {{ $_ := set $additionalCAs $normalizedName $elem.contents }}
+{{ end }}
+{{ $_ = set $._rox "_additionalCAs" $additionalCAs }}
+
+{{/*
+    Final validation (after merging in defaults).
+   */}}
+
+{{ if and ._rox.helmManaged (not ._rox.clusterName) }}
+  {{ include "srox.fail" "No cluster name specified. Set 'clusterName' to the desired cluster name." }}
+{{ end }}
+
+{{/* Image settings */}}
+{{ include "srox.configureImage" (list $ ._rox.image.main) }}
+{{ include "srox.configureImage" (list $ ._rox.image.collector) }}
+{{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
+{{ include "srox.configureImage" (list $ ._rox.image.scannerV4) }}
+
+{{ include "srox.initGlobalPrefix" (list $) }}
+
+{{/* ManagedBy related settings */}}
+{{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
+     in case it was explicitly set `helmManaged=false`. */}}
+{{- if not ._rox.helmManaged }}
+  {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
+{{- end }}
+
+{{/*
+The following block checks for the validity of the provided init bundle. (`helm install ... -f <init-bundle.yaml>`)
+1. Throw an error if the wrong init-bundle format was provided (user wrongly passed an operator-formatted init-bundle to helm). We detect the presence of an operator init bundle by checking for the Kubernetes secret annotation "init-bundle.stackrox.io/name", that suggests a user has wrongly used `helm install ... -f <operator-init-bundle.yaml>.`
+2. Warn if the user specified both init bundles, e.g. `helm install ... -f <helm-init-bundle.yaml> -f <operator-init-bundle.yaml>`
+*/}}
+{{ $operatorInitBundlePresent := hasKey (._rox.metadata).annotations "init-bundle.stackrox.io/name" }}
+{{ $helmInitBundlePresent := and (not (empty ._rox.ca._cert)) (not (empty ._rox.sensor.serviceTLS._cert)) }}
+{{- if and $operatorInitBundlePresent (not $helmInitBundlePresent) }}
+    {{ include "srox.fail" "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation." }}
+{{- else if and $helmInitBundlePresent $operatorInitBundlePresent }}
+    {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.") }}
+{{- end }}
+
+{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
+{{- $crs := ._rox.crs -}}
+{{- $crsFile := get $crs "file" -}}
+{{- if and (kindIs "string" $crsFile) (not (empty $crsFile)) -}}
+  {{- if not ._rox._securedClusterCertRefresh -}}
+    {{- include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
+  {{- end -}}
+
+  {{- if $helmInitBundlePresent -}}
+    {{- include "srox.fail" "A cluster registration secret and an init bundle was provided -- please pick only one." -}}
+  {{- end -}}
+
+  {{- $crsManifest := $crsFile | fromYaml -}}
+  {{- if hasKey $crsManifest "Error" -}}
+    {{- include "srox.fail" (printf "Cluster registration secret file is invalid: %s" (get $crsManifest "Error")) -}}
+  {{- end -}}
+
+  {{/* First, extract the opaque CRS from the manifest. */}}
+  {{- $crsOpaque := dig "data" "crs" "" $crsManifest -}}
+  {{- if empty $crsOpaque -}}
+    {{ include "srox.fail" "Invalid cluster registration secret manifest: missing field data.crs in CRS secret manifest." -}}
+  {{- end -}}
+
+  {{/* Second, deserialize the opaque CRS. */}}
+  {{- $crsDeserialized := $crsOpaque | b64dec | b64dec | fromYaml -}}
+  {{- $crsCAs := dig "CAs" list $crsDeserialized -}}
+  {{- if empty $crsCAs -}}
+    {{ include "srox.fail" "Invalid cluster registration secret: no CAs found in CRS." -}}
+  {{- end -}}
+  {{- $crsCA := first $crsCAs -}}
+
+  {{- $_ = set $crs "_secret" $crsManifest -}}
+  {{- $_ = set $crs "_opaque" $crsOpaque -}}
+  {{- $_ = set $crs "_deserialized" $crsDeserialized -}}
+  {{- $_ = set $crs "_caCert" $crsCA -}}
+  {{- $_ = set $crs "_enabled" true -}}
+  {{- $_ = set $crs "_create" true -}}
+
+  {{- $_ = set ._rox.ca "_cert" $crsCA -}}
+  {{- $_ = set ._rox "createSecrets" false -}}
+{{- else if ._rox.crs.enabled -}}
+  {{- $_ = set $crs "_enabled" true -}}
+{{- end -}}
+
+{{- if empty ._rox.ca._cert }}
+  {{ include "srox.fail" "A CA certificate must be specified (please make sure that either an init bundle or a cluster registration secret has been provided)" }}
+{{- end }}
+
+{{ $imagePullSecretNames := list }}
+
+{{ if eq ._rox.scanner.disable false }}
+{{/*
+   Local scanner setup.
+  */}}
+  {{ $centralDeployment := dict }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+  {{ if $centralDeployment.result }}
+    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
+    {{ $_ := set $._rox.scanner "disable" true }}
+  {{ end }}
+
+  {{ if ne ._rox.scanner.mode "slim" }}
+    {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
+  {{ end }}
+
+  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+  {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
+  {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
+  {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
+
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner" }}
+{{ end }}
+
+{{/*
+   Local Scanner v4 Indexer setup.
+  */}}
+
+{{ $scannerV4Cfg := $._rox.scannerV4 }}
+
+
+
+{{/* Disable scanner v4 always in kubectl outputs */}}
+
+{{/* Copy secured-cluster-style image configuration to what the Scanner V4 configuration machinery expects. */}}
+{{ $_ := set $._rox.scannerV4 "image" $._rox.image.scannerV4 }}
+{{ $_ := set $._rox.scannerV4.db "image" $._rox.image.scannerV4DB }}
+
+{{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
+{{ if ._rox.scannerV4._dbEnabled }}
+  {{ include "srox.scannerV4Volume" $ }}
+{{ end }}
+
+{{ if ._rox.scannerV4._indexerEnabled }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner-v4" }}
+{{ end }}
+
+{{ if not (empty $imagePullSecretNames) }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
+  {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
+       set of all referenced images first. */}}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" $imagePullSecretNames $.Release.Namespace) }}
+{{ end }}
+
+{{/* Setup Image Pull Secrets.
+
+     Note: This must happen late, as we rely on "srox.configureImage" to collect the
+     set of all referenced images first. */}}
+{{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
+
+{{ end }}
+
+{{ end }}

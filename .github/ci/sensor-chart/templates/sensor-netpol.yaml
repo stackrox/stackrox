@@ -1,0 +1,95 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.network.enableNetworkPolicies }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "sensor") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "sensor") | nindent 4 }}
+spec:
+  ingress:
+  - from:
+      - podSelector:
+          matchLabels:
+            app: collector
+      - podSelector:
+          matchLabels:
+            service: collector
+      - podSelector:
+          matchLabels:
+            app: admission-control
+      {{- if ._rox.sensor.localImageScanning.enabled }}
+      - podSelector:
+          matchLabels:
+            app: scanner
+      {{- if ._rox.scannerV4._indexerEnabled }}
+      - podSelector:
+          matchLabels:
+            app: scanner-v4-indexer
+     {{- end }}
+     {{- end }}
+    ports:
+    - port: 8443
+      protocol: TCP
+  - ports:
+    - port: 9443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: sensor
+  policyTypes:
+    - Ingress
+
+{{ if ._rox.sensor.exposeMonitoring }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sensor-monitoring
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "sensor-monitoring") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "sensor-monitoring") | nindent 4 }}
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: sensor
+  policyTypes:
+    - Ingress
+{{ end }}
+
+{{- if ._rox.monitoring.openshift.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sensor-monitoring-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
+spec:
+  ingress:
+    - ports:
+      - port: 9091
+        protocol: TCP
+  podSelector:
+    matchLabels:
+      app: sensor
+  policyTypes:
+    - Ingress
+{{- end }}
+{{- end }}

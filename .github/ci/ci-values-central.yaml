@@ -1,0 +1,49 @@
+# CI values for KinD e2e smoke tests.
+# Minimal resources, no scanner v4, legacy scanner enabled.
+# Matches Prow gke_ui_e2e_tests.py config (ROX_SCANNER_V4=false).
+
+imagePullSecrets:
+  allowNone: true
+
+central:
+  persistence:
+    none: true
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 4Gi
+      cpu: 2
+  db:
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+      limits:
+        memory: 4Gi
+        cpu: 2
+  telemetry:
+    enabled: false
+
+scanner:
+  disable: false
+  replicas: 1
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+  dbResources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+
+scannerV4:
+  disable: true
+
+system:
+  enablePodSecurityPolicies: false

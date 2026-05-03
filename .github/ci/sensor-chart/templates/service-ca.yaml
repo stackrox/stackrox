@@ -1,0 +1,16 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: service-ca
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "service-ca") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: sensor
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "service-ca") | nindent 4 }}
+type: Opaque
+stringData:
+  ca.pem: |
+    {{- ._rox.ca._cert | nindent 4 }}

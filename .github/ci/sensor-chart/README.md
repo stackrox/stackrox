@@ -1,0 +1,497 @@
+# StackRox Kubernetes Security Platform - Secured Cluster Services Helm Chart
+
+This Helm chart allows you to deploy the necessary services on a StackRox
+secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
+Control. Optionally StackRox Scanner can be deployed, either alone or together
+with the new Scanner V4.
+
+If you want to install Secured Cluster Services for Red Hat Advanced Cluster Security,
+refer to [Installing the secured-cluster-services Helm chart](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html#installing-secured-cluster-services-quickly_acs-install-helm-quick).
+
+## Prerequisites
+
+To deploy the secured cluster services for the StackRox Kubernetes Security Platform, you must:
+- Have at least version 3.1 of the Helm tool installed on your machine
+
+> **IMPORTANT**
+>
+> We publish new Helm charts with every new release of the StackRox Kubernetes
+> Security Platform. Make sure to use a version of this chart that matches the
+> StackRox Kubernetes Security Platform version you have installed.
+
+## Add the canonical chart location as a Helm repository
+
+The canonical repository for StackRox Helm charts is https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/.
+To use StackRox Helm charts, run the following command:
+```sh
+helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+```
+Only run this command once per machine on which you want to use StackRox Helm
+charts.
+
+Before you deploy or upgrade a chart from a remote repository, you must
+run the following command:
+```sh
+helm repo update
+```
+
+## Install Secured Cluster Services
+
+Installing a new StackRox secured cluster requires a *cluster init bundle*. You
+can generate a **cluster init bundle** by using the `roxctl` CLI or the StackRox
+portal. You can use the same bundle to set up multiple StackRox secured
+clusters by providing it as an input to the `helm install` command.
+
+> **NOTE**:
+>
+> - The following sections assume that you have a safe way to pass secrets to
+>   the helm command.
+> - If not, you can decouple secret creation from installing or upgrading the
+>   Helm chart, see [Deployment with pre-created secrets](#deployment-with-pre-created-secrets) for more information.
+
+### Generate cluster init bundle
+> **NOTE**: Beginning with StackRox/ACS 4.6 there exists a modern alternative to init bundles which goes
+> by the name of cluster registration secrets (or 'CRS' for short) and will at some point replace
+> init bundles entirely. Cluster registration secrets and init bundles differ in their specific usage
+> semantics, please consult the RHACS documentation for details.
+>
+> Feel free to skip this section and continue with the next one ("Generate cluster
+> registration secret (CRS)") if you want to try out the new CRS-style of bootstrapping a new secured
+> cluster.
+>
+> In any case, you only need an init bundle *or* a CRS, not both.
+
+Run the following command to generate a **cluster init bundle**:
+```sh
+roxctl central init-bundles generate <cluster init bundle name> --output cluster-init-bundle.yaml
+```
+
+- This command creates a **cluster init bundle** called
+  `cluster-init-bundle.yaml`.
+- Make sure that you store this bundle securely as it contains secrets. You can
+  use the same bundle to set up multiple StackRox secured clusters.
+### Generate cluster registration secret (CRS)
+
+> **NOTE**: Skip this section if you have already created an init bundle.
+> You only need an init bundle *or* a CRS, not both.
+
+Run the following command to generate a **cluster registration secret**:
+```sh
+roxctl central crs generate <CRS name> --output crs.yaml
+```
+
+- This command creates a **cluster registration secret** and stores it in the file
+  `crs.yaml`.
+- Make sure that you store this file securely as it contains secrets. You can
+  use the same CRS to set up multiple StackRox secured clusters.
+
+### Deploy Secured Cluster Services
+
+You can use the following command to deploy secured cluster services using
+this Helm chart:
+```sh
+helm install -n stackrox --create-namespace \
+    stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+    [ -f <path to cluster-init-bundle.yaml> | --set-file crs.file=<path to crs.yaml> ] \
+    --set clusterName=<name of the secured cluster> \
+    --set centralEndpoint=<endpoint of Central service>
+```
+- In this command, you can replace the chart name
+  `stackrox/stackrox-secured-cluster-services` with the chart's file path if you have it
+  locally.
+- The provided cluster name can either denote the intended name for a new secured cluster
+  or the name of an existing cluster, in which case the name will be reused and associated
+  with the Kubernetes cluster on which the chart is installed.
+
+After you deploy the StackRox Kubernetes Security Platform Secured Cluster
+Services using the `helm install` command, you will see informative notes and
+warnings related to the installation. The new cluster automatically registers
+itself to StackRox Central, and is visible in the StackRox portal as a
+Helm-managed cluster. If the provided cluster name is already associated with
+an existing secured cluster, the name will be reused and associated with the
+cluster on which the chart is installed.
+
+In case you use image mirroring or otherwise access StackRox container images from non-standard location,
+you may also need to provide image pull credentials.
+There are several ways to inject the required credentials (if any) into the installation process:
+
+- **Explicitly specify username and password:** Use this if you are using a registry that supports username/password
+  authentication. Pass the following arguments to the `helm install` command:
+  ```sh
+  --set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>
+  ```
+- **Use pre-existing image pull secrets:** If you already have one or several image pull secrets
+  created in the namespace to which you are deploying, you can reference these in the following
+  way (we assume that your secrets are called `pull-secret-1` and `pull-secret-2`):
+  ```sh
+  --set imagePullSecrets.useExisting="pull-secret-1;pull-secret-2"
+  ```
+- **Do not use image pull secrets:** If you are pulling your images from quay.io/stackrox-io or a registry in a private
+  network that does not require authentication, or if the default service account in the namespace
+  to which you are deploying is already configured with appropriate image pull secrets, you do
+  not need to specify any additional image pull secrets.
+
+### Applying custom configuration options
+
+The secured cluster services Helm chart has many different configuration
+options. You can directly specify these options when you run the `helm install`
+command for simple use cases.
+
+However, we recommend storing your configuration in a file and using that file
+for future upgrades or reconfiguration using the `helm upgrade` command.
+
+#### Specifying options with `--set` parameter
+
+You can use the `--set` and `--set-file` parameter with the `helm install`
+command to specify various options to customize deployments quickly. However,
+don't use them for specifying complex configurations.
+
+For example,
+- **Configure cluster environment**:
+  ```sh
+  --set env.openshift=true
+  ```
+
+#### Using configuration YAML files and the `-f` command-line option
+
+We recommended that you store all custom configuration options in persisted files.
+
+The Secured Cluster Services Helm chart contains example configuration files
+(called `values-public.yaml.example` and `values-private.yaml.example`), that list
+all the available configuration options, along with documentation.
+
+Furthermore, the files `values-scanner.yaml.example`, `values-public-scanner-v4.yaml.example`
+and `values-private-scanner-v4.yaml.example` list the most commonly used configuration options
+for StackRox Scanner and Scanner V4.
+
+The following sample configuration file (`secured-cluster.yaml`) uses a few of
+the options which you can configure:
+- **`values-public.yaml`:**
+  ```yaml
+  clusterName: "acme-cluster-01"
+  centralEndpoint: "central.acme-labs.internal"
+
+  env:
+    istio: true  # enable istio support
+
+  sensor:
+    # Use custom resource overrides for sensor
+    resources:
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+
+  admissionControl:
+    dynamic:
+      disableBypass: true # Disable bypassing of Admission Controller
+
+  customize:
+    # Apply the important-service=true label for all objects managed by this chart.
+    labels:
+      important-service: true
+    # Set the CLUSTER=important-cluster environment variable for all containers in the
+    # collector deployment:
+    collector:
+      envVars:
+        CLUSTER: important-cluster
+  ```
+- **`values-private.yaml`**:
+  ```yaml
+  imagePullSecrets:
+    username: <username for StackRox image registry>
+    password: <password for StackRox image registry>
+  ```
+
+After you have created these YAML files, you can inject the configuration options into the
+installation process via the `-f` flag, i.e., by appending the following options to the
+`helm install` invocation:
+```sh
+helm install ... -f values-public.yaml -f values-private.yaml
+```
+
+#### Changing configuration options after deployment
+
+To make changes to the configuration of an existing deployment of the StackRox
+Secured Cluster Services:
+1. Change the configuration options in your YAML configuration file(s).
+1. Use the `-f` option and specify the configuration file's path when you
+   run the `helm upgrade` command.
+
+For example, to apply configuration changes for the secured cluster, use the following command:
+```sh
+helm upgrade -n stackrox \
+    stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+    --reuse-values \
+    -f values-public.yaml \
+    -f values-private.yaml
+```
+
+You can also specify configuration values using the `--set` or `--set-file`
+parameters. However, these options aren't saved, and you'll have to specify all
+the options again manually.
+
+#### Changing cluster name after deployment
+
+To change the name of the cluster shown in the StackRox portal, you must specify
+values for both the `--clusterName` and the `--confirmNewClusterName` options:
+
+```sh
+helm upgrade -n stackrox stackrox-secured-cluster-services --clusterName=<new-cluster-name> --confirmNewClusterName=<new-cluster-name>
+```
+
+> **NOTE:**
+>
+> When you change the cluster name:
+> - The StackRox Kubernetes Security Platform either creates a new cluster or
+>   reuses an existing cluster if a cluster with the same name already exists.
+> - The StackRox Kubernetes Security Platform doesn't rename the old cluster.
+>   The old cluster still shows up in the StackRox portal, but it doesn't
+>   receive any data. You must remove the old cluster if you don't want to see
+>   it in the StackRox portal.
+
+### Configuration
+
+The following table lists some common configuration parameters of this Helm
+chart and their default values:
+
+|Parameter |Description | Default value |
+|:---------|:-----------|:--------------|
+|`clusterName`| Name of your cluster. | |
+|`confirmNewClusterName`| You don't need to change this unless you upgrade and change the value for `clusterName`. In this case, set it to the new value of `clusterName`. This option exists to prevent you from [accidentally creating a new cluster with a different name](#changing-cluster-after-deployment). | `null` |
+|`centralEndpoint`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox.svc:443` |
+|`clusterLabels`| Custom labels associated with a secured cluster. Must be a dictionary where both keys and values are strings. | `{}` |
+|`additionalCAs`| Use it to add (named) PEM-encoded CA certificates for Sensor. | `{}` |
+|`imagePullSecrets.username`| Specify username for accessing image registry. |`null`|
+|`imagePullSecrets.password`| Specify password for accessing image registry. |`null`|
+|`imagePullSecrets.useExisting`| Specify existing Kubernetes image pull secrets that should be used for trying to pull StackRox images. |`[]`|
+|`imagePullSecrets.useFromDefaultServiceAccount`| This setting controls whether image pull secrets from a default service account in the target namespace should be used for image pulls. |`true`|
+|`imagePullSecrets.allowNone`| Enabling this setting indicates that no image pull secrets are required to be configured upon initial deployment. Use this setting if you are using a cluster-private registry that does not require authentication. |`false`|
+|`image.main.name`|Repository from which to download the main image. |`main` |
+|`image.collector.name`|Repository from which to download the collector image.  |`collector` |
+|`image.main.registry`| Address of the registry you are using for main image.|`quay.io/stackrox-io` |
+|`image.collector.registry`| Address of the registry you are using for collector image.|`quay.io/stackrox-io` |
+|`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
+|`collector.forceCollectionMethod`|Deprecated. This value has no effect. |`false` |
+|`collector.collectionMethod`|Either `CORE_BPF`, or `NO_COLLECTION`. |`CORE_BPF` |
+|`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
+|`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
+|`admissionControl.listenOnUpdates`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` events on Kubernetes objects.|`false` |
+|`admissionControl.listenOnEvents`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` Kubernetes events like `exec` and `portforward`.|`false` on OpenShift, `true` otherwise.|
+|`admissionControl.dynamic.enforceOnCreates`| It controls whether the StackRox Kubernetes Security Platform evaluates policies; if it’s disabled, all `AdmissionReview` requests are automatically accepted. You must specify `listenOnCreates` as `true` for this to work. |`false` |
+|`admissionControl.dynamic.enforceOnUpdates`| It controls whether the StackRox Kubernetes Security Platform evaluates policies for object updates; if it’s disabled, all `AdmissionReview` requests are automatically accepted. You must specify `listenOnUpdates` as `true` for this to work. |`false`|
+|`admissionControl.dynamic.scanInline`| |`false` |
+|`admissionControl.dynamic.disableBypass`|Set it to `true` to disable [bypassing the admission controller](https://help.stackrox.com/docs/manage-security-policies/use-admission-controller-enforcement/). |`false` |
+|`admissionControl.dynamic.timeout`|The maximum time in seconds, the StackRox Kubernetes Security Platform should wait while evaluating admission review requests. Use it to set request timeouts when you enable image scanning. If the image scan runs longer than the specified time, the StackRox Kubernetes Security Platform accepts the request. Other enforcement options, such as scaling the deployment to zero replicas, are still applied later if the image violates applicable policies.|`3` |
+|`registryOverride`|Use this parameter to override the default `docker.io` registry. Specify the name of your registry if you are using some other registry.| |
+|`createUpgraderServiceAccount`| Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes Security Platform creates a service account called `sensor-upgrader` in each secured cluster. This account is highly privileged but is only used during upgrades. If you don’t create this account, you will have to complete future upgrades manually if the Sensor doesn’t have enough permissions. See [Enable automatic upgrades for secured clusters](https://help.stackrox.com/docs/configure-stackrox/enable-automatic-upgrades/) for more information.|`false` |
+|`createSecrets`| Specify `false` to skip the orchestrator secret creation for the sensor, collector, and admission controller. | `true` |
+|`customize`|Modern interface for specifying custom metadata for resources, including labels, annotations and environment variables. See below for more information.|`{}`|
+
+
+The following table lists some advanced parameters, and you'll only need them in
+non-standard environments:
+
+|Parameter |Description | Default value |
+|:---------|:-----------|:--------------|
+|`image.main.tag`| Tag of `main` image to use.|`null` |
+|`image.collector.tag`| Tag of `collector` image to use.| `null` |
+|`image.main.pullPolicy`| Image pull policy for `main` images.|`IfNotPresent`|
+|`image.collector.pullPolicy`| Image pull policy for `collector` images.|`IfNotPresent`|
+|`sensor.resources`|Resource specification for Sensor.|See below.|
+|`collector.resources`|Resource specification for Collector.|See below.|
+|`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
+|`collector.nodeScanningResources`|Resource specification for Collector's Node Inventory container.|See below.|
+|`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
+|`collector.priorityClassName` | Name of a cluster's PriorityClass object to assign to Collector pods. | `null` (no PriorityClass assignment) |
+|`admissionControl.resources`|Resource specification for Admission Control.|See below.|
+|`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
+|`sensor.nodeSelector` | Node selector for Sensor pod placement. | `null` (no placement constraints) |
+|`collector.imagePullPolicy`| Kubernetes image pull policy for Collector. | `Always` when deploying in slim mode, otherwise `IfNotPresent`. |
+|`collector.complianceImagePullPolicy`| Kubernetes image pull policy for Collector. | `IfNotPresent` |
+|`admissionControl.imagePullPolicy`| Kubernetes image pull policy for Admission Control. | `IfNotPresent` |
+|`admissionControl.nodeSelector` | Node selector for Admission Control pods placement. | `null` (no placement constraints) |
+|`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
+|`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
+|`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
+|`scanner.disable`| Scan images stored in the cluster's local registries. | `true` |
+|`scannerV4.disable`| Enable Scanner V4. StackRox Scanner must be enabled as well (`scanner.disable=false``). | `true` |
+### Default resources
+
+Each of the baseline container's default resource settings are defined in the
+`internal/defaults/40-resources.yaml` file in this chart. The following table lists the YAML
+paths to the respective defaults for each container that this chart deploys:
+
+|Container        |Path in `internal/defaults/40-resources.yaml` |
+|:----------------|:---------------------------------------------|
+|Sensor           |`sensor.resources`                            |
+|Collector        |`collector.resources`                         |
+|Compliance       |`collector.complianceResources`               |
+|NodeInventory    |`collector.nodeScanningResources`             |
+|Admission Control|`admissionControl.resources`                  |
+
+Furthermore, default resource settings for StackRox Scanner and Scanner V4 can be
+found in the files `internal/defaults/70-scanner.yaml` and `internal/defaults/70-scanner-v4.yaml`.
+
+### Customization settings
+
+The `customize` setting allows specifying custom Kubernetes metadata (labels and
+annotations) for all objects created by this Helm chart and additional pod
+labels, pod annotations, and container environment variables for workloads.
+
+The configuration is hierarchical, in the sense that metadata defined at a more
+generic scope (for example, for all objects) can be overridden by metadata
+defined at a narrower scope (for example, only for the sensor deployment).
+
+For example:
+
+```
+customize:
+  # Extra metadata for all objects.
+  labels:
+    my-label-key: my-label-value
+  annotations:
+    my-annotation-key: my-annotation-value
+  # Extra pod metadata for all objects (only has an effect for workloads, i.e., deployments and daemonsets).
+  podLabels:
+    my-pod-label-key: my-pod-label-value
+  podAnnotations:
+    my-pod-annotation-key: my-pod-annotation-value
+  # Extra environment variables for all containers in all workloads.
+  envVars:
+    MY_ENV_VAR_NAME: MY_ENV_VAR_VALUE
+  # Extra metadata for the central deployment only.
+  sensor:
+    labels: {}
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    envVars: {}
+  # Extra metadata for the collector deployment only.
+  collector:
+    labels: {}
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    envVars: {}
+  # Extra metadata for the admission-control deployment only.
+  admission-control:
+    labels: {}
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    envVars: {}
+  # Extra metadata for all other objects. The keys in the following map can be
+  # an object name of the form "service/sensor", or a reference to all
+  # objects of a given type in the form "service/*". The values under each key
+  # are the five metadata overrides (labels, annotations, podLabels, podAnnotations, envVars)
+  # as specified above, though only the first two will be relevant for non-workload
+  # object types.
+  other:
+    "service/*":
+      labels: {}
+      annotations: {}
+```
+
+## Deployment with pre-created secrets
+
+The init bundle that you pass to the `helm` command using the `-f` flag creates
+Kubernetes secrets for TLS certificates. If you don't want Helm to manage your
+Kubernetes secrets, you can deploy the Secured Cluster Services chart without
+creating secrets. However, it requires that you always specify the StackRox CA
+certificate while installing or upgrading the Helm chart. This certificate
+doesn't need to be kept secret.
+
+1. **Obtain the CA certificate configuration** either through the StackRox
+   portal or by using the `roxctl` CLI.
+   - **StackRox portal**:
+     1. Navigate to **Platform Configuration** > **Integrations**.
+     1. Under the **Authentication Tokens** section, select **Cluster Init Bundle**.
+     1. Select **Get CA Config** on the top right to download the configuration
+        file called `ca-config.yaml`.
+   - **`roxctl CLI**:
+     1. Run the following command:
+        ```sh
+        roxctl central init-bundles fetch-ca --output ca-config.yaml
+        ```
+        This command writes the CA certificate configuration in a file called
+        `ca-config.yaml`.
+1. **Use the CA certificate configuration in your Helm installation**. When you
+   run the `helm install` or the `helm upgrade` command,
+   pass the option `-f ca-config.yaml`:
+   ```sh
+   helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+     -f ca-config.yaml \
+     <other options ...>
+   ```
+1. **Disable TLS secret creation**. To prevent Helm from creating Kubernetes
+   secrets for the StackRox service certificates, set the `createSecrets` option
+   to `false`. You can either specify `createSecrets` option in a YAML
+   configuration file (such as `values-public.yaml`) or pass it to the `helm`
+   command by adding the `--set createSecrets=false` option.
+
+### Required Kubernetes secrets
+
+The following list contains the Kubernetes `Secret` objects that you need to
+create in the `stackrox` namespace (or the custom namespace you are using) if
+you configure the Helm chart to not create TLS certificate secrets.
+
+- `sensor-tls` with data:
+  - `ca.pem`: PEM-encoded StackRox CA certificate
+  - `sensor-cert.pem`: PEM-encoded StackRox Sensor certificate
+  - `sensor-key.pem`: PEM-encoded private key for the StackRox Sensor certificate
+- `collector-tls` with data:
+  - `ca.pem`: PEM-encoded StackRox CA certificate
+  - `collector-cert.pem`: PEM-encoded StackRox Collector certificate
+  - `collector-key.pem`: PEM-encoded private key for the StackRox Collector certificate
+- `admission-control-tls` with data:
+  - `ca.pem`: PEM-encoded StackRox CA certificate
+  - `admission-control-cert.pem`: PEM-encoded StackRox Admission Control certificate
+  - `admission-control-key.pem`: PEM-encoded private key for the StackRox Admision Control certificate
+
+#### Obtaining secrets for an existing cluster
+
+If you upgrade from a previous Helm chart, you can create certificates specific
+to a particular cluster by using the following `roxctl` CLI command:
+
+```sh
+export ROX_API_TOKEN=<StackRox API token>
+roxctl -e <central endpoint and port> sensor generate-certs <cluster name>
+```
+Running this command create a file called `cluster-<cluster-name>-tls.yaml` in
+the current directory. The file contains YAML manifests for the
+[required Kubernetes secrets](#required-kubernetes-secrets).
+
+#### Obtaining secrets for an init bundle
+
+If you want to deploy multiple clusters using this Helm chart and want to create
+certificates that can be used to register new clusters on-the-fly, you can
+obtain the contents of an init bundle in the form of Kubernetes secrets. You can
+use the StackRox portal or the `roxctl` CLI for this.
+
+- **Using the StackRox portal**:
+  1. Navigate to **Platform Configuration** > **Integrations**.
+  1. Under the **Authentication Tokens** section, select **Cluster Init Bundle**.
+  1. Select the add **+** icon on the top left and enter a name for the new init
+     bundle.
+  1. Select **Generate**.
+  1. Select **Download Kubernetes Secrets File** at the bottom to save the
+     Kubernetes manifests to a file called
+     `<init-bundle-name>-cluster-init-secrets.yaml`.
+- **Using the `roxctl` CLI**:
+  1. run the following command:
+  ```sh
+  roxctl central init-bundles generate <name> --output-secrets cluster-init-secrets.yaml
+  ```
+  This command stores the Kubernetes secret manifests for the cluster init
+  certificates in a file called `cluster-init-secrets.yaml`.
+
+You can then use the YAML file to generate secrets through any method that you like, for example, using Sealed Secrets.
+
+> **NOTE**
+>
+> Even when you use the certificates from an init bundle, you still need to
+> specify the CA certificate configuration every time you install or upgrade the
+> Helm chart.

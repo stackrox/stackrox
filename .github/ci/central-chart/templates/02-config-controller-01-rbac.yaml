@@ -1,0 +1,45 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.configAsCode.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: config-controller-manager-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "config-controller-manager-role") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "config-controller-manager-role") | nindent 4 }}
+rules:
+  - apiGroups:
+    - config.stackrox.io
+    resources:
+    - securitypolicies
+    - securitypolicies/status
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: config-controller-manager-rolebinding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "config-controller-manager-rolebinding") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "config-controller-manager-rolebinding") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: config-controller-manager-role
+subjects:
+- kind: ServiceAccount
+  name: config-controller
+  namespace: {{.Release.Namespace}}
+{{- end }}
