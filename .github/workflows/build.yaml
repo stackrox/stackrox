@@ -728,9 +728,6 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
-      - pre-build-docs
-      - pre-build-oss-notice
-      - pre-build-ui
     if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
@@ -847,46 +844,33 @@ jobs:
         with:
           driver: docker
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        id: download-cli
-        continue-on-error: true
-        with:
-          name: cli-build
-
-      - name: Unpack cli build or create stubs
+      - name: Build UI if changed
+        id: ui-build
         run: |
-          if [[ -f cli-build.tgz ]]; then
-            tar xzf cli-build.tgz
-          else
-            mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
-            for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
-              echo "stub" > "bin/${arch}/roxctl"
-              cp "bin/${arch}/roxctl" "bin/${arch}/roxagent"
+          ARCH="${{ matrix.arch }}"
+          # UI changes are detected by checking the ui/ directory
+          # If unchanged, COPY --from=cached handles it in the Dockerfile
+          if git diff --name-only origin/${{ github.event.repository.default_branch }}...HEAD -- 'ui/' 2>/dev/null | grep -q .; then
+            echo "UI files changed — building inline"
+            echo "ui_changed=true" >> "$GITHUB_OUTPUT"
+
+            # Set up Node.js
+            node_version=$(python3 -c "import json; print(json.load(open('ui/package.json')).get('engines',{}).get('node','20'))")
+            echo "Using Node.js ${node_version}"
+            export PATH="/opt/hostedtoolcache/node/${node_version}/x64/bin:$PATH" 2>/dev/null || true
+
+            # Build UI for both brandings
+            for brand in RHACS_BRANDING STACKROX_BRANDING; do
+              ROX_PRODUCT_BRANDING="${brand}" make -C ui deps
+              ROX_PRODUCT_BRANDING="${brand}" make -C ui build
+              mkdir -p "ui-${brand}"
+              cp -a ui/build "ui-${brand}/build"
+              rm -rf ui/build
             done
-            echo "stub" > bin/windows_amd64/roxctl.exe
+          else
+            echo "No UI changes — will use --from=cached"
+            echo "ui_changed=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: docs-build
-          path: image/rhel/docs
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: oss-notice
-          path: image/rhel/THIRD_PARTY_NOTICES
-
-      - name: Download RHACS UI
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: ui-RHACS_BRANDING-build
-          path: ui-RHACS_BRANDING
-
-      - name: Download STACKROX UI
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: ui-STACKROX_BRANDING-build
-          path: ui-STACKROX_BRANDING
 
       - name: Build or re-tag images
         if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -923,8 +907,9 @@ jobs:
               # Decide: re-tag or rebuild?
               # - main image: rebuild only if main binaries changed
               # - roxctl/central-db: always re-tag (no Go binaries from our build)
+              UI_CHANGED="${{ steps.ui-build.outputs.ui_changed }}"
               need_build=false
-              if [[ "$IMAGE" == "main" && "$MAIN_CHANGED" == "true" ]]; then
+              if [[ "$IMAGE" == "main" ]] && [[ "$MAIN_CHANGED" == "true" || "$UI_CHANGED" == "true" ]]; then
                 need_build=true
               fi
 
@@ -947,9 +932,6 @@ jobs:
 
                 case "$IMAGE" in
                   main)
-                    # Swap UI for this branding
-                    rm -rf ui/build
-                    cp -a "ui-${brand}/build" ui/build
                     cp -f ./*VERSION image/rhel/
 
                     # Generate optimized Dockerfile: unchanged binaries use COPY --from=cached
@@ -993,7 +975,13 @@ jobs:
 
                     # Non-binary layers: use --from=cached for all
                     # (UI, docs, OSS notices, roxctl CLIs, VERSION)
-                    sed -i 's|COPY --link ui /ui|COPY --link --from=cached /ui /ui|' /tmp/Dockerfile.optimized
+                    if [[ "$UI_CHANGED" != "true" ]]; then
+                      sed -i 's|COPY --link ui /ui|COPY --link --from=cached /ui /ui|' /tmp/Dockerfile.optimized
+                    else
+                      # UI changed — need to copy branding-specific UI build to context
+                      rm -rf image/rhel/ui
+                      cp -a "ui-${brand}/build" image/rhel/ui
+                    fi
                     sed -i 's|COPY --link ./docs/api/v1/swagger.json .*|COPY --link --from=cached /stackrox/static-data/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json|' /tmp/Dockerfile.optimized
                     sed -i 's|COPY --link ./docs/api/v2/swagger.json .*|COPY --link --from=cached /stackrox/static-data/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json|' /tmp/Dockerfile.optimized
                     sed -i 's|COPY --link THIRD_PARTY_NOTICES .*|COPY --link --from=cached /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES|' /tmp/Dockerfile.optimized
