@@ -779,55 +779,50 @@ jobs:
           fi
           mkdir -p "bin/linux_${ARCH}"
 
-          # Record pre-build state (for change detection)
-          before=""
-          for f in bin/linux_${ARCH}/*; do
-            [[ -f "$f" ]] && before="${before}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
-          done
+          LDFLAGS="-s -w ${LDFLAGS_EXTRA} \
+            -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
+            -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}"
 
-          GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
-            go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
-            -ldflags "-s -w ${LDFLAGS_EXTRA} \
-              -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
-              -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}" \
-            -tags "${GOTAGS}" \
-            ./central \
-            ./compliance/cmd/compliance \
-            ./config-controller \
-            ./migrator \
-            ./operator/cmd \
-            ./sensor/admission-control \
-            ./sensor/kubernetes \
-            ./sensor/upgrader
-          # roxctl and roxagent come from cli-build artifact, not built here
+          # Build each binary individually so Go's buildID check skips
+          # unchanged ones instantly (~0.1s) and only walks the dep tree
+          # for changed ones (~3s each).
+          BINS="central:./central
+          compliance:./compliance/cmd/compliance
+          config-controller:./config-controller
+          migrator:./migrator
+          cmd:./operator/cmd
+          admission-control:./sensor/admission-control
+          kubernetes:./sensor/kubernetes
+          upgrader:./sensor/upgrader"
+
+          changed=()
+          while IFS=: read -r bin_name pkg; do
+            [[ -z "$bin_name" ]] && continue
+            out="bin/linux_${ARCH}/${bin_name}"
+            old_id=""
+            [[ -f "$out" ]] && old_id=$(go tool buildid "$out" 2>/dev/null)
+
+            GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
+              go build -buildvcs=false -trimpath -o "$out" \
+              -ldflags "${LDFLAGS}" -tags "${GOTAGS}" "$pkg"
+
+            new_id=$(go tool buildid "$out" 2>/dev/null)
+            if [[ "$old_id" != "$new_id" ]]; then
+              changed+=("$bin_name")
+              echo "CHANGED: $bin_name"
+            fi
+          done <<< "$BINS"
 
           mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
 
-          # Record post-build state
-          after=""
-          for f in bin/linux_${ARCH}/*; do
-            [[ -f "$f" ]] && after="${after}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
-          done
-
-          if [[ "$before" == "$after" ]] && [[ -n "$before" ]]; then
+          if [[ ${#changed[@]} -eq 0 ]]; then
             echo "go_changed=false" >> "$GITHUB_OUTPUT"
             echo "main_changed=false" >> "$GITHUB_OUTPUT"
-            echo "No binaries changed (all buildIDs match)"
+            echo "No binaries changed"
           else
             echo "go_changed=true" >> "$GITHUB_OUTPUT"
-            # Check if any binary in the main image changed (roxctl/central-db are separate)
-            # main image contains: central, compliance, config-controller, migrator,
-            # stackrox-operator, admission-control, kubernetes, upgrader
-            main_changed=false
-            for bin_name in central compliance config-controller migrator stackrox-operator admission-control kubernetes upgrader; do
-              old_id=$(echo ";${before}" | sed -n "s/.*;\(${bin_name}\):\([^;]*\).*/\2/p")
-              new_id=$(echo ";${after}" | sed -n "s/.*;\(${bin_name}\):\([^;]*\).*/\2/p")
-              if [[ "$old_id" != "$new_id" ]]; then
-                echo "CHANGED: ${bin_name}"
-                main_changed=true
-              fi
-            done
-            echo "main_changed=${main_changed}" >> "$GITHUB_OUTPUT"
+            echo "main_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changed: ${changed[*]}"
           fi
 
       - name: Login to docker.io
