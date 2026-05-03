@@ -446,22 +446,41 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # === FAST SHARDS — no data dependencies, ~60s startup ===
           - shard: "1-access"
             specs: "cypress/integration/accessControl/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**"
+            needs_data: "false"
           - shard: "2-clusters"
             specs: "cypress/integration/clusters/**,cypress/integration/administration/**"
+            needs_data: "false"
           - shard: "3-config"
             specs: "cypress/integration/configmanagement/**"
+            needs_data: "false"
           - shard: "4-ui"
             specs: "cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**,cypress/integration/credentialExpiry/**"
+            needs_data: "false"
           - shard: "5-policy"
-            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
-          - shard: "6-vuln-mgmt"
-            specs: "cypress/integration/vulnmanagement/**"
-          - shard: "7-vuln-except"
-            specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
-          - shard: "8-vuln-workload"
-            specs: "cypress/integration/vulnerabilities/workloadCves/**"
+            # policies, violations, main, top-level — all pass without extra data
+            specs: "cypress/integration/policies/**,cypress/integration/violations/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
+            needs_data: "false"
+          # === COLLECTOR-DEPENDENT — needs network flows + process events ===
+          # FIX: tests assume collector has reported data. Needs busybox workload
+          # generating traffic + time for collector to observe and report.
+          # Tests: risk/deploymentTimeline (looks for 'collector' deployment in risk list),
+          #        networkGraph/* (expects sensor/scanner nodes in topology),
+          #        listeningEndpoints/* (expects central-db listening endpoints),
+          #        risk/filteredWorkflowViews, risk/riskSearchToPolicy
+          - shard: "6-collector-data"
+            specs: "cypress/integration/risk/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**"
+            needs_data: "true"
+          # === SCANNER-DEPENDENT — needs CVE data from scanned images ===
+          # FIX: scanner-v4 takes 5-10 min to index nginx:1.12 CVEs.
+          # Tests need CVE data to exist for: deferral requests, CVE detail pages,
+          # legacy vuln management tables, workload CVE overview.
+          # Workaround: deploy nginx:1.12 and wait for image scan to complete.
+          - shard: "7-scanner-data"
+            specs: "cypress/integration/vulnmanagement/**,cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*,cypress/integration/vulnerabilities/workloadCves/**"
+            needs_data: "true"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
@@ -627,9 +646,10 @@ jobs:
           echo "Auth token ready"
 
       - name: Wait for test data (scanner + sensor)
+        if: matrix.needs_data == 'true'
         run: |
-          echo "Waiting for scanner to index images and sensor to report deployments..."
-          for i in $(seq 1 120); do
+          echo "This shard needs scanner/collector data. Waiting..."
+          for i in $(seq 1 180); do
             [ -f /tmp/data-ready ] && echo "Data ready" && break
             sleep 2
           done
