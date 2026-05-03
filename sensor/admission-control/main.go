@@ -1,5 +1,6 @@
 package main
 
+// test: isolated single-binary change for partial rebuild verification
 import (
 	"context"
 	"os"
