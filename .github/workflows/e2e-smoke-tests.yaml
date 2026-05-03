@@ -473,13 +473,25 @@ jobs:
           - shard: "6-collector-data"
             specs: "cypress/integration/risk/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**"
             needs_data: "true"
-          # === SCANNER-DEPENDENT — needs CVE data from scanned images ===
-          # FIX: scanner-v4 takes 5-10 min to index nginx:1.12 CVEs.
-          # Tests need CVE data to exist for: deferral requests, CVE detail pages,
-          # legacy vuln management tables, workload CVE overview.
-          # Workaround: deploy nginx:1.12 and wait for image scan to complete.
-          - shard: "7-scanner-data"
-            specs: "cypress/integration/vulnmanagement/**,cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*,cypress/integration/vulnerabilities/workloadCves/**"
+          # === SCANNER-DEPENDENT — needs CVE data from auto-scanned StackRox images ===
+          # Scanner-v4 auto-scans images from deployed workloads. In Prow, tests run
+          # after 2+ hours giving scanner time to index. Here we seed nginx:1.12 and
+          # wait, but scanner needs 5-10 min to index CVEs.
+          # Tests expect CVE data from built-in platform components (central, sensor).
+          # Split into 3 shards for parallelism and to identify which tests pass
+          # with limited scanner data vs which need full indexing.
+          - shard: "7-scanner-vulnmgmt"
+            # Legacy vuln management tables — need CVE data in old react-table format
+            specs: "cypress/integration/vulnmanagement/**"
+            needs_data: "true"
+          - shard: "8-scanner-exceptions"
+            # Exception management — needs CVEs to create deferral/false-positive requests
+            # Also: nodeCves, platformCves, VulnerabilityReporting, snoozeWorkflow
+            specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
+            needs_data: "true"
+          - shard: "9-scanner-workload"
+            # Workload CVE pages — need scanner to have indexed deployment images
+            specs: "cypress/integration/vulnerabilities/workloadCves/**"
             needs_data: "true"
     env:
       CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
