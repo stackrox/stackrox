@@ -1,6 +1,5 @@
 package main
 
-// build test: verify partial rebuild detects changed binary
 import (
 	"context"
 	"net/http"

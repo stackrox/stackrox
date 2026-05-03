@@ -811,12 +811,23 @@ jobs:
 
           if [[ "$before" == "$after" ]] && [[ -n "$before" ]]; then
             echo "go_changed=false" >> "$GITHUB_OUTPUT"
+            echo "main_changed=false" >> "$GITHUB_OUTPUT"
             echo "No binaries changed (all buildIDs match)"
           else
             echo "go_changed=true" >> "$GITHUB_OUTPUT"
-            echo "Binaries changed"
-            echo "BEFORE: $before"
-            echo "AFTER:  $after"
+            # Check if any binary in the main image changed (roxctl/central-db are separate)
+            # main image contains: central, compliance, config-controller, migrator,
+            # stackrox-operator, admission-control, kubernetes, upgrader
+            main_changed=false
+            for bin_name in central compliance config-controller migrator stackrox-operator admission-control kubernetes upgrader; do
+              old_id=$(echo ";${before}" | sed -n "s/.*;\(${bin_name}\):\([^;]*\).*/\2/p")
+              new_id=$(echo ";${after}" | sed -n "s/.*;\(${bin_name}\):\([^;]*\).*/\2/p")
+              if [[ "$old_id" != "$new_id" ]]; then
+                echo "CHANGED: ${bin_name}"
+                main_changed=true
+              fi
+            done
+            echo "main_changed=${main_changed}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Login to docker.io
@@ -872,41 +883,8 @@ jobs:
           name: ui-STACKROX_BRANDING-build
           path: ui-STACKROX_BRANDING
 
-      - name: Re-tag images (no changes)
-        if: |
-          steps.go-build.outputs.go_changed == 'false'
-            && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-          source ./scripts/ci/lib.sh
-          ARCH="${{ matrix.arch }}"
-          TAG="${{ env.REAL_BUILD_TAG }}"
-
-          for brand in RHACS_BRANDING STACKROX_BRANDING; do
-            REGISTRY="$(registry_from_branding "${brand}")"
-            registry_rw_login "${REGISTRY}"
-
-            for IMAGE in main roxctl central-db; do
-              SRC="${REGISTRY}/${IMAGE}:cache-${ARCH}"
-              DST="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
-
-              echo "Re-tagging ${IMAGE} (${brand}): ${SRC} → ${DST}"
-              # Server-side tag — no layer transfer, just manifest copy
-              docker buildx imagetools create --tag "${DST}" "${SRC}" || {
-                echo "::warning::Re-tag failed for ${SRC} — falling back to full build"
-                echo "go_changed=true" >> "$GITHUB_OUTPUT"
-              }
-            done
-          done
-
-      - name: Build and push images (changes detected)
-        if: |
-          steps.go-build.outputs.go_changed == 'true'
-            && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+      - name: Build or re-tag images
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
           SOURCE_DATE_EPOCH: 0
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -916,21 +894,24 @@ jobs:
         run: |
           source ./scripts/ci/lib.sh
           ARCH="${{ matrix.arch }}"
+          MAIN_CHANGED="${{ steps.go-build.outputs.main_changed }}"
 
           push_context=""
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
             push_context="merge-to-master"
           fi
 
+          # Prepare build context once (only needed if main image will be built)
+          if [[ "$MAIN_CHANGED" == "true" ]]; then
+            rm -rf ui/build
+            cp -a "ui-RHACS_BRANDING/build" ui/build
+            GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
+            cp -f ./*VERSION image/rhel/
+          fi
+
           for brand in RHACS_BRANDING STACKROX_BRANDING; do
             echo "::group::${brand} images"
             export ROX_PRODUCT_BRANDING="${brand}"
-
-            rm -rf ui/build
-            cp -a "ui-${brand}/build" ui/build
-
-            GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
-            cp -f ./*VERSION image/rhel/
 
             REGISTRY="$(registry_from_branding "${brand}")"
             registry_rw_login "${REGISTRY}"
@@ -939,51 +920,79 @@ jobs:
             NL=$'\n'
 
             for IMAGE in main roxctl central-db; do
-              TAGS="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
-              TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:cache-${ARCH}"
-              if [[ "$push_context" == "merge-to-master" ]]; then
-                TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:latest-${ARCH}"
+              DST="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
+              SRC="${REGISTRY}/${IMAGE}:cache-${ARCH}"
+
+              # Decide: re-tag or rebuild?
+              # - main image: rebuild only if main binaries changed
+              # - roxctl/central-db: always re-tag (no Go binaries from our build)
+              need_build=false
+              if [[ "$IMAGE" == "main" && "$MAIN_CHANGED" == "true" ]]; then
+                need_build=true
               fi
 
-              TAG_FLAGS=()
-              while read -r t; do [[ -n "$t" ]] && TAG_FLAGS+=("--tag=$t"); done <<< "$TAGS"
+              if [[ "$need_build" == "false" ]]; then
+                echo "Re-tagging ${IMAGE} (${brand}): cache → ${TAG}-${ARCH}"
+                docker buildx imagetools create --tag "${DST}" "${SRC}" || {
+                  echo "::warning::Re-tag failed, falling back to build"
+                  need_build=true
+                }
+              fi
 
-              case "$IMAGE" in
-                main)
-                  DOCKERFILE=image/rhel/Dockerfile
-                  CONTEXT=image/rhel
-                  BUILD_ARGS=(
-                    "--build-arg" "ROX_PRODUCT_BRANDING=${brand}"
-                    "--build-arg" "TARGET_ARCH=${ARCH}"
-                    "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
-                    "--build-arg" "LABEL_VERSION=${TAG}"
-                    "--build-arg" "LABEL_RELEASE=${{ env.REAL_SHORTCOMMIT }}"
-                    "--build-arg" "QUAY_TAG_EXPIRATION=13w"
-                  )
-                  ;;
-                roxctl)
-                  cp -f "bin/linux_${ARCH}/roxctl" image/roxctl/roxctl-linux
-                  DOCKERFILE=image/roxctl/Dockerfile
-                  CONTEXT=image/roxctl
-                  BUILD_ARGS=()
-                  ;;
-                central-db)
-                  DOCKERFILE=image/postgres/Dockerfile
-                  CONTEXT=image/postgres
-                  BUILD_ARGS=("--build-arg" "MAIN_IMAGE_TAG=${TAG}")
-                  ;;
-              esac
+              if [[ "$need_build" == "true" ]]; then
+                # Swap UI for this branding if not already done
+                if [[ "$IMAGE" == "main" ]]; then
+                  rm -rf ui/build
+                  cp -a "ui-${brand}/build" ui/build
+                  GOOS=linux GOARCH="${ARCH}" make copy-binaries-to-image-dir
+                fi
 
-              docker buildx build \
-                --file "$DOCKERFILE" \
-                --platform "linux/${ARCH}" \
-                --output "type=image,push=true,rewrite-timestamp=true" \
-                --provenance=false \
-                "${TAG_FLAGS[@]}" \
-                "${BUILD_ARGS[@]}" \
-                --cache-from "type=registry,ref=${REGISTRY}/${IMAGE}:cache-${ARCH}" \
-                --cache-to type=inline \
-                "$CONTEXT"
+                TAGS="${DST}${NL}${SRC}"
+                if [[ "$push_context" == "merge-to-master" ]]; then
+                  TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:latest-${ARCH}"
+                fi
+
+                TAG_FLAGS=()
+                while read -r t; do [[ -n "$t" ]] && TAG_FLAGS+=("--tag=$t"); done <<< "$TAGS"
+
+                case "$IMAGE" in
+                  main)
+                    DOCKERFILE=image/rhel/Dockerfile
+                    CONTEXT=image/rhel
+                    BUILD_ARGS=(
+                      "--build-arg" "ROX_PRODUCT_BRANDING=${brand}"
+                      "--build-arg" "TARGET_ARCH=${ARCH}"
+                      "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
+                      "--build-arg" "LABEL_VERSION=${TAG}"
+                      "--build-arg" "LABEL_RELEASE=${{ env.REAL_SHORTCOMMIT }}"
+                      "--build-arg" "QUAY_TAG_EXPIRATION=13w"
+                    )
+                    ;;
+                  roxctl)
+                    cp -f "bin/linux_${ARCH}/roxctl" image/roxctl/roxctl-linux
+                    DOCKERFILE=image/roxctl/Dockerfile
+                    CONTEXT=image/roxctl
+                    BUILD_ARGS=()
+                    ;;
+                  central-db)
+                    DOCKERFILE=image/postgres/Dockerfile
+                    CONTEXT=image/postgres
+                    BUILD_ARGS=("--build-arg" "MAIN_IMAGE_TAG=${TAG}")
+                    ;;
+                esac
+
+                echo "Building ${IMAGE} (${brand})"
+                docker buildx build \
+                  --file "$DOCKERFILE" \
+                  --platform "linux/${ARCH}" \
+                  --output "type=image,push=true,rewrite-timestamp=true" \
+                  --provenance=false \
+                  "${TAG_FLAGS[@]}" \
+                  "${BUILD_ARGS[@]}" \
+                  --cache-from "type=registry,ref=${SRC}" \
+                  --cache-to type=inline \
+                  "$CONTEXT"
+              fi
             done
 
             echo "::endgroup::"
