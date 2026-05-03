@@ -783,46 +783,42 @@ jobs:
             -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
             -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}"
 
-          # Build each binary individually so Go's buildID check skips
-          # unchanged ones instantly (~0.1s) and only walks the dep tree
-          # for changed ones (~3s each).
-          BINS="central:./central
-          compliance:./compliance/cmd/compliance
-          config-controller:./config-controller
-          migrator:./migrator
-          cmd:./operator/cmd
-          admission-control:./sensor/admission-control
-          kubernetes:./sensor/kubernetes
-          upgrader:./sensor/upgrader"
+          # Record pre-build buildIDs
+          before=""
+          for f in bin/linux_${ARCH}/*; do
+            [[ -f "$f" ]] && before="${before}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
+          done
 
-          changed=()
-          while IFS=: read -r bin_name pkg; do
-            [[ -z "$bin_name" ]] && continue
-            out="bin/linux_${ARCH}/${bin_name}"
-            old_id=""
-            [[ -f "$out" ]] && old_id=$(go tool buildid "$out" 2>/dev/null)
-
-            GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
-              go build -buildvcs=false -trimpath -o "$out" \
-              -ldflags "${LDFLAGS}" -tags "${GOTAGS}" "$pkg"
-
-            new_id=$(go tool buildid "$out" 2>/dev/null)
-            if [[ "$old_id" != "$new_id" ]]; then
-              changed+=("$bin_name")
-              echo "CHANGED: $bin_name"
-            fi
-          done <<< "$BINS"
+          # Single go build: Go checks each output binary's buildID independently.
+          # Unchanged binaries skip instantly, changed ones rebuild (~3s each).
+          GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
+            go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
+            -ldflags "${LDFLAGS}" -tags "${GOTAGS}" \
+            ./central \
+            ./compliance/cmd/compliance \
+            ./config-controller \
+            ./migrator \
+            ./operator/cmd \
+            ./sensor/admission-control \
+            ./sensor/kubernetes \
+            ./sensor/upgrader
 
           mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
 
-          if [[ ${#changed[@]} -eq 0 ]]; then
+          # Record post-build buildIDs
+          after=""
+          for f in bin/linux_${ARCH}/*; do
+            [[ -f "$f" ]] && after="${after}$(basename "$f"):$(go tool buildid "$f" 2>/dev/null);"
+          done
+
+          if [[ "$before" == "$after" ]] && [[ -n "$before" ]]; then
             echo "go_changed=false" >> "$GITHUB_OUTPUT"
             echo "main_changed=false" >> "$GITHUB_OUTPUT"
             echo "No binaries changed"
           else
             echo "go_changed=true" >> "$GITHUB_OUTPUT"
             echo "main_changed=true" >> "$GITHUB_OUTPUT"
-            echo "Changed: ${changed[*]}"
+            echo "Binaries changed"
           fi
 
       - name: Login to docker.io
