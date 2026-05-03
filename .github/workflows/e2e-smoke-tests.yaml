@@ -509,31 +509,22 @@ jobs:
             # Only 2 images needed: main + central-db. Saves ~1GB memory + 20s pull time.
 
             # Phase 1: KinD create + pull images into KinD (parallel)
-            # No roxctl needed — using committed CI charts in .github/ci/
+            # No roxctl needed at all — committed charts + curl API for init-bundles.
             SCANNER_TAG=$(cat SCANNER_VERSION)
+
+            # Phase 1: KinD create + pull images into KinD (parallel)
             kind create cluster --name "$CLUSTER_NAME" &
             PID_KIND=$!
-            # Pre-pull main image on host for roxctl extraction (still needed for init-bundles)
-            docker pull --platform linux/amd64 "${IMAGE_REGISTRY}/main:${TAG}" &
-            PID_DOCKER=$!
 
             wait $PID_KIND
             docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
 
-            # Pull images into KinD while extracting roxctl
             for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
                        "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}"; do
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
             done
 
-            # Extract roxctl (still needed for init-bundles generate)
-            wait $PID_DOCKER
-            cid=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
-            mkdir -p bin && docker cp "${cid}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl && docker rm "${cid}"
-            chmod +x bin/roxctl
-            export PATH="$(pwd)/bin:$PATH"
-
-            # Phase 2: Patch committed charts with image tags + deploy
+            # Phase 2: Patch committed charts with image tags (parallel with image pulls)
             # Charts are committed in .github/ci/ with CI_TAG placeholders.
             # Only need to sed the version — no roxctl chart generation needed.
             cp -r .github/ci/central-chart /tmp/central-chart
@@ -562,11 +553,12 @@ jobs:
               "https://localhost:8000/v1/apitokens/generate" \
               -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
 
-            # Deploy sensor — roxctl still needed for init-bundles
-            roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
-              --insecure-skip-tls-verify --insecure \
-              central init-bundles generate "shard-${{ strategy.job-index }}" \
-              --output sensor-init-bundle.yaml 2>/dev/null
+            # Generate init bundle via API — no roxctl needed
+            # POST /v1/cluster-init/init-bundles returns helmValuesBundle (base64 bytes)
+            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8000/v1/cluster-init/init-bundles" \
+              -X POST -d "{\"name\":\"shard-${{ strategy.job-index }}\"}" \
+              | jq -r '.helmValuesBundle' | base64 -d > sensor-init-bundle.yaml
             helm upgrade --install -n stackrox stackrox-secured-cluster-services /tmp/sensor-chart \
               -f .github/ci/ci-values-sensor.yaml \
               --set image.registry="${IMAGE_REGISTRY}" \
