@@ -487,33 +487,53 @@ jobs:
             # No roxctl needed at all — committed charts + curl API for init-bundles.
             SCANNER_TAG=$(cat SCANNER_VERSION)
 
-            # Phase 1: KinD create + render charts from in-repo templates (parallel)
-            # NO roxctl, NO docker pull — charts rendered from .htpl templates with sed
+            # Phase 1: KinD create + docker pull main (for roxctl) — parallel
             kind create cluster --name "$CLUSTER_NAME" &
             PID_KIND=$!
-
-            # Render charts from in-repo templates (instant — just cp + sed)
-            .github/ci/render-chart.sh central /tmp/central-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
-            .github/ci/render-chart.sh sensor /tmp/sensor-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
+            docker pull --platform linux/amd64 "${IMAGE_REGISTRY}/main:${TAG}" &
+            PID_DOCKER=$!
 
             wait $PID_KIND
             docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
 
-            # Phase 2: Pull images into KinD (parallel)
+            # Pull images into KinD
             for img in "${IMAGE_REGISTRY}/main:${TAG}" "${IMAGE_REGISTRY}/central-db:${TAG}" \
                        "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}"; do
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
             done
-            wait
 
-            # Phase 3: Deploy central with static CI CA
+            # Extract roxctl + generate charts (parallel with image pulls)
+            wait $PID_DOCKER
+            cid=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
+            mkdir -p bin && docker cp "${cid}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl && docker rm "${cid}"
+            chmod +x bin/roxctl
+            export PATH="$(pwd)/bin:$PATH"
+
+            roxctl helm output central-services --image-defaults opensource --output-dir /tmp/central-chart &
+            roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/sensor-chart &
+            wait  # Wait for image pulls + chart gen
+            sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" /tmp/central-chart/internal/defaults.yaml
+            find /tmp/sensor-chart/internal -name "*.yaml" -exec sed -i "s/tag: 0\.0\.0/tag: ${TAG}/g" {} +
+
+            # Deploy central
             kubectl create namespace stackrox
             helm upgrade --install -n stackrox stackrox-central-services /tmp/central-chart \
-              -f .github/ci/ci-values-central.yaml \
               --set image.registry="${IMAGE_REGISTRY}" \
+              --set imagePullSecrets.allowNone=true \
               --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
-              --set-file ca.cert=.github/ci/ca.pem \
-              --set-file ca.key=.github/ci/ca.key >/dev/null
+              --set central.resources.requests.memory=100Mi --set central.resources.requests.cpu=100m \
+              --set central.resources.limits.memory=4Gi --set central.resources.limits.cpu=2 \
+              --set central.db.resources.requests.memory=100Mi --set central.db.resources.requests.cpu=100m \
+              --set central.db.resources.limits.memory=4Gi --set central.db.resources.limits.cpu=2 \
+              --set central.persistence.none=true \
+              --set scanner.disable=false --set scanner.replicas=1 \
+              --set scanner.resources.requests.memory=100Mi --set scanner.resources.requests.cpu=100m \
+              --set scanner.resources.limits.memory=2Gi \
+              --set scanner.dbResources.requests.memory=100Mi --set scanner.dbResources.requests.cpu=100m \
+              --set scanner.dbResources.limits.memory=2Gi \
+              --set scannerV4.disable=true \
+              --set system.enablePodSecurityPolicies=false \
+              --set central.telemetry.enabled=false >/dev/null
 
             # Port-forward with retry
             while true; do
@@ -526,12 +546,19 @@ jobs:
               "https://localhost:8000/v1/apitokens/generate" \
               -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
 
-            # Deploy sensor with static init bundle (matching the CI CA)
+            # Generate init bundle — roxctl needed here (curl API response format TBD)
+            roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
+              --insecure-skip-tls-verify --insecure \
+              central init-bundles generate "shard-${{ strategy.job-index }}" \
+              --output sensor-init-bundle.yaml 2>/dev/null
             helm upgrade --install -n stackrox stackrox-secured-cluster-services /tmp/sensor-chart \
-              -f .github/ci/ci-values-sensor.yaml \
-              --set image.registry="${IMAGE_REGISTRY}" \
-              --set centralEndpoint=central.stackrox.svc:443 \
-              -f .github/ci/init-bundle.yaml >/dev/null 2>&1
+              --set image.registry="${IMAGE_REGISTRY}" --set imagePullSecrets.allowNone=true \
+              --set clusterName=remote --set centralEndpoint=central.stackrox.svc:443 \
+              --set sensor.resources.requests.memory=100Mi --set sensor.resources.requests.cpu=100m --set sensor.resources.limits.memory=4Gi \
+              --set collector.collectionMethod=CORE_BPF \
+              --set collector.resources.requests.memory=100Mi --set collector.resources.requests.cpu=50m --set collector.resources.limits.memory=1Gi \
+              --set admissionControl.replicas=1 --set admissionControl.resources.requests.memory=100Mi --set admissionControl.resources.requests.cpu=50m \
+              -f sensor-init-bundle.yaml >/dev/null 2>&1
 
             # Seed workloads for collector data (risk, networkGraph tests)
             kubectl create namespace qa-test 2>/dev/null || true
