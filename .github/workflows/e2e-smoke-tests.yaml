@@ -524,18 +524,19 @@ jobs:
               "https://localhost:8000/v1/apitokens/generate" \
               -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
 
-            # Deploy sensor — need roxctl for init-bundles (still investigating API)
-            # Extract roxctl from main image (already pulled into KinD)
-            docker pull --platform linux/amd64 "${IMAGE_REGISTRY}/main:${TAG}" >/dev/null 2>&1
-            cid=$(docker create "${IMAGE_REGISTRY}/main:${TAG}")
-            mkdir -p bin && docker cp "${cid}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl && docker rm "${cid}" >/dev/null
-            chmod +x bin/roxctl
-            export PATH="$(pwd)/bin:$PATH"
-
-            bin/roxctl -e "https://localhost:8000" -p "${ROX_ADMIN_PASSWORD}" \
-              --insecure-skip-tls-verify --insecure \
-              central init-bundles generate "shard-${{ strategy.job-index }}" \
-              --output /tmp/sensor-init-bundle.yaml 2>/dev/null
+            # Generate init bundle via API — no roxctl needed
+            # helmValuesBundle is base64-encoded YAML in the JSON response
+            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8000/v1/cluster-init/init-bundles" \
+              -X POST -d "{\"name\":\"shard-${{ strategy.job-index }}\"}" \
+              > /tmp/init-response.json
+            jq -r '.helmValuesBundle' /tmp/init-response.json | base64 -d > /tmp/sensor-init-bundle.yaml
+            # Verify the bundle was generated
+            if ! grep -q "ca:" /tmp/sensor-init-bundle.yaml 2>/dev/null; then
+              echo "ERROR: Init bundle generation failed"
+              cat /tmp/init-response.json
+              exit 1
+            fi
             helm upgrade --install -n stackrox stackrox-secured-cluster-services /tmp/sensor-chart \
               -f .github/ci/ci-values-sensor.yaml \
               --set image.registry="${IMAGE_REGISTRY}" \
