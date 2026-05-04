@@ -142,12 +142,12 @@ jobs:
       - name: Setup Go at Konflux builder version
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
         with:
-          go-version: '1.25.7'
+          go-version-file: 'go.mod'
           cache: false
 
       - name: Verify go.mod is compatible with Konflux builders
         run: |
-          go list -m || {
+          go mod tidy || {
             >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang"
             exit 1
           }
