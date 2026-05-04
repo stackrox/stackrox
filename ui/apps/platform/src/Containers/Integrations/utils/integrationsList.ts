@@ -330,6 +330,7 @@ const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
 export const apiClientsSource: IntegrationSource = 'apiClients';
 
 export const serviceNowDescriptor: ApiClientDescriptor = {
+    // TODO: Replace with ServiceNow logo once available from UX
     Logo: RedhatSvg,
     label: 'ServiceNow',
     type: 'serviceNow',
