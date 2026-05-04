@@ -370,6 +370,23 @@ _main() {
 		set -- "$@" -c "ssl_ciphers=${ROX_TLS_OPENSSL_CIPHERS}"
 	fi
 
+	# Watch for TLS certificate changes and reload PostgreSQL when detected.
+	(
+		CERT_DIR="/run/secrets/stackrox.io/certs"
+		MTIME=""
+		while true; do
+			sleep 60
+			NEW_MTIME=$(stat -c '%Y' "$CERT_DIR"/server.crt "$CERT_DIR"/server.key 2>/dev/null)
+			if [ -n "$NEW_MTIME" ] && [ "$NEW_MTIME" != "$MTIME" ]; then
+				if [ -n "$MTIME" ]; then
+					echo "TLS certificates changed, reloading PostgreSQL"
+					pg_ctl reload -D "$PGDATA"
+				fi
+				MTIME="$NEW_MTIME"
+			fi
+		done
+	) &
+
 	flock /var/lib/postgresql/data/pglock "$@" &
 	child=$!
 	echo "Waiting for child process $child to exit"
