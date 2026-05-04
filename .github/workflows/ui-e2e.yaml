@@ -406,7 +406,7 @@ jobs:
             kubectl create namespace qa-test 2>/dev/null || true
             kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null
             kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
-              sh -c 'while true; do wget -q -O /dev/null http://central.stackrox:443 2>/dev/null; sleep 5; done' 2>/dev/null
+              sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null
 
             # Wait until Sensor has reported enough deployments to Central.
             # Data-dependent shards (vuln, risk, networkGraph) wait on /tmp/data-ready.
