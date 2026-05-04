@@ -247,10 +247,9 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
             current_version = matching_tags[0]
 
     except subprocess.CalledProcessError as e:
-        print(
-            f"WARNING: Failed to get merged tags for {branch_name}: "
-            f"returncode={e.returncode}, stderr={e.stderr}",
-            file=sys.stderr,
+        github_warning(
+            f"Failed to get merged tags for {branch_name}: "
+            f"returncode={e.returncode}, stderr={e.stderr}"
         )
         current_version = None
 

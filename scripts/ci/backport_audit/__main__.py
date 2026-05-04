@@ -22,6 +22,7 @@ from .utils import (
     detect_release_version,
     extract_jira_keys,
     github_notice,
+    github_warning,
     resolve_author,
 )
 
@@ -141,16 +142,10 @@ def _fetch_merged_prs_from_commits(
                 prs_by_branch.setdefault(branch.name, []).append(pr)
 
         except subprocess.CalledProcessError as e:
-            print(
-                f"WARNING: git log failed for branch {branch.name}: {e}",
-                file=sys.stderr,
-            )
+            github_warning(f"git log failed for branch {branch.name}: {e}")
             continue
         except subprocess.TimeoutExpired as e:
-            print(
-                f"WARNING: git log timed out for branch {branch.name}: {e}",
-                file=sys.stderr,
-            )
+            github_warning(f"git log timed out for branch {branch.name}: {e}")
             continue
 
     return prs_by_branch, all_jira_keys
@@ -183,10 +178,7 @@ def _detect_orphaned_issues(
         try:
             jira_issues_for_branch = jira_client.search_issues(jql)
         except Exception as e:
-            print(
-                f"WARNING: Jira search failed for {branch.expected_version}: {e}",
-                file=sys.stderr,
-            )
+            github_warning(f"Jira search failed for {branch.expected_version}: {e}")
             continue
 
         pr_jira_keys = set()
