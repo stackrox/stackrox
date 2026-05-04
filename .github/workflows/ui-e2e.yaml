@@ -206,7 +206,7 @@ jobs:
           npx cypress run \
             --browser chrome \
             --spec "${{ matrix.specs }}" \
-            --config "baseUrl=https://localhost:8000,video=false,screenshotOnRunFailure=false,retries=0"
+            --config "baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
