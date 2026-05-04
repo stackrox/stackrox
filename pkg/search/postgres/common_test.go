@@ -216,7 +216,7 @@ func TestMultiTableQueries(t *testing.T) {
 				ProtoQuery(),
 			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
-			expectedWhere:      "(deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)",
+			expectedWhere:      "((deployments_containers.Image_Name_FullName is not null AND deployments_containers.Image_Name_FullName != '') and (deployments_containers_envs.Key is not null AND deployments_containers_envs.Key != ''))",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner, "deployments_containers_envs": Inner},
 		},
 		{
@@ -464,7 +464,7 @@ func TestCountQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id
 				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx
-				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)`),
+				where ((deployments_containers.Image_Name_FullName is not null AND deployments_containers.Image_Name_FullName != '') and (deployments_containers_envs.Key is not null AND deployments_containers_envs.Key != ''))`),
 		},
 		{
 			desc: "search active and inactive images with observed CVEs in non-platform deployments",
@@ -1243,7 +1243,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id
 				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx
-				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)
+				where ((deployments_containers.Image_Name_FullName is not null AND deployments_containers.Image_Name_FullName != '') and (deployments_containers_envs.Key is not null AND deployments_containers_envs.Key != ''))
 				group by deployments.Id, deployments.serialized`),
 		},
 		{
@@ -1258,7 +1258,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id
 				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx
-				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)
+				where ((deployments_containers.Image_Name_FullName is not null AND deployments_containers.Image_Name_FullName != '') and (deployments_containers_envs.Key is not null AND deployments_containers_envs.Key != ''))
 				group by deployments.Id, deployments.serialized, deployments.Name
 				order by deployments.Name asc nulls last`),
 		},
@@ -1308,7 +1308,7 @@ func TestGetQueries(t *testing.T) {
 			schema: imagesSchema,
 			expectedQuery: normalizeStatement(`select images.serialized from images
 				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId
-				where image_cves_v2.CveBaseInfo_Cve is not null
+				where (image_cves_v2.CveBaseInfo_Cve is not null AND image_cves_v2.CveBaseInfo_Cve != '')
 				group by images.Id, images.serialized
 				order by MAX(image_cves_v2.Cvss) desc nulls last LIMIT 20`),
 			expectedData: []interface{}(nil),
