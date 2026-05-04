@@ -91,7 +91,12 @@ def _calculate_urgency_stats(
             for jira_key in pr.jira_keys:
                 if jira_key in seen_jira_keys:
                     continue
+
                 if jira_key not in data.jira_issues:
+                    # Missing Jira lookup is a critical problem
+                    total_jira_issues += 1
+                    urgency_counts["critical"] = urgency_counts.get("critical", 0) + 1
+                    seen_jira_keys.add(jira_key)
                     continue
 
                 issue = data.jira_issues[jira_key]
@@ -194,7 +199,24 @@ def _create_all_pr_rows(
     all_issues = []
     for pr in prs:
         for jira_key in pr.jira_keys:
+            pr_refs = jira_to_prs.get(jira_key, [])
+            pr_title = pr_refs[0].title if pr_refs else "—"
+
             if jira_key not in jira_issues:
+                # Missing Jira lookup - treat as critical problem
+                issue_info = (
+                    jira_key,
+                    ":x:",  # fixVersion
+                    ":x:",  # affectedVersion
+                    "MISSING JIRA",  # priority
+                    "Lookup failed",  # severity
+                    pr_title,
+                    "critical",  # urgency_level
+                    ":red_circle:",  # urgency_icon
+                    False,  # is_complete
+                )
+                if issue_info not in all_issues:
+                    all_issues.append(issue_info)
                 continue
 
             issue = jira_issues[jira_key]
@@ -207,9 +229,6 @@ def _create_all_pr_rows(
                 issue.due_date,
                 issue.sla_date,
             )
-
-            pr_refs = jira_to_prs.get(jira_key, [])
-            pr_title = pr_refs[0].title if pr_refs else "—"
 
             issue_info = (
                 jira_key,
