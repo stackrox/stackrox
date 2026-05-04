@@ -96,22 +96,6 @@ const searchFieldLabelMapForClusterNamespaceDeployment: Record<
     EntityScopeRuleWithoutValues
 > = {
     ...searchFieldLabelMapForClusterNamespace,
-    'Namespace ID': {
-        entity: 'SCOPE_ENTITY_NAMESPACE',
-        field: 'FIELD_ID',
-    },
-    Namespace: {
-        entity: 'SCOPE_ENTITY_NAMESPACE',
-        field: 'FIELD_NAME',
-    },
-    'Namespace Label': {
-        entity: 'SCOPE_ENTITY_NAMESPACE',
-        field: 'FIELD_LABEL',
-    },
-    'Namespace Annotation': {
-        entity: 'SCOPE_ENTITY_NAMESPACE',
-        field: 'FIELD_ANNOTATION',
-    },
     'Deployment ID': {
         entity: 'SCOPE_ENTITY_DEPLOYMENT',
         field: 'FIELD_ID',
