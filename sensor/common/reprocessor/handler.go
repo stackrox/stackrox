@@ -91,6 +91,7 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 	default:
 		h.admCtrlSettingsMgr.InvalidateImageCache(req.GetImageKeys())
 
+		// Each ImageKey may produce up to 2 cache keys (digest-derived + full name).
 		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys())*2)
 		for _, image := range req.GetImageKeys() {
 			keysToDelete = append(keysToDelete, cacheKeysToInvalidate(image)...)
