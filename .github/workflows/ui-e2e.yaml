@@ -30,6 +30,10 @@ on:
         description: "Image tag to test"
         required: true
         type: string
+  # Temporary: push trigger for testing. Remove before merge.
+  push:
+    branches:
+    - davdhacs/ui-e2e
 
 defaults:
   run:
@@ -150,7 +154,7 @@ jobs:
         uses: ./.github/actions/create-kind-cluster
         with:
           cluster-name: ${{ env.CLUSTER_NAME }}
-          tag: ${{ inputs.tag }}
+          tag: ${{ inputs.tag || '4.11.x-831-g8f262d83ee' }}
           memory-limit: ${{ env.KIND_MEMORY_LIMIT }}
           quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
