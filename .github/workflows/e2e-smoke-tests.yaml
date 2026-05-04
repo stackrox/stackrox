@@ -220,18 +220,21 @@ jobs:
             # Pods enter ErrImagePull until their image arrives via ctr, then
             # start automatically on kubelet's next retry.
             #
-            # Image pulls run in their own background subprocess — the main
-            # flow continues straight to helm install without waiting.
-            # central-db gets exclusive bandwidth for PULL_DELAY seconds
-            # before the other pulls start competing. Each shard uses a
-            # different delay (0-7s via job-index) so we can measure the
-            # optimal head start in a single run.
-            PULL_DELAY=${{ strategy.job-index }}
-            ts "phase2: image pulls (central-db head start: ${PULL_DELAY}s) + helm install"
+            # All image pulls run in a background subprocess — the main flow
+            # continues straight to helm install without waiting. Helm just
+            # creates k8s resources; kubelet starts each pod as its image
+            # arrives (IfNotPresent). central-db is listed first because it's
+            # the smallest image (~200 MB) and finishes first, giving its
+            # initdb a head start before Central's larger image (~500 MB)
+            # arrives.
+            #
+            # Tested: staggering pulls (0-7s delay) showed no benefit — all
+            # 4 images share network bandwidth within the KinD container and
+            # kubelet's image-retry interval dominates over pull ordering.
+            ts "phase2: image pulls (background) + helm install"
             (
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/central-db:${TAG}" &
-              sleep "$PULL_DELAY"
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/main:${TAG}" &
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
@@ -443,7 +446,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Shard ${{ matrix.shard }} Resource Report (pull delay: ${{ strategy.job-index }}s)"
+            echo "## Shard ${{ matrix.shard }} Resource Report"
             echo ""
             echo "### Deploy Timeline"
             echo '```'
