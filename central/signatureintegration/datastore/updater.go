@@ -82,8 +82,16 @@ func (u *keyBundleUpdater) run() {
 }
 
 func (u *keyBundleUpdater) download() {
-	if err := u.doDownload(); err != nil {
+	start := time.Now()
+	err := u.doDownload()
+	updaterDownloadDuration.Observe(time.Since(start).Seconds())
+
+	if err != nil {
 		log.Warnf("Failed to download Red Hat signing key bundle from %q: %v", u.url, err)
+		updaterDownloadTotal.WithLabelValues("error").Inc()
+	} else {
+		updaterDownloadTotal.WithLabelValues("success").Inc()
+		updaterLastSuccessTimestamp.SetToCurrentTime()
 	}
 }
 
