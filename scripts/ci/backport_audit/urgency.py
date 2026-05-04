@@ -97,10 +97,14 @@ def calculate_urgency(
     # SLA Date is legally binding for Red Hat, takes precedence over Due date
     deadline = parse_date(sla_date) or parse_date(due_date)
     if deadline:
-        if deadline < current_date:
+        # Compare date-only to avoid same-day false positives
+        deadline_date = deadline.date()
+        current_date_only = current_date.date()
+
+        if deadline_date < current_date_only:
             return ("overdue", ":red_circle:")
 
-        days_remaining = (deadline - current_date).days
+        days_remaining = (deadline_date - current_date_only).days
         if days_remaining <= CRITICAL_DEADLINE_DAYS:
             return ("critical", ":red_circle:")
         if days_remaining <= HIGH_DEADLINE_DAYS:
