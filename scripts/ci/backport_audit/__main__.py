@@ -76,6 +76,7 @@ def _fetch_merged_prs_from_commits(
     """
     prs_by_branch: dict[str, list[PR]] = {}
     all_jira_keys = set()
+    seen_prs_by_branch: dict[str, set[int]] = {}
 
     for branch in branches:
         base_ref = branch.latest_tag or branch.current_version
@@ -111,6 +112,12 @@ def _fetch_merged_prs_from_commits(
                     continue
 
                 pr_number = int(pr_match.group(1))
+
+                # Skip if we've already processed this PR for this branch
+                seen_prs = seen_prs_by_branch.setdefault(branch.name, set())
+                if pr_number in seen_prs:
+                    continue
+                seen_prs.add(pr_number)
 
                 try:
                     pr_data = gh_client.get_pr_details(pr_number)
