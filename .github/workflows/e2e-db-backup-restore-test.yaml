@@ -110,7 +110,7 @@ jobs:
         echo "Running central db restore..."
         roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
           -p "${ROX_ADMIN_PASSWORD}" \
-          central db restore /tmp/db-backup/postgres_db_*
+          central db restore $(ls /tmp/db-backup/postgres_db_*)
 
         # Wait for Central to come back after restore
         for i in $(seq 1 60); do
