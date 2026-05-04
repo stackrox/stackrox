@@ -8,6 +8,7 @@ export const integrationSources = [
     'backups',
     'cloudSources',
     'authProviders',
+    'apiClients',
 ] as const;
 
 export type IntegrationSource = (typeof integrationSources)[number];
@@ -17,6 +18,7 @@ export function isIntegrationSource(source: unknown): source is IntegrationSourc
 }
 
 export type IntegrationType =
+    | ApiClientIntegrationType
     | AuthProviderType
     | BackupIntegrationType
     | ImageIntegrationType
@@ -69,6 +71,8 @@ export type NotifierIntegrationType =
     | 'teams';
 
 export type SignatureIntegrationType = 'signature';
+
+export type ApiClientIntegrationType = 'serviceNow';
 
 export type CloudSourceIntegrationType = 'paladinCloud' | 'ocm';
 

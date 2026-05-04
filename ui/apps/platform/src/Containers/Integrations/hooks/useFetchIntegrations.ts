@@ -25,8 +25,8 @@ const useFetchIntegrations = (source: IntegrationSource): UseFetchIntegrationsRe
         if (source === 'authProviders') {
             dispatch(apitokensActions.fetchAPITokens.request());
             dispatch(machineAccessConfigsActions.fetchMachineAccessConfigs.request());
-        } else {
-            dispatch(fetchIntegrationsActionMap[source]);
+        } else if (source in fetchIntegrationsActionMap) {
+            dispatch(fetchIntegrationsActionMap[source as keyof typeof fetchIntegrationsActionMap]);
         }
     }
 

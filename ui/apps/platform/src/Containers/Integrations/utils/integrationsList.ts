@@ -43,6 +43,7 @@ import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import { integrationSources } from 'types/integration';
 import type {
+    ApiClientIntegrationType,
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,
@@ -80,6 +81,10 @@ export type NotifierIntegrationDescriptor = {
 
 export type SignatureIntegrationDescriptor = {
     type: SignatureIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type ApiClientDescriptor = {
+    type: ApiClientIntegrationType;
 } & BaseIntegrationDescriptor;
 
 export type CloudSourceDescriptor = {
@@ -322,6 +327,16 @@ export const ocmDescriptor: CloudSourceDescriptor = {
 
 const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
 
+export const apiClientsSource: IntegrationSource = 'apiClients';
+
+export const serviceNowDescriptor: ApiClientDescriptor = {
+    Logo: RedhatSvg,
+    label: 'ServiceNow',
+    type: 'serviceNow',
+};
+
+const apiClientsDescriptors: ApiClientDescriptor[] = [serviceNowDescriptor];
+
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {
         case 'imageIntegrations':
@@ -336,6 +351,8 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
             return authenticationTokensDescriptors;
         case 'cloudSources':
             return cloudSourceDescriptors;
+        case 'apiClients':
+            return apiClientsDescriptors;
         default:
             return [];
     }
@@ -360,6 +377,7 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRo
     backups: { centralCapabilityRequirement: 'centralCanUseCloudBackupIntegrations' },
     cloudSources: {},
     authProviders: {},
+    apiClients: {},
 };
 
 export type IntegrationsRoutePredicates = {
@@ -407,6 +425,7 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     backups: 'Backup',
     cloudSources: 'Cloud source',
     authProviders: 'Authentication',
+    apiClients: 'API Clients',
 };
 
 export function getIntegrationTabPath(source: IntegrationSource) {

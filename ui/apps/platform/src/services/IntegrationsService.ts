@@ -6,6 +6,7 @@ import { updateCloudSource } from './CloudSourceService';
 import type { UpdateCloudSourceRequest } from './CloudSourceService';
 
 export type IntegrationSource =
+    | 'apiClients'
     | 'authProviders'
     | 'backups'
     | 'imageIntegrations'
@@ -27,6 +28,8 @@ function getPath(source: IntegrationSource): string {
             return '/v1/auth/m2m';
         case 'cloudSources':
             return '/v1/cloud-sources';
+        case 'apiClients':
+            return '/v1/api-clients';
         default:
             return '';
     }

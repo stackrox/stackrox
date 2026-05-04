@@ -74,6 +74,9 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 }
                 return cloudSources;
             }
+            case 'apiClients': {
+                return [];
+            }
             default: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 throw new Error(`Unknown source ${source}`);
