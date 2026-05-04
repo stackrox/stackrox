@@ -95,9 +95,12 @@ jobs:
 
         # Backup
         echo "Running central backup..."
+        mkdir -p /tmp/db-backup
         roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
           -p "${ROX_ADMIN_PASSWORD}" \
           central backup --output /tmp/db-backup
+        echo "Backup contents:"
+        ls -la /tmp/db-backup/
 
         # Modify config (so restore has something to revert)
         echo "Modifying config..."
