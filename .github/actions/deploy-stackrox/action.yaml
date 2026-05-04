@@ -40,6 +40,7 @@ runs:
         echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
 
         (
+          set +e
           T0=$(date +%s)
           ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
 

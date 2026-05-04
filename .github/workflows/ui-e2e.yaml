@@ -199,14 +199,6 @@ jobs:
           echo "::add-mask::${ROX_AUTH_TOKEN}"
           set -x
 
-      - name: Wait for test data
-        run: |
-          for i in $(seq 1 180); do
-            [ -f /tmp/rox-data-ready ] && break
-            sleep 2
-          done
-          echo "Data ready"
-
       - name: Run Cypress
         working-directory: ui/apps/platform
         run: |
