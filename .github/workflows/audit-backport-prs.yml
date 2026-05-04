@@ -109,7 +109,7 @@ jobs:
             # Check if Slack API returned success
             if ! echo "$response" | jq -e '.ok == true' > /dev/null; then
               echo "❌ Slack API error:"
-              echo "$response" | jq .
+              echo "$response"
               exit 1
             fi
 

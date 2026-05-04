@@ -107,7 +107,7 @@ def _fetch_merged_prs_from_commits(
 
                 pr_match = re.search(r"\(#(\d+)\)", subject)
                 if not pr_match:
-                    print(f"WARNING: commit without PR number {commit_sha} {subject}", file=sys.stderr)
+                    github_warning(f"commit without PR number {commit_sha} {subject}")
                     continue
 
                 pr_number = int(pr_match.group(1))
