@@ -85,28 +85,35 @@ def _calculate_urgency_stats(
 
     for branch in data.branches:
         prs = data.prs_by_branch.get(branch.name, [])
+        seen_jira_keys = set()
+
         for pr in prs:
             for jira_key in pr.jira_keys:
-                if jira_key in data.jira_issues:
-                    issue = data.jira_issues[jira_key]
-                    has_fix = (
-                        branch.expected_version in issue.fix_versions
-                        if issue.fix_versions
-                        else False
+                if jira_key in seen_jira_keys:
+                    continue
+                if jira_key not in data.jira_issues:
+                    continue
+
+                issue = data.jira_issues[jira_key]
+                has_fix = (
+                    branch.expected_version in issue.fix_versions
+                    if issue.fix_versions
+                    else False
+                )
+                has_affected = len(issue.affected_versions) > 0
+
+                if not has_fix or not has_affected:
+                    total_jira_issues += 1
+                    urgency_level, _ = calculate_urgency(
+                        issue.priority,
+                        issue.severity,
+                        issue.due_date,
+                        issue.sla_date,
                     )
-                    has_affected = len(issue.affected_versions) > 0
-                    if not has_fix or not has_affected:
-                        total_jira_issues += 1
-                        urgency_level, _ = calculate_urgency(
-                            issue.priority,
-                            issue.severity,
-                            issue.due_date,
-                            issue.sla_date,
-                        )
-                        urgency_counts[urgency_level] = (
-                            urgency_counts.get(urgency_level, 0) + 1
-                        )
-                        break
+                    urgency_counts[urgency_level] = (
+                        urgency_counts.get(urgency_level, 0) + 1
+                    )
+                    seen_jira_keys.add(jira_key)
 
     return total_prs_no_jira, total_jira_issues, urgency_counts
 
