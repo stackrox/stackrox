@@ -187,49 +187,43 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 }
 
 func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
-	// Make sure the enricher propagates the error returned
-	// by the virtual machine scanner.
-	t.Run("nil virtual machine scanner", func(it *testing.T) {
+	t.Run("should add missing scanner note when scanner is nil", func(t *testing.T) {
 		enricher := New(nil)
 
-		virtualMachine := &storage.VirtualMachine{
-			Id:   "vm-id",
-			Name: "test-vm",
-		}
-		indexReport := &v4.IndexReport{
+		vm := &storage.VirtualMachine{Id: "vm-id", Name: "test-vm"}
+		err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, &v4.IndexReport{
 			Contents: &v4.Contents{},
-		}
+		})
 
-		err := enricher.EnrichVirtualMachineWithVulnerabilities(virtualMachine, indexReport)
-		require.Error(it, err)
-		assert.Contains(it, err.Error(), "Scanner V4 client not available for VM enrichment")
-		expectedNotes := []storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA}
-		assert.Equal(it, expectedNotes, virtualMachine.GetNotes())
+		require.Error(t, err)
+		assert.Equal(t,
+			[]storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCANNER},
+			vm.GetNotes(),
+		)
 	})
-	t.Run("virtual machine enricher propagates virtual machine scanner errors", func(it *testing.T) {
-		ctrl := gomock.NewController(it)
+
+	t.Run("should add scan failed note when scanner returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
 		testError := errors.New("test error")
-
 		mockScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
 		mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 		mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(nil, testError)
 
 		enricher := New(mockScanner)
+		vm := &storage.VirtualMachine{Id: "vm-id", Name: "test-vm"}
 
-		virtualMachine := &storage.VirtualMachine{
-			Id:   "vm-id",
-			Name: "test-vm",
-		}
-		indexReport := &v4.IndexReport{
+		err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, &v4.IndexReport{
 			Contents: &v4.Contents{},
-		}
+		})
 
-		err := enricher.EnrichVirtualMachineWithVulnerabilities(virtualMachine, indexReport)
-		assert.Error(it, err)
-		assert.Nil(it, virtualMachine.GetScan())
-		assert.ErrorIs(it, err, testError)
+		require.ErrorIs(t, err, testError)
+		assert.Nil(t, vm.GetScan())
+		assert.Equal(t,
+			[]storage.VirtualMachine_Note{storage.VirtualMachine_SCAN_FAILED},
+			vm.GetNotes(),
+		)
 	})
 }
 

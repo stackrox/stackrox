@@ -29,7 +29,7 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 	vm.Notes = vm.GetNotes()[:0]
 
 	if e.vmScanner == nil {
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
+		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCANNER)
 		return errors.New("Scanner V4 client not available for VM enrichment")
 	}
 
@@ -39,11 +39,7 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 
 	scan, err := e.vmScanner.GetVirtualMachineScan(vm, indexReport)
 	if err != nil {
-		// Currently, the error paths in GetVirtualMachineScan all come from missing data
-		// to perform an actual scan.
-		// The function signature could be changed to return the note to be added to the
-		// virtual machine notes
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
+		vm.Notes = append(vm.Notes, storage.VirtualMachine_SCAN_FAILED)
 		return errors.Wrap(err, "getting scan for VM")
 	}
 

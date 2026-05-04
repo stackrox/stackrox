@@ -19254,6 +19254,14 @@
               {
                 "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
                 "integer": 3
+              },
+              {
+                "name": "MISSING_SCANNER",
+                "integer": 4
+              },
+              {
+                "name": "SCAN_FAILED",
+                "integer": 5
               }
             ]
           },
@@ -19905,6 +19913,14 @@
               {
                 "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
                 "integer": 3
+              },
+              {
+                "name": "MISSING_SCANNER",
+                "integer": 4
+              },
+              {
+                "name": "SCAN_FAILED",
+                "integer": 5
               }
             ]
           }

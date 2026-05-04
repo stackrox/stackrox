@@ -39,6 +39,8 @@ message VirtualMachineV2 {
     MISSING_SCAN_DATA = 1;
     MISSING_SIGNATURE = 2;
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
+    MISSING_SCANNER = 4;
+    SCAN_FAILED = 5;
   }
   repeated Note notes = 10; // @gotags: hash:"set"
 

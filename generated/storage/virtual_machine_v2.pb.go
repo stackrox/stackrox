@@ -78,6 +78,8 @@ const (
 	VirtualMachineV2_MISSING_SCAN_DATA                   VirtualMachineV2_Note = 1
 	VirtualMachineV2_MISSING_SIGNATURE                   VirtualMachineV2_Note = 2
 	VirtualMachineV2_MISSING_SIGNATURE_VERIFICATION_DATA VirtualMachineV2_Note = 3
+	VirtualMachineV2_MISSING_SCANNER                     VirtualMachineV2_Note = 4
+	VirtualMachineV2_SCAN_FAILED                         VirtualMachineV2_Note = 5
 )
 
 // Enum value maps for VirtualMachineV2_Note.
@@ -87,12 +89,16 @@ var (
 		1: "MISSING_SCAN_DATA",
 		2: "MISSING_SIGNATURE",
 		3: "MISSING_SIGNATURE_VERIFICATION_DATA",
+		4: "MISSING_SCANNER",
+		5: "SCAN_FAILED",
 	}
 	VirtualMachineV2_Note_value = map[string]int32{
 		"MISSING_METADATA":                    0,
 		"MISSING_SCAN_DATA":                   1,
 		"MISSING_SIGNATURE":                   2,
 		"MISSING_SIGNATURE_VERIFICATION_DATA": 3,
+		"MISSING_SCANNER":                     4,
+		"SCAN_FAILED":                         5,
 	}
 )
 
@@ -130,18 +136,18 @@ func (VirtualMachineV2_Note) EnumDescriptor() ([]byte, []int) {
 type VirtualMachineV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// VM identifier
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"`                                      // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name"`                                  // @gotags: search:"Virtual Machine Name"
-	Namespace   string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                        // @gotags: search:"Namespace"
-	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
+	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"`       // @gotags: search:"Virtual Machine ID,hidden" sql:"pk,type(uuid)" hash:"ignore"
+	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name"`                                          // @gotags: search:"Virtual Machine Name"
+	Namespace   string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                           // @gotags: search:"Namespace"
+	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                      // @gotags: search:"Cluster"
 	// KubeVirt facts about the VM.
 	Facts map[string]string `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Guest OS reported by KubeVirt facts, extracted as a queryable column.
-	GuestOs     string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                          // @gotags: search:"Guest OS" sql:"index=btree"
-	State       VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"`        // @gotags: search:"Virtual Machine State"
-	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"`              // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"
-	Notes       []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty" hash:"set"` // @gotags: hash:"set"
+	GuestOs     string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                                            // @gotags: search:"Guest OS" sql:"index=btree"
+	State       VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"`                               // @gotags: search:"Virtual Machine State"
+	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"` // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)" hash:"ignore"
+	Notes       []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty" hash:"set"`                                            // @gotags: hash:"set"
 	VsockCid    int32                   `protobuf:"varint,11,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
 	// Hash of VM data fields for change detection (excludes last_updated).
 	Hash          uint64 `protobuf:"varint,12,opt,name=hash,proto3" json:"hash,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
@@ -267,7 +273,7 @@ var File_storage_virtual_machine_v2_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_v2_proto_rawDesc = "" +
 	"\n" +
-	" storage/virtual_machine_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa9\x05\n" +
+	" storage/virtual_machine_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd0\x05\n" +
 	"\x10VirtualMachineV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -290,12 +296,14 @@ const file_storage_virtual_machine_v2_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"s\n" +
+	"\aRUNNING\x10\x02\"\x99\x01\n" +
 	"\x04Note\x12\x14\n" +
 	"\x10MISSING_METADATA\x10\x00\x12\x15\n" +
 	"\x11MISSING_SCAN_DATA\x10\x01\x12\x15\n" +
 	"\x11MISSING_SIGNATURE\x10\x02\x12'\n" +
-	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03B.\n" +
+	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\x12\x13\n" +
+	"\x0fMISSING_SCANNER\x10\x04\x12\x0f\n" +
+	"\vSCAN_FAILED\x10\x05B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
