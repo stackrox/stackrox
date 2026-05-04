@@ -40,12 +40,13 @@ jobs:
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+        # No collector — it's built from a separate repo and the matching
+        # tag may not exist. KinD doesn't need collector for db backup test.
         image: |
           rhacs-eng/main:${{ env.tag }}
           rhacs-eng/central-db:${{ env.tag }}
           rhacs-eng/scanner-v4:${{ env.tag }}
           rhacs-eng/scanner-v4-db:${{ env.tag }}
-          rhacs-eng/collector:${{ env.tag }}
 
   # EXPERIMENT: Replace GKE/infractl with KinD cluster.
   # Removes: infractl, GCP auth, gcloud SDK, 15-25 min cluster wait.
@@ -62,8 +63,10 @@ jobs:
       CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}-${{ github.run_attempt }}
       CI_JOB_NAME: kind-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports/
-      # No LOAD_BALANCER — use port-forward instead of GKE LB
       ORCHESTRATOR_FLAVOR: k8s
+      # EXPERIMENT: hardcode tag (normally comes from build workflow)
+      tag: 4.11.x-831-g8f262d83ee
+      MAIN_IMAGE_TAG: 4.11.x-831-g8f262d83ee
     timeout-minutes: 60
     steps:
 
