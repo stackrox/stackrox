@@ -64,8 +64,8 @@ ENV PATH="/stackrox:$PATH" \
 
 COPY --from=package_installer /out/ /
 
-COPY static-bin /stackrox/
-COPY --from=downloads /output/go/ /go/
+COPY --link static-bin /stackrox/
+COPY --link --from=downloads /output/go/ /go/
 
 RUN \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
@@ -78,25 +78,27 @@ RUN \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
 
-COPY --from=stackrox_data /stackrox-data /stackrox/static-data
-COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
-COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
-COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
+COPY --link --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY --link ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+COPY --link ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+COPY --link THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
-COPY ui /ui
+COPY --link ui /ui
 
-COPY bin/central            /stackrox/central
-COPY bin/migrator           /stackrox/bin/migrator
-COPY bin/compliance         /stackrox/bin/compliance
-COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
-COPY bin/admission-control  /stackrox/bin/admission-control
-COPY bin/config-controller  /stackrox/bin/config-controller
-COPY bin/roxagent           /stackrox/bin/roxagent
-COPY bin/roxctl*            /assets/downloads/cli/
+COPY --link bin/central            /stackrox/central
+COPY --link bin/migrator           /stackrox/bin/migrator
+COPY --link bin/compliance         /stackrox/bin/compliance
+COPY --link bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY --link bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY --link bin/admission-control  /stackrox/bin/admission-control
+COPY --link bin/config-controller  /stackrox/bin/config-controller
+COPY --link bin/roxagent           /stackrox/bin/roxagent
+COPY --link bin/roxctl*            /assets/downloads/cli/
 
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
-    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
+COPY --link *VERSION /
+
+RUN ln -sf /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
+    ln -sf /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
 
 EXPOSE 8443
 

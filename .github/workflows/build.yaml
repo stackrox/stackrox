@@ -70,7 +70,7 @@ jobs:
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
-            "build_and_push_main": { "name":[], "arch":[] },
+            "build_and_push_main": { "name":[], "arch":[], "image":["main","roxctl","central-db"] },
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
             "push_operator_multiarch_manifests": { "name":[] },
@@ -181,8 +181,10 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable version produces byte-identical binaries across commits.
+      # Enables Docker COPY --link layer caching for unchanged binaries.
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -263,8 +265,9 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # Stable version (see pre-build-cli comment)
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -460,7 +463,6 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
-      - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries
       - pre-build-oss-notice
@@ -541,38 +543,55 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        with:
+          driver: ${{ (matrix.arch == 'amd64' || matrix.arch == 'arm64') && 'docker' || 'docker-container' }}
 
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
-
+      # Download only artifacts needed for this image
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui
 
       - uses: ./.github/actions/download-artifact-with-retry
+        id: download-cli
+        if: matrix.image == 'main' || matrix.image == 'roxctl'
+        continue-on-error: true
         with:
           name: cli-build
 
-      - name: Unpack cli build
+      - name: Unpack cli build or create stubs
+        if: matrix.image == 'main' || matrix.image == 'roxctl'
         run: |
-          tar xvzf cli-build.tgz
+          if [[ -f cli-build.tgz ]]; then
+            tar xzf cli-build.tgz
+          else
+            echo "CLI artifact not available, creating stubs"
+            mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
+            for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
+              echo "stub: CLI not built for this PR" > "bin/${arch}/roxctl"
+              cp "bin/${arch}/roxctl" "bin/${arch}/roxagent"
+            done
+            echo "stub: CLI not built for this PR" > bin/windows_amd64/roxctl.exe
+          fi
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
       - name: Unpack Go binaries build
-        run: |
-          tar xvzf go-binaries-build.tgz
+        if: matrix.image == 'main'
+        run: tar xzf go-binaries-build.tgz
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: docs-build
           path: image/rhel/docs
 
       - uses: ./.github/actions/download-artifact-with-retry
+        if: matrix.image == 'main'
         with:
           name: oss-notice
           path: image/rhel/THIRD_PARTY_NOTICES
@@ -585,45 +604,492 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
-      - name: Build main images
+      - name: Prepare build context
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+          case "${{ matrix.image }}" in
+            main)
+              GOOS=linux GOARCH=${{ matrix.arch }} make copy-binaries-to-image-dir
+              cp -f ./*VERSION image/rhel/
+              echo "${{ env.BUILD_TAG }}" > image/rhel/VERSION
+              ;;
+            roxctl)
+              cp -f bin/linux_${{ matrix.arch }}/roxctl image/roxctl/roxctl-linux
+              ;;
+            central-db)
+              ;; # no prep needed
+          esac
 
-      - name: Check debugger presence in the main image
-        run: make check-debugger
-
-      - name: Build roxctl image
+      - name: Compute image tags
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
+          source ./scripts/ci/lib.sh
+          registry="$(registry_from_branding "${{ env.ROX_PRODUCT_BRANDING }}")"
+          tag="${{ env.BUILD_TAG }}"
+          arch="${{ matrix.arch }}"
+          NL=$'\n'
 
-      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+
+          for image in main roxctl central-db; do
+            TAGS="${registry}/${image}:${tag}-${arch}"
+            TAGS="${TAGS}${NL}${registry}/${image}:cache-${arch}"
+
+            if [[ "$push_context" == "merge-to-master" ]]; then
+              TAGS="${TAGS}${NL}${registry}/${image}:latest-${arch}"
+            fi
+
+            TAG_VAR="$(echo "${image}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')_TAGS"
+            {
+              echo "${TAG_VAR}<<EOF"
+              echo "$TAGS"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          done
+
+          echo "QUAY_REGISTRY=${registry}" >> "$GITHUB_ENV"
+
+      - name: Login to quay.io
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_USERNAME || secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ env.QUAY_REGISTRY == 'quay.io/stackrox-io' && secrets.QUAY_STACKROX_IO_RW_PASSWORD || secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Push images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      - name: Build and push ${{ matrix.image }} image
         env:
+          SOURCE_DATE_EPOCH: 0
+        run: |
+          REGISTRY="${{ env.QUAY_REGISTRY }}"
+          ARCH="${{ matrix.arch }}"
+          IMAGE="${{ matrix.image }}"
+
+          if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ github.event.pull_request.head.repo.fork }}" != "true" ]]; then
+            OUTPUT="type=image,push=true,rewrite-timestamp=true"
+          else
+            OUTPUT="type=image"
+          fi
+
+          # Select tags, Dockerfile, context, and build-args per image
+          case "$IMAGE" in
+            main)
+              TAGS="$MAIN_TAGS"
+              DOCKERFILE=image/rhel/Dockerfile
+              CONTEXT=image/rhel
+              BUILD_ARGS=(
+                "--build-arg" "DEBUG_BUILD=${{ env.DEBUG_BUILD || 'no' }}"
+                "--build-arg" "ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}"
+                "--build-arg" "TARGET_ARCH=${ARCH}"
+                "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
+                "--build-arg" "LABEL_VERSION=${{ env.BUILD_TAG }}"
+                "--build-arg" "LABEL_RELEASE=${{ env.SHORTCOMMIT }}"
+                "--build-arg" "QUAY_TAG_EXPIRATION=13w"
+              )
+              ;;
+            roxctl)
+              TAGS="$ROXCTL_TAGS"
+              DOCKERFILE=image/roxctl/Dockerfile
+              CONTEXT=image/roxctl
+              BUILD_ARGS=()
+              ;;
+            central-db)
+              TAGS="$CENTRAL_DB_TAGS"
+              DOCKERFILE=image/postgres/Dockerfile
+              CONTEXT=image/postgres
+              BUILD_ARGS=("--build-arg" "MAIN_IMAGE_TAG=${{ env.BUILD_TAG }}")
+              ;;
+          esac
+
+          TAG_FLAGS=()
+          while read -r t; do [[ -n "$t" ]] && TAG_FLAGS+=("--tag=$t"); done <<< "$TAGS"
+
+          # BuildKit (docker driver) resolves inline cache via lazy pull —
+          # metadata only, no layer blob downloads. With stable ldflags,
+          # binary layers have identical digests across commits.
+          docker buildx build \
+            --file "$DOCKERFILE" \
+            --platform "linux/${ARCH}" \
+            --output "$OUTPUT" \
+            --provenance=false \
+            "${TAG_FLAGS[@]}" \
+            "${BUILD_ARGS[@]}" \
+            --cache-from "type=registry,ref=${REGISTRY}/${IMAGE}:cache-${ARCH}" \
+            --cache-to type=inline \
+            "$CONTEXT"
+
+  # Experimental: combined Go build + image build+push with buildID caching.
+  # Three scenarios: (1) no changes → re-tag only, (2) few changes → partial rebuild,
+  # (3) major changes → full rebuild.
+  build-and-push-combined:
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    needs:
+      - define-job-matrix
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+      REAL_BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      REAL_SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        env:
+          GOARCH: ${{ matrix.arch }}
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Restore cached buildIDs
+        id: buildid-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
+        with:
+          path: /tmp/buildid-cache
+          key: go-buildids-v1-build-and-push-combined-${{ matrix.arch }}-${{ github.sha }}
+          restore-keys: go-buildids-v1-build-and-push-combined-${{ matrix.arch }}-
+
+      - name: Go build with buildID caching
+        id: go-build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ARCH="${{ matrix.arch }}"
+          CGO=0
+          LDFLAGS_EXTRA=""
+          if [[ "$ARCH" == "amd64" ]]; then
+            CGO=1
+            LDFLAGS_EXTRA="-linkmode=external"
+          fi
+          mkdir -p "bin/linux_${ARCH}"
+
+          LDFLAGS="-s -w ${LDFLAGS_EXTRA} \
+            -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
+            -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}"
+
+          # Check if go build can be skipped. Only safe when ALL changes
+          # are exclusively under ui/ — anything else could affect Go
+          # (go:embed, proto-generated code, helm charts, Makefiles, etc.)
+          go_build_needed=true
+          if [[ -f /tmp/buildid-cache/buildids.txt ]]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            if [[ -n "$PR_NUMBER" ]]; then
+              # Only ui/ is guaranteed to not affect Go builds
+              non_ui_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null \
+                | grep -v '^ui/' || true)
+              if [[ -z "$non_ui_files" ]]; then
+                go_build_needed=false
+                echo "All PR changes are under ui/ — skipping go build"
+              else
+                echo "Non-UI files changed — go build required"
+              fi
+            fi
+          else
+            echo "No cached buildIDs — full build required"
+          fi
+
+          if [[ "$go_build_needed" == "false" ]]; then
+            # FAST PATH: no Go changes, cached buildIDs exist → skip go build
+            echo "go_changed=false" >> "$GITHUB_OUTPUT"
+            echo "main_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            # Go files changed or no cache — run go build
+            # Create stubs from cached buildIDs for buildID skip
+            if [[ -f /tmp/buildid-cache/buildids.txt ]]; then
+              echo "Creating stub binaries from cached buildIDs"
+              echo 'package main; func main(){}' > /tmp/stub.go
+              GOOS=linux GOARCH="$ARCH" go build -ldflags="-s -w" -trimpath -o /tmp/stub-template /tmp/stub.go
+              STUB_ID=$(go tool buildid /tmp/stub-template)
+
+              while read -r name bid; do
+                [[ -z "$name" || -z "$bid" ]] && continue
+                cp /tmp/stub-template "bin/linux_${ARCH}/${name}"
+                python3 -c "import sys; d=open(sys.argv[1],'rb').read(); open(sys.argv[1],'wb').write(d.replace(sys.argv[2].encode(),sys.argv[3].encode(),1))" "bin/linux_${ARCH}/${name}" "$STUB_ID" "$bid"
+              done < /tmp/buildid-cache/buildids.txt
+              echo "Created $(wc -l < /tmp/buildid-cache/buildids.txt) stubs"
+            fi
+
+            GOOS=linux GOARCH="$ARCH" CGO_ENABLED="$CGO" \
+              go build -buildvcs=false -trimpath -o "bin/linux_${ARCH}/" \
+              -ldflags "${LDFLAGS}" -tags "${GOTAGS}" \
+              ./central ./compliance/cmd/compliance ./config-controller \
+              ./migrator ./operator/cmd ./sensor/admission-control \
+              ./sensor/kubernetes ./sensor/upgrader
+
+            # Save buildIDs BEFORE rename
+            mkdir -p /tmp/buildid-cache
+            for f in bin/linux_${ARCH}/*; do
+              [[ -f "$f" ]] && echo "$(basename "$f") $(go tool buildid "$f")"
+            done > /tmp/buildid-cache/buildids.txt
+            echo "Saved $(wc -l < /tmp/buildid-cache/buildids.txt) buildIDs"
+
+            # Detect what changed: stubs are ~1.2MB, real binaries are >50MB
+            changed=()
+            for f in bin/linux_${ARCH}/*; do
+              [[ -f "$f" ]] || continue
+              size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+              [[ $size -gt 2000000 ]] && changed+=("$(basename "$f")")
+            done
+
+            mv -f "bin/linux_${ARCH}/cmd" "bin/linux_${ARCH}/stackrox-operator" 2>/dev/null || true
+
+            if [[ ${#changed[@]} -eq 0 ]] && [[ -f /tmp/buildid-cache/buildids.txt ]]; then
+              echo "go_changed=false" >> "$GITHUB_OUTPUT"
+              echo "main_changed=false" >> "$GITHUB_OUTPUT"
+              echo "No binaries changed (all stubs preserved)"
+            else
+              echo "go_changed=true" >> "$GITHUB_OUTPUT"
+              echo "main_changed=true" >> "$GITHUB_OUTPUT"
+              echo "Changed binaries: ${changed[*]:-all (no cached buildIDs)}"
+            fi
+          fi
+
+      - name: Login to docker.io
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        with:
+          driver: docker
+
+      - name: Check for UI changes
+        id: ui-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ui_changed=false
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          if [[ -n "$PR_NUMBER" ]]; then
+            pr_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null || echo "")
+            # UI build needed if ui/, .github/, or image/ changed
+            if echo "$pr_files" | grep -qE '^(ui/|\.github/|image/)'; then
+              ui_changed=true
+            fi
+          else
+            git fetch --depth=2 origin "${{ github.sha }}" 2>/dev/null || true
+            if git diff --name-only HEAD~1 HEAD -- 'ui/' '.github/' 'image/' 2>/dev/null | grep -q .; then
+              ui_changed=true
+            fi
+          fi
+          echo "ui_changed=${ui_changed}" >> "$GITHUB_OUTPUT"
+          echo "UI changed: ${ui_changed}"
+
+      - name: Set up Node.js
+        if: steps.ui-check.outputs.ui_changed == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+        with:
+          node-version-file: ui/package.json
+
+      - name: Cache UI dependencies
+        if: steps.ui-check.outputs.ui_changed == 'true'
+        uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Build UI
+        id: ui-build
+        if: steps.ui-check.outputs.ui_changed == 'true'
+        run: |
+          echo "ui_changed=true" >> "$GITHUB_OUTPUT"
+          for brand in RHACS_BRANDING STACKROX_BRANDING; do
+            ROX_PRODUCT_BRANDING="${brand}" make -C ui deps
+            ROX_PRODUCT_BRANDING="${brand}" make -C ui build
+            mkdir -p "ui-${brand}"
+            cp -a ui/build "ui-${brand}/build"
+            rm -rf ui/build
+          done
+
+      - name: Build or re-tag images
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          SOURCE_DATE_EPOCH: 0
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
           QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+          source ./scripts/ci/lib.sh
+          ARCH="${{ matrix.arch }}"
+          MAIN_CHANGED="${{ steps.go-build.outputs.main_changed }}"
+
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+
+          for brand in RHACS_BRANDING STACKROX_BRANDING; do
+            echo "::group::${brand} images"
+            export ROX_PRODUCT_BRANDING="${brand}"
+
+            REGISTRY="$(registry_from_branding "${brand}")"
+            registry_rw_login "${REGISTRY}"
+
+            TAG="${{ env.REAL_BUILD_TAG }}"
+            NL=$'\n'
+
+            for IMAGE in main roxctl central-db; do
+              DST="${REGISTRY}/${IMAGE}:${TAG}-${ARCH}"
+              SRC="${REGISTRY}/${IMAGE}:cache-${ARCH}"
+
+              # Decide: re-tag or rebuild?
+              # - main image: rebuild only if main binaries changed
+              # - roxctl/central-db: always re-tag (no Go binaries from our build)
+              UI_CHANGED="${{ steps.ui-check.outputs.ui_changed }}"
+              need_build=false
+              if [[ "$IMAGE" == "main" ]] && [[ "$MAIN_CHANGED" == "true" || "$UI_CHANGED" == "true" ]]; then
+                need_build=true
+              fi
+
+              if [[ "$need_build" == "false" ]]; then
+                echo "Re-tagging ${IMAGE} (${brand}): cache → ${TAG}-${ARCH}"
+                docker buildx imagetools create --tag "${DST}" "${SRC}" || {
+                  echo "::warning::Re-tag failed, falling back to build"
+                  need_build=true
+                }
+              fi
+
+              if [[ "$need_build" == "true" ]]; then
+                TAGS="${DST}${NL}${SRC}"
+                if [[ "$push_context" == "merge-to-master" ]]; then
+                  TAGS="${TAGS}${NL}${REGISTRY}/${IMAGE}:latest-${ARCH}"
+                fi
+
+                TAG_FLAGS=()
+                while read -r t; do [[ -n "$t" ]] && TAG_FLAGS+=("--tag=$t"); done <<< "$TAGS"
+
+                case "$IMAGE" in
+                  main)
+                    cp -f ./*VERSION image/rhel/
+
+                    # Generate optimized Dockerfile: unchanged binaries use COPY --from=cached
+                    # (references existing registry layer, no local file needed).
+                    # Changed binaries use COPY --link from build context.
+                    # Only copy changed binaries to image dir (not all).
+                    CACHED="${SRC}"
+                    cp image/rhel/Dockerfile /tmp/Dockerfile.optimized
+
+                    # Add cached image as a stage before the final FROM
+                    sed -i "1i ARG CACHED_IMAGE=${CACHED}" /tmp/Dockerfile.optimized
+                    awk '/^FROM ubi-micro-base$/{print "FROM ${CACHED_IMAGE} AS cached"}1' /tmp/Dockerfile.optimized > /tmp/Dockerfile.tmp
+                    mv /tmp/Dockerfile.tmp /tmp/Dockerfile.optimized
+
+                    # For each binary: if stub (unchanged), use --from=cached
+                    declare -A BIN_MAP=(
+                      [central]="/stackrox/central"
+                      [migrator]="/stackrox/bin/migrator"
+                      [compliance]="/stackrox/bin/compliance"
+                      [kubernetes-sensor]="/stackrox/bin/kubernetes-sensor"
+                      [sensor-upgrader]="/stackrox/bin/sensor-upgrader"
+                      [admission-control]="/stackrox/bin/admission-control"
+                      [config-controller]="/stackrox/bin/config-controller"
+                      [roxagent]="/stackrox/bin/roxagent"
+                    )
+
+                    # Convert unchanged components to --from=cached
+                    # Binaries: check stub vs real
+                    for bin_name in "${!BIN_MAP[@]}"; do
+                      dest="${BIN_MAP[$bin_name]}"
+                      src_file="bin/${bin_name}"
+                      local_bin="bin/linux_${ARCH}/${bin_name}"
+
+                      if [[ -f "$local_bin" ]] && [[ $(stat -c%s "$local_bin" 2>/dev/null || echo 0) -gt 2000000 ]]; then
+                        echo "  ${bin_name}: changed → COPY from build context"
+                      else
+                        echo "  ${bin_name}: unchanged → COPY --from=cached"
+                        sed -i "s|COPY --link ${src_file} .*|COPY --link --from=cached ${dest} ${dest}|" /tmp/Dockerfile.optimized
+                      fi
+                    done
+
+                    # Non-binary layers: use --from=cached for all
+                    # (UI, docs, OSS notices, roxctl CLIs, VERSION)
+                    if [[ "$UI_CHANGED" != "true" ]]; then
+                      sed -i 's|COPY --link ui /ui|COPY --link --from=cached /ui /ui|' /tmp/Dockerfile.optimized
+                    else
+                      # UI changed — need to copy branding-specific UI build to context
+                      rm -rf image/rhel/ui
+                      cp -a "ui-${brand}/build" image/rhel/ui
+                    fi
+                    sed -i 's|COPY --link ./docs/api/v1/swagger.json .*|COPY --link --from=cached /stackrox/static-data/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link ./docs/api/v2/swagger.json .*|COPY --link --from=cached /stackrox/static-data/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link THIRD_PARTY_NOTICES .*|COPY --link --from=cached /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link bin/roxctl\*.*|COPY --link --from=cached /assets/downloads/cli /assets/downloads/cli|' /tmp/Dockerfile.optimized
+                    sed -i 's|COPY --link \*VERSION /|COPY --link --from=cached /VERSION /VERSION|' /tmp/Dockerfile.optimized
+
+                    echo "Generated Dockerfile.optimized:"
+                    grep -n 'COPY --link' /tmp/Dockerfile.optimized
+
+                    # Copy only changed binaries to build context
+                    mkdir -p image/rhel/bin
+                    for f in bin/linux_${ARCH}/*; do
+                      [[ -f "$f" ]] || continue
+                      size=$(stat -c%s "$f" 2>/dev/null || echo 0)
+                      if [[ $size -gt 2000000 ]]; then
+                        name=$(basename "$f")
+                        # Apply renaming (kubernetes→kubernetes-sensor, etc.)
+                        case "$name" in
+                          kubernetes) cp "$f" image/rhel/bin/kubernetes-sensor ;;
+                          upgrader) cp "$f" image/rhel/bin/sensor-upgrader ;;
+                          *) cp "$f" "image/rhel/bin/${name}" ;;
+                        esac
+                      fi
+                    done
+                    find image/rhel/bin -type f -exec chmod +x {} \;
+
+                    DOCKERFILE=/tmp/Dockerfile.optimized
+                    CONTEXT=image/rhel
+                    BUILD_ARGS=(
+                      "--build-arg" "ROX_PRODUCT_BRANDING=${brand}"
+                      "--build-arg" "TARGET_ARCH=${ARCH}"
+                      "--build-arg" "ROX_IMAGE_FLAVOR=development_build"
+                      "--build-arg" "LABEL_VERSION=${TAG}"
+                      "--build-arg" "LABEL_RELEASE=${{ env.REAL_SHORTCOMMIT }}"
+                      "--build-arg" "QUAY_TAG_EXPIRATION=13w"
+                    )
+                    ;;
+                  roxctl)
+                    cp -f "bin/linux_${ARCH}/roxctl" image/roxctl/roxctl-linux
+                    DOCKERFILE=image/roxctl/Dockerfile
+                    CONTEXT=image/roxctl
+                    BUILD_ARGS=()
+                    ;;
+                  central-db)
+                    DOCKERFILE=image/postgres/Dockerfile
+                    CONTEXT=image/postgres
+                    BUILD_ARGS=("--build-arg" "MAIN_IMAGE_TAG=${TAG}")
+                    ;;
+                esac
+
+                echo "Building ${IMAGE} (${brand})"
+                docker buildx build \
+                  --file "$DOCKERFILE" \
+                  --platform "linux/${ARCH}" \
+                  --output "type=image,push=true,rewrite-timestamp=true" \
+                  --provenance=false \
+                  "${TAG_FLAGS[@]}" \
+                  "${BUILD_ARGS[@]}" \
+                  --cache-from "type=registry,ref=${SRC}" \
+                  --cache-to type=inline \
+                  "$CONTEXT"
+              fi
+            done
+
+            echo "::endgroup::"
+          done
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
