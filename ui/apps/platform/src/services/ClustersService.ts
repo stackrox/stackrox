@@ -225,7 +225,10 @@ export type ClusterRegistrationSecret = {
         attributes: InitBundleAttribute[];
     };
     expiresAt: string;
-    impactedClusters: ImpactedCluster[];
+    // Protobuf uint64 is serialized as a JSON string. Parse with parseInt when a numeric value is needed.
+    maxRegistrations: string;
+    registrationsInitiated: string[];
+    registrationsCompleted: string[];
 };
 
 export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {

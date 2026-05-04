@@ -30,7 +30,7 @@
 - TLS config composition: `pkg/mtls/certwatch/tls_config_holder.go` — `atomic.Pointer[tls.Config]`, rotates session ticket keys on every update to invalidate cached TLS sessions
 - Trust pool builders: `pkg/mtls/verifier/verify.go` — `TrustedCertPool()`, `NonCA.TLSConfig()`
 - Central TLS manager: `central/tlsconfig/manager_impl.go` — composes server certs + trust roots for incoming connections
-- Central TLS cert loaders: `central/tlsconfig/tlsconfig.go` — `loadInternalCertificateFromFiles()`, `MaybeGetDefaultTLSCertificateFromDirectory()`
+- Central TLS cert loaders: `central/tlsconfig/tlsconfig.go` — `LoadInternalCertificateFromDirectory()`, `MaybeGetDefaultTLSCertificateFromDirectory()`
 - TLS challenge endpoint: `central/metadata/service/service_impl.go`
 - Cert issuance for Secured Clusters: `central/securedclustercertgen/certificates.go`
 - CentralHello cert bundle: `central/sensor/service/service_impl.go` — Central proactively issues certs and includes them in the CentralHello handshake message. Used by the CRS registration flow; typically ignored by Sensor during normal reconnects.
@@ -49,16 +49,15 @@
 - CA key bytes
 - These NEVER refresh without a pod restart.
 
-### Hot-reloaded via certwatch
+### Hot-reloaded via certwatch (Central)
 
-- Default/ingress TLS cert — `certwatch.WatchCertDir(DefaultCertPath, ...)` in `central/tlsconfig/manager_impl.go`
+- Default/ingress TLS cert — `certwatch.WatchCertDir` in `central/tlsconfig/manager_impl.go`
+- Internal service leaf cert — `certwatch.WatchCertDir` on `CertsPrefix` in `central/tlsconfig/manager_impl.go`, verified against internal CA on each reload
+- Primary leaf for TLS challenge — `certwatch.WatchCertDir` with atomic pointer in `central/metadata/service/service_impl.go`
 - Secure metrics TLS cert — `certwatch.WatchCertDir` in `pkg/metrics/tls.go`
 
 ### Loaded once at startup, never refreshed
 
-- Central internal service leaf cert — loaded in `getInternalCertificates()` at TLS manager construction, stored in `internalCerts`
-- Central primary leaf for TLS challenge — `sync.Once` in `central/metadata/service/service_impl.go`
-- Central secondary leaf for TLS challenge — `sync.Once`, issued in memory from secondary CA
 - Scanner V4 (indexer/matcher): server cert via `verifier.NonCA{}`, client cert via `clientconn.TLSConfig`
 - Admission controller: webhook server cert via `verifier.NonCA{}`
 - Sensor: client cert loaded in `centralclient.NewClient`, proxy cert in `StartProxyServer`
@@ -66,9 +65,9 @@
 
 ## Central has three independent cert-handling paths
 
-1. **TLS manager** (`TLSConfigHolder`) — incoming connections. Composes default cert (watched) + internal cert (loaded once) + sync.Once trust roots.
+1. **TLS manager** (`TLSConfigHolder`) — incoming connections. Composes default cert (watched) + internal cert (watched) + sync.Once trust roots.
 2. **Outbound client connections** (`clientconn.TLSConfig`) — reads leaf from disk per connection, trust pool from `mtls.CACert()`.
-3. **TLS challenge endpoint** (`central/metadata/service`) — reads primary leaf via `sync.Once`, issues secondary leaf via `sync.Once`, reads CA via `mtls.CACert()`.
+3. **TLS challenge endpoint** (`central/metadata/service`) — reads primary leaf via certwatch, issues secondary leaf with short validity and auto-renewal, reads CA via `mtls.CACert()`.
 
 ## Certificate management — who manages what
 
@@ -105,7 +104,7 @@
 - Unauthenticated endpoint. Sensor sends challenge token, Central returns signed TrustInfo.
 - Response includes: primary cert chain, secondary cert chain (if present), additional CAs, default TLS leaf cert.
 - Signed with both primary and secondary leaf certs. Sensor verifies one signature and trusts all certs in the response (trust delegation).
-- Secondary leaf cert: issued in memory from secondary CA with 1-year validity via sync.Once, never renewed.
+- Secondary leaf cert: issued in memory from secondary CA with ~3-hour validity, auto-renewed before expiry.
 
 ## Sensor certinit — blocks hot reload
 
