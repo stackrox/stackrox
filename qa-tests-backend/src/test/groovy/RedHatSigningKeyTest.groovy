@@ -4,6 +4,7 @@ import static util.Helpers.trueWithin
 
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 
+import objects.Deployment
 import common.Constants
 import services.BaseService
 import services.SignatureIntegrationService
@@ -15,6 +16,8 @@ class RedHatSigningKeyTest extends BaseSpecification {
 
     private static final String RED_HAT_INTEGRATION_ID =
             "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
+
+    private static final String CENTRAL_CONTAINER_NAME = "central"
 
     private static final String TEST_PUBLIC_KEY_PEM = """\
 -----BEGIN PUBLIC KEY-----
@@ -110,6 +113,82 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         waitForTrue(30, 10) {
             orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "central")
         }
+    }
+
+    @Tag("BAT")
+    def "Updater downloads key bundle from remote HTTP server"() {
+        given:
+        "An nginx pod serving a key bundle JSON in the stackrox namespace"
+        def bundleJson = """{"keys": [""" +
+                """{"name": "updater-key-1", "pem": ${escapeJsonString(TEST_PUBLIC_KEY_PEM)}}, """ +
+                """{"name": "updater-key-2", "pem": ${escapeJsonString(TEST_PUBLIC_KEY_PEM_2)}}]}"""
+
+        def configMapName = "rh-signing-key-bundle-test"
+        orchestrator.createConfigMap(configMapName,
+                ["bundle.json": bundleJson],
+                Constants.STACKROX_NAMESPACE)
+
+        def nginxDeployment = new Deployment()
+                .setName("key-bundle-server")
+                .setNamespace(Constants.STACKROX_NAMESPACE)
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
+                .addLabel("app", "key-bundle-server")
+                .addPort(80, "TCP")
+                .setExposeAsService(true)
+        nginxDeployment.addVolumeFromConfigMap(
+                new objects.ConfigMap(name: configMapName, namespace: Constants.STACKROX_NAMESPACE),
+                "/usr/share/nginx/html",
+        )
+        orchestrator.createDeployment(nginxDeployment)
+
+        def serviceIP = orchestrator.getServiceIP("key-bundle-server", Constants.STACKROX_NAMESPACE)
+        def bundleURL = "http://${serviceIP}/bundle.json"
+
+        when:
+        "Central is configured with the bundle URL and a short update interval"
+        orchestrator.updateDeploymentEnv(
+                Constants.STACKROX_NAMESPACE, "central", CENTRAL_CONTAINER_NAME,
+                "ROX_REDHAT_SIGNING_KEY_BUNDLE_URL", bundleURL,
+        )
+        orchestrator.updateDeploymentEnv(
+                Constants.STACKROX_NAMESPACE, "central", CENTRAL_CONTAINER_NAME,
+                "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL", "10s",
+        )
+
+        then:
+        "Central restarts and the updater downloads the bundle, watcher upserts the keys"
+        // Rolling update + updater download + watcher poll: allow up to 5 minutes.
+        trueWithin(60, 5) {
+            try {
+                def integration = getRedHatIntegration()
+                if (integration == null) {
+                    return false
+                }
+                if (integration.cosign.publicKeysCount != 2) {
+                    return false
+                }
+                def keyNames = (integration.cosign.publicKeysList*.name).sort()
+                return keyNames == ["updater-key-1", "updater-key-2"]
+            } catch (Exception ignored) {
+                return false
+            }
+        }
+
+        cleanup:
+        "Remove the env vars from Central and delete the nginx server"
+        orchestrator.removeDeploymentEnv(
+                Constants.STACKROX_NAMESPACE, "central", CENTRAL_CONTAINER_NAME,
+                "ROX_REDHAT_SIGNING_KEY_BUNDLE_URL",
+        )
+        orchestrator.removeDeploymentEnv(
+                Constants.STACKROX_NAMESPACE, "central", CENTRAL_CONTAINER_NAME,
+                "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL",
+        )
+        trueWithin(60, 5) {
+            orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "central")
+        }
+        orchestrator.deleteDeployment(nginxDeployment)
+        orchestrator.deleteConfigMap(configMapName, Constants.STACKROX_NAMESPACE)
     }
 
     private static String escapeJsonString(String s) {
