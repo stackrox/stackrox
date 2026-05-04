@@ -32,9 +32,10 @@
 #   docker save exports uncompressed tarballs (~1.5 GB for main vs ~500 MB
 #   compressed). Same approach used by sensor-integration-tests.
 #
-#   Pulls are staggered: central-db + main are pulled first (critical path).
-#   Scanner images pull in background and don't block helm install — scanner
-#   pods briefly show ErrImagePull, then start once ctr finishes.
+#   All pulls run fully parallel with helm install — no image-wait gate.
+#   Helm just creates k8s resources; kubelet starts each pod as its image
+#   arrives (IfNotPresent policy). central-db is pulled first (smallest)
+#   so its initdb gets a head start before Central's image arrives.
 #
 # Chart rendering:
 #   Instead of building/extracting roxctl to run `roxctl helm output`, charts
@@ -151,13 +152,13 @@ jobs:
       #
       # Timeline (typical):
       #   0s   - KinD create + chart render start (parallel)
-      #   15s  - KinD ready, critical images (central-db, main) start pulling
-      #   35s  - Critical images ready, helm install (scanner pulls continue)
-      #   36s  - central-db pod starts initdb (image was pulled first)
-      #   40s  - Central pod starts, migrator retries DB connection
-      #   50s  - Central API reachable, auth token written
-      #   60s  - Sensor deployed, test data seeding starts
-      #   ~85s - Sensor reports >5 deployments → /tmp/data-ready touched
+      #   15s  - KinD ready, image pulls + helm install start (parallel)
+      #   15s  - central-db image arrives first (smallest), pod starts initdb
+      #   20s  - main image arrives, Central pod starts, migrator retries DB
+      #   30s  - Central-DB ready, migrator connects, migration runs
+      #   35s  - Central API reachable, auth token written
+      #   45s  - Sensor deployed, test data seeding starts
+      #   ~70s - Sensor reports >5 deployments → /tmp/data-ready touched
       #
       # The auth token is written to /tmp/rox-auth-token. The "Wait for
       # auth token" step polls for this file before Cypress runs.
@@ -202,40 +203,34 @@ jobs:
             # Cap container memory — the KinD node is just a Docker container
             docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
 
-            # --- Phase 2: Pull images into KinD node (staggered) ---
+            # --- Phase 2: Pull images + helm install (fully parallel) ---
             # ctr pull downloads compressed images directly into containerd.
             # Faster than `docker save | kind load` (compressed ~500 MB vs
             # uncompressed ~1.5 GB for main image alone).
             #
+            # All image pulls run in background — helm install doesn't wait
+            # for any of them. Helm just creates k8s resources; kubelet
+            # handles image availability per-pod (imagePullPolicy: IfNotPresent).
+            # Pods enter ErrImagePull until their image arrives via ctr, then
+            # start automatically on kubelet's next retry.
+            #
             # Pull central-db first — it's smaller (~200 MB) and finishes
-            # before main (~500 MB). Helm install happens as soon as these
-            # two are ready, so kubelet starts the central-db pod first,
-            # giving initdb a head start while Central waits for its image.
-            # Scanner images pull in background — not on the auth-token
-            # critical path. Scanner pods enter brief ErrImagePull then
-            # start once ctr finishes (kubelet IfNotPresent retries).
+            # before main (~500 MB), so kubelet starts the central-db pod
+            # first, giving initdb a head start before Central even starts.
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
               "${IMAGE_REGISTRY}/central-db:${TAG}" &
-            PID_CDB=$!
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
               "${IMAGE_REGISTRY}/main:${TAG}" &
-            PID_MAIN=$!
-
-            # Scanner images: pull in background, don't block helm install
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
               "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" &
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
               "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}" &
 
-            # Only wait for the two critical images — Central + Central-DB
-            wait $PID_CDB $PID_MAIN
-
-            # --- Phase 3: Deploy central-services ---
+            # --- Phase 3: Deploy central-services (no image wait) ---
             # ci-values-central.yaml sets: minimal resources (100Mi/100m requests),
             # no persistence, legacy scanner on, scanner V4 off, telemetry off.
             # Central auto-generates its CA cert on first boot.
-            # Scanner pods may briefly show ErrImagePull until background
-            # ctr pulls finish — this is expected and doesn't affect Central.
+            # Pods start as images become available — no explicit wait needed.
             kubectl create namespace stackrox
             helm upgrade --install -n stackrox stackrox-central-services /tmp/central-chart \
               -f .github/ci/ci-values-central.yaml \
