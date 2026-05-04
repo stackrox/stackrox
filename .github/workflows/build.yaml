@@ -145,11 +145,7 @@ jobs:
           cache: false
 
       - name: Verify go.mod is compatible with Konflux builders
-        run: |
-          go mod tidy || {
-            >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang"
-            exit 1
-          }
+        run: go mod tidy
 
   pre-build-ui:
     strategy:
