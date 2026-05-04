@@ -140,9 +140,17 @@ def _fetch_merged_prs_from_commits(
 
                 prs_by_branch.setdefault(branch.name, []).append(pr)
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            print(
+                f"WARNING: git log failed for branch {branch.name}: {e}",
+                file=sys.stderr,
+            )
             continue
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
+            print(
+                f"WARNING: git log timed out for branch {branch.name}: {e}",
+                file=sys.stderr,
+            )
             continue
 
     return prs_by_branch, all_jira_keys
