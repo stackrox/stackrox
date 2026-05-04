@@ -221,25 +221,18 @@ jobs:
             # start automatically on kubelet's next retry.
             #
             # Image pulls run in a background subprocess — the main flow
-            # continues straight to helm install without waiting.
-            # central-db downloads first with PULL_DELAY seconds of
-            # exclusive bandwidth before the other images start competing.
-            # The delay is in the subprocess, NOT the main flow — helm
-            # install is unaffected. Each shard uses index*2 (0-14s) to
-            # test whether central-db finishing earlier lets its initdb
-            # complete before Central's first migrator retry check.
-            PULL_DELAY=$(( ${{ strategy.job-index }} * 2 ))
-            ts "phase2: image pulls (central-db head start: ${PULL_DELAY}s) + helm install"
+            # continues straight to helm install without waiting. All 4
+            # images pull in parallel. Tested staggering (0-14s delays)
+            # across 16 runs: no benefit — quay.io network speed is the
+            # bottleneck, not local bandwidth contention between pulls.
+            ts "phase2: image pulls (background) + helm install"
             (
-              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-                "${IMAGE_REGISTRY}/central-db:${TAG}" &
-              sleep "$PULL_DELAY"
-              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-                "${IMAGE_REGISTRY}/main:${TAG}" &
-              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-                "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" &
-              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-                "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}" &
+              for img in "${IMAGE_REGISTRY}/central-db:${TAG}" \
+                         "${IMAGE_REGISTRY}/main:${TAG}" \
+                         "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" \
+                         "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}"; do
+                docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 "$img" &
+              done
               wait
             ) &
 
@@ -464,7 +457,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Shard ${{ matrix.shard }} Resource Report (pull delay: $(( ${{ strategy.job-index }} * 2 ))s)"
+            echo "## Shard ${{ matrix.shard }} Resource Report"
             echo ""
             echo "### Deploy Timeline"
             echo '```'
