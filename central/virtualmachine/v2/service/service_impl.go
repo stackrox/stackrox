@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetov2"
+	"github.com/stackrox/rox/central/views/common"
 	"github.com/stackrox/rox/central/views/vmcve"
 	componentDS "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore"
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
@@ -528,6 +529,7 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 		searchQuery,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
+	searchQuery = common.UpdateSortAggs(searchQuery)
 	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
 
 	countQuery := searchQuery.CloneVT()
