@@ -2,7 +2,6 @@ name: Audit Backport PRs
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
     paths:
       - '.github/workflows/audit-backport-prs.yml'
       - 'scripts/ci/backport-audit.py'
