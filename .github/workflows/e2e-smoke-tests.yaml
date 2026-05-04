@@ -84,57 +84,32 @@ jobs:
   kind-e2e-sharded:
     name: "Shard ${{ matrix.shard }}"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     strategy:
       # Don't cancel other shards when one fails — we want full results
       fail-fast: false
       matrix:
-        include:
-          # Shards are grouped by feature area and data dependencies.
-          # "Fast" shards only need Central API + Sensor deployment data.
-          # "Data" shards also need scanner results or collector network flows,
-          # which take 30-60s to accumulate after deploy.
-
-          # --- Fast shards: no scanner/collector data needed ---
-          - shard: "1-access"
-            specs: "cypress/integration/accessControl/**,cypress/integration/collections/**,cypress/integration/compliance/**,cypress/integration/compliance-enhanced/**"
-            needs_data: "false"
-          - shard: "2-clusters"
-            specs: "cypress/integration/clusters/**,cypress/integration/administration/**"
-            needs_data: "false"
-          - shard: "3-config"
-            specs: "cypress/integration/configmanagement/**"
-            needs_data: "false"
-          - shard: "4-ui"
-            specs: "cypress/integration/dashboard/**,cypress/integration/integrations/**,cypress/integration/systemConfig/**,cypress/integration/systemHealth/**,cypress/integration/credentialExpiry/**"
-            needs_data: "false"
-
-          # --- Data shards: need sensor deployments + network flows ---
-          - shard: "5-policy"
-            specs: "cypress/integration/policies/**,cypress/integration/risk/**,cypress/integration/violations/**,cypress/integration/networkGraph/**,cypress/integration/listeningEndpoints/**,cypress/integration/exceptionConfiguration/**,cypress/integration/main/**,cypress/integration/*.test.{js,ts}"
-            needs_data: "true"
-
-          # --- Scanner shards: need vulnerability scan results ---
-          - shard: "6-vuln-mgmt"
-            specs: "cypress/integration/vulnmanagement/**"
-            needs_data: "true"
-          - shard: "7-vuln-except"
-            specs: "cypress/integration/vulnerabilities/exceptionManagement/**,cypress/integration/vulnerabilities/nodeCves/**,cypress/integration/vulnerabilities/platformCves/**,cypress/integration/vulnerabilities/VulnerabilityReporting/**,cypress/integration/vulnerabilities/snooze*"
-            needs_data: "true"
-          - shard: "8-vuln-workload"
-            specs: "cypress/integration/vulnerabilities/workloadCves/**"
-            needs_data: "true"
+        # Auto-sharding: each shard discovers all spec files at runtime,
+        # sorts alphabetically, and takes every 8th file via round-robin.
+        # Adding/removing spec files automatically rebalances — no manual
+        # spec lists to maintain. Round-robin spreads adjacent files
+        # (often from the same directory) across shards, preventing one
+        # shard from getting all the heavy specs in a group.
+        #
+        # To change shard count: edit this array AND TOTAL_SHARDS below.
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     env:
       # Unique cluster name per shard per run — prevents collisions on re-runs
-      CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ strategy.job-index }}
+      CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ matrix.shard }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
       TAG: ${{ inputs.tag || '4.11.x-831-g8f262d83ee' }}
       # Hard memory cap on the KinD Docker container. The runner has 16 GB;
       # 6 GB for k8s + StackRox leaves 10 GB for the OS, Docker, Node/Cypress.
       KIND_MEMORY_LIMIT: 6g
       ARTIFACT_DIR: ./test-artifacts
+      TOTAL_SHARDS: 10
 
     steps:
       - name: Checkout
@@ -423,47 +398,54 @@ jobs:
           echo "Auth token ready"
 
       # ---------------------------------------------------------------
-      # WAIT FOR TEST DATA (scanner/collector shards only)
+      # WAIT FOR TEST DATA
       #
-      # Vuln-mgmt and policy shards need scanner results and/or Sensor
-      # deployment observations to exist before tests make assertions.
-      # The background deploy touches /tmp/data-ready once Sensor has
-      # reported >5 deployments to Central. Scanner indexing may still
-      # be in progress — some vuln tests may see partial results.
+      # All shards wait for /tmp/data-ready (Sensor reporting >5
+      # deployments). With round-robin sharding, any shard may contain
+      # vuln or policy specs that need scanner/sensor data. The wait
+      # is short (~6-12s) and ensures consistent behavior.
       # ---------------------------------------------------------------
-      - name: Wait for test data (scanner + sensor)
-        if: matrix.needs_data == 'true'
+      - name: Wait for test data
         run: |
-          echo "This shard needs scanner/collector data. Waiting..."
           for i in $(seq 1 180); do
             [ -f /tmp/data-ready ] && echo "Data ready" && break
             sleep 2
           done
           if [ ! -f /tmp/data-ready ]; then
-            echo "::warning::Data readiness timeout — tests may see partial results"
+            echo "::warning::Data readiness timeout — some tests may see partial results"
           fi
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -c .
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://localhost:8000/v1/imagecount" 2>/dev/null | jq -c .
 
       # ---------------------------------------------------------------
-      # CYPRESS TEST EXECUTION
+      # COMPUTE SHARD SPECS + RUN CYPRESS
       #
-      # cypress-io/github-action handles Chrome launch and spec selection.
-      # install: false — dependencies were already installed in the
-      # "Install Cypress dependencies" step above (overlapping with deploy).
+      # Discovers all spec files, sorts alphabetically, takes every
+      # TOTAL_SHARDS-th file starting at this shard's index. No manual
+      # spec lists — adding/removing files auto-rebalances.
+      #
+      # Round-robin (NR % N == index) spreads adjacent files across
+      # shards, preventing one shard from getting all specs in a heavy
+      # directory.
       #
       # Video, screenshots, and retries are disabled. Retries mask
       # flaky tests — if a test is intermittent, it should fail and
       # get fixed, not silently pass on retry.
       # ---------------------------------------------------------------
       - name: Run Cypress shard
-        uses: cypress-io/github-action@v6
-        with:
-          working-directory: ui/apps/platform
-          install: false
-          browser: chrome
-          spec: ${{ matrix.specs }}
-          config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0
+        working-directory: ui/apps/platform
+        run: |
+          SPECS=$(find cypress/integration -name "*.test.js" -o -name "*.test.ts" \
+            | sort \
+            | awk "NR % ${TOTAL_SHARDS} == ${{ matrix.shard }}" \
+            | tr '\n' ',')
+          SPECS="${SPECS%,}"
+
+          echo "Shard ${{ matrix.shard }}/${TOTAL_SHARDS}: $(echo "$SPECS" | tr ',' '\n' | wc -l | tr -d ' ') specs"
+          echo "$SPECS" | tr ',' '\n'
+
+          npx cypress run \
+            --browser chrome \
+            --spec "$SPECS" \
+            --config "baseUrl=https://localhost:8000,video=false,screenshotOnRunFailure=false,retries=0"
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
