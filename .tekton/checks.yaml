@@ -30,6 +30,19 @@ spec:
   - name: hermetic
     value: "true"
 
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-bundle
+
+  timeouts:
+    tasks: 10m
+    finally: 2m
+    pipeline: 12m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
   pipelineSpec:
 
     finally:
@@ -150,16 +163,3 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-
-  taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle
-
-  timeouts:
-    tasks: 10m
-    finally: 2m
-    pipeline: 12m
-
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
