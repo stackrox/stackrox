@@ -216,15 +216,16 @@ jobs:
             #
             # Image pulls run in their own background subprocess — the main
             # flow continues straight to helm install without waiting.
-            # central-db gets 2s of exclusive bandwidth before the other
-            # pulls start competing. It's the smallest image (~200 MB) and
-            # on the critical path (initdb must finish before Central can
-            # connect). Finishing it earlier means initdb starts earlier,
-            # so Central-DB is ready before Central's first retry check.
+            # central-db gets exclusive bandwidth for PULL_DELAY seconds
+            # before the other pulls start competing. Each shard uses a
+            # different delay (0-7s via job-index) so we can measure the
+            # optimal head start in a single run.
+            PULL_DELAY=${{ strategy.job-index }}
+            echo "central-db head start: ${PULL_DELAY}s (shard index ${{ strategy.job-index }})"
             (
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/central-db:${TAG}" &
-              sleep 2
+              sleep "$PULL_DELAY"
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/main:${TAG}" &
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
@@ -427,7 +428,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Shard ${{ matrix.shard }} Resource Report"
+            echo "## Shard ${{ matrix.shard }} Resource Report (pull delay: ${{ strategy.job-index }}s)"
             echo ""
             echo "| Pod | CPU | Memory |"
             echo "|-----|-----|--------|"
