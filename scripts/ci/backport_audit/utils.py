@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+import sys
 from typing import Any
 
 from .github_client import GitHubClient
@@ -245,8 +246,13 @@ def detect_release_version(branch_name: str) -> ReleaseBranch:
             matching_tags.sort(key=sort_key, reverse=True)
             current_version = matching_tags[0]
 
-    except subprocess.CalledProcessError:
-        pass
+    except subprocess.CalledProcessError as e:
+        print(
+            f"WARNING: Failed to get merged tags for {branch_name}: "
+            f"returncode={e.returncode}, stderr={e.stderr}",
+            file=sys.stderr,
+        )
+        current_version = None
 
     try:
         result = subprocess.run(
