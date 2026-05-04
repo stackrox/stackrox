@@ -452,9 +452,9 @@ jobs:
       # install: false — dependencies were already installed in the
       # "Install Cypress dependencies" step above (overlapping with deploy).
       #
-      # Video recording and failure screenshots are disabled to save
-      # disk and upload time. Re-enable screenshotOnRunFailure for
-      # debugging specific failures.
+      # Video, screenshots, and retries are disabled. Retries mask
+      # flaky tests — if a test is intermittent, it should fail and
+      # get fixed, not silently pass on retry.
       # ---------------------------------------------------------------
       - name: Run Cypress shard
         uses: cypress-io/github-action@v6
@@ -463,7 +463,7 @@ jobs:
           install: false
           browser: chrome
           spec: ${{ matrix.specs }}
-          config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false
+          config: baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
