@@ -47,7 +47,10 @@ jobs:
           rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
 
-  gke-db-backup-restore-test:
+  # EXPERIMENT: Replace GKE/infractl with KinD cluster.
+  # Removes: infractl, GCP auth, gcloud SDK, 15-25 min cluster wait.
+  # Keeps: roxctl build, deploy_stackrox (lib.sh), backup/restore test.
+  kind-db-backup-restore-test:
     needs: [ wait-for-images ]
     if: >-
       !github.event.pull_request.head.repo.fork && (
@@ -56,12 +59,11 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
-      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}-${{ github.run_attempt }}
-      CI_JOB_NAME: gke-db-backup-restore-test
+      CI_JOB_NAME: kind-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports/
-      LOAD_BALANCER: lb
+      # No LOAD_BALANCER — use port-forward instead of GKE LB
+      ORCHESTRATOR_FLAVOR: k8s
     timeout-minutes: 60
     steps:
 
@@ -71,48 +73,30 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-    - uses: ./.github/actions/job-preamble
+    # KinD cluster replaces infractl GKE cluster.
+    # create-kind-cluster backgrounds KinD creation + image pulls.
+    # The test's deploy_stackrox script waits for kubectl access.
+    - name: Create KinD cluster (background)
+      uses: ./.github/actions/create-kind-cluster
       with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: ${{ env.CLUSTER_NAME }}
-        lifespan: 1h
-        args: nodes=3,machine-type=e2-standard-8
-        wait: false
-
-    - name: Docker login to Quay.io
-      env:
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
-
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      with:
-        install_components: "gke-gcloud-auth-plugin"
-
-    - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        tag: ${{ env.tag }}
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
     - name: Build roxctl
-      # The test uses roxctl for central backup/restore operations
+      # The test uses roxctl for central backup/restore operations.
+      # Overlaps with KinD creation in background.
       run: |
         make roxctl_linux-amd64
         echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
 
-    - name: Wait for the cluster and grab artifacts
-      timeout-minutes: 25
+    - name: Wait for KinD cluster
       run: |
-        infractl wait "${CLUSTER_NAME}"
-        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-        echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
-
-    - name: Verify kubectl access
-      run: |
+        for i in $(seq 1 120); do
+          kubectl cluster-info >/dev/null 2>&1 && break
+          sleep 2
+        done
         kubectl cluster-info
         kubectl get nodes
 
@@ -141,7 +125,6 @@ jobs:
         export_test_environment
         setup_deployment_env false false
         deploy_stackrox
-        # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
@@ -170,9 +153,9 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Delete cluster
+    - name: Cleanup KinD
       if: always()
-      run: infractl delete "${CLUSTER_NAME}" || echo "infractl delete failed or cluster not found; relying on lifespan expiry"
+      run: kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
 
     - name: Publish test summary
       uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
