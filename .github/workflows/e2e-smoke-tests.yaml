@@ -214,22 +214,25 @@ jobs:
             # Pods enter ErrImagePull until their image arrives via ctr, then
             # start automatically on kubelet's next retry.
             #
-            # Pull central-db first with 2s of exclusive bandwidth before
-            # starting the other pulls. central-db is smallest (~200 MB)
-            # and on the critical path (initdb must finish before Central
-            # can connect). The 2s head start lets it download ~40 MB
-            # before sharing the pipe with main (~500 MB) and scanner images.
-            # This means central-db finishes earlier → initdb starts earlier
-            # → Central's migrator connects sooner.
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/central-db:${TAG}" &
-            sleep 2
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/main:${TAG}" &
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" &
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}" &
+            # Image pulls run in their own background subprocess — the main
+            # flow continues straight to helm install without waiting.
+            # central-db gets 2s of exclusive bandwidth before the other
+            # pulls start competing. It's the smallest image (~200 MB) and
+            # on the critical path (initdb must finish before Central can
+            # connect). Finishing it earlier means initdb starts earlier,
+            # so Central-DB is ready before Central's first retry check.
+            (
+              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
+                "${IMAGE_REGISTRY}/central-db:${TAG}" &
+              sleep 2
+              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
+                "${IMAGE_REGISTRY}/main:${TAG}" &
+              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
+                "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" &
+              docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
+                "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}" &
+              wait
+            ) &
 
             # --- Phase 3: Deploy central-services (no image wait) ---
             # ci-values-central.yaml sets: minimal resources (100Mi/100m requests),
