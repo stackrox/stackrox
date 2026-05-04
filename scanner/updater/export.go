@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -28,8 +29,52 @@ import (
 	_ "github.com/quay/claircore/updater/defaults"
 )
 
+// UpdaterStatus represents the result of a single updater execution.
+type UpdaterStatus struct {
+	Name                 string    `json:"name"`
+	Status               string    `json:"status"` // "success" or "failed"
+	Error                string    `json:"error,omitempty"`
+	LastAttempt          time.Time `json:"last_attempt"`
+	LastSuccessfulUpdate *string   `json:"last_successful_update,omitempty"` // ISO8601 timestamp, enriched by Python
+}
+
+// ExportStatus contains the results of all updater executions.
+type ExportStatus struct {
+	Updaters []UpdaterStatus `json:"updaters"`
+}
+
+// HasFailures returns true if any updater failed.
+func (s *ExportStatus) HasFailures() bool {
+	for _, u := range s.Updaters {
+		if u.Status == StatusFailed {
+			return true
+		}
+	}
+	return false
+}
+
+// Counts returns the number of successful and failed updaters.
+func (s *ExportStatus) Counts() (success, failure int) {
+	for _, u := range s.Updaters {
+		switch u.Status {
+		case StatusSuccess:
+			success++
+		case StatusFailed:
+			failure++
+		}
+	}
+	return success, failure
+}
+
 const (
 	rhelVexUpdaterName = "rhel-vex"
+
+	// Status values for UpdaterStatus
+	StatusSuccess = "success"
+	StatusFailed  = "failed"
+
+	// Per-updater timeout prevents one slow updater from starving the rest.
+	updaterTimeout = 30 * time.Minute
 )
 
 var (
@@ -47,6 +92,65 @@ var (
 	}
 )
 
+// BundleExporter defines the interface for exporting vulnerability bundle data.
+type BundleExporter interface {
+	ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error
+}
+
+// claircoreUpdaterRunner is the production implementation that runs ClairCore updaters.
+type claircoreUpdaterRunner struct {
+	httpClient *http.Client
+}
+
+// ExportBundle runs ClairCore updaters and writes the results to the given writer.
+func (e *claircoreUpdaterRunner) ExportBundle(ctx context.Context, w io.Writer, opts []updates.ManagerOption) error {
+	jsonStore, err := jsonblob.New()
+	if err != nil {
+		return err
+	}
+	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), e.httpClient, opts...)
+	if err != nil {
+		return fmt.Errorf("new manager: %w", err)
+	}
+	err = mgr.Run(ctx)
+	if err != nil {
+		return fmt.Errorf("run: %w", err)
+	}
+	err = jsonStore.Store(w)
+	if err != nil {
+		return fmt.Errorf("json store: %w", err)
+	}
+	return nil
+}
+
+// NewDefaultBundleExporter creates a new production bundle exporter with rate-limited HTTP client.
+// Rate limit is ~16 requests/second by default, configurable via STACKROX_SCANNER_V4_UPDATER_INTERVAL.
+func NewDefaultBundleExporter() BundleExporter {
+	// Rate limit to ~16 requests/second by default.
+	interval := 62 * time.Millisecond
+	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
+	if configuredInterval != "" {
+		parsedInterval, err := time.ParseDuration(configuredInterval)
+		switch {
+		case err != nil:
+			log.Printf("invalid interval, using default (%v): %v", interval, err)
+		case parsedInterval < interval:
+			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
+		default:
+			interval = parsedInterval
+		}
+	}
+
+	httpClient := &http.Client{
+		Transport: &rateLimitedTransport{
+			limiter:   rate.NewLimiter(rate.Every(interval), 1),
+			transport: http.DefaultTransport,
+		},
+	}
+
+	return &claircoreUpdaterRunner{httpClient: httpClient}
+}
+
 type ExportOptions struct {
 	ManualVulnURL string
 }
@@ -54,7 +158,12 @@ type ExportOptions struct {
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
 // Depending on the export option, this will output either a single zstd file called vulns.json.zst
 // or several zstd files all written to the given outputDir.
-func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
+//
+// Export supports partial failure tolerance: if some updaters fail, the successful ones
+// are still written. A status.json file is written to outputDir alongside the bundle files,
+// recording the success or failure status of each updater. An error is only returned if ALL
+// updaters fail.
+func Export(ctx context.Context, outputDir string, opts *ExportOptions, exporter BundleExporter) error {
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return fmt.Errorf("creating output dir: %w", err)
@@ -81,48 +190,98 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		bundles[uSet] = managerOpts
 	}
 
-	// Rate limit to ~16 requests/second by default.
-	interval := 62 * time.Millisecond
-	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
-	if configuredInterval != "" {
-		parsedInterval, err := time.ParseDuration(configuredInterval)
-		switch {
-		case err != nil:
-			log.Printf("invalid interval, using default (%v): %v", interval, err)
-		case parsedInterval < interval:
-			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
-		default:
-			interval = parsedInterval
-		}
-	}
-
-	// The http client for pulling data from security sources.
-	httpClient := &http.Client{
-		Transport: &rateLimitedTransport{
-			limiter:   rate.NewLimiter(rate.Every(interval), 1),
-			transport: http.DefaultTransport,
-		},
-	}
-
-	// Export to bundle(s).
+	// Export to bundle(s) with partial failure tolerance.
+	var status ExportStatus
 	for name, o := range bundles {
-		ctx = zlog.ContextWithValues(ctx, "bundle", name)
-		w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
+		now := time.Now()
+		bundleCtx, cancel := context.WithTimeout(ctx, updaterTimeout)
+		bundleCtx = zlog.ContextWithValues(bundleCtx, "bundle", name)
+		bundlePath := filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name))
+
+		w, err := zstdWriter(bundlePath)
 		if err != nil {
-			return err
+			cancel()
+			zlog.Error(bundleCtx).Err(err).Msg("failed to create bundle output file")
+			status.Updaters = append(status.Updaters, UpdaterStatus{
+				Name:        name,
+				Status:      StatusFailed,
+				Error:       fmt.Sprintf("create output file: %v", err),
+				LastAttempt: now,
+			})
+			continue
 		}
-		err = bundle(ctx, httpClient, w, o)
+
+		err = exporter.ExportBundle(bundleCtx, w, o)
+		closeErr := w.Close()
+		cancel()
+
+		// Prefer bundle error, but capture close error if bundle succeeded
+		if err == nil && closeErr != nil {
+			err = fmt.Errorf("close output file: %w", closeErr)
+		}
+
 		if err != nil {
-			_ = w.Close()
-			return err
+			zlog.Error(bundleCtx).Err(err).Msg("bundle export failed")
+			status.Updaters = append(status.Updaters, UpdaterStatus{
+				Name:        name,
+				Status:      StatusFailed,
+				Error:       err.Error(),
+				LastAttempt: now,
+			})
+			if removeErr := os.Remove(bundlePath); removeErr != nil && !os.IsNotExist(removeErr) {
+				zlog.Warn(bundleCtx).Err(removeErr).Msg("failed to remove bundle file")
+			}
+			continue
 		}
-		if err := w.Close(); err != nil {
-			// Fail to close here means the data might not have been written fully, so we
-			// fail.
-			return fmt.Errorf("failed to close bundle output file: %w", err)
+
+		zlog.Info(bundleCtx).Msg("bundle export completed successfully")
+		status.Updaters = append(status.Updaters, UpdaterStatus{
+			Name:        name,
+			Status:      StatusSuccess,
+			LastAttempt: now,
+		})
+	}
+
+	// Write status.json with all results
+	if err := writeStatusFile(outputDir, &status); err != nil {
+		zlog.Warn(ctx).Err(err).Msg("failed to write status.json")
+	}
+
+	// Log summary
+	successCount, failureCount := status.Counts()
+	zlog.Info(ctx).
+		Int("success", successCount).
+		Int("failed", failureCount).
+		Int("total", len(bundles)).
+		Msg("export summary")
+
+	if status.HasFailures() {
+		for _, u := range status.Updaters {
+			if u.Status == StatusFailed {
+				zlog.Warn(ctx).Str("updater", u.Name).Str("error", u.Error).Msg("updater failed")
+			}
 		}
 	}
 
+	// Only return error if ALL bundles failed
+	if successCount == 0 {
+		return fmt.Errorf("all %d updaters failed", len(bundles))
+	}
+
+	return nil
+}
+
+// writeStatusFile writes the export status to a JSON file in the output directory.
+func writeStatusFile(outputDir string, status *ExportStatus) error {
+	statusPath := filepath.Join(outputDir, "status.json")
+	data, err := json.MarshalIndent(status, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal status: %w", err)
+	}
+	if err := os.WriteFile(statusPath, data, 0644); err != nil {
+		_ = os.Remove(statusPath)
+		return fmt.Errorf("write status file: %w", err)
+	}
 	return nil
 }
 
@@ -239,26 +398,6 @@ func zstdWriter(filename string) (io.WriteCloser, error) {
 		return nil, err
 	}
 	return w, nil
-}
-
-func bundle(ctx context.Context, client *http.Client, w io.Writer, opts []updates.ManagerOption) error {
-	jsonStore, err := jsonblob.New()
-	if err != nil {
-		return err
-	}
-	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), client, opts...)
-	if err != nil {
-		return fmt.Errorf("new manager: %w", err)
-	}
-	err = mgr.Run(ctx)
-	if err != nil {
-		return fmt.Errorf("run: %w", err)
-	}
-	err = jsonStore.Store(w)
-	if err != nil {
-		return fmt.Errorf("json store: %w", err)
-	}
-	return nil
 }
 
 type rateLimitedTransport struct {
