@@ -6,8 +6,8 @@ WORKDIR /workspace
 COPY go.mod .
 
 # Validate Go version compatibility
-# go mod tidy will fail if go.mod requires a Go version higher than installed
-RUN echo "Installed Go version:" && \
+# go mod tidy will fail if go.mod requires a Go version higher than available in the builder
+RUN echo "Go version of the builder:" && \
     go version
 RUN echo "go.mod version requirement:" && \
     grep -E '^(go|toolchain) ' go.mod

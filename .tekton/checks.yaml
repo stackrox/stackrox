@@ -14,7 +14,6 @@ metadata:
       (event == "pull_request" && body.action != "ready_for_review")
   labels:
     appstudio.openshift.io/application: acs
-    pipelines.appstudio.openshift.io/type: build
   name: checks
   namespace: rh-acs-tenant
 
@@ -28,12 +27,6 @@ spec:
   - name: output-image-repo
     # TODO: Change to quay.io/rhacs-eng/go-mod-validation once dedicated service account is created
     value: quay.io/rhacs-eng/release-roxctl
-  - name: clone-depth
-    value: '1'
-  - name: clone-fetch-tags
-    value: 'false'
-  - name: oci-artifact-expires-after
-    value: '1d'
   - name: hermetic
     value: "true"
 
@@ -43,7 +36,7 @@ spec:
     - name: slack-notification
       params:
       - name: message
-        value: ':x: `{{event_type}}` pipeline for <https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/$(context.pipelineRun.namespace)/pipelinerun/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`go.mod validation`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+        value: ':x: `{{event_type}}` pipeline for <https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/$(context.pipelineRun.namespace)/pipelinerun/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
       - name: key-name
         value: 'acs-konflux-notifications'
       when:
@@ -98,13 +91,6 @@ spec:
       name: oci-artifact-expires-after
       type: string
 
-    results:
-    - description: ""
-      name: CHAINS-GIT_URL
-      value: $(tasks.clone-repository.results.url)
-    - description: ""
-      name: CHAINS-GIT_COMMIT
-      value: $(tasks.clone-repository.results.commit)
 
     workspaces:
     - name: git-auth
