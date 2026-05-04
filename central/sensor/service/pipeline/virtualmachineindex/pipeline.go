@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -157,6 +158,10 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
+	if guestOS := p.lookupGuestOS(ctx, index.GetId()); guestOS != "" && guestOS != pkgVM.UnknownGuestOS && vm.Scan != nil {
+		vm.Scan.OperatingSystem = guestOS
+	}
+
 	// Store enriched VM via v1 or v2 path.
 	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		if err := p.storeV2Scan(ctx, clusterID, vm); err != nil {
@@ -198,4 +203,19 @@ func (p *pipelineImpl) storeV2Scan(ctx context.Context, clusterID string, vm *st
 		return errors.Wrapf(err, "failed to upsert v2 scan for VM %s", vm.GetId())
 	}
 	return nil
+}
+
+func (p *pipelineImpl) lookupGuestOS(ctx context.Context, vmID string) string {
+	if features.VirtualMachinesEnhancedDataModel.Enabled() {
+		vm, found, err := p.virtualMachineV2Store.GetVirtualMachine(ctx, vmID)
+		if err != nil || !found {
+			return ""
+		}
+		return vm.GetGuestOs()
+	}
+	vm, found, err := p.virtualMachineStore.GetVirtualMachine(ctx, vmID)
+	if err != nil || !found {
+		return ""
+	}
+	return vm.GetFacts()[pkgVM.GuestOSKey]
 }

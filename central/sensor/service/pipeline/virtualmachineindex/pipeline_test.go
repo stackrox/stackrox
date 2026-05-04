@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -142,6 +143,9 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
+	suite.virtualMachineStore.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
 
 	expectedError := errors.New("datastore error")
 	suite.virtualMachineStore.EXPECT().
@@ -251,6 +255,9 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 				enricher.EXPECT().
 					EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 					Return(nil)
+				virtualMachineStore.EXPECT().
+					GetVirtualMachine(gomock.Any(), vmID).
+					Return(nil, false, nil)
 
 				virtualMachineStore.EXPECT().
 					UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
@@ -361,6 +368,9 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
 	suite.virtualMachineStore.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
@@ -394,6 +404,9 @@ func (suite *PipelineTestSuite) TestRun_SendsACKWithVMIDAndVsockCIDResourceID() 
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
 	suite.virtualMachineStore.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
@@ -425,6 +438,9 @@ func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
 	suite.virtualMachineStore.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
+	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
@@ -446,6 +462,9 @@ func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
+	suite.virtualMachineStore.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
 	suite.virtualMachineStore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(errors.New("db error"))
@@ -669,6 +688,9 @@ func TestPipelineRunV2_StoresScanViaV2Datastore(t *testing.T) {
 			return nil
 		})
 	virtualMachineV2Store.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(nil)
 	virtualMachineV2Store.EXPECT().
@@ -716,6 +738,9 @@ func TestPipelineRunV2_NACKOnEnsureError(t *testing.T) {
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
 	virtualMachineV2Store.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(errors.New("ensure failed"))
 
@@ -757,6 +782,9 @@ func TestPipelineRunV2_NilScanNoUpsert(t *testing.T) {
 	enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 		Return(nil)
+	virtualMachineV2Store.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
 	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(nil)
@@ -806,6 +834,9 @@ func TestPipelineRunV2_NACKOnUpsertScanError(t *testing.T) {
 			return nil
 		})
 	virtualMachineV2Store.EXPECT().
+		GetVirtualMachine(gomock.Any(), vmID).
+		Return(nil, false, nil)
+	virtualMachineV2Store.EXPECT().
 		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 		Return(nil)
 	virtualMachineV2Store.EXPECT().
@@ -827,4 +858,137 @@ func TestPipelineRunV2_NACKOnUpsertScanError(t *testing.T) {
 	assert.NotNil(t, ack)
 	assert.Equal(t, central.SensorACK_NACK, ack.GetAction())
 	assert.Equal(t, centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
+}
+
+func TestLookupGuestOS(t *testing.T) {
+	tests := map[string]struct {
+		enhancedDataModel bool
+		v1VM              *storage.VirtualMachine
+		v1Found           bool
+		v2VM              *storage.VirtualMachineV2
+		v2Found           bool
+		enricherOS        string
+		wantOS            string
+	}{
+		"v1 guest OS overrides enricher": {
+			v1VM: &storage.VirtualMachine{
+				Facts: map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux 10"},
+			},
+			v1Found:    true,
+			enricherOS: "rhel:9",
+			wantOS:     "Red Hat Enterprise Linux 10",
+		},
+		"v2 guest OS overrides enricher": {
+			enhancedDataModel: true,
+			v2VM:              &storage.VirtualMachineV2{GuestOs: "Red Hat Enterprise Linux 10"},
+			v2Found:           true,
+			enricherOS:        "rhel:9",
+			wantOS:            "Red Hat Enterprise Linux 10",
+		},
+		"v1 VM not found keeps enricher OS": {
+			v1Found:    false,
+			enricherOS: "rhel:9",
+			wantOS:     "rhel:9",
+		},
+		"v2 VM not found keeps enricher OS": {
+			enhancedDataModel: true,
+			v2Found:           false,
+			enricherOS:        "rhel:9",
+			wantOS:            "rhel:9",
+		},
+		"v1 unknown guest OS keeps enricher OS": {
+			v1VM: &storage.VirtualMachine{
+				Facts: map[string]string{pkgVM.GuestOSKey: pkgVM.UnknownGuestOS},
+			},
+			v1Found:    true,
+			enricherOS: "rhel:9",
+			wantOS:     "rhel:9",
+		},
+		"v2 unknown guest OS keeps enricher OS": {
+			enhancedDataModel: true,
+			v2VM:              &storage.VirtualMachineV2{GuestOs: pkgVM.UnknownGuestOS},
+			v2Found:           true,
+			enricherOS:        "rhel:9",
+			wantOS:            "rhel:9",
+		},
+		"v1 empty guest OS keeps enricher OS": {
+			v1VM:       &storage.VirtualMachine{Facts: map[string]string{}},
+			v1Found:    true,
+			enricherOS: "rhel:9",
+			wantOS:     "rhel:9",
+		},
+		"v2 empty guest OS keeps enricher OS": {
+			enhancedDataModel: true,
+			v2VM:              &storage.VirtualMachineV2{GuestOs: ""},
+			v2Found:           true,
+			enricherOS:        "rhel:9",
+			wantOS:            "rhel:9",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), "true")
+			if tt.enhancedDataModel {
+				t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+			} else {
+				t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
+			}
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			v1Store := virtualMachineDSMocks.NewMockDataStore(ctrl)
+			v2Store := virtualMachineV2DSMocks.NewMockDataStore(ctrl)
+
+			p := &pipelineImpl{
+				enricher:              enricher,
+				virtualMachineStore:   v1Store,
+				virtualMachineV2Store: v2Store,
+			}
+
+			vmID := "vm-guest-os-test"
+			msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+			enricher.EXPECT().
+				EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(vm *storage.VirtualMachine, _ interface{}) error {
+					vm.Scan = &storage.VirtualMachineScan{
+						OperatingSystem: tt.enricherOS,
+						Components: []*storage.EmbeddedVirtualMachineScanComponent{
+							{Name: "test-pkg", Version: "1.0"},
+						},
+					}
+					return nil
+				})
+
+			if tt.enhancedDataModel {
+				v2Store.EXPECT().
+					GetVirtualMachine(gomock.Any(), vmID).
+					Return(tt.v2VM, tt.v2Found, nil)
+				v2Store.EXPECT().
+					EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
+					Return(nil)
+				v2Store.EXPECT().
+					UpsertScan(gomock.Any(), vmID, gomock.Any()).
+					DoAndReturn(func(_ context.Context, _ string, parts common.VMScanParts) error {
+						assert.Equal(t, tt.wantOS, parts.Scan.GetScanOs())
+						return nil
+					})
+			} else {
+				v1Store.EXPECT().
+					GetVirtualMachine(gomock.Any(), vmID).
+					Return(tt.v1VM, tt.v1Found, nil)
+				v1Store.EXPECT().
+					UpdateVirtualMachineScan(gomock.Any(), vmID, gomock.Any()).
+					DoAndReturn(func(_ context.Context, _ string, scan *storage.VirtualMachineScan) error {
+						assert.Equal(t, tt.wantOS, scan.GetOperatingSystem())
+						return nil
+					})
+			}
+
+			err := p.Run(ctx, testClusterID, msg, nil)
+			assert.NoError(t, err)
+		})
+	}
 }
