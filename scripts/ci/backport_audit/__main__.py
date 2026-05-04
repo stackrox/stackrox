@@ -180,7 +180,14 @@ def _detect_orphaned_issues(
 
     for branch in branches:
         jql = f'project = {jira_project} AND fixVersion = "{branch.expected_version}"'
-        jira_issues_for_branch = jira_client.search_issues(jql)
+        try:
+            jira_issues_for_branch = jira_client.search_issues(jql)
+        except Exception as e:
+            print(
+                f"WARNING: Jira search failed for {branch.expected_version}: {e}",
+                file=sys.stderr,
+            )
+            continue
 
         pr_jira_keys = set()
         for pr in prs_by_branch.get(branch.name, []):
