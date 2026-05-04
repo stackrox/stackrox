@@ -191,7 +191,7 @@ jobs:
       # Unique cluster name per shard per run — prevents collisions on re-runs
       CLUSTER_NAME: kind-e2e-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
-      TAG: ${{ inputs.tag || '4.11.x-831-g8f262d83ee' }}
+      TAG: ${{ inputs.tag }}
       # Hard memory cap on the KinD Docker container. The runner has 16 GB;
       # 6 GB for k8s + StackRox leaves 10 GB for the OS, Docker, Node/Cypress.
       KIND_MEMORY_LIMIT: 6g

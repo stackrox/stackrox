@@ -784,12 +784,12 @@ jobs:
         message-id: build-images-ready
         message-path: build-comment.md
 
-  e2e-smoke-tests:
+  ui-e2e:
     needs:
     - define-job-matrix
     - push-main-manifests
     if: ${{ !cancelled() && needs.push-main-manifests.result == 'success' }}
-    uses: ./.github/workflows/e2e-smoke-tests.yaml
+    uses: ./.github/workflows/ui-e2e.yaml
     with:
       tag: ${{ needs.define-job-matrix.outputs.build-tag }}
     secrets: inherit
