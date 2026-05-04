@@ -1,0 +1,114 @@
+name: Deploy StackRox
+description: >
+  Deploys StackRox (Central + Sensor) on an existing Kubernetes cluster.
+  Cluster-agnostic — works with KinD, GKE, minikube, or any cluster
+  that kubectl can reach. Generates auth tokens for test clients.
+
+inputs:
+  central-chart:
+    description: Path to rendered central-services helm chart
+    required: true
+  sensor-chart:
+    description: Path to rendered secured-cluster helm chart
+    required: true
+  central-values:
+    description: Central helm values file
+    default: .github/workflows/scripts/ci-values-central.yaml
+  sensor-values:
+    description: Sensor helm values file
+    default: .github/workflows/scripts/ci-values-sensor.yaml
+  registry:
+    description: Image registry for helm --set
+    default: quay.io/rhacs-eng
+
+outputs:
+  admin-password:
+    description: Central admin password
+    value: ${{ steps.credentials.outputs.admin-password }}
+  auth-token:
+    description: API auth token for test clients
+    value: ${{ steps.credentials.outputs.auth-token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Deploy central-services
+      id: credentials
+      shell: bash
+      run: |
+        ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
+        echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+
+        kubectl create namespace stackrox 2>/dev/null || true
+
+        helm upgrade --install -n stackrox stackrox-central-services \
+          "${{ inputs.central-chart }}" \
+          -f "${{ inputs.central-values }}" \
+          --set image.registry="${{ inputs.registry }}" \
+          --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
+
+        # Port-forward with auto-reconnect
+        while true; do
+          kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null || sleep 2
+        done &
+
+        # Wait for Central API
+        for i in $(seq 1 120); do
+          curl -sk --connect-timeout 1 https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
+          sleep 1
+        done
+
+        # Generate auth token
+        set +x
+        AUTH_TOKEN=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://localhost:8000/v1/apitokens/generate" \
+          -X POST -d '{"name":"ci-test","role":"Admin"}' | jq -r '.token')
+
+        echo "admin-password=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
+        echo "auth-token=${AUTH_TOKEN}" >> "$GITHUB_OUTPUT"
+        echo "::add-mask::${AUTH_TOKEN}"
+        set -x
+
+    - name: Deploy secured-cluster-services
+      shell: bash
+      run: |
+        # Generate init bundle via Central API
+        set +x
+        curl -sk -u "admin:${{ steps.credentials.outputs.admin-password }}" \
+          "https://localhost:8000/v1/cluster-init/init-bundles" \
+          -X POST -d '{"name":"ci-cluster"}' \
+          > /tmp/init-response.json
+        set -x
+
+        jq -r '.helmValuesBundle' /tmp/init-response.json | base64 -d > /tmp/sensor-init-bundle.yaml
+
+        if ! grep -q "ca:" /tmp/sensor-init-bundle.yaml 2>/dev/null; then
+          echo "ERROR: Init bundle generation failed"
+          cat /tmp/init-response.json
+          exit 1
+        fi
+
+        helm upgrade --install -n stackrox stackrox-secured-cluster-services \
+          "${{ inputs.sensor-chart }}" \
+          -f "${{ inputs.sensor-values }}" \
+          --set image.registry="${{ inputs.registry }}" \
+          --set centralEndpoint=central.stackrox.svc:443 \
+          -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
+
+    - name: Seed test workloads and wait for data
+      shell: bash
+      run: |
+        kubectl create namespace qa-test 2>/dev/null || true
+        kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
+        kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
+          sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null || true
+
+        for i in $(seq 1 60); do
+          set +x
+          dep_count=$(curl -sk -u "admin:${{ steps.credentials.outputs.admin-password }}" \
+            "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
+          set -x
+          [ "${dep_count:-0}" -gt 5 ] && break
+          sleep 3
+        done
+        echo "Data ready: ${dep_count} deployments"

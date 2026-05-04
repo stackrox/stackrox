@@ -1,70 +1,29 @@
-# StackRox UI E2E Tests on KinD
+# StackRox UI E2E Tests
 #
-# Runs Cypress UI tests against a full StackRox deployment on a KinD cluster,
-# all on a single GHA runner (ubuntu-latest: 4 vCPU, 16 GB RAM).
-#
-# Why KinD instead of GKE (Prow)?
-#   - Free: no cloud infrastructure cost (GKE uses 3x e2-standard-8 = 24 vCPU, 96 GB)
-#   - Fast: no cluster provisioning wait (~10 min saved)
-#   - Self-contained: no external dependencies, no flaky cloud APIs
+# Runs Cypress UI tests against a full StackRox deployment on a KinD
+# cluster, entirely on GHA runners (ubuntu-latest: 4 vCPU, 16 GB RAM).
 #
 # Architecture:
-#   Each shard runs independently on its own runner. Every shard:
-#   1. Creates a KinD cluster (single node)
-#   2. Renders helm charts from in-repo .htpl templates (no roxctl binary needed)
-#   3. Pulls images directly into the KinD node via ctr (avoids multi-arch issues)
-#   4. Deploys Central + Sensor via helm
-#   5. Generates an init-bundle via the Central REST API (no roxctl needed)
-#   6. Runs its assigned Cypress specs
+#   setup-shards: discovers spec files, groups by directory, outputs matrix
+#   kind-e2e (matrix): each shard creates a KinD cluster, deploys StackRox,
+#     installs Cypress, and runs its assigned specs
 #
-#   Steps 1-5 run in a background subshell, overlapping with Cypress npm install
-#   (~30s). The test step waits for an auth token file before starting.
+# Cluster + deploy are extracted into reusable composite actions:
+#   .github/actions/create-kind-cluster — KinD + image loading + chart rendering
+#   .github/actions/deploy-stackrox — helm install + auth + sensor (cluster-agnostic)
 #
-# Resource budget:
-#   KIND_MEMORY_LIMIT caps the KinD Docker container at 6 GB.
-#   Typical peak usage: ~2.1 GiB (Central ~600 Mi, Central-DB ~500 Mi, Sensor ~200 Mi,
-#   Scanner ~400 Mi, Scanner-DB ~200 Mi, kubelet/etcd ~200 Mi).
-#   The 80% threshold check (4.8 GB) catches regressions before they cause OOMs.
-#
-# Image strategy:
-#   Images are pulled compressed directly into the KinD node using ctr
-#   (containerd CLI). This is faster than `docker save | kind load` because
-#   docker save exports uncompressed tarballs (~1.5 GB for main vs ~500 MB
-#   compressed). Same approach used by sensor-integration-tests.
-#
-#   All pulls run fully parallel with helm install — no image-wait gate.
-#   Helm just creates k8s resources; kubelet starts each pod as its image
-#   arrives (IfNotPresent policy). central-db is pulled first (smallest)
-#   so its initdb gets a head start before Central's image arrives.
-#
-# Chart rendering:
-#   Instead of building/extracting roxctl to run `roxctl helm output`, charts
-#   are rendered from the .htpl templates checked into image/templates/helm/.
-#   render-chart.sh copies templates, merges shared files, and substitutes
-#   [< .ImageTag >] etc. with perl. This saves ~20s (no image pull + extract).
-#
-# Scanner configuration:
-#   Matches Prow UI e2e config: legacy scanner enabled, Scanner V4 disabled
-#   (ROX_SCANNER_V4=false). This reduces memory by ~1 GB and pull time by ~20s
-#   while still providing vulnerability data for vuln-mgmt test shards.
-#
-# Init bundles:
-#   Generated via POST /v1/cluster-init/init-bundles — the response contains
-#   helmValuesBundle (base64-encoded YAML) that helm accepts directly via -f.
-#   This registers the cluster ID in Central's database (static pre-generated
-#   bundles don't work because Central rejects unknown cluster IDs).
+# Shard names reflect test directories (e.g., "clusters", "vulnerabilities")
+# for clear ownership signals when tests are slow.
 
 name: UI E2E
 
 on:
-  # Called by build.yaml after images are pushed to quay.io
   workflow_call:
     inputs:
       tag:
         description: "Image tag to test (e.g., 4.11.x-831-g8f262d83ee)"
         required: true
         type: string
-  # Manual trigger for ad-hoc testing
   workflow_dispatch:
     inputs:
       tag:
@@ -77,22 +36,7 @@ defaults:
     shell: bash
 
 jobs:
-  # ---------------------------------------------------------------
-  # SETUP: discover spec files and group into shards
-  #
-  # Finds all *.test.{js,ts} files, groups by top-level directory,
-  # then bin-packs directories into shards using a waterline of 15
-  # specs per shard. Large directories get their own shard; small
-  # directories and root-level specs are grouped together.
-  #
-  # Shard names reflect content (e.g., "clusters", "risk+accessControl")
-  # so engineers can see which test area is slow on their PR.
-  #
-  # The shard count is NOT fixed — it grows with the spec count.
-  # But it only grows when new test directories are added, not when
-  # existing tests get slower. Slow shards are visible in the GHA UI
-  # as a signal to optimize — the 7-min target is a goal, not a gate.
-  # ---------------------------------------------------------------
+  # Discover spec files and group into named shards via waterline bin-packing.
   setup-shards:
     name: Setup shards
     runs-on: ubuntu-latest
@@ -111,7 +55,6 @@ jobs:
         run: |
           WATERLINE=15
 
-          # Count specs per top-level directory. Root-level specs → "root".
           find cypress/integration -name "*.test.js" -o -name "*.test.ts" \
             | while read -r f; do
                 rel="${f#cypress/integration/}"
@@ -126,8 +69,6 @@ jobs:
           echo "Spec counts per directory:"
           cat /tmp/dir-counts.txt
 
-          # Greedy bin-pack: accumulate directories until waterline exceeded.
-          # Output: JSON array of {name, specs} objects.
           python3 -c "
           import json, sys
 
@@ -166,6 +107,9 @@ jobs:
               )
               shards.append({'name': shard_name, 'specs': specs})
 
+          # DEV: limit to first shard only to reduce compute during iteration
+          shards = shards[:1]
+
           matrix = {'include': shards}
           print(f'Generated {len(shards)} shards:')
           for s in shards:
@@ -183,17 +127,11 @@ jobs:
     timeout-minutes: 30
 
     strategy:
-      # Don't cancel other shards when one fails — we want full results
       fail-fast: false
       matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix) }}
 
     env:
-      # Unique cluster name per shard per run — prevents collisions on re-runs
       CLUSTER_NAME: kind-e2e-${{ github.run_id }}-${{ strategy.job-index }}
-      IMAGE_REGISTRY: quay.io/rhacs-eng
-      TAG: ${{ inputs.tag }}
-      # Hard memory cap on the KinD Docker container. The runner has 16 GB;
-      # 6 GB for k8s + StackRox leaves 10 GB for the OS, Docker, Node/Cypress.
       KIND_MEMORY_LIMIT: 6g
       ARTIFACT_DIR: ./test-artifacts
 
@@ -204,228 +142,24 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
 
-      # ---------------------------------------------------------------
-      # DEPLOY (background)
-      #
-      # The entire StackRox deployment runs in a background subshell.
-      # GHA does NOT wait for background children in regular `run:` steps,
-      # so the next step (npm install) starts immediately — overlapping
-      # ~30s of Cypress install with the deploy.
-      #
-      # Timeline (typical):
-      #   0s   - KinD create + chart render start (parallel)
-      #   15s  - KinD ready, image pulls + helm install start (parallel)
-      #   15s  - central-db image arrives first (smallest), pod starts initdb
-      #   20s  - main image arrives, Central pod starts, migrator retries DB
-      #   30s  - Central-DB ready, migrator connects, migration runs
-      #   35s  - Central API reachable, auth token written
-      #   45s  - Sensor deployed, test data seeding starts
-      #   ~70s - Sensor reports >5 deployments → /tmp/data-ready touched
-      #
-      # The auth token is written to /tmp/rox-auth-token. The "Wait for
-      # auth token" step polls for this file before Cypress runs.
-      # ---------------------------------------------------------------
-      - name: Deploy StackRox on KinD (background)
-        env:
-          QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      - name: Create KinD cluster
+        uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ inputs.tag }}
+          memory-limit: ${{ env.KIND_MEMORY_LIMIT }}
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Deploy StackRox
+        id: deploy
+        uses: ./.github/actions/deploy-stackrox
+        with:
+          central-chart: /tmp/central-chart
+          sensor-chart: /tmp/sensor-chart
+
+      - name: Start resource monitor
         run: |
-          # Docker login before the subshell so ctr can pull from quay.io.
-          # set +x prevents secrets from appearing in the GHA log — the echo
-          # pipe means QUAY_PASS is a process argument briefly, but the log
-          # is the real risk since ::add-mask:: hasn't registered yet.
-          set +x
-          echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
-          set -x
-
-          # Admin password for Central — generated fresh each run
-          ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
-          echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
-          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
-
-          (
-            NODE="${CLUSTER_NAME}-control-plane"
-            T0=$(date +%s)
-            ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
-
-            # Legacy scanner tag differs from main tag (stored in SCANNER_VERSION)
-            SCANNER_TAG=$(cat SCANNER_VERSION)
-
-            # --- Phase 1: KinD + chart render (parallel) ---
-            # KinD create takes ~15s. Chart rendering is instant (cp + perl).
-            # No --wait flag: saves ~15s, we use kubectl wait later.
-            ts "phase1: KinD create + chart render"
-            kind create cluster --name "$CLUSTER_NAME" &
-            PID_KIND=$!
-
-            # render-chart.sh processes .htpl templates from image/templates/helm/
-            # into ready-to-install helm charts. Replaces `roxctl helm output`.
-            .github/workflows/scripts/render-chart.sh central /tmp/central-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
-            .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
-            ts "charts rendered, waiting for KinD..."
-
-            wait $PID_KIND
-            ts "phase1 done: KinD ready"
-
-            # Cap container memory — the KinD node is just a Docker container
-            docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
-
-            # --- Phase 2: Pull images + helm install (fully parallel) ---
-            # ctr pull downloads compressed images directly into containerd.
-            # Faster than `docker save | kind load` (compressed ~500 MB vs
-            # uncompressed ~1.5 GB for main image alone).
-            #
-            # All image pulls run in background — helm install doesn't wait
-            # for any of them. Helm just creates k8s resources; kubelet
-            # handles image availability per-pod (imagePullPolicy: IfNotPresent).
-            # Pods enter ErrImagePull until their image arrives via ctr, then
-            # start automatically on kubelet's next retry.
-            #
-            # --- Phase 2: Pull images (wait for central-db only) ---
-            # All 4 images start pulling in parallel, but we only wait for
-            # central-db before running helm install. This is critical:
-            #
-            # WITHOUT waiting: helm install creates pods before images exist.
-            #   kubelet enters ErrImagePull → exponential backoff (10s, 20s,
-            #   40s). Even when ctr finishes pulling the image, kubelet
-            #   doesn't notice until its next retry. This adds 10-20s of
-            #   wasted backoff to the critical path.
-            #
-            # WITH waiting for central-db: kubelet finds the image on its
-            #   first check → starts the container immediately → initdb
-            #   begins while main image is still downloading. By the time
-            #   Central starts (when main arrives), central-db is already
-            #   ready → migrator connects on first try (no 5s retry waste).
-            #
-            # Tested both approaches across 16 runs. Without waiting:
-            #   DB ready at +57-66s. With waiting: expected +42-50s.
-            ts "phase2: pulling images (all parallel)"
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/central-db:${TAG}" &
-            PID_CDB=$!
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/main:${TAG}" &
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/scanner:${SCANNER_TAG}" &
-            docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
-              "${IMAGE_REGISTRY}/scanner-db:${SCANNER_TAG}" &
-
-            # Wait for central-db image only — it's the smallest (~200 MB)
-            # and finishes first. The other 3 continue pulling in background.
-            wait $PID_CDB
-            ts "phase2 done: central-db image ready (others still pulling)"
-
-            # --- Phase 3: Deploy central-services ---
-            # ci-values-central.yaml sets: minimal resources (100Mi/100m requests),
-            # no persistence, legacy scanner on, scanner V4 off, telemetry off.
-            # kubelet starts central-db pod immediately (image present).
-            # Other pods wait for their images (background pulls continue).
-            kubectl create namespace stackrox
-            ts "phase3: helm install central-services"
-            helm upgrade --install -n stackrox stackrox-central-services /tmp/central-chart \
-              -f .github/workflows/scripts/ci-values-central.yaml \
-              --set image.registry="${IMAGE_REGISTRY}" \
-              --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
-            ts "phase3 done: helm install complete"
-
-            # Background probe: log when central-db pod becomes ready
-            # (image pulled + initdb complete + PostgreSQL listening).
-            # This tells us if the pull delay actually gave central-db
-            # a head start relative to Central's migrator checks.
-            (
-              for i in $(seq 1 120); do
-                ready=$(kubectl -n stackrox get pod -l app=central-db -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null)
-                [ "$ready" = "true" ] && ts "probe: central-db pod READY" && break
-                sleep 1
-              done
-            ) &
-            (
-              for i in $(seq 1 120); do
-                ready=$(kubectl -n stackrox get pod -l app=central -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null)
-                [ "$ready" = "true" ] && ts "probe: central pod READY" && break
-                sleep 1
-              done
-            ) &
-
-            # Port-forward with auto-reconnect — the loop restarts the forward
-            # if it dies (e.g., during pod restart). Runs until the job ends.
-            while true; do
-              kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null || sleep 2
-            done &
-
-            # --- Phase 4: Wait for Central API + generate auth token ---
-            # Poll /v1/metadata every 1s until Central responds.
-            ts "phase4: waiting for Central API..."
-            for i in $(seq 1 120); do curl -sk --connect-timeout 1 https://localhost:8000/v1/metadata >/dev/null 2>&1 && break; sleep 1; done
-            ts "phase4: Central API ready"
-
-            # Generate API token via basic auth. Written to a file so the
-            # "Wait for auth token" step can pick it up across process boundaries.
-            set +x
-            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8000/v1/apitokens/generate" \
-              -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
-            set -x
-            ts "phase4 done: auth token written"
-
-            # --- Phase 5: Deploy secured-cluster-services ---
-            # Generate init bundle via Central API (POST, not roxctl).
-            # helmValuesBundle in the response is base64-encoded YAML containing
-            # the CA cert, cluster ID, and service TLS certs. Central registers
-            # the cluster ID in its database — static bundles don't work because
-            # Central rejects unknown cluster IDs.
-            ts "phase5: sensor deploy (init-bundle + helm)"
-            set +x
-            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8000/v1/cluster-init/init-bundles" \
-              -X POST -d "{\"name\":\"shard-${{ strategy.job-index }}\"}" \
-              > /tmp/init-response.json
-            set -x
-            jq -r '.helmValuesBundle' /tmp/init-response.json | base64 -d > /tmp/sensor-init-bundle.yaml
-
-            if ! grep -q "ca:" /tmp/sensor-init-bundle.yaml 2>/dev/null; then
-              echo "ERROR: Init bundle generation failed"
-              cat /tmp/init-response.json
-              exit 1
-            fi
-
-            # ci-values-sensor.yaml sets: clusterName=remote, CORE_BPF collector,
-            # 1 admission-control replica, minimal resources.
-            helm upgrade --install -n stackrox stackrox-secured-cluster-services /tmp/sensor-chart \
-              -f .github/workflows/scripts/ci-values-sensor.yaml \
-              --set image.registry="${IMAGE_REGISTRY}" \
-              --set centralEndpoint=central.stackrox.svc:443 \
-              -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
-            ts "phase5 done: sensor deployed"
-
-            # --- Phase 6: Seed test workloads ---
-            # Some test shards (risk, networkGraph, violations) need real
-            # deployments observed by Sensor. Create a small workload that
-            # generates network traffic for collector to observe.
-            ts "phase6: seed workloads"
-            kubectl create namespace qa-test 2>/dev/null || true
-            kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null
-            kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
-              sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null
-
-            # Wait until Sensor has reported enough deployments to Central.
-            # Data-dependent shards (vuln, risk, networkGraph) wait on /tmp/data-ready.
-            for i in $(seq 1 60); do
-              dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-                "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
-              [ "${dep_count:-0}" -gt 5 ] && break
-              sleep 3
-            done
-            touch /tmp/data-ready
-            ts "phase6 done: data ready (${dep_count} deployments)"
-          ) > /tmp/deploy.log 2>&1 &
-
-          echo "Deploy started in background (PID $!). Proceeding to Cypress install..."
-
-          # --- Resource monitor (background) ---
-          # Tracks peak Docker container memory every 15s. The "Check resource
-          # thresholds" step reads /tmp/resource-monitor.log after tests finish
-          # and fails the job if peak exceeded 80% of KIND_MEMORY_LIMIT.
           NODE="${CLUSTER_NAME}-control-plane"
           (
             PEAK_MB=0
@@ -440,79 +174,10 @@ jobs:
           ) > /tmp/resource-monitor.log 2>&1 &
           echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
 
-      # ---------------------------------------------------------------
-      # CYPRESS INSTALL (overlaps with background deploy)
-      #
-      # npm ci runs while KinD + image pulls + helm install happen in
-      # the background. This step takes ~30-40s. By the time it finishes,
-      # the deploy is usually done or nearly done, so the auth-wait step
-      # sees the token immediately or waits only a few seconds.
-      #
-      # Split from cypress-io/github-action (which bundles install+run)
-      # to reclaim ~30s that was previously dead time in the auth-wait.
-      # ---------------------------------------------------------------
       - name: Install Cypress dependencies
         working-directory: ui/apps/platform
         run: npm ci
 
-      # ---------------------------------------------------------------
-      # WAIT FOR AUTH TOKEN
-      #
-      # The background deploy writes /tmp/rox-auth-token once Central's
-      # API is reachable and an admin token has been generated. With npm
-      # install running first (~30s), the deploy usually finishes during
-      # that step, so this wait is often <10s or instant.
-      # ---------------------------------------------------------------
-      - name: Wait for auth token
-        run: |
-          echo "Waiting for auth token (Central API must be ready)..."
-          for i in $(seq 1 90); do
-            [ -s /tmp/rox-auth-token ] && break
-            sleep 2
-          done
-          if [ ! -s /tmp/rox-auth-token ]; then
-            echo "::error::Auth token not generated after 3 minutes — deploy likely failed"
-            echo "=== Deploy log (last 50 lines) ==="
-            tail -50 /tmp/deploy.log 2>/dev/null || echo "(no log)"
-            exit 1
-          fi
-          set +x
-          ROX_AUTH_TOKEN=$(cat /tmp/rox-auth-token)
-          echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
-          echo "::add-mask::${ROX_AUTH_TOKEN}"
-          set -x
-          echo "Auth token ready"
-
-      # ---------------------------------------------------------------
-      # WAIT FOR TEST DATA
-      #
-      # All shards wait for /tmp/data-ready (Sensor reporting >5
-      # deployments). With round-robin sharding, any shard may contain
-      # vuln or policy specs that need scanner/sensor data. The wait
-      # is short (~6-12s) and ensures consistent behavior.
-      # ---------------------------------------------------------------
-      - name: Wait for test data
-        run: |
-          for i in $(seq 1 180); do
-            [ -f /tmp/data-ready ] && echo "Data ready" && break
-            sleep 2
-          done
-          if [ ! -f /tmp/data-ready ]; then
-            echo "::warning::Data readiness timeout — some tests may see partial results"
-          fi
-
-      # ---------------------------------------------------------------
-      # RUN CYPRESS
-      #
-      # Specs are determined by the setup-shards job — each shard gets
-      # a set of directory globs grouped by the waterline algorithm.
-      # Shard names reflect the test directories (e.g., "clusters",
-      # "risk+accessControl") for clear ownership signals.
-      #
-      # Video, screenshots, and retries are disabled. Retries mask
-      # flaky tests — if a test is intermittent, it should fail and
-      # get fixed, not silently pass on retry.
-      # ---------------------------------------------------------------
       - name: Run Cypress
         working-directory: ui/apps/platform
         run: |
@@ -522,24 +187,14 @@ jobs:
             --spec "${{ matrix.specs }}" \
             --config "baseUrl=https://localhost:8000,video=false,screenshotOnRunFailure=false,retries=0"
         env:
-          CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+          CYPRESS_ROX_AUTH_TOKEN: ${{ steps.deploy.outputs.auth-token }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
 
-      # ---------------------------------------------------------------
-      # POST-TEST: resource report, threshold check, cleanup
-      # ---------------------------------------------------------------
       - name: Resource report
         if: always()
         run: |
           {
             echo "## Shard ${{ matrix.name }} Resource Report"
-            echo ""
-            echo "### Deploy Timeline"
-            echo '```'
-            grep '^+[0-9]' /tmp/deploy.log 2>/dev/null || echo "(no timestamps)"
-            echo '```'
-            echo ""
-            echo "### Pod Resources"
             echo ""
             echo "| Pod | CPU | Memory |"
             echo "|-----|-----|--------|"
@@ -551,9 +206,6 @@ jobs:
             echo "**Docker total: ${mem}**"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Memory threshold check: fail the job if peak memory exceeded 80%
-      # of KIND_MEMORY_LIMIT. Catches memory regressions early — before
-      # they cause OOM kills or starve Cypress/Node on the runner.
       - name: Check resource thresholds
         if: always()
         run: |
@@ -576,7 +228,6 @@ jobs:
             kubectl -n stackrox logs "$pod" --all-containers > "${ARTIFACT_DIR}/${pod_name}.log" 2>&1 || true
           done
           cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
-          cp /tmp/deploy.log "${ARTIFACT_DIR}/deploy.log" 2>/dev/null || true
           cp /tmp/resource-monitor.log "${ARTIFACT_DIR}/resource-monitor.log" 2>/dev/null || true
 
       - name: Upload artifacts

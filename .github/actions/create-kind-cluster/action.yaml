@@ -1,0 +1,100 @@
+name: Create KinD cluster with StackRox images
+description: >
+  Creates a KinD cluster, pulls StackRox images into it via ctr,
+  and renders helm charts from in-repo .htpl templates.
+
+inputs:
+  cluster-name:
+    description: Unique cluster name
+    required: true
+  tag:
+    description: Main image tag (e.g., 4.11.x-831-g8f262d83ee)
+    required: true
+  registry:
+    description: Image registry
+    default: quay.io/rhacs-eng
+  memory-limit:
+    description: Docker container memory cap
+    default: 6g
+  quay-user:
+    description: Quay.io username
+    required: true
+  quay-pass:
+    description: Quay.io password
+    required: true
+
+outputs:
+  cluster-name:
+    description: Cluster name (for cleanup)
+    value: ${{ inputs.cluster-name }}
+  central-chart:
+    description: Path to rendered central helm chart
+    value: /tmp/central-chart
+  sensor-chart:
+    description: Path to rendered sensor helm chart
+    value: /tmp/sensor-chart
+
+runs:
+  using: composite
+  steps:
+    - name: Docker login
+      shell: bash
+      run: |
+        set +x
+        echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io
+        set -x
+
+    - name: Create KinD cluster and render charts
+      shell: bash
+      run: |
+        SCANNER_TAG=$(cat SCANNER_VERSION)
+
+        kind create cluster --name "${{ inputs.cluster-name }}" &
+        PID_KIND=$!
+
+        .github/workflows/scripts/render-chart.sh central /tmp/central-chart \
+          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
+        .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart \
+          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
+
+        wait $PID_KIND
+
+        docker update \
+          --memory "${{ inputs.memory-limit }}" \
+          --memory-swap "${{ inputs.memory-limit }}" \
+          "${{ inputs.cluster-name }}-control-plane"
+
+    - name: Pull images into KinD
+      shell: bash
+      env:
+        NODE: ${{ inputs.cluster-name }}-control-plane
+      run: |
+        SCANNER_TAG=$(cat SCANNER_VERSION)
+
+        # Pull central-db first and wait — eliminates kubelet exponential
+        # backoff when helm install creates the pod (image is present on
+        # first check). Other images pull in background; their pods start
+        # as each image arrives.
+        docker exec "$NODE" ctr -n k8s.io images pull \
+          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+          --platform linux/amd64 \
+          "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
+        PID_CDB=$!
+
+        docker exec "$NODE" ctr -n k8s.io images pull \
+          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+          --platform linux/amd64 \
+          "${{ inputs.registry }}/main:${{ inputs.tag }}" &
+
+        docker exec "$NODE" ctr -n k8s.io images pull \
+          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+          --platform linux/amd64 \
+          "${{ inputs.registry }}/scanner:${SCANNER_TAG}" &
+
+        docker exec "$NODE" ctr -n k8s.io images pull \
+          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+          --platform linux/amd64 \
+          "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" &
+
+        wait $PID_CDB
+        echo "central-db image ready (others still pulling in background)"
