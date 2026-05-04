@@ -1,4 +1,4 @@
-/* constants specific to Roles — build test */
+/* constants specific to Roles */
 import type { ResourceName } from 'types/roleResources';
 
 export const NO_ACCESS = 'NO_ACCESS';
