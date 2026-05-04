@@ -1,7 +1,7 @@
 import Raven from 'raven-js';
 import { distanceInWordsStrict } from 'date-fns';
 
-import type { Schedule, ScheduleBase } from 'types/schedule.proto';
+import type { LegacySchedule, Schedule, ScheduleBase } from 'types/schedule.proto';
 
 const userLanguages: readonly string[] | undefined = globalThis.navigator?.languages;
 
@@ -51,10 +51,10 @@ function formatLocalizedDateTime(
 
 /**
  * Returns a human readable label for a recurring schedule.
- * @param schedule - A `Schedule` object describing the interval and time
+ * @param schedule - A `Schedule` or `LegacySchedule` object describing the interval and time
  * @returns A formatted string such as "Daily at 05:00 UTC" or "Every Mon and Wed at 13:30 UTC"
  */
-export function formatRecurringSchedule(schedule: Schedule) {
+export function formatRecurringSchedule(schedule: Schedule | LegacySchedule) {
     const formatDays = (days: string[]): string => {
         if (days.length === 1) {
             return days[0];
@@ -71,6 +71,10 @@ export function formatRecurringSchedule(schedule: Schedule) {
         case 'DAILY':
             return `Daily at ${timeString}`;
         case 'WEEKLY': {
+            if ('weekly' in schedule) {
+                const dayLabel = daysOfWeekAbbreviated[schedule.weekly.day];
+                return `Every ${dayLabel} at ${timeString}`;
+            }
             const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekAbbreviated[day]);
             return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
         }
