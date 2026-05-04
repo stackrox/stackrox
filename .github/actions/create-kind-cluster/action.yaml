@@ -1,14 +1,21 @@
-name: Create KinD cluster with StackRox images
+name: Create KinD cluster with images
 description: >
-  Creates a KinD cluster, pulls StackRox images into it via ctr,
-  and renders helm charts from in-repo .htpl templates.
+  Creates a KinD cluster, pulls images via ctr, and renders helm charts.
+  Runs in the background — returns immediately. The cluster and images
+  become available asynchronously. Callers can start dependent actions
+  immediately; they should retry kubectl commands until the cluster is ready.
+
+  File-based outputs:
+    /tmp/central-chart  — rendered central helm chart (available in ~1s)
+    /tmp/sensor-chart   — rendered sensor helm chart (available in ~1s)
+    /tmp/kind-ready     — touched when KinD cluster + central-db image ready
 
 inputs:
   cluster-name:
     description: Unique cluster name
     required: true
   tag:
-    description: Main image tag (e.g., 4.11.x-831-g8f262d83ee)
+    description: Image tag
     required: true
   registry:
     description: Image registry
@@ -23,78 +30,57 @@ inputs:
     description: Quay.io password
     required: true
 
-outputs:
-  cluster-name:
-    description: Cluster name (for cleanup)
-    value: ${{ inputs.cluster-name }}
-  central-chart:
-    description: Path to rendered central helm chart
-    value: /tmp/central-chart
-  sensor-chart:
-    description: Path to rendered sensor helm chart
-    value: /tmp/sensor-chart
-
 runs:
   using: composite
   steps:
-    - name: Docker login
+    - name: Create KinD cluster (background)
       shell: bash
       run: |
         set +x
         echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io
         set -x
 
-    - name: Create KinD cluster and render charts
-      shell: bash
-      run: |
         SCANNER_TAG=$(cat SCANNER_VERSION)
 
-        kind create cluster --name "${{ inputs.cluster-name }}" &
-        PID_KIND=$!
-
+        # Render charts immediately (instant, <1s) — available before KinD is ready
         .github/workflows/scripts/render-chart.sh central /tmp/central-chart \
           "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
         .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart \
           "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
 
-        wait $PID_KIND
+        (
+          NODE="${{ inputs.cluster-name }}-control-plane"
 
-        docker update \
-          --memory "${{ inputs.memory-limit }}" \
-          --memory-swap "${{ inputs.memory-limit }}" \
-          "${{ inputs.cluster-name }}-control-plane"
+          kind create cluster --name "${{ inputs.cluster-name }}"
 
-    - name: Pull images into KinD
-      shell: bash
-      env:
-        NODE: ${{ inputs.cluster-name }}-control-plane
-      run: |
-        SCANNER_TAG=$(cat SCANNER_VERSION)
+          docker update --memory "${{ inputs.memory-limit }}" \
+            --memory-swap "${{ inputs.memory-limit }}" "$NODE"
 
-        # Pull central-db first and wait — eliminates kubelet exponential
-        # backoff when helm install creates the pod (image is present on
-        # first check). Other images pull in background; their pods start
-        # as each image arrives.
-        docker exec "$NODE" ctr -n k8s.io images pull \
-          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-          --platform linux/amd64 \
-          "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
-        PID_CDB=$!
+          # Pull central-db first (wait) — eliminates kubelet backoff.
+          # Other images pull in background.
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+            --platform linux/amd64 \
+            "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
+          PID_CDB=$!
 
-        docker exec "$NODE" ctr -n k8s.io images pull \
-          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-          --platform linux/amd64 \
-          "${{ inputs.registry }}/main:${{ inputs.tag }}" &
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+            --platform linux/amd64 \
+            "${{ inputs.registry }}/main:${{ inputs.tag }}" &
 
-        docker exec "$NODE" ctr -n k8s.io images pull \
-          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-          --platform linux/amd64 \
-          "${{ inputs.registry }}/scanner:${SCANNER_TAG}" &
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+            --platform linux/amd64 \
+            "${{ inputs.registry }}/scanner:${SCANNER_TAG}" &
 
-        docker exec "$NODE" ctr -n k8s.io images pull \
-          --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-          --platform linux/amd64 \
-          "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" &
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
+            --platform linux/amd64 \
+            "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" &
 
-        wait $PID_CDB
-        echo "central-db image ready (others still pulling in background)"
+          wait $PID_CDB
+          touch /tmp/kind-ready
+        ) > /tmp/kind-create.log 2>&1 &
+
+        echo "KinD cluster creation started in background"

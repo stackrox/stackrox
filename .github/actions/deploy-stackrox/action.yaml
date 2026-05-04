@@ -1,21 +1,24 @@
 name: Deploy StackRox
 description: >
-  Deploys StackRox (Central + Sensor) on an existing Kubernetes cluster.
-  Cluster-agnostic — works with KinD, GKE, minikube, or any cluster
-  that kubectl can reach.
+  Deploys StackRox (Central + Sensor) on a Kubernetes cluster.
+  Cluster-agnostic — retries kubectl until a cluster is reachable,
+  then deploys via helm. Can be started in parallel with cluster
+  creation; it will wait for the cluster to appear.
 
-  Runs entirely in the background — the action returns immediately.
-  The auth token is written to /tmp/rox-auth-token when Central is
-  ready. Callers should poll for this file before running tests.
-  The admin password is written to /tmp/rox-admin-password.
+  Runs in the background — returns immediately.
+  File-based outputs (poll for these):
+    /tmp/rox-auth-token     — API auth token (Central API ready)
+    /tmp/rox-admin-password — admin password
+    /tmp/rox-data-ready     — touched when Sensor reports >5 deployments
+    /tmp/deploy.log         — deploy timeline with timestamps
 
 inputs:
   central-chart:
     description: Path to rendered central-services helm chart
-    required: true
+    default: /tmp/central-chart
   sensor-chart:
     description: Path to rendered secured-cluster helm chart
-    required: true
+    default: /tmp/sensor-chart
   central-values:
     description: Central helm values file
     default: .github/workflows/scripts/ci-values-central.yaml
@@ -37,13 +40,26 @@ runs:
         echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
 
         (
-          kubectl create namespace stackrox 2>/dev/null || true
+          T0=$(date +%s)
+          ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
 
+          # Wait for cluster to be reachable (retries until kubectl works)
+          ts "waiting for cluster..."
+          for i in $(seq 1 120); do
+            kubectl cluster-info >/dev/null 2>&1 && break
+            sleep 2
+          done
+          ts "cluster reachable"
+
+          # Helm install central-services
+          kubectl create namespace stackrox 2>/dev/null || true
+          ts "helm install central-services"
           helm upgrade --install -n stackrox stackrox-central-services \
             "${{ inputs.central-chart }}" \
             -f "${{ inputs.central-values }}" \
             --set image.registry="${{ inputs.registry }}" \
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
+          ts "helm install complete"
 
           # Port-forward with auto-reconnect
           while true; do
@@ -51,10 +67,12 @@ runs:
           done &
 
           # Wait for Central API
+          ts "waiting for Central API..."
           for i in $(seq 1 120); do
             curl -sk --connect-timeout 1 https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
             sleep 1
           done
+          ts "Central API ready"
 
           # Generate auth token
           set +x
@@ -62,8 +80,12 @@ runs:
             "https://localhost:8000/v1/apitokens/generate" \
             -X POST -d '{"name":"ci-test","role":"Admin"}' \
             | jq -r '.token' > /tmp/rox-auth-token
+          set -x
+          ts "auth token written"
 
           # Deploy sensor via init-bundle
+          ts "sensor deploy"
+          set +x
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://localhost:8000/v1/cluster-init/init-bundles" \
             -X POST -d '{"name":"ci-cluster"}' \
@@ -84,6 +106,7 @@ runs:
             --set image.registry="${{ inputs.registry }}" \
             --set centralEndpoint=central.stackrox.svc:443 \
             -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
+          ts "sensor deployed"
 
           # Seed test workloads
           kubectl create namespace qa-test 2>/dev/null || true
@@ -91,7 +114,6 @@ runs:
           kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
             sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null || true
 
-          # Wait for sensor data
           for i in $(seq 1 60); do
             dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
               "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
@@ -99,6 +121,7 @@ runs:
             sleep 3
           done
           touch /tmp/rox-data-ready
-        ) > /tmp/deploy-stackrox.log 2>&1 &
+          ts "data ready (${dep_count} deployments)"
+        ) > /tmp/deploy.log 2>&1 &
 
-        echo "StackRox deploy started in background (PID $!)"
+        echo "StackRox deploy started in background"
