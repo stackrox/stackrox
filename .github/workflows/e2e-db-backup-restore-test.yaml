@@ -20,29 +20,7 @@ defaults:
     shell: bash
 
 jobs:
-  wait-for-images:
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
-      )
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    - name: Get image tag
-      id: get-tag
-      # EXPERIMENT: hardcode known-good tag to bypass build dependency
-      run: echo "tag=4.11.x-831-g8f262d83ee" | tee -a "$GITHUB_ENV"
-
-  # EXPERIMENT: Replace GKE/infractl with KinD cluster.
-  # Removes: infractl, GCP auth, gcloud SDK, 15-25 min cluster wait.
-  # Keeps: roxctl build, deploy_stackrox (lib.sh), backup/restore test.
   kind-db-backup-restore-test:
-    # needs: [ wait-for-images ]  # EXPERIMENT: skipped, using hardcoded tag
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
@@ -50,122 +28,112 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
-      CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}-${{ github.run_attempt }}
-      CI_JOB_NAME: kind-db-backup-restore-test
-      ARTIFACT_DIR: ./junit-reports/
-      ORCHESTRATOR_FLAVOR: k8s
-      # KinD: no cloud load balancer, use port-forward
-      LOAD_BALANCER: none
-      # EXPERIMENT: hardcode tag (normally comes from build workflow)
-      tag: 4.11.x-831-g8f262d83ee
-      MAIN_IMAGE_TAG: 4.11.x-831-g8f262d83ee
-    timeout-minutes: 60
+      CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}
+      # EXPERIMENT: hardcode known-good tag
+      TAG: 4.11.x-831-g8f262d83ee
+    timeout-minutes: 30
     steps:
 
-    - name: Checkout repo
+    - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 1
 
-    # KinD cluster replaces infractl GKE cluster.
-    # create-kind-cluster backgrounds KinD creation + image pulls.
-    # The test's deploy_stackrox script waits for kubectl access.
+    # KinD + deploy run in background. roxctl builds in parallel.
     - name: Create KinD cluster (background)
       uses: ./.github/actions/create-kind-cluster
       with:
         cluster-name: ${{ env.CLUSTER_NAME }}
-        tag: ${{ env.tag }}
+        tag: ${{ env.TAG }}
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
+    - name: Deploy StackRox (background)
+      uses: ./.github/actions/deploy-stackrox
+
     - name: Build roxctl
-      # The test uses roxctl for central backup/restore operations.
-      # Overlaps with KinD creation in background.
       run: |
         make roxctl_linux-amd64
         echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
 
-    - name: Wait for KinD cluster
+    - name: Wait for Central API
       run: |
-        for i in $(seq 1 120); do
-          kubectl cluster-info >/dev/null 2>&1 && break
+        for i in $(seq 1 180); do
+          [ -s /tmp/rox-auth-token ] && break
           sleep 2
         done
-        kubectl cluster-info
-        kubectl get nodes
+        if [ ! -s /tmp/rox-auth-token ]; then
+          echo "::error::Central API not ready after 6 minutes"
+          cat /tmp/deploy.log 2>/dev/null | tail -50 || true
+          exit 1
+        fi
+        echo "Central API ready"
 
-    - name: Run pre-test
-      shell: python
-      env:
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        PYTHONUNBUFFERED: "1"
+    - name: DB backup and restore test
       run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from pre_tests import PreSystemTests
-        PreSystemTests().run()
+        set +x
+        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        set -x
+        API_ENDPOINT="localhost:8000"
 
-    - name: Deploy StackRox and run DB backup/restore test
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        ORCHESTRATOR_FLAVOR: k8s
-      run: |
-        source tests/e2e/lib.sh
-        source tests/scripts/setup-certs.sh
-        source scripts/ci/sensor-wait.sh
-        export_test_environment
-        setup_deployment_env false false
-        deploy_stackrox
-        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        db_backup_and_restore_test /tmp/db-backup-restore-test
+        # Save original config
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/config" | jq . > /tmp/original-config.json
 
-    - name: Run post-test
+        # Backup
+        echo "Running central backup..."
+        roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
+          -p "${ROX_ADMIN_PASSWORD}" \
+          central backup --output /tmp/db-backup
+
+        # Modify config (so restore has something to revert)
+        echo "Modifying config..."
+        NEW_CONFIG=$(jq '. + { publicConfig: { header: { enabled: true, text: "modified-by-test" } } }' < /tmp/original-config.json)
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/config" \
+          -X PUT -d "{ \"config\": ${NEW_CONFIG} }" > /dev/null
+
+        # Restore
+        echo "Running central db restore..."
+        roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
+          -p "${ROX_ADMIN_PASSWORD}" \
+          central db restore /tmp/db-backup/postgres_db_*
+
+        # Wait for Central to come back after restore
+        for i in $(seq 1 60); do
+          curl -sk "https://${API_ENDPOINT}/v1/metadata" >/dev/null 2>&1 && break
+          sleep 2
+        done
+
+        # Verify config matches original
+        echo "Verifying config restored correctly..."
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/config" | jq . > /tmp/restored-config.json
+
+        if ! diff /tmp/original-config.json /tmp/restored-config.json; then
+          echo "::error::Config after restore differs from original!"
+          exit 1
+        fi
+        echo "DB backup and restore test PASSED"
+
+    - name: Collect logs
       if: always()
-      shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import CheckStackroxLogs
-        CheckStackroxLogs(
-            check_for_errors_in_stackrox_logs=True,
-            artifact_destination_prefix="db-test",
-        ).run(['/tmp/db-backup-restore-test', '${{ env.ARTIFACT_DIR }}'])
+        mkdir -p /tmp/test-artifacts
+        for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+          kubectl -n stackrox logs "$(basename "$pod")" --all-containers \
+            > "/tmp/test-artifacts/$(basename "$pod").log" 2>&1 || true
+        done
 
-    - name: Run final-post
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       if: always()
-      shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import FinalPost
-        FinalPost(store_qa_tests_data=False).run()
+      with:
+        name: db-backup-restore-${{ github.run_id }}
+        path: /tmp/test-artifacts
+        retention-days: 7
 
-    - name: Cleanup KinD
+    - name: Cleanup
       if: always()
       run: kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
-
-    - name: Publish test summary
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
-
-    - name: Report junit failures in jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: ${{ env.ARTIFACT_DIR }}
