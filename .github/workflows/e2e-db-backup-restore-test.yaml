@@ -108,9 +108,12 @@ jobs:
 
         # Restore
         echo "Running central db restore..."
+        ls -la /tmp/db-backup/
+        BACKUP_FILE=$(find /tmp/db-backup -name 'postgres_db_*' -type f | head -1)
+        echo "Restoring from: ${BACKUP_FILE}"
         roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
           -p "${ROX_ADMIN_PASSWORD}" \
-          central db restore $(ls /tmp/db-backup/postgres_db_*)
+          central db restore "${BACKUP_FILE}"
 
         # Wait for Central to come back after restore
         for i in $(seq 1 60); do
