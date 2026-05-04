@@ -260,8 +260,8 @@ jobs:
 
             # render-chart.sh processes .htpl templates from image/templates/helm/
             # into ready-to-install helm charts. Replaces `roxctl helm output`.
-            .github/ci/render-chart.sh central /tmp/central-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
-            .github/ci/render-chart.sh sensor /tmp/sensor-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
+            .github/workflows/scripts/render-chart.sh central /tmp/central-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
+            .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
             ts "charts rendered, waiting for KinD..."
 
             wait $PID_KIND
@@ -323,7 +323,7 @@ jobs:
             kubectl create namespace stackrox
             ts "phase3: helm install central-services"
             helm upgrade --install -n stackrox stackrox-central-services /tmp/central-chart \
-              -f .github/ci/ci-values-central.yaml \
+              -f .github/workflows/scripts/ci-values-central.yaml \
               --set image.registry="${IMAGE_REGISTRY}" \
               --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
             ts "phase3 done: helm install complete"
@@ -392,7 +392,7 @@ jobs:
             # ci-values-sensor.yaml sets: clusterName=remote, CORE_BPF collector,
             # 1 admission-control replica, minimal resources.
             helm upgrade --install -n stackrox stackrox-secured-cluster-services /tmp/sensor-chart \
-              -f .github/ci/ci-values-sensor.yaml \
+              -f .github/workflows/scripts/ci-values-sensor.yaml \
               --set image.registry="${IMAGE_REGISTRY}" \
               --set centralEndpoint=central.stackrox.svc:443 \
               -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
