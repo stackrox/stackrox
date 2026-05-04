@@ -18,5 +18,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_222_to_m_223_remove_component_risk_records"
 	_ "github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_add_deployment_type_and_enforcement_count_to_alerts"
 	_ "github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_populate_deployment_containers_imageidv2"
-	_ "github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_set_deployment_state"
+	_ "github.com/stackrox/rox/migrator/migrations/m_225_to_m_226_set_deployment_state"
 )

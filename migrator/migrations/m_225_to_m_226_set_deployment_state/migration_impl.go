@@ -1,9 +1,9 @@
-package m223tom224
+package m225tom226
 
 import (
 	"context"
 
-	"github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_set_deployment_state/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_225_to_m_226_set_deployment_state/schema"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"

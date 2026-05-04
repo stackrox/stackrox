@@ -1,13 +1,13 @@
 //go:build sql_integration
 
-package m223tom224
+package m225tom226
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_224_to_m_225_set_deployment_state/test/schema"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_225_to_m_226_set_deployment_state/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
