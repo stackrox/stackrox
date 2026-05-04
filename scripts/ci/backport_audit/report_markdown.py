@@ -21,11 +21,26 @@ def _collect_issue_problems(
 
     for pr in prs:
         for jira_key in pr.jira_keys:
+            jira_to_prs.setdefault(jira_key, []).append(pr)
+
             if jira_key not in jira_issues:
-                continue
+                # Create placeholder for missing Jira lookup
+                jira_issues[jira_key] = JiraIssue(
+                    key=jira_key,
+                    summary="MISSING JIRA: lookup failed",
+                    priority="MISSING",
+                    severity="MISSING",
+                    status="Unknown",
+                    assignee=None,
+                    team=None,
+                    component=None,
+                    fix_versions=[],
+                    affected_versions=[],
+                    due_date=None,
+                    sla_date=None,
+                )
 
             issue = jira_issues[jira_key]
-            jira_to_prs.setdefault(jira_key, []).append(pr)
 
             has_fix = (
                 expected_version in issue.fix_versions
