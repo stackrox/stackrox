@@ -141,7 +141,7 @@ jobs:
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version: '1.25.7'
           cache: false
 
       - name: Verify go.mod is compatible with Konflux builders
