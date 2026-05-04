@@ -29,18 +29,14 @@ import { downloadClusterRegistrationSecret } from './ClusterRegistrationSecretFo
 type ValidityMode = 'none' | 'date' | 'hours';
 
 export type ClusterRegistrationSecretFormValues = {
-    name: string;
     validityMode: ValidityMode;
-    validUntil: string | undefined;
-    validForHours: string | undefined;
-    maxRegistrations: string | undefined;
-};
+} & GenerateClusterRegistrationSecretExtendedRequest;
 
 export const initialValues: ClusterRegistrationSecretFormValues = {
     name: '',
     validityMode: 'none',
     validUntil: undefined,
-    validForHours: undefined,
+    validFor: undefined,
     maxRegistrations: undefined,
 };
 
@@ -78,7 +74,7 @@ const validationSchema: yup.ObjectSchema<ClusterRegistrationSecretFormValues> = 
                         return new Date(val) >= tomorrow;
                     }),
         }),
-    validForHours: yup
+    validFor: yup
         .string()
         .optional()
         .when('validityMode', {
@@ -117,10 +113,10 @@ export function buildRequestData(
     }
 
     if (values.validityMode === 'hours') {
-        if (!values.validForHours) {
+        if (!values.validFor) {
             throw new Error('An hours value is required when validity mode is "hours"');
         }
-        const hours = parseInt(values.validForHours, 10);
+        const hours = parseInt(values.validFor, 10);
         if (!Number.isInteger(hours) || hours <= 0) {
             throw new Error('Hours must be a positive integer');
         }
@@ -128,10 +124,7 @@ export function buildRequestData(
     }
 
     if (values.maxRegistrations) {
-        const maxRegs = parseInt(values.maxRegistrations, 10);
-        if (maxRegs > 0) {
-            data.maxRegistrations = maxRegs;
-        }
+        data.maxRegistrations = values.maxRegistrations;
     }
 
     return data;
@@ -238,7 +231,7 @@ function ClusterRegistrationSecretForm(): ReactElement {
                                             ...values,
                                             validityMode: 'none',
                                             validUntil: undefined,
-                                            validForHours: undefined,
+                                            validFor: undefined,
                                         });
                                     }}
                                 />
@@ -251,34 +244,40 @@ function ClusterRegistrationSecretForm(): ReactElement {
                                         return setValues({
                                             ...values,
                                             validityMode: 'date',
-                                            validForHours: undefined,
+                                            validFor: undefined,
                                         });
                                     }}
-                                />
-                                {values.validityMode === 'date' && (
-                                    <FormLabelGroup
-                                        fieldId="validUntil"
-                                        errors={errors}
-                                        touched={touched}
-                                    >
-                                        <DatePicker
-                                            value={datePickerValue}
-                                            onChange={onDateChange}
-                                            onBlur={() => setFieldTouched('validUntil', true)}
-                                            validators={[
-                                                (date) => {
-                                                    const tomorrow = new Date();
-                                                    tomorrow.setHours(0, 0, 0, 0);
-                                                    tomorrow.setDate(tomorrow.getDate() + 1);
-                                                    if (date < tomorrow) {
-                                                        return 'Date must be after today';
+                                    body={
+                                        values.validityMode === 'date' && (
+                                            <FormLabelGroup
+                                                fieldId="validUntil"
+                                                errors={errors}
+                                                touched={touched}
+                                            >
+                                                <DatePicker
+                                                    value={datePickerValue}
+                                                    onChange={onDateChange}
+                                                    onBlur={() =>
+                                                        setFieldTouched('validUntil', true)
                                                     }
-                                                    return '';
-                                                },
-                                            ]}
-                                        />
-                                    </FormLabelGroup>
-                                )}
+                                                    validators={[
+                                                        (date) => {
+                                                            const tomorrow = new Date();
+                                                            tomorrow.setHours(0, 0, 0, 0);
+                                                            tomorrow.setDate(
+                                                                tomorrow.getDate() + 1
+                                                            );
+                                                            if (date < tomorrow) {
+                                                                return 'Date must be after today';
+                                                            }
+                                                            return '';
+                                                        },
+                                                    ]}
+                                                />
+                                            </FormLabelGroup>
+                                        )
+                                    }
+                                />
                                 <Radio
                                     id="validity-hours"
                                     name="validityMode"
@@ -291,28 +290,33 @@ function ClusterRegistrationSecretForm(): ReactElement {
                                             validUntil: undefined,
                                         });
                                     }}
+                                    body={
+                                        values.validityMode === 'hours' && (
+                                            <FormLabelGroup
+                                                fieldId="validFor"
+                                                errors={errors}
+                                                touched={touched}
+                                            >
+                                                <TextInput
+                                                    id="validFor"
+                                                    type="number"
+                                                    name="validFor"
+                                                    value={values.validFor ?? ''}
+                                                    min={1}
+                                                    step={1}
+                                                    placeholder="24"
+                                                    onBlur={handleBlur}
+                                                    onChange={(_event, value) =>
+                                                        setFieldValue(
+                                                            'validFor',
+                                                            value || undefined
+                                                        )
+                                                    }
+                                                />
+                                            </FormLabelGroup>
+                                        )
+                                    }
                                 />
-                                {values.validityMode === 'hours' && (
-                                    <FormLabelGroup
-                                        fieldId="validForHours"
-                                        errors={errors}
-                                        touched={touched}
-                                    >
-                                        <TextInput
-                                            id="validForHours"
-                                            type="number"
-                                            name="validForHours"
-                                            value={values.validForHours ?? ''}
-                                            min={1}
-                                            step={1}
-                                            placeholder="24"
-                                            onBlur={handleBlur}
-                                            onChange={(_event, value) =>
-                                                setFieldValue('validForHours', value || undefined)
-                                            }
-                                        />
-                                    </FormLabelGroup>
-                                )}
                             </Flex>
                         </FormLabelGroup>
                         <FormLabelGroup

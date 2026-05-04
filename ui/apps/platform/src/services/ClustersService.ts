@@ -280,7 +280,7 @@ export type GenerateClusterRegistrationSecretExtendedRequest = {
     name: string;
     validUntil?: string;
     validFor?: string;
-    maxRegistrations?: number;
+    maxRegistrations?: string;
 };
 
 export function generateClusterRegistrationSecretExtended(

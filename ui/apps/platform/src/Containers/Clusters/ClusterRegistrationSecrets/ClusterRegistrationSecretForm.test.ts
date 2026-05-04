@@ -29,7 +29,7 @@ describe('buildRequestData', () => {
 
     it('should convert hours to seconds duration string', () => {
         expect(
-            buildRequestData({ ...baseFormValues, validityMode: 'hours', validForHours: '24' })
+            buildRequestData({ ...baseFormValues, validityMode: 'hours', validFor: '24' })
         ).toEqual({
             name: 'my-secret',
             validFor: '86400s',
@@ -38,14 +38,14 @@ describe('buildRequestData', () => {
 
     it('should throw when hours mode but value is undefined', () => {
         expect(() =>
-            buildRequestData({ ...baseFormValues, validityMode: 'hours', validForHours: undefined })
+            buildRequestData({ ...baseFormValues, validityMode: 'hours', validFor: undefined })
         ).toThrow('An hours value is required');
     });
 
     it('should include maxRegistrations when a positive number', () => {
         expect(buildRequestData({ ...baseFormValues, maxRegistrations: '5' })).toEqual({
             name: 'my-secret',
-            maxRegistrations: 5,
+            maxRegistrations: '5',
         });
     });
 
@@ -60,13 +60,13 @@ describe('buildRequestData', () => {
             buildRequestData({
                 ...baseFormValues,
                 validityMode: 'hours',
-                validForHours: '48',
+                validFor: '48',
                 maxRegistrations: '10',
             })
         ).toEqual({
             name: 'my-secret',
             validFor: '172800s',
-            maxRegistrations: 10,
+            maxRegistrations: '10',
         });
     });
 });
