@@ -114,7 +114,7 @@ def _fetch_merged_prs_from_commits(
                 try:
                     pr_data = gh_client.get_pr_details(pr_number)
                     title = pr_data.get("title", subject)
-                    author = pr_data.get("author", {}).get("login", author_name)
+                    author = resolve_author(pr_data, gh_client)
                     body = pr_data.get("body", "")
                 except GitHubError:
                     title = subject
