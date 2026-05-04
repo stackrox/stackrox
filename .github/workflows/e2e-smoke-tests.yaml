@@ -220,21 +220,20 @@ jobs:
             # Pods enter ErrImagePull until their image arrives via ctr, then
             # start automatically on kubelet's next retry.
             #
-            # All image pulls run in a background subprocess — the main flow
-            # continues straight to helm install without waiting. Helm just
-            # creates k8s resources; kubelet starts each pod as its image
-            # arrives (IfNotPresent). central-db is listed first because it's
-            # the smallest image (~200 MB) and finishes first, giving its
-            # initdb a head start before Central's larger image (~500 MB)
-            # arrives.
-            #
-            # Tested: staggering pulls (0-7s delay) showed no benefit — all
-            # 4 images share network bandwidth within the KinD container and
-            # kubelet's image-retry interval dominates over pull ordering.
-            ts "phase2: image pulls (background) + helm install"
+            # Image pulls run in a background subprocess — the main flow
+            # continues straight to helm install without waiting.
+            # central-db downloads first with PULL_DELAY seconds of
+            # exclusive bandwidth before the other images start competing.
+            # The delay is in the subprocess, NOT the main flow — helm
+            # install is unaffected. Each shard uses index*2 (0-14s) to
+            # test whether central-db finishing earlier lets its initdb
+            # complete before Central's first migrator retry check.
+            PULL_DELAY=$(( ${{ strategy.job-index }} * 2 ))
+            ts "phase2: image pulls (central-db head start: ${PULL_DELAY}s) + helm install"
             (
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/central-db:${TAG}" &
+              sleep "$PULL_DELAY"
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/main:${TAG}" &
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
@@ -256,6 +255,25 @@ jobs:
               --set image.registry="${IMAGE_REGISTRY}" \
               --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
             ts "phase3 done: helm install complete"
+
+            # Background probe: log when central-db pod becomes ready
+            # (image pulled + initdb complete + PostgreSQL listening).
+            # This tells us if the pull delay actually gave central-db
+            # a head start relative to Central's migrator checks.
+            (
+              for i in $(seq 1 120); do
+                ready=$(kubectl -n stackrox get pod -l app=central-db -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null)
+                [ "$ready" = "true" ] && ts "probe: central-db pod READY" && break
+                sleep 1
+              done
+            ) &
+            (
+              for i in $(seq 1 120); do
+                ready=$(kubectl -n stackrox get pod -l app=central -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null)
+                [ "$ready" = "true" ] && ts "probe: central pod READY" && break
+                sleep 1
+              done
+            ) &
 
             # Port-forward with auto-reconnect — the loop restarts the forward
             # if it dies (e.g., during pod restart). Runs until the job ends.
@@ -446,7 +464,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Shard ${{ matrix.shard }} Resource Report"
+            echo "## Shard ${{ matrix.shard }} Resource Report (pull delay: $(( ${{ strategy.job-index }} * 2 ))s)"
             echo ""
             echo "### Deploy Timeline"
             echo '```'
