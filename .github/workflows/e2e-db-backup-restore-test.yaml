@@ -35,24 +35,14 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
     - name: Get image tag
       id: get-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
-    - name: Wait for images
-      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        # No collector — it's built from a separate repo and the matching
-        # tag may not exist. KinD doesn't need collector for db backup test.
-        image: |
-          rhacs-eng/main:${{ env.tag }}
-          rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
+      # EXPERIMENT: hardcode known-good tag to bypass build dependency
+      run: echo "tag=4.11.x-831-g8f262d83ee" | tee -a "$GITHUB_ENV"
 
   # EXPERIMENT: Replace GKE/infractl with KinD cluster.
   # Removes: infractl, GCP auth, gcloud SDK, 15-25 min cluster wait.
   # Keeps: roxctl build, deploy_stackrox (lib.sh), backup/restore test.
   kind-db-backup-restore-test:
-    needs: [ wait-for-images ]
+    # needs: [ wait-for-images ]  # EXPERIMENT: skipped, using hardcoded tag
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
@@ -64,6 +54,8 @@ jobs:
       CI_JOB_NAME: kind-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports/
       ORCHESTRATOR_FLAVOR: k8s
+      # KinD: no cloud load balancer, use port-forward
+      LOAD_BALANCER: none
       # EXPERIMENT: hardcode tag (normally comes from build workflow)
       tag: 4.11.x-831-g8f262d83ee
       MAIN_IMAGE_TAG: 4.11.x-831-g8f262d83ee
