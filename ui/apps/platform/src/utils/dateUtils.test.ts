@@ -1,4 +1,4 @@
-import type { Schedule } from 'types/schedule.proto';
+import type { LegacySchedule, Schedule } from 'types/schedule.proto';
 
 import {
     addBrandedTimestampToString,
@@ -135,6 +135,17 @@ describe('formatRecurringSchedule', () => {
         };
 
         expect(formatRecurringSchedule(schedule)).toBe('Every Mon, Wed, and Fri at 13:30 UTC');
+    });
+
+    it('should format storage legacy WEEKLY (single weekly.day) like "Every Tue at hh:mm UTC"', () => {
+        const schedule: LegacySchedule = {
+            intervalType: 'WEEKLY',
+            hour: 4,
+            minute: 45,
+            weekly: { day: 2 }, // Tuesday
+        };
+
+        expect(formatRecurringSchedule(schedule)).toBe('Every Tue at 04:45 UTC');
     });
 
     it('should format MONTHLY schedules like "Monthly on the 1st and 15th at 02:15 UTC"', () => {
