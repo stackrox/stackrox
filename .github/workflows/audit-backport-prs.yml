@@ -100,11 +100,20 @@ jobs:
               mv slack-payload-updated.json slack-payload.json
             fi
 
-            # Post to Slack
-            curl -X POST https://slack.com/api/chat.postMessage \
+            # Post to Slack and capture response
+            response=$(curl -X POST https://slack.com/api/chat.postMessage \
               -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
               -H "Content-Type: application/json" \
-              -d @slack-payload.json
+              -d @slack-payload.json)
+
+            # Check if Slack API returned success
+            if ! echo "$response" | jq -e '.ok == true' > /dev/null; then
+              echo "❌ Slack API error:"
+              echo "$response" | jq .
+              exit 1
+            fi
+
+            echo "✅ Successfully posted to Slack"
           else
             echo "⚠️ Slack payload file not found, skipping Slack post"
           fi
