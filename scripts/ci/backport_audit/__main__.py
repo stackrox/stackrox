@@ -294,7 +294,9 @@ def main() -> int:
 
         return 0
 
-    except BackportAuditError:
+    except BackportAuditError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        traceback.print_exc()
         return 1
     except Exception:
         traceback.print_exc()
