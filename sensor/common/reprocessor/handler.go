@@ -93,7 +93,7 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 
 		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys())*2)
 		for _, image := range req.GetImageKeys() {
-			keysToDelete = append(keysToDelete, cacheKeysFromImageKey(image)...)
+			keysToDelete = append(keysToDelete, cacheKeysToInvalidate(image)...)
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}
@@ -136,12 +136,12 @@ func cacheKeyFromImageKey(imageKey *central.ImageKey) cache.Key {
 	return cache.Key(key)
 }
 
-// cacheKeysFromImageKey returns all possible cache keys for an ImageKey.
+// cacheKeysToInvalidate returns all possible cache keys for an ImageKey.
 // Images may be cached under either a digest-derived key (V2 UUID5 or raw
 // digest) or the full image name, depending on whether the deployment's
 // container image had a digest when it was first cached. Both keys must
 // be invalidated to avoid stale entries.
-func cacheKeysFromImageKey(imageKey *central.ImageKey) []cache.Key {
+func cacheKeysToInvalidate(imageKey *central.ImageKey) []cache.Key {
 	var keys []cache.Key
 	if centralcaps.Has(centralsensor.FlattenImageData) {
 		if id := imageKey.GetImageIdV2(); id != "" {
