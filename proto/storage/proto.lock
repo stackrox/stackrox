@@ -5882,7 +5882,7 @@
               {
                 "id": 1,
                 "name": "deployment_duration_days",
-                "type": "int32"
+                "type": "uint32"
               }
             ]
           },
