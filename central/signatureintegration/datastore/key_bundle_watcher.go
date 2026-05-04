@@ -78,6 +78,7 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 	}
 	if err != nil {
 		log.Warnf("Failed to stat key bundle file %q: %v", w.filePath, err)
+		watcherFileErrorTotal.Inc()
 		return
 	}
 	if info.Size() > int64(maxBundleFileSize) {
@@ -87,6 +88,7 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 			log.Warnf("Key bundle file %q exceeds maximum size (%d bytes > %d), skipping",
 				w.filePath, info.Size(), maxBundleFileSize)
 			w.lastHash = fingerprint
+			watcherFileErrorTotal.Inc()
 		}
 		return
 	}
@@ -94,6 +96,7 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 	data, err := os.ReadFile(w.filePath)
 	if err != nil {
 		log.Warnf("Failed to read key bundle file %q: %v", w.filePath, err)
+		watcherFileErrorTotal.Inc()
 		return
 	}
 
@@ -107,6 +110,7 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 	if err != nil {
 		log.Warnf("Invalid key bundle file %q: %v", w.filePath, err)
 		w.lastHash = hash
+		watcherFileErrorTotal.Inc()
 		return
 	}
 
@@ -114,10 +118,15 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	if err := w.siStore.Upsert(ctx, si); err != nil {
 		log.Errorf("Failed to upsert Red Hat signature integration from key bundle: %v", err)
+		watcherUpsertTotal.WithLabelValues("error").Inc()
 		return
 	}
 
 	w.lastHash = hash
+	watcherUpsertTotal.WithLabelValues("success").Inc()
+	watcherKeyCount.Set(float64(len(bundle.Keys)))
+	watcherLastSuccessTimestamp.SetToCurrentTime()
+
 	keyNames := make([]string, 0, len(bundle.Keys))
 	for _, k := range bundle.Keys {
 		keyNames = append(keyNames, k.Name)
