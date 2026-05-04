@@ -1,3 +1,4 @@
+import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 import static util.Helpers.trueWithin
 
@@ -29,6 +30,9 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
 -----END PUBLIC KEY-----
 """
 
+    private static final String WATCH_INTERVAL_ENV = "ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL"
+    private static final String SHORT_WATCH_INTERVAL = "10s"
+
     private static SignatureIntegration getRedHatIntegration() {
         def resp = SignatureIntegrationService.getSignatureIntegrationClient()
                 .listSignatureIntegrations(BaseService.EMPTY)
@@ -55,13 +59,20 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
     @Tag("BAT")
     def "Watcher picks up key bundle file written to Central pod"() {
         given:
-        "A key bundle JSON with two test keys"
+        "Central is configured with a short watch interval for testing"
+        orchestrator.updateDeploymentEnv(Constants.STACKROX_NAMESPACE, "central", "central",
+                WATCH_INTERVAL_ENV, SHORT_WATCH_INTERVAL)
+        waitForTrue(30, 10) {
+            def pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, "central")
+            return pods.size() == 1 && pods.get(0).status.phase == "Running"
+        }
+
         def bundleJson = """{"keys": [""" +
                 """{"name": "test-key-1", "pem": ${escapeJsonString(TEST_PUBLIC_KEY_PEM)}}, """ +
                 """{"name": "test-key-2", "pem": ${escapeJsonString(TEST_PUBLIC_KEY_PEM_2)}}]}"""
 
         def centralPods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, "central")
-        assert centralPods.size() > 0
+        assert centralPods.size() == 1
         def centralPodName = centralPods.get(0).metadata.name
 
         when:
@@ -88,10 +99,17 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         }
 
         cleanup:
-        "Remove the test bundle file so subsequent test runs start clean"
-        orchestrator.execInContainerByPodName(
-                centralPodName, Constants.STACKROX_NAMESPACE,
-                ["sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json"] as String[])
+        "Remove the test bundle file and restore the default watch interval"
+        if (centralPodName) {
+            orchestrator.execInContainerByPodName(
+                    centralPodName, Constants.STACKROX_NAMESPACE,
+                    ["sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json"] as String[])
+        }
+        orchestrator.updateDeploymentEnv(Constants.STACKROX_NAMESPACE, "central", "central",
+                WATCH_INTERVAL_ENV, "4h")
+        waitForTrue(30, 10) {
+            orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "central")
+        }
     }
 
     private static String escapeJsonString(String s) {

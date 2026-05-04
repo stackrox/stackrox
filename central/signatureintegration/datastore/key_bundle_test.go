@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	// Test-only ECDSA P-256 keys, not real Red Hat keys.
 	testPublicKeyPEM = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE16IoQbiiB5exTRLTkl2rn5FuyXys
 4TbDn4+GhQD1JmLZnAiA0cXktX+gFdxu/0JM9pcjjaqT7pdXztbBs78cXg==
@@ -23,77 +22,78 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
 `
 )
 
+var (
+	testKeyPEMJSON  = jsonEscapePEM(testPublicKeyPEM)
+	testKeyPEMJSON2 = jsonEscapePEM(testPublicKeyPEM2)
+)
+
 func TestParseKeyBundle(t *testing.T) {
 	cases := map[string]struct {
 		input   string
-		wantErr string
+		wantErr error
 	}{
 		"valid single key": {
-			input: `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
+			input: `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 		"valid multiple keys": {
 			input: `{"keys": [
-				{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"},
-				{"name": "key-2", "pem": "` + jsonEscapePEM(testPublicKeyPEM2) + `"}
+				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 		},
 		"empty keys array": {
 			input:   `{"keys": []}`,
-			wantErr: "at least one key",
+			wantErr: errKeyBundleEmpty,
 		},
 		"missing keys field": {
 			input:   `{}`,
-			wantErr: "at least one key",
-		},
-		"malformed JSON": {
-			input:   `{not json`,
-			wantErr: "unmarshalling key bundle JSON",
+			wantErr: errKeyBundleEmpty,
 		},
 		"empty name": {
-			input:   `{"keys": [{"name": "", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
-			wantErr: "empty name",
+			input:   `{"keys": [{"name": "", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: errKeyNameEmpty,
 		},
 		"whitespace-only name": {
-			input:   `{"keys": [{"name": "  \t ", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
-			wantErr: "empty name",
+			input:   `{"keys": [{"name": "  \t ", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: errKeyNameEmpty,
 		},
 		"name with path separator": {
-			input:   `{"keys": [{"name": "foo/bar", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"}]}`,
-			wantErr: "path separators",
+			input:   `{"keys": [{"name": "foo/bar", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: errKeyNamePathSeparator,
 		},
 		"invalid PEM": {
 			input:   `{"keys": [{"name": "bad-key", "pem": "not-a-pem"}]}`,
-			wantErr: "invalid PEM-encoded public key",
+			wantErr: errKeyInvalidPEM,
 		},
 		"wrong PEM type": { //nolint:gosec // G101: test data, not real credentials
 			input:   `{"keys": [{"name": "bad-key", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
-			wantErr: "invalid PEM-encoded public key",
+			wantErr: errKeyInvalidPEM,
 		},
 		"valid + invalid key rejects entire bundle": {
 			input: `{"keys": [
-				{"name": "good", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"},
+				{"name": "good", "pem": "` + testKeyPEMJSON + `"},
 				{"name": "bad", "pem": "not-a-pem"}
 			]}`,
-			wantErr: "invalid PEM-encoded public key",
+			wantErr: errKeyInvalidPEM,
 		},
 		"trailing PEM data": {
 			input:   `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM+"extra") + `"}]}`,
-			wantErr: "invalid PEM-encoded public key",
+			wantErr: errKeyInvalidPEM,
 		},
 		"duplicate key names": {
 			input: `{"keys": [
-				{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM) + `"},
-				{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM2) + `"}
+				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-1", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
-			wantErr: "duplicate key name",
+			wantErr: errKeyNameDuplicate,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			bundle, err := parseKeyBundle([]byte(tc.input))
-			if tc.wantErr != "" {
-				assert.ErrorContains(t, err, tc.wantErr)
+			if tc.wantErr != nil {
+				assert.ErrorIs(t, err, tc.wantErr)
 				assert.Nil(t, bundle)
 			} else {
 				require.NoError(t, err)
@@ -103,8 +103,13 @@ func TestParseKeyBundle(t *testing.T) {
 	}
 }
 
+func TestParseKeyBundleMalformedJSON(t *testing.T) {
+	bundle, err := parseKeyBundle([]byte(`{not json`))
+	assert.ErrorContains(t, err, "unmarshalling key bundle JSON")
+	assert.Nil(t, bundle)
+}
+
 func TestParseKeyBundlePEMCanonicalization(t *testing.T) {
-	// PEM with extra trailing newlines should be canonicalized.
 	pemWithExtraNewlines := testPublicKeyPEM + "\n\n\n"
 	input := `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(pemWithExtraNewlines) + `"}]}`
 
@@ -112,12 +117,11 @@ func TestParseKeyBundlePEMCanonicalization(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, bundle.Keys, 1)
 
-	// Canonicalized PEM ends with exactly one trailing newline.
 	assert.Regexp(t, `\n$`, bundle.Keys[0].PEM)
 	assert.NotRegexp(t, `\n\n$`, bundle.Keys[0].PEM)
 }
 
-func TestToSignatureIntegration(t *testing.T) {
+func TestToDefaultSignatureIntegration(t *testing.T) {
 	bundle := &keyBundle{
 		Keys: []keyBundleEntry{
 			{Name: "key-1", PEM: testPublicKeyPEM},
@@ -125,7 +129,7 @@ func TestToSignatureIntegration(t *testing.T) {
 		},
 	}
 
-	si := bundle.toSignatureIntegration()
+	si := bundle.toDefaultSignatureIntegration()
 
 	assert.Equal(t, signatures.DefaultRedHatSignatureIntegration.GetId(), si.GetId())
 	assert.Equal(t, "Red Hat", si.GetName())

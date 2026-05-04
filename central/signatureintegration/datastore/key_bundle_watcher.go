@@ -114,7 +114,7 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 		return
 	}
 
-	si := bundle.toSignatureIntegration()
+	si := bundle.toDefaultSignatureIntegration()
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	if err := w.siStore.Upsert(ctx, si); err != nil {
 		log.Errorf("Failed to upsert Red Hat signature integration from key bundle: %v", err)

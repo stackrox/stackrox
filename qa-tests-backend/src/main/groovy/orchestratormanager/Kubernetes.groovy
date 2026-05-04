@@ -70,6 +70,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
@@ -619,6 +620,39 @@ class Kubernetes {
                         envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
                     }
                     new DaemonSetBuilder(d)
+                            .editSpec()
+                            .editTemplate()
+                            .editSpec()
+                            .editContainer(containerIndex)
+                            .withEnv(envVars)
+                            .endContainer()
+                            .endSpec()
+                            .endTemplate()
+                            .endSpec()
+                            .build()
+                }
+    }
+
+    @Retry(attempts = 3, delay = 2)
+    void updateDeploymentEnv(String ns, String name, String containerName, String key, String value) {
+        log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
+        client.apps().deployments().inNamespace(ns).withName(name)
+                .edit { d ->
+                    List<Container> containers = d.spec.template.spec.containers
+                    int containerIndex = containers.findIndexOf { it.name == containerName }
+                    if (containerIndex == -1) {
+                        throw new RuntimeException(
+                                "Could not update env var." +
+                                " No container named ${containerName} in ${ns}/${name}")
+                    }
+                    List<EnvVar> envVars = containers.get(containerIndex).env
+                    int index = envVars.findIndexOf { EnvVar e -> e.name == key }
+                    if (index > -1) {
+                        envVars.get(index).value = value
+                    } else {
+                        envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+                    }
+                    new DeploymentBuilder(d)
                             .editSpec()
                             .editTemplate()
                             .editSpec()

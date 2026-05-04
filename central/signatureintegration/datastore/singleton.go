@@ -33,7 +33,7 @@ func KeyBundleWatcher() Stoppable {
 	return bundleWatcher
 }
 
-func seedRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
+func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationStore) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	id := signatures.DefaultRedHatSignatureIntegration.GetId()
@@ -70,7 +70,7 @@ func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
-		seedRedHatSignatureIntegration(storage)
+		seedRedHatDefaultSignatureIntegration(storage)
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
 	})
