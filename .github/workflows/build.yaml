@@ -787,7 +787,9 @@ jobs:
           if [[ -f /tmp/buildid-cache/buildids.txt ]]; then
             PR_NUMBER="${{ github.event.pull_request.number }}"
             if [[ -n "$PR_NUMBER" ]]; then
-              non_ui_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null | grep -v '^ui/' || true)
+              # Only ui/ is guaranteed to not affect Go builds
+              non_ui_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null \
+                | grep -v '^ui/' || true)
               if [[ -z "$non_ui_files" ]]; then
                 go_build_needed=false
                 echo "All PR changes are under ui/ — skipping go build"
