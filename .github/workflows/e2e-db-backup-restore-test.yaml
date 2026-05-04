@@ -83,11 +83,14 @@ jobs:
         echo "Central API ready"
 
     - name: DB backup and restore test
+      env:
+        ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
       run: |
         set +x
-        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
         API_ENDPOINT="localhost:8000"
+        ROXCTL="roxctl --insecure-skip-tls-verify --ca= -e ${API_ENDPOINT}"
 
         # Save original config
         curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
@@ -96,10 +99,7 @@ jobs:
         # Backup
         echo "Running central backup..."
         mkdir -p /tmp/db-backup
-        roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
-          -p "${ROX_ADMIN_PASSWORD}" \
-          central backup --output /tmp/db-backup
-        echo "Backup contents:"
+        $ROXCTL central backup --output /tmp/db-backup
         ls -la /tmp/db-backup/
 
         # Modify config (so restore has something to revert)
@@ -110,15 +110,12 @@ jobs:
           -X PUT -d "{ \"config\": ${NEW_CONFIG} }" > /dev/null
 
         # Restore
-        echo "Running central db restore..."
-        ls -la /tmp/db-backup/
         BACKUP_FILE=$(find /tmp/db-backup -name 'postgres_db_*' -type f | head -1)
         echo "Restoring from: ${BACKUP_FILE}"
-        roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
-          -p "${ROX_ADMIN_PASSWORD}" \
-          central db restore "${BACKUP_FILE}"
+        $ROXCTL central db restore "${BACKUP_FILE}"
 
         # Wait for Central to come back after restore
+        echo "Waiting for Central to recover..."
         for i in $(seq 1 60); do
           curl -sk "https://${API_ENDPOINT}/v1/metadata" >/dev/null 2>&1 && break
           sleep 2
