@@ -48,6 +48,7 @@ deploy_stackrox_with_roxie_compat() {
     merge_yaml "$override_file" <<EOF
 securedCluster:
   spec:
+    clusterName: remote
     processIndicators:
       excludeNamespaceRegex: namespace-without-persistence
 EOF

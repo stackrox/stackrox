@@ -149,13 +149,14 @@ EOF
     # - wait_for_api (implicit)
     # Note: --single-namespace deploys both components into the namespace "stackrox".
     local roxie_envrc; roxie_envrc="$(mktemp)"
-    roxie deploy central \
+    roxie deploy \
         --resources=ci \
         --envrc "$roxie_envrc" \
         --single-namespace \
         --central-wait=20m \
+        --secured-cluster-wait=20m \
         --pause-reconciliation \
-        --override <(yq eval '.central // {}' "$override_file")
+        --override "$override_file"
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
@@ -166,19 +167,6 @@ EOF
     source "$roxie_envrc"
 
     record_build_info "${namespace}"
-
-    # Replaces deploy_stackrox steps:
-    # - deploy_sensor
-    # - pause_stackrox_operator_reconcile
-    # - sensor_wait
-    roxie deploy sensor \
-        --set spec.clusterName=remote \
-        --resources=ci \
-        --envrc "$roxie_envrc" \
-        --single-namespace \
-        --secured-cluster-wait=20m \
-        --pause-reconciliation \
-        --override <(yq eval '.securedCluster // {}' "$override_file")
 
     # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
     # It just waits for sensor and collector workloads to be up and running.
