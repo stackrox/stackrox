@@ -93,6 +93,7 @@ class GitHubClient:
         cmd = [
             "gh", "api",
             "--paginate",
+            "--slurp",
             f"repos/stackrox/stackrox/issues/{pr_number}/events",
         ]
 
@@ -104,7 +105,12 @@ class GitHubClient:
                 check=True,
                 timeout=30,
             )
-            return json.loads(result.stdout)
+            # --slurp wraps pages into array of arrays, flatten them
+            pages = json.loads(result.stdout)
+            events = []
+            for page in pages:
+                events.extend(page)
+            return events
         except subprocess.CalledProcessError as e:
             msg = f"Failed to fetch events for PR #{pr_number}: {e.stderr}"
             raise GitHubError(msg) from e
