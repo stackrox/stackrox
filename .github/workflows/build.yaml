@@ -131,7 +131,7 @@ jobs:
           condensed="$(jq -c <<< "$matrix")"
           echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
-  check-go-version:
+  go-version-ceiling:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
