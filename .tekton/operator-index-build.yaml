@@ -96,7 +96,7 @@ spec:
       - name: git-url
         value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
       - name: image-url
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+        value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: build-task-status
         value: $(tasks.build-image-index.status)
       taskRef:
@@ -133,10 +133,6 @@ spec:
       type: string
     - description: Output Image Repository
       name: output-image-repo
-      type: string
-    - default: "-fast"
-      description: Suffix that will be appended to the output image tag.
-      name: output-tag-suffix
       type: string
     - description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
@@ -242,7 +238,7 @@ spec:
     - name: determine-image-tag
       params:
       - name: TAG_SUFFIX
-        value: $(params.output-tag-suffix)
+        value: ""  # Empty - index tag format is handled by determine-index-tag task
       - name: SOURCE_ARTIFACT
         value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
       taskRef:
@@ -254,6 +250,28 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
+    - name: determine-index-tag
+      params:
+      - name: BASE_TAG
+        value: $(tasks.determine-image-tag.results.IMAGE_TAG)
+      taskSpec:
+        params:
+        - name: BASE_TAG
+          description: Base image tag from determine-image-tag task
+          type: string
+        results:
+        - name: INDEX_TAG
+          description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
+        steps:
+        - name: compute-index-tag
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:c0e70387664f30cd9cf2795b547e4a9a51002c44a4a86aa9335ab030134bf392
+          script: |
+            #!/bin/bash
+            set -euo pipefail
+            # Add "v" prefix and "-fast" suffix unconditionally
+            # This ensures Konflux operator-index images never collide with GHA operator-index builds
+            echo -n "v$(params.BASE_TAG)-fast" | tee $(results.INDEX_TAG.path)
 
     - name: wait-for-bundle-image
       params:
@@ -301,7 +319,7 @@ spec:
       - name: BUNDLE_IMAGE
         value: "$(params.bundle-image-repo):v$(tasks.determine-image-tag.results.IMAGE_TAG)"
       - name: INDEX_IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+        value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: SOURCE_ARTIFACT
         value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
       - name: ociStorage
@@ -396,7 +414,7 @@ spec:
           - $(params.build-platforms)
       params:
       - name: IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+        value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: DOCKERFILE
         value: rhacs-operator-index.Dockerfile
       - name: CONTEXT
@@ -424,7 +442,7 @@ spec:
     - name: build-image-index
       params:
       - name: IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+        value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       - name: IMAGES
