@@ -895,7 +895,7 @@ func (x *AdministrationEventsConfig) GetRetentionDurationDays() uint32 {
 // resources are retained before being permanently removed.
 type ResourceRetentionConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Retention of deleted deployments in days. Set to zero to disable pruning.
+	// Retention of deleted deployments in days. Set to zero to prune immediately.
 	DeploymentDurationDays uint32 `protobuf:"varint,1,opt,name=deployment_duration_days,json=deploymentDurationDays,proto3" json:"deployment_duration_days,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache

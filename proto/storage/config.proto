@@ -165,7 +165,7 @@ message AdministrationEventsConfig {
 // ResourceRetentionConfig configures how long soft-deleted
 // resources are retained before being permanently removed.
 message ResourceRetentionConfig {
-  // Retention of deleted deployments in days. Set to zero to disable pruning.
+  // Retention of deleted deployments in days. Set to zero to prune immediately.
   uint32 deployment_duration_days = 1;
 }
 

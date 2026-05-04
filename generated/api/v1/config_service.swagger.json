@@ -574,7 +574,7 @@
         "deploymentDurationDays": {
           "type": "integer",
           "format": "int64",
-          "description": "Retention of deleted deployments in days. Set to zero to disable pruning."
+          "description": "Retention of deleted deployments in days. Set to zero to prune immediately."
         }
       },
       "description": "ResourceRetentionConfig configures how long soft-deleted\nresources are retained before being permanently removed."
