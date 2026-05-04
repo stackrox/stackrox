@@ -71,10 +71,6 @@ on:
         description: "Image tag to test"
         required: true
         type: string
-  # Temporary: auto-trigger on branch push for iteration. Remove before merge.
-  push:
-    branches:
-    - davdhacs/e2e-smoke-tests
 
 defaults:
   run:

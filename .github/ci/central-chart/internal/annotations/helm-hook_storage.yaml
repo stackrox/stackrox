@@ -1,3 +1,0 @@
-helm.sh/hook: pre-install,pre-upgrade
-helm.sh/resource-policy: keep
-helm.sh/hook-delete-policy: never

@@ -1,7 +1,0 @@
-apiVersion: v2 # Can probably be generalized to v1 later. TODO(ROX-5502).
-name: stackrox-central-services
-icon: https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png
-description: Helm Chart for StackRox Central Service
-type: application
-version: 400.7.0-rc.1
-appVersion: CI_TAG
