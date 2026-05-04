@@ -81,35 +81,125 @@ defaults:
     shell: bash
 
 jobs:
-  kind-e2e-sharded:
-    name: "Shard ${{ matrix.shard }}"
+  # ---------------------------------------------------------------
+  # SETUP: discover spec files and group into shards
+  #
+  # Finds all *.test.{js,ts} files, groups by top-level directory,
+  # then bin-packs directories into shards using a waterline of 15
+  # specs per shard. Large directories get their own shard; small
+  # directories and root-level specs are grouped together.
+  #
+  # Shard names reflect content (e.g., "clusters", "risk+accessControl")
+  # so engineers can see which test area is slow on their PR.
+  #
+  # The shard count is NOT fixed — it grows with the spec count.
+  # But it only grows when new test directories are added, not when
+  # existing tests get slower. Slow tests breach the 7-min timeout,
+  # which is the signal to fix them.
+  # ---------------------------------------------------------------
+  setup-shards:
+    name: Setup shards
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.shards.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          sparse-checkout: ui/apps/platform/cypress/integration
+
+      - name: Compute shards
+        id: shards
+        working-directory: ui/apps/platform
+        run: |
+          WATERLINE=15
+
+          # Count specs per top-level directory. Root-level specs → "root".
+          find cypress/integration -name "*.test.js" -o -name "*.test.ts" \
+            | while read -r f; do
+                rel="${f#cypress/integration/}"
+                if [[ "$rel" == */* ]]; then
+                  echo "${rel%%/*}"
+                else
+                  echo "root"
+                fi
+              done \
+            | sort | uniq -c | sort -rn > /tmp/dir-counts.txt
+
+          echo "Spec counts per directory:"
+          cat /tmp/dir-counts.txt
+
+          # Greedy bin-pack: accumulate directories until waterline exceeded.
+          # Output: JSON array of {name, specs} objects.
+          python3 -c "
+          import json, sys
+
+          waterline = ${WATERLINE}
+          dirs = []
+          with open('/tmp/dir-counts.txt') as f:
+              for line in f:
+                  parts = line.strip().split(None, 1)
+                  if len(parts) == 2:
+                      dirs.append((int(parts[0]), parts[1]))
+
+          shards = []
+          current_names = []
+          current_count = 0
+
+          for count, name in dirs:
+              if current_count > 0 and current_count + count > waterline:
+                  shard_name = '+'.join(current_names)
+                  specs = ','.join(
+                      'cypress/integration/*.test.js,cypress/integration/*.test.ts' if n == 'root'
+                      else f'cypress/integration/{n}/**'
+                      for n in current_names
+                  )
+                  shards.append({'name': shard_name, 'specs': specs})
+                  current_names = []
+                  current_count = 0
+              current_names.append(name)
+              current_count += count
+
+          if current_names:
+              shard_name = '+'.join(current_names)
+              specs = ','.join(
+                  'cypress/integration/*.test.js,cypress/integration/*.test.ts' if n == 'root'
+                  else f'cypress/integration/{n}/**'
+                  for n in current_names
+              )
+              shards.append({'name': shard_name, 'specs': specs})
+
+          matrix = {'include': shards}
+          print(f'Generated {len(shards)} shards:')
+          for s in shards:
+              print(f\"  {s['name']}\")
+          with open('/tmp/matrix.json', 'w') as f:
+              json.dump(matrix, f)
+          "
+
+          echo "matrix=$(cat /tmp/matrix.json)" >> "$GITHUB_OUTPUT"
+
+  kind-e2e:
+    name: "${{ matrix.name }}"
+    needs: setup-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     strategy:
       # Don't cancel other shards when one fails — we want full results
       fail-fast: false
-      matrix:
-        # Auto-sharding: each shard discovers all spec files at runtime,
-        # sorts alphabetically, and takes every 8th file via round-robin.
-        # Adding/removing spec files automatically rebalances — no manual
-        # spec lists to maintain. Round-robin spreads adjacent files
-        # (often from the same directory) across shards, preventing one
-        # shard from getting all the heavy specs in a group.
-        #
-        # To change shard count: edit this array AND TOTAL_SHARDS below.
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix) }}
 
     env:
       # Unique cluster name per shard per run — prevents collisions on re-runs
-      CLUSTER_NAME: kind-shard-${{ github.run_id }}-${{ matrix.shard }}
+      CLUSTER_NAME: kind-e2e-${{ github.run_id }}-${{ strategy.job-index }}
       IMAGE_REGISTRY: quay.io/rhacs-eng
       TAG: ${{ inputs.tag || '4.11.x-831-g8f262d83ee' }}
       # Hard memory cap on the KinD Docker container. The runner has 16 GB;
       # 6 GB for k8s + StackRox leaves 10 GB for the OS, Docker, Node/Cypress.
       KIND_MEMORY_LIMIT: 6g
       ARTIFACT_DIR: ./test-artifacts
-      TOTAL_SHARDS: 10
 
     steps:
       - name: Checkout
@@ -416,35 +506,24 @@ jobs:
           fi
 
       # ---------------------------------------------------------------
-      # COMPUTE SHARD SPECS + RUN CYPRESS
+      # RUN CYPRESS
       #
-      # Discovers all spec files, sorts alphabetically, takes every
-      # TOTAL_SHARDS-th file starting at this shard's index. No manual
-      # spec lists — adding/removing files auto-rebalances.
-      #
-      # Round-robin (NR % N == index) spreads adjacent files across
-      # shards, preventing one shard from getting all specs in a heavy
-      # directory.
+      # Specs are determined by the setup-shards job — each shard gets
+      # a set of directory globs grouped by the waterline algorithm.
+      # Shard names reflect the test directories (e.g., "clusters",
+      # "risk+accessControl") for clear ownership signals.
       #
       # Video, screenshots, and retries are disabled. Retries mask
       # flaky tests — if a test is intermittent, it should fail and
       # get fixed, not silently pass on retry.
       # ---------------------------------------------------------------
-      - name: Run Cypress shard
+      - name: Run Cypress
         working-directory: ui/apps/platform
         run: |
-          SPECS=$(find cypress/integration -name "*.test.js" -o -name "*.test.ts" \
-            | sort \
-            | awk "NR % ${TOTAL_SHARDS} == ${{ matrix.shard }}" \
-            | tr '\n' ',')
-          SPECS="${SPECS%,}"
-
-          echo "Shard ${{ matrix.shard }}/${TOTAL_SHARDS}: $(echo "$SPECS" | tr ',' '\n' | wc -l | tr -d ' ') specs"
-          echo "$SPECS" | tr ',' '\n'
-
+          echo "${{ matrix.name }}: ${{ matrix.specs }}"
           npx cypress run \
             --browser chrome \
-            --spec "$SPECS" \
+            --spec "${{ matrix.specs }}" \
             --config "baseUrl=https://localhost:8000,video=false,screenshotOnRunFailure=false,retries=0"
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
@@ -457,7 +536,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Shard ${{ matrix.shard }} Resource Report"
+            echo "## Shard ${{ matrix.name }} Resource Report"
             echo ""
             echo "### Deploy Timeline"
             echo '```'
@@ -508,7 +587,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
         if: always()
         with:
-          name: kind-e2e-shard-${{ matrix.shard }}-${{ github.run_id }}
+          name: kind-e2e-shard-${{ matrix.name }}-${{ github.run_id }}
           path: ${{ env.ARTIFACT_DIR }}
           retention-days: 7
 
