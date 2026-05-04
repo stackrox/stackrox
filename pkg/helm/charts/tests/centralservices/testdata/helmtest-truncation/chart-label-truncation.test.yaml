@@ -1,0 +1,34 @@
+name: "Test helm.sh/chart label truncation for long versions"
+defs: |
+  def labels(resource):
+    resource.metadata.labels;
+
+  def chartLabel(resource):
+    labels(resource) | ."helm.sh/chart";
+
+values:
+  imagePullSecrets:
+    allowNone: true
+
+tests:
+- name: Central deployment has valid truncated chart label
+  expect: |
+    chartLabel(.deployments.central) | length | assertThat(. <= 63)
+    chartLabel(.deployments.central) | assertThat(test("^[a-zA-Z0-9]"))
+    chartLabel(.deployments.central) | assertThat(test("[a-zA-Z0-9]$"))
+    chartLabel(.deployments.central) | assertThat(startswith("stackrox-central-services-"))
+
+- name: Central service has valid truncated chart label
+  expect: |
+    chartLabel(.services.central) | length | assertThat(. <= 63)
+    chartLabel(.services.central) | assertThat(test("[a-zA-Z0-9]$"))
+
+- name: Scanner deployment has valid truncated chart label
+  expect: |
+    chartLabel(.deployments.scanner) | length | assertThat(. <= 63)
+    chartLabel(.deployments.scanner) | assertThat(test("[a-zA-Z0-9]$"))
+
+- name: Scanner service has valid truncated chart label
+  expect: |
+    chartLabel(.services.scanner) | length | assertThat(. <= 63)
+    chartLabel(.services.scanner) | assertThat(test("[a-zA-Z0-9]$"))
