@@ -17,7 +17,7 @@ func TestSeedFirstInstall(t *testing.T) {
 	mockStore.EXPECT().Get(gomock.Any(), id).Return(nil, false, nil).Times(1)
 	mockStore.EXPECT().Upsert(gomock.Any(), signatures.DefaultRedHatSignatureIntegration).Return(nil).Times(1)
 
-	seedRedHatSignatureIntegration(mockStore)
+	seedRedHatDefaultSignatureIntegration(mockStore)
 }
 
 func TestStartKeyBundleWatcherDisabled(t *testing.T) {
@@ -42,5 +42,5 @@ func TestSeedSubsequentStartup(t *testing.T) {
 	mockStore.EXPECT().Get(gomock.Any(), id).Return(signatures.DefaultRedHatSignatureIntegration, true, nil).Times(1)
 	// Upsert must NOT be called — integration already exists.
 
-	seedRedHatSignatureIntegration(mockStore)
+	seedRedHatDefaultSignatureIntegration(mockStore)
 }

@@ -16,5 +16,5 @@ var (
 		WithDefault("/tmp/redhat-signing-keys/bundle.json"))
 
 	// RedHatSigningKeyWatchInterval controls how often the watcher polls the file for changes.
-	RedHatSigningKeyWatchInterval = registerDurationSetting("ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL", 30*time.Second)
+	RedHatSigningKeyWatchInterval = registerDurationSetting("ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL", 4*time.Hour)
 )
