@@ -2,11 +2,11 @@ package postgres
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore/datastore/postgres"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/retry"
 )
 
@@ -31,9 +31,9 @@ func Connect(ctx context.Context, connString string, applicationName string) (*p
 	err = retry.WithRetry(func() error {
 		return pool.Ping(ctx)
 	}, retry.Tries(connTries), retry.OnFailedAttempts(func(err error) {
-		zlog.Error(ctx).Err(err).Msg("failed to connect to postgres database")
+		slog.ErrorContext(ctx, "failed to connect to postgres database", "reason", err)
 	}), retry.BetweenAttempts(func(previousAttemptNumber int) {
-		zlog.Warn(ctx).Int("attempt", previousAttemptNumber+1).Msg("retrying connection to postgres database")
+		slog.WarnContext(ctx, "retrying connection to postgres database", "attempt", previousAttemptNumber+1)
 		time.Sleep(interval)
 	}))
 	if err != nil {

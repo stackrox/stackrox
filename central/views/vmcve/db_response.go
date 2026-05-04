@@ -145,3 +145,33 @@ func (c *cveComponentResponse) GetComponentSource() int32   { return c.Component
 func (c *cveComponentResponse) GetFixedBy() string          { return c.FixedBy }
 func (c *cveComponentResponse) GetAdvisoryName() string     { return c.AdvisoryName }
 func (c *cveComponentResponse) GetAdvisoryLink() string     { return c.AdvisoryLink }
+
+type vmSeverityCountsResponse struct {
+	VMID                          string `db:"virtual_machine_id"`
+	CriticalSeverityCount         int    `db:"critical_severity_count"`
+	FixableCriticalSeverityCount  int    `db:"fixable_critical_severity_count"`
+	ImportantSeverityCount        int    `db:"important_severity_count"`
+	FixableImportantSeverityCount int    `db:"fixable_important_severity_count"`
+	ModerateSeverityCount         int    `db:"moderate_severity_count"`
+	FixableModerateSeverityCount  int    `db:"fixable_moderate_severity_count"`
+	LowSeverityCount              int    `db:"low_severity_count"`
+	FixableLowSeverityCount       int    `db:"fixable_low_severity_count"`
+	UnknownSeverityCount          int    `db:"unknown_severity_count"`
+	FixableUnknownSeverityCount   int    `db:"fixable_unknown_severity_count"`
+}
+
+func (r *vmSeverityCountsResponse) GetVMID() string { return r.VMID }
+func (r *vmSeverityCountsResponse) GetSeverityCounts() common.ResourceCountByCVESeverity {
+	return &resourceCountByVMCVESeverity{
+		CriticalSeverityCount:         r.CriticalSeverityCount,
+		FixableCriticalSeverityCount:  r.FixableCriticalSeverityCount,
+		ImportantSeverityCount:        r.ImportantSeverityCount,
+		FixableImportantSeverityCount: r.FixableImportantSeverityCount,
+		ModerateSeverityCount:         r.ModerateSeverityCount,
+		FixableModerateSeverityCount:  r.FixableModerateSeverityCount,
+		LowSeverityCount:              r.LowSeverityCount,
+		FixableLowSeverityCount:       r.FixableLowSeverityCount,
+		UnknownSeverityCount:          r.UnknownSeverityCount,
+		FixableUnknownSeverityCount:   r.FixableUnknownSeverityCount,
+	}
+}

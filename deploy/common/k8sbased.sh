@@ -415,6 +415,12 @@ function launch_central {
         )
       fi
 
+      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-false}" != "false" ]]; then
+        helm_args+=(
+          --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
+        )
+      fi
+
       if [[ -n "$EXTERNAL_DB" ]]; then
           helm_args+=(
             --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
@@ -543,6 +549,9 @@ function launch_central {
                 ${ORCH_CMD} -n stackrox patch deployment scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-indexer-patch.yaml")"
                 ${ORCH_CMD} -n stackrox patch deployment scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-matcher-patch.yaml")"
                 ${ORCH_CMD} -n stackrox patch deployment scanner-v4-db --patch "$(cat "${common_dir}/scanner-v4-db-patch.yaml")"
+                if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+                  ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher SCANNER_V4_MATCHER_READINESS=vulnerability
+                fi
               fi
             else
               echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."

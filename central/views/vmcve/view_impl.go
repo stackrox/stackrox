@@ -122,6 +122,33 @@ func (v *vmCVECoreViewImpl) GetVMIDs(ctx context.Context, q *v1.Query) ([]string
 	return ret, nil
 }
 
+func (v *vmCVECoreViewImpl) CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return nil, err
+	}
+
+	cloned := common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID)
+	cloned.Selects = append([]*v1.QuerySelect{
+		search.NewQuerySelect(search.VirtualMachineID).Proto(),
+	}, cloned.GetSelects()...)
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.VirtualMachineID.String()},
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	var ret []VMSeverityCounts
+	err := pgSearch.RunSelectRequestForSchemaFn[vmSeverityCountsResponse](queryCtx, v.db, v.schema, cloned, func(r *vmSeverityCountsResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
@@ -31,7 +32,7 @@ func TestMatcherServiceSuite(t *testing.T) {
 }
 func (s *matcherServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.ctx = context.Background()
+	s.ctx = test.Logging(s.T())
 	s.matcherMock = matchermocks.NewMockMatcher(s.mockCtrl)
 	s.indexerMock = indexermocks.NewMockIndexer(s.mockCtrl)
 }
