@@ -111,8 +111,8 @@ jobs:
               )
               shards.append({'name': shard_name, 'specs': specs})
 
-          # DEV: limit to first shard only to reduce compute during iteration
-          shards = shards[:1]
+          # DEV: limit to clusters shard only to reduce compute during iteration
+          shards = [s for s in shards if 'clusters' in s['name']][:1]
 
           matrix = {'include': shards}
           print(f'Generated {len(shards)} shards:')
