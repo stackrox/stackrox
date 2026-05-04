@@ -92,6 +92,7 @@ class GitHubClient:
         """
         cmd = [
             "gh", "api",
+            "--paginate",
             f"repos/stackrox/stackrox/issues/{pr_number}/events",
         ]
 
