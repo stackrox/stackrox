@@ -780,24 +780,26 @@ jobs:
             -X github.com/stackrox/rox/pkg/version/internal.MainVersion=${{ env.BUILD_TAG }} \
             -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=${{ env.SHORTCOMMIT }}"
 
-          # Check if any Go-affecting files changed in this PR
-          go_files_changed=true
+          # Check if go build can be skipped. Only safe when ALL changes
+          # are exclusively under ui/ — anything else could affect Go
+          # (go:embed, proto-generated code, helm charts, Makefiles, etc.)
+          go_build_needed=true
           if [[ -f /tmp/buildid-cache/buildids.txt ]]; then
             PR_NUMBER="${{ github.event.pull_request.number }}"
             if [[ -n "$PR_NUMBER" ]]; then
-              pr_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null || echo "UNKNOWN")
-              if ! echo "$pr_files" | grep -qE '\.(go|mod|sum)$|^vendor/'; then
-                go_files_changed=false
-                echo "No Go files changed in PR — skipping go build entirely"
+              non_ui_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' 2>/dev/null | grep -v '^ui/' || true)
+              if [[ -z "$non_ui_files" ]]; then
+                go_build_needed=false
+                echo "All PR changes are under ui/ — skipping go build"
               else
-                echo "Go files changed in PR"
+                echo "Non-UI files changed — go build required"
               fi
             fi
           else
             echo "No cached buildIDs — full build required"
           fi
 
-          if [[ "$go_files_changed" == "false" ]]; then
+          if [[ "$go_build_needed" == "false" ]]; then
             # FAST PATH: no Go changes, cached buildIDs exist → skip go build
             echo "go_changed=false" >> "$GITHUB_OUTPUT"
             echo "main_changed=false" >> "$GITHUB_OUTPUT"
