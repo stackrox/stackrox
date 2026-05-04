@@ -118,6 +118,10 @@ func init() {
 			"scanTime: Time",
 			"scannerVersion: String!",
 
+			// Image digest (SHA). For V1 images this equals the image ID;
+			// for V2 images this is the separate SHA digest.
+			"digest: String!",
+
 			// Image signature-related fields.
 			"signatureCount: Int!",
 		}),

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -350,30 +351,41 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
 	cases := map[string]struct {
 		centralAction  central.SensorACK_Action
 		resourceID     string
+		vmID           string
 		nodeName       string
 		reason         string
 		expectedAction sensor.MsgToCompliance_ComplianceACK_Action
 	}{
-		"should forward ACK to compliance": {
+		"should forward ACK to compliance with composite resource ID": {
 			centralAction:  central.SensorACK_ACK,
-			resourceID:     "vm-123",
+			resourceID:     "vm-123:100",
+			vmID:           "vm-123",
 			nodeName:       "node-a",
 			reason:         "all good",
 			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
 		},
-		"should forward NACK to compliance": {
+		"should forward NACK to compliance with composite resource ID": {
 			centralAction:  central.SensorACK_NACK,
-			resourceID:     "vm-456",
+			resourceID:     "vm-456:200",
+			vmID:           "vm-456",
 			nodeName:       "node-b",
 			reason:         "validation failed",
 			expectedAction: sensor.MsgToCompliance_ComplianceACK_NACK,
+		},
+		"should forward ACK with bare VM ID": {
+			centralAction:  central.SensorACK_ACK,
+			resourceID:     "vm-789",
+			vmID:           "vm-789",
+			nodeName:       "node-c",
+			reason:         "",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
 		},
 	}
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			s.store.EXPECT().Get(virtualmachine.VMID(tc.resourceID)).Return(
-				&virtualmachine.Info{ID: virtualmachine.VMID(tc.resourceID), NodeName: tc.nodeName})
+			s.store.EXPECT().Get(virtualmachine.VMID(tc.vmID)).Return(
+				&virtualmachine.Info{ID: virtualmachine.VMID(tc.vmID), NodeName: tc.nodeName})
 
 			ctx := context.Background()
 			msg := &central.MsgToSensor{
@@ -405,26 +417,32 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
 	}
 }
 
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenVMUnknown() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	defer s.handler.Stop()
 
 	cases := map[string]struct {
 		resourceID string
+		expectedID string
 	}{
-		"should broadcast when resource ID is empty": {
+		"should drop when resource ID is empty": {
 			resourceID: "",
 		},
-		"should broadcast when VM not in store": {
+		"should drop when VM not in store": {
 			resourceID: "vm-deleted",
+			expectedID: "vm-deleted",
+		},
+		"should drop when VM from composite ID not in store": {
+			resourceID: "vm-deleted:999",
+			expectedID: "vm-deleted",
 		},
 	}
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			if tc.resourceID != "" {
-				s.store.EXPECT().Get(virtualmachine.VMID(tc.resourceID)).Return(nil)
+			if tc.expectedID != "" {
+				s.store.EXPECT().Get(virtualmachine.VMID(tc.expectedID)).Return(nil)
 			}
 
 			ctx := context.Background()
@@ -440,12 +458,9 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_Broadcast() {
 			s.Require().NoError(err)
 
 			select {
-			case got := <-s.handler.ComplianceC():
-				s.Equal(tc.resourceID, got.Msg.GetComplianceAck().GetResourceId())
-				s.Empty(got.Hostname)
-				s.True(got.Broadcast)
-			case <-time.After(100 * time.Millisecond):
-				s.Fail("timed out waiting for broadcast compliance ACK")
+			case <-s.handler.ComplianceC():
+				s.Fail("ACK should have been dropped when VM is unknown, not forwarded")
+			default:
 			}
 		})
 	}
@@ -673,4 +688,41 @@ func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
 
 	err = s.handler.Start()
 	s.Require().ErrorIs(err, errStartMoreThanOnce)
+}
+
+func TestVmIDFromResourceID(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		resourceID string
+		expected   string
+	}{
+		"extracts vm id from composite resource id": {
+			resourceID: "vm-1:100",
+			expected:   "vm-1",
+		},
+		"returns bare vm id as-is": {
+			resourceID: "vm-1",
+			expected:   "vm-1",
+		},
+		"returns empty string for empty input": {
+			resourceID: "",
+			expected:   "",
+		},
+		"extracts uuid vm id from composite": {
+			resourceID: "d2696fad-8ef2-49f5-9726-499b1419be20:1289650420",
+			expected:   "d2696fad-8ef2-49f5-9726-499b1419be20",
+		},
+		"returns bare CID as-is": {
+			resourceID: "1289650420",
+			expected:   "1289650420",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, vmIDFromResourceID(tc.resourceID))
+		})
+	}
 }

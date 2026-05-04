@@ -7,7 +7,7 @@ jackson = "2.14.2"
 groovy = "5.0.5"
 
 [libraries]
-gson = { module = "com.google.code.gson:gson", version = "2.13.2" }
+gson = { module = "com.google.code.gson:gson", version = "2.14.0" }
 proto-google-common-protos = { module = "com.google.api.grpc:proto-google-common-protos", version = "2.70.0" }
 grpc-alts = { module = "io.grpc:grpc-alts", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
@@ -37,7 +37,7 @@ opencsv = { module = "com.opencsv:opencsv", version = "5.12.0" }
 commons-cli = { module = "commons-cli:commons-cli", version = "1.11.0" }
 commons-exec = { module = "org.apache.commons:commons-exec", version = "1.6.0" }
 javax-mail = { module = "com.sun.mail:javax.mail", version = "1.6.2" }
-slack-api-client = { module = "com.slack.api:slack-api-client", version = "1.46.0" }
+slack-api-client = { module = "com.slack.api:slack-api-client", version = "1.48.1" }
 jaxb-api = { module = "javax.xml.bind:jaxb-api", version = "2.3.1" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version = "4.0.7" }
 javers-core = { module = "org.javers:javers-core", version = "7.11.0" }
@@ -46,6 +46,6 @@ commons-codec = { module = "commons-codec:commons-codec", version = "1.22.0" }
 uuid-creator = { module = "com.github.f4b6a3:uuid-creator", version = "6.1.1" }
 
 [plugins]
-protobuf = { id = "com.google.protobuf", version = "0.8.19" }
+protobuf = { id = "com.google.protobuf", version = "0.10.0" }
 
 [bundles]

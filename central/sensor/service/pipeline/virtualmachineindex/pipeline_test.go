@@ -378,7 +378,40 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_ACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
+	suite.Empty(ack.GetReason())
+}
+
+func (suite *PipelineTestSuite) TestRun_SendsACKWithVMIDAndVsockCIDResourceID() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	suite.T().Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "false")
+	vmID := "vm-ack-vsock-correlation"
+	vsockCID := "1337"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+	msg.GetEvent().GetVirtualMachineIndexReport().GetIndex().VsockCid = vsockCID
+
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil)
+	suite.virtualMachineStore.EXPECT().
+		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+		Return(nil)
+
+	injector := &mockInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+	suite.NoError(err)
+
+	suite.Require().Len(injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	suite.Require().NotNil(ack)
+	suite.Equal(central.SensorACK_ACK, ack.GetAction())
+	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	suite.Equal(vmID+":"+vsockCID, ack.GetResourceId(), "expected ACK resource_id to match VMID:CID pair for relay correlation")
 	suite.Empty(ack.GetReason())
 }
 
@@ -431,7 +464,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
 }
 
@@ -459,7 +492,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonEnrichmentFailed, ack.GetReason())
 }
 
@@ -490,7 +523,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMatcherNotInitializedError() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonMatcherNotReady, ack.GetReason())
 }
 
@@ -514,7 +547,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMissingClusterID() {
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_NACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(vmID+":", ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonMissingClusterID, ack.GetReason())
 }
 
@@ -567,7 +600,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnMissingScannerIndexPayload() {
 			suite.Require().NotNil(ack)
 			suite.Equal(central.SensorACK_NACK, ack.GetAction())
 			suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-			suite.Equal(vmID, ack.GetResourceId())
+			suite.Equal(vmID+":", ack.GetResourceId())
 			suite.Equal(centralsensor.SensorACKReasonMissingScanData, ack.GetReason())
 		})
 	}
@@ -603,7 +636,7 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	assert.NotNil(t, ack)
 	assert.Equal(t, central.SensorACK_ACK, ack.GetAction())
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	assert.Equal(t, vmID, ack.GetResourceId())
+	assert.Equal(t, vmID+":", ack.GetResourceId())
 	assert.Equal(t, centralsensor.SensorACKReasonFeatureDisabled, ack.GetReason())
 }
 
