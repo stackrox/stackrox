@@ -54,7 +54,7 @@
 #   This registers the cluster ID in Central's database (static pre-generated
 #   bundles don't work because Central rejects unknown cluster IDs).
 
-name: E2E Smoke Tests
+name: KinD UI E2E
 
 on:
   # Called by build.yaml after images are pushed to quay.io
