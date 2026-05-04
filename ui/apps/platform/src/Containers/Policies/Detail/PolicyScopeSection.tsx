@@ -38,12 +38,15 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
                 <>
                     <Title headingLevel="h3">Included resources</Title>
                     <Grid hasGutter md={12} xl={6}>
-                        {scope.map((scope, index) => (
+                        {scope.map((scopeItem, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
                                 <Card>
                                     <CardBody>
-                                        <InclusionScopeDetails clusters={clusters} scope={scope} />
+                                        <InclusionScopeDetails
+                                            clusters={clusters}
+                                            scope={scopeItem}
+                                        />
                                     </CardBody>
                                 </Card>
                             </GridItem>
