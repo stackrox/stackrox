@@ -10,6 +10,9 @@ var (
 	CreateTableBackgroundMigrationVersionsStmt = &postgres.CreateStmts{
 		GormModel: (*BackgroundMigrationVersion)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE background_migration_versions REPLICA IDENTITY FULL",
+		},
 	}
 
 	// BackgroundMigrationVersionsSchema is the go schema for table `background_migration_versions`.
@@ -34,6 +37,6 @@ const (
 
 // BackgroundMigrationVersion holds the Gorm model for Postgres table `background_migration_versions`.
 type BackgroundMigrationVersion struct {
-	SeqNum      int32  `gorm:"column:seqnum;type:integer;primaryKey"`
+	SeqNum      int32  `gorm:"column:seqnum;type:integer"`
 	OverrideTag string `gorm:"column:override_tag;type:text;default:''"`
 }

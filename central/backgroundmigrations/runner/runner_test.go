@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,10 +77,8 @@ func (s *RunnerTestSuite) SetupSuite() {
 	})
 	s.db = pool
 
-	_, err = pool.Exec(s.ctx,
-		"CREATE TABLE IF NOT EXISTS "+schema.BackgroundMigrationVersionsTableName+
-			" (seqnum integer PRIMARY KEY NOT NULL, override_tag text DEFAULT '')")
-	s.Require().NoError(err)
+	gormDB := conn.OpenGormDB(s.T(), source, false)
+	pgutils.CreateTableFromModel(s.ctx, gormDB, schema.CreateTableBackgroundMigrationVersionsStmt)
 }
 
 func (s *RunnerTestSuite) SetupTest() {
