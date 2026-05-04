@@ -157,7 +157,7 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 	if httpProxyURL == nil {
 		httpProxyURL = allProxyURL
 	}
-	httpsProxyURL, err := getProxyURL(envCfg.HTTPSProxy, c.HTTP)
+	httpsProxyURL, err := getProxyURL(envCfg.HTTPSProxy, c.HTTPS)
 	if err != nil {
 		log.Warnf("Failed to obtain HTTPS proxy configuration: %v", err)
 	}
@@ -203,8 +203,15 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 	httpCfg.HTTPProxy = urlToStringOrEmpty(httpProxyURL)
 	httpsCfg := baseCfg
 	httpsCfg.HTTPSProxy = urlToStringOrEmpty(httpsProxyURL)
+	// For non-http/https schemes (e.g., tcp:// used by AwareDialContext),
+	// fall back to HTTPS proxy when ALL_PROXY is not explicitly configured.
+	// This ensures TLS checks and other raw TCP dials respect HTTPS_PROXY.
+	otherProxyURL := allProxyURL
+	if otherProxyURL == nil {
+		otherProxyURL = httpsProxyURL
+	}
 	otherCfg := baseCfg
-	otherCfg.HTTPProxy = urlToStringOrEmpty(allProxyURL)
+	otherCfg.HTTPProxy = urlToStringOrEmpty(otherProxyURL)
 
 	cc := &compiledConfig{
 		httpFunc:  httpCfg.ProxyFunc(),
@@ -213,7 +220,7 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 		envVars: map[string]string{
 			"http_proxy":  httpCfg.HTTPProxy,
 			"https_proxy": httpsCfg.HTTPSProxy,
-			"all_proxy":   otherCfg.HTTPProxy,
+			"all_proxy":   urlToStringOrEmpty(allProxyURL),
 			"no_proxy":    baseCfg.NoProxy,
 		},
 	}
