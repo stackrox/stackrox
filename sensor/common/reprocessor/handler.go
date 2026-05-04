@@ -107,13 +107,33 @@ func (h *handlerImpl) ProcessRefreshImageCacheTTL(req *central.RefreshImageCache
 	case <-h.stopSig.Done():
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill refresh image cache TTL request")
 	default:
+		// Unlike invalidation, refresh intentionally touches only the
+		// digest-derived key and does not touch name-based entries.
+		// Name-based entries may refer to images with mutable tags
+		// (e.g. "latest"); refreshing them would delay expiry and
+		// risk serving stale data when the tag points to a new image.
 		for _, image := range req.GetImageKeys() {
-			for _, key := range cacheKeysFromImageKey(image) {
+			if key := cacheKeyFromImageKey(image); key != "" {
 				h.imageCache.Touch(key)
 			}
 		}
 	}
 	return nil
+}
+
+// cacheKeyFromImageKey resolves the cache key from an ImageKey
+// proto, applying the V2/V1/fullName precedence based on the FlattenImageData capability.
+func cacheKeyFromImageKey(imageKey *central.ImageKey) cache.Key {
+	var key string
+	if centralcaps.Has(centralsensor.FlattenImageData) {
+		key = imageKey.GetImageIdV2()
+	} else {
+		key = imageKey.GetImageId()
+	}
+	if key == "" {
+		key = imageKey.GetImageFullName()
+	}
+	return cache.Key(key)
 }
 
 // cacheKeysFromImageKey returns all possible cache keys for an ImageKey.
