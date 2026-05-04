@@ -132,7 +132,7 @@ spec:
       - name: IMAGE
         value: $(params.output-image-repo):$(params.revision)-go-mod-validation
       - name: DOCKERFILE
-        value: .konflux/go-mod-validation.konflux.Dockerfile
+        value: .konflux/konflux.go-mod-validation.Dockerfile
       - name: CONTEXT
         value: .
       - name: IMAGE_EXPIRES_AFTER
