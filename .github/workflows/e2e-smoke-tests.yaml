@@ -141,6 +141,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
 
       # ---------------------------------------------------------------
       # DEPLOY (background)
@@ -183,6 +184,8 @@ jobs:
 
           (
             NODE="${CLUSTER_NAME}-control-plane"
+            T0=$(date +%s)
+            ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
 
             # Legacy scanner tag differs from main tag (stored in SCANNER_VERSION)
             SCANNER_TAG=$(cat SCANNER_VERSION)
@@ -190,6 +193,7 @@ jobs:
             # --- Phase 1: KinD + chart render (parallel) ---
             # KinD create takes ~15s. Chart rendering is instant (cp + perl).
             # No --wait flag: saves ~15s, we use kubectl wait later.
+            ts "phase1: KinD create + chart render"
             kind create cluster --name "$CLUSTER_NAME" &
             PID_KIND=$!
 
@@ -197,8 +201,10 @@ jobs:
             # into ready-to-install helm charts. Replaces `roxctl helm output`.
             .github/ci/render-chart.sh central /tmp/central-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
             .github/ci/render-chart.sh sensor /tmp/sensor-chart "$TAG" "$SCANNER_TAG" "$IMAGE_REGISTRY"
+            ts "charts rendered, waiting for KinD..."
 
             wait $PID_KIND
+            ts "phase1 done: KinD ready"
 
             # Cap container memory — the KinD node is just a Docker container
             docker update --memory "${KIND_MEMORY_LIMIT}" --memory-swap "${KIND_MEMORY_LIMIT}" "$NODE"
@@ -221,7 +227,7 @@ jobs:
             # different delay (0-7s via job-index) so we can measure the
             # optimal head start in a single run.
             PULL_DELAY=${{ strategy.job-index }}
-            echo "central-db head start: ${PULL_DELAY}s (shard index ${{ strategy.job-index }})"
+            ts "phase2: image pulls (central-db head start: ${PULL_DELAY}s) + helm install"
             (
               docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
                 "${IMAGE_REGISTRY}/central-db:${TAG}" &
@@ -241,10 +247,12 @@ jobs:
             # Central auto-generates its CA cert on first boot.
             # Pods start as images become available — no explicit wait needed.
             kubectl create namespace stackrox
+            ts "phase3: helm install central-services"
             helm upgrade --install -n stackrox stackrox-central-services /tmp/central-chart \
               -f .github/ci/ci-values-central.yaml \
               --set image.registry="${IMAGE_REGISTRY}" \
               --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
+            ts "phase3 done: helm install complete"
 
             # Port-forward with auto-reconnect — the loop restarts the forward
             # if it dies (e.g., during pod restart). Runs until the job ends.
@@ -253,8 +261,10 @@ jobs:
             done &
 
             # --- Phase 4: Wait for Central API + generate auth token ---
-            # Poll /v1/metadata until Central responds (typically ~30s after helm install).
-            for i in $(seq 1 90); do curl -sk https://localhost:8000/v1/metadata >/dev/null 2>&1 && break; sleep 2; done
+            # Poll /v1/metadata every 1s until Central responds.
+            ts "phase4: waiting for Central API..."
+            for i in $(seq 1 120); do curl -sk --connect-timeout 1 https://localhost:8000/v1/metadata >/dev/null 2>&1 && break; sleep 1; done
+            ts "phase4: Central API ready"
 
             # Generate API token via basic auth. Written to a file so the
             # "Wait for auth token" step can pick it up across process boundaries.
@@ -263,6 +273,7 @@ jobs:
               "https://localhost:8000/v1/apitokens/generate" \
               -X POST -d '{"name":"ci-shard","role":"Admin"}' | jq -r '.token' > /tmp/rox-auth-token
             set -x
+            ts "phase4 done: auth token written"
 
             # --- Phase 5: Deploy secured-cluster-services ---
             # Generate init bundle via Central API (POST, not roxctl).
@@ -270,6 +281,7 @@ jobs:
             # the CA cert, cluster ID, and service TLS certs. Central registers
             # the cluster ID in its database — static bundles don't work because
             # Central rejects unknown cluster IDs.
+            ts "phase5: sensor deploy (init-bundle + helm)"
             set +x
             curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
               "https://localhost:8000/v1/cluster-init/init-bundles" \
@@ -291,11 +303,13 @@ jobs:
               --set image.registry="${IMAGE_REGISTRY}" \
               --set centralEndpoint=central.stackrox.svc:443 \
               -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
+            ts "phase5 done: sensor deployed"
 
             # --- Phase 6: Seed test workloads ---
             # Some test shards (risk, networkGraph, violations) need real
             # deployments observed by Sensor. Create a small workload that
             # generates network traffic for collector to observe.
+            ts "phase6: seed workloads"
             kubectl create namespace qa-test 2>/dev/null || true
             kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null
             kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
@@ -310,6 +324,7 @@ jobs:
               sleep 3
             done
             touch /tmp/data-ready
+            ts "phase6 done: data ready (${dep_count} deployments)"
           ) > /tmp/deploy.log 2>&1 &
 
           echo "Deploy started in background (PID $!). Proceeding to Cypress install..."
@@ -429,6 +444,13 @@ jobs:
         run: |
           {
             echo "## Shard ${{ matrix.shard }} Resource Report (pull delay: ${{ strategy.job-index }}s)"
+            echo ""
+            echo "### Deploy Timeline"
+            echo '```'
+            grep '^+[0-9]' /tmp/deploy.log 2>/dev/null || echo "(no timestamps)"
+            echo '```'
+            echo ""
+            echo "### Pod Resources"
             echo ""
             echo "| Pod | CPU | Memory |"
             echo "|-----|-----|--------|"
