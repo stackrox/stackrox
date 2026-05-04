@@ -214,11 +214,16 @@ jobs:
             # Pods enter ErrImagePull until their image arrives via ctr, then
             # start automatically on kubelet's next retry.
             #
-            # Pull central-db first — it's smaller (~200 MB) and finishes
-            # before main (~500 MB), so kubelet starts the central-db pod
-            # first, giving initdb a head start before Central even starts.
+            # Pull central-db first with 2s of exclusive bandwidth before
+            # starting the other pulls. central-db is smallest (~200 MB)
+            # and on the critical path (initdb must finish before Central
+            # can connect). The 2s head start lets it download ~40 MB
+            # before sharing the pipe with main (~500 MB) and scanner images.
+            # This means central-db finishes earlier → initdb starts earlier
+            # → Central's migrator connects sooner.
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
               "${IMAGE_REGISTRY}/central-db:${TAG}" &
+            sleep 2
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
               "${IMAGE_REGISTRY}/main:${TAG}" &
             docker exec "$NODE" ctr -n k8s.io images pull --user "${QUAY_USER}:${QUAY_PASS}" --platform linux/amd64 \
