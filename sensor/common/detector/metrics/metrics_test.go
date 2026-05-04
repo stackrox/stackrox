@@ -14,6 +14,7 @@ import (
 func setupCentralCaps(t *testing.T, caps []centralsensor.CentralCapability) {
 	centralcaps.Set(caps)
 	t.Cleanup(func() { centralcaps.Set(nil) })
+	t.Cleanup(resetLastDelegatedConfig)
 }
 
 func TestUpdateScannerConfigurationInfo_LocalScanningDisabled(t *testing.T) {
@@ -160,6 +161,27 @@ func TestUpdateScannerConfigurationInfo_SequentialUpdates(t *testing.T) {
 
 	config := &central.DelegatedRegistryConfig{EnabledFor: central.DelegatedRegistryConfig_ALL}
 	UpdateScannerConfigurationInfo(config)
+	assert.InDelta(t, 1, testutil.ToFloat64(scannerConfigurationInfo.WithLabelValues("true", ModeV4, "true")), 0)
+	assert.InDelta(t, 1, testutil.ToFloat64(imageIndexingRouteInfo.WithLabelValues(ForImagesNonClusterLocal, IndexerLocalScanner)), 0)
+
+	assert.Equal(t, 1, testutil.CollectAndCount(scannerConfigurationInfo))
+	assert.Equal(t, 2, testutil.CollectAndCount(imageIndexingRouteInfo))
+}
+
+func TestUpdateScannerConfigurationInfo_NilOnReconnectPreservesLastConfig(t *testing.T) {
+	t.Setenv("ROX_LOCAL_IMAGE_SCANNING_ENABLED", "true")
+	t.Setenv("ROX_DELEGATED_SCANNING_DISABLED", "false")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+	setupCentralCaps(t, []centralsensor.CentralCapability{centralsensor.ScannerV4Supported})
+
+	config := &central.DelegatedRegistryConfig{EnabledFor: central.DelegatedRegistryConfig_ALL}
+	UpdateScannerConfigurationInfo(config)
+	assert.InDelta(t, 1, testutil.ToFloat64(scannerConfigurationInfo.WithLabelValues("true", ModeV4, "true")), 0)
+	assert.InDelta(t, 1, testutil.ToFloat64(imageIndexingRouteInfo.WithLabelValues(ForImagesNonClusterLocal, IndexerLocalScanner)), 0)
+
+	// Simulate reconnect: hello handshake passes nil. Metrics must retain
+	// the previously known delegated config instead of resetting.
+	UpdateScannerConfigurationInfo(nil)
 	assert.InDelta(t, 1, testutil.ToFloat64(scannerConfigurationInfo.WithLabelValues("true", ModeV4, "true")), 0)
 	assert.InDelta(t, 1, testutil.ToFloat64(imageIndexingRouteInfo.WithLabelValues(ForImagesNonClusterLocal, IndexerLocalScanner)), 0)
 

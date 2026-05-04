@@ -419,7 +419,24 @@ func RemoveScanAndSetCall(reason string) {
 	}).Inc()
 }
 
-var scannerConfigMu sync.Mutex
+// scannerConfigMu serialises UpdateScannerConfigurationInfo calls so that the
+// multi-step Reset → Set sequence on the gauge vectors is atomic (see comment
+// inside the function).
+//
+// lastConfig retains the most recent non-nil DelegatedRegistryConfig so that
+// capability-only refreshes (hello handshake, which passes nil) do not
+// temporarily reset delegated-routing metrics between reconnect and the next
+// config delivery from Central.
+var (
+	scannerConfigMu sync.Mutex
+	lastConfig      *central.DelegatedRegistryConfig
+)
+
+func resetLastDelegatedConfig() {
+	scannerConfigMu.Lock()
+	defer scannerConfigMu.Unlock()
+	lastConfig = nil
+}
 
 // scannerMode returns the active scanner version label based on whether local
 // scanning is enabled and whether Central advertises Scanner V4 support.
@@ -467,11 +484,23 @@ func nonClusterLocalIndexer(localEnabled bool, config *central.DelegatedRegistry
 // UpdateScannerConfigurationInfo updates info metrics that describe Sensor
 // scanner topology. It is safe for concurrent use.
 //
-// config is the current DelegatedRegistryConfig from Central (may be nil
-// when no config has been received yet, e.g. right after the hello handshake).
+// When config is non-nil, it is stored as the last-known delegated registry
+// configuration. When config is nil (e.g. during the hello handshake on
+// reconnect), the previously stored configuration is reused so that metrics
+// remain accurate across reconnects.
 func UpdateScannerConfigurationInfo(config *central.DelegatedRegistryConfig) {
+	// Hold the lock for the full update (config swap + gauge Reset/Set) so that
+	// concurrent callers cannot interleave and leave mixed or zero series.
+	// The individual Prometheus operations are thread-safe, but the sequence
+	// Reset → Set across two gauge vectors is not atomic without the lock.
 	scannerConfigMu.Lock()
 	defer scannerConfigMu.Unlock()
+
+	if config != nil {
+		lastConfig = config
+	} else {
+		config = lastConfig
+	}
 
 	localEnabled := env.LocalImageScanningEnabled.BooleanSetting()
 
