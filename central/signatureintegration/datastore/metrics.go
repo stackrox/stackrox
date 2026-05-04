@@ -33,6 +33,28 @@ var (
 		Name:      "key_bundle_watcher_last_success_timestamp",
 		Help:      "Unix timestamp of the last successful key bundle upsert by the watcher",
 	})
+
+	updaterDownloadTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "key_bundle_updater_download_total",
+		Help:      "Total number of key bundle download attempts by the updater, labeled by result",
+	}, []string{"result"})
+
+	updaterLastSuccessTimestamp = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "key_bundle_updater_last_success_timestamp",
+		Help:      "Unix timestamp of the last successful key bundle download by the updater",
+	})
+
+	updaterDownloadDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "key_bundle_updater_download_duration_seconds",
+		Help:      "Duration of key bundle download attempts by the updater",
+		Buckets:   prometheus.DefBuckets,
+	})
 )
 
 func init() {
@@ -41,5 +63,8 @@ func init() {
 		watcherFileErrorTotal,
 		watcherKeyCount,
 		watcherLastSuccessTimestamp,
+		updaterDownloadTotal,
+		updaterLastSuccessTimestamp,
+		updaterDownloadDuration,
 	)
 }
