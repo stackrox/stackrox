@@ -151,8 +151,10 @@ jobs:
           quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-      - name: Deploy StackRox
-        id: deploy
+      # deploy-stackrox backgrounds all work and returns immediately.
+      # npm ci runs next, overlapping with Central boot + sensor deploy.
+      # The auth token is written to /tmp/rox-auth-token when ready.
+      - name: Deploy StackRox (background)
         uses: ./.github/actions/deploy-stackrox
         with:
           central-chart: /tmp/central-chart
@@ -178,6 +180,30 @@ jobs:
         working-directory: ui/apps/platform
         run: npm ci
 
+      - name: Wait for auth token
+        run: |
+          for i in $(seq 1 90); do
+            [ -s /tmp/rox-auth-token ] && break
+            sleep 2
+          done
+          if [ ! -s /tmp/rox-auth-token ]; then
+            echo "::error::Auth token not generated after 3 minutes — deploy likely failed"
+            tail -50 /tmp/deploy-stackrox.log 2>/dev/null || echo "(no log)"
+            exit 1
+          fi
+          set +x
+          ROX_AUTH_TOKEN=$(cat /tmp/rox-auth-token)
+          echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_AUTH_TOKEN}"
+          set -x
+
+      - name: Wait for test data
+        run: |
+          for i in $(seq 1 180); do
+            [ -f /tmp/rox-data-ready ] && echo "Data ready" && break
+            sleep 2
+          done
+
       - name: Run Cypress
         working-directory: ui/apps/platform
         run: |
@@ -187,7 +213,7 @@ jobs:
             --spec "${{ matrix.specs }}" \
             --config "baseUrl=https://localhost:8000,video=false,screenshotOnRunFailure=false,retries=0"
         env:
-          CYPRESS_ROX_AUTH_TOKEN: ${{ steps.deploy.outputs.auth-token }}
+          CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
 
       - name: Resource report
