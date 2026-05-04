@@ -139,18 +139,18 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
-	// Expect enricher to be called successfully
-	suite.enricher.EXPECT().
-		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
-		Return(nil)
-	suite.virtualMachineStore.EXPECT().
-		GetVirtualMachine(gomock.Any(), vmID).
-		Return(nil, false, nil)
-
 	expectedError := errors.New("datastore error")
-	suite.virtualMachineStore.EXPECT().
-		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
-		Return(expectedError)
+	gomock.InOrder(
+		suite.enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil),
+		suite.virtualMachineStore.EXPECT().
+			GetVirtualMachine(gomock.Any(), vmID).
+			Return(nil, false, nil),
+		suite.virtualMachineStore.EXPECT().
+			UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+			Return(expectedError),
+	)
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
 	suite.Error(err)
@@ -865,8 +865,10 @@ func TestLookupGuestOS(t *testing.T) {
 		enhancedDataModel bool
 		v1VM              *storage.VirtualMachine
 		v1Found           bool
+		v1StoreErr        bool
 		v2VM              *storage.VirtualMachineV2
 		v2Found           bool
+		v2StoreErr        bool
 		enricherOS        string
 		wantOS            string
 	}{
@@ -924,6 +926,19 @@ func TestLookupGuestOS(t *testing.T) {
 			enricherOS:        "rhel:9",
 			wantOS:            "rhel:9",
 		},
+		"v1 store error keeps enricher OS": {
+			v1Found:    false,
+			enricherOS: "rhel:9",
+			wantOS:     "rhel:9",
+			v1StoreErr: true,
+		},
+		"v2 store error keeps enricher OS": {
+			enhancedDataModel: true,
+			v2Found:           false,
+			enricherOS:        "rhel:9",
+			wantOS:            "rhel:9",
+			v2StoreErr:        true,
+		},
 	}
 
 	for name, tt := range tests {
@@ -963,9 +978,13 @@ func TestLookupGuestOS(t *testing.T) {
 				})
 
 			if tt.enhancedDataModel {
+				var v2Err error
+				if tt.v2StoreErr {
+					v2Err = errors.New("db fail")
+				}
 				v2Store.EXPECT().
 					GetVirtualMachine(gomock.Any(), vmID).
-					Return(tt.v2VM, tt.v2Found, nil)
+					Return(tt.v2VM, tt.v2Found, v2Err)
 				v2Store.EXPECT().
 					EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 					Return(nil)
@@ -976,9 +995,13 @@ func TestLookupGuestOS(t *testing.T) {
 						return nil
 					})
 			} else {
+				var v1Err error
+				if tt.v1StoreErr {
+					v1Err = errors.New("db fail")
+				}
 				v1Store.EXPECT().
 					GetVirtualMachine(gomock.Any(), vmID).
-					Return(tt.v1VM, tt.v1Found, nil)
+					Return(tt.v1VM, tt.v1Found, v1Err)
 				v1Store.EXPECT().
 					UpdateVirtualMachineScan(gomock.Any(), vmID, gomock.Any()).
 					DoAndReturn(func(_ context.Context, _ string, scan *storage.VirtualMachineScan) error {

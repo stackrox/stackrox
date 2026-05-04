@@ -158,7 +158,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
-	if guestOS := p.lookupGuestOS(ctx, index.GetId()); guestOS != "" && guestOS != pkgVM.UnknownGuestOS && vm.Scan != nil {
+	if guestOS := p.lookupGuestOS(ctx, index.GetId()); guestOS != "" && guestOS != pkgVM.UnknownGuestOS && vm.GetScan() != nil {
 		vm.Scan.OperatingSystem = guestOS
 	}
 
@@ -208,13 +208,21 @@ func (p *pipelineImpl) storeV2Scan(ctx context.Context, clusterID string, vm *st
 func (p *pipelineImpl) lookupGuestOS(ctx context.Context, vmID string) string {
 	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		vm, found, err := p.virtualMachineV2Store.GetVirtualMachine(ctx, vmID)
-		if err != nil || !found {
+		if err != nil {
+			log.Warnf("Failed to look up guest OS for VM %s: %v", vmID, err)
+			return ""
+		}
+		if !found {
 			return ""
 		}
 		return vm.GetGuestOs()
 	}
 	vm, found, err := p.virtualMachineStore.GetVirtualMachine(ctx, vmID)
-	if err != nil || !found {
+	if err != nil {
+		log.Warnf("Failed to look up guest OS for VM %s: %v", vmID, err)
+		return ""
+	}
+	if !found {
 		return ""
 	}
 	return vm.GetFacts()[pkgVM.GuestOSKey]
