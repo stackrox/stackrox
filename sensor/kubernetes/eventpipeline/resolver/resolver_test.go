@@ -488,6 +488,44 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	}
 }
 
+func (s *resolverSuite) Test_Send_SkipDedupingResolvesInline() {
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
+
+			messageReceived := sync.WaitGroup{}
+			messageReceived.Add(1)
+
+			s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
+
+			// With SkipDeduping the deployment is resolved inline within processMessage,
+			// so Send is called exactly once with the resolved deployment included.
+			s.mockOutput.EXPECT().Send(&deploymentMatcher{
+				id:              "1234",
+				permissionLevel: storage.PermissionLevel_NONE,
+			}).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+
+			event := &component.ResourceEvent{
+				DeploymentReferences: []component.DeploymentReference{
+					{
+						Reference:            resolverStore.ResolveDeploymentIds("1234"),
+						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+						SkipDeduping:         true,
+					},
+				},
+			}
+			s.dispatchEvent(event, resolver, pubSubEnabled)
+
+			messageReceived.Wait()
+		})
+	}
+}
+
 func (s *resolverSuite) Test_ToEvent_InitContainerFiltering() {
 	cases := map[string]struct {
 		caps               []centralsensor.CentralCapability
