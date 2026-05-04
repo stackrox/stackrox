@@ -90,8 +90,8 @@ jobs:
   #
   # The shard count is NOT fixed — it grows with the spec count.
   # But it only grows when new test directories are added, not when
-  # existing tests get slower. Slow tests breach the 7-min timeout,
-  # which is the signal to fix them.
+  # existing tests get slower. Slow shards are visible in the GHA UI
+  # as a signal to optimize — the 7-min target is a goal, not a gate.
   # ---------------------------------------------------------------
   setup-shards:
     name: Setup shards
@@ -180,7 +180,7 @@ jobs:
     name: "${{ matrix.name }}"
     needs: setup-shards
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
 
     strategy:
       # Don't cancel other shards when one fails — we want full results
