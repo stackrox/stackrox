@@ -30,11 +30,16 @@ function dateParse(date: string): Date {
 
 export type SearchFilterConditionDateProps = {
     attribute: GenericSearchFilterAttribute;
+    isDisabled?: boolean;
     onSearch: OnSearchCallback;
     // does not depend on searchFilter
 };
 
-function SearchFilterConditionDate({ attribute, onSearch }: SearchFilterConditionDateProps) {
+function SearchFilterConditionDate({
+    attribute,
+    isDisabled = false,
+    onSearch,
+}: SearchFilterConditionDateProps) {
     const { searchTerm: category } = attribute;
 
     const [conditionExternal, setConditionExternal] = useState(dateConditions[1]);
@@ -44,6 +49,7 @@ function SearchFilterConditionDate({ attribute, onSearch }: SearchFilterConditio
         <>
             <ToolbarItem>
                 <SimpleSelect
+                    isDisabled={isDisabled}
                     value={conditionExternal}
                     onChange={(conditionSelected) =>
                         setConditionExternal(conditionSelected as (typeof dateConditions)[number])
@@ -64,6 +70,7 @@ function SearchFilterConditionDate({ attribute, onSearch }: SearchFilterConditio
                 <DatePicker
                     aria-label="Filter by date"
                     buttonAriaLabel="Filter by date toggle"
+                    isDisabled={isDisabled}
                     value={dateString}
                     onChange={(_, datePicked) => {
                         setDateString(datePicked);

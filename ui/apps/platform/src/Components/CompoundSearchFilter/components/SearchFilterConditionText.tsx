@@ -78,11 +78,16 @@ export function convertFromInternalToExternalConditionText(
 
 export type SearchFilterConditionTextProps = {
     attribute: ConditionTextFilterAttribute;
+    isDisabled?: boolean;
     onSearch: OnSearchCallback;
     // does not depend on searchFilter
 };
 
-function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditionTextProps) {
+function SearchFilterConditionText({
+    attribute,
+    isDisabled = false,
+    onSearch,
+}: SearchFilterConditionTextProps) {
     const { inputProps, searchTerm: category } = attribute;
     const {
         conditionProps: { conditionEntries },
@@ -118,6 +123,7 @@ function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditio
             aria-label="Condition selector toggle"
             ref={toggleRef}
             onClick={onToggleClick}
+            isDisabled={isDisabled}
             isExpanded={isOpen}
         >
             {conditionSelected[1]}
@@ -148,6 +154,7 @@ function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditio
                 <TextInput
                     aria-label="Condition value input"
                     className="ConditionTextInput"
+                    isDisabled={isDisabled}
                     onChange={(event: FormEvent<HTMLInputElement>) => {
                         const { value: changedText } = event.target as HTMLInputElement;
                         setExternalText(changedText);
@@ -160,7 +167,7 @@ function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditio
                 <Button
                     icon={<ArrowRightIcon />}
                     aria-label="Apply condition and number input to search"
-                    isDisabled={!validateExternalText(externalText)}
+                    isDisabled={isDisabled || !validateExternalText(externalText)}
                     onClick={() => {
                         const internalText = convertFromExternalToInternalText(externalText);
                         onSearch([
