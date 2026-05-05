@@ -88,7 +88,10 @@ jobs:
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
         go mod download github.com/stackrox/scanner
-        make smoke-test
+        # Run proto gen + compile + test in a SINGLE gradle invocation.
+        # Separate invocations cause NO-SOURCE because registered Test
+        # tasks don't re-scan for compiled classes across daemon calls.
+        ./gradlew generateProto compileTestGroovy testSMOKE
 
     - name: Collect logs
       if: always()
