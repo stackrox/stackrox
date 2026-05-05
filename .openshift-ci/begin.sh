@@ -26,7 +26,11 @@ fi
 if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     set_ci_shared_export WORKER_NODE_COUNT 2
-    set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+    if [[ "${JOB_NAME:-}" =~ vm-scanning ]]; then
+        set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
+    else
+        set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+    fi
 fi
 
 if [[ "${JOB_NAME:-}" =~ -eks- ]]; then

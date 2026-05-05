@@ -235,6 +235,20 @@ class NonGroovyE2e(BaseTest):
         )
 
 
+class VMScanningE2e(BaseTest):
+    TEST_TIMEOUT = 2 * 60 * 60
+    TEST_OUTPUT_DIR = "/tmp/vm-scanning-test-logs"
+
+    def run(self):
+        print("Executing VM scanning e2e tests")
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-vm-scanning.sh", self.TEST_OUTPUT_DIR],
+            self.TEST_TIMEOUT,
+            output_dir=self.TEST_OUTPUT_DIR,
+        )
+
+
 class SensorIntegration(BaseTest):
     TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "/tmp/sensor-integration-test-logs"
