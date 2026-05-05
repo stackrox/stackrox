@@ -101,7 +101,6 @@ runs:
         # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
 
         git ls-files | xargs touch -t 200101010000
-       
         # Also stabilize directory mtimes — tests using os.ReadDir or
         # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
