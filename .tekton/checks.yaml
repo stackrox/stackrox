@@ -20,15 +20,6 @@ metadata:
 spec:
 
   params:
-  - name: git-url
-    value: '{{source_url}}'
-  - name: revision
-    value: '{{revision}}'
-  - name: output-image-repo
-    # TODO: Change to quay.io/rhacs-eng/go-mod-validation once dedicated service account is created
-    value: quay.io/rhacs-eng/release-roxctl
-  - name: hermetic
-    value: "true"
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle
@@ -81,23 +72,18 @@ spec:
         resolver: bundles
 
     params:
-    - description: Source Repository URL
+    - default: "{{source_url}}"
+      description: Source Repository URL
       name: git-url
       type: string
-    - default: ""
+    - default: "{{revision}}"
       description: Revision of the Source Repository
       name: revision
       type: string
-    - description: Output Image Repository (for OCI artifacts)
+    # TODO: Change to quay.io/rhacs-eng/konflux-checks once this repo is created
+    - default: quay.io/rhacs-eng/release-roxctl
+      description: Output Image Repository (for OCI artifacts)
       name: output-image-repo
-      type: string
-    - default: "1"
-      description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
-      name: clone-depth
-      type: string
-    - default: "false"
-      description: Fetch tags with git clone
-      name: clone-fetch-tags
       type: string
     - default: "1d"
       description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
@@ -120,9 +106,9 @@ spec:
       - name: revision
         value: $(params.revision)
       - name: depth
-        value: $(params.clone-depth)
+        value: "1"
       - name: fetchTags
-        value: $(params.clone-fetch-tags)
+        value: "false"
       - name: ociStorage
         value: $(params.output-image-repo):konflux-$(params.revision).git
       - name: ociArtifactExpiresAfter
@@ -155,7 +141,7 @@ spec:
       - name: SOURCE_ARTIFACT
         value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
       - name: HERMETIC
-        value: $(params.hermetic)
+        value: "true"
       taskRef:
         params:
         - name: name
