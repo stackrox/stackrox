@@ -39,7 +39,9 @@ function useIntegrationActions(): UseIntegrationActionsResult {
         isEditing,
         params: { source, type },
     } = usePageState();
-    // This hook is only mounted on CRUD routes, so source is always a CRUD-capable source
+    // The routing IntegrationSource type includes 'apiClients', which has no backend
+    // endpoints. This hook only mounts on create/edit routes, so 'apiClients' never
+    // reaches here. Safe to narrow to the CRUD-capable source type.
     const crudSource = source as CrudIntegrationSource;
     const fetchIntegrations = useFetchIntegrations(source);
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
