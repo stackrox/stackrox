@@ -70,7 +70,7 @@ jobs:
         fi
         echo "Central API ready"
 
-    - name: Run QA SMOKE tests
+    - name: Run QA BAT tests
       working-directory: qa-tests-backend
       env:
         API_HOSTNAME: localhost
@@ -82,7 +82,7 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        ./gradlew testSMOKE --info 2>&1 | tail -100
+        ./gradlew testBegin testParallelBAT testBAT --info 2>&1 | tail -200
 
     - name: Collect logs
       if: always()
