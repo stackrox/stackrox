@@ -72,9 +72,9 @@ func (s *datastoreMockedTestSuite) SetupTest() {
 
 	s.mockSet = mocks.NewMockTokenExchangerSet(s.mockCtrl)
 	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	s.authStore = mockAuthStore.NewMockStore(s.mockCtrl)
 	s.authDataStore = New(s.authStore, s.roleDataStore, s.mockSet)

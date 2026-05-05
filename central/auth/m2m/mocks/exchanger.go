@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	storage "github.com/stackrox/rox/generated/storage"
 	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
@@ -42,18 +43,18 @@ func (m *MockTokenExchanger) EXPECT() *MockTokenExchangerMockRecorder {
 	return m.recorder
 }
 
-// Config mocks base method.
-func (m *MockTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
+// Configs mocks base method.
+func (m *MockTokenExchanger) Configs() []*storage.AuthMachineToMachineConfig {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Config")
-	ret0, _ := ret[0].(*storage.AuthMachineToMachineConfig)
+	ret := m.ctrl.Call(m, "Configs")
+	ret0, _ := ret[0].([]*storage.AuthMachineToMachineConfig)
 	return ret0
 }
 
-// Config indicates an expected call of Config.
-func (mr *MockTokenExchangerMockRecorder) Config() *gomock.Call {
+// Configs indicates an expected call of Configs.
+func (mr *MockTokenExchangerMockRecorder) Configs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockTokenExchanger)(nil).Config))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configs", reflect.TypeOf((*MockTokenExchanger)(nil).Configs))
 }
 
 // ExchangeToken mocks base method.
@@ -83,4 +84,18 @@ func (m *MockTokenExchanger) Provider() authproviders.Provider {
 func (mr *MockTokenExchangerMockRecorder) Provider() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Provider", reflect.TypeOf((*MockTokenExchanger)(nil).Provider))
+}
+
+// TokenTTL mocks base method.
+func (m *MockTokenExchanger) TokenTTL() time.Duration {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TokenTTL")
+	ret0, _ := ret[0].(time.Duration)
+	return ret0
+}
+
+// TokenTTL indicates an expected call of TokenTTL.
+func (mr *MockTokenExchangerMockRecorder) TokenTTL() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TokenTTL", reflect.TypeOf((*MockTokenExchanger)(nil).TokenTTL))
 }
