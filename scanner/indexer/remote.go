@@ -2,9 +2,10 @@ package indexer
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
@@ -39,11 +40,8 @@ func (r *remoteIndexer) Close(_ context.Context) error {
 
 // GetIndexReport calls the remote service to retrieve an IndexReport for the given hash ID.
 func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string, _ bool) (*claircore.IndexReport, bool, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/backend/remoteIndexer.GetIndexReport",
-		"hash_id", hashID,
-	)
-	zlog.Info(ctx).Msg("fetching index report from remote indexer")
+	ctx = log.With(ctx, "hash_id", hashID)
+	slog.InfoContext(ctx, "fetching index report from remote indexer")
 	resp, exists, err := r.indexer.GetImageIndex(ctx, hashID)
 	if err != nil {
 		return nil, false, err

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"regexp"
 	"slices"
@@ -20,7 +21,6 @@ import (
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/toolkit/types/cpe"
-	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -614,13 +614,12 @@ func toProtoV4VulnerabilitiesMap(
 		}
 		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, csafAdvisory)
 		if err != nil {
-			zlog.Debug(ctx).
-				Err(err).
-				Str("vuln_id", v.ID).
-				Str("vuln_name", v.Name).
-				Str("vuln_updater", v.Updater).
-				Str("severity", v.Severity).
-				Msg("missing severity and/or CVSS score(s): proceeding with partial values")
+			slog.DebugContext(ctx, "missing severity and/or CVSS score(s): proceeding with partial values",
+				"vuln_id", v.ID,
+				"vuln_name", v.Name,
+				"vuln_updater", v.Updater,
+				"severity", v.Severity,
+				"reason", err)
 		}
 		var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 		if len(metrics) > 0 {
@@ -647,18 +646,15 @@ func toProtoV4VulnerabilitiesMap(
 		}
 		issued := issuedTime(vulnPublished, nvdVuln.Published)
 		if issued == nil {
-			zlog.Warn(ctx).
-				Str("vuln_id", v.ID).
-				Str("vuln_name", v.Name).
-				Str("vuln_updater", v.Updater).
-				Bool("feature_rh_cves_enabled", features.ScannerV4RedHatCVEs.Enabled()).
-				Bool("csaf_advisory_exists", csafAdvisoryExists).
-				// Use Str instead of Time because the latter will format the time into
-				// RFC3339 form, which may not be valid for this.
-				Str("csaf_advisory_release_date", csafAdvisory.ReleaseDate.String()).
-				Str("claircore_issued", v.Issued.String()).
-				Str("nvd_published", nvdVuln.Published).
-				Msg("issued time invalid: leaving empty")
+			slog.WarnContext(ctx, "issued time invalid: leaving empty",
+				"vuln_id", v.ID,
+				"vuln_name", v.Name,
+				"vuln_updater", v.Updater,
+				"feature_rh_cves_enabled", features.ScannerV4RedHatCVEs.Enabled(),
+				"csaf_advisory_exists", csafAdvisoryExists,
+				"csaf_advisory_release_date", csafAdvisory.ReleaseDate.String(),
+				"claircore_issued", v.Issued.String(),
+				"nvd_published", nvdVuln.Published)
 		}
 
 		fixed := fixedTime(csafAdvisory)
@@ -743,9 +739,8 @@ func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Se
 	if mappedSeverity, ok := severityMapping[ccSeverity]; ok {
 		return mappedSeverity
 	}
-	zlog.Warn(ctx).
-		Str("claircore_severity", ccSeverity.String()).
-		Msgf("unknown ClairCore severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
+	slog.WarnContext(ctx, "unknown Claircore severity, mapping to UNSPECIFIED",
+		"claircore_severity", ccSeverity.String())
 	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 }
 
@@ -762,9 +757,8 @@ func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity stri
 	case strings.EqualFold("critical", severity):
 		return v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL
 	default:
-		zlog.Warn(ctx).
-			Str("severity_string", severity).
-			Msgf("unknown severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
+		slog.WarnContext(ctx, "unknown severity, mapping to UNSPECIFIED",
+			"severity_string", severity)
 		return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 	}
 }
@@ -1011,7 +1005,8 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 	ret := make(map[string]csaf.Advisory)
 	for id, records := range items {
 		if len(records) != 1 {
-			zlog.Warn(ctx).Str("vuln_id", id).Msgf("unexpected number of CSAF enrichment records than expected (%d != 1)", len(records))
+			slog.WarnContext(ctx, "unexpected number of CSAF enrichment records",
+				"vuln_id", id, "count", len(records))
 		}
 		if len(records) == 0 {
 			// Unexpected, but ok... Ignore this.
@@ -1020,7 +1015,7 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 		record := records[0]
 		if record.Name == "" {
 			// Unexpected, but ok... Ignore this.
-			zlog.Warn(ctx).Str("vuln_id", id).Msg("advisory incomplete")
+			slog.WarnContext(ctx, "advisory incomplete", "vuln_id", id)
 			continue
 		}
 		ret[id] = records[0]
@@ -1173,9 +1168,8 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]map[string]*epss.EPSSItem, error) {
 	enrichmentList := enrichments[epss.Type]
 	if len(enrichmentList) == 0 {
-		zlog.Warn(ctx).
-			Str("enrichments", epss.Type).
-			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
+		slog.WarnContext(ctx, "No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.",
+			"enrichments", epss.Type)
 		return nil, nil
 	}
 
@@ -1187,9 +1181,8 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 	}
 
 	if len(epssItems) == 0 {
-		zlog.Warn(ctx).
-			Str("enrichments", epss.Type).
-			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
+		slog.WarnContext(ctx, "No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.",
+			"enrichments", epss.Type)
 		return nil, nil
 	}
 

@@ -110,7 +110,7 @@ message Alert {
   }
 
   message Enforcement {
-    storage.EnforcementAction action = 1; // @gotags: search:"Enforcement"
+    storage.EnforcementAction action = 1; // @gotags: search:"Enforcement Action"
     string message = 2;
   }
 
