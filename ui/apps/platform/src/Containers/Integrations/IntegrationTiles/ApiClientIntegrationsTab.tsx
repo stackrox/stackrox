@@ -11,8 +11,6 @@ import {
 } from '@patternfly/react-core';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
-import useMetadata from 'hooks/useMetadata';
-import { getVersionedDocs } from 'utils/versioning';
 import ServiceNowLogo from 'images/servicenow.svg?react';
 
 import type { IntegrationsTabProps } from './IntegrationsTab.types';
@@ -20,10 +18,10 @@ import IntegrationsTabPage from './IntegrationsTabPage';
 
 const source = 'apiClients';
 
-function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactElement {
-    const { version } = useMetadata();
+const serviceNowStoreUrl =
+    'https://store.servicenow.com/store/app/edea7344476072502ec7c1c4f16d4343';
 
-    const docsUrl = getVersionedDocs(version, 'integrating/integrate-with-servicenow');
+function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactElement {
 
     return (
         <IntegrationsTabPage source={source} sourcesEnabled={sourcesEnabled}>
@@ -32,10 +30,10 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                     <Card isClickable isCompact data-testid="integration-tile">
                         <CardHeader
                             selectableActions={{
-                                to: docsUrl,
+                                to: serviceNowStoreUrl,
                                 isExternalLink: true,
                                 selectableActionAriaLabel:
-                                    'View ServiceNow VR documentation (opens in a new tab)',
+                                    'View ServiceNow VR app in ServiceNow Store (opens in a new tab)',
                             }}
                             className="pf-v6-u-mb-lg"
                         >
