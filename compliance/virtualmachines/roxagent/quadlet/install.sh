@@ -29,7 +29,7 @@ filter_container_file() {
     local file="$1"
     local pattern=""
     for p in "${OPTIONAL_HOST_PATHS[@]}"; do
-        if [ ! -d "$p" ]; then
+        if [ ! -e "$p" ]; then
             echo "  Stripping mount for missing path: $p" >&2
             pattern="${pattern:+${pattern}|}Volume=${p}[:/]"
         fi
@@ -102,7 +102,7 @@ install_remote() {
         # Strip Volume= lines for host paths that don't exist on this machine
         pattern=""
         for p in "${OPTIONAL_HOST_PATHS[@]}"; do
-            if [ ! -d "$p" ]; then
+            if [ ! -e "$p" ]; then
                 echo "  Stripping mount for missing path: $p"
                 pattern="${pattern:+${pattern}|}Volume=${p}[:/]"
             fi
