@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import {
     Card,
-    CardBody,
+    CardFooter,
     CardHeader,
     CardTitle,
     Gallery,
@@ -48,9 +48,9 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                             ServiceNow VR{' '}
                             <ExternalLinkAltIcon color="var(--pf-t--global--text--color--link--default)" />
                         </CardTitle>
-                        <CardBody className="pf-v6-u-color-200">
+                        <CardFooter className="pf-v6-u-color-200">
                             Pull ACS vulnerability data into ServiceNow Vulnerability Response.
-                        </CardBody>
+                        </CardFooter>
                     </Card>
                 </GalleryItem>
             </Gallery>
