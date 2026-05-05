@@ -11,5 +11,8 @@ type Creator func(scanner *storage.ImageIntegration) (types.Scanner, error)
 // NodeScannerCreator is the func stub that defines how to instantiate a node scanner.
 type NodeScannerCreator func(scanner *storage.NodeIntegration) (types.NodeScanner, error)
 
+// VirtualMachineScannerCreator is the function stub that defines how to instantiate a virtual machine scanner.
+type VirtualMachineScannerCreator func(scanner *storage.ImageIntegration) (types.VirtualMachineScanner, error)
+
 // OrchestratorScannerCreator is a func stub that defines how to instantiate an orchestrator scanner.
 type OrchestratorScannerCreator func(scanner *storage.OrchestratorIntegration) (types.OrchestratorScanner, error)

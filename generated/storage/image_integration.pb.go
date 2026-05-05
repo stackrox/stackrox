@@ -31,6 +31,8 @@ const (
 	// so the image integration is also currently used for node integrations.
 	// This decision was made because we currently only support one node scanner (our scanner).
 	ImageIntegrationCategory_NODE_SCANNER ImageIntegrationCategory = 2
+	// TODO: ROX-32218: ensure scanner V4 can also be used as virtual machine scanner
+	ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER ImageIntegrationCategory = 3
 )
 
 // Enum value maps for ImageIntegrationCategory.
@@ -39,11 +41,13 @@ var (
 		0: "REGISTRY",
 		1: "SCANNER",
 		2: "NODE_SCANNER",
+		3: "VIRTUAL_MACHINE_SCANNER",
 	}
 	ImageIntegrationCategory_value = map[string]int32{
-		"REGISTRY":     0,
-		"SCANNER":      1,
-		"NODE_SCANNER": 2,
+		"REGISTRY":                0,
+		"SCANNER":                 1,
+		"NODE_SCANNER":            2,
+		"VIRTUAL_MACHINE_SCANNER": 3,
 	}
 )
 
@@ -1303,11 +1307,12 @@ const file_storage_image_integration_proto_rawDesc = "" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x1f\n" +
 	"\vwif_enabled\x18\x04 \x01(\bR\n" +
-	"wifEnabled*G\n" +
+	"wifEnabled*d\n" +
 	"\x18ImageIntegrationCategory\x12\f\n" +
 	"\bREGISTRY\x10\x00\x12\v\n" +
 	"\aSCANNER\x10\x01\x12\x10\n" +
-	"\fNODE_SCANNER\x10\x02B.\n" +
+	"\fNODE_SCANNER\x10\x02\x12\x1b\n" +
+	"\x17VIRTUAL_MACHINE_SCANNER\x10\x03B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
