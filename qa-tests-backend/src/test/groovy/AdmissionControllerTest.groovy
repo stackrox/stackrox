@@ -5,7 +5,9 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
+import org.junit.Assume
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageService
 import services.PolicyService
 import util.Timer
@@ -33,6 +35,7 @@ class AdmissionControllerTest extends BaseSpecification {
     static final private String BUSYBOX_NO_BYPASS        = "busybox-no-bypass"
     static final private String BUSYBOX_BYPASS           = "busybox-bypass"
     static final private String BUSYBOX_LATEST_TAG_IMAGE = "quay.io/rhacs-eng/qa-multi-arch-busybox:latest"
+    static final private String BUSYBOX_TAGGED_IMAGE     = "quay.io/rhacs-eng/qa-multi-arch:busybox-1-28"
 
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
     private final static String LATEST_TAG = "Latest tag"
@@ -150,7 +153,7 @@ class AdmissionControllerTest extends BaseSpecification {
         when:
         "Create a deployment with a non-violating image"
         def modDeployment = deployment.clone()
-        modDeployment.image = "quay.io/rhacs-eng/qa-multi-arch:busybox-1-28"
+        modDeployment.image = BUSYBOX_TAGGED_IMAGE
         def created = orchestrator.createDeploymentNoWait(modDeployment)
         assert created
 
@@ -386,6 +389,45 @@ class AdmissionControllerTest extends BaseSpecification {
         desc               | initialValue | changedValue
         "namespace reload" | "backend"    | "frontend"
         "namespace removal"| "backend"    | null
+    }
+
+    @Unroll
+    @Tag("BAT")
+    def "Verify AC init container enforcement: #desc"() {
+        given:
+        "Feature flag for init container support is enabled"
+        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_INIT_CONTAINER_SUPPORT"))
+
+        when:
+        "Create a deployment with init container(s)"
+        def deployment = new Deployment()
+                .setName("init-ac-${desc.replaceAll(' ', '-')}")
+                .setNamespace(TEST_NAMESPACE)
+                .setImagePrefetcherAffinity()
+                .setImage(mainImage)
+                .addLabel("app", "test")
+        initImages.eachWithIndex { String image, int i ->
+            deployment.addInitContainer("init-${i}", image)
+        }
+
+        def created = orchestrator.createDeploymentNoWait(deployment)
+
+        then:
+        "Verify admission controller allows or blocks based on which container violates policy"
+        assert created == allowed
+
+        cleanup:
+        if (created) {
+            deleteDeploymentWithCaution(deployment)
+        }
+
+        where:
+        desc              | mainImage                | initImages                                          | allowed
+        "1 init latest"   | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE]                          | true
+        "2 inits latest"  | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE, BUSYBOX_LATEST_TAG_IMAGE]| true
+        "mixed inits"     | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE, BUSYBOX_TAGGED_IMAGE]    | true
+        "main latest 1i"  | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE]                              | false
+        "main latest 2i"  | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE, BUSYBOX_TAGGED_IMAGE]        | false
     }
 
 }
