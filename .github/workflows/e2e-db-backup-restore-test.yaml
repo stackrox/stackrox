@@ -89,7 +89,7 @@ jobs:
         set -x
         go mod download github.com/stackrox/scanner
         make compile
-        cd qa-tests-backend && ./gradlew testClasses testBegin testParallelBAT testBAT
+        ./gradlew testClasses testBegin testParallelBAT testBAT
 
     - name: Collect logs
       if: always()
