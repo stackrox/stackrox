@@ -312,7 +312,7 @@ generate_and_migrate() {
 @test "migrate-to-operator: fails without --from-dir or --namespace" {
   run roxctl-development central migrate-to-operator
   assert_failure
-  assert_output --partial "either --from-dir or --namespace must be specified"
+  assert_output --partial "at least one of the flags in the group [from-dir namespace] is required"
 }
 
 @test "migrate-to-operator: fails with --from-dir and --namespace" {
