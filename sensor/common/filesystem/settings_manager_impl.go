@@ -33,6 +33,8 @@ type factSettingsManager struct {
 	lastPaths      set.StringSet
 }
 
+var _ SettingsManager = (*factSettingsManager)(nil)
+
 func NewFactSettingsManager() SettingsManager {
 	f := &factSettingsManager{
 		settingsUpdate: concurrency.NewValueStream[*v1.ConfigMap](nil),
@@ -68,7 +70,8 @@ func (f *factSettingsManager) UpdateFactSettings(policies []*storage.Policy) {
 func (f *factSettingsManager) extractFileActivityPaths(policies []*storage.Policy) set.StringSet {
 	paths := set.NewStringSet()
 	for _, policy := range policies {
-		if !pkgPolicies.AppliesAtRunTime(policy) ||
+		if policy.GetDisabled() ||
+			!pkgPolicies.AppliesAtRunTime(policy) ||
 			!booleanpolicy.ContainsOneOf(policy, booleanpolicy.FileAccess) {
 			continue
 		}

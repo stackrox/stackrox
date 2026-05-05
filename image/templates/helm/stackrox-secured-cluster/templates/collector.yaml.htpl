@@ -129,8 +129,6 @@ spec:
           value: "/var/run/secrets/stackrox.io/certs/"
         - name: FACT_HOST_MOUNT
           value: "/host"
-        - name: FACT_HOTRELOAD
-          value: "true"
         {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
           {{- ._rox.collector._famResources | nindent 10 }}
