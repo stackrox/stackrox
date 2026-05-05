@@ -4,6 +4,8 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
+    Flex,
+    FlexItem,
     Gallery,
     GalleryItem,
 } from '@patternfly/react-core';
@@ -45,8 +47,10 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                             />
                         </CardHeader>
                         <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
-                            ServiceNow VR{' '}
-                            <ExternalLinkAltIcon color="var(--pf-t--global--text--color--link--default)" />
+                            <Flex alignItems={{ default: 'alignItemsBaseline' }} gap={{ default: 'gapSm' }}>
+                                <FlexItem>ServiceNow VR</FlexItem>
+                                <ExternalLinkAltIcon />
+                            </Flex>
                         </CardTitle>
                         <CardFooter className="pf-v6-u-color-200">
                             Pull ACS vulnerability data into ServiceNow Vulnerability Response.
