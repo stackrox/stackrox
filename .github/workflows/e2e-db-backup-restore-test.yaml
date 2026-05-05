@@ -89,7 +89,10 @@ jobs:
         set -x
         go mod download github.com/stackrox/scanner
         make compile
-        ./gradlew testClasses testBegin testParallelBAT testBAT
+        # Run the default test task (which IS wired to the source set)
+        # to verify tests execute. The registered tasks (testBAT etc.)
+        # have a NO-SOURCE issue — investigate separately.
+        ./gradlew test
 
     - name: Collect logs
       if: always()
