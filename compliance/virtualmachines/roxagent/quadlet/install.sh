@@ -26,18 +26,18 @@ OPTIONAL_HOST_PATHS=(
 # Produce a filtered roxagent.container on stdout, removing Volume= lines
 # whose host source path does not exist on this machine.
 filter_container_file() {
-    local file="$1"
+    local file="${1}"
     local pattern=""
     for p in "${OPTIONAL_HOST_PATHS[@]}"; do
-        if [ ! -e "$p" ]; then
-            echo "Stripping mount for missing path: $p" >&2
+        if [ ! -e "${p}" ]; then
+            echo "Stripping mount for missing path: ${p}" >&2
             pattern="${pattern:+${pattern}|}Volume=${p}[:/]"
         fi
     done
-    if [ -z "$pattern" ]; then
-        cat "$file"
+    if [ -z "${pattern}" ]; then
+        cat "${file}"
     else
-        grep -Ev "$pattern" "$file"
+        grep -Ev "${pattern}" "${file}"
     fi
 }
 
@@ -74,7 +74,7 @@ install_locally() {
 }
 
 install_remote() {
-    local REMOTE_HOST="$1"
+    local REMOTE_HOST="${1}"
     local SSH_PORT="${2:-22}"
 
     echo "Installing Quadlet units on ${REMOTE_HOST} (port ${SSH_PORT})..."
@@ -102,13 +102,13 @@ install_remote() {
         # Strip Volume= lines for host paths that don't exist on this machine
         pattern=""
         for p in "${OPTIONAL_HOST_PATHS[@]}"; do
-            if [ ! -e "$p" ]; then
-                echo "  Stripping mount for missing path: $p"
+            if [ ! -e "${p}" ]; then
+                echo "  Stripping mount for missing path: ${p}"
                 pattern="${pattern:+${pattern}|}Volume=${p}[:/]"
             fi
         done
-        if [ -n "$pattern" ]; then
-            grep -Ev "$pattern" /tmp/roxagent.container > /tmp/roxagent.container.filtered
+        if [ -n "${pattern}" ]; then
+            grep -Ev "${pattern}" /tmp/roxagent.container > /tmp/roxagent.container.filtered
             mv /tmp/roxagent.container.filtered /tmp/roxagent.container
         fi
 
@@ -142,10 +142,10 @@ EOF
 }
 
 # Main
-if [ $# -eq 0 ]; then
+if [ "${#}" -eq 0 ]; then
     install_locally
 else
-    install_remote "$1" "${2:-22}"
+    install_remote "${1}" "${2:-22}"
 fi
 
 echo ""
