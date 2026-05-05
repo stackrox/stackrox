@@ -20,7 +20,7 @@ defaults:
     shell: bash
 
 jobs:
-  kind-db-backup-restore-test:
+  kind-e2e-test:
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
@@ -28,7 +28,7 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
-      CLUSTER_NAME: e2e-dbbr-${{ github.run_id }}
+      CLUSTER_NAME: e2e-test-${{ github.run_id }}
       # EXPERIMENT: hardcode known-good tag
       TAG: 4.11.x-831-g8f262d83ee
     timeout-minutes: 30
@@ -40,7 +40,6 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
-    # KinD + deploy run in background. roxctl builds in parallel.
     - name: Create KinD cluster (background)
       uses: ./.github/actions/create-kind-cluster
       with:
@@ -52,22 +51,11 @@ jobs:
     - name: Deploy StackRox (background)
       uses: ./.github/actions/deploy-stackrox
 
-    - name: Extract roxctl from main image
-      env:
-        QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: |
-        set +x
-        echo "${QUAY_PASS}" | docker login -u "${QUAY_USER}" --password-stdin quay.io
-        set -x
-        docker pull "quay.io/rhacs-eng/main:${TAG}"
-        CID=$(docker create "quay.io/rhacs-eng/main:${TAG}")
-        mkdir -p bin
-        docker cp "${CID}:/assets/downloads/cli/roxctl-linux-amd64" bin/roxctl
-        docker rm "${CID}"
-        chmod +x bin/roxctl
-        echo "$(pwd)/bin" >> "$GITHUB_PATH"
-        bin/roxctl version
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
 
     - name: Wait for Central API
       run: |
@@ -76,61 +64,25 @@ jobs:
           sleep 2
         done
         if [ ! -s /tmp/rox-auth-token ]; then
-          echo "::error::Central API not ready after 6 minutes"
+          echo "::error::Central API not ready"
           cat /tmp/deploy.log 2>/dev/null | tail -50 || true
           exit 1
         fi
         echo "Central API ready"
 
-    - name: DB backup and restore test
+    - name: Run QA SMOKE tests
+      working-directory: qa-tests-backend
       env:
+        API_HOSTNAME: localhost
+        API_PORT: "8000"
         ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+        CLUSTER: K8S
+        ORCHESTRATOR_FLAVOR: k8s
       run: |
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        API_ENDPOINT="localhost:8000"
-        ROXCTL="roxctl --insecure-skip-tls-verify --ca= -e ${API_ENDPOINT}"
-
-        # Save original config
-        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-          "https://${API_ENDPOINT}/v1/config" | jq . > /tmp/original-config.json
-
-        # Backup
-        echo "Running central backup..."
-        mkdir -p /tmp/db-backup
-        $ROXCTL central backup --output /tmp/db-backup
-        ls -la /tmp/db-backup/
-
-        # Modify config (so restore has something to revert)
-        echo "Modifying config..."
-        NEW_CONFIG=$(jq '. + { publicConfig: { header: { enabled: true, text: "modified-by-test" } } }' < /tmp/original-config.json)
-        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-          "https://${API_ENDPOINT}/v1/config" \
-          -X PUT -d "{ \"config\": ${NEW_CONFIG} }" > /dev/null
-
-        # Restore
-        BACKUP_FILE=$(find /tmp/db-backup -name 'postgres_db_*' -type f | head -1)
-        echo "Restoring from: ${BACKUP_FILE}"
-        $ROXCTL central db restore "${BACKUP_FILE}"
-
-        # Wait for Central to come back after restore
-        echo "Waiting for Central to recover..."
-        for i in $(seq 1 60); do
-          curl -sk "https://${API_ENDPOINT}/v1/metadata" >/dev/null 2>&1 && break
-          sleep 2
-        done
-
-        # Verify config matches original
-        echo "Verifying config restored correctly..."
-        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-          "https://${API_ENDPOINT}/v1/config" | jq . > /tmp/restored-config.json
-
-        if ! diff /tmp/original-config.json /tmp/restored-config.json; then
-          echo "::error::Config after restore differs from original!"
-          exit 1
-        fi
-        echo "DB backup and restore test PASSED"
+        ./gradlew testSMOKE --info 2>&1 | tail -100
 
     - name: Collect logs
       if: always()
@@ -140,12 +92,13 @@ jobs:
           kubectl -n stackrox logs "$(basename "$pod")" --all-containers \
             > "/tmp/test-artifacts/$(basename "$pod").log" 2>&1 || true
         done
+        cp -r qa-tests-backend/build/reports/ /tmp/test-artifacts/reports/ 2>/dev/null || true
 
     - name: Upload artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       if: always()
       with:
-        name: db-backup-restore-${{ github.run_id }}
+        name: e2e-test-${{ github.run_id }}
         path: /tmp/test-artifacts
         retention-days: 7
 
