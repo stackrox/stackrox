@@ -25,6 +25,7 @@ func (cmd *Command) AddFlags(c *cobra.Command) {
 	c.Flags().StringVar(&cmd.FromDir, "from-dir", "", "Path to directory containing generated manifests.")
 	c.Flags().StringVarP(&cmd.Namespace, "namespace", "n", "", "Kubernetes namespace of the running deployment.")
 	c.Flags().StringVarP(&cmd.Output, "output", "o", "", "Path to write the generated CR YAML (default: stdout).")
+	c.MarkFlagsOneRequired("from-dir", "namespace")
 	c.MarkFlagsMutuallyExclusive("from-dir", "namespace")
 }
 
