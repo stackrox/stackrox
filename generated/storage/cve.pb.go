@@ -1591,8 +1591,14 @@ type ImageCVEV2 struct {
 	// Timestamp when the fix for this CVE was made available according to the sources.
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// repository_cpe is the CPE of the repository (product stream) this vulnerability was matched against.
+	RepositoryCpe string `protobuf:"bytes,18,opt,name=repository_cpe,json=repositoryCpe,proto3" json:"repository_cpe,omitempty"`
+	// component_name is the name of the component this CVE was found in.
+	ComponentName string `protobuf:"bytes,19,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty"`
+	// component_version is the version of the component this CVE was found in.
+	ComponentVersion string `protobuf:"bytes,20,opt,name=component_version,json=componentVersion,proto3" json:"component_version,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ImageCVEV2) Reset() {
@@ -1750,6 +1756,27 @@ func (x *ImageCVEV2) GetFixAvailableTimestamp() *timestamppb.Timestamp {
 func (x *ImageCVEV2) GetDatasource() string {
 	if x != nil {
 		return x.Datasource
+	}
+	return ""
+}
+
+func (x *ImageCVEV2) GetRepositoryCpe() string {
+	if x != nil {
+		return x.RepositoryCpe
+	}
+	return ""
+}
+
+func (x *ImageCVEV2) GetComponentName() string {
+	if x != nil {
+		return x.ComponentName
+	}
+	return ""
+}
+
+func (x *ImageCVEV2) GetComponentVersion() string {
+	if x != nil {
+		return x.ComponentVersion
 	}
 	return ""
 }
@@ -2705,7 +2732,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\anvdcvss\x18\n" +
 	" \x01(\x02R\anvdcvss\x125\n" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12E\n" +
-	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xfc\x05\n" +
+	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xf7\x06\n" +
 	"\n" +
 	"ImageCVEV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -2728,7 +2755,10 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\x17fix_available_timestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12\x1e\n" +
 	"\n" +
 	"datasource\x18\x11 \x01(\tR\n" +
-	"datasourceB\x0e\n" +
+	"datasource\x12%\n" +
+	"\x0erepository_cpe\x18\x12 \x01(\tR\rrepositoryCpe\x12%\n" +
+	"\x0ecomponent_name\x18\x13 \x01(\tR\rcomponentName\x12+\n" +
+	"\x11component_version\x18\x14 \x01(\tR\x10componentVersionB\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +

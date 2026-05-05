@@ -54,6 +54,10 @@ message ImageCVEFinding {
   google.protobuf.Timestamp first_image_occurrence = 6;
   // state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE.
   VulnerabilityState state = 7;
+  // severity is the component-specific severity, which may differ from the CVE base severity.
+  VulnerabilitySeverity severity = 8;
+  // cvss is the component-specific CVSS score.
+  float cvss = 9;
 }
 
 // ImageVulnCounts holds CVE counts broken down by severity and fixability.
@@ -90,12 +94,34 @@ message ImageScan {
 // it against the cve field in ImageCVEFinding to avoid re-fetching repeated data.
 message CVEDetail {
   string cve = 1;
+  // severity is the highest severity across all affected components and sources.
   VulnerabilitySeverity severity = 2;
+  // cvss is the highest CVSS score across all affected components and sources.
   float cvss = 3;
   string summary = 4;
   string link = 5;
   google.protobuf.Timestamp published_on = 6;
   float epss_probability = 7;
+  // cvss_scores provides per-source CVSS breakdowns (e.g. Red Hat, NVD, OSV).
+  repeated CVSSScore cvss_scores = 8;
+  float epss_percentile = 9;
+  Advisory advisory = 10;
+  // component_overrides lists per-component/product entries where severity or CVSS
+  // differs from the base values above. This captures cases like Red Hat scoring
+  // a CVE differently for specific packages or product streams.
+  repeated CVEComponentOverride component_overrides = 11;
+}
+
+// CVEComponentOverride captures per-component CVSS/severity that differs from
+// the CVE base values. Keyed by (component_name, component_version, repository_cpe).
+message CVEComponentOverride {
+  string component_name = 1;
+  string component_version = 2;
+  // repository_cpe is the CPE of the product stream (e.g. "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*").
+  string repository_cpe = 3;
+  VulnerabilitySeverity severity = 4;
+  float cvss = 5;
+  repeated CVSSScore cvss_scores = 6;
 }
 
 // ExportImagesRequest is used by both the paginated and streaming image endpoints.

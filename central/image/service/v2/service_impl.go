@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	storagetov2 "github.com/stackrox/rox/central/convert/storagetov2"
 	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -144,8 +145,8 @@ func (s *serviceImpl) ListCVEs(ctx context.Context, req *v2.ExportCVEsRequest) (
 	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
 	filteredQuery = sortByCVE(filteredQuery)
 
-	// Collect all unique CVEs in a single pass.
-	unique, err := collectUniqueCVEs(ctx, s.cveDS, filteredQuery)
+	// Collect and merge all CVE rows into unique entries in a single pass.
+	unique, err := collectAndMergeCVEs(ctx, s.cveDS, filteredQuery)
 	if err != nil {
 		return nil, errors.Wrap(err, "collecting unique CVEs")
 	}
@@ -206,14 +207,30 @@ func (s *serviceImpl) ExportCVEs(req *v2.ExportCVEsRequest, srv grpc.ServerStrea
 	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
 	filteredQuery = sortByCVE(filteredQuery)
 
-	var lastSeen string
-	return s.cveDS.WalkByQuery(srv.Context(), filteredQuery, func(cve *storage.ImageCVEV2) error {
-		if id := cve.GetCveBaseInfo().GetCve(); id != lastSeen {
-			lastSeen = id
-			return srv.Send(toCVEDetail(cve))
+	var current *cveAccumulator
+	err = s.cveDS.WalkByQuery(srv.Context(), filteredQuery, func(cve *storage.ImageCVEV2) error {
+		id := cve.GetCveBaseInfo().GetCve()
+		if current == nil {
+			current = newCVEAccumulator(cve)
+			return nil
 		}
+		if current.cve != id {
+			if sendErr := srv.Send(current.toCVEDetail()); sendErr != nil {
+				return sendErr
+			}
+			current = newCVEAccumulator(cve)
+			return nil
+		}
+		current.merge(cve)
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if current != nil {
+		return srv.Send(current.toCVEDetail())
+	}
+	return nil
 }
 
 // applySinceFilter returns a query that adds a last_updated >= since predicate when since
@@ -253,34 +270,184 @@ func sortByCVE(q *v1.Query) *v1.Query {
 	return cloned
 }
 
-// collectUniqueCVEs walks all CVEs matching q (must be sorted by CVE string) and
-// returns one CVEDetail per unique CVE identifier.
-func collectUniqueCVEs(ctx context.Context, ds imagecvev2DS.DataStore, q *v1.Query) ([]*v2.CVEDetail, error) {
-	var (
-		results  []*v2.CVEDetail
-		lastSeen string
-	)
+// collectAndMergeCVEs walks all CVEs matching q (must be sorted by CVE string),
+// merges rows for the same CVE identifier, and returns one CVEDetail per unique CVE.
+func collectAndMergeCVEs(ctx context.Context, ds imagecvev2DS.DataStore, q *v1.Query) ([]*v2.CVEDetail, error) {
+	accumulators := make(map[string]*cveAccumulator)
+	var order []string
+
 	err := ds.WalkByQuery(ctx, q, func(cve *storage.ImageCVEV2) error {
-		if id := cve.GetCveBaseInfo().GetCve(); id != lastSeen {
-			lastSeen = id
-			results = append(results, toCVEDetail(cve))
+		id := cve.GetCveBaseInfo().GetCve()
+		acc, exists := accumulators[id]
+		if !exists {
+			acc = newCVEAccumulator(cve)
+			accumulators[id] = acc
+			order = append(order, id)
+		} else {
+			acc.merge(cve)
 		}
 		return nil
 	})
-	return results, err
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*v2.CVEDetail, 0, len(order))
+	for _, id := range order {
+		results = append(results, accumulators[id].toCVEDetail())
+	}
+	return results, nil
 }
 
-// toCVEDetail converts a storage.ImageCVEV2 to the API CVEDetail message.
-func toCVEDetail(cve *storage.ImageCVEV2) *v2.CVEDetail {
-	return &v2.CVEDetail{
-		Cve:             cve.GetCveBaseInfo().GetCve(),
-		Severity:        convertSeverity(cve.GetSeverity()),
-		Cvss:            cve.GetCvss(),
-		Summary:         cve.GetCveBaseInfo().GetSummary(),
-		Link:            cve.GetCveBaseInfo().GetLink(),
-		PublishedOn:     cve.GetCveBaseInfo().GetPublishedOn(),
-		EpssProbability: cve.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+type componentKey struct {
+	name    string
+	version string
+	cpe     string
+}
+
+type componentOverride struct {
+	severity    storage.VulnerabilitySeverity
+	cvss        float32
+	cvssMetrics map[storage.Source]*storage.CVSSScore
+}
+
+type cveAccumulator struct {
+	cve             string
+	maxSeverity     storage.VulnerabilitySeverity
+	maxCvss         float32
+	summary         string
+	link            string
+	publishedOn     *storage.CVEInfo
+	epssProbability float32
+	epssPercentile  float32
+	advisory        *storage.Advisory
+	cvssMetrics     map[storage.Source]*storage.CVSSScore
+	overrides       map[componentKey]*componentOverride
+	cveBaseInfo     *storage.CVEInfo
+}
+
+func newCVEAccumulator(cve *storage.ImageCVEV2) *cveAccumulator {
+	acc := &cveAccumulator{
+		cve:             cve.GetCveBaseInfo().GetCve(),
+		maxSeverity:     cve.GetSeverity(),
+		maxCvss:         cve.GetCvss(),
+		summary:         cve.GetCveBaseInfo().GetSummary(),
+		link:            cve.GetCveBaseInfo().GetLink(),
+		epssProbability: cve.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+		epssPercentile:  cve.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
+		advisory:        cve.GetAdvisory(),
+		cvssMetrics:     make(map[storage.Source]*storage.CVSSScore),
+		overrides:       make(map[componentKey]*componentOverride),
+		cveBaseInfo:     cve.GetCveBaseInfo(),
 	}
+	for _, m := range cve.GetCveBaseInfo().GetCvssMetrics() {
+		acc.cvssMetrics[m.GetSource()] = m
+	}
+	acc.recordComponent(cve)
+	return acc
+}
+
+func (a *cveAccumulator) recordComponent(cve *storage.ImageCVEV2) {
+	key := componentKey{
+		name:    cve.GetComponentName(),
+		version: cve.GetComponentVersion(),
+		cpe:     cve.GetRepositoryCpe(),
+	}
+	if _, exists := a.overrides[key]; !exists {
+		override := &componentOverride{
+			severity:    cve.GetSeverity(),
+			cvss:        cve.GetCvss(),
+			cvssMetrics: make(map[storage.Source]*storage.CVSSScore),
+		}
+		for _, m := range cve.GetCveBaseInfo().GetCvssMetrics() {
+			override.cvssMetrics[m.GetSource()] = m
+		}
+		a.overrides[key] = override
+	}
+}
+
+func (a *cveAccumulator) merge(cve *storage.ImageCVEV2) {
+	if cve.GetSeverity() > a.maxSeverity {
+		a.maxSeverity = cve.GetSeverity()
+	}
+	if cve.GetCvss() > a.maxCvss {
+		a.maxCvss = cve.GetCvss()
+	}
+	if a.summary == "" {
+		a.summary = cve.GetCveBaseInfo().GetSummary()
+	}
+	if a.link == "" {
+		a.link = cve.GetCveBaseInfo().GetLink()
+	}
+	if cve.GetCveBaseInfo().GetEpss().GetEpssProbability() > a.epssProbability {
+		a.epssProbability = cve.GetCveBaseInfo().GetEpss().GetEpssProbability()
+		a.epssPercentile = cve.GetCveBaseInfo().GetEpss().GetEpssPercentile()
+	}
+	if a.advisory == nil {
+		a.advisory = cve.GetAdvisory()
+	}
+	for _, m := range cve.GetCveBaseInfo().GetCvssMetrics() {
+		if existing, ok := a.cvssMetrics[m.GetSource()]; !ok || cvssScoreValue(m) > cvssScoreValue(existing) {
+			a.cvssMetrics[m.GetSource()] = m
+		}
+	}
+
+	a.recordComponent(cve)
+}
+
+func cvssScoreValue(score *storage.CVSSScore) float32 {
+	if v3 := score.GetCvssv3(); v3 != nil {
+		return v3.GetScore()
+	}
+	if v2Score := score.GetCvssv2(); v2Score != nil {
+		return v2Score.GetScore()
+	}
+	return 0
+}
+
+func (a *cveAccumulator) toCVEDetail() *v2.CVEDetail {
+	detail := &v2.CVEDetail{
+		Cve:             a.cve,
+		Severity:        convertSeverity(a.maxSeverity),
+		Cvss:            a.maxCvss,
+		Summary:         a.summary,
+		Link:            a.link,
+		PublishedOn:     a.cveBaseInfo.GetPublishedOn(),
+		EpssProbability: a.epssProbability,
+		EpssPercentile:  a.epssPercentile,
+		CvssScores:      convertCVSSMetrics(a.cvssMetrics),
+	}
+	if a.advisory != nil {
+		detail.Advisory = &v2.Advisory{
+			Name: a.advisory.GetName(),
+			Link: a.advisory.GetLink(),
+		}
+	}
+	for key, override := range a.overrides {
+		if override.severity == a.maxSeverity && override.cvss == a.maxCvss {
+			continue
+		}
+		detail.ComponentOverrides = append(detail.ComponentOverrides, &v2.CVEComponentOverride{
+			ComponentName:    key.name,
+			ComponentVersion: key.version,
+			RepositoryCpe:    key.cpe,
+			Severity:         convertSeverity(override.severity),
+			Cvss:             override.cvss,
+			CvssScores:       convertCVSSMetrics(override.cvssMetrics),
+		})
+	}
+	return detail
+}
+
+func convertCVSSMetrics(metrics map[storage.Source]*storage.CVSSScore) []*v2.CVSSScore {
+	if len(metrics) == 0 {
+		return nil
+	}
+	scores := make([]*storage.CVSSScore, 0, len(metrics))
+	for _, m := range metrics {
+		scores = append(scores, m)
+	}
+	return storagetov2.ScoreVersions(scores)
 }
 
 // toImageInfo converts a storage.Image to the v2 API ImageInfo projection.
@@ -339,6 +506,8 @@ func toImageScan(img *storage.Image) *v2.ImageScan {
 				FixedBy:              vuln.GetFixedBy(),
 				FirstImageOccurrence: vuln.GetFirstImageOccurrence(),
 				State:                convertVulnState(vuln.GetState()),
+				Severity:             convertSeverity(vuln.GetSeverity()),
+				Cvss:                 vuln.GetCvss(),
 			})
 		}
 	}

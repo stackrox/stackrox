@@ -270,6 +270,62 @@
     }
   },
   "definitions": {
+    "CVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -298,6 +354,17 @@
         }
       }
     },
+    "v2Advisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
     "v2AggregateBy": {
       "type": "object",
       "properties": {
@@ -319,11 +386,18 @@
       ],
       "default": "UNSET"
     },
-    "v2CVEDetail": {
+    "v2CVEComponentOverride": {
       "type": "object",
       "properties": {
-        "cve": {
+        "componentName": {
           "type": "string"
+        },
+        "componentVersion": {
+          "type": "string"
+        },
+        "repositoryCpe": {
+          "type": "string",
+          "description": "repository_cpe is the CPE of the product stream (e.g. \"cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*\")."
         },
         "severity": {
           "$ref": "#/definitions/v2VulnerabilitySeverity"
@@ -331,6 +405,31 @@
         "cvss": {
           "type": "number",
           "format": "float"
+        },
+        "cvssScores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVSSScore"
+          }
+        }
+      },
+      "description": "CVEComponentOverride captures per-component CVSS/severity that differs from\nthe CVE base values. Keyed by (component_name, component_version, repository_cpe)."
+    },
+    "v2CVEDetail": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity",
+          "description": "severity is the highest severity across all affected components and sources."
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float",
+          "description": "cvss is the highest CVSS score across all affected components and sources."
         },
         "summary": {
           "type": "string"
@@ -345,9 +444,101 @@
         "epssProbability": {
           "type": "number",
           "format": "float"
+        },
+        "cvssScores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVSSScore"
+          },
+          "description": "cvss_scores provides per-source CVSS breakdowns (e.g. Red Hat, NVD, OSV)."
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
+        },
+        "componentOverrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVEComponentOverride"
+          },
+          "description": "component_overrides lists per-component/product entries where severity or CVSS\ndiffers from the base values above. This captures cases like Red Hat scoring\na CVE differently for specific packages or product streams."
         }
       },
       "description": "CVEDetail holds vulnerability metadata that is shared across all images and components\nwhere the CVE appears. Consumers can build a local dictionary keyed by cve and join\nit against the cve field in ImageCVEFinding to avoid re-fetching repeated data."
+    },
+    "v2CVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/v2Source"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/v2CVSSV3"
+        }
+      }
+    },
+    "v2CVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/CVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/v2CVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/CVSSV3Severity"
+        }
+      }
+    },
+    "v2CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
     },
     "v2ImageCVEFinding": {
       "type": "object",
@@ -375,6 +566,15 @@
         "state": {
           "$ref": "#/definitions/v2VulnerabilityState",
           "description": "state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE."
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity",
+          "description": "severity is the component-specific severity, which may differ from the CVE base severity."
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float",
+          "description": "cvss is the component-specific CVSS score."
         }
       },
       "description": "ImageCVEFinding records that a specific CVE affects a specific component in an image.\nIt intentionally omits CVE-level metadata (summary, CVSS, severity) to avoid\nduplication across images; those details are available via the /cves endpoint."
@@ -638,6 +838,16 @@
           "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
+    },
+    "v2Source": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
     },
     "v2VulnerabilitySeverity": {
       "type": "string",

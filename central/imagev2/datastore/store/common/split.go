@@ -63,6 +63,8 @@ func splitCVEs(imageID string, componentID string, embedded *storage.EmbeddedIma
 		if err != nil {
 			return nil, err
 		}
+		convertedCVE.ComponentName = embedded.GetName()
+		convertedCVE.ComponentVersion = embedded.GetVersion()
 
 		cp := CVEPartsV2{
 			CVEV2: convertedCVE,

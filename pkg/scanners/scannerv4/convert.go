@@ -26,14 +26,14 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 		ScannerVersion:  scannerVersion,
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: os(report),
-		Components:      components(metadata, report),
+		Components:      components(metadata, report, report.GetContents().GetRepositories()),
 		Notes:           notes(report),
 	}
 
 	return scan
 }
 
-func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
+func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, repositories map[string]*v4.Repository) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
 	pkgs := report.GetContents().GetPackages()
@@ -63,7 +63,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Name:         pkg.GetName(),
 			Version:      pkg.GetVersion(),
 			Architecture: pkg.GetArch(),
-			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report)),
+			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report), repositories),
 			FixedBy:      pkg.GetFixedInVersion(),
 			Source:       source,
 			Location:     location,
@@ -173,7 +173,7 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 	}
 }
 
-func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string) []*storage.EmbeddedVulnerability {
+func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string, repositories map[string]*v4.Repository) []*storage.EmbeddedVulnerability {
 	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
@@ -207,6 +207,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Epss:                  epss(ccVuln.GetEpssMetrics()),
 			FixAvailableTimestamp: ccVuln.GetFixedDate(),
 			Datasource:            vulnDataSource(ccVuln, envOS),
+			RepositoryCpe:         repositoryCPE(repositories, ccVuln.GetRepositoryId()),
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
@@ -257,6 +258,13 @@ func vulnDataSource(ccVuln *v4.VulnerabilityReport_Vulnerability, os string) str
 		ccVuln.GetUpdater(),
 		os,
 	}, vulnDataSourceDelimiter)
+}
+
+func repositoryCPE(repositories map[string]*v4.Repository, repoID string) string {
+	if repo, ok := repositories[repoID]; ok {
+		return repo.GetCpe()
+	}
+	return ""
 }
 
 func advisory(advisory *v4.VulnerabilityReport_Advisory) *storage.Advisory {

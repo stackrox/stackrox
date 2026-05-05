@@ -200,6 +200,12 @@ message ImageCVEV2 {
   // Timestamp when the fix for this CVE was made available according to the sources.
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
   string datasource = 17;
+  // repository_cpe is the CPE of the repository (product stream) this vulnerability was matched against.
+  string repository_cpe = 18;
+  // component_name is the name of the component this CVE was found in.
+  string component_name = 19;
+  // component_version is the version of the component this CVE was found in.
+  string component_version = 20;
 }
 
 message NodeCVE {

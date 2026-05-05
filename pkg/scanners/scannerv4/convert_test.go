@@ -557,7 +557,7 @@ func TestComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := components(tc.metadata, tc.report)
+			got := components(tc.metadata, tc.report, tc.report.GetContents().GetRepositories())
 			protoassert.SlicesEqual(t, tc.expected, got, fmt.Sprintf("expected: %+#v\ngot: %+#v", tc.expected, got))
 		})
 	}
