@@ -142,13 +142,13 @@ export const SkipContainerType: CompoundSearchFilterAttribute = {
     inputType: 'select',
     featureFlagDependency: ['ROX_INIT_CONTAINER_SUPPORT'],
     inputProps: {
-        options: [{ value: 'SKIP_INIT', label: 'Init containers' }],
+        options: [{ value: 'SKIP_INIT', label: 'Skip init containers' }],
     },
 };
 
 export const SkipImageLayers: CompoundSearchFilterAttribute = {
-    displayName: 'Image layer filter',
-    filterChipLabel: 'Image layer filter',
+    displayName: 'Skip image layer',
+    filterChipLabel: 'Skip image layer',
     searchTerm: 'Skip Image Layers',
     inputType: 'select',
     featureFlagDependency: ['ROX_POLICY_FILTERS_UI'],

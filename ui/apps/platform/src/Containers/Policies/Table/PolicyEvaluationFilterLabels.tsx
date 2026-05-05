@@ -1,13 +1,9 @@
 import type { ReactElement } from 'react';
 import { Label, LabelGroup } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { EvaluationFilter } from 'types/policy.proto';
-
-type FilterLabel = {
-    text: string;
-    color: 'blue' | 'orange';
-};
 
 type PolicyEvaluationFilterLabelsProps = {
     evaluationFilter: EvaluationFilter | undefined;
@@ -22,7 +18,10 @@ function PolicyEvaluationFilterLabels({
         return null;
     }
 
-    const labels: FilterLabel[] = [];
+    const labels: {
+        text: string;
+        color: LabelProps['color'];
+    }[] = [];
 
     if (
         isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT') &&

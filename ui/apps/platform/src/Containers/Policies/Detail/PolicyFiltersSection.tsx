@@ -22,7 +22,7 @@ function getContainerTypeLabel(
 
     const skipped = evaluationFilter?.skipContainerTypes ?? [];
     if (skipped.includes('SKIP_INIT')) {
-        return 'Skipping init containers';
+        return 'Skip init containers';
     }
     return null;
 }

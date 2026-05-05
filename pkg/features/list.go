@@ -139,6 +139,7 @@ var (
 
 	// PolicyFiltersUI enables the image layer and init container filters UI in the policy editor.
 	PolicyFiltersUI = registerFeature("Enable image layer and init container filters UI in the policy editor", "ROX_POLICY_FILTERS_UI")
+
 	// BackgroundMigration enables long-running background migrations in Central
 	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
 )
