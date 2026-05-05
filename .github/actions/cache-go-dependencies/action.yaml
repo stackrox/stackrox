@@ -72,6 +72,16 @@ runs:
           after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
+    - name: Clear test cache on non-PR runs
+      if: github.event_name != 'pull_request'
+      run: |
+        # Non-PR runs (master, release branches, nightlies) always run tests
+        # from scratch to catch real failures. go clean -testcache removes
+        # cached test results while preserving the compilation cache.
+        go clean -testcache
+        echo "Cleared test cache for fresh run"
+      shell: bash
+
     - name: Stabilize file mtimes for Go test cache
       run: |
         # Go's test cache validates inputs by (path, size, mtime) — NOT content.

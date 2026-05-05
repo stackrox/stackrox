@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/lock"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -21,12 +22,24 @@ const (
 	mappingClientTimeout = 30 * time.Second
 )
 
-func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
+// RunDaemon runs the indexer on an interval. lockPath is used for a non-blocking exclusive flock
+// around each scan so concurrent agent processes do not overload the host.
+func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client, lockPath string) error {
 	if err := applyRandomDelay(ctx, cfg.MaxInitialReportDelay); err != nil {
 		return fmt.Errorf("delaying initial index: %w", err)
 	}
 
-	if err := RunSingle(ctx, cfg, client); err != nil {
+	scanFn := func() error { return RunSingle(ctx, cfg, client) }
+	onLockHeld := func() error {
+		log.Info("roxagent scan skipped because another agent is already running")
+		return nil
+	}
+	onLockUnavailable := func(lockErr error) error {
+		log.Warnf("could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load", lockPath, lockErr)
+		return scanFn()
+	}
+
+	if err := lock.RunWithLock(lockPath, scanFn, onLockHeld, onLockUnavailable); err != nil {
 		return fmt.Errorf("handling initial index: %w", err)
 	}
 
@@ -38,7 +51,7 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := RunSingle(ctx, cfg, client); err != nil {
+			if err := lock.RunWithLock(lockPath, scanFn, onLockHeld, onLockUnavailable); err != nil {
 				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
