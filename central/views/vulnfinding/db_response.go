@@ -6,8 +6,8 @@ type findingResponse struct {
 	DeploymentID     string                         `db:"deployment_id"`
 	ImageID          string                         `db:"image_sha"`
 	CVE              string                         `db:"cve"`
-	ComponentName    *string                        `db:"cve_component_name"`
-	ComponentVersion *string                        `db:"cve_component_version"`
+	ComponentName    *string                        `db:"component"`
+	ComponentVersion *string                        `db:"component_version"`
 	IsFixable        bool                           `db:"fixable"`
 	FixedBy          *string                        `db:"fixed_by"`
 	State            *storage.VulnerabilityState    `db:"vulnerability_state"`
