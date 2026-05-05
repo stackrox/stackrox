@@ -193,6 +193,7 @@ func rhelVexOpts() []updates.ManagerOption {
 				// We only need to configure the Factory (which has the CompressedFileTimeout field).
 				switch cfg := i.(type) {
 				case *vex.FactoryConfig:
+					cfg.URL = "https://security.access.redhat.com/data/csaf/v2/vex-feed/"
 					// Configure the factory with custom timeout.
 					timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
 					if timeout != "" {
