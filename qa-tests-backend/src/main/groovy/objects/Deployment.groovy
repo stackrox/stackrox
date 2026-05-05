@@ -58,6 +58,7 @@ class Deployment {
     Boolean readinessProbeDefined = false
     String serviceName
     String serviceAccountName
+    List<Map<String, Object>> initContainers = []
 
     Deployment setName(String n) {
         this.name = n
@@ -329,6 +330,15 @@ class Deployment {
 
     Deployment setServiceName(String name) {
         this.serviceName = name
+        return this
+    }
+
+    Deployment addInitContainer(String name, String image, List<String> command = ["sh", "-c", "echo init done"]) {
+        Map<String, Object> spec = new HashMap<>()
+        spec.put("name", name)
+        spec.put("image", image)
+        spec.put("command", command)
+        this.initContainers.add(spec)
         return this
     }
 
