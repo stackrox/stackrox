@@ -695,7 +695,7 @@ image_prefetcher_start_set() {
     case "${KUBERNETES_PROVIDER}" in
     gke)
         flavor=vanilla
-        kubelet_image_creds=GKE
+        kubelet_image_creds="" # i.e. disabled, temporarily
         ;;
     eks|aks)
         flavor=vanilla
@@ -726,7 +726,7 @@ image_prefetcher_start_set() {
     populate_prefetcher_image_list "$name" "${image_list}"
 
     # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
-    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
+    if [[ "${kubelet_image_creds}" != "GKE" ]]; then
         local filtered_image_list
         filtered_image_list=$(mktemp)
         info "Filtering out *.gcr.io images for non-GKE cluster"
