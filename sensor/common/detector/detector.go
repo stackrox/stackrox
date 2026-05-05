@@ -78,7 +78,7 @@ type Detector interface {
 func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore,
-	clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider, factSettingsMgr filesystem.SettingsManager) Detector {
+	clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider, factSettingsMgr *filesystem.FactSettingsManager) Detector {
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
@@ -179,7 +179,7 @@ type detectorImpl struct {
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	auditLogUpdater    updater.Component
-	factSettingsMgr    filesystem.SettingsManager
+	factSettingsMgr    *filesystem.FactSettingsManager
 
 	detectorStopper   concurrency.Stopper
 	auditStopper      concurrency.Stopper

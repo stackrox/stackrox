@@ -99,7 +99,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		namespaces = storeProvider.Namespaces()
 	}
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
-	var factSettingsMgr filesystem.SettingsManager
+	var factSettingsMgr *filesystem.FactSettingsManager
 	if features.SensitiveFileActivity.Enabled() {
 		factSettingsMgr = filesystem.NewFactSettingsManager()
 	}

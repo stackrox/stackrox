@@ -20,11 +20,11 @@ func TestFactSettingsManager(t *testing.T) {
 type FactSettingsManagerSuite struct {
 	suite.Suite
 
-	mgr *factSettingsManager
+	mgr *FactSettingsManager
 }
 
 func (s *FactSettingsManagerSuite) SetupTest() {
-	s.mgr = NewFactSettingsManager().(*factSettingsManager)
+	s.mgr = NewFactSettingsManager()
 }
 
 func newTestPolicy(disabled bool, eventSource storage.EventSource, paths ...string) *storage.Policy {
@@ -109,6 +109,21 @@ func (s *FactSettingsManagerSuite) TestExtractPaths() {
 			},
 			expected: nil,
 		},
+		"node event policies included": {
+			policies: []*storage.Policy{
+				newTestPolicy(false, storage.EventSource_NODE_EVENT, "/etc/passwd"),
+			},
+			expected: []string{"/etc/passwd"},
+		},
+		// Audit log policies can't have file access fields in practice (the
+		// policy validator rejects them), but we test with one to verify the
+		// event source filter works independently of the other checks.
+		"audit log event policies excluded": {
+			policies: []*storage.Policy{
+				newTestPolicy(false, storage.EventSource_AUDIT_LOG_EVENT, "/etc/passwd"),
+			},
+			expected: nil,
+		},
 	}
 
 	for name, tc := range cases {
@@ -163,4 +178,44 @@ func (s *FactSettingsManagerSuite) TestUpdatePathsSorted() {
 	var settings sensor.FactSettings
 	require.NoError(s.T(), yaml.Unmarshal([]byte(cm.Data[factConfigFile]), &settings))
 	assert.Equal(s.T(), []string{"/a/path", "/m/path", "/z/path"}, settings.GetPaths())
+}
+
+func (s *FactSettingsManagerSuite) TestUpdateTransitionToZeroPaths() {
+	s.mgr.UpdateFactSettings([]*storage.Policy{
+		newTestPolicy(false, storage.EventSource_DEPLOYMENT_EVENT, "/etc/passwd"),
+	})
+	it := s.mgr.ConfigMapStream().Iterator(false)
+	require.NotNil(s.T(), it.Value())
+
+	// Remove all file access policies.
+	s.mgr.UpdateFactSettings(nil)
+	<-it.Done()
+	it = it.TryNext()
+
+	cm := it.Value()
+	require.NotNil(s.T(), cm)
+
+	var settings sensor.FactSettings
+	require.NoError(s.T(), yaml.Unmarshal([]byte(cm.Data[factConfigFile]), &settings))
+	assert.Empty(s.T(), settings.GetPaths())
+}
+
+func (s *FactSettingsManagerSuite) TestUpdateTransitionFromZeroPaths() {
+	// Start with no policies.
+	s.mgr.UpdateFactSettings(nil)
+	it := s.mgr.ConfigMapStream().Iterator(false)
+
+	// Add a policy.
+	s.mgr.UpdateFactSettings([]*storage.Policy{
+		newTestPolicy(false, storage.EventSource_DEPLOYMENT_EVENT, "/etc/passwd"),
+	})
+	<-it.Done()
+	it = it.TryNext()
+
+	cm := it.Value()
+	require.NotNil(s.T(), cm)
+
+	var settings sensor.FactSettings
+	require.NoError(s.T(), yaml.Unmarshal([]byte(cm.Data[factConfigFile]), &settings))
+	assert.Equal(s.T(), []string{"/etc/passwd"}, settings.GetPaths())
 }
