@@ -30,7 +30,7 @@ filter_container_file() {
     local pattern=""
     for p in "${OPTIONAL_HOST_PATHS[@]}"; do
         if [ ! -e "$p" ]; then
-            echo "  Stripping mount for missing path: $p" >&2
+            echo "Stripping mount for missing path: $p" >&2
             pattern="${pattern:+${pattern}|}Volume=${p}[:/]"
         fi
     done
