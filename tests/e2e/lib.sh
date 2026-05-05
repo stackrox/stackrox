@@ -642,7 +642,7 @@ install_the_cnv_operator() {
         wait_for_object_to_appear openshift-cnv ds/virt-handler 600
         oc rollout status ds/virt-handler -n openshift-cnv --timeout=600s
     else
-        info "Reusing existing CNV operator deployment from $csv subscription"
+        info "Reusing existing CNV operator deployment from ${csv} subscription"
         wait_for_object_to_appear openshift-cnv deploy/hco-operator 900
         oc rollout status deploy/hco-operator -n openshift-cnv --timeout=300s
         wait_for_object_to_appear openshift-cnv deploy/virt-operator 600

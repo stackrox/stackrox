@@ -111,8 +111,10 @@ ensure_virtctl_binary() {
 # - Used only as fallback when the verified helper fails in this VM-scanning lane.
 # - Accepted here for ephemeral CI clusters where the URL comes from cluster-managed
 #   ConsoleCLIDownload metadata but cluster trust material can still be unreliable.
-# - Never use this helper for persistent/shared environments.
+# - Never use this helper for persistent/shared environments; this is enforced by
+#   rejecting the fallback outside CI.
 ensure_virtctl_binary_insecure() {
     _use_existing_virtctl_binary_if_available && return
+    is_CI || die "Secure virtctl download failed; refusing insecure curl -k fallback outside CI. Set VIRTCTL_PATH or fix cluster ingress trust material."
     _download_and_install_virtctl -k
 }
