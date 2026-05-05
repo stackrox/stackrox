@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
@@ -95,8 +95,6 @@ type matcherImpl struct {
 
 // NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
-
 	var success bool
 
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
@@ -145,7 +143,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		csafEnabled = true
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
-	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
+	slog.InfoContext(ctx, "CSAF enrichment", "enabled", csafEnabled)
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
@@ -204,7 +202,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// Start the vulnerability updater.
 	go func() {
 		if err := vulnUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+			slog.ErrorContext(ctx, "vulnerability updater failed", "reason", err)
 		}
 	}()
 
@@ -222,12 +220,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 }
 
 func (m *matcherImpl) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetVulnerabilities")
 	return m.libVuln.Scan(ctx, ir)
 }
 
 func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetLastVulnerabilityUpdate")
 	return m.metadataStore.GetLastVulnerabilityUpdate(ctx)
 }
 
@@ -241,7 +237,6 @@ func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, op
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
 	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
