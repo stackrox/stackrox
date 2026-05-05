@@ -149,6 +149,64 @@ func (v *vmCVECoreViewImpl) CountBySeverityPerVM(ctx context.Context, q *v1.Quer
 	return ret, nil
 }
 
+func (v *vmCVECoreViewImpl) CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return 0, err
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	result, err := pgSearch.RunSelectOneForSchema[affectedVMCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.VirtualMachineID))
+	if err != nil {
+		return 0, err
+	}
+	if result == nil {
+		return 0, nil
+	}
+	return result.VMCount, nil
+}
+
+func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return nil, err
+	}
+
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.VirtualMachineID).Proto(),
+		search.NewQuerySelect(search.VirtualMachineName).Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.Fixable).AggrFunc(aggregatefunc.Count).
+			Filter("fixable_count",
+				search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.GuestOS).Proto(),
+		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.VirtualMachineID.String(),
+			search.VirtualMachineName.String(),
+			search.GuestOS.String(),
+		},
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	var ret []AffectedVMCore
+	err := pgSearch.RunSelectRequestForSchemaFn[affectedVMResponse](queryCtx, v.db, v.schema, cloned, func(r *affectedVMResponse) error {
+		ret = append(ret, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
