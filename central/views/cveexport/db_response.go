@@ -12,13 +12,13 @@ type cveExportResponse struct {
 	Severity        *storage.VulnerabilitySeverity `db:"severity_max"`
 	CVSS            *float32                       `db:"cvss_max"`
 	NVDCVSS         *float32                       `db:"nvd_cvss_max"`
-	Summary         *string                        `db:"cve_summary"`
-	Link            *string                        `db:"cve_link"`
+	Summary         *string                        `db:"cve_summary_min"`
+	Link            *string                        `db:"cve_link_min"`
 	PublishedOn     *time.Time                     `db:"cve_published_on_min"`
 	EPSSProbability *float32                       `db:"epss_probability_max"`
 	EPSSPercentile  *float32                       `db:"epss_percentile_max"`
-	AdvisoryName    *string                        `db:"advisory_name"`
-	AdvisoryLink    *string                        `db:"advisory_link"`
+	AdvisoryName    *string                        `db:"advisory_name_min"`
+	AdvisoryLink    *string                        `db:"advisory_link_min"`
 }
 
 func (c *cveExportResponse) GetCVE() string {

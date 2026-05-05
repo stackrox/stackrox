@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/views/cveexport"
 	"github.com/stackrox/rox/central/views/vulnfinding"
@@ -20,9 +21,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given datastores and views.
-func New(images imageDS.DataStore, cves cveexport.CveExportView, findings vulnfinding.FindingView) Service {
+func New(images imageDS.DataStore, cveDS imagecvev2DS.DataStore, cves cveexport.CveExportView, findings vulnfinding.FindingView) Service {
 	return &serviceImpl{
 		imageDS:     images,
+		cveDS:       cveDS,
 		cveView:     cves,
 		findingView: findings,
 	}

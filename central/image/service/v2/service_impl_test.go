@@ -52,7 +52,7 @@ func TestCveExportToDetail(t *testing.T) {
 		advisoryLink:    "https://access.redhat.com/errata/RHSA-2024:1234",
 	}
 
-	detail := cveExportToDetail(input)
+	detail := cveExportToDetail(input, nil)
 
 	assert.Equal(t, "CVE-2024-1234", detail.GetCve())
 	assert.Equal(t, v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, detail.GetSeverity())
@@ -72,7 +72,7 @@ func TestCveExportToDetail_NoAdvisory(t *testing.T) {
 		cvss:     3.0,
 	}
 
-	detail := cveExportToDetail(input)
+	detail := cveExportToDetail(input, nil)
 
 	assert.Equal(t, "CVE-2024-5678", detail.GetCve())
 	assert.Nil(t, detail.GetAdvisory())

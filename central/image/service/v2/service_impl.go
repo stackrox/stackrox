@@ -6,6 +6,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	storagetov2 "github.com/stackrox/rox/central/convert/storagetov2"
+	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/views/cveexport"
 	"github.com/stackrox/rox/central/views/vulnfinding"
@@ -40,6 +42,7 @@ type serviceImpl struct {
 	v2.UnimplementedImageExportServiceServer
 
 	imageDS     datastore.DataStore
+	cveDS       imagecvev2DS.DataStore
 	cveView     cveexport.CveExportView
 	findingView vulnfinding.FindingView
 }
@@ -113,7 +116,8 @@ func (s *serviceImpl) ListCVEs(ctx context.Context, req *v2.ExportCVEsRequest) (
 
 	results := make([]*v2.CVEDetail, 0, len(cves))
 	for _, c := range cves {
-		results = append(results, cveExportToDetail(c))
+		scores := s.cvssMetricsForCVE(ctx, c.GetCVEIDs())
+		results = append(results, cveExportToDetail(c, scores))
 	}
 
 	return &v2.ListCVEsResponse{
@@ -183,7 +187,8 @@ func (s *serviceImpl) ExportCVEs(req *v2.ExportCVEsRequest, srv grpc.ServerStrea
 		return errors.Wrap(err, "querying CVEs")
 	}
 	for _, c := range cves {
-		if sendErr := srv.Send(cveExportToDetail(c)); sendErr != nil {
+		scores := s.cvssMetricsForCVE(srv.Context(), c.GetCVEIDs())
+		if sendErr := srv.Send(cveExportToDetail(c, scores)); sendErr != nil {
 			return sendErr
 		}
 	}
@@ -212,7 +217,7 @@ func (s *serviceImpl) ExportFindings(req *v2.ExportFindingsRequest, srv grpc.Ser
 }
 
 // cveExportToDetail converts a SQL-aggregated CveExport to the API CVEDetail message.
-func cveExportToDetail(c cveexport.CveExport) *v2.CVEDetail {
+func cveExportToDetail(c cveexport.CveExport, cvssScores []*v2.CVSSScore) *v2.CVEDetail {
 	detail := &v2.CVEDetail{
 		Cve:             c.GetCVE(),
 		Severity:        convertSeverity(c.GetSeverity()),
@@ -221,6 +226,7 @@ func cveExportToDetail(c cveexport.CveExport) *v2.CVEDetail {
 		Link:            c.GetLink(),
 		EpssProbability: c.GetEPSSProbability(),
 		EpssPercentile:  c.GetEPSSPercentile(),
+		CvssScores:      cvssScores,
 	}
 	if t := c.GetPublishedOn(); t != nil {
 		detail.PublishedOn = timestamppb.New(*t)
@@ -232,6 +238,26 @@ func cveExportToDetail(c cveexport.CveExport) *v2.CVEDetail {
 		}
 	}
 	return detail
+}
+
+// cvssMetricsForCVE fetches one representative blob for a CVE and extracts
+// the per-source CVSS metrics. This is needed because cvss_metrics is a
+// repeated nested field that cannot be represented as a SQL column.
+func (s *serviceImpl) cvssMetricsForCVE(ctx context.Context, cveIDs []string) []*v2.CVSSScore {
+	if len(cveIDs) == 0 {
+		return nil
+	}
+	q := search.NewQueryBuilder().AddDocIDs(cveIDs[0]).ProtoQuery()
+	var result []*v2.CVSSScore
+	_ = s.cveDS.WalkByQuery(ctx, q, func(cve *storage.ImageCVEV2) error {
+		metrics := cve.GetCveBaseInfo().GetCvssMetrics()
+		if len(metrics) > 0 {
+			result = storagetov2.ScoreVersions(metrics)
+			return errors.New("stop")
+		}
+		return nil
+	})
+	return result
 }
 
 // findingToProto converts a SQL-queried Finding to the API VulnerabilityFinding message.

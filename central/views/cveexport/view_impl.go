@@ -86,13 +86,13 @@ func withSelectCVEExportQuery(q *v1.Query, cveIDsToFilter []string) *v1.Query {
 		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.CVESummary).Proto(),
-		search.NewQuerySelect(search.CVELink).Proto(),
+		search.NewQuerySelect(search.CVESummary).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.CVELink).AggrFunc(aggregatefunc.Min).Proto(),
 		search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.EPSSPercentile).AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.AdvisoryName).Proto(),
-		search.NewQuerySelect(search.AdvisoryLink).Proto(),
+		search.NewQuerySelect(search.AdvisoryName).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.AdvisoryLink).AggrFunc(aggregatefunc.Min).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},

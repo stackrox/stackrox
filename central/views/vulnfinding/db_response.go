@@ -6,14 +6,14 @@ type findingResponse struct {
 	DeploymentID     string                         `db:"deployment_id"`
 	ImageID          string                         `db:"image_sha"`
 	CVE              string                         `db:"cve"`
-	ComponentName    string                         `db:"cve_component_name"`
-	ComponentVersion string                         `db:"cve_component_version"`
+	ComponentName    *string                        `db:"cve_component_name"`
+	ComponentVersion *string                        `db:"cve_component_version"`
 	IsFixable        bool                           `db:"fixable"`
 	FixedBy          *string                        `db:"fixed_by"`
 	State            *storage.VulnerabilityState    `db:"vulnerability_state"`
 	Severity         *storage.VulnerabilitySeverity `db:"severity"`
 	CVSS             *float32                       `db:"cvss"`
-	RepositoryCPE    string                         `db:"repository_cpe"`
+	RepositoryCPE    *string                        `db:"repository_cpe"`
 }
 
 func (f *findingResponse) GetDeploymentID() string {
@@ -29,11 +29,17 @@ func (f *findingResponse) GetCVE() string {
 }
 
 func (f *findingResponse) GetComponentName() string {
-	return f.ComponentName
+	if f.ComponentName == nil {
+		return ""
+	}
+	return *f.ComponentName
 }
 
 func (f *findingResponse) GetComponentVersion() string {
-	return f.ComponentVersion
+	if f.ComponentVersion == nil {
+		return ""
+	}
+	return *f.ComponentVersion
 }
 
 func (f *findingResponse) GetIsFixable() bool {
@@ -69,7 +75,10 @@ func (f *findingResponse) GetCVSS() float32 {
 }
 
 func (f *findingResponse) GetRepositoryCPE() string {
-	return f.RepositoryCPE
+	if f.RepositoryCPE == nil {
+		return ""
+	}
+	return *f.RepositoryCPE
 }
 
 type findingCountResponse struct {
