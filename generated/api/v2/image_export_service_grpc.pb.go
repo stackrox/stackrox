@@ -19,12 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ImageExportService_ListImages_FullMethodName   = "/v2.ImageExportService/ListImages"
-	ImageExportService_ListScans_FullMethodName    = "/v2.ImageExportService/ListScans"
-	ImageExportService_ListCVEs_FullMethodName     = "/v2.ImageExportService/ListCVEs"
-	ImageExportService_ExportImages_FullMethodName = "/v2.ImageExportService/ExportImages"
-	ImageExportService_ExportScans_FullMethodName  = "/v2.ImageExportService/ExportScans"
-	ImageExportService_ExportCVEs_FullMethodName   = "/v2.ImageExportService/ExportCVEs"
+	ImageExportService_ListImages_FullMethodName     = "/v2.ImageExportService/ListImages"
+	ImageExportService_ListFindings_FullMethodName   = "/v2.ImageExportService/ListFindings"
+	ImageExportService_ListCVEs_FullMethodName       = "/v2.ImageExportService/ListCVEs"
+	ImageExportService_ExportImages_FullMethodName   = "/v2.ImageExportService/ExportImages"
+	ImageExportService_ExportFindings_FullMethodName = "/v2.ImageExportService/ExportFindings"
+	ImageExportService_ExportCVEs_FullMethodName     = "/v2.ImageExportService/ExportCVEs"
 )
 
 // ImageExportServiceClient is the client API for ImageExportService service.
@@ -38,9 +38,9 @@ type ImageExportServiceClient interface {
 	// ListImages returns a paginated list of image data (metadata, layers, and installed
 	// components). Use ExportImages for large unbounded datasets.
 	ListImages(ctx context.Context, in *ExportImagesRequest, opts ...grpc.CallOption) (*ListImagesResponse, error)
-	// ListScans returns a paginated list of image scan results and vulnerability findings.
-	// Each scan record references its image by image_id. Use ExportScans for large datasets.
-	ListScans(ctx context.Context, in *ExportScansRequest, opts ...grpc.CallOption) (*ListScansResponse, error)
+	// ListFindings returns a paginated list of vulnerability findings. Each finding
+	// represents one CVE affecting one component in one image running in one deployment.
+	ListFindings(ctx context.Context, in *ExportFindingsRequest, opts ...grpc.CallOption) (*ListFindingsResponse, error)
 	// ListCVEs returns a paginated list of unique CVE details. The cve field in each
 	// record matches the cve field in ImageCVEFinding, allowing callers to build a
 	// lookup dictionary. Use ExportCVEs for large unbounded datasets.
@@ -48,10 +48,9 @@ type ImageExportServiceClient interface {
 	// ExportImages streams image data for all images matching the query.
 	// Preferred over ListImages for large datasets that do not require pagination.
 	ExportImages(ctx context.Context, in *ExportImagesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ImageInfo], error)
-	// ExportScans streams scan results and vulnerability findings for all images matching
-	// the query. Each streamed record references its image by image_id.
-	// Preferred over ListScans for large datasets that do not require pagination.
-	ExportScans(ctx context.Context, in *ExportScansRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ImageScan], error)
+	// ExportFindings streams vulnerability findings for all images matching the query.
+	// Each finding represents one CVE in one component in one image in one deployment.
+	ExportFindings(ctx context.Context, in *ExportFindingsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[VulnerabilityFinding], error)
 	// ExportCVEs streams unique CVE details for all CVEs matching the query.
 	// Preferred over ListCVEs for large datasets that do not require pagination.
 	ExportCVEs(ctx context.Context, in *ExportCVEsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CVEDetail], error)
@@ -75,10 +74,10 @@ func (c *imageExportServiceClient) ListImages(ctx context.Context, in *ExportIma
 	return out, nil
 }
 
-func (c *imageExportServiceClient) ListScans(ctx context.Context, in *ExportScansRequest, opts ...grpc.CallOption) (*ListScansResponse, error) {
+func (c *imageExportServiceClient) ListFindings(ctx context.Context, in *ExportFindingsRequest, opts ...grpc.CallOption) (*ListFindingsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListScansResponse)
-	err := c.cc.Invoke(ctx, ImageExportService_ListScans_FullMethodName, in, out, cOpts...)
+	out := new(ListFindingsResponse)
+	err := c.cc.Invoke(ctx, ImageExportService_ListFindings_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -114,13 +113,13 @@ func (c *imageExportServiceClient) ExportImages(ctx context.Context, in *ExportI
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ImageExportService_ExportImagesClient = grpc.ServerStreamingClient[ImageInfo]
 
-func (c *imageExportServiceClient) ExportScans(ctx context.Context, in *ExportScansRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ImageScan], error) {
+func (c *imageExportServiceClient) ExportFindings(ctx context.Context, in *ExportFindingsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[VulnerabilityFinding], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ImageExportService_ServiceDesc.Streams[1], ImageExportService_ExportScans_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ImageExportService_ServiceDesc.Streams[1], ImageExportService_ExportFindings_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[ExportScansRequest, ImageScan]{ClientStream: stream}
+	x := &grpc.GenericClientStream[ExportFindingsRequest, VulnerabilityFinding]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -131,7 +130,7 @@ func (c *imageExportServiceClient) ExportScans(ctx context.Context, in *ExportSc
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ImageExportService_ExportScansClient = grpc.ServerStreamingClient[ImageScan]
+type ImageExportService_ExportFindingsClient = grpc.ServerStreamingClient[VulnerabilityFinding]
 
 func (c *imageExportServiceClient) ExportCVEs(ctx context.Context, in *ExportCVEsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CVEDetail], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -163,9 +162,9 @@ type ImageExportServiceServer interface {
 	// ListImages returns a paginated list of image data (metadata, layers, and installed
 	// components). Use ExportImages for large unbounded datasets.
 	ListImages(context.Context, *ExportImagesRequest) (*ListImagesResponse, error)
-	// ListScans returns a paginated list of image scan results and vulnerability findings.
-	// Each scan record references its image by image_id. Use ExportScans for large datasets.
-	ListScans(context.Context, *ExportScansRequest) (*ListScansResponse, error)
+	// ListFindings returns a paginated list of vulnerability findings. Each finding
+	// represents one CVE affecting one component in one image running in one deployment.
+	ListFindings(context.Context, *ExportFindingsRequest) (*ListFindingsResponse, error)
 	// ListCVEs returns a paginated list of unique CVE details. The cve field in each
 	// record matches the cve field in ImageCVEFinding, allowing callers to build a
 	// lookup dictionary. Use ExportCVEs for large unbounded datasets.
@@ -173,10 +172,9 @@ type ImageExportServiceServer interface {
 	// ExportImages streams image data for all images matching the query.
 	// Preferred over ListImages for large datasets that do not require pagination.
 	ExportImages(*ExportImagesRequest, grpc.ServerStreamingServer[ImageInfo]) error
-	// ExportScans streams scan results and vulnerability findings for all images matching
-	// the query. Each streamed record references its image by image_id.
-	// Preferred over ListScans for large datasets that do not require pagination.
-	ExportScans(*ExportScansRequest, grpc.ServerStreamingServer[ImageScan]) error
+	// ExportFindings streams vulnerability findings for all images matching the query.
+	// Each finding represents one CVE in one component in one image in one deployment.
+	ExportFindings(*ExportFindingsRequest, grpc.ServerStreamingServer[VulnerabilityFinding]) error
 	// ExportCVEs streams unique CVE details for all CVEs matching the query.
 	// Preferred over ListCVEs for large datasets that do not require pagination.
 	ExportCVEs(*ExportCVEsRequest, grpc.ServerStreamingServer[CVEDetail]) error
@@ -192,8 +190,8 @@ type UnimplementedImageExportServiceServer struct{}
 func (UnimplementedImageExportServiceServer) ListImages(context.Context, *ExportImagesRequest) (*ListImagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListImages not implemented")
 }
-func (UnimplementedImageExportServiceServer) ListScans(context.Context, *ExportScansRequest) (*ListScansResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListScans not implemented")
+func (UnimplementedImageExportServiceServer) ListFindings(context.Context, *ExportFindingsRequest) (*ListFindingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListFindings not implemented")
 }
 func (UnimplementedImageExportServiceServer) ListCVEs(context.Context, *ExportCVEsRequest) (*ListCVEsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCVEs not implemented")
@@ -201,8 +199,8 @@ func (UnimplementedImageExportServiceServer) ListCVEs(context.Context, *ExportCV
 func (UnimplementedImageExportServiceServer) ExportImages(*ExportImagesRequest, grpc.ServerStreamingServer[ImageInfo]) error {
 	return status.Error(codes.Unimplemented, "method ExportImages not implemented")
 }
-func (UnimplementedImageExportServiceServer) ExportScans(*ExportScansRequest, grpc.ServerStreamingServer[ImageScan]) error {
-	return status.Error(codes.Unimplemented, "method ExportScans not implemented")
+func (UnimplementedImageExportServiceServer) ExportFindings(*ExportFindingsRequest, grpc.ServerStreamingServer[VulnerabilityFinding]) error {
+	return status.Error(codes.Unimplemented, "method ExportFindings not implemented")
 }
 func (UnimplementedImageExportServiceServer) ExportCVEs(*ExportCVEsRequest, grpc.ServerStreamingServer[CVEDetail]) error {
 	return status.Error(codes.Unimplemented, "method ExportCVEs not implemented")
@@ -245,20 +243,20 @@ func _ImageExportService_ListImages_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageExportService_ListScans_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExportScansRequest)
+func _ImageExportService_ListFindings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportFindingsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ImageExportServiceServer).ListScans(ctx, in)
+		return srv.(ImageExportServiceServer).ListFindings(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ImageExportService_ListScans_FullMethodName,
+		FullMethod: ImageExportService_ListFindings_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ImageExportServiceServer).ListScans(ctx, req.(*ExportScansRequest))
+		return srv.(ImageExportServiceServer).ListFindings(ctx, req.(*ExportFindingsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -292,16 +290,16 @@ func _ImageExportService_ExportImages_Handler(srv interface{}, stream grpc.Serve
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ImageExportService_ExportImagesServer = grpc.ServerStreamingServer[ImageInfo]
 
-func _ImageExportService_ExportScans_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExportScansRequest)
+func _ImageExportService_ExportFindings_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExportFindingsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ImageExportServiceServer).ExportScans(m, &grpc.GenericServerStream[ExportScansRequest, ImageScan]{ServerStream: stream})
+	return srv.(ImageExportServiceServer).ExportFindings(m, &grpc.GenericServerStream[ExportFindingsRequest, VulnerabilityFinding]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ImageExportService_ExportScansServer = grpc.ServerStreamingServer[ImageScan]
+type ImageExportService_ExportFindingsServer = grpc.ServerStreamingServer[VulnerabilityFinding]
 
 func _ImageExportService_ExportCVEs_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportCVEsRequest)
@@ -326,8 +324,8 @@ var ImageExportService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ImageExportService_ListImages_Handler,
 		},
 		{
-			MethodName: "ListScans",
-			Handler:    _ImageExportService_ListScans_Handler,
+			MethodName: "ListFindings",
+			Handler:    _ImageExportService_ListFindings_Handler,
 		},
 		{
 			MethodName: "ListCVEs",
@@ -341,8 +339,8 @@ var ImageExportService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "ExportScans",
-			Handler:       _ImageExportService_ExportScans_Handler,
+			StreamName:    "ExportFindings",
+			Handler:       _ImageExportService_ExportFindings_Handler,
 			ServerStreams: true,
 		},
 		{

@@ -249,43 +249,45 @@ func (x *ImageInfo) GetLastUpdated() *timestamppb.Timestamp {
 	return nil
 }
 
-// ImageCVEFinding records that a specific CVE affects a specific component in an image.
-// It intentionally omits CVE-level metadata (summary, CVSS, severity) to avoid
-// duplication across images; those details are available via the /cves endpoint.
-type ImageCVEFinding struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// cve is the CVE identifier (e.g. "CVE-2024-12345"). Use it to look up full
-	// details in the /v2/export/cves response.
-	Cve                  string                 `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
-	ComponentName        string                 `protobuf:"bytes,2,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty"`
-	ComponentVersion     string                 `protobuf:"bytes,3,opt,name=component_version,json=componentVersion,proto3" json:"component_version,omitempty"`
-	IsFixable            bool                   `protobuf:"varint,4,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty"`
-	FixedBy              string                 `protobuf:"bytes,5,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty"`
+// VulnerabilityFinding represents a single vulnerability occurrence: one CVE affecting
+// one component in one image running in one deployment. Use the cve field to join
+// against the /v2/export/cves response for full CVE metadata.
+type VulnerabilityFinding struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	DeploymentId string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	ImageId      string                 `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	// cve is the CVE identifier (e.g. "CVE-2024-12345").
+	Cve              string `protobuf:"bytes,3,opt,name=cve,proto3" json:"cve,omitempty"`
+	ComponentName    string `protobuf:"bytes,4,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty"`
+	ComponentVersion string `protobuf:"bytes,5,opt,name=component_version,json=componentVersion,proto3" json:"component_version,omitempty"`
+	IsFixable        bool   `protobuf:"varint,6,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty"`
+	FixedBy          string `protobuf:"bytes,7,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	// state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE.
-	State VulnerabilityState `protobuf:"varint,7,opt,name=state,proto3,enum=v2.VulnerabilityState" json:"state,omitempty"`
+	State VulnerabilityState `protobuf:"varint,8,opt,name=state,proto3,enum=v2.VulnerabilityState" json:"state,omitempty"`
 	// severity is the component-specific severity, which may differ from the CVE base severity.
-	Severity VulnerabilitySeverity `protobuf:"varint,8,opt,name=severity,proto3,enum=v2.VulnerabilitySeverity" json:"severity,omitempty"`
+	Severity VulnerabilitySeverity `protobuf:"varint,9,opt,name=severity,proto3,enum=v2.VulnerabilitySeverity" json:"severity,omitempty"`
 	// cvss is the component-specific CVSS score.
-	Cvss          float32 `protobuf:"fixed32,9,opt,name=cvss,proto3" json:"cvss,omitempty"`
+	Cvss float32 `protobuf:"fixed32,10,opt,name=cvss,proto3" json:"cvss,omitempty"`
+	// repository_cpe is the CPE of the product stream this vulnerability was matched against.
+	RepositoryCpe string `protobuf:"bytes,11,opt,name=repository_cpe,json=repositoryCpe,proto3" json:"repository_cpe,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ImageCVEFinding) Reset() {
-	*x = ImageCVEFinding{}
+func (x *VulnerabilityFinding) Reset() {
+	*x = VulnerabilityFinding{}
 	mi := &file_api_v2_image_export_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ImageCVEFinding) String() string {
+func (x *VulnerabilityFinding) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImageCVEFinding) ProtoMessage() {}
+func (*VulnerabilityFinding) ProtoMessage() {}
 
-func (x *ImageCVEFinding) ProtoReflect() protoreflect.Message {
+func (x *VulnerabilityFinding) ProtoReflect() protoreflect.Message {
 	mi := &file_api_v2_image_export_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -297,293 +299,86 @@ func (x *ImageCVEFinding) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImageCVEFinding.ProtoReflect.Descriptor instead.
-func (*ImageCVEFinding) Descriptor() ([]byte, []int) {
+// Deprecated: Use VulnerabilityFinding.ProtoReflect.Descriptor instead.
+func (*VulnerabilityFinding) Descriptor() ([]byte, []int) {
 	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ImageCVEFinding) GetCve() string {
+func (x *VulnerabilityFinding) GetDeploymentId() string {
 	if x != nil {
-		return x.Cve
+		return x.DeploymentId
 	}
 	return ""
 }
 
-func (x *ImageCVEFinding) GetComponentName() string {
-	if x != nil {
-		return x.ComponentName
-	}
-	return ""
-}
-
-func (x *ImageCVEFinding) GetComponentVersion() string {
-	if x != nil {
-		return x.ComponentVersion
-	}
-	return ""
-}
-
-func (x *ImageCVEFinding) GetIsFixable() bool {
-	if x != nil {
-		return x.IsFixable
-	}
-	return false
-}
-
-func (x *ImageCVEFinding) GetFixedBy() string {
-	if x != nil {
-		return x.FixedBy
-	}
-	return ""
-}
-
-func (x *ImageCVEFinding) GetFirstImageOccurrence() *timestamppb.Timestamp {
-	if x != nil {
-		return x.FirstImageOccurrence
-	}
-	return nil
-}
-
-func (x *ImageCVEFinding) GetState() VulnerabilityState {
-	if x != nil {
-		return x.State
-	}
-	return VulnerabilityState_OBSERVED
-}
-
-func (x *ImageCVEFinding) GetSeverity() VulnerabilitySeverity {
-	if x != nil {
-		return x.Severity
-	}
-	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-}
-
-func (x *ImageCVEFinding) GetCvss() float32 {
-	if x != nil {
-		return x.Cvss
-	}
-	return 0
-}
-
-// ImageVulnCounts holds CVE counts broken down by severity and fixability.
-type ImageVulnCounts struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	CriticalTotal    int32                  `protobuf:"varint,1,opt,name=critical_total,json=criticalTotal,proto3" json:"critical_total,omitempty"`
-	CriticalFixable  int32                  `protobuf:"varint,2,opt,name=critical_fixable,json=criticalFixable,proto3" json:"critical_fixable,omitempty"`
-	ImportantTotal   int32                  `protobuf:"varint,3,opt,name=important_total,json=importantTotal,proto3" json:"important_total,omitempty"`
-	ImportantFixable int32                  `protobuf:"varint,4,opt,name=important_fixable,json=importantFixable,proto3" json:"important_fixable,omitempty"`
-	ModerateTotal    int32                  `protobuf:"varint,5,opt,name=moderate_total,json=moderateTotal,proto3" json:"moderate_total,omitempty"`
-	ModerateFixable  int32                  `protobuf:"varint,6,opt,name=moderate_fixable,json=moderateFixable,proto3" json:"moderate_fixable,omitempty"`
-	LowTotal         int32                  `protobuf:"varint,7,opt,name=low_total,json=lowTotal,proto3" json:"low_total,omitempty"`
-	LowFixable       int32                  `protobuf:"varint,8,opt,name=low_fixable,json=lowFixable,proto3" json:"low_fixable,omitempty"`
-	UnknownTotal     int32                  `protobuf:"varint,9,opt,name=unknown_total,json=unknownTotal,proto3" json:"unknown_total,omitempty"`
-	UnknownFixable   int32                  `protobuf:"varint,10,opt,name=unknown_fixable,json=unknownFixable,proto3" json:"unknown_fixable,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *ImageVulnCounts) Reset() {
-	*x = ImageVulnCounts{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ImageVulnCounts) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImageVulnCounts) ProtoMessage() {}
-
-func (x *ImageVulnCounts) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImageVulnCounts.ProtoReflect.Descriptor instead.
-func (*ImageVulnCounts) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *ImageVulnCounts) GetCriticalTotal() int32 {
-	if x != nil {
-		return x.CriticalTotal
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetCriticalFixable() int32 {
-	if x != nil {
-		return x.CriticalFixable
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetImportantTotal() int32 {
-	if x != nil {
-		return x.ImportantTotal
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetImportantFixable() int32 {
-	if x != nil {
-		return x.ImportantFixable
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetModerateTotal() int32 {
-	if x != nil {
-		return x.ModerateTotal
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetModerateFixable() int32 {
-	if x != nil {
-		return x.ModerateFixable
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetLowTotal() int32 {
-	if x != nil {
-		return x.LowTotal
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetLowFixable() int32 {
-	if x != nil {
-		return x.LowFixable
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetUnknownTotal() int32 {
-	if x != nil {
-		return x.UnknownTotal
-	}
-	return 0
-}
-
-func (x *ImageVulnCounts) GetUnknownFixable() int32 {
-	if x != nil {
-		return x.UnknownFixable
-	}
-	return 0
-}
-
-// ImageScan holds scan results and vulnerability findings for a specific image.
-// It references the image by image_id and changes whenever a new scan is performed
-// or vulnerability states are updated.
-type ImageScan struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// image_id is the unique identifier of the image this scan belongs to.
-	ImageId         string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	Digest          string                 `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
-	ScanTime        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
-	ScannerVersion  string                 `protobuf:"bytes,4,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	OperatingSystem string                 `protobuf:"bytes,5,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
-	Cves            []*ImageCVEFinding     `protobuf:"bytes,6,rep,name=cves,proto3" json:"cves,omitempty"`
-	CveCounts       *ImageVulnCounts       `protobuf:"bytes,7,opt,name=cve_counts,json=cveCounts,proto3" json:"cve_counts,omitempty"`
-	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *ImageScan) Reset() {
-	*x = ImageScan{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ImageScan) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImageScan) ProtoMessage() {}
-
-func (x *ImageScan) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImageScan.ProtoReflect.Descriptor instead.
-func (*ImageScan) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *ImageScan) GetImageId() string {
+func (x *VulnerabilityFinding) GetImageId() string {
 	if x != nil {
 		return x.ImageId
 	}
 	return ""
 }
 
-func (x *ImageScan) GetDigest() string {
+func (x *VulnerabilityFinding) GetCve() string {
 	if x != nil {
-		return x.Digest
+		return x.Cve
 	}
 	return ""
 }
 
-func (x *ImageScan) GetScanTime() *timestamppb.Timestamp {
+func (x *VulnerabilityFinding) GetComponentName() string {
 	if x != nil {
-		return x.ScanTime
-	}
-	return nil
-}
-
-func (x *ImageScan) GetScannerVersion() string {
-	if x != nil {
-		return x.ScannerVersion
+		return x.ComponentName
 	}
 	return ""
 }
 
-func (x *ImageScan) GetOperatingSystem() string {
+func (x *VulnerabilityFinding) GetComponentVersion() string {
 	if x != nil {
-		return x.OperatingSystem
+		return x.ComponentVersion
 	}
 	return ""
 }
 
-func (x *ImageScan) GetCves() []*ImageCVEFinding {
+func (x *VulnerabilityFinding) GetIsFixable() bool {
 	if x != nil {
-		return x.Cves
+		return x.IsFixable
 	}
-	return nil
+	return false
 }
 
-func (x *ImageScan) GetCveCounts() *ImageVulnCounts {
+func (x *VulnerabilityFinding) GetFixedBy() string {
 	if x != nil {
-		return x.CveCounts
+		return x.FixedBy
 	}
-	return nil
+	return ""
 }
 
-func (x *ImageScan) GetLastUpdated() *timestamppb.Timestamp {
+func (x *VulnerabilityFinding) GetState() VulnerabilityState {
 	if x != nil {
-		return x.LastUpdated
+		return x.State
 	}
-	return nil
+	return VulnerabilityState_OBSERVED
+}
+
+func (x *VulnerabilityFinding) GetSeverity() VulnerabilitySeverity {
+	if x != nil {
+		return x.Severity
+	}
+	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+func (x *VulnerabilityFinding) GetCvss() float32 {
+	if x != nil {
+		return x.Cvss
+	}
+	return 0
+}
+
+func (x *VulnerabilityFinding) GetRepositoryCpe() string {
+	if x != nil {
+		return x.RepositoryCpe
+	}
+	return ""
 }
 
 // CVEDetail holds vulnerability metadata that is shared across all images and components
@@ -614,7 +409,7 @@ type CVEDetail struct {
 
 func (x *CVEDetail) Reset() {
 	*x = CVEDetail{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[6]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -626,7 +421,7 @@ func (x *CVEDetail) String() string {
 func (*CVEDetail) ProtoMessage() {}
 
 func (x *CVEDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[6]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -639,7 +434,7 @@ func (x *CVEDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CVEDetail.ProtoReflect.Descriptor instead.
 func (*CVEDetail) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{6}
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CVEDetail) GetCve() string {
@@ -736,7 +531,7 @@ type CVEComponentOverride struct {
 
 func (x *CVEComponentOverride) Reset() {
 	*x = CVEComponentOverride{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[7]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -748,7 +543,7 @@ func (x *CVEComponentOverride) String() string {
 func (*CVEComponentOverride) ProtoMessage() {}
 
 func (x *CVEComponentOverride) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[7]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -761,7 +556,7 @@ func (x *CVEComponentOverride) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CVEComponentOverride.ProtoReflect.Descriptor instead.
 func (*CVEComponentOverride) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{7}
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CVEComponentOverride) GetComponentName() string {
@@ -818,7 +613,7 @@ type ExportImagesRequest struct {
 
 func (x *ExportImagesRequest) Reset() {
 	*x = ExportImagesRequest{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[8]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +625,7 @@ func (x *ExportImagesRequest) String() string {
 func (*ExportImagesRequest) ProtoMessage() {}
 
 func (x *ExportImagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[8]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +638,7 @@ func (x *ExportImagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportImagesRequest.ProtoReflect.Descriptor instead.
 func (*ExportImagesRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{8}
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ExportImagesRequest) GetQuery() *RawQuery {
@@ -860,31 +655,31 @@ func (x *ExportImagesRequest) GetSince() *timestamppb.Timestamp {
 	return nil
 }
 
-// ExportScansRequest is used by both the paginated and streaming scan endpoints.
-type ExportScansRequest struct {
+// ExportFindingsRequest is used by both the paginated and streaming findings endpoints.
+type ExportFindingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	// When set, only scans with last_updated >= since are returned.
+	// When set, only findings from images with last_updated >= since are returned.
 	Since         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=since,proto3" json:"since,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ExportScansRequest) Reset() {
-	*x = ExportScansRequest{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[9]
+func (x *ExportFindingsRequest) Reset() {
+	*x = ExportFindingsRequest{}
+	mi := &file_api_v2_image_export_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExportScansRequest) String() string {
+func (x *ExportFindingsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExportScansRequest) ProtoMessage() {}
+func (*ExportFindingsRequest) ProtoMessage() {}
 
-func (x *ExportScansRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[9]
+func (x *ExportFindingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_image_export_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -895,19 +690,19 @@ func (x *ExportScansRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ExportScansRequest.ProtoReflect.Descriptor instead.
-func (*ExportScansRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{9}
+// Deprecated: Use ExportFindingsRequest.ProtoReflect.Descriptor instead.
+func (*ExportFindingsRequest) Descriptor() ([]byte, []int) {
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ExportScansRequest) GetQuery() *RawQuery {
+func (x *ExportFindingsRequest) GetQuery() *RawQuery {
 	if x != nil {
 		return x.Query
 	}
 	return nil
 }
 
-func (x *ExportScansRequest) GetSince() *timestamppb.Timestamp {
+func (x *ExportFindingsRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Since
 	}
@@ -926,7 +721,7 @@ type ExportCVEsRequest struct {
 
 func (x *ExportCVEsRequest) Reset() {
 	*x = ExportCVEsRequest{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[10]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -938,7 +733,7 @@ func (x *ExportCVEsRequest) String() string {
 func (*ExportCVEsRequest) ProtoMessage() {}
 
 func (x *ExportCVEsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[10]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -951,7 +746,7 @@ func (x *ExportCVEsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportCVEsRequest.ProtoReflect.Descriptor instead.
 func (*ExportCVEsRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{10}
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ExportCVEsRequest) GetQuery() *RawQuery {
@@ -979,7 +774,7 @@ type ListImagesResponse struct {
 
 func (x *ListImagesResponse) Reset() {
 	*x = ListImagesResponse{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[11]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -991,7 +786,7 @@ func (x *ListImagesResponse) String() string {
 func (*ListImagesResponse) ProtoMessage() {}
 
 func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[11]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1004,7 +799,7 @@ func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListImagesResponse.ProtoReflect.Descriptor instead.
 func (*ListImagesResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{11}
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListImagesResponse) GetImages() []*ImageInfo {
@@ -1021,30 +816,30 @@ func (x *ListImagesResponse) GetTotalCount() int32 {
 	return 0
 }
 
-// ListScansResponse is the paginated response for ListScans.
-type ListScansResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Scans         []*ImageScan           `protobuf:"bytes,1,rep,name=scans,proto3" json:"scans,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+// ListFindingsResponse is the paginated response for ListFindings.
+type ListFindingsResponse struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Findings      []*VulnerabilityFinding `protobuf:"bytes,1,rep,name=findings,proto3" json:"findings,omitempty"`
+	TotalCount    int32                   `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListScansResponse) Reset() {
-	*x = ListScansResponse{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[12]
+func (x *ListFindingsResponse) Reset() {
+	*x = ListFindingsResponse{}
+	mi := &file_api_v2_image_export_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListScansResponse) String() string {
+func (x *ListFindingsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListScansResponse) ProtoMessage() {}
+func (*ListFindingsResponse) ProtoMessage() {}
 
-func (x *ListScansResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[12]
+func (x *ListFindingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_image_export_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1055,19 +850,19 @@ func (x *ListScansResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListScansResponse.ProtoReflect.Descriptor instead.
-func (*ListScansResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{12}
+// Deprecated: Use ListFindingsResponse.ProtoReflect.Descriptor instead.
+func (*ListFindingsResponse) Descriptor() ([]byte, []int) {
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ListScansResponse) GetScans() []*ImageScan {
+func (x *ListFindingsResponse) GetFindings() []*VulnerabilityFinding {
 	if x != nil {
-		return x.Scans
+		return x.Findings
 	}
 	return nil
 }
 
-func (x *ListScansResponse) GetTotalCount() int32 {
+func (x *ListFindingsResponse) GetTotalCount() int32 {
 	if x != nil {
 		return x.TotalCount
 	}
@@ -1086,7 +881,7 @@ type ListCVEsResponse struct {
 
 func (x *ListCVEsResponse) Reset() {
 	*x = ListCVEsResponse{}
-	mi := &file_api_v2_image_export_service_proto_msgTypes[13]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1098,7 +893,7 @@ func (x *ListCVEsResponse) String() string {
 func (*ListCVEsResponse) ProtoMessage() {}
 
 func (x *ListCVEsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_image_export_service_proto_msgTypes[13]
+	mi := &file_api_v2_image_export_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1111,7 +906,7 @@ func (x *ListCVEsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCVEsResponse.ProtoReflect.Descriptor instead.
 func (*ListCVEsResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{13}
+	return file_api_v2_image_export_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListCVEsResponse) GetCves() []*CVEDetail {
@@ -1151,41 +946,21 @@ const file_api_v2_image_export_service_proto_rawDesc = "" +
 	"\n" +
 	"components\x18\a \x03(\v2\x18.v2.ImageExportComponentR\n" +
 	"components\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\"\xfc\x02\n" +
-	"\x0fImageCVEFinding\x12\x10\n" +
-	"\x03cve\x18\x01 \x01(\tR\x03cve\x12%\n" +
-	"\x0ecomponent_name\x18\x02 \x01(\tR\rcomponentName\x12+\n" +
-	"\x11component_version\x18\x03 \x01(\tR\x10componentVersion\x12\x1d\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\"\x96\x03\n" +
+	"\x14VulnerabilityFinding\x12#\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12\x19\n" +
+	"\bimage_id\x18\x02 \x01(\tR\aimageId\x12\x10\n" +
+	"\x03cve\x18\x03 \x01(\tR\x03cve\x12%\n" +
+	"\x0ecomponent_name\x18\x04 \x01(\tR\rcomponentName\x12+\n" +
+	"\x11component_version\x18\x05 \x01(\tR\x10componentVersion\x12\x1d\n" +
 	"\n" +
-	"is_fixable\x18\x04 \x01(\bR\tisFixable\x12\x19\n" +
-	"\bfixed_by\x18\x05 \x01(\tR\afixedBy\x12P\n" +
-	"\x16first_image_occurrence\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence\x12,\n" +
-	"\x05state\x18\a \x01(\x0e2\x16.v2.VulnerabilityStateR\x05state\x125\n" +
-	"\bseverity\x18\b \x01(\x0e2\x19.v2.VulnerabilitySeverityR\bseverity\x12\x12\n" +
-	"\x04cvss\x18\t \x01(\x02R\x04cvss\"\x97\x03\n" +
-	"\x0fImageVulnCounts\x12%\n" +
-	"\x0ecritical_total\x18\x01 \x01(\x05R\rcriticalTotal\x12)\n" +
-	"\x10critical_fixable\x18\x02 \x01(\x05R\x0fcriticalFixable\x12'\n" +
-	"\x0fimportant_total\x18\x03 \x01(\x05R\x0eimportantTotal\x12+\n" +
-	"\x11important_fixable\x18\x04 \x01(\x05R\x10importantFixable\x12%\n" +
-	"\x0emoderate_total\x18\x05 \x01(\x05R\rmoderateTotal\x12)\n" +
-	"\x10moderate_fixable\x18\x06 \x01(\x05R\x0fmoderateFixable\x12\x1b\n" +
-	"\tlow_total\x18\a \x01(\x05R\blowTotal\x12\x1f\n" +
-	"\vlow_fixable\x18\b \x01(\x05R\n" +
-	"lowFixable\x12#\n" +
-	"\runknown_total\x18\t \x01(\x05R\funknownTotal\x12'\n" +
-	"\x0funknown_fixable\x18\n" +
-	" \x01(\x05R\x0eunknownFixable\"\xe7\x02\n" +
-	"\tImageScan\x12\x19\n" +
-	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12\x16\n" +
-	"\x06digest\x18\x02 \x01(\tR\x06digest\x127\n" +
-	"\tscan_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12'\n" +
-	"\x0fscanner_version\x18\x04 \x01(\tR\x0escannerVersion\x12)\n" +
-	"\x10operating_system\x18\x05 \x01(\tR\x0foperatingSystem\x12'\n" +
-	"\x04cves\x18\x06 \x03(\v2\x13.v2.ImageCVEFindingR\x04cves\x122\n" +
-	"\n" +
-	"cve_counts\x18\a \x01(\v2\x13.v2.ImageVulnCountsR\tcveCounts\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\"\xce\x03\n" +
+	"is_fixable\x18\x06 \x01(\bR\tisFixable\x12\x19\n" +
+	"\bfixed_by\x18\a \x01(\tR\afixedBy\x12,\n" +
+	"\x05state\x18\b \x01(\x0e2\x16.v2.VulnerabilityStateR\x05state\x125\n" +
+	"\bseverity\x18\t \x01(\x0e2\x19.v2.VulnerabilitySeverityR\bseverity\x12\x12\n" +
+	"\x04cvss\x18\n" +
+	" \x01(\x02R\x04cvss\x12%\n" +
+	"\x0erepository_cpe\x18\v \x01(\tR\rrepositoryCpe\"\xce\x03\n" +
 	"\tCVEDetail\x12\x10\n" +
 	"\x03cve\x18\x01 \x01(\tR\x03cve\x125\n" +
 	"\bseverity\x18\x02 \x01(\x0e2\x19.v2.VulnerabilitySeverityR\bseverity\x12\x12\n" +
@@ -1210,8 +985,8 @@ const file_api_v2_image_export_service_proto_rawDesc = "" +
 	"cvssScores\"k\n" +
 	"\x13ExportImagesRequest\x12\"\n" +
 	"\x05query\x18\x01 \x01(\v2\f.v2.RawQueryR\x05query\x120\n" +
-	"\x05since\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\"j\n" +
-	"\x12ExportScansRequest\x12\"\n" +
+	"\x05since\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\"m\n" +
+	"\x15ExportFindingsRequest\x12\"\n" +
 	"\x05query\x18\x01 \x01(\v2\f.v2.RawQueryR\x05query\x120\n" +
 	"\x05since\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\"i\n" +
 	"\x11ExportCVEsRequest\x12\"\n" +
@@ -1220,22 +995,22 @@ const file_api_v2_image_export_service_proto_rawDesc = "" +
 	"\x12ListImagesResponse\x12%\n" +
 	"\x06images\x18\x01 \x03(\v2\r.v2.ImageInfoR\x06images\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount\"Y\n" +
-	"\x11ListScansResponse\x12#\n" +
-	"\x05scans\x18\x01 \x03(\v2\r.v2.ImageScanR\x05scans\x12\x1f\n" +
+	"totalCount\"m\n" +
+	"\x14ListFindingsResponse\x124\n" +
+	"\bfindings\x18\x01 \x03(\v2\x18.v2.VulnerabilityFindingR\bfindings\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount\"V\n" +
 	"\x10ListCVEsResponse\x12!\n" +
 	"\x04cves\x18\x01 \x03(\v2\r.v2.CVEDetailR\x04cves\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount2\xc4\x03\n" +
+	"totalCount2\xe1\x03\n" +
 	"\x12ImageExportService\x12X\n" +
 	"\n" +
-	"ListImages\x12\x17.v2.ExportImagesRequest\x1a\x16.v2.ListImagesResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v2/export/images\x12T\n" +
-	"\tListScans\x12\x16.v2.ExportScansRequest\x1a\x15.v2.ListScansResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v2/export/scans\x12P\n" +
+	"ListImages\x12\x17.v2.ExportImagesRequest\x1a\x16.v2.ListImagesResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v2/export/images\x12`\n" +
+	"\fListFindings\x12\x19.v2.ExportFindingsRequest\x1a\x18.v2.ListFindingsResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v2/export/findings\x12P\n" +
 	"\bListCVEs\x12\x15.v2.ExportCVEsRequest\x1a\x14.v2.ListCVEsResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v2/export/cves\x12:\n" +
-	"\fExportImages\x12\x17.v2.ExportImagesRequest\x1a\r.v2.ImageInfo\"\x000\x01\x128\n" +
-	"\vExportScans\x12\x16.v2.ExportScansRequest\x1a\r.v2.ImageScan\"\x000\x01\x126\n" +
+	"\fExportImages\x12\x17.v2.ExportImagesRequest\x1a\r.v2.ImageInfo\"\x000\x01\x12I\n" +
+	"\x0eExportFindings\x12\x19.v2.ExportFindingsRequest\x1a\x18.v2.VulnerabilityFinding\"\x000\x01\x126\n" +
 	"\n" +
 	"ExportCVEs\x12\x15.v2.ExportCVEsRequest\x1a\r.v2.CVEDetail\"\x000\x01B'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x03b\x06proto3"
@@ -1252,74 +1027,67 @@ func file_api_v2_image_export_service_proto_rawDescGZIP() []byte {
 	return file_api_v2_image_export_service_proto_rawDescData
 }
 
-var file_api_v2_image_export_service_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_api_v2_image_export_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_api_v2_image_export_service_proto_goTypes = []any{
 	(*ImageExportLayer)(nil),      // 0: v2.ImageExportLayer
 	(*ImageExportComponent)(nil),  // 1: v2.ImageExportComponent
 	(*ImageInfo)(nil),             // 2: v2.ImageInfo
-	(*ImageCVEFinding)(nil),       // 3: v2.ImageCVEFinding
-	(*ImageVulnCounts)(nil),       // 4: v2.ImageVulnCounts
-	(*ImageScan)(nil),             // 5: v2.ImageScan
-	(*CVEDetail)(nil),             // 6: v2.CVEDetail
-	(*CVEComponentOverride)(nil),  // 7: v2.CVEComponentOverride
-	(*ExportImagesRequest)(nil),   // 8: v2.ExportImagesRequest
-	(*ExportScansRequest)(nil),    // 9: v2.ExportScansRequest
-	(*ExportCVEsRequest)(nil),     // 10: v2.ExportCVEsRequest
-	(*ListImagesResponse)(nil),    // 11: v2.ListImagesResponse
-	(*ListScansResponse)(nil),     // 12: v2.ListScansResponse
-	(*ListCVEsResponse)(nil),      // 13: v2.ListCVEsResponse
-	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
-	(VulnerabilityState)(0),       // 15: v2.VulnerabilityState
-	(VulnerabilitySeverity)(0),    // 16: v2.VulnerabilitySeverity
-	(*CVSSScore)(nil),             // 17: v2.CVSSScore
-	(*Advisory)(nil),              // 18: v2.Advisory
-	(*RawQuery)(nil),              // 19: v2.RawQuery
+	(*VulnerabilityFinding)(nil),  // 3: v2.VulnerabilityFinding
+	(*CVEDetail)(nil),             // 4: v2.CVEDetail
+	(*CVEComponentOverride)(nil),  // 5: v2.CVEComponentOverride
+	(*ExportImagesRequest)(nil),   // 6: v2.ExportImagesRequest
+	(*ExportFindingsRequest)(nil), // 7: v2.ExportFindingsRequest
+	(*ExportCVEsRequest)(nil),     // 8: v2.ExportCVEsRequest
+	(*ListImagesResponse)(nil),    // 9: v2.ListImagesResponse
+	(*ListFindingsResponse)(nil),  // 10: v2.ListFindingsResponse
+	(*ListCVEsResponse)(nil),      // 11: v2.ListCVEsResponse
+	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(VulnerabilityState)(0),       // 13: v2.VulnerabilityState
+	(VulnerabilitySeverity)(0),    // 14: v2.VulnerabilitySeverity
+	(*CVSSScore)(nil),             // 15: v2.CVSSScore
+	(*Advisory)(nil),              // 16: v2.Advisory
+	(*RawQuery)(nil),              // 17: v2.RawQuery
 }
 var file_api_v2_image_export_service_proto_depIdxs = []int32{
-	14, // 0: v2.ImageInfo.created:type_name -> google.protobuf.Timestamp
+	12, // 0: v2.ImageInfo.created:type_name -> google.protobuf.Timestamp
 	0,  // 1: v2.ImageInfo.layers:type_name -> v2.ImageExportLayer
 	1,  // 2: v2.ImageInfo.components:type_name -> v2.ImageExportComponent
-	14, // 3: v2.ImageInfo.last_updated:type_name -> google.protobuf.Timestamp
-	14, // 4: v2.ImageCVEFinding.first_image_occurrence:type_name -> google.protobuf.Timestamp
-	15, // 5: v2.ImageCVEFinding.state:type_name -> v2.VulnerabilityState
-	16, // 6: v2.ImageCVEFinding.severity:type_name -> v2.VulnerabilitySeverity
-	14, // 7: v2.ImageScan.scan_time:type_name -> google.protobuf.Timestamp
-	3,  // 8: v2.ImageScan.cves:type_name -> v2.ImageCVEFinding
-	4,  // 9: v2.ImageScan.cve_counts:type_name -> v2.ImageVulnCounts
-	14, // 10: v2.ImageScan.last_updated:type_name -> google.protobuf.Timestamp
-	16, // 11: v2.CVEDetail.severity:type_name -> v2.VulnerabilitySeverity
-	14, // 12: v2.CVEDetail.published_on:type_name -> google.protobuf.Timestamp
-	17, // 13: v2.CVEDetail.cvss_scores:type_name -> v2.CVSSScore
-	18, // 14: v2.CVEDetail.advisory:type_name -> v2.Advisory
-	7,  // 15: v2.CVEDetail.component_overrides:type_name -> v2.CVEComponentOverride
-	16, // 16: v2.CVEComponentOverride.severity:type_name -> v2.VulnerabilitySeverity
-	17, // 17: v2.CVEComponentOverride.cvss_scores:type_name -> v2.CVSSScore
-	19, // 18: v2.ExportImagesRequest.query:type_name -> v2.RawQuery
-	14, // 19: v2.ExportImagesRequest.since:type_name -> google.protobuf.Timestamp
-	19, // 20: v2.ExportScansRequest.query:type_name -> v2.RawQuery
-	14, // 21: v2.ExportScansRequest.since:type_name -> google.protobuf.Timestamp
-	19, // 22: v2.ExportCVEsRequest.query:type_name -> v2.RawQuery
-	14, // 23: v2.ExportCVEsRequest.since:type_name -> google.protobuf.Timestamp
-	2,  // 24: v2.ListImagesResponse.images:type_name -> v2.ImageInfo
-	5,  // 25: v2.ListScansResponse.scans:type_name -> v2.ImageScan
-	6,  // 26: v2.ListCVEsResponse.cves:type_name -> v2.CVEDetail
-	8,  // 27: v2.ImageExportService.ListImages:input_type -> v2.ExportImagesRequest
-	9,  // 28: v2.ImageExportService.ListScans:input_type -> v2.ExportScansRequest
-	10, // 29: v2.ImageExportService.ListCVEs:input_type -> v2.ExportCVEsRequest
-	8,  // 30: v2.ImageExportService.ExportImages:input_type -> v2.ExportImagesRequest
-	9,  // 31: v2.ImageExportService.ExportScans:input_type -> v2.ExportScansRequest
-	10, // 32: v2.ImageExportService.ExportCVEs:input_type -> v2.ExportCVEsRequest
-	11, // 33: v2.ImageExportService.ListImages:output_type -> v2.ListImagesResponse
-	12, // 34: v2.ImageExportService.ListScans:output_type -> v2.ListScansResponse
-	13, // 35: v2.ImageExportService.ListCVEs:output_type -> v2.ListCVEsResponse
-	2,  // 36: v2.ImageExportService.ExportImages:output_type -> v2.ImageInfo
-	5,  // 37: v2.ImageExportService.ExportScans:output_type -> v2.ImageScan
-	6,  // 38: v2.ImageExportService.ExportCVEs:output_type -> v2.CVEDetail
-	33, // [33:39] is the sub-list for method output_type
-	27, // [27:33] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	12, // 3: v2.ImageInfo.last_updated:type_name -> google.protobuf.Timestamp
+	13, // 4: v2.VulnerabilityFinding.state:type_name -> v2.VulnerabilityState
+	14, // 5: v2.VulnerabilityFinding.severity:type_name -> v2.VulnerabilitySeverity
+	14, // 6: v2.CVEDetail.severity:type_name -> v2.VulnerabilitySeverity
+	12, // 7: v2.CVEDetail.published_on:type_name -> google.protobuf.Timestamp
+	15, // 8: v2.CVEDetail.cvss_scores:type_name -> v2.CVSSScore
+	16, // 9: v2.CVEDetail.advisory:type_name -> v2.Advisory
+	5,  // 10: v2.CVEDetail.component_overrides:type_name -> v2.CVEComponentOverride
+	14, // 11: v2.CVEComponentOverride.severity:type_name -> v2.VulnerabilitySeverity
+	15, // 12: v2.CVEComponentOverride.cvss_scores:type_name -> v2.CVSSScore
+	17, // 13: v2.ExportImagesRequest.query:type_name -> v2.RawQuery
+	12, // 14: v2.ExportImagesRequest.since:type_name -> google.protobuf.Timestamp
+	17, // 15: v2.ExportFindingsRequest.query:type_name -> v2.RawQuery
+	12, // 16: v2.ExportFindingsRequest.since:type_name -> google.protobuf.Timestamp
+	17, // 17: v2.ExportCVEsRequest.query:type_name -> v2.RawQuery
+	12, // 18: v2.ExportCVEsRequest.since:type_name -> google.protobuf.Timestamp
+	2,  // 19: v2.ListImagesResponse.images:type_name -> v2.ImageInfo
+	3,  // 20: v2.ListFindingsResponse.findings:type_name -> v2.VulnerabilityFinding
+	4,  // 21: v2.ListCVEsResponse.cves:type_name -> v2.CVEDetail
+	6,  // 22: v2.ImageExportService.ListImages:input_type -> v2.ExportImagesRequest
+	7,  // 23: v2.ImageExportService.ListFindings:input_type -> v2.ExportFindingsRequest
+	8,  // 24: v2.ImageExportService.ListCVEs:input_type -> v2.ExportCVEsRequest
+	6,  // 25: v2.ImageExportService.ExportImages:input_type -> v2.ExportImagesRequest
+	7,  // 26: v2.ImageExportService.ExportFindings:input_type -> v2.ExportFindingsRequest
+	8,  // 27: v2.ImageExportService.ExportCVEs:input_type -> v2.ExportCVEsRequest
+	9,  // 28: v2.ImageExportService.ListImages:output_type -> v2.ListImagesResponse
+	10, // 29: v2.ImageExportService.ListFindings:output_type -> v2.ListFindingsResponse
+	11, // 30: v2.ImageExportService.ListCVEs:output_type -> v2.ListCVEsResponse
+	2,  // 31: v2.ImageExportService.ExportImages:output_type -> v2.ImageInfo
+	3,  // 32: v2.ImageExportService.ExportFindings:output_type -> v2.VulnerabilityFinding
+	4,  // 33: v2.ImageExportService.ExportCVEs:output_type -> v2.CVEDetail
+	28, // [28:34] is the sub-list for method output_type
+	22, // [22:28] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_image_export_service_proto_init() }
@@ -1336,7 +1104,7 @@ func file_api_v2_image_export_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_image_export_service_proto_rawDesc), len(file_api_v2_image_export_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

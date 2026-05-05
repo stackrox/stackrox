@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	storagetov2 "github.com/stackrox/rox/central/convert/storagetov2"
 	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -30,10 +31,10 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Image)): {
 			v2.ImageExportService_ListImages_FullMethodName,
-			v2.ImageExportService_ListScans_FullMethodName,
+			v2.ImageExportService_ListFindings_FullMethodName,
 			v2.ImageExportService_ListCVEs_FullMethodName,
 			v2.ImageExportService_ExportImages_FullMethodName,
-			v2.ImageExportService_ExportScans_FullMethodName,
+			v2.ImageExportService_ExportFindings_FullMethodName,
 			v2.ImageExportService_ExportCVEs_FullMethodName,
 		},
 	})
@@ -42,11 +43,9 @@ var (
 type serviceImpl struct {
 	v2.UnimplementedImageExportServiceServer
 
-	// imageDS is the mapping datastore used by the v1 image service. It handles
-	// both the legacy images table and the imagev2 table transparently, so it works
-	// regardless of the ROX_FLATTEN_IMAGE_DATA feature flag.
-	imageDS imageDS.DataStore
-	cveDS   imagecvev2DS.DataStore
+	imageDS      imageDS.DataStore
+	cveDS        imagecvev2DS.DataStore
+	deploymentDS deploymentDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -99,37 +98,41 @@ func (s *serviceImpl) ListImages(ctx context.Context, req *v2.ExportImagesReques
 	}, nil
 }
 
-// ListScans returns a paginated list of image scan results and vulnerability findings.
-// Each scan record is linked to its image via image_id.
-func (s *serviceImpl) ListScans(ctx context.Context, req *v2.ExportScansRequest) (*v2.ListScansResponse, error) {
+// ListFindings returns a paginated list of vulnerability findings. Each finding
+// represents one CVE affecting one component in one image running in one deployment.
+func (s *serviceImpl) ListFindings(ctx context.Context, req *v2.ExportFindingsRequest) (*v2.ListFindingsResponse, error) {
 	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing input query")
 	}
 
 	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
-	paginated.FillPaginationV2(filteredQuery, req.GetQuery().GetPagination(), defaultPageSize)
 
-	countQuery := filteredQuery.CloneVT()
-	countQuery.Pagination = nil
-	totalCount, err := s.imageDS.Count(ctx, countQuery)
+	var findings []*v2.VulnerabilityFinding
+	err = s.imageDS.WalkByQuery(ctx, filteredQuery, func(img *storage.Image) error {
+		deploymentIDs, lookupErr := s.deploymentIDsForImage(ctx, img.GetId())
+		if lookupErr != nil {
+			return lookupErr
+		}
+		findings = append(findings, toFindings(img, deploymentIDs)...)
+		return nil
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "counting images")
+		return nil, errors.Wrap(err, "collecting findings")
 	}
 
-	images, err := s.imageDS.SearchRawImages(ctx, filteredQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "searching images")
+	p := req.GetQuery().GetPagination()
+	offset := int(p.GetOffset())
+	limit := int(p.GetLimit())
+	if limit <= 0 || limit > defaultPageSize {
+		limit = defaultPageSize
 	}
+	start := min(offset, len(findings))
+	end := min(start+limit, len(findings))
 
-	results := make([]*v2.ImageScan, 0, len(images))
-	for _, img := range images {
-		results = append(results, toImageScan(img))
-	}
-
-	return &v2.ListScansResponse{
-		Scans:      results,
-		TotalCount: int32(totalCount),
+	return &v2.ListFindingsResponse{
+		Findings:   findings[start:end],
+		TotalCount: int32(len(findings)),
 	}, nil
 }
 
@@ -181,9 +184,9 @@ func (s *serviceImpl) ExportImages(req *v2.ExportImagesRequest, srv grpc.ServerS
 	})
 }
 
-// ExportScans streams image scan results and vulnerability findings for all images
-// matching the query. Each streamed record is linked to its image via image_id.
-func (s *serviceImpl) ExportScans(req *v2.ExportScansRequest, srv grpc.ServerStreamingServer[v2.ImageScan]) error {
+// ExportFindings streams vulnerability findings for all images matching the query.
+// Each finding represents one CVE in one component in one image in one deployment.
+func (s *serviceImpl) ExportFindings(req *v2.ExportFindingsRequest, srv grpc.ServerStreamingServer[v2.VulnerabilityFinding]) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return errors.Wrap(err, "parsing input query")
@@ -192,7 +195,16 @@ func (s *serviceImpl) ExportScans(req *v2.ExportScansRequest, srv grpc.ServerStr
 	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
 
 	return s.imageDS.WalkByQuery(srv.Context(), filteredQuery, func(img *storage.Image) error {
-		return srv.Send(toImageScan(img))
+		deploymentIDs, lookupErr := s.deploymentIDsForImage(srv.Context(), img.GetId())
+		if lookupErr != nil {
+			return lookupErr
+		}
+		for _, f := range toFindings(img, deploymentIDs) {
+			if sendErr := srv.Send(f); sendErr != nil {
+				return sendErr
+			}
+		}
+		return nil
 	})
 }
 
@@ -491,78 +503,47 @@ func toImageInfo(img *storage.Image) *v2.ImageInfo {
 	}
 }
 
-// toImageScan converts a storage.Image to the v2 API ImageScan projection.
-// CVE findings contain only the finding-specific fields (component reference, fixability,
-// state). Full CVE metadata is available separately via the /cves endpoint.
-func toImageScan(img *storage.Image) *v2.ImageScan {
-	var cves []*v2.ImageCVEFinding
-	for _, comp := range img.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			cves = append(cves, &v2.ImageCVEFinding{
-				Cve:                  vuln.GetCve(),
-				ComponentName:        comp.GetName(),
-				ComponentVersion:     comp.GetVersion(),
-				IsFixable:            vuln.GetSetFixedBy() != nil,
-				FixedBy:              vuln.GetFixedBy(),
-				FirstImageOccurrence: vuln.GetFirstImageOccurrence(),
-				State:                convertVulnState(vuln.GetState()),
-				Severity:             convertSeverity(vuln.GetSeverity()),
-				Cvss:                 vuln.GetCvss(),
-			})
-		}
+// deploymentIDsForImage returns the IDs of all deployments that reference the given image.
+func (s *serviceImpl) deploymentIDsForImage(ctx context.Context, imageID string) ([]string, error) {
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+	results, err := s.deploymentDS.Search(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "looking up deployments for image")
 	}
-
-	return &v2.ImageScan{
-		// In the legacy model, id is the image SHA which also serves as the digest.
-		ImageId:         img.GetId(),
-		Digest:          img.GetId(),
-		ScanTime:        img.GetScan().GetScanTime(),
-		ScannerVersion:  img.GetScan().GetScannerVersion(),
-		OperatingSystem: img.GetScan().GetOperatingSystem(),
-		Cves:            cves,
-		CveCounts:       computeVulnCounts(img.GetScan().GetComponents()),
-		LastUpdated:     img.GetLastUpdated(),
+	ids := make([]string, 0, len(results))
+	for _, r := range results {
+		ids = append(ids, r.ID)
 	}
+	return ids, nil
 }
 
-// computeVulnCounts tallies CVE counts per severity by iterating the scan components.
-// storage.Image does not cache per-severity counts the way ImageV2.ScanStats does,
-// so we compute them on the fly from the embedded vulnerability list.
-func computeVulnCounts(components []*storage.EmbeddedImageScanComponent) *v2.ImageVulnCounts {
-	counts := &v2.ImageVulnCounts{}
-	for _, comp := range components {
+// toFindings converts a storage.Image into flat VulnerabilityFinding messages,
+// one per (deployment, component, vuln) tuple.
+func toFindings(img *storage.Image, deploymentIDs []string) []*v2.VulnerabilityFinding {
+	if len(deploymentIDs) == 0 {
+		return nil
+	}
+	var findings []*v2.VulnerabilityFinding
+	for _, comp := range img.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
-			fixable := vuln.GetSetFixedBy() != nil
-			switch vuln.GetSeverity() {
-			case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-				counts.CriticalTotal++
-				if fixable {
-					counts.CriticalFixable++
-				}
-			case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-				counts.ImportantTotal++
-				if fixable {
-					counts.ImportantFixable++
-				}
-			case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-				counts.ModerateTotal++
-				if fixable {
-					counts.ModerateFixable++
-				}
-			case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-				counts.LowTotal++
-				if fixable {
-					counts.LowFixable++
-				}
-			default:
-				counts.UnknownTotal++
-				if fixable {
-					counts.UnknownFixable++
-				}
+			for _, deployID := range deploymentIDs {
+				findings = append(findings, &v2.VulnerabilityFinding{
+					DeploymentId:     deployID,
+					ImageId:          img.GetId(),
+					Cve:              vuln.GetCve(),
+					ComponentName:    comp.GetName(),
+					ComponentVersion: comp.GetVersion(),
+					IsFixable:        vuln.GetSetFixedBy() != nil,
+					FixedBy:          vuln.GetFixedBy(),
+					State:            convertVulnState(vuln.GetState()),
+					Severity:         convertSeverity(vuln.GetSeverity()),
+					Cvss:             vuln.GetCvss(),
+					RepositoryCpe:    vuln.GetRepositoryCpe(),
+				})
 			}
 		}
 	}
-	return counts
+	return findings
 }
 
 // convertSeverity maps storage.VulnerabilitySeverity to the v2 API enum.

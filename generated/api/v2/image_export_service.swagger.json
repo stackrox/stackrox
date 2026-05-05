@@ -100,6 +100,90 @@
         ]
       }
     },
+    "/v2/export/findings": {
+      "get": {
+        "summary": "ListFindings returns a paginated list of vulnerability findings. Each finding\nrepresents one CVE affecting one component in one image running in one deployment.",
+        "operationId": "ImageExportService_ListFindings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListFindingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "since",
+            "description": "When set, only findings from images with last_updated >= since are returned.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "ImageExportService"
+        ]
+      }
+    },
     "/v2/export/images": {
       "get": {
         "summary": "ListImages returns a paginated list of image data (metadata, layers, and installed\ncomponents). Use ExportImages for large unbounded datasets.",
@@ -173,90 +257,6 @@
           {
             "name": "since",
             "description": "When set, only images with last_updated >= since are returned.",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          }
-        ],
-        "tags": [
-          "ImageExportService"
-        ]
-      }
-    },
-    "/v2/export/scans": {
-      "get": {
-        "summary": "ListScans returns a paginated list of image scan results and vulnerability findings.\nEach scan record references its image by image_id. Use ExportScans for large datasets.",
-        "operationId": "ImageExportService_ListScans",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ListScansResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "query.query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "query.pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "since",
-            "description": "When set, only scans with last_updated >= since are returned.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -540,45 +540,6 @@
       ],
       "default": "UNCHANGED"
     },
-    "v2ImageCVEFinding": {
-      "type": "object",
-      "properties": {
-        "cve": {
-          "type": "string",
-          "description": "cve is the CVE identifier (e.g. \"CVE-2024-12345\"). Use it to look up full\ndetails in the /v2/export/cves response."
-        },
-        "componentName": {
-          "type": "string"
-        },
-        "componentVersion": {
-          "type": "string"
-        },
-        "isFixable": {
-          "type": "boolean"
-        },
-        "fixedBy": {
-          "type": "string"
-        },
-        "firstImageOccurrence": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "state": {
-          "$ref": "#/definitions/v2VulnerabilityState",
-          "description": "state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE."
-        },
-        "severity": {
-          "$ref": "#/definitions/v2VulnerabilitySeverity",
-          "description": "severity is the component-specific severity, which may differ from the CVE base severity."
-        },
-        "cvss": {
-          "type": "number",
-          "format": "float",
-          "description": "cvss is the component-specific CVSS score."
-        }
-      },
-      "description": "ImageCVEFinding records that a specific CVE affects a specific component in an image.\nIt intentionally omits CVE-level metadata (summary, CVSS, severity) to avoid\nduplication across images; those details are available via the /cves endpoint."
-    },
     "v2ImageExportComponent": {
       "type": "object",
       "properties": {
@@ -654,89 +615,6 @@
       },
       "description": "ImageInfo holds image properties that change infrequently: the image digest,\nmetadata, filesystem layers, and the list of installed software components."
     },
-    "v2ImageScan": {
-      "type": "object",
-      "properties": {
-        "imageId": {
-          "type": "string",
-          "description": "image_id is the unique identifier of the image this scan belongs to."
-        },
-        "digest": {
-          "type": "string"
-        },
-        "scanTime": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "scannerVersion": {
-          "type": "string"
-        },
-        "operatingSystem": {
-          "type": "string"
-        },
-        "cves": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v2ImageCVEFinding"
-          }
-        },
-        "cveCounts": {
-          "$ref": "#/definitions/v2ImageVulnCounts"
-        },
-        "lastUpdated": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "description": "ImageScan holds scan results and vulnerability findings for a specific image.\nIt references the image by image_id and changes whenever a new scan is performed\nor vulnerability states are updated."
-    },
-    "v2ImageVulnCounts": {
-      "type": "object",
-      "properties": {
-        "criticalTotal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "criticalFixable": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "importantTotal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "importantFixable": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "moderateTotal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "moderateFixable": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "lowTotal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "lowFixable": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "unknownTotal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "unknownFixable": {
-          "type": "integer",
-          "format": "int32"
-        }
-      },
-      "description": "ImageVulnCounts holds CVE counts broken down by severity and fixability."
-    },
     "v2ListCVEsResponse": {
       "type": "object",
       "properties": {
@@ -754,6 +632,23 @@
       },
       "description": "ListCVEsResponse is the paginated response for ListCVEs.\nEach entry is unique by cve identifier."
     },
+    "v2ListFindingsResponse": {
+      "type": "object",
+      "properties": {
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VulnerabilityFinding"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ListFindingsResponse is the paginated response for ListFindings."
+    },
     "v2ListImagesResponse": {
       "type": "object",
       "properties": {
@@ -770,23 +665,6 @@
         }
       },
       "description": "ListImagesResponse is the paginated response for ListImages."
-    },
-    "v2ListScansResponse": {
-      "type": "object",
-      "properties": {
-        "scans": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v2ImageScan"
-          }
-        },
-        "totalCount": {
-          "type": "integer",
-          "format": "int32"
-        }
-      },
-      "description": "ListScansResponse is the paginated response for ListScans."
     },
     "v2Pagination": {
       "type": "object",
@@ -848,6 +726,51 @@
         "SOURCE_NVD"
       ],
       "default": "SOURCE_UNKNOWN"
+    },
+    "v2VulnerabilityFinding": {
+      "type": "object",
+      "properties": {
+        "deploymentId": {
+          "type": "string"
+        },
+        "imageId": {
+          "type": "string"
+        },
+        "cve": {
+          "type": "string",
+          "description": "cve is the CVE identifier (e.g. \"CVE-2024-12345\")."
+        },
+        "componentName": {
+          "type": "string"
+        },
+        "componentVersion": {
+          "type": "string"
+        },
+        "isFixable": {
+          "type": "boolean"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/v2VulnerabilityState",
+          "description": "state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE."
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity",
+          "description": "severity is the component-specific severity, which may differ from the CVE base severity."
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float",
+          "description": "cvss is the component-specific CVSS score."
+        },
+        "repositoryCpe": {
+          "type": "string",
+          "description": "repository_cpe is the CPE of the product stream this vulnerability was matched against."
+        }
+      },
+      "description": "VulnerabilityFinding represents a single vulnerability occurrence: one CVE affecting\none component in one image running in one deployment. Use the cve field to join\nagainst the /v2/export/cves response for full CVE metadata."
     },
     "v2VulnerabilitySeverity": {
       "type": "string",

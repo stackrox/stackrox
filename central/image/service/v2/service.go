@@ -4,6 +4,7 @@ import (
 	"context"
 
 	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -19,9 +20,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given datastores.
-func New(images imageDS.DataStore, cves imagecvev2DS.DataStore) Service {
+func New(images imageDS.DataStore, cves imagecvev2DS.DataStore, deployments deploymentDS.DataStore) Service {
 	return &serviceImpl{
-		imageDS: images,
-		cveDS:   cves,
+		imageDS:      images,
+		cveDS:        cves,
+		deploymentDS: deployments,
 	}
 }

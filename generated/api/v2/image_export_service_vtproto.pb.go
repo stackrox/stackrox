@@ -102,20 +102,22 @@ func (m *ImageInfo) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ImageCVEFinding) CloneVT() *ImageCVEFinding {
+func (m *VulnerabilityFinding) CloneVT() *VulnerabilityFinding {
 	if m == nil {
-		return (*ImageCVEFinding)(nil)
+		return (*VulnerabilityFinding)(nil)
 	}
-	r := new(ImageCVEFinding)
+	r := new(VulnerabilityFinding)
+	r.DeploymentId = m.DeploymentId
+	r.ImageId = m.ImageId
 	r.Cve = m.Cve
 	r.ComponentName = m.ComponentName
 	r.ComponentVersion = m.ComponentVersion
 	r.IsFixable = m.IsFixable
 	r.FixedBy = m.FixedBy
-	r.FirstImageOccurrence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstImageOccurrence).CloneVT())
 	r.State = m.State
 	r.Severity = m.Severity
 	r.Cvss = m.Cvss
+	r.RepositoryCpe = m.RepositoryCpe
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -123,63 +125,7 @@ func (m *ImageCVEFinding) CloneVT() *ImageCVEFinding {
 	return r
 }
 
-func (m *ImageCVEFinding) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *ImageVulnCounts) CloneVT() *ImageVulnCounts {
-	if m == nil {
-		return (*ImageVulnCounts)(nil)
-	}
-	r := new(ImageVulnCounts)
-	r.CriticalTotal = m.CriticalTotal
-	r.CriticalFixable = m.CriticalFixable
-	r.ImportantTotal = m.ImportantTotal
-	r.ImportantFixable = m.ImportantFixable
-	r.ModerateTotal = m.ModerateTotal
-	r.ModerateFixable = m.ModerateFixable
-	r.LowTotal = m.LowTotal
-	r.LowFixable = m.LowFixable
-	r.UnknownTotal = m.UnknownTotal
-	r.UnknownFixable = m.UnknownFixable
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *ImageVulnCounts) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *ImageScan) CloneVT() *ImageScan {
-	if m == nil {
-		return (*ImageScan)(nil)
-	}
-	r := new(ImageScan)
-	r.ImageId = m.ImageId
-	r.Digest = m.Digest
-	r.ScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ScanTime).CloneVT())
-	r.ScannerVersion = m.ScannerVersion
-	r.OperatingSystem = m.OperatingSystem
-	r.CveCounts = m.CveCounts.CloneVT()
-	r.LastUpdated = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdated).CloneVT())
-	if rhs := m.Cves; rhs != nil {
-		tmpContainer := make([]*ImageCVEFinding, len(rhs))
-		for k, v := range rhs {
-			tmpContainer[k] = v.CloneVT()
-		}
-		r.Cves = tmpContainer
-	}
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *ImageScan) CloneMessageVT() proto.Message {
+func (m *VulnerabilityFinding) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -268,11 +214,11 @@ func (m *ExportImagesRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ExportScansRequest) CloneVT() *ExportScansRequest {
+func (m *ExportFindingsRequest) CloneVT() *ExportFindingsRequest {
 	if m == nil {
-		return (*ExportScansRequest)(nil)
+		return (*ExportFindingsRequest)(nil)
 	}
-	r := new(ExportScansRequest)
+	r := new(ExportFindingsRequest)
 	r.Query = m.Query.CloneVT()
 	r.Since = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Since).CloneVT())
 	if len(m.unknownFields) > 0 {
@@ -282,7 +228,7 @@ func (m *ExportScansRequest) CloneVT() *ExportScansRequest {
 	return r
 }
 
-func (m *ExportScansRequest) CloneMessageVT() proto.Message {
+func (m *ExportFindingsRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -328,18 +274,18 @@ func (m *ListImagesResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ListScansResponse) CloneVT() *ListScansResponse {
+func (m *ListFindingsResponse) CloneVT() *ListFindingsResponse {
 	if m == nil {
-		return (*ListScansResponse)(nil)
+		return (*ListFindingsResponse)(nil)
 	}
-	r := new(ListScansResponse)
+	r := new(ListFindingsResponse)
 	r.TotalCount = m.TotalCount
-	if rhs := m.Scans; rhs != nil {
-		tmpContainer := make([]*ImageScan, len(rhs))
+	if rhs := m.Findings; rhs != nil {
+		tmpContainer := make([]*VulnerabilityFinding, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.Scans = tmpContainer
+		r.Findings = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -348,7 +294,7 @@ func (m *ListScansResponse) CloneVT() *ListScansResponse {
 	return r
 }
 
-func (m *ListScansResponse) CloneMessageVT() proto.Message {
+func (m *ListFindingsResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -500,10 +446,16 @@ func (this *ImageInfo) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ImageCVEFinding) EqualVT(that *ImageCVEFinding) bool {
+func (this *VulnerabilityFinding) EqualVT(that *VulnerabilityFinding) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
+		return false
+	}
+	if this.DeploymentId != that.DeploymentId {
+		return false
+	}
+	if this.ImageId != that.ImageId {
 		return false
 	}
 	if this.Cve != that.Cve {
@@ -521,9 +473,6 @@ func (this *ImageCVEFinding) EqualVT(that *ImageCVEFinding) bool {
 	if this.FixedBy != that.FixedBy {
 		return false
 	}
-	if !(*timestamppb1.Timestamp)(this.FirstImageOccurrence).EqualVT((*timestamppb1.Timestamp)(that.FirstImageOccurrence)) {
-		return false
-	}
 	if this.State != that.State {
 		return false
 	}
@@ -533,111 +482,14 @@ func (this *ImageCVEFinding) EqualVT(that *ImageCVEFinding) bool {
 	if this.Cvss != that.Cvss {
 		return false
 	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *ImageCVEFinding) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageCVEFinding)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *ImageVulnCounts) EqualVT(that *ImageVulnCounts) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.CriticalTotal != that.CriticalTotal {
-		return false
-	}
-	if this.CriticalFixable != that.CriticalFixable {
-		return false
-	}
-	if this.ImportantTotal != that.ImportantTotal {
-		return false
-	}
-	if this.ImportantFixable != that.ImportantFixable {
-		return false
-	}
-	if this.ModerateTotal != that.ModerateTotal {
-		return false
-	}
-	if this.ModerateFixable != that.ModerateFixable {
-		return false
-	}
-	if this.LowTotal != that.LowTotal {
-		return false
-	}
-	if this.LowFixable != that.LowFixable {
-		return false
-	}
-	if this.UnknownTotal != that.UnknownTotal {
-		return false
-	}
-	if this.UnknownFixable != that.UnknownFixable {
+	if this.RepositoryCpe != that.RepositoryCpe {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ImageVulnCounts) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageVulnCounts)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *ImageScan) EqualVT(that *ImageScan) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.ImageId != that.ImageId {
-		return false
-	}
-	if this.Digest != that.Digest {
-		return false
-	}
-	if !(*timestamppb1.Timestamp)(this.ScanTime).EqualVT((*timestamppb1.Timestamp)(that.ScanTime)) {
-		return false
-	}
-	if this.ScannerVersion != that.ScannerVersion {
-		return false
-	}
-	if this.OperatingSystem != that.OperatingSystem {
-		return false
-	}
-	if len(this.Cves) != len(that.Cves) {
-		return false
-	}
-	for i, vx := range this.Cves {
-		vy := that.Cves[i]
-		if p, q := vx, vy; p != q {
-			if p == nil {
-				p = &ImageCVEFinding{}
-			}
-			if q == nil {
-				q = &ImageCVEFinding{}
-			}
-			if !p.EqualVT(q) {
-				return false
-			}
-		}
-	}
-	if !this.CveCounts.EqualVT(that.CveCounts) {
-		return false
-	}
-	if !(*timestamppb1.Timestamp)(this.LastUpdated).EqualVT((*timestamppb1.Timestamp)(that.LastUpdated)) {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *ImageScan) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageScan)
+func (this *VulnerabilityFinding) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*VulnerabilityFinding)
 	if !ok {
 		return false
 	}
@@ -790,7 +642,7 @@ func (this *ExportImagesRequest) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ExportScansRequest) EqualVT(that *ExportScansRequest) bool {
+func (this *ExportFindingsRequest) EqualVT(that *ExportFindingsRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -805,8 +657,8 @@ func (this *ExportScansRequest) EqualVT(that *ExportScansRequest) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ExportScansRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ExportScansRequest)
+func (this *ExportFindingsRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ExportFindingsRequest)
 	if !ok {
 		return false
 	}
@@ -870,23 +722,23 @@ func (this *ListImagesResponse) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ListScansResponse) EqualVT(that *ListScansResponse) bool {
+func (this *ListFindingsResponse) EqualVT(that *ListFindingsResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.Scans) != len(that.Scans) {
+	if len(this.Findings) != len(that.Findings) {
 		return false
 	}
-	for i, vx := range this.Scans {
-		vy := that.Scans[i]
+	for i, vx := range this.Findings {
+		vy := that.Findings[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &ImageScan{}
+				p = &VulnerabilityFinding{}
 			}
 			if q == nil {
-				q = &ImageScan{}
+				q = &VulnerabilityFinding{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -899,8 +751,8 @@ func (this *ListScansResponse) EqualVT(that *ListScansResponse) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ListScansResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ListScansResponse)
+func (this *ListFindingsResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ListFindingsResponse)
 	if !ok {
 		return false
 	}
@@ -1157,7 +1009,7 @@ func (m *ImageInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageCVEFinding) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityFinding) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1170,12 +1022,12 @@ func (m *ImageCVEFinding) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageCVEFinding) MarshalToVT(dAtA []byte) (int, error) {
+func (m *VulnerabilityFinding) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageCVEFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *VulnerabilityFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1187,38 +1039,35 @@ func (m *ImageCVEFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.RepositoryCpe) > 0 {
+		i -= len(m.RepositoryCpe)
+		copy(dAtA[i:], m.RepositoryCpe)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.RepositoryCpe)))
+		i--
+		dAtA[i] = 0x5a
+	}
 	if m.Cvss != 0 {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Cvss))))
 		i--
-		dAtA[i] = 0x4d
+		dAtA[i] = 0x55
 	}
 	if m.Severity != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Severity))
 		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x48
 	}
 	if m.State != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.State))
 		i--
-		dAtA[i] = 0x38
-	}
-	if m.FirstImageOccurrence != nil {
-		size, err := (*timestamppb1.Timestamp)(m.FirstImageOccurrence).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x40
 	}
 	if len(m.FixedBy) > 0 {
 		i -= len(m.FixedBy)
 		copy(dAtA[i:], m.FixedBy)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FixedBy)))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x3a
 	}
 	if m.IsFixable {
 		i--
@@ -1228,212 +1077,40 @@ func (m *ImageCVEFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x30
 	}
 	if len(m.ComponentVersion) > 0 {
 		i -= len(m.ComponentVersion)
 		copy(dAtA[i:], m.ComponentVersion)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ComponentVersion)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x2a
 	}
 	if len(m.ComponentName) > 0 {
 		i -= len(m.ComponentName)
 		copy(dAtA[i:], m.ComponentName)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ComponentName)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x22
 	}
 	if len(m.Cve) > 0 {
 		i -= len(m.Cve)
 		copy(dAtA[i:], m.Cve)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Cve)))
 		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ImageVulnCounts) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ImageVulnCounts) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageVulnCounts) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.UnknownFixable != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UnknownFixable))
-		i--
-		dAtA[i] = 0x50
-	}
-	if m.UnknownTotal != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UnknownTotal))
-		i--
-		dAtA[i] = 0x48
-	}
-	if m.LowFixable != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LowFixable))
-		i--
-		dAtA[i] = 0x40
-	}
-	if m.LowTotal != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LowTotal))
-		i--
-		dAtA[i] = 0x38
-	}
-	if m.ModerateFixable != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ModerateFixable))
-		i--
-		dAtA[i] = 0x30
-	}
-	if m.ModerateTotal != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ModerateTotal))
-		i--
-		dAtA[i] = 0x28
-	}
-	if m.ImportantFixable != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ImportantFixable))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.ImportantTotal != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ImportantTotal))
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.CriticalFixable != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CriticalFixable))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.CriticalTotal != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CriticalTotal))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ImageScan) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ImageScan) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageScan) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.LastUpdated != nil {
-		size, err := (*timestamppb1.Timestamp)(m.LastUpdated).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x42
-	}
-	if m.CveCounts != nil {
-		size, err := m.CveCounts.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x3a
-	}
-	if len(m.Cves) > 0 {
-		for iNdEx := len(m.Cves) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Cves[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x32
-		}
-	}
-	if len(m.OperatingSystem) > 0 {
-		i -= len(m.OperatingSystem)
-		copy(dAtA[i:], m.OperatingSystem)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.OperatingSystem)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.ScannerVersion) > 0 {
-		i -= len(m.ScannerVersion)
-		copy(dAtA[i:], m.ScannerVersion)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScannerVersion)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if m.ScanTime != nil {
-		size, err := (*timestamppb1.Timestamp)(m.ScanTime).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
 		dAtA[i] = 0x1a
-	}
-	if len(m.Digest) > 0 {
-		i -= len(m.Digest)
-		copy(dAtA[i:], m.Digest)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Digest)))
-		i--
-		dAtA[i] = 0x12
 	}
 	if len(m.ImageId) > 0 {
 		i -= len(m.ImageId)
 		copy(dAtA[i:], m.ImageId)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.DeploymentId) > 0 {
+		i -= len(m.DeploymentId)
+		copy(dAtA[i:], m.DeploymentId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.DeploymentId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1691,7 +1368,7 @@ func (m *ExportImagesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportScansRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ExportFindingsRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1704,12 +1381,12 @@ func (m *ExportScansRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportScansRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ExportFindingsRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ExportScansRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ExportFindingsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1847,7 +1524,7 @@ func (m *ListImagesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListScansResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListFindingsResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1860,12 +1537,12 @@ func (m *ListScansResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListScansResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ListFindingsResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ListScansResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ListFindingsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1882,9 +1559,9 @@ func (m *ListScansResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.Scans) > 0 {
-		for iNdEx := len(m.Scans) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Scans[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if len(m.Findings) > 0 {
+		for iNdEx := len(m.Findings) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Findings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2039,12 +1716,20 @@ func (m *ImageInfo) SizeVT() (n int) {
 	return n
 }
 
-func (m *ImageCVEFinding) SizeVT() (n int) {
+func (m *VulnerabilityFinding) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	l = len(m.DeploymentId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.ImageId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	l = len(m.Cve)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -2064,10 +1749,6 @@ func (m *ImageCVEFinding) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.FirstImageOccurrence != nil {
-		l = (*timestamppb1.Timestamp)(m.FirstImageOccurrence).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	if m.State != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.State))
 	}
@@ -2077,88 +1758,8 @@ func (m *ImageCVEFinding) SizeVT() (n int) {
 	if m.Cvss != 0 {
 		n += 5
 	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *ImageVulnCounts) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.CriticalTotal != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.CriticalTotal))
-	}
-	if m.CriticalFixable != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.CriticalFixable))
-	}
-	if m.ImportantTotal != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ImportantTotal))
-	}
-	if m.ImportantFixable != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ImportantFixable))
-	}
-	if m.ModerateTotal != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ModerateTotal))
-	}
-	if m.ModerateFixable != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ModerateFixable))
-	}
-	if m.LowTotal != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.LowTotal))
-	}
-	if m.LowFixable != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.LowFixable))
-	}
-	if m.UnknownTotal != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.UnknownTotal))
-	}
-	if m.UnknownFixable != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.UnknownFixable))
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *ImageScan) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ImageId)
+	l = len(m.RepositoryCpe)
 	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.Digest)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.ScanTime != nil {
-		l = (*timestamppb1.Timestamp)(m.ScanTime).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.ScannerVersion)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.OperatingSystem)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if len(m.Cves) > 0 {
-		for _, e := range m.Cves {
-			l = e.SizeVT()
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
-	if m.CveCounts != nil {
-		l = m.CveCounts.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.LastUpdated != nil {
-		l = (*timestamppb1.Timestamp)(m.LastUpdated).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -2271,7 +1872,7 @@ func (m *ExportImagesRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *ExportScansRequest) SizeVT() (n int) {
+func (m *ExportFindingsRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2326,14 +1927,14 @@ func (m *ListImagesResponse) SizeVT() (n int) {
 	return n
 }
 
-func (m *ListScansResponse) SizeVT() (n int) {
+func (m *ListFindingsResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Scans) > 0 {
-		for _, e := range m.Scans {
+	if len(m.Findings) > 0 {
+		for _, e := range m.Findings {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -2977,7 +2578,7 @@ func (m *ImageInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageCVEFinding) UnmarshalVT(dAtA []byte) error {
+func (m *VulnerabilityFinding) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3000,15 +2601,15 @@ func (m *ImageCVEFinding) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageCVEFinding: wiretype end group for non-group")
+			return fmt.Errorf("proto: VulnerabilityFinding: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageCVEFinding: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VulnerabilityFinding: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3036,502 +2637,9 @@ func (m *ImageCVEFinding) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Cve = string(dAtA[iNdEx:postIndex])
+			m.DeploymentId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComponentName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ComponentName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComponentVersion", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ComponentVersion = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsFixable", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsFixable = bool(v != 0)
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.FixedBy = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FirstImageOccurrence", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.FirstImageOccurrence == nil {
-				m.FirstImageOccurrence = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.FirstImageOccurrence).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
-			}
-			m.State = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.State |= VulnerabilityState(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
-			}
-			m.Severity = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 9:
-			if wireType != 5 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
-			}
-			var v uint32
-			if (iNdEx + 4) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
-			iNdEx += 4
-			m.Cvss = float32(math.Float32frombits(v))
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ImageVulnCounts) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnCounts: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnCounts: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalTotal", wireType)
-			}
-			m.CriticalTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CriticalTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalFixable", wireType)
-			}
-			m.CriticalFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CriticalFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantTotal", wireType)
-			}
-			m.ImportantTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ImportantTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantFixable", wireType)
-			}
-			m.ImportantFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ImportantFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateTotal", wireType)
-			}
-			m.ModerateTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ModerateTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateFixable", wireType)
-			}
-			m.ModerateFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ModerateFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowTotal", wireType)
-			}
-			m.LowTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.LowTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowFixable", wireType)
-			}
-			m.LowFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.LowFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownTotal", wireType)
-			}
-			m.UnknownTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UnknownTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownFixable", wireType)
-			}
-			m.UnknownFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UnknownFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ImageScan: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageScan: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
 			}
@@ -3563,9 +2671,9 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ImageId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3593,47 +2701,11 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Digest = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanTime", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ScanTime == nil {
-				m.ScanTime = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.ScanTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Cve = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentName", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3661,11 +2733,11 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ScannerVersion = string(dAtA[iNdEx:postIndex])
+			m.ComponentName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentVersion", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3693,13 +2765,13 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.OperatingSystem = string(dAtA[iNdEx:postIndex])
+			m.ComponentVersion = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cves", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsFixable", wireType)
 			}
-			var msglen int
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -3709,31 +2781,17 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				v |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Cves = append(m.Cves, &ImageCVEFinding{})
-			if err := m.Cves[len(m.Cves)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
+			m.IsFixable = bool(v != 0)
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CveCounts", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -3743,33 +2801,29 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CveCounts == nil {
-				m.CveCounts = &ImageVulnCounts{}
-			}
-			if err := m.CveCounts.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.FixedBy = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
 			}
-			var msglen int
+			m.State = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -3779,27 +2833,72 @@ func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.State |= VulnerabilityState(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepositoryCpe", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.LastUpdated).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.RepositoryCpe = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4496,7 +3595,7 @@ func (m *ExportImagesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportScansRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ExportFindingsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4519,10 +3618,10 @@ func (m *ExportScansRequest) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExportScansRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ExportFindingsRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExportScansRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ExportFindingsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4846,7 +3945,7 @@ func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListScansResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListFindingsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4869,15 +3968,15 @@ func (m *ListScansResponse) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListScansResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListFindingsResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListScansResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListFindingsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Scans", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Findings", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4904,8 +4003,8 @@ func (m *ListScansResponse) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Scans = append(m.Scans, &ImageScan{})
-			if err := m.Scans[len(m.Scans)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.Findings = append(m.Findings, &VulnerabilityFinding{})
+			if err := m.Findings[len(m.Findings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5707,7 +4806,7 @@ func (m *ImageInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageCVEFinding) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *VulnerabilityFinding) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5730,15 +4829,15 @@ func (m *ImageCVEFinding) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageCVEFinding: wiretype end group for non-group")
+			return fmt.Errorf("proto: VulnerabilityFinding: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageCVEFinding: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VulnerabilityFinding: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -5770,514 +4869,9 @@ func (m *ImageCVEFinding) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Cve = stringValue
+			m.DeploymentId = stringValue
 			iNdEx = postIndex
 		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComponentName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ComponentName = stringValue
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComponentVersion", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ComponentVersion = stringValue
-			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsFixable", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsFixable = bool(v != 0)
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.FixedBy = stringValue
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FirstImageOccurrence", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.FirstImageOccurrence == nil {
-				m.FirstImageOccurrence = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.FirstImageOccurrence).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
-			}
-			m.State = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.State |= VulnerabilityState(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
-			}
-			m.Severity = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 9:
-			if wireType != 5 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
-			}
-			var v uint32
-			if (iNdEx + 4) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
-			iNdEx += 4
-			m.Cvss = float32(math.Float32frombits(v))
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ImageVulnCounts) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnCounts: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnCounts: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalTotal", wireType)
-			}
-			m.CriticalTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CriticalTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalFixable", wireType)
-			}
-			m.CriticalFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CriticalFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantTotal", wireType)
-			}
-			m.ImportantTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ImportantTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantFixable", wireType)
-			}
-			m.ImportantFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ImportantFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateTotal", wireType)
-			}
-			m.ModerateTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ModerateTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateFixable", wireType)
-			}
-			m.ModerateFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ModerateFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowTotal", wireType)
-			}
-			m.LowTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.LowTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowFixable", wireType)
-			}
-			m.LowFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.LowFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownTotal", wireType)
-			}
-			m.UnknownTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UnknownTotal |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownFixable", wireType)
-			}
-			m.UnknownFixable = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UnknownFixable |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ImageScan: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageScan: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
 			}
@@ -6313,9 +4907,9 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ImageId = stringValue
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -6347,47 +4941,11 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Digest = stringValue
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanTime", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ScanTime == nil {
-				m.ScanTime = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.ScanTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Cve = stringValue
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentName", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -6419,11 +4977,11 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ScannerVersion = stringValue
+			m.ComponentName = stringValue
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentVersion", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -6455,13 +5013,13 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.OperatingSystem = stringValue
+			m.ComponentVersion = stringValue
 			iNdEx = postIndex
 		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cves", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsFixable", wireType)
 			}
-			var msglen int
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -6471,31 +5029,17 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				v |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Cves = append(m.Cves, &ImageCVEFinding{})
-			if err := m.Cves[len(m.Cves)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
+			m.IsFixable = bool(v != 0)
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CveCounts", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -6505,33 +5049,33 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CveCounts == nil {
-				m.CveCounts = &ImageVulnCounts{}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			if err := m.CveCounts.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.FixedBy = stringValue
 			iNdEx = postIndex
 		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
 			}
-			var msglen int
+			m.State = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -6541,27 +5085,76 @@ func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.State |= VulnerabilityState(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepositoryCpe", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.LastUpdated == nil {
-				m.LastUpdated = &timestamppb.Timestamp{}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			if err := (*timestamppb1.Timestamp)(m.LastUpdated).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.RepositoryCpe = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -7282,7 +5875,7 @@ func (m *ExportImagesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportScansRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ExportFindingsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7305,10 +5898,10 @@ func (m *ExportScansRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExportScansRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ExportFindingsRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExportScansRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ExportFindingsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7632,7 +6225,7 @@ func (m *ListImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListScansResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ListFindingsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7655,15 +6248,15 @@ func (m *ListScansResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListScansResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListFindingsResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListScansResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListFindingsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Scans", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Findings", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7690,8 +6283,8 @@ func (m *ListScansResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Scans = append(m.Scans, &ImageScan{})
-			if err := m.Scans[len(m.Scans)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			m.Findings = append(m.Findings, &VulnerabilityFinding{})
+			if err := m.Findings[len(m.Findings)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
