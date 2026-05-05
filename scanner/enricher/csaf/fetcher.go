@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,7 +21,6 @@ import (
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/enricher/csaf/internal/zreader"
 )
@@ -74,7 +74,6 @@ func (fp *fingerprint) String() string {
 // This method fetches Red Hat's CSAF data (https://security.access.redhat.com/data/csaf/v2/advisories/),
 // unless configured otherwise, and returns a Snappy-compressed file with each advisory's data written to each line.
 func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/csaf/Enricher/FetchEnrichment")
 	fp, err := parseFingerprint(hint)
 	if err != nil {
 		return nil, hint, err
@@ -90,16 +89,14 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	var success bool
 	defer func() {
 		if err := cw.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close snappy writer")
+			slog.WarnContext(ctx, "unable to close snappy writer", "reason", err)
 		}
 		if _, err := f.Seek(0, io.SeekStart); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("unable to seek file back to start")
+			slog.WarnContext(ctx, "unable to seek file back to start", "reason", err)
 		}
 		if !success {
 			if err := f.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				slog.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -110,9 +107,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	if err != nil {
 		return nil, hint, fmt.Errorf("could not get compressed file URL: %w", err)
 	}
-	zlog.Debug(ctx).
-		Str("url", compressedURL.String()).
-		Msg("got compressed URL")
+	slog.DebugContext(ctx, "got compressed URL", "url", compressedURL.String())
 
 	fp.requestTime, err = e.getLastModified(ctx, compressedURL)
 	if err != nil {
@@ -201,10 +196,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		return nil, hint, fmt.Errorf("error reading tar contents: %w", err)
 	}
 
-	zlog.Debug(ctx).
-		Str("enricher", e.Name()).
-		Int("entries written", entriesWritten).
-		Msg("finished writing compressed data to spool")
+	slog.DebugContext(ctx, "finished writing compressed data to spool", "enricher", e.Name(), "entries_written", entriesWritten)
 
 	fp.version = updaterVersion
 	fp.requestTime = time.Now()
@@ -375,7 +367,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 			if err != nil {
 				return fmt.Errorf("error reading from buffer: %w", err)
 			}
-			zlog.Debug(ctx).Str("url", advisoryURI.String()).Msg("copying body to file")
+			slog.DebugContext(ctx, "copying body to file", "url", advisoryURI.String())
 			err = json.Compact(&bc, buf.Bytes())
 			if err != nil {
 				return fmt.Errorf("error compressing JSON: %w", err)

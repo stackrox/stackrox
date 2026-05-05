@@ -14,14 +14,15 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import useContainerGroups from 'hooks/useContainerGroups';
 import usePermissions from 'hooks/usePermissions';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import type { Deployment } from 'types/deployment.proto';
 import type { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
 
-import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
-import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
+import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 
 import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
 import EgressOnly from 'images/network-graph/egress-only.svg?react';
@@ -61,6 +62,8 @@ function DeploymentDetails({
     networkPolicyState,
     nodes,
 }: DeploymentDetailsProps) {
+    const { regularContainers, initContainers } = useContainerGroups(deployment.containers);
+
     const labelKeys = Object.keys(deployment.labels);
     const annotationKeys = Object.keys(deployment.annotations);
 
@@ -292,28 +295,43 @@ function DeploymentDetails({
                 <li>
                     <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Container configurations">
-                        {deployment.containers.length ? (
+                        {regularContainers.length > 0 ? (
                             <Stack hasGutter>
-                                {deployment.containers.map((container) => {
-                                    return (
-                                        <StackItem key={container.id}>
-                                            <DeploymentContainerConfig
-                                                container={container}
-                                                getImageUrl={getImageUrl}
-                                            />
-                                        </StackItem>
-                                    );
-                                })}
+                                {regularContainers.map((container) => (
+                                    <StackItem key={container.id}>
+                                        <DeploymentContainerConfig
+                                            container={container}
+                                            getImageUrl={getImageUrl}
+                                        />
+                                    </StackItem>
+                                ))}
                             </Stack>
                         ) : (
                             <EmptyState
                                 headingLevel="h4"
                                 titleText="No containers available"
                                 variant="xs"
-                            ></EmptyState>
+                            />
                         )}
                     </DetailSection>
                 </li>
+                {initContainers.length > 0 && (
+                    <li>
+                        <Divider className="pf-v6-u-mb-sm" />
+                        <DetailSection title="Init container configurations">
+                            <Stack hasGutter>
+                                {initContainers.map((container) => (
+                                    <StackItem key={container.id}>
+                                        <DeploymentContainerConfig
+                                            container={container}
+                                            getImageUrl={getImageUrl}
+                                        />
+                                    </StackItem>
+                                ))}
+                            </Stack>
+                        </DetailSection>
+                    </li>
+                )}
             </ul>
         </div>
     );

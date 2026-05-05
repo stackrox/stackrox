@@ -251,9 +251,7 @@ spec:
           mountPath: /etc/pki/ca-trust/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
-          {{- if not ._rox._securedClusterCertRefresh }}
-          readOnly: true
-          {{- end }}
+          readOnly: {{ (default false ._rox._securedClusterCertRefresh) | ternary "false" "true" }}
         {{- if ._rox._securedClusterCertRefresh }}
         - name: certs-legacy
           mountPath: /run/secrets/stackrox.io/certs-legacy/
@@ -296,6 +294,7 @@ spec:
       {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
+        secret: null
       - name: certs-legacy
         secret:
           secretName: sensor-tls
@@ -313,6 +312,7 @@ spec:
           optional: true
       {{- else }}
       - name: certs
+        emptyDir: null
         secret:
           secretName: sensor-tls
           optional: true

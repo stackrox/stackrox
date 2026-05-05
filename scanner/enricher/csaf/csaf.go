@@ -8,13 +8,14 @@ package csaf
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
@@ -92,8 +93,6 @@ func (*Enricher) Name() string {
 // For each vulnerability in the report, determine if there is a Red Hat advisory associated with it and map that vulnerability
 // to the advisory's data, if applicable.
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/csaf/Enricher/Enrich")
-
 	m := make(map[string][]json.RawMessage)
 
 	erCache := make(map[string][]driver.EnrichmentRecord)
@@ -105,7 +104,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			// Skipping...
 			continue
 		}
-		ctx := zlog.ContextWithValues(ctx, "original_vuln", v.Name, "advisory", advisoryName)
+		vulnCtx := log.With(ctx, "original_vuln", v.Name, "advisory", advisoryName)
 		rec, ok := erCache[advisoryName]
 		if !ok {
 			ts := []string{advisoryName}
@@ -116,9 +115,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			}
 			erCache[advisoryName] = rec
 		}
-		zlog.Debug(ctx).
-			Int("count", len(rec)).
-			Msg("found records")
+		slog.DebugContext(vulnCtx, "found records", "count", len(rec))
 		for _, r := range rec {
 			m[id] = append(m[id], r.Enrichment)
 		}

@@ -6,7 +6,8 @@ After=roxagent-prep.service
 
 [Container]
 # Replace with your StackRox main image tag
-Image=quay.io/stackrox-io/main:4.10.x-697-g3c843a274f
+Image=quay.io/stackrox-io/main:4.11.x-798-g8a5ad6ed58
+Pull=missing
 Exec=--host-path /host
 Network=host
 
@@ -25,10 +26,13 @@ Volume=/etc/system-release-cpe:/host/etc/system-release-cpe:ro
 # DNF cache and state for repo-to-package mapping
 Volume=/var/cache/dnf:/host/var/cache/dnf:ro
 Volume=/var/lib/dnf:/host/var/lib/dnf:ro
+# Single-instance lock shared between host and container roxagent runs
+Volume=/run/lock/roxagent:/run/lock/roxagent:rw
 
 [Service]
 Type=oneshot
-TimeoutStartSec=300
+# First start can take longer on slow VMs
+TimeoutStartSec=600
 
 [Install]
 WantedBy=

@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -221,8 +222,14 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 	fetchCount := 0
 
 	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
+	initContainerSupportEnabled := features.InitContainerSupport.Enabled()
 
 	for idx, container := range deployment.GetContainers() {
+		// Init container images are filtered from policy evaluation (ROX-34026), skip scanning them.
+		if initContainerSupportEnabled && container.GetType() == storage.ContainerType_INIT {
+			images[idx] = types.ToImage(container.GetImage())
+			continue
+		}
 		image := container.GetImage()
 		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image, s, true)
