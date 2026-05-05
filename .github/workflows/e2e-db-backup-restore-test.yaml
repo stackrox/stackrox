@@ -87,9 +87,12 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        # Proto compilation needs scanner module from go mod cache
         go mod download github.com/stackrox/scanner
-        make bat-test
+        make compile
+        echo "=== Test class dirs ==="
+        find build -name "*.class" -path "*/test/*" 2>/dev/null | head -5
+        echo "=== Running default test task ==="
+        ./gradlew test --info 2>&1 | head -50
 
     - name: Collect logs
       if: always()
