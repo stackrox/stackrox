@@ -151,6 +151,12 @@ tasks.withType<Test>().configureEach {
     }
 
     useJUnitPlatform();
+
+    // Gradle 9: registered Test tasks don't inherit testClassesDirs from
+    // the test source set. Wire them explicitly so test discovery works.
+    val testSourceSet = project.sourceSets["test"]
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
 }
 
 tasks.register<Test>("testBegin") {
