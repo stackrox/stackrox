@@ -87,6 +87,8 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
+        # Proto compilation needs scanner module from go mod cache
+        go mod download github.com/stackrox/scanner
         make bat-test
 
     - name: Collect logs
