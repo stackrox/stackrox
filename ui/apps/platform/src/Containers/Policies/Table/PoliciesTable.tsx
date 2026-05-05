@@ -30,7 +30,10 @@ import type { IAction } from '@patternfly/react-table';
 import type { ListPolicy } from 'types/policy.proto';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
-import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
@@ -58,7 +61,7 @@ import {
     isExternalPolicy,
 } from '../policies.utils';
 import type { LabelAndNotifierIdsForType } from '../policies.utils';
-import { getPolicySearchFilterConfig } from '../policiesSearchFilterConfig';
+import { policySearchFilterConfig } from '../policiesSearchFilterConfig';
 
 import './PoliciesTable.css';
 
@@ -103,13 +106,13 @@ function PoliciesTable({
     const navigate = useNavigate();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const searchFilterConfig = useMemo(() => {
-        const config = getPolicySearchFilterConfig({
-            initContainerSupport: isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT'),
-            imageLayerFilter: isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER'),
-        });
-        return [config];
-    }, [isFeatureFlagEnabled]);
+    const searchFilterConfig = useMemo(
+        () =>
+            getSearchFilterConfigWithFeatureFlagDependency(isFeatureFlagEnabled, [
+                policySearchFilterConfig,
+            ]),
+        [isFeatureFlagEnabled]
+    );
 
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
@@ -497,23 +500,15 @@ function PoliciesTable({
                                                 />
                                                 <Td dataLabel="Policy">
                                                     <Flex
-                                                        spaceItems={{
-                                                            default: 'spaceItemsSm',
-                                                        }}
-                                                        alignItems={{
-                                                            default: 'alignItemsCenter',
-                                                        }}
+                                                        spaceItems={{ default: 'spaceItemsSm' }}
+                                                        alignItems={{ default: 'alignItemsCenter' }}
                                                     >
-                                                        <FlexItem>
-                                                            <Link to={`${policiesBasePath}/${id}`}>
-                                                                {name}
-                                                            </Link>
-                                                        </FlexItem>
-                                                        <FlexItem>
-                                                            <PolicyEvaluationFilterLabels
-                                                                evaluationFilter={evaluationFilter}
-                                                            />
-                                                        </FlexItem>
+                                                        <Link to={`${policiesBasePath}/${id}`}>
+                                                            {name}
+                                                        </Link>
+                                                        <PolicyEvaluationFilterLabels
+                                                            evaluationFilter={evaluationFilter}
+                                                        />
                                                     </Flex>
                                                 </Td>
                                                 <Td dataLabel="Status">
