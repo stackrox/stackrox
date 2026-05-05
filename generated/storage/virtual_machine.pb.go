@@ -226,11 +226,11 @@ func (EmbeddedVirtualMachineScanComponent_Note) EnumDescriptor() ([]byte, []int)
 
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)" search:"Virtual Machine ID"`                            // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID"
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                           // @gotags: search:"Namespace"
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name"`                                          // @gotags: search:"Virtual Machine Name"
-	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
-	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                      // @gotags: search:"Cluster"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)" search:"Virtual Machine ID"`                                      // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID"
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                        // @gotags: search:"Namespace"
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Virtual Machine Name"`                                  // @gotags: search:"Virtual Machine Name"
+	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
+	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
 	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	Notes         []VirtualMachine_Note  `protobuf:"varint,8,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
@@ -434,7 +434,7 @@ type EmbeddedVirtualMachineScanComponent struct {
 	//	*EmbeddedVirtualMachineScanComponent_TopCvss
 	SetTopCvss      isEmbeddedVirtualMachineScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	RiskScore       float32                                          `protobuf:"fixed32,4,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
-	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty" hash:"set"`           // @gotags: hash:"set"
+	Vulnerabilities []*VirtualMachineVulnerability                   `protobuf:"bytes,5,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty" hash:"set"`        // @gotags: hash:"set"
 	Source          SourceType                                       `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty"`
 	Notes           []EmbeddedVirtualMachineScanComponent_Note       `protobuf:"varint,7,rep,packed,name=notes,proto3,enum=storage.EmbeddedVirtualMachineScanComponent_Note" json:"notes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
