@@ -984,7 +984,7 @@ func (CVSSV3_Severity) EnumDescriptor() ([]byte, []int) {
 type EPSS struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	EpssProbability float32                `protobuf:"fixed32,1,opt,name=epss_probability,json=epssProbability,proto3" json:"epss_probability,omitempty" search:"EPSS Probability"` // @gotags: search:"EPSS Probability"
-	EpssPercentile  float32                `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile,proto3" json:"epss_percentile,omitempty"`
+	EpssPercentile  float32                `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile,proto3" json:"epss_percentile,omitempty" search:"EPSS Percentile,hidden"`    // @gotags: search:"EPSS Percentile,hidden"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1229,9 +1229,9 @@ func (x *CVE) GetSeverity() VulnerabilitySeverity {
 
 type CVEInfo struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
-	Cve     string                 `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE" sql:"index=btree"` // @gotags: search:"CVE" sql:"index=btree"
-	Summary string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
-	Link    string                 `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty"`
+	Cve     string                 `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE" sql:"index=btree"`         // @gotags: search:"CVE" sql:"index=btree"
+	Summary string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty" search:"CVE Summary,hidden"` // @gotags: search:"CVE Summary,hidden"
+	Link    string                 `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty" search:"CVE Link,hidden"`       // @gotags: search:"CVE Link,hidden"
 	// This indicates the timestamp when the cve was first published in the cve feeds.
 	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
 	// Time when the CVE was first seen in the system.
@@ -1592,11 +1592,11 @@ type ImageCVEV2 struct {
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
 	// repository_cpe is the CPE of the repository (product stream) this vulnerability was matched against.
-	RepositoryCpe string `protobuf:"bytes,18,opt,name=repository_cpe,json=repositoryCpe,proto3" json:"repository_cpe,omitempty"`
+	RepositoryCpe string `protobuf:"bytes,18,opt,name=repository_cpe,json=repositoryCpe,proto3" json:"repository_cpe,omitempty" search:"Repository CPE,hidden"` // @gotags: search:"Repository CPE,hidden"
 	// component_name is the name of the component this CVE was found in.
-	ComponentName string `protobuf:"bytes,19,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty"`
+	ComponentName string `protobuf:"bytes,19,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty" search:"CVE Component Name,hidden"` // @gotags: search:"CVE Component Name,hidden"
 	// component_version is the version of the component this CVE was found in.
-	ComponentVersion string `protobuf:"bytes,20,opt,name=component_version,json=componentVersion,proto3" json:"component_version,omitempty"`
+	ComponentVersion string `protobuf:"bytes,20,opt,name=component_version,json=componentVersion,proto3" json:"component_version,omitempty" search:"CVE Component Version,hidden"` // @gotags: search:"CVE Component Version,hidden"
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }

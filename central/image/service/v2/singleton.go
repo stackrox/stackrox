@@ -1,9 +1,9 @@
 package service
 
 import (
-	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/views/cveexport"
+	"github.com/stackrox/rox/central/views/vulnfinding"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,10 +14,7 @@ var (
 )
 
 func initialize() {
-	// imageDS.Singleton() is the mapping datastore used by the v1 image service.
-	// It handles both the legacy images table and the imagev2 table transparently,
-	// so the service works regardless of the ROX_FLATTEN_IMAGE_DATA feature flag.
-	srv = New(imageDS.Singleton(), imagecvev2DS.Singleton(), deploymentDS.Singleton())
+	srv = New(imageDS.Singleton(), cveexport.Singleton(), vulnfinding.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

@@ -102,9 +102,12 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetCveBaseInfo().GetCve(),
+		obj.GetCveBaseInfo().GetSummary(),
+		obj.GetCveBaseInfo().GetLink(),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+		obj.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -114,7 +117,7 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Type, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_cves (Id, CveBaseInfo_Cve, CveBaseInfo_Summary, CveBaseInfo_Link, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_Epss_EpssPercentile, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Type, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_Summary = EXCLUDED.CveBaseInfo_Summary, CveBaseInfo_Link = EXCLUDED.CveBaseInfo_Link, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_Epss_EpssPercentile = EXCLUDED.CveBaseInfo_Epss_EpssPercentile, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -123,9 +126,12 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 var copyColsClusterCves = []string{
 	"id",
 	"cvebaseinfo_cve",
+	"cvebaseinfo_summary",
+	"cvebaseinfo_link",
 	"cvebaseinfo_publishedon",
 	"cvebaseinfo_createdat",
 	"cvebaseinfo_epss_epssprobability",
+	"cvebaseinfo_epss_epsspercentile",
 	"cvss",
 	"severity",
 	"impactscore",
@@ -168,9 +174,12 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		return []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
+			obj.GetCveBaseInfo().GetSummary(),
+			obj.GetCveBaseInfo().GetLink(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+			obj.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),

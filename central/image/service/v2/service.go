@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/views/cveexport"
+	"github.com/stackrox/rox/central/views/vulnfinding"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -19,11 +19,11 @@ type Service interface {
 	v2.ImageExportServiceServer
 }
 
-// New returns a new Service instance using the given datastores.
-func New(images imageDS.DataStore, cves imagecvev2DS.DataStore, deployments deploymentDS.DataStore) Service {
+// New returns a new Service instance using the given datastores and views.
+func New(images imageDS.DataStore, cves cveexport.CveExportView, findings vulnfinding.FindingView) Service {
 	return &serviceImpl{
-		imageDS:      images,
-		cveDS:        cves,
-		deploymentDS: deployments,
+		imageDS:     images,
+		cveView:     cves,
+		findingView: findings,
 	}
 }

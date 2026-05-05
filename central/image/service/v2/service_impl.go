@@ -6,10 +6,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	storagetov2 "github.com/stackrox/rox/central/convert/storagetov2"
-	imagecvev2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	imageDS "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/views/cveexport"
+	"github.com/stackrox/rox/central/views/vulnfinding"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,44 +20,38 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const (
-	defaultPageSize = 100
-)
+const defaultPageSize = 100
 
-var (
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Image)): {
-			v2.ImageExportService_ListImages_FullMethodName,
-			v2.ImageExportService_ListFindings_FullMethodName,
-			v2.ImageExportService_ListCVEs_FullMethodName,
-			v2.ImageExportService_ExportImages_FullMethodName,
-			v2.ImageExportService_ExportFindings_FullMethodName,
-			v2.ImageExportService_ExportCVEs_FullMethodName,
-		},
-	})
-)
+var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+	user.With(permissions.View(resources.Image)): {
+		v2.ImageExportService_ListImages_FullMethodName,
+		v2.ImageExportService_ListFindings_FullMethodName,
+		v2.ImageExportService_ListCVEs_FullMethodName,
+		v2.ImageExportService_ExportImages_FullMethodName,
+		v2.ImageExportService_ExportFindings_FullMethodName,
+		v2.ImageExportService_ExportCVEs_FullMethodName,
+	},
+})
 
 type serviceImpl struct {
 	v2.UnimplementedImageExportServiceServer
 
-	imageDS      imageDS.DataStore
-	cveDS        imagecvev2DS.DataStore
-	deploymentDS deploymentDS.DataStore
+	imageDS     datastore.DataStore
+	cveView     cveexport.CveExportView
+	findingView vulnfinding.FindingView
 }
 
-// RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v2.RegisterImageExportServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return v2.RegisterImageExportServiceHandler(ctx, mux, conn)
 }
 
-// AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
@@ -70,8 +63,6 @@ func (s *serviceImpl) ListImages(ctx context.Context, req *v2.ExportImagesReques
 		return nil, errors.Wrap(err, "parsing input query")
 	}
 
-	// Apply the since filter before pagination because ConjunctionQuery creates a new
-	// top-level Query that does not carry the Pagination field from the inner query.
 	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
 	paginated.FillPaginationV2(filteredQuery, req.GetQuery().GetPagination(), defaultPageSize)
 
@@ -98,47 +89,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, req *v2.ExportImagesReques
 	}, nil
 }
 
-// ListFindings returns a paginated list of vulnerability findings. Each finding
-// represents one CVE affecting one component in one image running in one deployment.
-func (s *serviceImpl) ListFindings(ctx context.Context, req *v2.ExportFindingsRequest) (*v2.ListFindingsResponse, error) {
-	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing input query")
-	}
-
-	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
-
-	var findings []*v2.VulnerabilityFinding
-	err = s.imageDS.WalkByQuery(ctx, filteredQuery, func(img *storage.Image) error {
-		deploymentIDs, lookupErr := s.deploymentIDsForImage(ctx, img.GetId())
-		if lookupErr != nil {
-			return lookupErr
-		}
-		findings = append(findings, toFindings(img, deploymentIDs)...)
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "collecting findings")
-	}
-
-	p := req.GetQuery().GetPagination()
-	offset := int(p.GetOffset())
-	limit := int(p.GetLimit())
-	if limit <= 0 || limit > defaultPageSize {
-		limit = defaultPageSize
-	}
-	start := min(offset, len(findings))
-	end := min(start+limit, len(findings))
-
-	return &v2.ListFindingsResponse{
-		Findings:   findings[start:end],
-		TotalCount: int32(len(findings)),
-	}, nil
-}
-
-// ListCVEs returns a paginated list of unique CVE details. Uniqueness is by CVE
-// identifier string. The implementation collects all matching CVEs, deduplicates
-// in memory, then applies offset-based pagination on the deduplicated set.
+// ListCVEs returns a paginated list of unique CVE details via SQL aggregation.
 func (s *serviceImpl) ListCVEs(ctx context.Context, req *v2.ExportCVEsRequest) (*v2.ListCVEsResponse, error) {
 	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -146,27 +97,61 @@ func (s *serviceImpl) ListCVEs(ctx context.Context, req *v2.ExportCVEsRequest) (
 	}
 
 	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
-	filteredQuery = sortByCVE(filteredQuery)
+	paginated.FillPaginationV2(filteredQuery, req.GetQuery().GetPagination(), defaultPageSize)
 
-	// Collect and merge all CVE rows into unique entries in a single pass.
-	unique, err := collectAndMergeCVEs(ctx, s.cveDS, filteredQuery)
+	countQuery := filteredQuery.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := s.cveView.Count(ctx, countQuery)
 	if err != nil {
-		return nil, errors.Wrap(err, "collecting unique CVEs")
+		return nil, errors.Wrap(err, "counting CVEs")
 	}
 
-	// Apply manual pagination on the deduplicated result.
-	p := req.GetQuery().GetPagination()
-	offset := int(p.GetOffset())
-	limit := int(p.GetLimit())
-	if limit <= 0 || limit > defaultPageSize {
-		limit = defaultPageSize
+	cves, err := s.cveView.Get(ctx, filteredQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying CVEs")
 	}
-	start := min(offset, len(unique))
-	end := min(start+limit, len(unique))
+
+	results := make([]*v2.CVEDetail, 0, len(cves))
+	for _, c := range cves {
+		results = append(results, cveExportToDetail(c))
+	}
 
 	return &v2.ListCVEsResponse{
-		Cves:       unique[start:end],
-		TotalCount: int32(len(unique)),
+		Cves:       results,
+		TotalCount: int32(totalCount),
+	}, nil
+}
+
+// ListFindings returns a paginated list of vulnerability findings via SQL JOIN.
+func (s *serviceImpl) ListFindings(ctx context.Context, req *v2.ExportFindingsRequest) (*v2.ListFindingsResponse, error) {
+	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing input query")
+	}
+
+	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
+	paginated.FillPaginationV2(filteredQuery, req.GetQuery().GetPagination(), defaultPageSize)
+
+	countQuery := filteredQuery.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := s.findingView.Count(ctx, countQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "counting findings")
+	}
+
+	findings, err := s.findingView.Get(ctx, filteredQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying findings")
+	}
+
+	results := make([]*v2.VulnerabilityFinding, 0, len(findings))
+	for _, f := range findings {
+		results = append(results, findingToProto(f))
+	}
+
+	return &v2.ListFindingsResponse{
+		Findings:   results,
+		TotalCount: int32(totalCount),
 	}, nil
 }
 
@@ -184,8 +169,28 @@ func (s *serviceImpl) ExportImages(req *v2.ExportImagesRequest, srv grpc.ServerS
 	})
 }
 
-// ExportFindings streams vulnerability findings for all images matching the query.
-// Each finding represents one CVE in one component in one image in one deployment.
+// ExportCVEs streams unique CVE details via SQL aggregation.
+func (s *serviceImpl) ExportCVEs(req *v2.ExportCVEsRequest, srv grpc.ServerStreamingServer[v2.CVEDetail]) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(err, "parsing input query")
+	}
+
+	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
+
+	cves, err := s.cveView.Get(srv.Context(), filteredQuery)
+	if err != nil {
+		return errors.Wrap(err, "querying CVEs")
+	}
+	for _, c := range cves {
+		if sendErr := srv.Send(cveExportToDetail(c)); sendErr != nil {
+			return sendErr
+		}
+	}
+	return nil
+}
+
+// ExportFindings streams vulnerability findings via SQL JOIN.
 func (s *serviceImpl) ExportFindings(req *v2.ExportFindingsRequest, srv grpc.ServerStreamingServer[v2.VulnerabilityFinding]) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -194,72 +199,67 @@ func (s *serviceImpl) ExportFindings(req *v2.ExportFindingsRequest, srv grpc.Ser
 
 	filteredQuery := applySinceFilter(parsedQuery, req.GetSince().AsTime())
 
-	return s.imageDS.WalkByQuery(srv.Context(), filteredQuery, func(img *storage.Image) error {
-		deploymentIDs, lookupErr := s.deploymentIDsForImage(srv.Context(), img.GetId())
-		if lookupErr != nil {
-			return lookupErr
-		}
-		for _, f := range toFindings(img, deploymentIDs) {
-			if sendErr := srv.Send(f); sendErr != nil {
-				return sendErr
-			}
-		}
-		return nil
-	})
-}
-
-// ExportCVEs streams unique CVE details for all CVEs matching the query. Results
-// are sorted by CVE identifier and deduplicated: each CVE is emitted exactly once.
-func (s *serviceImpl) ExportCVEs(req *v2.ExportCVEsRequest, srv grpc.ServerStreamingServer[v2.CVEDetail]) error {
-	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	findings, err := s.findingView.Get(srv.Context(), filteredQuery)
 	if err != nil {
-		return errors.Wrap(err, "parsing input query")
+		return errors.Wrap(err, "querying findings")
 	}
-
-	filteredQuery := applySinceCVEFilter(parsedQuery, req.GetSince().AsTime())
-	filteredQuery = sortByCVE(filteredQuery)
-
-	var current *cveAccumulator
-	err = s.cveDS.WalkByQuery(srv.Context(), filteredQuery, func(cve *storage.ImageCVEV2) error {
-		id := cve.GetCveBaseInfo().GetCve()
-		if current == nil {
-			current = newCVEAccumulator(cve)
-			return nil
+	for _, f := range findings {
+		if sendErr := srv.Send(findingToProto(f)); sendErr != nil {
+			return sendErr
 		}
-		if current.cve != id {
-			if sendErr := srv.Send(current.toCVEDetail()); sendErr != nil {
-				return sendErr
-			}
-			current = newCVEAccumulator(cve)
-			return nil
-		}
-		current.merge(cve)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if current != nil {
-		return srv.Send(current.toCVEDetail())
 	}
 	return nil
 }
 
-// applySinceFilter returns a query that adds a last_updated >= since predicate when since
-// is non-zero. The new conjunction query is returned; the input query is not modified.
+// cveExportToDetail converts a SQL-aggregated CveExport to the API CVEDetail message.
+func cveExportToDetail(c cveexport.CveExport) *v2.CVEDetail {
+	detail := &v2.CVEDetail{
+		Cve:             c.GetCVE(),
+		Severity:        convertSeverity(c.GetSeverity()),
+		Cvss:            c.GetCVSS(),
+		Summary:         c.GetSummary(),
+		Link:            c.GetLink(),
+		EpssProbability: c.GetEPSSProbability(),
+		EpssPercentile:  c.GetEPSSPercentile(),
+	}
+	if t := c.GetPublishedOn(); t != nil {
+		detail.PublishedOn = timestamppb.New(*t)
+	}
+	if name := c.GetAdvisoryName(); name != "" {
+		detail.Advisory = &v2.Advisory{
+			Name: name,
+			Link: c.GetAdvisoryLink(),
+		}
+	}
+	return detail
+}
+
+// findingToProto converts a SQL-queried Finding to the API VulnerabilityFinding message.
+func findingToProto(f vulnfinding.Finding) *v2.VulnerabilityFinding {
+	return &v2.VulnerabilityFinding{
+		DeploymentId:     f.GetDeploymentID(),
+		ImageId:          f.GetImageID(),
+		Cve:              f.GetCVE(),
+		ComponentName:    f.GetComponentName(),
+		ComponentVersion: f.GetComponentVersion(),
+		IsFixable:        f.GetIsFixable(),
+		FixedBy:          f.GetFixedBy(),
+		State:            convertVulnState(f.GetState()),
+		Severity:         convertSeverity(f.GetSeverity()),
+		Cvss:             f.GetCVSS(),
+		RepositoryCpe:    f.GetRepositoryCPE(),
+	}
+}
+
 func applySinceFilter(q *v1.Query, since time.Time) *v1.Query {
 	if since.IsZero() {
 		return q
 	}
-	// Format the timestamp in the layout understood by the postgres time query parser.
-	// The ">=" prefix generates the SQL predicate "lastupdated >= <since>".
 	sinceStr := ">=" + since.UTC().Format("01/02/2006 3:04:05 PM MST")
 	sinceQuery := search.NewQueryBuilder().AddStrings(search.LastUpdatedTime, sinceStr).ProtoQuery()
 	return search.ConjunctionQuery(q, sinceQuery)
 }
 
-// applySinceCVEFilter filters CVEs by the time they were first seen in the system
-// (CVEInfo.created_at). The "since" semantics differ from the image last_updated filter.
 func applySinceCVEFilter(q *v1.Query, since time.Time) *v1.Query {
 	if since.IsZero() {
 		return q
@@ -269,202 +269,7 @@ func applySinceCVEFilter(q *v1.Query, since time.Time) *v1.Query {
 	return search.ConjunctionQuery(q, sinceQuery)
 }
 
-// sortByCVE adds an ascending sort on the CVE identifier string to a query.
-// This enables the streaming deduplication in ExportCVEs to work with O(1) state.
-func sortByCVE(q *v1.Query) *v1.Query {
-	cloned := q.CloneVT()
-	if cloned.Pagination == nil {
-		cloned.Pagination = &v1.QueryPagination{}
-	}
-	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-		{Field: search.CVE.String(), Reversed: false},
-	}
-	return cloned
-}
-
-// collectAndMergeCVEs walks all CVEs matching q (must be sorted by CVE string),
-// merges rows for the same CVE identifier, and returns one CVEDetail per unique CVE.
-func collectAndMergeCVEs(ctx context.Context, ds imagecvev2DS.DataStore, q *v1.Query) ([]*v2.CVEDetail, error) {
-	accumulators := make(map[string]*cveAccumulator)
-	var order []string
-
-	err := ds.WalkByQuery(ctx, q, func(cve *storage.ImageCVEV2) error {
-		id := cve.GetCveBaseInfo().GetCve()
-		acc, exists := accumulators[id]
-		if !exists {
-			acc = newCVEAccumulator(cve)
-			accumulators[id] = acc
-			order = append(order, id)
-		} else {
-			acc.merge(cve)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]*v2.CVEDetail, 0, len(order))
-	for _, id := range order {
-		results = append(results, accumulators[id].toCVEDetail())
-	}
-	return results, nil
-}
-
-type componentKey struct {
-	name    string
-	version string
-	cpe     string
-}
-
-type componentOverride struct {
-	severity    storage.VulnerabilitySeverity
-	cvss        float32
-	cvssMetrics map[storage.Source]*storage.CVSSScore
-}
-
-type cveAccumulator struct {
-	cve             string
-	maxSeverity     storage.VulnerabilitySeverity
-	maxCvss         float32
-	summary         string
-	link            string
-	publishedOn     *storage.CVEInfo
-	epssProbability float32
-	epssPercentile  float32
-	advisory        *storage.Advisory
-	cvssMetrics     map[storage.Source]*storage.CVSSScore
-	overrides       map[componentKey]*componentOverride
-	cveBaseInfo     *storage.CVEInfo
-}
-
-func newCVEAccumulator(cve *storage.ImageCVEV2) *cveAccumulator {
-	acc := &cveAccumulator{
-		cve:             cve.GetCveBaseInfo().GetCve(),
-		maxSeverity:     cve.GetSeverity(),
-		maxCvss:         cve.GetCvss(),
-		summary:         cve.GetCveBaseInfo().GetSummary(),
-		link:            cve.GetCveBaseInfo().GetLink(),
-		epssProbability: cve.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-		epssPercentile:  cve.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
-		advisory:        cve.GetAdvisory(),
-		cvssMetrics:     make(map[storage.Source]*storage.CVSSScore),
-		overrides:       make(map[componentKey]*componentOverride),
-		cveBaseInfo:     cve.GetCveBaseInfo(),
-	}
-	for _, m := range cve.GetCveBaseInfo().GetCvssMetrics() {
-		acc.cvssMetrics[m.GetSource()] = m
-	}
-	acc.recordComponent(cve)
-	return acc
-}
-
-func (a *cveAccumulator) recordComponent(cve *storage.ImageCVEV2) {
-	key := componentKey{
-		name:    cve.GetComponentName(),
-		version: cve.GetComponentVersion(),
-		cpe:     cve.GetRepositoryCpe(),
-	}
-	if _, exists := a.overrides[key]; !exists {
-		override := &componentOverride{
-			severity:    cve.GetSeverity(),
-			cvss:        cve.GetCvss(),
-			cvssMetrics: make(map[storage.Source]*storage.CVSSScore),
-		}
-		for _, m := range cve.GetCveBaseInfo().GetCvssMetrics() {
-			override.cvssMetrics[m.GetSource()] = m
-		}
-		a.overrides[key] = override
-	}
-}
-
-func (a *cveAccumulator) merge(cve *storage.ImageCVEV2) {
-	if cve.GetSeverity() > a.maxSeverity {
-		a.maxSeverity = cve.GetSeverity()
-	}
-	if cve.GetCvss() > a.maxCvss {
-		a.maxCvss = cve.GetCvss()
-	}
-	if a.summary == "" {
-		a.summary = cve.GetCveBaseInfo().GetSummary()
-	}
-	if a.link == "" {
-		a.link = cve.GetCveBaseInfo().GetLink()
-	}
-	if cve.GetCveBaseInfo().GetEpss().GetEpssProbability() > a.epssProbability {
-		a.epssProbability = cve.GetCveBaseInfo().GetEpss().GetEpssProbability()
-		a.epssPercentile = cve.GetCveBaseInfo().GetEpss().GetEpssPercentile()
-	}
-	if a.advisory == nil {
-		a.advisory = cve.GetAdvisory()
-	}
-	for _, m := range cve.GetCveBaseInfo().GetCvssMetrics() {
-		if existing, ok := a.cvssMetrics[m.GetSource()]; !ok || cvssScoreValue(m) > cvssScoreValue(existing) {
-			a.cvssMetrics[m.GetSource()] = m
-		}
-	}
-
-	a.recordComponent(cve)
-}
-
-func cvssScoreValue(score *storage.CVSSScore) float32 {
-	if v3 := score.GetCvssv3(); v3 != nil {
-		return v3.GetScore()
-	}
-	if v2Score := score.GetCvssv2(); v2Score != nil {
-		return v2Score.GetScore()
-	}
-	return 0
-}
-
-func (a *cveAccumulator) toCVEDetail() *v2.CVEDetail {
-	detail := &v2.CVEDetail{
-		Cve:             a.cve,
-		Severity:        convertSeverity(a.maxSeverity),
-		Cvss:            a.maxCvss,
-		Summary:         a.summary,
-		Link:            a.link,
-		PublishedOn:     a.cveBaseInfo.GetPublishedOn(),
-		EpssProbability: a.epssProbability,
-		EpssPercentile:  a.epssPercentile,
-		CvssScores:      convertCVSSMetrics(a.cvssMetrics),
-	}
-	if a.advisory != nil {
-		detail.Advisory = &v2.Advisory{
-			Name: a.advisory.GetName(),
-			Link: a.advisory.GetLink(),
-		}
-	}
-	for key, override := range a.overrides {
-		if override.severity == a.maxSeverity && override.cvss == a.maxCvss {
-			continue
-		}
-		detail.ComponentOverrides = append(detail.ComponentOverrides, &v2.CVEComponentOverride{
-			ComponentName:    key.name,
-			ComponentVersion: key.version,
-			RepositoryCpe:    key.cpe,
-			Severity:         convertSeverity(override.severity),
-			Cvss:             override.cvss,
-			CvssScores:       convertCVSSMetrics(override.cvssMetrics),
-		})
-	}
-	return detail
-}
-
-func convertCVSSMetrics(metrics map[storage.Source]*storage.CVSSScore) []*v2.CVSSScore {
-	if len(metrics) == 0 {
-		return nil
-	}
-	scores := make([]*storage.CVSSScore, 0, len(metrics))
-	for _, m := range metrics {
-		scores = append(scores, m)
-	}
-	return storagetov2.ScoreVersions(scores)
-}
-
 // toImageInfo converts a storage.Image to the v2 API ImageInfo projection.
-// Components are included but their vulnerability lists are intentionally omitted; use
-// toImageScan to retrieve vulnerability findings.
 func toImageInfo(img *storage.Image) *v2.ImageInfo {
 	layers := make([]*v2.ImageExportLayer, 0, len(img.GetMetadata().GetV1().GetLayers()))
 	for _, l := range img.GetMetadata().GetV1().GetLayers() {
@@ -490,8 +295,6 @@ func toImageInfo(img *storage.Image) *v2.ImageInfo {
 	}
 
 	return &v2.ImageInfo{
-		// In the legacy image model the id field holds the image SHA, which is
-		// also the digest. There is no separate UUID-style id.
 		Id:              img.GetId(),
 		Digest:          img.GetId(),
 		Names:           names,
@@ -503,50 +306,6 @@ func toImageInfo(img *storage.Image) *v2.ImageInfo {
 	}
 }
 
-// deploymentIDsForImage returns the IDs of all deployments that reference the given image.
-func (s *serviceImpl) deploymentIDsForImage(ctx context.Context, imageID string) ([]string, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
-	results, err := s.deploymentDS.Search(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "looking up deployments for image")
-	}
-	ids := make([]string, 0, len(results))
-	for _, r := range results {
-		ids = append(ids, r.ID)
-	}
-	return ids, nil
-}
-
-// toFindings converts a storage.Image into flat VulnerabilityFinding messages,
-// one per (deployment, component, vuln) tuple.
-func toFindings(img *storage.Image, deploymentIDs []string) []*v2.VulnerabilityFinding {
-	if len(deploymentIDs) == 0 {
-		return nil
-	}
-	var findings []*v2.VulnerabilityFinding
-	for _, comp := range img.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			for _, deployID := range deploymentIDs {
-				findings = append(findings, &v2.VulnerabilityFinding{
-					DeploymentId:     deployID,
-					ImageId:          img.GetId(),
-					Cve:              vuln.GetCve(),
-					ComponentName:    comp.GetName(),
-					ComponentVersion: comp.GetVersion(),
-					IsFixable:        vuln.GetSetFixedBy() != nil,
-					FixedBy:          vuln.GetFixedBy(),
-					State:            convertVulnState(vuln.GetState()),
-					Severity:         convertSeverity(vuln.GetSeverity()),
-					Cvss:             vuln.GetCvss(),
-					RepositoryCpe:    vuln.GetRepositoryCpe(),
-				})
-			}
-		}
-	}
-	return findings
-}
-
-// convertSeverity maps storage.VulnerabilitySeverity to the v2 API enum.
 func convertSeverity(s storage.VulnerabilitySeverity) v2.VulnerabilitySeverity {
 	switch s {
 	case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
@@ -562,7 +321,6 @@ func convertSeverity(s storage.VulnerabilitySeverity) v2.VulnerabilitySeverity {
 	}
 }
 
-// convertVulnState maps storage.VulnerabilityState to the v2 API enum.
 func convertVulnState(s storage.VulnerabilityState) v2.VulnerabilityState {
 	switch s {
 	case storage.VulnerabilityState_DEFERRED:
@@ -572,11 +330,4 @@ func convertVulnState(s storage.VulnerabilityState) v2.VulnerabilityState {
 	default:
 		return v2.VulnerabilityState_OBSERVED
 	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
