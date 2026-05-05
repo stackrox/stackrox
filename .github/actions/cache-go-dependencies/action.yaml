@@ -98,7 +98,8 @@ runs:
         # A fixed mtime can cause stale cached imports when a file changes content
         # but keeps the same size. This is mitigated by including go.mod hash in
         # the GOCACHE key — dependency changes invalidate the entire cache.
-        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L101
+        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
+
         git ls-files | xargs touch -t 200101010000
         # Also stabilize directory mtimes — tests using os.ReadDir or
         # filepath.Walk check directory mtimes too.
