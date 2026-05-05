@@ -88,7 +88,8 @@ jobs:
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
         go mod download github.com/stackrox/scanner
-        make bat-test
+        make compile
+        cd qa-tests-backend && ./gradlew testClasses testBegin testParallelBAT testBAT
 
     - name: Collect logs
       if: always()
