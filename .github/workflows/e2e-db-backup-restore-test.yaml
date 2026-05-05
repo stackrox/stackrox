@@ -57,6 +57,11 @@ jobs:
         distribution: temurin
         java-version: 21
 
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
     - name: Wait for Central API
       run: |
         for i in $(seq 1 180); do
