@@ -332,7 +332,7 @@ export const apiClientsSource: IntegrationSource = 'apiClients';
 export const serviceNowDescriptor: ApiClientDescriptor = {
     // TODO: Replace with ServiceNow logo once available from UX
     Logo: RedhatSvg,
-    label: 'ServiceNow',
+    label: 'ServiceNow VR',
     type: 'serviceNow',
 };
 
@@ -426,7 +426,7 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     backups: 'Backup',
     cloudSources: 'Cloud source',
     authProviders: 'Authentication',
-    apiClients: 'API Clients',
+    apiClients: 'API clients',
 };
 
 export function getIntegrationTabPath(source: IntegrationSource) {
