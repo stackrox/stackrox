@@ -116,8 +116,8 @@ func (s *serviceImpl) ListCVEs(ctx context.Context, req *v2.ExportCVEsRequest) (
 
 	results := make([]*v2.CVEDetail, 0, len(cves))
 	for _, c := range cves {
-		scores := s.cvssMetricsForCVE(ctx, c.GetCVEIDs())
-		results = append(results, cveExportToDetail(c, scores))
+		blob := s.enrichFromBlob(ctx, c.GetCVEIDs())
+		results = append(results, cveExportToDetail(c, blob))
 	}
 
 	return &v2.ListCVEsResponse{
@@ -187,8 +187,8 @@ func (s *serviceImpl) ExportCVEs(req *v2.ExportCVEsRequest, srv grpc.ServerStrea
 		return errors.Wrap(err, "querying CVEs")
 	}
 	for _, c := range cves {
-		scores := s.cvssMetricsForCVE(srv.Context(), c.GetCVEIDs())
-		if sendErr := srv.Send(cveExportToDetail(c, scores)); sendErr != nil {
+		blob := s.enrichFromBlob(srv.Context(), c.GetCVEIDs())
+		if sendErr := srv.Send(cveExportToDetail(c, blob)); sendErr != nil {
 			return sendErr
 		}
 	}
@@ -217,16 +217,24 @@ func (s *serviceImpl) ExportFindings(req *v2.ExportFindingsRequest, srv grpc.Ser
 }
 
 // cveExportToDetail converts a SQL-aggregated CveExport to the API CVEDetail message.
-func cveExportToDetail(c cveexport.CveExport, cvssScores []*v2.CVSSScore) *v2.CVEDetail {
+func cveExportToDetail(c cveexport.CveExport, blob cveBlobFields) *v2.CVEDetail {
+	summary := c.GetSummary()
+	if summary == "" {
+		summary = blob.summary
+	}
+	link := c.GetLink()
+	if link == "" {
+		link = blob.link
+	}
 	detail := &v2.CVEDetail{
 		Cve:             c.GetCVE(),
 		Severity:        convertSeverity(c.GetSeverity()),
 		Cvss:            c.GetCVSS(),
-		Summary:         c.GetSummary(),
-		Link:            c.GetLink(),
+		Summary:         summary,
+		Link:            link,
 		EpssProbability: c.GetEPSSProbability(),
 		EpssPercentile:  c.GetEPSSPercentile(),
-		CvssScores:      cvssScores,
+		CvssScores:      blob.cvssScores,
 	}
 	if t := c.GetPublishedOn(); t != nil {
 		detail.PublishedOn = timestamppb.New(*t)
@@ -240,22 +248,29 @@ func cveExportToDetail(c cveexport.CveExport, cvssScores []*v2.CVSSScore) *v2.CV
 	return detail
 }
 
-// cvssMetricsForCVE fetches one representative blob for a CVE and extracts
-// the per-source CVSS metrics. This is needed because cvss_metrics is a
-// repeated nested field that cannot be represented as a SQL column.
-func (s *serviceImpl) cvssMetricsForCVE(ctx context.Context, cveIDs []string) []*v2.CVSSScore {
+// cveBlobFields holds fields extracted from the serialized protobuf blob
+// that have no SQL column or may be empty for pre-existing rows.
+type cveBlobFields struct {
+	summary    string
+	link       string
+	cvssScores []*v2.CVSSScore
+}
+
+// enrichFromBlob fetches one representative blob for a CVE and extracts
+// fields that are only available in the serialized protobuf.
+func (s *serviceImpl) enrichFromBlob(ctx context.Context, cveIDs []string) cveBlobFields {
 	if len(cveIDs) == 0 {
-		return nil
+		return cveBlobFields{}
 	}
 	q := search.NewQueryBuilder().AddDocIDs(cveIDs[0]).ProtoQuery()
-	var result []*v2.CVSSScore
+	var result cveBlobFields
 	_ = s.cveDS.WalkByQuery(ctx, q, func(cve *storage.ImageCVEV2) error {
-		metrics := cve.GetCveBaseInfo().GetCvssMetrics()
-		if len(metrics) > 0 {
-			result = storagetov2.ScoreVersions(metrics)
-			return errors.New("stop")
+		result.summary = cve.GetCveBaseInfo().GetSummary()
+		result.link = cve.GetCveBaseInfo().GetLink()
+		if metrics := cve.GetCveBaseInfo().GetCvssMetrics(); len(metrics) > 0 {
+			result.cvssScores = storagetov2.ScoreVersions(metrics)
 		}
-		return nil
+		return errors.New("stop")
 	})
 	return result
 }
