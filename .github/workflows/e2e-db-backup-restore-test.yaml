@@ -82,7 +82,7 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        ./gradlew testBegin testParallelBAT testBAT --info
+        make bat-test
 
     - name: Collect logs
       if: always()
