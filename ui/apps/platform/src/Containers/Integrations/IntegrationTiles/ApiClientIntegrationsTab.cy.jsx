@@ -33,7 +33,7 @@ describe(Cypress.spec.relative, () => {
     it('should display a description of the connector', () => {
         setup();
 
-        cy.findByText('Pull ACS vulnerability data into ServiceNow Vulnerability Response.').should(
+        cy.findByText('Pull RHACS vulnerability data into ServiceNow Vulnerability Response.').should(
             'exist'
         );
     });
