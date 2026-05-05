@@ -206,7 +206,7 @@ func rhelVexOpts() []updates.ManagerOption {
 						}
 					}
 				case *vex.UpdaterConfig:
-					// Updater config - nothing to configure here.
+					cfg.URL = "https://security.access.redhat.com/data/csaf/v2/vex-feed/"
 				default:
 					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
 				}
