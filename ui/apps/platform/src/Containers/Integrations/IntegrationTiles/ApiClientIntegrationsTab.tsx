@@ -46,7 +46,10 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                             />
                         </CardHeader>
                         <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
-                            <Flex alignItems={{ default: 'alignItemsBaseline' }} gap={{ default: 'gapSm' }}>
+                            <Flex
+                                alignItems={{ default: 'alignItemsBaseline' }}
+                                gap={{ default: 'gapSm' }}
+                            >
                                 <FlexItem>ServiceNow VR</FlexItem>
                                 <ExternalLinkAltIcon />
                             </Flex>
