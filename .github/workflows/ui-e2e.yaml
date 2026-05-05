@@ -177,7 +177,7 @@ jobs:
 
       - name: Wait for auth token
         run: |
-          for i in $(seq 1 90); do
+          for _ in $(seq 1 90); do
             [ -s /tmp/rox-auth-token ] && break
             sleep 2
           done

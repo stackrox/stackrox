@@ -46,7 +46,7 @@ runs:
 
           # Wait for cluster to be reachable (retries until kubectl works)
           ts "waiting for cluster..."
-          for i in $(seq 1 120); do
+          for _ in $(seq 1 120); do
             kubectl cluster-info >/dev/null 2>&1 && break
             sleep 2
           done
@@ -69,7 +69,7 @@ runs:
 
           # Wait for Central API
           ts "waiting for Central API..."
-          for i in $(seq 1 120); do
+          for _ in $(seq 1 120); do
             curl -sk --connect-timeout 1 https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
             sleep 1
           done
@@ -115,7 +115,7 @@ runs:
           kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
             sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null || true
 
-          for i in $(seq 1 60); do
+          for _ in $(seq 1 60); do
             dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
               "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
             [ "${dep_count:-0}" -gt 5 ] && break
