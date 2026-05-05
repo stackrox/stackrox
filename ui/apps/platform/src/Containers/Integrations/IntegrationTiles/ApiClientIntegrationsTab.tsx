@@ -52,7 +52,7 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                             </Flex>
                         </CardTitle>
                         <CardFooter className="pf-v6-u-color-200">
-                            Pull ACS vulnerability data into ServiceNow Vulnerability Response.
+                            Pull RHACS vulnerability data into ServiceNow Vulnerability Response.
                         </CardFooter>
                     </Card>
                 </GalleryItem>
