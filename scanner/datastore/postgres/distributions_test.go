@@ -48,6 +48,9 @@ func TestDistributions(t *testing.T) {
 			VersionID: "",
 			Version:   "3.18",
 		},
+		{
+			DID: "hummingbird",
+		},
 	}
 	const insertDists = `
 INSERT INTO vuln (hash_kind, hash, dist_id, dist_version_id, dist_version, repo_name) VALUES
@@ -58,13 +61,36 @@ INSERT INTO vuln (hash_kind, hash, dist_id, dist_version_id, dist_version, repo_
     ('md5', 'fake5', 'alpine', '',      '3.18',          ''),
     ('md5', 'fake6', 'debian', '10',    '10 (buster)',   ''),
     ('md5', 'fake7', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:%:*:*:*:*:*:*:*'),
-    ('md5', 'fake8', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:10.1:*:*:*:*:*:*:*')`
+    ('md5', 'fake8', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:10.1:*:*:*:*:*:*:*'),
+    ('md5', 'fake9', '',       '',      '',              'cpe:2.3:a:redhat:hummingbird:1:*:*:*:*:*:*:*')`
 	_, err = pool.Exec(ctx, insertDists)
 	require.NoError(t, err)
 
 	dists, err := store.Distributions(ctx)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, expected, dists)
+}
+
+func TestHummingbirdDist(t *testing.T) {
+	dist := hummingbirdDist()
+	assert.Equal(t, claircore.Distribution{DID: "hummingbird"}, dist)
+}
+
+func TestHummingbirdCPE(t *testing.T) {
+	for _, tc := range []struct {
+		repoName string
+		match    bool
+	}{
+		{"cpe:2.3:a:redhat:hummingbird:1:*:*:*:*:*:*:*", true},
+		{"cpe:2.3:a:redhat:hummingbird:2:*:*:*:*:*:*:*", true},
+		{"cpe:2.3:a:redhat:hummingbird:1.0:*:*:*:*:*:*:*", true},
+		{"cpe:2.3:o:redhat:enterprise_linux:9:*:*:*:*:*:*:*", false},
+		{"cpe:2.3:a:redhat:other_product:1:*:*:*:*:*:*:*", false},
+	} {
+		t.Run(tc.repoName, func(t *testing.T) {
+			assert.Equal(t, tc.match, hummingbirdCPE.MatchString(tc.repoName))
+		})
+	}
 }
 
 func TestRHELDist(t *testing.T) {

@@ -241,6 +241,9 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 			VersionID: "3.19",
 			Version:   "",
 		},
+		{
+			DID: "hummingbird",
+		},
 	}
 
 	srv := NewMatcherService(s.matcherMock, nil)
@@ -256,6 +259,23 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 				"0": {
 					Did:       "alpine",
 					VersionId: "3.18",
+				},
+			},
+		},
+	})
+	s.Empty(notes)
+
+	// Hummingbird supported via DID-only match (no VersionID in known dist).
+	s.matcherMock.
+		EXPECT().
+		GetKnownDistributions(gomock.Any()).
+		Return(dists)
+	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
+		Contents: &v4.Contents{
+			Distributions: map[string]*v4.Distribution{
+				"0": {
+					Did:       "hummingbird",
+					VersionId: "20251124",
 				},
 			},
 		},

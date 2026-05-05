@@ -159,7 +159,7 @@ func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) 
 	knownDists := s.matcher.GetKnownDistributions(ctx)
 	known := slices.ContainsFunc(knownDists, func(dist claircore.Distribution) bool {
 		vID := mappers.VersionID(&dist)
-		return distID == dist.DID && versionID == vID
+		return distID == dist.DID && (vID == "" || versionID == vID)
 	})
 	if !known {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}
