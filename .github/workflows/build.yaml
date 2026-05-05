@@ -789,10 +789,8 @@ jobs:
     - define-job-matrix
     - push-main-manifests
     if: >-
-      !cancelled() && needs.push-main-manifests.result == 'success' && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'ui-e2e')
-      )
+      !cancelled() && needs.push-main-manifests.result == 'success' &&
+      contains(github.event.pull_request.labels.*.name, 'ui-e2e')
     uses: ./.github/workflows/ui-e2e.yaml
     with:
       tag: ${{ needs.define-job-matrix.outputs.build-tag }}
