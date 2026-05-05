@@ -4,19 +4,17 @@ import { Label, LabelGroup } from '@patternfly/react-core';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { EvaluationFilter } from 'types/policy.proto';
 
-export type FilterLabel = {
+type FilterLabel = {
     text: string;
     color: 'blue' | 'orange';
 };
 
 type PolicyEvaluationFilterLabelsProps = {
     evaluationFilter: EvaluationFilter | undefined;
-    className?: string;
 };
 
 function PolicyEvaluationFilterLabels({
     evaluationFilter,
-    className,
 }: PolicyEvaluationFilterLabelsProps): ReactElement | null {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -33,13 +31,13 @@ function PolicyEvaluationFilterLabels({
         labels.push({ text: 'Skips init', color: 'blue' });
     }
 
-    if (isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER')) {
+    if (isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI')) {
         switch (evaluationFilter.skipImageLayers) {
             case 'SKIP_BASE':
-                labels.push({ text: 'App layers only', color: 'orange' });
+                labels.push({ text: 'Skips base', color: 'orange' });
                 break;
             case 'SKIP_APP':
-                labels.push({ text: 'Base layers only', color: 'orange' });
+                labels.push({ text: 'Skips application', color: 'orange' });
                 break;
             default:
                 break;
@@ -51,9 +49,9 @@ function PolicyEvaluationFilterLabels({
     }
 
     return (
-        <LabelGroup className={className}>
+        <LabelGroup>
             {labels.map(({ text, color }) => (
-                <Label key={text} color={color} variant="outline">
+                <Label key={text} color={color} isCompact variant="outline">
                     {text}
                 </Label>
             ))}
