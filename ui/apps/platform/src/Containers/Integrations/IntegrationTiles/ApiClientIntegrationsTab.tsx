@@ -13,8 +13,7 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
-// TODO(ROX-34536): Replace with approved ServiceNow SVG logo
-import ServiceNowLogo from 'images/redhat.svg?react';
+import ServiceNowLogo from 'images/servicenow.svg?react';
 
 import type { IntegrationsTabProps } from './IntegrationsTab.types';
 import IntegrationsTabPage from './IntegrationsTabPage';
