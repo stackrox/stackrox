@@ -36,7 +36,7 @@ compliance-v2-tests:
 .PHONY: vm-scanning-tests
 vm-scanning-tests:
 	@echo "+ $@"
-	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test,test_e2e $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v -run '\''Test(InspectClusterKVMReadiness|ClusterKVMPreflightResultDiagnostic|VirtHandlerHostVsockVolumesLookUsable|VerifyClusterVSOCKReadyPhases|LoadVMScanConfig|DiscoverVirtctlPath|GenerateEphemeralSSHKeypair)'\'' $(shell go list -e ./... | grep -v generated | grep -v vendor | grep -v vmhelpers) 2>&1 | tee test.log'
+	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test,test_e2e_vm $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v . 2>&1 | tee test.log'
 	@$(MAKE) report JUNIT_OUT=vm-scanning-tests-results
 
 include ../make/stackrox.mk
