@@ -8,7 +8,10 @@ import {
     testIntegration,
     testIntegrationV2,
 } from 'services/IntegrationsService';
-import type { IntegrationOptions } from 'services/IntegrationsService';
+import type {
+    IntegrationOptions,
+    IntegrationSource as CrudIntegrationSource,
+} from 'services/IntegrationsService';
 import { generateAPIToken } from 'services/APITokensService';
 import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
@@ -36,6 +39,8 @@ function useIntegrationActions(): UseIntegrationActionsResult {
         isEditing,
         params: { source, type },
     } = usePageState();
+    // This hook is only mounted on CRUD routes, so source is always a CRUD-capable source
+    const crudSource = source as CrudIntegrationSource;
     const fetchIntegrations = useFetchIntegrations(source);
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
 
@@ -46,8 +51,8 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             if (isEditing) {
                 responseData =
                     typeof updatePassword === 'boolean'
-                        ? await saveIntegration(source, data, { updatePassword })
-                        : await saveIntegrationV2(source, data);
+                        ? await saveIntegration(crudSource, data, { updatePassword })
+                        : await saveIntegrationV2(crudSource, data);
                 navigate(integrationsListPath);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
@@ -55,7 +60,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                 responseData = await createMachineAccessConfig(data);
                 navigate(-1);
             } else {
-                responseData = await createIntegration(source, data);
+                responseData = await createIntegration(crudSource, data);
                 // we only want to redirect when creating a new non-apitoken integration
                 navigate(-1);
             }
@@ -70,9 +75,9 @@ function useIntegrationActions(): UseIntegrationActionsResult {
     async function onTest(data, { updatePassword }: IntegrationOptions = {}) {
         try {
             if (typeof updatePassword === 'boolean') {
-                await testIntegration(source, data, { updatePassword });
+                await testIntegration(crudSource, data, { updatePassword });
             } else {
-                await testIntegrationV2(source, data);
+                await testIntegrationV2(crudSource, data);
             }
             return { message: `The test was successful`, isError: false };
         } catch (error) {
