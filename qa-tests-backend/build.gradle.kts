@@ -77,6 +77,9 @@ dependencies {
     implementation(platform(libs.spock.bom))
     implementation(libs.spock.core)
     implementation(libs.spock.junit4)
+    // Gradle 9 requires the JUnit Platform launcher explicitly.
+    // Without this, test tasks fail with "Failed to load JUnit Platform".
+    runtimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(libs.rest.assured)
     testImplementation(libs.snakeyaml)
     implementation(libs.logback.classic)
