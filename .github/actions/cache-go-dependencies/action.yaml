@@ -82,19 +82,29 @@ runs:
         echo "Cleared test cache for fresh run"
       shell: bash
 
-    - name: Stabilize file mtimes for Go test cache
+    - name: Stabilize file mtimes for Go cache
       run: |
-        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
+        # Go's cache validates inputs by (path, size, mtime) — NOT content.
         # git checkout sets all mtimes to "now", which differs between CI runs,
-        # causing every test to miss the cache. Setting a fixed mtime makes the
-        # test cache hit across runs when file content hasn't changed.
+        # causing every test to miss the cache.
         #
-        # Risk: if a non-.go testdata file changes content but not size between
-        # commits, the test cache could return a stale result. This is extremely
-        # rare and Go's own test cache has the same inherent limitation.
-        git ls-files | xargs touch -t 200101010000
-        # Also stabilize directory mtimes — tests using os.ReadDir or
-        # filepath.Walk check directory mtimes too. git ls-files only
-        # lists files, not directories.
-        git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
+        # 1. Set ALL tracked files + directories to a fixed mtime → cache hits.
+        # 2. Restore "now" on files that changed vs the cache baseline so Go's
+        #    test cache correctly misses, even when file size is unchanged.
+        git ls-files -z | xargs -0 touch -t 200101010000
+        git ls-files -z | sed -z 's|/[^/]*$||' | sort -uz | xargs -0 touch -t 200101010000
+
+        base=""
+        if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+          base="origin/${GITHUB_BASE_REF}"
+        # github.event.before is the zero SHA on the first push to a new branch.
+        elif [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+          base="${{ github.event.before }}"
+        fi
+
+        if [[ -n "$base" ]]; then
+          git diff -z --name-only "$base"..HEAD 2>/dev/null | xargs -0 -r touch
+          git diff -z --name-only "$base"..HEAD 2>/dev/null \
+            | sed -z 's|/[^/]*$||' | sort -uz | xargs -0 -r touch
+        fi
       shell: bash
