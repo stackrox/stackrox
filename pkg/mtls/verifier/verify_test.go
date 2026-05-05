@@ -1,8 +1,6 @@
 package verifier
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,46 +30,19 @@ func TestLoadLeafCertFromDirectory(t *testing.T) {
 		assert.Contains(t, cert.Leaf.DNSNames, "central.stackrox.svc")
 	})
 
-	t.Run("missing files returns nil", func(t *testing.T) {
+	t.Run("missing files returns error", func(t *testing.T) {
 		dir := t.TempDir()
 		cert, err := loadLeafCertFromDirectory(dir)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, cert)
 	})
 
-	t.Run("cert only, no key", func(t *testing.T) {
+	t.Run("cert only, no key returns error", func(t *testing.T) {
 		dir := t.TempDir()
 		require.NoError(t, os.WriteFile(filepath.Join(dir, mtls.ServiceCertFileName), issuedCert.CertPEM, 0644))
 
 		cert, err := loadLeafCertFromDirectory(dir)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, cert)
-	})
-}
-
-func TestNonCALeafCertUpdateCallback(t *testing.T) {
-	originalCert := &tls.Certificate{
-		Leaf: &x509.Certificate{},
-	}
-	nonCALeafCert.Store(originalCert)
-	defer nonCALeafCert.Store(nil)
-
-	updateFn := func(c *tls.Certificate) {
-		if c != nil {
-			nonCALeafCert.Store(c)
-		}
-	}
-
-	t.Run("nil does not overwrite existing cert", func(t *testing.T) {
-		updateFn(nil)
-		assert.Equal(t, originalCert, nonCALeafCert.Load())
-	})
-
-	t.Run("non-nil replaces cert", func(t *testing.T) {
-		newCert := &tls.Certificate{
-			Leaf: &x509.Certificate{},
-		}
-		updateFn(newCert)
-		assert.Equal(t, newCert, nonCALeafCert.Load())
 	})
 }

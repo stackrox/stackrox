@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,16 +33,16 @@ func (f TLSConfigurerFunc) TLSConfig() (*tls.Config, error) {
 type NonCA struct{}
 
 var (
-	nonCALeafCert     atomic.Pointer[tls.Certificate]
-	nonCALeafCertOnce sync.Once
+	leafCert     atomic.Pointer[tls.Certificate]
+	leafCertOnce sync.Once
 )
 
-func startNonCALeafCertWatcher() {
-	nonCALeafCertOnce.Do(func() {
-		certwatch.WatchCertDir("service", mtls.CertsPrefix,
+func loadAndWatchLeafCert() {
+	leafCertOnce.Do(func() {
+		certwatch.WatchCertDir("service", filepath.Dir(mtls.CertFilePath()),
 			loadLeafCertFromDirectory, func(cert *tls.Certificate) {
 				if cert != nil {
-					nonCALeafCert.Store(cert)
+					leafCert.Store(cert)
 				}
 			}, certwatch.WithVerify(false))
 	})
@@ -53,13 +52,9 @@ func loadLeafCertFromDirectory(dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
 	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
 
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
-	}
-
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading service certificate")
+		return nil, errors.Wrapf(err, "loading service certificate from %q", dir)
 	}
 
 	return &cert, nil
@@ -104,15 +99,14 @@ func addSecondaryCACertIfExists(certPool *x509.CertPool) {
 // The returned config uses GetConfigForClient to serve the latest cert
 // from a file watcher, enabling hot reload when cert files change on disk.
 func (NonCA) TLSConfig() (*tls.Config, error) {
-	startNonCALeafCertWatcher()
+	loadAndWatchLeafCert()
 
-	serverTLSCert, err := mtls.LeafCertificateFromFile()
-	if err != nil {
-		return nil, errors.Wrap(err, "tls conversion")
+	cert := leafCert.Load()
+	if cert == nil {
+		return nil, errors.New("no leaf certificate available")
 	}
-	nonCALeafCert.Store(&serverTLSCert)
 
-	rootConf, err := config(serverTLSCert)
+	rootConf, err := config(*cert)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +115,7 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 	rootConf.ClientAuth = tls.VerifyClientCertIfGiven
 
 	rootConf.GetCertificate = func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-		cert := nonCALeafCert.Load()
+		cert := leafCert.Load()
 		if cert == nil {
 			return nil, errors.New("no leaf certificate available")
 		}
