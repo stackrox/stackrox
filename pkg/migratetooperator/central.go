@@ -41,7 +41,9 @@ func TransformToCentral(src Source) (*platform.Central, []string, error) {
 	if err := setCentralExposure(src, cr); err != nil {
 		return nil, nil, err
 	}
-	setCentralDefaultTLS(src, cr)
+	if err := setCentralDefaultTLS(src, cr); err != nil {
+		return nil, nil, err
+	}
 	setCentralDeclarativeConfig(centralDep, cr)
 	setCentralTelemetry(centralDep, cr)
 	setCentralPlaintextEndpoints(centralDep, cr)
@@ -134,13 +136,17 @@ func setCentralExposure(src Source, cr *platform.Central) error {
 	return nil
 }
 
-func setCentralDefaultTLS(src Source, cr *platform.Central) {
-	tlsSecret, _ := src.Secret("central-default-tls-cert")
+func setCentralDefaultTLS(src Source, cr *platform.Central) error {
+	tlsSecret, err := src.Secret("central-default-tls-cert")
+	if err != nil {
+		return errors.Wrap(err, "checking for central-default-tls-cert Secret")
+	}
 	if tlsSecret != nil {
 		cr.Spec.Central.DefaultTLSSecret = &platform.LocalSecretReference{
 			Name: "central-default-tls-cert",
 		}
 	}
+	return nil
 }
 
 func setCentralDeclarativeConfig(centralDep *appsv1.Deployment, cr *platform.Central) {
@@ -178,7 +184,7 @@ func setCentralPlaintextEndpoints(centralDep *appsv1.Deployment, cr *platform.Ce
 }
 
 func setCentralOfflineMode(centralDep *appsv1.Deployment, cr *platform.Central) {
-	if envVarValue(centralDep, "ROX_OFFLINE_MODE") == "true" {
+	if envVarIsTrue(centralDep, "ROX_OFFLINE_MODE") {
 		cr.Spec.Egress = &platform.Egress{
 			ConnectivityPolicy: platform.ConnectivityOffline.Pointer(),
 		}
