@@ -1,0 +1,118 @@
+name: Audit Backport PRs
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/audit-backport-prs.yml'
+      - 'scripts/ci/backport-audit.py'
+      - 'scripts/ci/backport_audit/**'
+  schedule:
+    # Run twice a month: 1st and 15th at 9:00 AM UTC
+    - cron: '0 9 1,15 * *'
+  workflow_dispatch:
+    inputs:
+      release_branches:
+        description: 'Release branches (comma-separated, or "all" for auto-detect)'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry run (post to test Slack channel)'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+jobs:
+  properties:
+    name: Read repository properties
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.slack-channel, steps.properties.outputs.dry-slack-channel))[(github.event_name == 'workflow_dispatch' && inputs.dry_run) || github.event_name == 'pull_request'] }}
+    steps:
+      - name: Read workflow properties file
+        id: properties
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.event.repository.default_branch }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
+  audit:
+    runs-on: ubuntu-latest
+    needs: [properties]
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git tag operations
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # ratchet:actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run backport audit
+        env:
+          JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_BRANCHES: ${{ inputs.release_branches || 'all' }}
+        run: |
+          python3 scripts/ci/backport-audit.py \
+            --branches "$RELEASE_BRANCHES" \
+            --output-dir . \
+            --github-run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Show report in summary
+        if: always()
+        run: |
+          if [ -f backport-audit-report.md ]; then
+            cat backport-audit-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ Report file not generated" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backport-audit-report
+          path: |
+            backport-audit-report.md
+            slack-payload.json
+
+      - name: Post report to Slack
+        if: success()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ needs.properties.outputs.slack-channel }}
+        run: |
+          if [ -f slack-payload.json ]; then
+            # Update channel in payload if needed
+            if [ -n "$SLACK_CHANNEL" ]; then
+              jq --arg channel "$SLACK_CHANNEL" '.channel = $channel' slack-payload.json > slack-payload-updated.json
+              mv slack-payload-updated.json slack-payload.json
+            fi
+
+            # Post to Slack and capture response
+            response=$(curl -X POST https://slack.com/api/chat.postMessage \
+              -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d @slack-payload.json)
+
+            # Check if Slack API returned success
+            if ! echo "$response" | jq -e '.ok == true' > /dev/null; then
+              echo "❌ Slack API error:"
+              echo "$response"
+              exit 1
+            fi
+
+            echo "✅ Successfully posted to Slack"
+          else
+            echo "⚠️ Slack payload file not found, skipping Slack post"
+          fi

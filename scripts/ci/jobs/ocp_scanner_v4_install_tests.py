@@ -16,6 +16,7 @@ os.environ["KUBERNETES_PROVIDER"] = "ocp"
 os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["ROX_SCANNER_V4"] = "true"
+os.environ["SCANNER_V4_VULN_READINESS"] = "false"
 os.environ["ENABLE_OPERATOR_TESTS"] = "true"
 
 enable_sfa_for_ocp()

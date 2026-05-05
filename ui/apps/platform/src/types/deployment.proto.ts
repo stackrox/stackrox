@@ -48,6 +48,8 @@ export type Deployment = {
     platformComponent: boolean;
 };
 
+export type ContainerType = 'REGULAR' | 'INIT';
+
 export type Container = {
     id: string;
     config: ContainerConfig | null;
@@ -58,6 +60,7 @@ export type Container = {
     secrets: EmbeddedSecret[];
     resources: ContainerResources | null;
     name: string;
+    type: ContainerType;
 };
 
 export type ContainerConfig = {
