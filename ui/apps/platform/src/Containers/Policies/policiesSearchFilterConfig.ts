@@ -6,6 +6,8 @@ import {
     LifecycleStage,
     Name,
     Severity,
+    SkipContainerType,
+    SkipImageLayers,
     Status,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
@@ -21,6 +23,8 @@ export const policySearchFilterConfig: CompoundSearchFilterEntity = {
         LifecycleStage,
         Name,
         Severity,
+        SkipContainerType,
+        SkipImageLayers,
         Status,
     ],
 };

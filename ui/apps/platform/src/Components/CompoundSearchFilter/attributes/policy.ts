@@ -135,6 +135,32 @@ export const LastUpdated: CompoundSearchFilterAttribute = {
     inputType: 'date-picker',
 };
 
+export const SkipContainerType: CompoundSearchFilterAttribute = {
+    displayName: 'Skip container type',
+    filterChipLabel: 'Skip container type',
+    searchTerm: 'Skip Container Type',
+    inputType: 'select',
+    featureFlagDependency: ['ROX_INIT_CONTAINER_SUPPORT'],
+    inputProps: {
+        options: [{ value: 'SKIP_INIT', label: 'Init containers' }],
+    },
+};
+
+export const SkipImageLayers: CompoundSearchFilterAttribute = {
+    displayName: 'Image layer filter',
+    filterChipLabel: 'Image layer filter',
+    searchTerm: 'Skip Image Layers',
+    inputType: 'select',
+    featureFlagDependency: ['ROX_POLICY_FILTERS_UI'],
+    inputProps: {
+        options: [
+            { value: 'SKIP_NONE', label: 'Evaluate all layers' },
+            { value: 'SKIP_BASE', label: 'Skip base image layers' },
+            { value: 'SKIP_APP', label: 'Skip application layers' },
+        ],
+    },
+};
+
 export const policyAttributes = [
     Name,
     Category,
