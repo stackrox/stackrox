@@ -408,7 +408,7 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     backups: 'Backup',
     cloudSources: 'Cloud source',
     authProviders: 'Authentication',
-    apiClients: 'API Clients',
+    apiClients: 'API clients',
 };
 
 export function getIntegrationTabPath(source: IntegrationSource) {
