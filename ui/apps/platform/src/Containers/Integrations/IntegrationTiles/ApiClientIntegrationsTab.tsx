@@ -22,7 +22,6 @@ const serviceNowStoreUrl =
     'https://store.servicenow.com/store/app/edea7344476072502ec7c1c4f16d4343';
 
 function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactElement {
-
     return (
         <IntegrationsTabPage source={source} sourcesEnabled={sourcesEnabled}>
             <Gallery hasGutter>
