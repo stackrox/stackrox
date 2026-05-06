@@ -9,6 +9,7 @@ import type { OnSearchCallback, SelectExclusiveSingleSearchFilterAttribute } fro
 
 export type SearchFilterSelectExclusiveSingleProps = {
     attribute: SelectExclusiveSingleSearchFilterAttribute;
+    isDisabled?: boolean;
     isSeparate?: boolean; // default false if within CompoundSearchFilter
     onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
@@ -16,6 +17,7 @@ export type SearchFilterSelectExclusiveSingleProps = {
 
 function SearchFilterSelectExclusiveSingle({
     attribute,
+    isDisabled = false,
     isSeparate = false,
     onSearch,
     searchFilter,
@@ -41,6 +43,7 @@ function SearchFilterSelectExclusiveSingle({
         <ToolbarItem>
             <SelectSingle
                 id={category}
+                isDisabled={isDisabled}
                 isFullWidth={false}
                 placeholderText={placeholderText}
                 toggleAriaLabel={`${placeholderText} select menu`}

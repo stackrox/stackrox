@@ -3,11 +3,8 @@ name: e2e-db-backup-restore-test
 on:
   workflow_dispatch:
   push:
-    tags:
-    - '*'
     branches:
     - master
-    - release-*
   pull_request:
     types:
     - opened
@@ -33,8 +30,9 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    - name: Get image tag
-      id: get-tag
+    - uses: ./.github/actions/handle-tagged-build
+    - name: Compute build tag
+      id: build-tag
       run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
@@ -146,7 +144,7 @@ jobs:
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
     - name: Run post-test
-      if: always()
+      if: failure() || github.event_name == 'push'
       shell: python
       env:
         PYTHONUNBUFFERED: "1"

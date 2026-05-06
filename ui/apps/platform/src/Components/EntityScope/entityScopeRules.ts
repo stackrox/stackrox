@@ -10,6 +10,7 @@ import {
     getValueByCaseInsensitiveKey,
     isQuotedString,
     searchValueAsArray,
+    wrapInQuotes,
 } from 'utils/searchUtils';
 
 type EntityScopeSearchFieldLabelForCluster = Extract<
@@ -17,7 +18,18 @@ type EntityScopeSearchFieldLabelForCluster = Extract<
     'Cluster ID' | 'Cluster' | 'Cluster Label'
 >;
 
-type EntityScopeSearchFieldLabelForWorkload = Extract<
+type EntityScopeSearchFieldLabelForClusterNamespace = Extract<
+    SearchFieldLabel,
+    | 'Cluster ID'
+    | 'Cluster'
+    | 'Cluster Label'
+    | 'Namespace ID'
+    | 'Namespace'
+    | 'Namespace Label'
+    | 'Namespace Annotation'
+>;
+
+type EntityScopeSearchFieldLabelForClusterNamespaceDeployment = Extract<
     SearchFieldLabel,
     | 'Cluster ID'
     | 'Cluster'
@@ -56,8 +68,8 @@ const searchFieldLabelMapForCluster: Record<
     // 'Cluster Annotation' is not a search filter
 } as const;
 
-const searchFieldLabelMapForWorkload: Record<
-    EntityScopeSearchFieldLabelForWorkload,
+const searchFieldLabelMapForClusterNamespace: Record<
+    EntityScopeSearchFieldLabelForClusterNamespace,
     EntityScopeRuleWithoutValues
 > = {
     ...searchFieldLabelMapForCluster,
@@ -77,6 +89,13 @@ const searchFieldLabelMapForWorkload: Record<
         entity: 'SCOPE_ENTITY_NAMESPACE',
         field: 'FIELD_ANNOTATION',
     },
+} as const;
+
+const searchFieldLabelMapForClusterNamespaceDeployment: Record<
+    EntityScopeSearchFieldLabelForClusterNamespaceDeployment,
+    EntityScopeRuleWithoutValues
+> = {
+    ...searchFieldLabelMapForClusterNamespace,
     'Deployment ID': {
         entity: 'SCOPE_ENTITY_DEPLOYMENT',
         field: 'FIELD_ID',
@@ -128,6 +147,35 @@ function getEntityScopeRulesFromSearchFilter(
     return rules;
 }
 
+export const ruleFieldValueMapper = ({ matchType, value }: RuleValue): string =>
+    matchType === 'EXACT' ? wrapInQuotes(value) : `r/${value}`;
+
+/**
+ * Return search filter in EntityScopeCompoundSearchFilter component.
+ */
+function getSearchFilterFromEntityScopeRules(
+    rules: EntityScopeRule[],
+    searchFieldLabelMap: Record<string, EntityScopeRuleWithoutValues>
+) {
+    const searchFilter: SearchFilter = {};
+
+    rules.forEach((rule) => {
+        const found = Object.entries(searchFieldLabelMap).find(
+            ([, { entity, field }]) => entity === rule.entity && field === rule.field
+        );
+
+        if (found) {
+            const [searchFieldLabel] = found;
+            const searchFilterValue = getValueByCaseInsensitiveKey(searchFilter, searchFieldLabel);
+            const searchFilterValues = searchValueAsArray(searchFilterValue);
+            const ruleValues = rule.values.map(ruleFieldValueMapper);
+            searchFilter[searchFieldLabel] = [...searchFilterValues, ...ruleValues];
+        }
+    });
+
+    return searchFilter;
+}
+
 /**
  * Return initial entity scope rules for corresponding search fields
  * when user creates node vulnerability report configuration from results page.
@@ -136,10 +184,43 @@ export function getEntityScopeRulesFromSearchFilterForCluster(searchFilter: Sear
     return getEntityScopeRulesFromSearchFilter(searchFilter, searchFieldLabelMapForCluster);
 }
 
+export function getSearchFilterFromEntityScopeRulesForCluster(rules: EntityScopeRule[]) {
+    return getSearchFilterFromEntityScopeRules(rules, searchFieldLabelMapForCluster);
+}
+
+/**
+ * Return initial entity scope rules for corresponding search fields
+ * when user creates either virtual machine vulnerability report configuration from results page.
+ */
+export function getEntityScopeRulesFromSearchFilterForClusterNamespace(searchFilter: SearchFilter) {
+    return getEntityScopeRulesFromSearchFilter(
+        searchFilter,
+        searchFieldLabelMapForClusterNamespace
+    );
+}
+
+export function getSearchFilterFromEntityScopeRulesForClusterNamespace(rules: EntityScopeRule[]) {
+    return getSearchFilterFromEntityScopeRules(rules, searchFieldLabelMapForClusterNamespace);
+}
+
 /**
  * Return initial entity scope rules for corresponding search fields
  * when user creates either violation or image vulnerability report configuration from results page.
  */
-export function getEntityScopeRulesFromSearchFilterForWorkload(searchFilter: SearchFilter) {
-    return getEntityScopeRulesFromSearchFilter(searchFilter, searchFieldLabelMapForWorkload);
+export function getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment(
+    searchFilter: SearchFilter
+) {
+    return getEntityScopeRulesFromSearchFilter(
+        searchFilter,
+        searchFieldLabelMapForClusterNamespaceDeployment
+    );
+}
+
+export function getSearchFilterFromEntityScopeRulesForClusterNamespaceDeployment(
+    rules: EntityScopeRule[]
+) {
+    return getSearchFilterFromEntityScopeRules(
+        rules,
+        searchFieldLabelMapForClusterNamespaceDeployment
+    );
 }

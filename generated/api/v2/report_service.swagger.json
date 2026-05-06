@@ -1396,7 +1396,8 @@
           "format": "date-time"
         },
         "includeNvdCvss": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Deprecated: These fields are no longer used.\nNVD CVSS, EPSS Probability and Advisory columns are always included in reports."
         },
         "includeEpssProbability": {
           "type": "boolean"

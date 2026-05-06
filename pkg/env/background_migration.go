@@ -8,3 +8,6 @@ var BackgroundMigrationOverrideSeqNum = RegisterIntegerSetting("ROX_BACKGROUND_M
 // The tag is persisted to the DB after applying an override. Subsequent replicas that see the
 // same tag in the DB will skip the override. Change the tag to trigger a new override run.
 var BackgroundMigrationOverrideTag = RegisterSetting("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG")
+
+// SkipBackgroundMigrations is a comma-separated list of background migration sequence numbers to skip.
+var SkipBackgroundMigrations = RegisterSetting("ROX_SKIP_BACKGROUND_MIGRATIONS")
