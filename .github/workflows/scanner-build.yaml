@@ -317,15 +317,15 @@ jobs:
         source ./scripts/ci/lib.sh
 
         # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
-        architectures=(amd64 arm64)
+        architectures="amd64,arm64"
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures=(amd64 arm64 ppc64le s390x)
+          architectures="amd64,arm64,ppc64le,s390x"
         fi
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
-          architectures=(amd64)
+          architectures="amd64"
         fi
 
-        push_scanner_image_manifest_lists "${{ matrix.registry }}" "${architectures[@]}"
+        push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
 
   scan-images-with-roxctl:
     if: github.event_name == 'push' ||

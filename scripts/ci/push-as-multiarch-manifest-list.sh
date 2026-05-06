@@ -6,11 +6,10 @@ source "$ROOT/scripts/lib.sh"
 
 set -euo pipefail
 
-[[ "$#" -ge 2 ]] || die "Usage: $0 <image> <arch> [<arch>...]"
+[[ "$#" == 2 ]] || die "Usage: $0 <image> <csv of architectures>"
 
 image="$1"
-shift
-architectures=("$@")
+IFS=',' read -ra architectures <<< "$2"
 
 [[ -n "$image" ]] || die "No image specified"
 [[ "$image" == *:* ]] || die "Must specify a tagged image reference when using this script"
