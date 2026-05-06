@@ -28,10 +28,8 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
-      # For tagged builds, use the tag. Otherwise: {version}-g{sha}.
-      # STACKROX_VERSION is a GitHub repo variable (e.g., "4.11.x") updated when a release cycle begins.
-      build-tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-g{1}', vars.STACKROX_VERSION, github.sha) }}
-      short-commit: ${{ format('{0}', github.sha) }}
+      build-tag: ${{ steps.define-job-matrix.outputs.build-tag }}
+      short-commit: ${{ github.sha }}
       gotags: ${{ startsWith(github.ref, 'refs/tags/') && 'release' || '' }}
     runs-on: ubuntu-latest
     steps:
@@ -44,8 +42,24 @@ jobs:
           PRERELEASE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-prerelease') }}
           RACE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug') }}
           TAGGED: ${{ startsWith(github.ref, 'refs/tags/') }}
+          # STACKROX_VERSION is a GitHub repo variable (e.g., "4.11.x") for the current dev cycle.
+          STACKROX_VERSION: ${{ vars.STACKROX_VERSION }}
+          # Branch that this build targets (PR base branch, or the push branch itself).
+          TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
+          COMMIT_SHA: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
         run: |
           echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
+
+          # Compute build tag: tagged builds use the tag directly, release branches
+          # derive version from branch name, everything else uses STACKROX_VERSION.
+          if [[ "$TAGGED" == "true" ]]; then
+            build_tag="${GITHUB_REF#refs/tags/}"
+          elif [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
+            build_tag="${BASH_REMATCH[1]}.x-g${COMMIT_SHA:0:10}"
+          else
+            build_tag="${STACKROX_VERSION}-g${COMMIT_SHA:0:10}"
+          fi
+          echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
