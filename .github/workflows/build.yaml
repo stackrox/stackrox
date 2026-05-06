@@ -32,27 +32,28 @@ jobs:
       short-commit: ${{ steps.short-commit.outputs.shortcommit }}
       gotags: ${{ steps.gotags.outputs.gotags }}
     runs-on: ubuntu-latest
+    env:
+      COMMIT_SHA: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          fetch-depth: 0
-          filter: blob:none
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - name: Compute build metadata
+      - name: Compute build tag
         id: build-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [[ "${GITHUB_REF}" =~ ^refs/tags/(.*) ]]; then
-            TAG="${BASH_REMATCH[1]}"
+            echo "tag=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
           else
-            TAG="$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*')"
+            SHORT="${COMMIT_SHA:0:10}"
+            # Find the nearest version tag and its distance via the API.
+            TAG="$(gh api repos/${{ github.repository }}/tags --jq \
+              '[.[] | select(.name | test("^[0-9]+\\.[0-9]+\\.")) | select(.name | test("nightly") | not)][0].name')"
+            AHEAD="$(gh api "repos/${{ github.repository }}/compare/${TAG}...${COMMIT_SHA}" --jq '.ahead_by')"
+            echo "tag=${TAG}-${AHEAD}-g${SHORT}" >> "$GITHUB_OUTPUT"
           fi
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Compute short commit
         id: short-commit
-        run: echo "shortcommit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        run: echo "shortcommit=${COMMIT_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Compute GOTAGS
         id: gotags
@@ -75,56 +76,21 @@ jobs:
         run: |
           echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
-          # Build the full matrix in a single jq expression.
-          # The structure is the template; conditions are inline via optional().
-          matrix="$(jq -n \
-            --argjson all_arch "$ALL_ARCH" \
-            --argjson prerelease "$PRERELEASE" \
-            --argjson race "$RACE" \
-            --argjson tagged "$TAGGED" \
-          '
-            def optional($flag; $items): if $flag then $items else [] end;
+          matrix='{
+            "pre_build_go_binaries": { "name":[], "arch":[] },
+            "build_and_push_main": { "name":[], "arch":[] },
+            "push_main_multiarch_manifests": { "name":[] },
+            "build_and_push_operator": { "name":[], "arch":[] },
+            "push_operator_multiarch_manifests": { "name":[] },
+            "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
+          }'
 
-            # Pre-compute repeated fragments.
-            (["RHACS_BRANDING", "STACKROX_BRANDING"]) as $brands |
-            (["amd64", "arm64"] + optional($all_arch; ["ppc64le", "s390x"])) as $archs |
-            (optional(($tagged | not) and $prerelease; ["prerelease"])
-              + optional($race; ["race-condition-debug"])) as $extra_builds |
-            (optional($race; [{"name":"race-condition-debug","arch":"arm64"},
-                              {"name":"race-condition-debug","arch":"ppc64le"},
-                              {"name":"race-condition-debug","arch":"s390x"}])) as $race_excludes |
+          # The base matrix
+          matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
-            {
-              pre_build_go_binaries: {
-                name: (["default"] + $extra_builds),
-                arch: $archs,
-                exclude: $race_excludes
-              },
-              build_and_push_main: {
-                name: ($brands + $extra_builds),
-                arch: $archs,
-                exclude: $race_excludes
-              },
-              push_main_multiarch_manifests: {
-                name: ($brands + $extra_builds)
-              },
-              build_and_push_operator: {
-                name: $brands,
-                arch: $archs
-              },
-              push_operator_multiarch_manifests: {
-                name: $brands,
-                # CSV in a one-element array: push_operator_manifest_lists expects a CSV string arg.
-                archs: [$archs | join(",")]
-              },
-              scan_images_with_roxctl: {
-                name: $brands,
-                image: ["central-db","collector","fact","main","roxctl","scanner",
-                        "scanner-db","scanner-db-slim","scanner-slim","stackrox-operator"],
-                exclude: [{"name":"STACKROX_BRANDING","image":"stackrox-operator"}]
-              }
-            }
-          ')"
+          matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
