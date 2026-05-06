@@ -155,6 +155,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "reading current state")
 	}
+	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
 
 	overrideSeqNum, overrideTag, shouldOverride := r.checkSeqNumOverrideConfig(r.targetSeqNum, dbOverrideTag)
 	if shouldOverride {
