@@ -46,6 +46,7 @@ _use_existing_virtctl_binary_if_available() {
 }
 
 # Retrieves the cluster ingress CA bundle and prints its path to stdout.
+# Any diagnostic logging must go to stderr so command substitution captures only the path.
 # Dies if no trust material is available.
 _fetch_cluster_ingress_ca() {
     local ca_bundle
@@ -53,16 +54,16 @@ _fetch_cluster_ingress_ca() {
     if oc get configmap -n openshift-config-managed default-ingress-cert \
             -o jsonpath='{.data.ca-bundle\.crt}' > "$ca_bundle" 2>/dev/null \
        && [[ -s "$ca_bundle" ]]; then
-        info "Using ingress CA from default-ingress-cert configmap"
+        info "Using ingress CA from default-ingress-cert configmap" >&2
     elif oc get secret -n openshift-ingress-operator router-ca \
             -o jsonpath='{.data.tls\.crt}' 2>/dev/null | base64 -d > "$ca_bundle" \
          && [[ -s "$ca_bundle" ]]; then
-        info "Using ingress CA from router-ca secret"
+        info "Using ingress CA from router-ca secret" >&2
     else
         rm -f "$ca_bundle"
         die "Cluster ingress CA not available"
     fi
-    echo "$ca_bundle"
+    printf '%s\n' "$ca_bundle"
 }
 
 # Downloads and installs virtctl using the provided curl TLS arguments.
