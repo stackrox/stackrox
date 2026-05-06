@@ -6,11 +6,16 @@ import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
 
 export type SearchFilterTextProps = {
     attribute: GenericSearchFilterAttribute;
+    isDisabled?: boolean;
     onSearch: OnSearchCallback;
     // does not depend on searchFilter
 };
 
-function SearchFilterText({ attribute, onSearch }: SearchFilterTextProps): ReactElement {
+function SearchFilterText({
+    attribute,
+    isDisabled = false,
+    onSearch,
+}: SearchFilterTextProps): ReactElement {
     const { filterChipLabel, searchTerm: category } = attribute;
     const textLabel = `Filter results by ${filterChipLabel}`;
 
@@ -21,6 +26,7 @@ function SearchFilterText({ attribute, onSearch }: SearchFilterTextProps): React
             <SearchInput
                 aria-label={textLabel}
                 placeholder={textLabel}
+                isDisabled={isDisabled}
                 value={value}
                 onChange={(_event, _value) => setValue(_value)}
                 onSearch={(_event, _value) => {
