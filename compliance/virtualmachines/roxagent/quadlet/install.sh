@@ -24,6 +24,14 @@ OPTIONAL_HOST_PATHS=(
     /var/lib/dnf
 )
 
+STAGED_INSTALL_FILES=(
+    install.sh
+    roxagent.container
+    roxagent.timer
+    roxagent-prep.service
+    roxagent-tmpfiles.conf
+)
+
 # --- Transport abstraction ---------------------------------------------------
 # Each transport stores state here and uses the shared helpers:
 #   remote_copy <local-file> <remote-dest>   — copy a file to the target
@@ -90,78 +98,65 @@ setup_transport_virtctl() {
 
 # --- Install logic (shared) --------------------------------------------------
 
-REMOTE_INSTALL_SCRIPT=$(cat << 'SCRIPT'
+create_remote_stage_dir() {
+    local output
+    output="$(
+        remote_exec <<'SCRIPT'
 set -euo pipefail
-
-OPTIONAL_HOST_PATHS=(
-    /etc/yum.repos.d
-    /etc/yum/repos.d
-    /etc/distro.repos.d
-    /etc/redhat-release
-    /etc/system-release-cpe
-    /var/cache/dnf
-    /var/lib/dnf
-)
-
-# Strip Volume= lines for host paths that don't exist on this machine
-pattern=""
-for p in "${OPTIONAL_HOST_PATHS[@]}"; do
-    if [ ! -e "${p}" ]; then
-        echo "  Stripping mount for missing path: ${p}"
-        pattern="${pattern:+${pattern}|}Volume=${p}[:/]"
-    fi
-done
-if [ -n "${pattern}" ]; then
-    grep -Ev "${pattern}" /tmp/roxagent.container > /tmp/roxagent.container.filtered
-    mv /tmp/roxagent.container.filtered /tmp/roxagent.container
-fi
-
-# Quadlet container file
-sudo mkdir -p /etc/containers/systemd/
-sudo mv /tmp/roxagent.container /etc/containers/systemd/
-sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
-
-# Timer and prep service
-sudo mv /tmp/roxagent.timer /etc/systemd/system/
-sudo mv /tmp/roxagent-prep.service /etc/systemd/system/
-sudo restorecon -Rv /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
-
-# Recreate the lock directory on every boot since /run is tmpfs.
-sudo mkdir -p /etc/tmpfiles.d/
-sudo mv /tmp/roxagent-tmpfiles.conf /etc/tmpfiles.d/roxagent.conf
-sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
-# systemd-tmpfiles --create applies the rule now (creates /run/lock/roxagent immediately).
-sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
-
-echo "Reloading systemd..."
-sudo systemctl daemon-reload
-
-echo "Enabling and starting timer..."
-sudo systemctl enable --now roxagent.timer
-
-echo "Status:"
-sudo systemctl list-timers roxagent.timer
+stage_dir="$(mktemp -d "${TMPDIR:-/var/tmp}/roxagent-install.XXXXXX")"
+printf '__STAGE_DIR__=%s\n' "${stage_dir}"
 SCRIPT
-)
+    )"
 
-install_local() {
-    echo "Installing Quadlet units locally..."
+    local stage_dir
+    stage_dir="$(printf '%s\n' "${output}" | sed -n 's/^__STAGE_DIR__=//p' | tail -n 1)"
+    if [ -z "${stage_dir}" ]; then
+        echo "failed to determine remote stage dir" >&2
+        return 1
+    fi
+    printf '%s\n' "${stage_dir}"
+}
+
+copy_remote_stage_files() {
+    local remote_stage_dir="${1}"
+    local file
+    for file in "${STAGED_INSTALL_FILES[@]}"; do
+        remote_copy "${SCRIPT_DIR}/${file}" "${remote_stage_dir}/${file}"
+    done
+}
+
+validate_stage_dir() {
+    local stage_dir="${1}"
+    local file
+    for file in roxagent.container roxagent.timer roxagent-prep.service roxagent-tmpfiles.conf; do
+        if [ ! -f "${stage_dir}/${file}" ]; then
+            echo "missing staged file: ${stage_dir}/${file}" >&2
+            return 1
+        fi
+    done
+}
+
+install_from_stage_dir() {
+    local stage_dir="${1}"
+    validate_stage_dir "${stage_dir}"
+
+    echo "Installing Quadlet units from ${stage_dir}..."
 
     # Quadlet container file (strip mounts for paths missing on this host)
     sudo mkdir -p /etc/containers/systemd/
-    filter_container_file "${SCRIPT_DIR}/roxagent.container" \
+    filter_container_file "${stage_dir}/roxagent.container" \
         | sudo tee /etc/containers/systemd/roxagent.container >/dev/null
     # restorecon resets SELinux labels so systemd/podman can read the new files.
     sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
 
     # Timer and prep service go in standard systemd directory
-    sudo cp "${SCRIPT_DIR}/roxagent.timer" /etc/systemd/system/
-    sudo cp "${SCRIPT_DIR}/roxagent-prep.service" /etc/systemd/system/
+    sudo cp "${stage_dir}/roxagent.timer" /etc/systemd/system/
+    sudo cp "${stage_dir}/roxagent-prep.service" /etc/systemd/system/
     sudo restorecon -Rv /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
 
     # Recreate the lock directory on every boot since /run is tmpfs.
     sudo mkdir -p /etc/tmpfiles.d/
-    sudo cp "${SCRIPT_DIR}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
+    sudo cp "${stage_dir}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
     sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
     # systemd-tmpfiles --create applies the rule now (creates /run/lock/roxagent immediately).
     sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
@@ -176,15 +171,28 @@ install_local() {
     sudo systemctl list-timers roxagent.timer
 }
 
+install_local() {
+    install_from_stage_dir "${SCRIPT_DIR}"
+}
+
 install_remote() {
+    local remote_stage_dir
+
+    echo "Preparing stage directory on target..."
+    remote_stage_dir="$(create_remote_stage_dir)"
+
     echo "Copying files to target..."
-    remote_copy "${SCRIPT_DIR}/roxagent.container" /tmp/
-    remote_copy "${SCRIPT_DIR}/roxagent.timer" /tmp/
-    remote_copy "${SCRIPT_DIR}/roxagent-prep.service" /tmp/
-    remote_copy "${SCRIPT_DIR}/roxagent-tmpfiles.conf" /tmp/
+    copy_remote_stage_files "${remote_stage_dir}"
 
     echo "Running install on target..."
-    echo "${REMOTE_INSTALL_SCRIPT}" | remote_exec
+    remote_exec <<SCRIPT
+set -euo pipefail
+cleanup() {
+    rm -rf "${remote_stage_dir}"
+}
+trap cleanup EXIT
+bash "${remote_stage_dir}/install.sh" --stage-dir "${remote_stage_dir}"
+SCRIPT
 }
 
 # Produce a filtered roxagent.container on stdout, removing Volume= lines
@@ -207,10 +215,15 @@ filter_container_file() {
 
 # --- Main ---------------------------------------------------------------------
 
-# Main
 if [ "${#}" -eq 0 ]; then
     setup_transport_local
     install_local
+elif [ "${1}" = "--stage-dir" ]; then
+    if [ "${#}" -ne 2 ]; then
+        echo "usage: ${0} --stage-dir <dir>" >&2
+        exit 1
+    fi
+    install_from_stage_dir "${2}"
 elif [[ "${1}" == "virtctl" ]]; then
     shift
     setup_transport_virtctl "${@}"
