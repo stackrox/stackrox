@@ -615,11 +615,7 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
+            push_context="$(get_push_context)"
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
   build-and-push-images:
@@ -734,11 +730,7 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
+            push_context="$(get_push_context)"
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
       - name: Push operator image
@@ -751,11 +743,7 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
+            push_context="$(get_push_context)"
             echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
             if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
               echo "ERROR: push_operator_image failed" >&2
@@ -886,15 +874,8 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
       run: |
         source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        architectures="amd64,arm64"
-        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
-        fi
+        push_context="$(get_push_context)"
+        architectures="$(get_build_architectures)"
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi
@@ -967,15 +948,8 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
           source ./scripts/ci/lib.sh
-          echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-          push_context=""
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-            push_context="merge-to-master"
-          fi
-          architectures="amd64,arm64"
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-            architectures="amd64,arm64,ppc64le,s390x"
-          fi
+          push_context="$(get_push_context)"
+          architectures="$(get_build_architectures)"
           push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
       - name: Build and push operator manifest lists
@@ -988,15 +962,8 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
           source ./scripts/ci/lib.sh
-          echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-          push_context=""
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-            push_context="merge-to-master"
-          fi
-          architectures="amd64,arm64"
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-            architectures="amd64,arm64,ppc64le,s390x"
-          fi
+          push_context="$(get_push_context)"
+          architectures="$(get_build_architectures)"
           push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
       - name: Prepare build comment

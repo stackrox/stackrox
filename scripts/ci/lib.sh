@@ -1225,6 +1225,22 @@ get_PR_number() {
     return 1
 }
 
+get_push_context() {
+    if [[ "${GITHUB_EVENT_NAME:-}" == "push" && "${GITHUB_REF_NAME:-}" == "master" ]]; then
+        echo "merge-to-master"
+    else
+        echo ""
+    fi
+}
+
+get_build_architectures() {
+    if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+        echo "amd64,arm64,ppc64le,s390x"
+    else
+        echo "amd64,arm64"
+    fi
+}
+
 is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
