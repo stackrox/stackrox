@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
 )
 
 func (i *indexerMetadataStore) MigrateManifests(ctx context.Context, expiration time.Time) ([]string, error) {
@@ -17,8 +17,6 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context, expiration 
 	if i.store == nil {
 		return nil, errors.New("indexer store not defined")
 	}
-
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.MigrateManifests")
 
 	// insertMissingManifests inserts missing manifests from the manifest table into manifest_metadata,
 	// and it sets the expiration time to the given expiration.
@@ -40,7 +38,7 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context, expiration 
 	for rows.Next() {
 		var manifestID string
 		if err := rows.Scan(&manifestID); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("scanning manifest row")
+			slog.WarnContext(ctx, "scanning manifest row", "reason", err)
 			continue
 		}
 		missingManifests = append(missingManifests, manifestID)
@@ -53,8 +51,6 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context, expiration 
 }
 
 func (i *indexerMetadataStore) StoreManifest(ctx context.Context, manifestID string, expiration time.Time) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.StoreManifest")
-
 	// insertManifest inserts the metadata into manifest_metadata, overwriting the previous expiration, if it exists.
 	const insertManifest = `
 		INSERT INTO manifest_metadata (manifest_id, expiration) VALUES
@@ -70,8 +66,6 @@ func (i *indexerMetadataStore) StoreManifest(ctx context.Context, manifestID str
 }
 
 func (i *indexerMetadataStore) ManifestExists(ctx context.Context, manifestID string) (bool, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.ManifestExists")
-
 	// selectManifest returns 1 if the given manifest exists in the table.
 	// If it does not exist, then no rows will be returned.
 	const selectManifest = `SELECT 1 FROM manifest_metadata WHERE manifest_id = $1`
@@ -92,8 +86,6 @@ func (i *indexerMetadataStore) ManifestExists(ctx context.Context, manifestID st
 
 func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error) {
 	o := makeReindexGCOpts(opts)
-
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.GCManifests")
 
 	const deleteManifests = `
 		DELETE FROM manifest_metadata
@@ -121,7 +113,7 @@ func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.
 	for rows.Next() {
 		var manifestID string
 		if err := rows.Scan(&manifestID); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("scanning deleted manifest metadata row")
+			slog.WarnContext(ctx, "scanning deleted manifest metadata row", "reason", err)
 			continue
 		}
 		deletedManifests = append(deletedManifests, manifestID)
@@ -148,9 +140,9 @@ func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.
 			for _, d := range deletedDigs {
 				digs = append(digs, d.String())
 			}
-			zlog.Debug(ctx).Strs("deleted_manifests", digs).Msg("deleted manifests")
+			slog.DebugContext(ctx, "deleted manifests", "deleted_manifests", digs)
 		}
-		zlog.Info(ctx).Int("deleted_manifests", len(deletedDigs)).Msg("deleted manifests")
+		slog.InfoContext(ctx, "deleted manifests", "deleted_manifests", len(deletedDigs))
 	}
 
 	if err := tx.Commit(ctx); err != nil {

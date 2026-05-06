@@ -298,28 +298,6 @@ spec:
       # This timeout must be the same as the pipeline timeout in `operator-bundle-build.yaml`.
       timeout: 3h20m
 
-    - name: prefetch-dependencies
-      params:
-      - name: input
-        value: ""
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-      - name: ociStorage
-        value: $(params.output-image-repo):konflux-$(params.revision).prefetch
-      - name: ociArtifactExpiresAfter
-        value: $(params.oci-artifact-expires-after)
-      taskRef:
-        params:
-        - name: name
-          value: prefetch-dependencies-oci-ta
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.3@sha256:a579d00fe370b6d9a1cb1751c883ecd0ec9f663604344e2fd61e1f6d5bf4e990
-        - name: kind
-          value: task
-        resolver: bundles
-      workspaces:
-      - name: git-basic-auth
-        workspace: git-auth
 
     - name: generate-index-content
       runAfter:
