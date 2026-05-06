@@ -28,7 +28,7 @@ jobs:
       CLUSTER_NAME: e2e-test-${{ github.run_id }}
       # EXPERIMENT: hardcode known-good tag with scanner images
       TAG: 4.11.x-879-g846c8632d9
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
 
     - name: Checkout
@@ -72,6 +72,27 @@ jobs:
         fi
         echo "Central API ready"
 
+    - name: Add registry integration for scanning
+      env:
+        QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      run: |
+        set +x
+        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://localhost:8000/v1/imageintegrations" \
+          -X POST -d "{
+            \"name\": \"quay-ci\",
+            \"type\": \"docker\",
+            \"categories\": [\"REGISTRY\"],
+            \"docker\": {
+              \"endpoint\": \"https://quay.io\",
+              \"username\": \"${QUAY_USER}\",
+              \"password\": \"${QUAY_PASS}\"
+            }
+          }" | jq -r '.id // .error'
+        set -x
+
     - name: Run QA SMOKE tests
       working-directory: qa-tests-backend
       env:
@@ -80,6 +101,8 @@ jobs:
         ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
         CLUSTER: K8S
         POD_SECURITY_POLICIES: "false"
+        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: |
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
