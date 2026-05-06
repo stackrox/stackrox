@@ -22,11 +22,30 @@ import (
 const vulnDataSourceDelimiter = "::"
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
+	repos := report.GetContents().GetRepositories()
+	if len(repos) > 0 {
+		for id, repo := range repos {
+			log.Debugf("Repository CPE: repo id=%q name=%q key=%q cpe=%q", id, repo.GetName(), repo.GetKey(), repo.GetCpe())
+		}
+	} else {
+		log.Debugf("Repository CPE: vulnerability report contains 0 repositories")
+	}
+
+	var withRepoID, withoutRepoID int
+	for _, vuln := range report.GetVulnerabilities() {
+		if vuln.GetRepositoryId() != "" {
+			withRepoID++
+		} else {
+			withoutRepoID++
+		}
+	}
+	log.Debugf("Repository CPE: %d vulns with repo ID, %d without", withRepoID, withoutRepoID)
+
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: os(report),
-		Components:      components(metadata, report, report.GetContents().GetRepositories()),
+		Components:      components(metadata, report, repos),
 		Notes:           notes(report),
 	}
 
@@ -261,10 +280,19 @@ func vulnDataSource(ccVuln *v4.VulnerabilityReport_Vulnerability, os string) str
 }
 
 func repositoryCPE(repositories map[string]*v4.Repository, repoID string) string {
-	if repo, ok := repositories[repoID]; ok {
-		return repo.GetCpe()
+	if repoID == "" {
+		return ""
 	}
-	return ""
+	repo, ok := repositories[repoID]
+	if !ok {
+		log.Debugf("Repository CPE lookup: repo ID %q not found in %d repositories", repoID, len(repositories))
+		return ""
+	}
+	cpeStr := repo.GetCpe()
+	if cpeStr == "" {
+		log.Debugf("Repository CPE lookup: repo ID %q (name=%q, key=%q) has empty CPE", repoID, repo.GetName(), repo.GetKey())
+	}
+	return cpeStr
 }
 
 func advisory(advisory *v4.VulnerabilityReport_Advisory) *storage.Advisory {
