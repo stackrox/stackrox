@@ -28,7 +28,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"},
 					},
@@ -37,7 +37,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "UpgradeSuccessful"}, // Changed
 					},
@@ -50,7 +50,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},
+						{Type: "Available", Status: platform.StatusFalse, Reason: "WorkloadsNotReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -58,7 +58,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"}, // Changed
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"}, // Changed
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -70,7 +70,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusTrue, Reason: "Reconciling"},
 					},
 				},
@@ -78,7 +78,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"}, // Changed
 					},
 				},
@@ -90,7 +90,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},
+						{Type: "Available", Status: platform.StatusFalse, Reason: "WorkloadsNotReady"},
 						{Type: "Progressing", Status: platform.StatusTrue, Reason: "Reconciling"},
 					},
 				},
@@ -98,7 +98,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},       // Changed
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},         // Changed
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"}, // Changed
 					},
 				},
@@ -110,7 +110,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusUnknown},
 					},
@@ -119,7 +119,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"}, // Changed
 					},
@@ -132,7 +132,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusUnknown},
 					},
 				},
@@ -140,7 +140,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},             // Changed
+						{Type: "Available", Status: platform.StatusFalse, Reason: "WorkloadsNotReady"},               // Changed
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"}, // Changed
 					},
 				},
@@ -152,7 +152,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 					ObservedGeneration: 5,
@@ -161,7 +161,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 					ObservedGeneration: 6, // Changed
@@ -207,7 +207,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 				},
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -218,7 +218,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 				},
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -490,7 +490,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 							map[string]interface{}{
 								"type":   "Available",
 								"status": "True",
-								"reason": "DeploymentsReady",
+								"reason": "WorkloadsReady",
 							},
 						},
 					},
@@ -512,7 +512,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 							map[string]interface{}{
 								"type":   "Available",
 								"status": "True",
-								"reason": "DeploymentsReady",
+								"reason": "WorkloadsReady",
 							},
 							map[string]interface{}{
 								"type":   "Deployed",
@@ -535,7 +535,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 							map[string]interface{}{
 								"type":   "Available",
 								"status": "True",
-								"reason": "DeploymentsReady",
+								"reason": "WorkloadsReady",
 							},
 							map[string]interface{}{
 								"type":   "Deployed",
