@@ -1076,9 +1076,12 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		obj.GetId(),
 		obj.GetImageIdV2(),
 		obj.GetCveBaseInfo().GetCve(),
+		obj.GetCveBaseInfo().GetSummary(),
+		obj.GetCveBaseInfo().GetLink(),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+		obj.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -1089,11 +1092,15 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		obj.GetFixedBy(),
 		obj.GetComponentId(),
 		obj.GetAdvisory().GetName(),
+		obj.GetAdvisory().GetLink(),
 		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
+		obj.GetRepositoryCpe(),
+		obj.GetComponentName(),
+		obj.GetComponentVersion(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageIdV2, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, FixAvailableTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageIdV2 = EXCLUDED.ImageIdV2, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves_v2 (Id, ImageIdV2, CveBaseInfo_Cve, CveBaseInfo_Summary, CveBaseInfo_Link, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_Epss_EpssPercentile, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, Advisory_Name, Advisory_Link, FixAvailableTimestamp, RepositoryCpe, ComponentName, ComponentVersion, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageIdV2 = EXCLUDED.ImageIdV2, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_Summary = EXCLUDED.CveBaseInfo_Summary, CveBaseInfo_Link = EXCLUDED.CveBaseInfo_Link, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_Epss_EpssPercentile = EXCLUDED.CveBaseInfo_Epss_EpssPercentile, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, RepositoryCpe = EXCLUDED.RepositoryCpe, ComponentName = EXCLUDED.ComponentName, ComponentVersion = EXCLUDED.ComponentVersion, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
