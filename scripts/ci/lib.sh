@@ -225,13 +225,14 @@ get_central_diagnostics() {
 push_image_manifest_lists() {
     info "Pushing main, roxctl and central-db images as manifest lists"
 
-    if [[ "$#" -ne 3 ]]; then
-        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
+    if [[ "$#" -lt 3 ]]; then
+        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <arch> [<arch>...]"
     fi
 
     local push_context="$1"
     local brand="$2"
-    local architectures="$3"
+    shift 2
+    local architectures=("$@")
 
     local main_image_set=("main" "roxctl" "central-db")
 
@@ -244,10 +245,10 @@ push_image_manifest_lists() {
     registry_rw_login "$registry"
     for image in "${main_image_set[@]}"; do
         retry 5 true \
-          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "${architectures[@]}" | cat
         if [[ "$push_context" == "merge-to-master" ]]; then
             retry 5 true \
-              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
+              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "${architectures[@]}" | cat
         fi
     done
 }
@@ -368,12 +369,13 @@ push_operator_image() {
 push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_scanner_image_manifest_lists <registry> <architectures (CSV)>"
+    if [[ "$#" -lt 2 ]]; then
+        die "missing arg. usage: push_scanner_image_manifest_lists <registry> <arch> [<arch>...]"
     fi
 
     local registry="$1"
-    local architectures="$2"
+    shift
+    local architectures=("$@")
     local scanner_image_set=("scanner-v4" "scanner-v4-db")
 
     local tag
@@ -381,7 +383,7 @@ push_scanner_image_manifest_lists() {
     registry_rw_login "$registry"
     for image in "${scanner_image_set[@]}"; do
         retry 5 true \
-          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "${architectures[@]}" | cat
     done
 }
 
@@ -429,13 +431,14 @@ push_scanner_image_set() {
 push_operator_manifest_lists() {
     info "Pushing stackrox-operator images as manifest lists"
 
-    if [[ "$#" -ne 3 ]]; then
-        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
+    if [[ "$#" -lt 3 ]]; then
+        die "missing arg. usage: push_operator_manifest_lists <push_context> <brand> <arch> [<arch>...]"
     fi
 
     local push_context="$1"
     local brand="$2"
-    local architectures="$3"
+    shift 2
+    local architectures=("$@")
 
     local registry
     registry="$(registry_from_branding "$brand")"
@@ -445,16 +448,16 @@ push_operator_manifest_lists() {
 
     registry_rw_login "$registry"
     retry 5 true \
-        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${tag}" "$architectures" | cat
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${tag}" "${architectures[@]}" | cat
     if [[ "$push_context" == "merge-to-master" ]]; then
         retry 5 true \
-            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:latest" "$architectures" | cat
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:latest" "${architectures[@]}" | cat
     fi
     if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         # For release builds, also push a major.minor tag, see operator/install/README.md
         local major_minor="${tag%.*}"
         retry 5 true \
-            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${major_minor}" "$architectures" | cat
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${major_minor}" "${architectures[@]}" | cat
     fi
 }
 

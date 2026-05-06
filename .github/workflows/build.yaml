@@ -107,7 +107,9 @@ jobs:
                 exclude: $race_excludes
               },
               push_main_multiarch_manifests: {
-                name: ($brands + $extra_builds)
+                name: ($brands + $extra_builds),
+                arch: $archs,
+                exclude: $race_excludes
               },
               build_and_push_operator: {
                 name: $brands,
@@ -115,7 +117,7 @@ jobs:
               },
               push_operator_multiarch_manifests: {
                 name: $brands,
-                archs: [$archs | join(",")]
+                arch: $archs
               },
               scan_images_with_roxctl: {
                 name: $brands,
@@ -752,14 +754,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        architectures="amd64,arm64"
-        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
-        fi
-        if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
-          architectures="amd64"
-        fi
-        push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
+        push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ join(matrix.arch, ' ') }}
 
     - name: Prepare build comment
       # Skip for external contributions.
@@ -944,7 +939,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
+        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ join(matrix.arch, ' ') }}
 
   scan-go-binaries:
     if: |
