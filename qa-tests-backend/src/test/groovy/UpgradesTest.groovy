@@ -2,6 +2,7 @@ import static util.Helpers.withRetry
 
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
+import io.fabric8.kubernetes.client.LocalPortForward
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
@@ -9,6 +10,8 @@ import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
+import common.Constants
+import objects.Deployment
 import services.AlertService
 import services.ClusterService
 import services.GraphQLService
@@ -62,6 +65,59 @@ class UpgradesTest extends BaseSpecification {
         cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
     }
+
+    @Tag("Upgrade")
+    def "Verify all background migrations complete after upgrade"() {
+        when:
+        "Polling background migration metrics until complete"
+        def centralDeployment = new Deployment(
+                name: "central", namespace: Constants.STACKROX_NAMESPACE)
+        orchestrator.waitForDeploymentAndPopulateInfo(centralDeployment)
+
+        boolean metricsAvailable = false
+        double completeValue = -1
+
+        withRetry(30, 10) {
+            LocalPortForward portForward = orchestrator.createPortForward(
+                    9090, centralDeployment)
+            try {
+                int localPort = portForward.getLocalPort()
+                def metricsText = new URL("http://localhost:${localPort}/metrics").text
+
+                def completeLine = metricsText.readLines().find {
+                    it.startsWith("rox_central_background_migration_complete")
+                }
+
+                if (completeLine == null) {
+                    log.info "background_migration_complete metric not found, skipping"
+                    return
+                }
+                metricsAvailable = true
+
+                def seqNumLine = metricsText.readLines().find {
+                    it.startsWith("rox_central_background_migration_seq_num")
+                }
+
+                completeValue = Double.parseDouble(completeLine.trim().split("\\s+").last())
+                def seqNum = seqNumLine ? seqNumLine.trim().split("\\s+").last() : "unknown"
+
+                assert completeValue >= 1.0,
+                    "Background migrations not yet complete (complete=${completeValue}, seq_num=${seqNum})"
+            } finally {
+                portForward.close()
+            }
+        }
+
+        then:
+        "All background migrations have completed or metrics are not available"
+        if (metricsAvailable) {
+            log.info "Background migrations completed (complete=${completeValue})"
+        } else {
+            log.info "Central does not expose background migration metrics, skipping check"
+        }
+        !metricsAvailable || completeValue >= 1.0
+    }
+
     @Tag("Upgrade")
     def "Verify that APIs returns non-zero values on upgrade"() {
         expect:
