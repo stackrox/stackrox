@@ -17,20 +17,86 @@ defaults:
     shell: bash
 
 jobs:
-  kind-e2e-test:
+  kind-qa-e2e:
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
       )
+    name: "QA ${{ matrix.name }}"
     runs-on: ubuntu-latest
-    env:
-      CLUSTER_NAME: e2e-test-${{ github.run_id }}
-      # EXPERIMENT: hardcode known-good tag with scanner images
-      TAG: 4.11.x-879-g846c8632d9
-    timeout-minutes: 60
-    steps:
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Area-based sharding: each shard gets its own KinD + StackRox.
+          # Grouped by functional area so engineers see which area is slow.
+          #
+          # Scanner-independent shards run fast (~5 min).
+          # Scanner-dependent shards (vuln) need indexing time (~15-20 min).
 
+          - name: auth
+            tests: >-
+              --tests AuthServiceTest
+              --tests CertRotationTest
+              --tests ClientCertAuthTest
+              --tests K8sRbacTest
+              --tests SecretsTest
+              --tests ServiceAccountTest
+
+          - name: cluster
+            tests: >-
+              --tests DeploymentCheck
+              --tests DeploymentTest
+              --tests NetworkFlowTest
+              --tests NetworkSimulator
+              --tests K8sEventDetectionTest
+              --tests GlobalSearch
+              --tests CSVTest
+
+          - name: policy
+            tests: >-
+              --tests PolicyConfigurationTest
+              --tests PolicyFieldsTest
+              --tests Enforcement
+              --tests ComplianceTest
+              --tests DeclarativeConfigTest
+
+          - name: runtime
+            tests: >-
+              --tests RuntimePolicyTest
+              --tests RuntimeViolationLifecycleTest
+              --tests ProcessBaselinesTest
+              --tests ProcessVisualizationTest
+              --tests AuditLogAlertsTest
+              --tests AuditScrubbingTest
+              --tests AttemptedAlertsTest
+              --tests FileActivityTest
+
+          - name: vuln
+            tests: >-
+              --tests DefaultPoliciesTest
+              --tests ImageManagementTest
+              --tests ImageScanningTest
+              --tests VulnScanPermissionTest
+              --tests VulnReportingTest
+              --tests AdmissionControllerTest
+              --tests AdmissionControllerNoImageScanTest
+
+          - name: integrations
+            tests: >-
+              --tests IntegrationsTest
+              --tests PaginationTest
+              --tests AutocompleteTest
+              --tests BuiltinPoliciesTest
+              --tests GraphQLResourcePaginationTest
+
+    env:
+      CLUSTER_NAME: qa-e2e-${{ github.run_id }}-${{ strategy.job-index }}
+      TAG: 4.11.x-879-g846c8632d9
+
+    steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
@@ -72,13 +138,15 @@ jobs:
         fi
         echo "Central API ready"
 
-    - name: Add registry integration for scanning
+    - name: Add registry integration + pull secrets
       env:
         QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: |
         set +x
         ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+
+        # Central needs registry creds to pull manifests for scanning
         curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
           "https://localhost:8000/v1/imageintegrations" \
           -X POST -d "{
@@ -91,9 +159,25 @@ jobs:
               \"password\": \"${QUAY_PASS}\"
             }
           }" | jq -r '.id // .error'
+
+        # Test workloads need pull secrets for private qa-multi-arch images
+        kubectl create namespace qa 2>/dev/null || true
+        kubectl -n qa create secret docker-registry quay-pull-secret \
+          --docker-server=quay.io \
+          --docker-username="${QUAY_USER}" \
+          --docker-password="${QUAY_PASS}" 2>/dev/null || true
+        kubectl -n qa patch serviceaccount default \
+          -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
         set -x
 
-    - name: Run QA SMOKE tests
+    - name: Compile QA tests
+      working-directory: qa-tests-backend
+      run: |
+        go mod download github.com/stackrox/scanner
+        scripts/copy_scanner_protos.sh
+        make compile
+
+    - name: "Run QA tests: ${{ matrix.name }}"
       working-directory: qa-tests-backend
       env:
         API_HOSTNAME: localhost
@@ -103,16 +187,13 @@ jobs:
         POD_SECURITY_POLICIES: "false"
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: "{}"
       run: |
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        # Unset CI to skip mandatory external credential checks
-        # (GCR, AWS, etc.) that aren't needed for smoke tests
         unset CI
-        go mod download github.com/stackrox/scanner
-        scripts/copy_scanner_protos.sh
-        make smoke-test
+        ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
       if: always()
@@ -129,7 +210,7 @@ jobs:
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       if: always()
       with:
-        name: e2e-test-${{ github.run_id }}
+        name: qa-e2e-${{ matrix.name }}-${{ github.run_id }}
         path: /tmp/test-artifacts
         retention-days: 7
 
