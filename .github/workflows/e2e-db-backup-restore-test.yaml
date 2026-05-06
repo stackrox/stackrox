@@ -206,12 +206,22 @@ jobs:
       if: always()
       run: |
         mkdir -p /tmp/test-artifacts
+
+        # Pod logs — scrub potential secrets before saving
         for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
-          kubectl -n stackrox logs "$(basename "$pod")" --all-containers \
-            > "/tmp/test-artifacts/$(basename "$pod").log" 2>&1 || true
+          kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+            | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+            > "/tmp/test-artifacts/$(basename "$pod").log" || true
         done
+
+        # Test reports (HTML + XML) — safe, contain test names and assertions
         cp -r qa-tests-backend/build/reports/ /tmp/test-artifacts/reports/ 2>/dev/null || true
         cp -r qa-tests-backend/build/test-results/ /tmp/test-artifacts/test-results/ 2>/dev/null || true
+
+        # Never upload: /tmp/rox-admin-password, /tmp/rox-auth-token,
+        # /tmp/sensor-init-bundle.yaml, /tmp/init-response.json,
+        # /tmp/deploy.log (may contain ctr --user credentials),
+        # /tmp/kind-create.log (may contain ctr --user credentials)
 
     - name: Upload artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7

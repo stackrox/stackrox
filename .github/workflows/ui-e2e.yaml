@@ -252,12 +252,17 @@ jobs:
         if: always()
         run: |
           mkdir -p "$ARTIFACT_DIR"
+          # Pod logs — scrub potential secrets before saving
           for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
             pod_name=$(basename "$pod")
-            kubectl -n stackrox logs "$pod" --all-containers > "${ARTIFACT_DIR}/${pod_name}.log" 2>&1 || true
+            kubectl -n stackrox logs "$pod" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "${ARTIFACT_DIR}/${pod_name}.log" || true
           done
           cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
           cp /tmp/resource-monitor.log "${ARTIFACT_DIR}/resource-monitor.log" 2>/dev/null || true
+          # Never upload: /tmp/rox-admin-password, /tmp/rox-auth-token,
+          # /tmp/sensor-init-bundle.yaml, /tmp/deploy.log
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7

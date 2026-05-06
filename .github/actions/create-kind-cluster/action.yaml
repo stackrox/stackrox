@@ -50,6 +50,8 @@ runs:
 
         (
           NODE="${{ inputs.cluster-name }}-control-plane"
+          # Store credentials once — never trace them
+          CTR_AUTH="${{ inputs.quay-user }}:${{ inputs.quay-pass }}"
 
           kind create cluster --name "${{ inputs.cluster-name }}"
 
@@ -58,26 +60,22 @@ runs:
 
           # Pull central-db first (wait) — eliminates kubelet backoff.
           # Other images pull in background.
+          # set +x around ctr pull to prevent --user credentials in trace
+          set +x
           docker exec "$NODE" ctr -n k8s.io images pull \
-            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-            --platform linux/amd64 \
+            --user "$CTR_AUTH" --platform linux/amd64 \
             "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
           PID_CDB=$!
-
           docker exec "$NODE" ctr -n k8s.io images pull \
-            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-            --platform linux/amd64 \
+            --user "$CTR_AUTH" --platform linux/amd64 \
             "${{ inputs.registry }}/main:${{ inputs.tag }}" &
-
           docker exec "$NODE" ctr -n k8s.io images pull \
-            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-            --platform linux/amd64 \
+            --user "$CTR_AUTH" --platform linux/amd64 \
             "${{ inputs.registry }}/scanner:${SCANNER_TAG}" &
-
           docker exec "$NODE" ctr -n k8s.io images pull \
-            --user "${{ inputs.quay-user }}:${{ inputs.quay-pass }}" \
-            --platform linux/amd64 \
+            --user "$CTR_AUTH" --platform linux/amd64 \
             "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" &
+          set -x
 
           wait $PID_CDB
           touch /tmp/kind-ready
