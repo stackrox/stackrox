@@ -166,6 +166,9 @@ message ImageKey {
 
 message InvalidateImageCache {
   repeated ImageKey image_keys = 1;
+  // When true, only the admission controller cache is invalidated;
+  // the sensor image cache is left intact (already warm via UpdatedImage).
+  bool admission_controller_only = 2;
 }
 
 // RefreshImageCacheTTL bumps the TTL of existing image cache entries on

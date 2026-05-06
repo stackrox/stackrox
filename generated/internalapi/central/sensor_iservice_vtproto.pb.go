@@ -658,6 +658,7 @@ func (m *InvalidateImageCache) CloneVT() *InvalidateImageCache {
 		return (*InvalidateImageCache)(nil)
 	}
 	r := new(InvalidateImageCache)
+	r.AdmissionControllerOnly = m.AdmissionControllerOnly
 	if rhs := m.ImageKeys; rhs != nil {
 		tmpContainer := make([]*ImageKey, len(rhs))
 		for k, v := range rhs {
@@ -2156,6 +2157,9 @@ func (this *InvalidateImageCache) EqualVT(that *InvalidateImageCache) bool {
 				return false
 			}
 		}
+	}
+	if this.AdmissionControllerOnly != that.AdmissionControllerOnly {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -3903,6 +3907,16 @@ func (m *InvalidateImageCache) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.AdmissionControllerOnly {
+		i--
+		if m.AdmissionControllerOnly {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
 	if len(m.ImageKeys) > 0 {
 		for iNdEx := len(m.ImageKeys) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.ImageKeys[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -4828,6 +4842,9 @@ func (m *InvalidateImageCache) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.AdmissionControllerOnly {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8143,6 +8160,26 @@ func (m *InvalidateImageCache) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerOnly", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdmissionControllerOnly = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -11596,6 +11633,26 @@ func (m *InvalidateImageCache) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerOnly", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdmissionControllerOnly = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -1500,10 +1500,13 @@ func (x *ImageKey) GetImageIdV2() string {
 }
 
 type InvalidateImageCache struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ImageKeys     []*ImageKey            `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ImageKeys []*ImageKey            `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
+	// When true, only the admission controller cache is invalidated;
+	// the sensor image cache is left intact (already warm via UpdatedImage).
+	AdmissionControllerOnly bool `protobuf:"varint,2,opt,name=admission_controller_only,json=admissionControllerOnly,proto3" json:"admission_controller_only,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *InvalidateImageCache) Reset() {
@@ -1541,6 +1544,13 @@ func (x *InvalidateImageCache) GetImageKeys() []*ImageKey {
 		return x.ImageKeys
 	}
 	return nil
+}
+
+func (x *InvalidateImageCache) GetAdmissionControllerOnly() bool {
+	if x != nil {
+		return x.AdmissionControllerOnly
+	}
+	return false
 }
 
 // RefreshImageCacheTTL bumps the TTL of existing image cache entries on
@@ -1702,10 +1712,11 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\bImageKey\x12\x19\n" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12&\n" +
 	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName\x12\x1e\n" +
-	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV2\"H\n" +
+	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV2\"\x84\x01\n" +
 	"\x14InvalidateImageCache\x120\n" +
 	"\n" +
-	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys\"H\n" +
+	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys\x12:\n" +
+	"\x19admission_controller_only\x18\x02 \x01(\bR\x17admissionControllerOnly\"H\n" +
 	"\x14RefreshImageCacheTTL\x120\n" +
 	"\n" +
 	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys2P\n" +

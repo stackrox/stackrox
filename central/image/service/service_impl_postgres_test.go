@@ -46,7 +46,7 @@ func (s *imageServicePostgresTestSuite) SetupTest() {
 	policyMock := policyDataStoreMock.NewMockDataStore(gomock.NewController(s.T()))
 	s.sigIntegrationDS = signatureIntegrationDS.New(sigStore, policyMock)
 
-	s.service = New(s.imageDS, nil, s.imageDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, s.sigIntegrationDS)
+	s.service = New(s.imageDS, nil, s.imageDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, s.sigIntegrationDS)
 
 	s.ctx = sac.WithAllAccess(context.Background())
 }
