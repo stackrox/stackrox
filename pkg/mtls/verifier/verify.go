@@ -101,19 +101,12 @@ func addSecondaryCACertIfExists(certPool *x509.CertPool) {
 func (NonCA) TLSConfig() (*tls.Config, error) {
 	loadAndWatchLeafCert()
 
-	cert := leafCert.Load()
-	if cert == nil {
-		return nil, errors.New("no leaf certificate available")
-	}
-
-	rootConf, err := config(*cert)
+	rootConf, err := serverTLSConfig()
 	if err != nil {
 		return nil, err
 	}
-	// TODO(cg): Sensors should also issue creds to, and verify, their clients.
-	// For the time being, we only verify that the client cert is from the central CA.
-	rootConf.ClientAuth = tls.VerifyClientCertIfGiven
 
+	rootConf.ClientAuth = tls.VerifyClientCertIfGiven
 	rootConf.GetCertificate = func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 		cert := leafCert.Load()
 		if cert == nil {
@@ -144,14 +137,10 @@ func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *t
 	return cfg
 }
 
-func config(serverBundle tls.Certificate) (*tls.Config, error) {
+func serverTLSConfig() (*tls.Config, error) {
 	certPool, err := TrustedCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "CA cert")
 	}
-
-	// This is based on TLSClientAuthServerConfig from cfssl/transport.
-	// However, we don't use enough of their ecosystem to fully use it yet.
-	cfg := DefaultTLSServerConfig(certPool, []tls.Certificate{serverBundle})
-	return cfg, nil
+	return DefaultTLSServerConfig(certPool, nil), nil
 }
