@@ -234,9 +234,11 @@ function PolicyDetail({
                                         isDisabled={isDefault || isExternalPolicy(policy)}
                                         onClick={() => setIsDeleteOpen(true)}
                                     >
-                                        {isDefault || isExternalPolicy(policy)
-                                            ? 'Cannot delete an externally managed policy'
-                                            : 'Delete policy'}
+                                        {isDefault
+                                            ? 'Cannot delete a default policy'
+                                            : isExternalPolicy(policy)
+                                              ? 'Cannot delete an externally managed policy'
+                                              : 'Delete policy'}
                                     </DropdownItem>
                                 )}
                             </MenuDropdown>

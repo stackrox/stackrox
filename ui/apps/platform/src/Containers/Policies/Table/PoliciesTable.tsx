@@ -459,10 +459,11 @@ function PoliciesTable({
                                                   isSeparator: true,
                                               },
                                               {
-                                                  title:
-                                                      isDefault || source === 'DECLARATIVE'
-                                                          ? 'Cannot delete an externally managed policy'
-                                                          : 'Delete policy',
+                                                  title: isDefault
+                                                      ? 'Cannot delete a default policy'
+                                                      : source === 'DECLARATIVE'
+                                                        ? 'Cannot delete an externally managed policy'
+                                                        : 'Delete policy',
                                                   onClick: () => setDeletingIds([id]),
                                                   isDisabled:
                                                       isDefault || source === 'DECLARATIVE',
