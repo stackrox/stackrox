@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
+	accesscontrol "github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	pkgDetection "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -336,6 +337,25 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	// Note: default policies cannot be deleted, only disabled
 	if policy.GetIsDefault() {
 		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	}
+
+	// Declarative policies can only be deleted by the config-controller via its finalizer.
+	if policy.GetSource() == storage.PolicySource_DECLARATIVE {
+		identity, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to determine caller identity")
+		}
+		isConfigController := false
+		for _, role := range identity.Roles() {
+			if role.GetRoleName() == accesscontrol.ConfigController {
+				isConfigController = true
+				break
+			}
+		}
+		if !isConfigController {
+			return nil, errors.Wrap(errox.InvalidArgs,
+				"A declarative policy cannot be deleted via the API. Delete the SecurityPolicy custom resource instead.")
+		}
 	}
 
 	if err := s.policies.RemovePolicy(ctx, policy); err != nil {
