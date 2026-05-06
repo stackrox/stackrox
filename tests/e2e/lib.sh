@@ -92,14 +92,7 @@ deploy_stackrox() {
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
-# This function expects two arguments:
-# 1) Namespace to deploy into (required)
-# 2) Path to a 'roxie override file' (optional)
-#
-# The override file is a YAML file with two top-level keys: 'central' and 'securedCluster',
-# which correspond to the central and sensor components respectively.
-# Expected under each key is an overlay for a central or a secured cluster custom resource.
-#
+# This function expects the path to a roxie configuration.
 deploy_stackrox_with_roxie() {
     info "╔═════════════════════════════════╗"
     info "║                                 ║"
@@ -107,39 +100,38 @@ deploy_stackrox_with_roxie() {
     info "║                                 ║"
     info "╚═════════════════════════════════╝"
 
-    local namespace="$1"
-    info "Deploying into namespace ${namespace}"
+    local config_file="${1:-}"
 
-    local provided_override_file="${2:-}"
-    local override_file; override_file="$(mktemp)"
-    if [[ -n "$provided_override_file" ]]; then
-        info "Applying overrides from ${provided_override_file}"
-        cp "$provided_override_file" "$override_file"
+    local central_namespace
+    central_namespace="$(yq eval ".central.namespace // \"\"" "$config_file")"
+    if [[ -n "$central_namespace" ]]; then
+        info "Deploying Central into namespace ${central_namespace}"
+    else
+        info "Deploying Central into standard namespace"
     fi
 
-    # Downscale sensor, as being done here: https://github.com/stackrox/stackrox/blob/768451c8d876573b326d8a2093f9435b610e2e88/deploy/common/k8sbased.sh#L1036
-    # This can be removed once https://github.com/stackrox/roxie/pull/128 lands in the apollo-ci images used in CI.
-    merge_yaml "$override_file" <<EOF
-securedCluster:
-  spec:
-    sensor:
-      resources:
-        requests:
-          cpu: 500m
-          memory: 500Mi
-EOF
+    local securedcluster_namespace
+    securedcluster_namespace="$(yq eval ".securedCluster.namespace // \"\"" "$config_file")"
+    if [[ -n "$securedcluster_namespace" ]]; then
+        info "Deploying SecuredCluster into namespace ${securedcluster_namespace}"
+    else
+        info "Deploying SecuredCluster into standard namespace"
+    fi
+
 
     info "Creating admin password"
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
 
-    # Print out the override file in use for transparency.
+    prepare_for_konflux "$config_file"
+
+    # Print out the config file in use for transparency.
     # This does not contain secrets.
-    info "Override configuration for roxie deployment:"
+    info "roxie configuration:"
     info "------------------------------------"
     while IFS="" read -r line; do # IFS="" for preserving indentation in the output.
         info "${line}"
-    done < <(yq eval --prettyPrint "$override_file")
+    done < <(yq eval --prettyPrint "$config_file")
     info "------------------------------------"
 
     # Replaces deploy_stackrox steps:
@@ -147,16 +139,10 @@ EOF
     # - deploy_central
     # - pause_stackrox_operator_reconcile (--pause-reconciliation)
     # - wait_for_api (implicit)
-    # Note: --single-namespace deploys both components into the namespace "stackrox".
     local roxie_envrc; roxie_envrc="$(mktemp)"
     roxie deploy \
-        --resources=ci \
         --envrc "$roxie_envrc" \
-        --single-namespace \
-        --central-wait=20m \
-        --secured-cluster-wait=20m \
-        --pause-reconciliation \
-        --override "$override_file"
+        --config "$config_file"
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
@@ -166,22 +152,21 @@ EOF
     # shellcheck source=/dev/null
     source "$roxie_envrc"
 
-    record_build_info "${namespace}"
+    record_build_info "${central_namespace}"
 
     # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
     # It just waits for sensor and collector workloads to be up and running.
     # We use the same mechanism here instead of `--early-readiness=false`, because the latter
     # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
     # and we don't want to slow down this deployment path using roxie.
-    sensor_wait "$namespace"
-    wait_for_collectors_to_be_operational "$namespace"
-    if retrying_kubectl </dev/null -n "$namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
-        wait_for_scanner_V4 "$namespace"
+    sensor_wait "$securedcluster_namespace"
+    wait_for_collectors_to_be_operational "$securedcluster_namespace"
+    if retrying_kubectl </dev/null -n "$central_namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "$central_namespace"
     fi
 
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
-    rm -f "$override_file"
 
     info "╔═════════════════════╗"
     info "║                     ║"
@@ -190,6 +175,34 @@ EOF
     info "╚═════════════════════╝"
 }
 
+prepare_for_konflux() {
+    local config_file="$1"
+    local use_konflux
+    use_konflux=$(yq eval ".roxie.konfluxImages" "$config_file")
+    local main_image_tag
+    main_image_tag=$(yq eval ".roxie.version" "$config_file")
+    if [[ "$use_konflux" == "true" ]]; then
+        # We need to be able to pull operator bundle images.
+        registry_ro_login "quay.io/rhacs-eng"
+
+        info "Checking if ACS main image tag needs to be patched for Konflux usage: current tag is ${main_image_tag}"
+        if is_CI; then
+            # get_branch_name() may only be called in CI context.
+            local branch_name
+            branch_name="$(get_branch_name)"
+            if [[ "$branch_name" =~ ^release- ]]; then
+                info "On release branch (${branch_name}), skipping main image tag patching for Konflux usage"
+                return
+            fi
+        fi
+        info "Patching main image tag for Konflux usage: using ${main_image_tag}"
+        if [[ "$main_image_tag" != *-fast ]]; then
+            main_image_tag="${main_image_tag}-fast"
+            patch_yaml "$config_file" ".roxie.version = \"${main_image_tag}\""
+            info "Main image tag patched for Konflux usage: ${main_image_tag}"
+        fi
+    fi
+}
 
 check_for_roxie() {
     if ! command -v roxie >/dev/null 2>&1; then
