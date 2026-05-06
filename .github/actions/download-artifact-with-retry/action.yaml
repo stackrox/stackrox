@@ -34,3 +34,13 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         pattern: ${{ inputs.pattern }}
+    - name: Normalize file timestamps for reproducible builds
+      if: env.SOURCE_DATE_EPOCH != ''
+      shell: bash
+      run: |
+        target_path="${{ inputs.path }}"
+        if [ -z "$target_path" ]; then
+          target_path="$GITHUB_WORKSPACE"
+        fi
+        echo "Normalizing mtimes in $target_path to SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+        find "$target_path" -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
