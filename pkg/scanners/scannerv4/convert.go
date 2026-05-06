@@ -39,7 +39,11 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 			withoutRepoID++
 		}
 	}
-	log.Debugf("Repository CPE: %d vulns with repo ID, %d without", withRepoID, withoutRepoID)
+	log.Debugf("Repository CPE: %d vulns with repo ID, %d without; %d environments, %d packages",
+		withRepoID, withoutRepoID,
+		len(report.GetContents().GetEnvironments())+len(report.GetContents().GetEnvironmentsDEPRECATED()),
+		len(report.GetContents().GetPackages())+len(report.GetContents().GetPackagesDEPRECATED()),
+	)
 
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
@@ -299,10 +303,21 @@ func repositoryCPE(repositories map[string]*v4.Repository, repoID string) string
 }
 
 func envRepositoryCPE(repositories map[string]*v4.Repository, env *v4.Environment) string {
-	for _, repoID := range env.GetRepositoryIds() {
+	if env == nil {
+		log.Debugf("Repository CPE fallback: environment is nil")
+		return ""
+	}
+	repoIDs := env.GetRepositoryIds()
+	if len(repoIDs) == 0 {
+		log.Debugf("Repository CPE fallback: environment has 0 repository IDs")
+		return ""
+	}
+	for _, repoID := range repoIDs {
 		if repo, ok := repositories[repoID]; ok && repo.GetCpe() != "" {
+			log.Debugf("Repository CPE fallback: found CPE %q from env repo ID %q", repo.GetCpe(), repoID)
 			return repo.GetCpe()
 		}
+		log.Debugf("Repository CPE fallback: env repo ID %q not found or has empty CPE (found=%v)", repoID, repositories[repoID] != nil)
 	}
 	return ""
 }
