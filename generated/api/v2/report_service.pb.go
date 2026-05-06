@@ -743,10 +743,16 @@ type VulnerabilityReportFilters struct {
 	//	*VulnerabilityReportFilters_AllVuln
 	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
 	//	*VulnerabilityReportFilters_SinceStartDate
-	CvesSince              isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
-	IncludeNvdCvss         bool                                   `protobuf:"varint,7,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
-	IncludeEpssProbability bool                                   `protobuf:"varint,8,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
-	IncludeAdvisory        bool                                   `protobuf:"varint,9,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
+	CvesSince isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	// Deprecated: These fields are no longer used.
+	// NVD CVSS, EPSS Probability and Advisory columns are always included in reports.
+	//
+	// Deprecated: Marked as deprecated in api/v2/report_service.proto.
+	IncludeNvdCvss bool `protobuf:"varint,7,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
+	// Deprecated: Marked as deprecated in api/v2/report_service.proto.
+	IncludeEpssProbability bool `protobuf:"varint,8,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	// Deprecated: Marked as deprecated in api/v2/report_service.proto.
+	IncludeAdvisory bool `protobuf:"varint,9,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
 	// Filters related to image, cve etc for non-collection-based scopes
 	Query         string `protobuf:"bytes,12,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -838,6 +844,7 @@ func (x *VulnerabilityReportFilters) GetSinceStartDate() *timestamppb.Timestamp 
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v2/report_service.proto.
 func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 	if x != nil {
 		return x.IncludeNvdCvss
@@ -845,6 +852,7 @@ func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 	return false
 }
 
+// Deprecated: Marked as deprecated in api/v2/report_service.proto.
 func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	if x != nil {
 		return x.IncludeEpssProbability
@@ -852,6 +860,7 @@ func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	return false
 }
 
+// Deprecated: Marked as deprecated in api/v2/report_service.proto.
 func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
 	if x != nil {
 		return x.IncludeAdvisory
@@ -2439,7 +2448,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
-	"\x06filter\"\x96\a\n" +
+	"\x06filter\"\xa2\a\n" +
 	"\x1aVulnerabilityReportFilters\x12I\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2).v2.VulnerabilityReportFilters.FixabilityR\n" +
@@ -2451,10 +2460,10 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"imageTypes\x12\x1b\n" +
 	"\ball_vuln\x18\x04 \x01(\bH\x00R\aallVuln\x12H\n" +
 	" since_last_sent_scheduled_report\x18\x05 \x01(\bH\x00R\x1csinceLastSentScheduledReport\x12F\n" +
-	"\x10since_start_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x0esinceStartDate\x12(\n" +
-	"\x10include_nvd_cvss\x18\a \x01(\bR\x0eincludeNvdCvss\x128\n" +
-	"\x18include_epss_probability\x18\b \x01(\bR\x16includeEpssProbability\x12)\n" +
-	"\x10include_advisory\x18\t \x01(\bR\x0fincludeAdvisory\x12\x14\n" +
+	"\x10since_start_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x0esinceStartDate\x12,\n" +
+	"\x10include_nvd_cvss\x18\a \x01(\bB\x02\x18\x01R\x0eincludeNvdCvss\x12<\n" +
+	"\x18include_epss_probability\x18\b \x01(\bB\x02\x18\x01R\x16includeEpssProbability\x12-\n" +
+	"\x10include_advisory\x18\t \x01(\bB\x02\x18\x01R\x0fincludeAdvisory\x12\x14\n" +
 	"\x05query\x18\f \x01(\tR\x05query\"4\n" +
 	"\n" +
 	"Fixability\x12\b\n" +

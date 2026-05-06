@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
+	"github.com/stackrox/rox/scanner/matcher/repo2cpe"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 	"github.com/stackrox/rox/scanner/sbom"
 )
@@ -87,16 +88,17 @@ type matcherImpl struct {
 	metadataStore postgres.MatcherMetadataStore
 	pool          *pgxpool.Pool
 
-	vulnUpdater *vuln.Updater
-	sbomer      *sbom.SBOMer
+	vulnUpdater     *vuln.Updater
+	repo2cpeUpdater *repo2cpe.Updater
+	sbomer          *sbom.SBOMer
 
 	readyWithVulns bool
 }
 
-// NewMatcher creates a new matcher.
-func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
-
+// NewMatcher creates a new matcher. If repo2cpeGetter is non-nil and SBOM
+// scanning is enabled, a background updater is started for the
+// repository-to-CPE mapping.
+func NewMatcher(ctx context.Context, cfg config.MatcherConfig, repo2cpeGetter repo2cpe.Getter) (Matcher, error) {
 	var success bool
 
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
@@ -145,7 +147,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		csafEnabled = true
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
-	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
+	slog.InfoContext(ctx, "CSAF enrichment", "enabled", csafEnabled)
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
@@ -201,10 +203,19 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// include vulnerabilities vs. not.
 	sbomer := sbom.NewSBOMer()
 
+	var repo2cpeUpdater *repo2cpe.Updater
+	if features.SBOMScanning.Enabled() {
+		if repo2cpeGetter != nil {
+			repo2cpeUpdater = repo2cpe.NewUpdater(repo2cpeGetter)
+		} else {
+			slog.ErrorContext(ctx, "failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete")
+		}
+	}
+
 	// Start the vulnerability updater.
 	go func() {
 		if err := vulnUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+			slog.ErrorContext(ctx, "vulnerability updater failed", "reason", err)
 		}
 	}()
 
@@ -214,20 +225,19 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		metadataStore: metadataStore,
 		pool:          pool,
 
-		vulnUpdater: vulnUpdater,
-		sbomer:      sbomer,
+		vulnUpdater:     vulnUpdater,
+		repo2cpeUpdater: repo2cpeUpdater,
+		sbomer:          sbomer,
 
 		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil
 }
 
 func (m *matcherImpl) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetVulnerabilities")
 	return m.libVuln.Scan(ctx, ir)
 }
 
 func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetLastVulnerabilityUpdate")
 	return m.metadataStore.GetLastVulnerabilityUpdate(ctx)
 }
 
@@ -241,7 +251,9 @@ func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, op
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
+	if m.repo2cpeUpdater != nil {
+		m.repo2cpeUpdater.Close()
+	}
 	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err

@@ -9,9 +9,8 @@ import (
 // ToVirtualMachineScan converts a scan report to the format needed to enrich a virtual machine with scan data.
 func ToVirtualMachineScan(r *v4.VulnerabilityReport) *storage.VirtualMachineScan {
 	return &storage.VirtualMachineScan{
-		ScanTime: protocompat.TimestampNow(),
-		// TODO: find an actual operating system source
-		OperatingSystem: "",
+		ScanTime:        protocompat.TimestampNow(),
+		OperatingSystem: os(r),
 		Notes:           toVirtualMachineScanNotes(r.GetNotes()),
 		Components:      toVirtualMachineComponents(r),
 	}
