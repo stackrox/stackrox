@@ -11,10 +11,10 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 #
 # which deploys StackRox using roxie, but allows configuration through environment variables for compatibility
 # with existing tests. New tests should use deploy_stackrox_with_roxie() directly and provide configuration through
-# override files instead of environment variables.
+# config files instead of environment variables.
 #
-# The environment based configuration is implemented in the function roxie_override_from_environment_compat(),
-# which translates environment variables into roxie overrides.
+# The environment based configuration is implemented in the function roxie_config_from_environment_compat(),
+# which translates environment variables into a roxie configuration.
 
 managed_by="stackrox-tests"
 
@@ -24,10 +24,11 @@ retrying_kubectl() {
 }
 export -f retrying_kubectl
 
-# TODO: Make namespaces configurable?
 # Implements a compatibility configuration layer.
 # For new use-cases, please use deploy_stackrox_with_roxie() instead.
 deploy_stackrox_with_roxie_compat() {
+    local config_file="${1:-}"
+
     local namespace="stackrox"
     info "Deploying StackRox with roxie (compat layer)"
 
@@ -42,45 +43,51 @@ deploy_stackrox_with_roxie_compat() {
         retrying_kubectl create ns "${namespace}" </dev/null
     fi
 
-    local override_file; override_file="$(mktemp)"
+    if [[ -z "$config_file" ]]; then
+        config_file="$(mktemp)"
+    elif [[ ! -e "$config_file" ]]; then
+        touch "$config_file"
+    fi
 
-    # Prepare override file with some static settings coming from secured-cluster-cr.envsubst.yaml.
-    merge_yaml "$override_file" <<EOF
+    info "Using config file ${config_file}"
+
+    # Prepare config file with some static settings coming from secured-cluster-cr.envsubst.yaml.
+    merge_yaml "$config_file" <<EOF
+roxie:
+  version: "$MAIN_IMAGE_TAG"
+central:
+  namespace: "$namespace"
 securedCluster:
   spec:
     clusterName: remote
     processIndicators:
       excludeNamespaceRegex: namespace-without-persistence
+  namespace: "$namespace"
 EOF
 
-    roxie_override_from_environment_compat "$override_file" "$namespace"
+    roxie_config_from_environment_compat "$config_file" "$namespace"
 
-    deploy_stackrox_with_roxie "$namespace" "$override_file"
-    rm -f "$override_file"
+    deploy_stackrox_with_roxie "$config_file"
+    rm -f "$config_file"
 }
 
-# This function translates environment settings into a roxie override.
+# This function translates environment settings into a roxie configuration.
 # This is a compatibility function to allow using roxie with existing environment variable-based configuration for tests,
-# without needing to switch to the new override file approach immediately.
-roxie_override_from_environment_compat() {
-    local override_file="$1"
+# without needing to switch to the new roxie configuration file approach immediately.
+roxie_config_from_environment_compat() {
+    local config_file="$1"
     local namespace="$2"
-
-    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-        info "Using Konflux-built downstream images for deployment."
-        patch_yaml "$override_file" '.roxie.useKonfluxImages = true'
-    fi
 
     handle_pod_security_policies
 
     info "Configuring TRUSTED_CA_FILE..."
-    handle_trusted_ca_file "$override_file"
+    handle_trusted_ca_file "$config_file"
 
     info "Configuring TLS..."
-    handle_default_tls_settings "$override_file" "$namespace"
+    handle_default_tls_settings "$config_file" "$namespace"
 
     info "Configuring load balancer..."
-    handle_load_balancer_setting "$override_file"
+    handle_load_balancer_setting "$config_file"
 
     info "Configuring custom central environment..."
     {
@@ -125,7 +132,7 @@ roxie_override_from_environment_compat() {
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
         info "  ${name}=${value}"
-        set_custom_env "$override_file" "central" "$name" "$value"
+        set_custom_env "$config_file" "central" "$name" "$value"
         ci_export "$name" "$value"
     done
 
@@ -141,7 +148,7 @@ roxie_override_from_environment_compat() {
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
         info "  ${name}=${value}"
-        set_custom_env "$override_file" "securedCluster" "$name" "$value"
+        set_custom_env "$config_file" "securedCluster" "$name" "$value"
         ci_export "$name" "$value"
     done
 
@@ -161,22 +168,22 @@ roxie_override_from_environment_compat() {
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
         info "  ${name}=${value} for DaemonSet/collector"
-        set_overlay_env "$override_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
+        set_overlay_env "$config_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
         ci_export "$name" "$value"
     done
 
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$override_file" ".central.spec.scannerV4.scannerComponent"
-    handle_scanner_v4_setting "$override_file" ".securedCluster.spec.scannerV4.scannerComponent"
+    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent"
+    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent"
 
     info "Configuring declarative configuration..."
-    handle_declarative_configuration "$override_file"
+    handle_declarative_configuration "$config_file"
 
     info "Configuring file activity monitoring mode..."
-    handle_file_activity_monitoring "$override_file"
+    handle_file_activity_monitoring "$config_file"
 }
 
-# Emit feature flags, enabling injection into roxie overrides, rendering them overwritable using
+# Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
 # environment variables.
 collect_feature_flags() {
     # Disabled by default in StackRox, but enabled by default for test deployments.
@@ -208,16 +215,16 @@ handle_pod_security_policies() {
 }
 
 handle_scanner_v4_setting() {
-    local override_file="$1"
+    local config_file="$1"
     local path="$2"
     local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
 
     case "$rox_scanner_v4" in
         true)
-            patch_yaml "$override_file" "${path} = \"Enabled\""
+            patch_yaml "$config_file" "${path} = \"Enabled\""
             ;;
         false)
-            patch_yaml "$override_file" "${path} = \"Disabled\""
+            patch_yaml "$config_file" "${path} = \"Disabled\""
             ;;
         *)
             die "Unsupported value for ROX_SCANNER_V4: $rox_scanner_v4"
@@ -226,13 +233,13 @@ handle_scanner_v4_setting() {
 }
 
 handle_trusted_ca_file() {
-    local override_file="$1"
+    local config_file="$1"
     local trusted_ca_file="${TRUSTED_CA_FILE:-}"
 
     if [[ -n "$trusted_ca_file" ]]; then
         [[ -f "$trusted_ca_file" ]] || die "Trusted CA file not found: $trusted_ca_file"
         trusted_ca_as_string=$(jq -Rs . < "$trusted_ca_file")
-        merge_yaml "$override_file" <<EOF
+        merge_yaml "$config_file" <<EOF
 central:
   spec:
     tls:
@@ -244,7 +251,7 @@ EOF
 }
 
 handle_default_tls_settings() {
-    local override_file="$1"
+    local config_file="$1"
     local namespace="$2"
     local rox_default_tls_key_file="${ROX_DEFAULT_TLS_KEY_FILE:-}"
     local rox_default_tls_cert_file="${ROX_DEFAULT_TLS_CERT_FILE:-}"
@@ -267,7 +274,7 @@ data:
   tls.key: $(base64 < "$rox_default_tls_key_file" | tr -d '\n')
   tls.crt: $(base64 < "$rox_default_tls_cert_file" | tr -d '\n')
 EOF
-        merge_yaml "$override_file" << EOF
+        merge_yaml "$config_file" << EOF
 central:
   spec:
     central:
@@ -278,17 +285,17 @@ EOF
 }
 
 handle_load_balancer_setting() {
-    local override_file="$1"
+    local config_file="$1"
     local load_balancer="${LOAD_BALANCER:-}"
 
     case "$load_balancer" in
     "")
         ;;
     lb)
-        patch_yaml "$override_file" ".central.spec.central.exposure.loadBalancer.enabled = true"
+        patch_yaml "$config_file" ".central.spec.central.exposure.loadBalancer.enabled = true"
         ;;
     route)
-        patch_yaml "$override_file" ".central.spec.central.exposure.route.enabled = true"
+        patch_yaml "$config_file" ".central.spec.central.exposure.route.enabled = true"
         ;;
     *)
         die "Unsupported value for LOAD_BALANCER: $load_balancer"
@@ -297,8 +304,8 @@ handle_load_balancer_setting() {
 }
 
 handle_declarative_configuration() {
-    local override_file="$1"
-    merge_yaml "$override_file" <<EOF
+    local config_file="$1"
+    merge_yaml "$config_file" <<EOF
 central:
   spec:
     central:
@@ -311,15 +318,15 @@ EOF
 }
 
 handle_file_activity_monitoring() {
-    local override_file="$1"
+    local config_file="$1"
     local sfa_agent="${SFA_AGENT:-false}"
 
     case "$sfa_agent" in
     true)
-        patch_yaml "$override_file" '.securedCluster.spec.perNode.fileActivityMonitoring.mode = "Enabled"'
+        patch_yaml "$config_file" '.securedCluster.spec.perNode.fileActivityMonitoring.mode = "Enabled"'
         ;;
     false)
-        patch_yaml "$override_file" '.securedCluster.spec.perNode.fileActivityMonitoring.mode = "Disabled"'
+        patch_yaml "$config_file" '.securedCluster.spec.perNode.fileActivityMonitoring.mode = "Disabled"'
         ;;
     *)
         die "Unsupported value for SFA_AGENT: ${sfa_agent}"

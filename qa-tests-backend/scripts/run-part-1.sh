@@ -13,6 +13,8 @@ source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/scripts/ci/create-webhookserver.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/e2e/lib-yaml.sh
+source "$ROOT/tests/e2e/lib-yaml.sh"
 # shellcheck source=../../tests/scripts/setup-certs.sh
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../qa-tests-backend/scripts/lib.sh
@@ -49,11 +51,50 @@ config_part_1() {
 
     if [[ "$use_roxie_deploy" == "true" ]]; then
         info "Using roxie-based config_part_1 for qa-tests-backend"
-        info "Roxie version: $(roxie version)"
+
+        local config_file
+        config_file="$(mktemp)"
+
+        merge_yaml "$config_file" <<EOF
+central:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
+
         if pr_has_label test-konflux-images; then
-            export USE_KONFLUX_IMAGES="true"
+            info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
         fi
-        deploy_stackrox_with_roxie_compat
+        if [[ "$ORCHESTRATOR_FLAVOR" == "openshift" ]]; then
+            # In openshift/release rehearsal jobs we cannot set the label that we need for this workflow, hence we will simply
+            # enable this if we are running on OpenShift.
+            info "Temporarily enabling usage of Konflux-built images for deploying StackRox due to ORCHESTRATOR_FLAVOR==openshift"
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
+        fi
+        if [[ "$(yq eval ".roxie.konfluxImages" "$config_file")" == "true" ]]; then
+            # Due to https://access.redhat.com/solutions/6540591 we need to patch the global pull secrets
+            # to be able to pull images after applying image-rewriting rules for downstream images.
+            # See https://docs.redhat.com/en/documentation/openshift_container_platform/4.12/html/images/
+            #     managing-images#images-update-global-pull-secret_using-image-pull-secrets.
+            #
+            # Can be removed once https://github.com/stackrox/roxie/pull/186 lands.
+            info "Patching global pull-secret to include credentials for quay.io/rhacs-eng"
+            local tmp_pull_secret
+            tmp_pull_secret=$(mktemp)
+            oc get secret/pull-secret -n openshift-config --template='{{index .data ".dockerconfigjson" | base64decode}}' \
+                > "$tmp_pull_secret"
+            oc registry login --registry="quay.io/rhacs-eng" \
+                --auth-basic="${QUAY_RHACS_ENG_RO_USERNAME}:${QUAY_RHACS_ENG_RO_PASSWORD}" \
+                --to="$tmp_pull_secret"
+            oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson="$tmp_pull_secret"
+            rm -f "$tmp_pull_secret"
+        fi
+        deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     else
         info "Using traditional config_part_1 for qa-tests-backend"
