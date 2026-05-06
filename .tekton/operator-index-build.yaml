@@ -238,7 +238,7 @@ spec:
     - name: determine-image-tag
       params:
       - name: TAG_SUFFIX
-        value: ""  # Empty - index tag format is handled by determine-index-tag task
+        value: "-fast"
       - name: SOURCE_ARTIFACT
         value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
       taskRef:
@@ -269,9 +269,18 @@ spec:
           script: |
             #!/bin/bash
             set -euo pipefail
-            # Add "v" prefix and "-fast" suffix unconditionally
+            base_tag="$(params.BASE_TAG)"
+
+            # Add "v" prefix and ensure "-fast" suffix
             # This ensures Konflux operator-index images never collide with GHA operator-index builds
-            echo -n "v$(params.BASE_TAG)-fast" | tee $(results.INDEX_TAG.path)
+            if [[ "${base_tag}" == *-fast ]]; then
+              index_tag="v${base_tag}"
+            else
+              # No -fast suffix (e.g., from tagged builds where suffix was suppressed)
+              index_tag="v${base_tag}-fast"
+            fi
+
+            echo -n "${index_tag}" | tee $(results.INDEX_TAG.path)
 
     - name: wait-for-bundle-image
       params:
