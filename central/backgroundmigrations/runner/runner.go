@@ -208,6 +208,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			if err := r.writeSeqNum(ctx, migration.VersionAfterSeqNum); err != nil {
 				return errors.Wrapf(err, "updating seq num to %d after skipping migration %d", migration.VersionAfterSeqNum, seqNum)
 			}
+			bgMigrationSeqNumGauge.Set(float64(migration.VersionAfterSeqNum))
 			continue
 		}
 
