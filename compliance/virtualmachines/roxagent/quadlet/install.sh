@@ -32,16 +32,38 @@ STAGED_INSTALL_FILES=(
     roxagent-tmpfiles.conf
 )
 
-# --- Transport abstraction ---------------------------------------------------
-# Each transport stores state here and uses the shared helpers:
-#   remote_copy <local-file> <remote-dest>   — copy a file to the target
-#   remote_exec                              — run a script from stdin on target
-
 TRANSPORT_KIND=""
 SSH_HOST=""
 SSH_PORT=""
 VIRTCTL_TARGET=""
 VIRTCTL_FLAGS=()
+
+main() {
+    if [ "${#}" -eq 0 ]; then
+        setup_transport_local
+        install_local
+    elif [ "${1}" = "--stage-dir" ]; then
+        if [ "${#}" -ne 2 ]; then
+            echo "usage: ${0} --stage-dir <dir>" >&2
+            exit 1
+        fi
+        install_from_stage_dir "${2}"
+    elif [ "${1}" = "virtctl" ]; then
+        shift
+        setup_transport_virtctl "${@}"
+        install_remote
+    else
+        setup_transport_ssh "${1}" "${2:-22}"
+        install_remote
+    fi
+
+    echo ""
+    echo "Done! The roxagent will run hourly."
+    echo ""
+    echo "To run immediately:  sudo systemctl start roxagent.service"
+    echo "To view logs:        sudo journalctl -u roxagent.service -f"
+    echo "To check timer:      sudo systemctl list-timers roxagent.timer"
+}
 
 remote_copy() {
     case "${TRANSPORT_KIND}" in
@@ -213,29 +235,4 @@ filter_container_file() {
     fi
 }
 
-# --- Main ---------------------------------------------------------------------
-
-if [ "${#}" -eq 0 ]; then
-    setup_transport_local
-    install_local
-elif [ "${1}" = "--stage-dir" ]; then
-    if [ "${#}" -ne 2 ]; then
-        echo "usage: ${0} --stage-dir <dir>" >&2
-        exit 1
-    fi
-    install_from_stage_dir "${2}"
-elif [[ "${1}" == "virtctl" ]]; then
-    shift
-    setup_transport_virtctl "${@}"
-    install_remote
-else
-    setup_transport_ssh "${1}" "${2:-22}"
-    install_remote
-fi
-
-echo ""
-echo "Done! The roxagent will run hourly."
-echo ""
-echo "To run immediately:  sudo systemctl start roxagent.service"
-echo "To view logs:        sudo journalctl -u roxagent.service -f"
-echo "To check timer:      sudo systemctl list-timers roxagent.timer"
+main "${@}"
