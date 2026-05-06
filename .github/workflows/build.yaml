@@ -65,8 +65,16 @@ jobs:
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
+        env:
+          # PR labels that gate optional matrix entries.
+          # On non-PR events (master, tags), all are enabled regardless.
+          UPSTREAM: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-upstream') }}
+          ALL_ARCH: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}
+          PRERELEASE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-prerelease') }}
+          RACE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug') }}
+          TAGGED: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: |
-          source './scripts/ci/lib.sh'
+          echo "Flags: UPSTREAM=$UPSTREAM ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
           matrix='{
             "pre_build_ui": { "branding":[] },
@@ -101,8 +109,7 @@ jobs:
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
 
-          # Conditionally add upstream (STACKROX_BRANDING) builds
-          if ! is_in_PR_context || pr_has_label ci-build-upstream; then
+          if [[ "$UPSTREAM" == "true" ]]; then
             matrix="$(jq '.pre_build_ui.branding += ["STACKROX_BRANDING"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["STACKROX_BRANDING"]' <<< "$matrix")"
@@ -114,39 +121,30 @@ jobs:
             matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
           fi
 
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          if [[ "$ALL_ARCH" == "true" ]]; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-          fi;
-
-          # Conditionally add a prerelease build (binaries built with GOTAGS=release)
-          if ! is_tagged; then
-            if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-              matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
-            fi
           fi
 
-          # Conditionally add a -race debug build (binaries built with -race)
-          if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
+          if [[ "$TAGGED" != "true" && "$PRERELEASE" == "true" ]]; then
+            matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
+          fi
+
+          if [[ "$RACE" == "true" ]]; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
-            # Exclude "arm64", "ppc64le", "s390x"
-            matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
+            for arch in arm64 ppc64le s390x; do
+              matrix="$(jq --arg arch "$arch" '.pre_build_go_binaries.exclude += [{"name":"race-condition-debug","arch":$arch}]' <<< "$matrix")"
+              matrix="$(jq --arg arch "$arch" '.build_and_push_main.exclude += [{"name":"race-condition-debug","arch":$arch}]' <<< "$matrix")"
+            done
           fi
 
-          echo "Job matrix after conditionals:"
+          echo "Job matrix:"
           jq <<< "$matrix"
-
-          condensed="$(jq -c <<< "$matrix")"
-          echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(jq -c <<< "$matrix")" >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
     needs: define-job-matrix
