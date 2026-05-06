@@ -37,36 +37,43 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Compute build tag
+      - name: Compute build metadata
         id: build-tag
         run: |
-          TAG=$(make --quiet --no-print-directory tag)
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/(.*) ]]; then
+            TAG="${BASH_REMATCH[1]}"
+          else
+            TAG="$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*')"
+          fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Compute short commit
         id: short-commit
-        run: |
-          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
-          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
+        run: echo "shortcommit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Compute GOTAGS
         id: gotags
         run: |
           GOTAGS=""
           if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
-            # Tag builds (release or nightly) get release GOTAGS
             GOTAGS="release"
           fi
           echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
+        env:
+          # PR labels that gate optional matrix entries.
+          # On non-PR events (master, tags), all are enabled regardless.
+          ALL_ARCH: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}
+          PRERELEASE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-prerelease') }}
+          RACE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug') }}
+          TAGGED: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: |
-          source './scripts/ci/lib.sh'
+          echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
@@ -97,22 +104,20 @@ jobs:
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          if [[ "$ALL_ARCH" == "true" ]]; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-          fi;
+          fi
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
-          if ! is_tagged; then
-            if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-              matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
-            fi
+          if [[ "$TAGGED" != "true" && "$PRERELEASE" == "true" ]]; then
+            matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
 
           # Conditionally add a -race debug build (binaries built with -race)
-          if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
+          if [[ "$RACE" == "true" ]]; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
