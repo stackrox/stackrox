@@ -160,14 +160,17 @@ jobs:
             }
           }" | jq -r '.id // .error'
 
-        # Test workloads need pull secrets for private qa-multi-arch images
-        kubectl create namespace qa 2>/dev/null || true
-        kubectl -n qa create secret docker-registry quay-pull-secret \
-          --docker-server=quay.io \
-          --docker-username="${QUAY_USER}" \
-          --docker-password="${QUAY_PASS}" 2>/dev/null || true
-        kubectl -n qa patch serviceaccount default \
-          -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
+        # Test workloads need pull secrets for private qa-multi-arch images.
+        # Add to qa namespace (main test namespace) and default namespace.
+        for ns in qa default; do
+          kubectl create namespace "$ns" 2>/dev/null || true
+          kubectl -n "$ns" create secret docker-registry quay-pull-secret \
+            --docker-server=quay.io \
+            --docker-username="${QUAY_USER}" \
+            --docker-password="${QUAY_PASS}" 2>/dev/null || true
+          kubectl -n "$ns" patch serviceaccount default \
+            -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
+        done
         set -x
 
     - name: Compile QA tests
@@ -188,6 +191,10 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         GOOGLE_CREDENTIALS_GCR_SCANNER_V2: "{}"
+        # Use quay.io multi-arch images instead of us.gcr.io (avoids
+        # needing GCR pull secrets). Setting to non-"x86_64" triggers
+        # the multi-arch image path in test code.
+        REMOTE_CLUSTER_ARCH: multi-arch
       run: |
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
