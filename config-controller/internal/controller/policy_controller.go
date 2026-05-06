@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
@@ -36,7 +37,8 @@ import (
 )
 
 const (
-	policyFinalizer = "securitypolicies.config.stackrox.io/finalizer"
+	policyFinalizer   = "securitypolicies.config.stackrox.io/finalizer"
+	reconcileInterval = 5 * time.Minute
 )
 
 var (
@@ -246,7 +248,10 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, errMsg)
 	}
 
-	return ctrl.Result{}, retErr
+	if retErr != nil {
+		return ctrl.Result{}, retErr
+	}
+	return ctrl.Result{RequeueAfter: reconcileInterval}, nil
 }
 
 func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxiov1alpha1.SecurityPolicy, ctx context.Context, refreshFunc func(context.Context) error) (ctrl.Result, error) {
