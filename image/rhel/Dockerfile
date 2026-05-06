@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM registry.access.redhat.com/ubi9:latest AS ubi-base
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
@@ -78,12 +79,12 @@ RUN \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
 
-COPY --from=stackrox_data /stackrox-data /stackrox/static-data
-COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
-COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
-COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
+COPY --link --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY --link ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+COPY --link ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+COPY --link THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
-COPY ui /ui
+COPY --link ui /ui
 
 COPY bin/central            /stackrox/central
 COPY bin/migrator           /stackrox/bin/migrator
