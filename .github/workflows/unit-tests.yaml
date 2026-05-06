@@ -32,6 +32,12 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
+    # Skip release build tests on PRs unless ci-release-build label is present
+    # Skipped jobs satisfy required status checks
+    if: |
+      matrix.gotags != 'GOTAGS=release' ||
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'ci-release-build')
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -116,6 +122,12 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '15' ]
     runs-on: ubuntu-latest
+    # Skip release build tests on PRs unless ci-release-build label is present
+    # Skipped jobs satisfy required status checks
+    if: |
+      matrix.gotags != 'GOTAGS=release' ||
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'ci-release-build')
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include

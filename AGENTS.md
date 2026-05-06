@@ -51,6 +51,33 @@ When creating pull requests, you must follow these requirements:
   - include: problem definition, considered alternatives, explain whys for chosen solution, if applicable.
   - include benchmark results if applicable
 
+### CI Release Build Testing
+
+By default, PRs run tests with `GOTAGS=""` (debug build) only for faster feedback (~50% faster CI).
+Master/release branches and tags always run both `GOTAGS=""` and `GOTAGS=release` to ensure
+comprehensive coverage.
+
+**When to add the `ci-release-build` label:**
+
+Add this label to your PR when you need full release variant testing:
+- Changes to build system or release-sensitive code paths:
+  - `pkg/sync/mutex_*.go` (affects mutex deadlock detection)
+  - `pkg/buildinfo/buildinfo_*.go` (changes build flavor detection)
+  - `roxctl/maincommand/` (affects CLI command tree)
+  - Any files with `//go:build release` or `//go:build !release` tags
+- Changes to Go build tags or conditional compilation logic
+- Critical PRs where comprehensive testing is needed before merge
+- When debugging release-specific test failures
+
+**Why the optimization exists:**
+
+The codebase uses Go build tags to compile different code for debug vs release:
+- Debug builds (`GOTAGS=""`): Include deadlock detection, shorter timeouts, debug features
+- Release builds (`GOTAGS=release`): Production-optimized mutex, production timeouts, release command tree
+
+Running both variants on every PR doubles test time. The optimization skips release testing on
+PRs by default, but master branch CI still catches release-specific issues before deployment.
+
 ## Common Development Commands
 
 ### Build Commands
