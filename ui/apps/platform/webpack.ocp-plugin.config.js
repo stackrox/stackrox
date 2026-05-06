@@ -38,7 +38,11 @@ function getProductVersion() {
 function getSrcAliases() {
     const aliases = {};
 
-    fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true }).forEach(({ name }) => {
+    const entries = fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true });
+    // Sort entries for deterministic ordering across different filesystems
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
+    entries.forEach(({ name }) => {
         if (name.startsWith('.')) {
             // avoid hidden directories, like `.DS_Store`
             return;
@@ -57,8 +61,8 @@ const config = {
     context: path.resolve(__dirname, 'src'),
     output: {
         path: path.resolve(__dirname, 'build', 'static', 'ocp-plugin'),
-        filename: isProd ? '[name]-bundle-[hash].min.js' : '[name]-bundle.js',
-        chunkFilename: isProd ? '[name]-chunk-[chunkhash].min.js' : '[name]-chunk.js',
+        filename: isProd ? '[name]-bundle-[contenthash].min.js' : '[name]-bundle.js',
+        chunkFilename: isProd ? '[name]-chunk-[contenthash].min.js' : '[name]-chunk.js',
     },
     resolve: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
