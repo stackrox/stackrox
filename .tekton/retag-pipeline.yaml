@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:61e4676c047b19f5860ed55ddb87df49dd6c3c370e568e28ffb295d5b3a9f1d9
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dc867161527173022dcafd5593dde5204491fa2a4233d42c74465bf6f55e62ff
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:61e4676c047b19f5860ed55ddb87df49dd6c3c370e568e28ffb295d5b3a9f1d9
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dc867161527173022dcafd5593dde5204491fa2a4233d42c74465bf6f55e62ff
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:61e4676c047b19f5860ed55ddb87df49dd6c3c370e568e28ffb295d5b3a9f1d9
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dc867161527173022dcafd5593dde5204491fa2a4233d42c74465bf6f55e62ff
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:61e4676c047b19f5860ed55ddb87df49dd6c3c370e568e28ffb295d5b3a9f1d9
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dc867161527173022dcafd5593dde5204491fa2a4233d42c74465bf6f55e62ff
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:61e4676c047b19f5860ed55ddb87df49dd6c3c370e568e28ffb295d5b3a9f1d9
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dc867161527173022dcafd5593dde5204491fa2a4233d42c74465bf6f55e62ff
       - name: kind
         value: task
       resolver: bundles
