@@ -488,41 +488,56 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	}
 }
 
-func (s *resolverSuite) Test_Send_SkipDedupingResolvesInline() {
-	for _, pubSubEnabled := range []bool{true, false} {
-		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
-			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
-			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+func (s *resolverSuite) Test_Send_SkipDedupingBehavior() {
+	cases := map[string]struct {
+		skipDeduping  bool
+		expectedSends int
+	}{
+		"resolves inline producing a single Send": {
+			skipDeduping:  true,
+			expectedSends: 1,
+		},
+		"routes through queue producing two Sends": {
+			skipDeduping:  false,
+			expectedSends: 2,
+		},
+	}
 
-			messageReceived := sync.WaitGroup{}
-			messageReceived.Add(1)
+	for name, tc := range cases {
+		for _, pubSubEnabled := range []bool{true, false} {
+			s.Run(fmt.Sprintf("%s with %s %t", name, features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+				s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+				resolver := s.newResolver(pubSubEnabled)
+				err := resolver.Start()
+				s.NoError(err)
 
-			s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
+				messageReceived := sync.WaitGroup{}
+				messageReceived.Add(tc.expectedSends)
 
-			// With SkipDeduping the deployment is resolved inline within processMessage,
-			// so Send is called exactly once with the resolved deployment included.
-			s.mockOutput.EXPECT().Send(&deploymentMatcher{
-				id:              "1234",
-				permissionLevel: storage.PermissionLevel_NONE,
-			}).Times(1).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
+				s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
 
-			event := &component.ResourceEvent{
-				DeploymentReferences: []component.DeploymentReference{
-					{
-						Reference:            resolverStore.ResolveDeploymentIds("1234"),
-						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
-						SkipDeduping:         true,
+				s.mockOutput.EXPECT().Send(&deploymentMatcher{
+					id:                           "1234",
+					permissionLevel:              storage.PermissionLevel_NONE,
+					acceptableNumberOfMismatches: tc.expectedSends - 1,
+				}).Times(tc.expectedSends).Do(func(arg0 interface{}) {
+					defer messageReceived.Done()
+				})
+
+				event := &component.ResourceEvent{
+					DeploymentReferences: []component.DeploymentReference{
+						{
+							Reference:            resolverStore.ResolveDeploymentIds("1234"),
+							ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+							SkipDeduping:         tc.skipDeduping,
+						},
 					},
-				},
-			}
-			s.dispatchEvent(event, resolver, pubSubEnabled)
+				}
+				s.dispatchEvent(event, resolver, pubSubEnabled)
 
-			messageReceived.Wait()
-		})
+				messageReceived.Wait()
+			})
+		}
 	}
 }
 
