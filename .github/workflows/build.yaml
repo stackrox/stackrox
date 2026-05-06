@@ -115,6 +115,7 @@ jobs:
               },
               push_operator_multiarch_manifests: {
                 name: $brands,
+                # CSV in a one-element array: push_operator_manifest_lists expects a CSV string arg.
                 archs: [$archs | join(",")]
               },
               scan_images_with_roxctl: {
