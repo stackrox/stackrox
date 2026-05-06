@@ -29,7 +29,7 @@ jobs:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
       build-tag: ${{ steps.define-job-matrix.outputs.build-tag }}
-      short-commit: ${{ github.sha }}
+      short-commit: ${{ steps.define-job-matrix.outputs.short-commit }}
       gotags: ${{ startsWith(github.ref, 'refs/tags/') && 'release' || '' }}
     runs-on: ubuntu-latest
     steps:
@@ -60,6 +60,7 @@ jobs:
             build_tag="${STACKROX_VERSION}-g${COMMIT_SHA:0:10}"
           fi
           echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
+          echo "short-commit=${COMMIT_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
