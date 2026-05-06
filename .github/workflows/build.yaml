@@ -39,27 +39,26 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: Compute build metadata
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Compute build tag
         id: build-tag
         run: |
-          # For tagged builds, the tag itself is the version.
-          # Otherwise, use git describe for the dev version string.
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/(.*) ]]; then
-            TAG="${BASH_REMATCH[1]}"
-          else
-            TAG="$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*')"
-          fi
+          TAG=$(make --quiet --no-print-directory tag)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Compute short commit
         id: short-commit
-        run: echo "shortcommit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        run: |
+          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
+          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
 
       - name: Compute GOTAGS
         id: gotags
         run: |
           GOTAGS=""
           if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+            # Tag builds (release or nightly) get release GOTAGS
             GOTAGS="release"
           fi
           echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
