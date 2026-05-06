@@ -46,7 +46,7 @@ func takeMetaStep(currentType reflect.Type, metaStep pathutil.MetaStep, evaluato
 	switch currentType.Kind() {
 	case reflect.Array, reflect.Slice:
 		return takeSliceMetaStep(currentType, metaStep, evaluator)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return takePtrMetaStep(currentType, metaStep, evaluator)
 	case reflect.Struct:
 		return takeStructMetaStep(metaStep, evaluator), nil
@@ -64,7 +64,7 @@ func takeInterfaceMetaStep(metaStep pathutil.MetaStep, evaluator fieldEvaluator)
 			return nil, false
 		}
 		nextValue := value.Elem()
-		if nextValue.Underlying().Kind() == reflect.Ptr {
+		if nextValue.Underlying().Kind() == reflect.Pointer {
 			nextValue = nextValue.Elem()
 		}
 		if nextValue.Underlying().Kind() != reflect.Struct {
