@@ -16,6 +16,8 @@ spec:
         memory: "100Mi"
         cpu: "300m"
   perNode:
+    fileActivityMonitoring:
+      mode: $fam_mode_setting
     collector:
       resources:
         requests:
@@ -32,6 +34,8 @@ spec:
         requests:
           memory: "100Mi"
           cpu: "100m"
+  processIndicators:
+    excludeNamespaceRegex: namespace-without-persistence
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:
