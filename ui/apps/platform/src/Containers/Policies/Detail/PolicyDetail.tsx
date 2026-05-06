@@ -231,11 +231,11 @@ function PolicyDetail({
                                 {hasWriteAccessForPolicy && (
                                     <DropdownItem
                                         key="Delete policy"
-                                        isDisabled={isDefault}
+                                        isDisabled={isDefault || isExternalPolicy(policy)}
                                         onClick={() => setIsDeleteOpen(true)}
                                     >
-                                        {isDefault
-                                            ? 'Cannot delete a default policy'
+                                        {isDefault || isExternalPolicy(policy)
+                                            ? 'Cannot delete an externally managed policy'
                                             : 'Delete policy'}
                                     </DropdownItem>
                                 )}
@@ -278,17 +278,8 @@ function PolicyDetail({
                 onConfirm={onConfirmDeletePolicy}
                 onCancel={onCancelDeletePolicy}
             >
-                {isExternalPolicy(policy) ? (
-                    <>
-                        This policy is managed externally and will only be removed from the system
-                        temporarily. The policy will not trigger violations until the next resync.
-                    </>
-                ) : (
-                    <>
-                        This policy will be permanently removed from the system and will no longer
-                        trigger violations.
-                    </>
-                )}
+                This policy will be permanently removed from the system and will no longer
+                trigger violations.
             </ConfirmationModal>
             <ConfirmationModal
                 title={`Save policy as Custom Resource?`}

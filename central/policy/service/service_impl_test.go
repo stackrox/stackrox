@@ -19,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
@@ -920,6 +922,28 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 	// assert
 	s.Require().Error(err, expectedErr)
 	s.Require().Nil(resp)
+}
+
+func (s *PolicyServiceTestSuite) TestDeletingDeclarativePolicyIsBlocked() {
+	// arrange
+	mockIdentity := authnMocks.NewMockIdentity(s.mockCtrl)
+	mockIdentity.EXPECT().Roles().Return(nil)
+	ctx := authn.ContextWithIdentity(context.Background(), mockIdentity, s.T())
+
+	mockPolicy := &storage.Policy{
+		Id:     mockRequestOneID.GetPolicyIds()[0],
+		Source: storage.PolicySource_DECLARATIVE,
+	}
+	s.policies.EXPECT().GetPolicy(ctx, mockPolicy.GetId()).Return(mockPolicy, true, nil)
+
+	// act
+	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicy.GetId()}
+	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
+
+	// assert
+	s.Require().Error(err)
+	s.Require().Nil(resp)
+	s.Contains(err.Error(), "declarative policy cannot be deleted via the API")
 }
 
 func (s *PolicyServiceTestSuite) TestDeletingNonExistentPolicyDoesNothing() {
