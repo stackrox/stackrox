@@ -653,6 +653,140 @@ func (s *PruningTestSuite) TestImagePruning() {
 	}
 }
 
+func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("only applicable when FlattenImageData is enabled")
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	digest := types.NewDigest("shareddigest").Digest()
+	differentDigest := types.NewDigest("newdigest").Digest()
+
+	nameA := &storage.ImageName{FullName: "ghcr.io/stackrox/imageA:latest@" + digest}
+	nameB := &storage.ImageName{FullName: "ghcr.io/stackrox/imageB:latest@" + digest}
+	oldTimestamp := protoconv.ConvertTimeToTimestamp(
+		time.Now().Add(-24 * time.Duration(configDatastore.DefaultImageRetention+1) * time.Hour),
+	)
+
+	imageA := &storage.ImageV2{
+		Id:          utils.NewImageV2ID(nameA, digest),
+		Digest:      digest,
+		Name:        nameA,
+		LastUpdated: oldTimestamp,
+	}
+	imageB := &storage.ImageV2{
+		Id:          utils.NewImageV2ID(nameB, digest),
+		Digest:      digest,
+		Name:        nameB,
+		LastUpdated: oldTimestamp,
+	}
+
+	type testCase struct {
+		name            string
+		images          []*storage.ImageV2
+		deployments     []*storage.Deployment
+		pods            []*storage.Pod
+		expectedDigests []string
+	}
+
+	cases := []testCase{
+		{
+			name:   "active pod from different deployment with same digest - should prune unreferenced image",
+			images: []*storage.ImageV2{imageA, imageB},
+			deployments: []*storage.Deployment{
+				{
+					Id: fixtureconsts.Deployment1,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   digest,
+								IdV2: imageB.GetId(),
+								Name: nameB,
+							},
+						},
+					},
+				},
+			},
+			pods: []*storage.Pod{
+				{
+					Id:           fixtureconsts.PodUID1,
+					DeploymentId: fixtureconsts.Deployment1,
+					LiveInstances: []*storage.ContainerInstance{
+						{ImageDigest: digest},
+					},
+				},
+			},
+			expectedDigests: []string{digest},
+		},
+		{
+			name:   "stuck pod - deployment no longer references digest - should not prune",
+			images: []*storage.ImageV2{imageA},
+			deployments: []*storage.Deployment{
+				{
+					Id: fixtureconsts.Deployment1,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   differentDigest,
+								IdV2: uuid.NewV5FromNonUUIDs("ghcr.io/stackrox/imageA:v2@"+differentDigest, differentDigest).String(),
+								Name: &storage.ImageName{FullName: "ghcr.io/stackrox/imageA:v2@" + differentDigest},
+							},
+						},
+					},
+				},
+			},
+			pods: []*storage.Pod{
+				{
+					Id:           fixtureconsts.PodUID1,
+					DeploymentId: fixtureconsts.Deployment1,
+					LiveInstances: []*storage.ContainerInstance{
+						{ImageDigest: digest},
+					},
+				},
+			},
+			expectedDigests: []string{digest},
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			defer func() {
+				_, _ = s.pool.Exec(ctx, "TRUNCATE images_v2, deployments, pods CASCADE")
+			}()
+
+			_, config, _, imagesV2, deployments, pods := s.generateImageDataStructures(ctx)
+			gc := newGarbageCollector(nil, nil, nil, imagesV2, nil, deployments, pods,
+				nil, nil, nil, config, nil,
+				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
+
+			for _, dep := range c.deployments {
+				require.NoError(t, deployments.UpsertDeployment(ctx, dep))
+			}
+			for _, pod := range c.pods {
+				require.NoError(t, pods.UpsertPod(ctx, pod))
+			}
+			for _, img := range c.images {
+				require.NoError(t, imagesV2.UpsertImage(ctx, img))
+			}
+
+			privateConfig, err := config.GetPrivateConfig(ctx)
+			require.NoError(t, err)
+			gc.collectImages(privateConfig)
+
+			remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
+			require.NoError(t, err)
+
+			var remainingDigests []string
+			for _, img := range remainingImages {
+				remainingDigests = append(remainingDigests, img.GetDigest())
+			}
+			assert.ElementsMatch(t, c.expectedDigests, remainingDigests)
+		})
+	}
+}
+
 func (s *PruningTestSuite) TestClusterPruning() {
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 

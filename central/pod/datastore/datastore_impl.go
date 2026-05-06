@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"strings"
 )
 
 const (
@@ -83,6 +84,33 @@ func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, b
 		return nil, false, err
 	}
 	return pod, true, nil
+}
+
+func (ds *datastoreImpl) GetDeploymentIDsByDigest(ctx context.Context, digest string) ([]string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "GetDeploymentIDsByDigest")
+
+	if digest == "" {
+		return nil, nil
+	}
+
+	query := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.ContainerImageDigest, digest).
+		ForSearchResults(pkgSearch.DeploymentID).
+		ProtoQuery()
+	results, err := ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentIDs := make([]string, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if depID, ok := res.FieldValues[strings.ToLower(pkgSearch.DeploymentID.String())]; ok && depID != "" {
+				deploymentIDs = append(deploymentIDs, depID)
+			}
+		}
+	}
+	return deploymentIDs, nil
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(p *storage.Pod) error) error {

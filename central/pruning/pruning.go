@@ -13,10 +13,12 @@ import (
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentViews "github.com/stackrox/rox/central/deployment/views"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2Views "github.com/stackrox/rox/central/imagev2/views"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -636,7 +638,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	if features.FlattenImageData.Enabled() {
-		imageResults, err := g.imagesV2.GetImageIDsAndDigests(pruningCtx, qb)
+		imageResults, err := g.imagesV2.GetImageIdentifiers(pruningCtx, qb)
 		if err != nil {
 			log.Error(err)
 			return
@@ -655,13 +657,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 				continue
 			}
 
-			q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.Digest).ProtoQuery()
-			podResults, err := g.pods.Search(pruningCtx, q2)
-			if err != nil {
-				log.Errorf("[Image pruning] searching pods: %v", err)
-				continue
-			}
-			if len(podResults) != 0 {
+			if g.isImageActiveInPods(result) {
 				continue
 			}
 			imagesToPrune = append(imagesToPrune, result.ImageID)
@@ -712,6 +708,63 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			}
 		}
 	}
+}
+
+// isImageActiveInPods checks if there are pods running an image with the same name and digest.
+// Returns true if the image should be kept (not pruned).
+//
+// TODO(ROX-33447): This would be simpler if we stored image full name and IdV2 in
+// pods_live_instances. Then we could look up pods directly by IdV2 instead of having to
+// cross-reference digests through deployments. This is a workaround until that is done.
+func (g *garbageCollectorImpl) isImageActiveInPods(img *imageV2Views.ImageIdentifiersView) bool {
+	// Get deployment IDs of pods running images with the same digest.
+	deploymentIDs, err := g.pods.GetDeploymentIDsByDigest(pruningCtx, img.Digest)
+	if err != nil {
+		log.Errorf("[Image pruning] getting deployment IDs by digest: %v", err)
+		return true // err on the side of caution
+	}
+	if len(deploymentIDs) == 0 {
+		return false
+	}
+
+	// Get container image views for those deployments filtered by this digest.
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, deploymentIDs...).
+		AddExactMatches(search.ImageSHA, img.Digest).
+		ProtoQuery()
+	containerViews, err := g.deployments.GetContainerImageViews(pruningCtx, q)
+	if err != nil {
+		log.Errorf("[Image pruning] getting container image views: %v", err)
+		return true
+	}
+
+	// Build map of deployment ID to container image views.
+	depToViews := make(map[string][]*deploymentViews.ContainerImageView)
+	for _, cv := range containerViews {
+		for _, depID := range cv.GetDeploymentIDs() {
+			depToViews[depID] = append(depToViews[depID], cv)
+		}
+	}
+
+	// For each deployment that has pods running the same digest, check whether
+	// it still references the digest in its container spec.
+	for _, depID := range deploymentIDs {
+		views, ok := depToViews[depID]
+		if !ok {
+			// Deployment has pods with this digest but no container references it.
+			// This can happen if there is a stuck terminating pod — don't prune.
+			return true
+		}
+		// Check if any container has the same full name as the image being pruned.
+		// If so, the image was re-deployed while we were doing all the looping - don't prune.
+		for _, v := range views {
+			if v.GetImageName().GetFullName() == img.FullName {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {

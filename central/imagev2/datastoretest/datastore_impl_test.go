@@ -515,11 +515,12 @@ func (s *ImageV2DataStoreTestSuite) TestGetImageIdsAndDigest() {
 	ctx := sac.WithAllAccess(context.Background())
 	testImage1 := fixtures.GetImageV2()
 	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
-	results, err := s.datastore.GetImageIDsAndDigests(ctx, pkgSearch.EmptyQuery())
+	results, err := s.datastore.GetImageIdentifiers(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(testImage1.GetId(), results[0].ImageID)
 	s.Equal(testImage1.GetDigest(), results[0].Digest)
+	s.Equal(testImage1.GetName().GetFullName(), results[0].FullName)
 }
 
 func (s *ImageV2DataStoreTestSuite) TestGetImageNames() {

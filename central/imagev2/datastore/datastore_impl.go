@@ -372,9 +372,9 @@ func (ds *datastoreImpl) initializeRankers() {
 	log.Infof("Initialized image ranking with %d images", len(results))
 }
 
-func (ds *datastoreImpl) GetImageIDsAndDigests(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageIDsAndDigest")
-	return ds.storage.GetImagesIdAndDigestView(ctx, q)
+func (ds *datastoreImpl) GetImageIdentifiers(ctx context.Context, q *v1.Query) ([]*views.ImageIdentifiersView, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageIdentifiers")
+	return ds.storage.GetImageIdentifiersView(ctx, q)
 }
 
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {
