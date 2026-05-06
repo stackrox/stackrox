@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -441,6 +442,150 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 			if result != tt.shallReconcile {
 				t.Errorf("Expected predicate to return %v, got %v", tt.shallReconcile, result)
 			}
+		})
+	}
+}
+
+func TestDaemonSetStatusUpdatePredicate(t *testing.T) {
+	tests := map[string]struct {
+		old            *appsv1.DaemonSet
+		new            *appsv1.DaemonSet
+		shallReconcile bool
+	}{
+		"status.numberAvailable changed should trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        2,
+					NumberReady:            2,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: true,
+		},
+		"status.desiredNumberScheduled changed should trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 5,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: true,
+		},
+		"status.numberReady changed should trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            2,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: true,
+		},
+		"only observedGeneration changed should NOT trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+					ObservedGeneration:     1,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+					ObservedGeneration:     2,
+				},
+			},
+			shallReconcile: false,
+		},
+		"no changes should NOT trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: false,
+		},
+		"spec change only should NOT trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Spec: appsv1.DaemonSetSpec{
+					MinReadySeconds: 5,
+				},
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Spec: appsv1.DaemonSetSpec{
+					MinReadySeconds: 10,
+				},
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+				},
+			},
+			shallReconcile: false,
+		},
+		"old object nil should allow reconciliation": {
+			old:            nil,
+			new:            &appsv1.DaemonSet{},
+			shallReconcile: true,
+		},
+		"new object nil should allow reconciliation": {
+			old:            &appsv1.DaemonSet{},
+			new:            nil,
+			shallReconcile: true,
+		},
+		"both objects nil should allow reconciliation": {
+			old:            nil,
+			new:            nil,
+			shallReconcile: true,
+		},
+	}
+
+	pred := PassThroughUpdatedDaemonSetStatusPredicate{logger: logr.Discard()}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := pred.Update(event.TypedUpdateEvent[*appsv1.DaemonSet]{
+				ObjectOld: tt.old,
+				ObjectNew: tt.new,
+			})
+
+			assert.Equal(t, tt.shallReconcile, result, "unexpected predicate result")
 		})
 	}
 }
