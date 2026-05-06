@@ -465,8 +465,7 @@ function PoliciesTable({
                                                         ? 'Cannot delete an externally managed policy'
                                                         : 'Delete policy',
                                                   onClick: () => setDeletingIds([id]),
-                                                  isDisabled:
-                                                      isDefault || source === 'DECLARATIVE',
+                                                  isDisabled: isDefault || source === 'DECLARATIVE',
                                               },
                                           ]
                                         : [exportPolicyAction, saveAsCustomResourceActionItem];

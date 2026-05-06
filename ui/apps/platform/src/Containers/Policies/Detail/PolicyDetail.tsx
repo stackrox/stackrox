@@ -280,8 +280,8 @@ function PolicyDetail({
                 onConfirm={onConfirmDeletePolicy}
                 onCancel={onCancelDeletePolicy}
             >
-                This policy will be permanently removed from the system and will no longer
-                trigger violations.
+                This policy will be permanently removed from the system and will no longer trigger
+                violations.
             </ConfirmationModal>
             <ConfirmationModal
                 title={`Save policy as Custom Resource?`}
