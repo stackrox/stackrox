@@ -59,12 +59,18 @@ func splitComponents(parts ImagePartsV2) ([]ComponentPartsV2, error) {
 func splitCVEs(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEPartsV2, error) {
 	ret := make([]CVEPartsV2, 0, len(embedded.GetVulns()))
 	for index, cve := range embedded.GetVulns() {
+		if cve.GetRepositoryCpe() != "" {
+			log.Debugf("splitCVEs: EmbeddedVulnerability %q has RepositoryCpe=%q", cve.GetCve(), cve.GetRepositoryCpe())
+		}
 		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, index, cve)
 		if err != nil {
 			return nil, err
 		}
 		convertedCVE.ComponentName = embedded.GetName()
 		convertedCVE.ComponentVersion = embedded.GetVersion()
+		if convertedCVE.GetRepositoryCpe() != "" {
+			log.Debugf("splitCVEs: ImageCVEV2 %q has RepositoryCpe=%q", convertedCVE.GetId(), convertedCVE.GetRepositoryCpe())
+		}
 
 		cp := CVEPartsV2{
 			CVEV2: convertedCVE,

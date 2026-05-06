@@ -82,7 +82,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport,
 			Name:         pkg.GetName(),
 			Version:      pkg.GetVersion(),
 			Architecture: pkg.GetArch(),
-			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report), repositories),
+			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report), repositories, env),
 			FixedBy:      pkg.GetFixedInVersion(),
 			Source:       source,
 			Location:     location,
@@ -192,7 +192,7 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 	}
 }
 
-func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string, repositories map[string]*v4.Repository) []*storage.EmbeddedVulnerability {
+func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string, repositories map[string]*v4.Repository, env *v4.Environment) []*storage.EmbeddedVulnerability {
 	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
@@ -227,6 +227,9 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			FixAvailableTimestamp: ccVuln.GetFixedDate(),
 			Datasource:            vulnDataSource(ccVuln, envOS),
 			RepositoryCpe:         repositoryCPE(repositories, ccVuln.GetRepositoryId()),
+		}
+		if vuln.RepositoryCpe == "" {
+			vuln.RepositoryCpe = envRepositoryCPE(repositories, env)
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
@@ -293,6 +296,15 @@ func repositoryCPE(repositories map[string]*v4.Repository, repoID string) string
 		log.Debugf("Repository CPE lookup: repo ID %q (name=%q, key=%q) has empty CPE", repoID, repo.GetName(), repo.GetKey())
 	}
 	return cpeStr
+}
+
+func envRepositoryCPE(repositories map[string]*v4.Repository, env *v4.Environment) string {
+	for _, repoID := range env.GetRepositoryIds() {
+		if repo, ok := repositories[repoID]; ok && repo.GetCpe() != "" {
+			return repo.GetCpe()
+		}
+	}
+	return ""
 }
 
 func advisory(advisory *v4.VulnerabilityReport_Advisory) *storage.Advisory {
