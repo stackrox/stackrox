@@ -232,7 +232,8 @@ type daemonSetStatus struct {
 }
 
 func (d daemonSetStatus) IsAvailable() bool {
-	return d.status.NumberAvailable >= d.status.DesiredNumberScheduled
+	return d.status.DesiredNumberScheduled > 0 &&
+		d.status.NumberAvailable >= d.status.DesiredNumberScheduled
 }
 
 func (d daemonSetStatus) Name() string {
