@@ -117,6 +117,15 @@ deploy_stackrox_with_roxie() {
         cp "$provided_override_file" "$override_file"
     fi
 
+    local use_konflux_images="${USE_KONFLUX_IMAGES:-false}"
+    if [[ "${use_konflux_images}" == "true" ]]; then
+        if [[ -z "$MAIN_IMAGE_TAG" ]]; then
+            die "Missing main image tag in MAIN_IMAGE_TAG environment variable"
+        fi
+        export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG}-fast" # This will be done by a future roxie version automatically.
+        info "Using Konflux-built downstream images for main image tag ${MAIN_IMAGE_TAG}."
+    fi
+
     # Downscale sensor, as being done here: https://github.com/stackrox/stackrox/blob/768451c8d876573b326d8a2093f9435b610e2e88/deploy/common/k8sbased.sh#L1036
     # This can be removed once https://github.com/stackrox/roxie/pull/128 lands in the apollo-ci images used in CI.
     merge_yaml "$override_file" <<EOF
@@ -151,6 +160,7 @@ EOF
     local roxie_envrc; roxie_envrc="$(mktemp)"
     roxie deploy \
         --resources=ci \
+        --konflux="${use_konflux_images}" \
         --envrc "$roxie_envrc" \
         --single-namespace \
         --central-wait=20m \

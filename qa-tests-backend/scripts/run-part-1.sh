@@ -51,6 +51,14 @@ config_part_1() {
         info "Using roxie-based config_part_1 for qa-tests-backend"
         info "Roxie version: $(roxie version)"
         if pr_has_label test-konflux-images; then
+            # We will soon be able to replace this environment variable with a YAML file passed to deploy_stackrox_with_roxie_compat.
+            info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
+            export USE_KONFLUX_IMAGES="true"
+        fi
+        if [[ "$ORCHESTRATOR_FLAVOR" == "openshift" ]]; then
+            # In openshift/release rehearsal jobs we cannot set the label that we need for this workflow, hence we will simply
+            # enable this if we are running on OpenShift.
+            info "Temporarily enabling usage of Konflux-built images for deploying StackRox due to ORCHESTRATOR_FLAVOR==openshift"
             export USE_KONFLUX_IMAGES="true"
         fi
         deploy_stackrox_with_roxie_compat

@@ -66,11 +66,6 @@ roxie_override_from_environment_compat() {
     local override_file="$1"
     local namespace="$2"
 
-    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-        info "Using Konflux-built downstream images for deployment."
-        patch_yaml "$override_file" '.roxie.useKonfluxImages = true'
-    fi
-
     handle_pod_security_policies
 
     info "Configuring TRUSTED_CA_FILE..."
