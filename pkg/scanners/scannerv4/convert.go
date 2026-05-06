@@ -80,6 +80,18 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport,
 		if env != nil {
 			source, location = ParsePackageDB(env.GetPackageDb())
 			layerIdx = layerIndex(layerSHAToIndex, env)
+			if len(vulnIDs) > 0 {
+				log.Debugf("[CPE-TRACE-0] package=%q envRepoIds=%v repoMapSize=%d", pkg.GetName(), env.GetRepositoryIds(), len(repositories))
+				for _, rid := range env.GetRepositoryIds() {
+					if repo, ok := repositories[rid]; ok {
+						log.Debugf("[CPE-TRACE-0]   repoId=%q cpe=%q key=%q", rid, repo.GetCpe(), repo.GetKey())
+					} else {
+						log.Debugf("[CPE-TRACE-0]   repoId=%q NOT FOUND in repositories map", rid)
+					}
+				}
+			}
+		} else if len(vulnIDs) > 0 {
+			log.Debugf("[CPE-TRACE-0] package=%q has %d vulns but NO environment", pkg.GetName(), len(vulnIDs))
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
@@ -235,6 +247,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 		if vuln.RepositoryCpe == "" {
 			vuln.RepositoryCpe = envRepositoryCPE(repositories, env)
 		}
+		log.Debugf("[CPE-TRACE-1] convert.vulnerabilities: cve=%q repositoryCpe=%q", vuln.GetCve(), vuln.GetRepositoryCpe())
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
 		}

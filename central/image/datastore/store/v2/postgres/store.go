@@ -202,8 +202,16 @@ func (s *storeImpl) insertIntoImages(
 	// If the scan is not new, we do not need to bother writing the components and CVEs as the latest already
 	// exist.
 	if !scanUpdated {
+		log.Debugf("[CPE-TRACE-4] scanUpdated=false, skipping CVE insert for image %q", parts.image.GetId())
 		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
+	}
+	log.Debugf("[CPE-TRACE-4] scanUpdated=true, writing %d CVEs for image %q", len(parts.cvesV2), parts.image.GetId())
+	for _, cve := range parts.cvesV2 {
+		if cve.GetRepositoryCpe() != "" {
+			log.Debugf("[CPE-TRACE-5] store insert: cve=%q repositoryCpe=%q", cve.GetCveBaseInfo().GetCve(), cve.GetRepositoryCpe())
+			break
+		}
 	}
 	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
