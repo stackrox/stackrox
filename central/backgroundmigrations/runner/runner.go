@@ -182,15 +182,14 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		dbSeqNum = r.targetSeqNum
 	}
 
+	// apply potential changes from overrides or rollbacks to the metric
+	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
+
 	if dbSeqNum == r.targetSeqNum {
 		log.Infof("up to date at seq num %d", dbSeqNum)
-		bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
 		bgMigrationCompleteGauge.Set(1)
 		return nil
 	}
-
-	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
-	bgMigrationCompleteGauge.Set(0)
 
 	log.Infof("running migrations from %d to %d", dbSeqNum, r.targetSeqNum)
 
