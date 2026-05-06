@@ -28,42 +28,13 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
-      build-tag: ${{ steps.build-tag.outputs.tag }}
-      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
-      gotags: ${{ steps.gotags.outputs.gotags }}
+      # For tagged builds, use the tag. Otherwise: {version}-g{sha}.
+      # STACKROX_VERSION is a GitHub repo variable (e.g., "4.11.x") updated when a release cycle begins.
+      build-tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-g{1}', vars.STACKROX_VERSION, github.sha) }}
+      short-commit: ${{ format('{0}', github.sha) }}
+      gotags: ${{ startsWith(github.ref, 'refs/tags/') && 'release' || '' }}
     runs-on: ubuntu-latest
-    env:
-      COMMIT_SHA: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Compute build tag
-        id: build-tag
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/(.*) ]]; then
-            echo "tag=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
-          else
-            SHORT="${COMMIT_SHA:0:10}"
-            # Find the nearest version tag and its distance via the API.
-            TAG="$(gh api repos/${{ github.repository }}/tags --jq \
-              '[.[] | select(.name | test("^[0-9]+\\.[0-9]+\\.")) | select(.name | test("nightly") | not)][0].name')"
-            AHEAD="$(gh api "repos/${{ github.repository }}/compare/${TAG}...${COMMIT_SHA}" --jq '.ahead_by')"
-            echo "tag=${TAG}-${AHEAD}-g${SHORT}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Compute short commit
-        id: short-commit
-        run: echo "shortcommit=${COMMIT_SHA:0:7}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute GOTAGS
-        id: gotags
-        run: |
-          GOTAGS=""
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
-            GOTAGS="release"
-          fi
-          echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
-
       - name: Define the matrix for build jobs
         id: define-job-matrix
         env:
