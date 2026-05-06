@@ -47,6 +47,7 @@ jobs:
           # Branch that this build targets (PR base branch, or the push branch itself).
           TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
           COMMIT_SHA: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
@@ -55,11 +56,17 @@ jobs:
           if [[ "$TAGGED" == "true" ]]; then
             build_tag="${GITHUB_REF#refs/tags/}"
           elif [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
-            build_tag="${BASH_REMATCH[1]}.x-g${COMMIT_SHA:0:10}"
+            version="${BASH_REMATCH[1]}.x"
           else
-            build_tag="${STACKROX_VERSION}-g${COMMIT_SHA:0:10}"
+            version="${STACKROX_VERSION}"
           fi
-          echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
+
+          if [[ -z "${build_tag:-}" ]]; then
+            # Fetch commit count since the version tag in the background (runs during jq matrix below).
+            gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '.ahead_by' > /tmp/ahead_by &
+            api_pid=$!
+          fi
+
           echo "short-commit=${COMMIT_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
           matrix='{
@@ -116,6 +123,14 @@ jobs:
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
+
+          # Collect the commit count from the background API call and finalize build-tag.
+          if [[ -n "${api_pid:-}" ]]; then
+            wait "$api_pid"
+            ahead_by="$(cat /tmp/ahead_by)"
+            build_tag="${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
+          fi
+          echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
 
           echo "Job matrix after conditionals:"
           jq <<< "$matrix"
