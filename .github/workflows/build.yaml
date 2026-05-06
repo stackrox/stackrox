@@ -85,42 +85,40 @@ jobs:
             --argjson tagged "$TAGGED" \
           '
             def optional($flag; $items): if $flag then $items else [] end;
+
+            # Pre-compute repeated fragments.
+            (["RHACS_BRANDING", "STACKROX_BRANDING"]) as $brands |
+            (["amd64", "arm64"] + optional($all_arch; ["ppc64le", "s390x"])) as $archs |
+            (optional(($tagged | not) and $prerelease; ["prerelease"])
+              + optional($race; ["race-condition-debug"])) as $extra_builds |
+            (optional($race; [{"name":"race-condition-debug","arch":"arm64"},
+                              {"name":"race-condition-debug","arch":"ppc64le"},
+                              {"name":"race-condition-debug","arch":"s390x"}])) as $race_excludes |
+
             {
               pre_build_go_binaries: {
-                name: (["default"]
-                  + optional(($tagged | not) and $prerelease; ["prerelease"])
-                  + optional($race; ["race-condition-debug"])),
-                arch: (["amd64", "arm64"] + optional($all_arch; ["ppc64le", "s390x"])),
-                exclude: optional($race;
-                  [{"name":"race-condition-debug","arch":"arm64"},
-                   {"name":"race-condition-debug","arch":"ppc64le"},
-                   {"name":"race-condition-debug","arch":"s390x"}])
+                name: (["default"] + $extra_builds),
+                arch: $archs,
+                exclude: $race_excludes
               },
               build_and_push_main: {
-                name: (["RHACS_BRANDING", "STACKROX_BRANDING"]
-                  + optional(($tagged | not) and $prerelease; ["prerelease"])
-                  + optional($race; ["race-condition-debug"])),
-                arch: (["amd64", "arm64"] + optional($all_arch; ["ppc64le", "s390x"])),
-                exclude: optional($race;
-                  [{"name":"race-condition-debug","arch":"arm64"},
-                   {"name":"race-condition-debug","arch":"ppc64le"},
-                   {"name":"race-condition-debug","arch":"s390x"}])
+                name: ($brands + $extra_builds),
+                arch: $archs,
+                exclude: $race_excludes
               },
               push_main_multiarch_manifests: {
-                name: (["RHACS_BRANDING", "STACKROX_BRANDING"]
-                  + optional(($tagged | not) and $prerelease; ["prerelease"])
-                  + optional($race; ["race-condition-debug"]))
+                name: ($brands + $extra_builds)
               },
               build_and_push_operator: {
-                name: ["RHACS_BRANDING", "STACKROX_BRANDING"],
-                arch: (["amd64", "arm64"] + optional($all_arch; ["ppc64le", "s390x"]))
+                name: $brands,
+                arch: $archs
               },
               push_operator_multiarch_manifests: {
-                name: ["RHACS_BRANDING", "STACKROX_BRANDING"],
-                archs: [(["amd64", "arm64"] + optional($all_arch; ["ppc64le", "s390x"])) | join(",")]
+                name: $brands,
+                archs: [$archs | join(",")]
               },
               scan_images_with_roxctl: {
-                name: ["RHACS_BRANDING", "STACKROX_BRANDING"],
+                name: $brands,
                 image: ["central-db","collector","fact","main","roxctl","scanner",
                         "scanner-db","scanner-db-slim","scanner-slim","stackrox-operator"],
                 exclude: [{"name":"STACKROX_BRANDING","image":"stackrox-operator"}]
