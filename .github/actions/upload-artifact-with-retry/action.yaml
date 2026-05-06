@@ -19,6 +19,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Normalize file timestamps for reproducible builds
+      if: env.SOURCE_DATE_EPOCH != ''
+      shell: bash
+      run: |
+        echo "Normalizing mtimes in ${{ inputs.path }} to SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+        find ${{ inputs.path }} -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
     - id: upload-artifact-try1
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
