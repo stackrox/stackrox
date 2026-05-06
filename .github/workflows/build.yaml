@@ -140,6 +140,8 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
+      # Match timestamp from cache-go-dependencies for consistency
+      SOURCE_DATE_EPOCH: 978307200
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
