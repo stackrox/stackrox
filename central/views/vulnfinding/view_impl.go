@@ -7,12 +7,15 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
+
+var log = logging.LoggerForModule()
 
 var queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
 
@@ -68,7 +71,12 @@ func (v *viewImpl) Get(ctx context.Context, q *v1.Query) ([]Finding, error) {
 	}
 
 	var ret []Finding
+	logged := false
 	err := pgSearch.RunSelectRequestForSchemaFn[findingResponse](queryCtx, v.db, v.schema, cloned, func(r *findingResponse) error {
+		if !logged {
+			log.Debugf("[CPE-TRACE-VIEW] finding: cve=%q repositoryCpe=%v componentName=%v", r.CVE, r.RepositoryCPE, r.ComponentName)
+			logged = true
+		}
 		ret = append(ret, r)
 		return nil
 	})
