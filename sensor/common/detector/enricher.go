@@ -59,9 +59,11 @@ type enricher struct {
 	clusterID           ClusterIDProvider
 }
 
-// ClusterIDProvider provides cluster ID access with optional waiting.
+// ClusterIDProvider provides cluster ID access.
 type ClusterIDProvider interface {
+	// Get blocks until the cluster ID is available.
 	Get() string
+	// GetNoWait returns an empty string if the ID is not yet available.
 	GetNoWait() string
 }
 

@@ -1,7 +1,8 @@
 package detector
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -59,51 +60,64 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
+// WithClusterID sets the cluster ID provider. Required.
 func (b *Builder) WithClusterID(id ClusterIDProvider) *Builder {
 	b.clusterID = id
 	return b
 }
 
+// WithEnforcer sets the policy enforcer. Required.
 func (b *Builder) WithEnforcer(e enforcer.Enforcer) *Builder {
 	b.enforcer = e
 	return b
 }
 
+// WithAdmCtrlSettingsMgr sets the admission controller settings manager. Optional.
 func (b *Builder) WithAdmCtrlSettingsMgr(mgr admissioncontroller.SettingsManager) *Builder {
 	b.admCtrlSettingsMgr = mgr
 	return b
 }
 
+// WithDeploymentStore sets the deployment store. Required.
 func (b *Builder) WithDeploymentStore(ds store.DeploymentStore) *Builder {
 	b.deploymentStore = ds
 	return b
 }
 
+// WithServiceAccountStore sets the service account store. Required.
 func (b *Builder) WithServiceAccountStore(sas store.ServiceAccountStore) *Builder {
 	b.serviceAccountStore = sas
 	return b
 }
 
+// WithImageCache sets the image cache. Required.
 func (b *Builder) WithImageCache(c cache.Image) *Builder {
 	b.imageCache = c
 	return b
 }
 
+// WithAuditLogEvents sets the channel for receiving audit log events. Required.
 func (b *Builder) WithAuditLogEvents(events chan *sensor.AuditEvents) *Builder {
 	b.auditLogEvents = events
 	return b
 }
 
+// WithAuditLogUpdater sets the audit log updater component. Required.
 func (b *Builder) WithAuditLogUpdater(u updater.Component) *Builder {
 	b.auditLogUpdater = u
 	return b
 }
 
+// WithNetworkPolicyStore sets the network policy store. Required.
 func (b *Builder) WithNetworkPolicyStore(nps store.NetworkPolicyStore) *Builder {
 	b.networkPolicyStore = nps
 	return b
 }
 
+// WithStoreProvider sets all store dependencies from a single provider.
+// This is the preferred way to configure stores; it sets DeploymentStore,
+// ServiceAccountStore, NetworkPolicyStore, NodeStore, RegistryStore,
+// ClusterLabelProvider, and NamespaceLabelProvider.
 func (b *Builder) WithStoreProvider(sp StoreProvider) *Builder {
 	b.deploymentStore = sp.Deployments()
 	b.serviceAccountStore = sp.ServiceAccounts()
@@ -115,59 +129,72 @@ func (b *Builder) WithStoreProvider(sp StoreProvider) *Builder {
 	return b
 }
 
+// WithRegistryStore sets the registry store directly. Required if not using WithStoreProvider.
 func (b *Builder) WithRegistryStore(rs registry.Provider) *Builder {
 	b.registryStore = rs
 	return b
 }
 
+// WithLocalScan sets the local scan component. Required.
 func (b *Builder) WithLocalScan(ls *scan.LocalScan) *Builder {
 	b.localScan = ls
 	return b
 }
 
+// WithNodeStore sets the node store. Required if not using WithStoreProvider.
 func (b *Builder) WithNodeStore(ns store.NodeStore) *Builder {
 	b.nodeStore = ns
 	return b
 }
 
+// WithClusterLabelProvider sets the cluster label provider for policy scoping.
+// Required if not using WithStoreProvider.
 func (b *Builder) WithClusterLabelProvider(clp scopecomp.ClusterLabelProvider) *Builder {
 	b.clusterLabelProvider = clp
 	return b
 }
 
+// WithNamespaceLabelProvider sets the namespace label provider for policy scoping.
+// Required if not using WithStoreProvider.
 func (b *Builder) WithNamespaceLabelProvider(nlp scopecomp.NamespaceLabelProvider) *Builder {
 	b.namespaceLabelProvider = nlp
 	return b
 }
 
+// WithFactSettingsMgr sets the Fact settings manager. Optional.
 func (b *Builder) WithFactSettingsMgr(fsm *filesystem.FactSettingsManager) *Builder {
 	b.factSettingsMgr = fsm
 	return b
 }
 
 func (b *Builder) validate() error {
-	type field struct {
-		name  string
-		value any
-	}
-	for _, f := range []field{
-		{"ClusterID", b.clusterID},
-		{"Enforcer", b.enforcer},
-		{"DeploymentStore", b.deploymentStore},
-		{"ServiceAccountStore", b.serviceAccountStore},
-		{"ImageCache", b.imageCache},
-		{"AuditLogEvents", b.auditLogEvents},
-		{"AuditLogUpdater", b.auditLogUpdater},
-		{"NetworkPolicyStore", b.networkPolicyStore},
-		{"RegistryStore", b.registryStore},
-		{"LocalScan", b.localScan},
-		{"NodeStore", b.nodeStore},
-		{"ClusterLabelProvider", b.clusterLabelProvider},
-		{"NamespaceLabelProvider", b.namespaceLabelProvider},
-	} {
-		if f.value == nil {
-			return errors.Errorf("detector.Builder: %s is required", f.name)
-		}
+	switch {
+	case b.clusterID == nil:
+		return errors.New("detector.Builder: ClusterID is required")
+	case b.enforcer == nil:
+		return errors.New("detector.Builder: Enforcer is required")
+	case b.deploymentStore == nil:
+		return errors.New("detector.Builder: DeploymentStore is required")
+	case b.serviceAccountStore == nil:
+		return errors.New("detector.Builder: ServiceAccountStore is required")
+	case b.imageCache == nil:
+		return errors.New("detector.Builder: ImageCache is required")
+	case b.auditLogEvents == nil:
+		return errors.New("detector.Builder: AuditLogEvents is required")
+	case b.auditLogUpdater == nil:
+		return errors.New("detector.Builder: AuditLogUpdater is required")
+	case b.networkPolicyStore == nil:
+		return errors.New("detector.Builder: NetworkPolicyStore is required")
+	case b.registryStore == nil:
+		return errors.New("detector.Builder: RegistryStore is required")
+	case b.localScan == nil:
+		return errors.New("detector.Builder: LocalScan is required")
+	case b.nodeStore == nil:
+		return errors.New("detector.Builder: NodeStore is required")
+	case b.clusterLabelProvider == nil:
+		return errors.New("detector.Builder: ClusterLabelProvider is required")
+	case b.namespaceLabelProvider == nil:
+		return errors.New("detector.Builder: NamespaceLabelProvider is required")
 	}
 	return nil
 }
