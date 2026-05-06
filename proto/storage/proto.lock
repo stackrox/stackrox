@@ -453,6 +453,11 @@
                 "id": 23,
                 "name": "entity_type",
                 "type": "EntityType"
+              },
+              {
+                "id": 25,
+                "name": "enforcement_count",
+                "type": "int32"
               }
             ],
             "reserved_ids": [
@@ -15610,17 +15615,35 @@
               {
                 "id": 9,
                 "name": "include_nvd_cvss",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 10,
                 "name": "include_epss_probability",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 11,
                 "name": "include_advisory",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 12,

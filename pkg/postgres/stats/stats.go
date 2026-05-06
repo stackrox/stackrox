@@ -2,6 +2,7 @@ package stats
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -131,4 +132,75 @@ func GetPGAnalyzeStats(ctx context.Context, db postgres.DB, limit int) *PGAnalyz
 		analyzeStats.Error = err.Error()
 	}
 	return &analyzeStats
+}
+
+var literalRedactor = regexp.MustCompile(`'(?:[^']|'')*'`)
+
+// redactQueryLiterals replaces SQL string literals with $? to avoid leaking sensitive values.
+func redactQueryLiterals(query string) string {
+	return literalRedactor.ReplaceAllString(query, "$?")
+}
+
+// PGStatActivity is the data model for a single row in pg_stat_activity
+type PGStatActivity struct {
+	DatabaseName    *string
+	PID             int32
+	UserName        *string
+	ApplicationName *string
+	BackendStart    *time.Time
+	XactStart       *time.Time
+	QueryStart      *time.Time
+	StateChange     *time.Time
+	WaitEventType   *string
+	WaitEvent       *string
+	State           *string
+	BackendType     *string
+	Query           *string
+}
+
+// PGStatActivities is a wrapper around PGStatActivity
+type PGStatActivities struct {
+	Activities []*PGStatActivity
+	Error      string
+}
+
+// GetPGStatActivities returns an activities struct that wraps the results from the query to pg_stat_activity
+func GetPGStatActivities(ctx context.Context, db postgres.DB, limit int) *PGStatActivities {
+	var activities PGStatActivities
+	rows, err := db.Query(ctx,
+		`SELECT datname, pid, usename, application_name,
+			backend_start, xact_start, query_start, state_change,
+			wait_event_type, wait_event, state, backend_type,
+			substr(query, 1, 1000)
+		FROM pg_stat_activity
+		WHERE state IS NOT NULL
+		ORDER BY query_start ASC NULLS LAST
+		LIMIT $1`, limit)
+	if err != nil {
+		activities.Error = err.Error()
+		return &activities
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var a PGStatActivity
+		if err := rows.Scan(
+			&a.DatabaseName, &a.PID, &a.UserName, &a.ApplicationName,
+			&a.BackendStart, &a.XactStart, &a.QueryStart, &a.StateChange,
+			&a.WaitEventType, &a.WaitEvent, &a.State, &a.BackendType,
+			&a.Query,
+		); err != nil {
+			activities.Error = errors.Wrap(err, "error scanning rows from pg_stat_activity").Error()
+			return &activities
+		}
+		if a.Query != nil {
+			redacted := redactQueryLiterals(*a.Query)
+			a.Query = &redacted
+		}
+		activities.Activities = append(activities.Activities, &a)
+	}
+	if err := rows.Err(); err != nil {
+		activities.Error = err.Error()
+	}
+	return &activities
 }

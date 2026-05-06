@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/v1tov2storage"
@@ -17,13 +18,20 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
+)
+
+const (
+	matcherNotReadyReasonText = "the matcher is not initialized"
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -78,16 +86,41 @@ func sendVMIndexNACK(ctx context.Context, resourceID, reason string, injector co
 	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, reason, injector)
 }
 
+func reasonForEnrichmentFailure(err error) string {
+	if isMatcherNotReadyError(err) {
+		return centralsensor.SensorACKReasonMatcherNotReady
+	}
+	return centralsensor.SensorACKReasonEnrichmentFailed
+}
+
+func isMatcherNotReadyError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	grpcStatus, ok := status.FromError(err)
+	if !ok || grpcStatus.Code() != codes.FailedPrecondition {
+		return false
+	}
+
+	return strings.Contains(grpcStatus.Message(), matcherNotReadyReasonText)
+}
+
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
-	if !features.VirtualMachines.Enabled() {
-		// ACK to prevent the sender from retrying when the feature is disabled on Central.
-		sendVMIndexACK(ctx, msg.GetEvent().GetVirtualMachineIndexReport().GetId(), centralsensor.SensorACKReasonFeatureDisabled, injector)
-		return nil
-	}
 	event := msg.GetEvent()
 	index := event.GetVirtualMachineIndexReport()
+	resourceID := ""
+	if index != nil {
+		resourceID = common.VMIndexACKResourceID(index.GetId(), index.GetIndex().GetVsockCid())
+	}
+
+	if !features.VirtualMachines.Enabled() {
+		// ACK to prevent the sender from retrying when the feature is disabled on Central.
+		sendVMIndexACK(ctx, resourceID, centralsensor.SensorACKReasonFeatureDisabled, injector)
+		return nil
+	}
 	if index == nil {
 		return errors.Errorf("unexpected resource type %T for virtual machine index report", event.GetResource())
 	}
@@ -97,14 +130,14 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			event.GetAction().String(),
 			central.ResourceAction_SYNC_RESOURCE.String(),
 		)
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonUnsupportedAction, injector)
+		sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonUnsupportedAction, injector)
 		return nil
 	}
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
 	if clusterID == "" {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonMissingClusterID, injector)
+		sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonMissingClusterID, injector)
 		return errors.New("missing cluster ID in pipeline context")
 	}
 
@@ -114,26 +147,30 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Extract Scanner V4 index report from VM index report event
 	indexV4 := index.GetIndex().GetIndexV4()
 	if indexV4 == nil {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonMissingScanData, injector)
+		sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonMissingScanData, injector)
 		return errors.Errorf("VM index report %s missing Scanner V4 index data", index.GetId())
 	}
 
 	// Enrich VM with vulnerabilities
 	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
 	if err != nil {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonEnrichmentFailed, injector)
+		sendVMIndexNACK(ctx, resourceID, reasonForEnrichmentFailure(err), injector)
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
+	}
+
+	if guestOS := p.lookupGuestOS(ctx, index.GetId()); guestOS != "" && guestOS != pkgVM.UnknownGuestOS && vm.GetScan() != nil {
+		vm.Scan.OperatingSystem = guestOS
 	}
 
 	// Store enriched VM via v1 or v2 path.
 	if features.VirtualMachinesEnhancedDataModel.Enabled() {
 		if err := p.storeV2Scan(ctx, clusterID, vm); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+			sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonStorageFailed, injector)
 			return err
 		}
 	} else {
 		if err := p.storeV1Scan(ctx, vm); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+			sendVMIndexNACK(ctx, resourceID, centralsensor.SensorACKReasonStorageFailed, injector)
 			return err
 		}
 	}
@@ -141,7 +178,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
-	sendVMIndexACK(ctx, index.GetId(), "", injector)
+	sendVMIndexACK(ctx, resourceID, "", injector)
 	return nil
 }
 
@@ -166,4 +203,27 @@ func (p *pipelineImpl) storeV2Scan(ctx context.Context, clusterID string, vm *st
 		return errors.Wrapf(err, "failed to upsert v2 scan for VM %s", vm.GetId())
 	}
 	return nil
+}
+
+func (p *pipelineImpl) lookupGuestOS(ctx context.Context, vmID string) string {
+	if features.VirtualMachinesEnhancedDataModel.Enabled() {
+		vm, found, err := p.virtualMachineV2Store.GetVirtualMachine(ctx, vmID)
+		if err != nil {
+			log.Warnf("Failed to look up guest OS for VM %s: %v", vmID, err)
+			return ""
+		}
+		if !found {
+			return ""
+		}
+		return vm.GetGuestOs()
+	}
+	vm, found, err := p.virtualMachineStore.GetVirtualMachine(ctx, vmID)
+	if err != nil {
+		log.Warnf("Failed to look up guest OS for VM %s: %v", vmID, err)
+		return ""
+	}
+	if !found {
+		return ""
+	}
+	return vm.GetFacts()[pkgVM.GuestOSKey]
 }

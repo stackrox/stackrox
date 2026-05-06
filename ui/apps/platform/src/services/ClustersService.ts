@@ -225,7 +225,10 @@ export type ClusterRegistrationSecret = {
         attributes: InitBundleAttribute[];
     };
     expiresAt: string;
-    impactedClusters: ImpactedCluster[];
+    // Protobuf uint64 is serialized as a JSON string. Parse with parseInt when a numeric value is needed.
+    maxRegistrations: string;
+    registrationsInitiated: string[];
+    registrationsCompleted: string[];
 };
 
 export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {
@@ -273,14 +276,21 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
         });
 }
 
-export function generateClusterRegistrationSecret(data: {
+export type GenerateClusterRegistrationSecretExtendedRequest = {
     name: string;
-}): Promise<GenerateClusterRegistrationSecretResponse> {
+    validUntil?: string;
+    validFor?: string;
+    maxRegistrations?: string;
+};
+
+export function generateClusterRegistrationSecretExtended(
+    data: GenerateClusterRegistrationSecretExtendedRequest
+): Promise<GenerateClusterRegistrationSecretResponse> {
     return axios
         .post<{
             meta: ClusterRegistrationSecret;
             crs: string;
-        }>(`${clusterInitUrl}/crs`, data)
+        }>(`${clusterInitUrl}/crs-extended`, data)
         .then((response) => {
             return response.data;
         });

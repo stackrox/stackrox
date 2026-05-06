@@ -139,7 +139,7 @@ function ReviewPolicyForm({
                 </Flex>
                 <Divider component="div" />
                 <FlexItem className="pf-v6-u-p-lg">
-                    <PolicyDetailContent policy={values} isReview />
+                    <PolicyDetailContent policy={getServerPolicy(values)} isReview />
                 </FlexItem>
             </Flex>
             {showPolicyResults && (

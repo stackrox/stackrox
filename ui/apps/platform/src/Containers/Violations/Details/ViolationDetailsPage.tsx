@@ -18,7 +18,6 @@ import {
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
-import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
@@ -193,7 +192,7 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={4} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection hasBodyWrapper={false} variant="default">
-                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
+                                <PolicyDetailContent policy={policy} />
                             </PageSection>
                         </Tab>
                     )}

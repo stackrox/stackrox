@@ -9,16 +9,13 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/connectivity"
 	admission "k8s.io/api/admission/v1"
-)
-
-const (
-	imageCacheTTL = 30 * time.Minute
 )
 
 type imageCacheEntry struct {
@@ -79,7 +76,7 @@ func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe 
 		emit(observeCacheMiss)
 		return nil
 	}
-	if time.Since(cachedImg.timestamp) > imageCacheTTL {
+	if time.Since(cachedImg.timestamp) > m.imageCacheTTL {
 		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
 		// imageCache entry TTL-expired. Same reasoning as above: only tag-only refs
 		// have a name→key mapping to invalidate.
@@ -184,14 +181,19 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		if cached := m.getCachedImage(image, s, false); cached != nil {
 			return cached, nil
 		}
+		gen, cacheVer := m.imageCacheGen.Snapshot(imgKey)
 		img, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
 		if err != nil {
 			return nil, err
 		}
 		// Caching inside the Coalesce callback ensures only the leader goroutine
-		// writes to imageCache. Waiters receive the result from the coalescer,
-		// avoiding N-1 redundant cache writes under concurrent bursts.
-		m.cacheImage(img, image.GetName().GetFullName(), s)
+		// writes to imageCache, avoiding N-1 redundant writes under bursts.
+		// Skip caching if an invalidation or purge happened during this fetch.
+		if !m.imageCacheGen.Changed(imgKey, gen, cacheVer) {
+			m.cacheImage(img, image.GetName().GetFullName(), s)
+		} else {
+			log.Warnf("Stale fetch detected for %q (key=%s): gen or cacheVersion changed during in-flight fetch, discarding result", image.GetName().GetFullName(), imgKey)
+		}
 		return img, nil
 	})
 
@@ -220,8 +222,14 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 	fetchCount := 0
 
 	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
+	initContainerSupportEnabled := features.InitContainerSupport.Enabled()
 
 	for idx, container := range deployment.GetContainers() {
+		// Init container images are filtered from policy evaluation (ROX-34026), skip scanning them.
+		if initContainerSupportEnabled && container.GetType() == storage.ContainerType_INIT {
+			images[idx] = types.ToImage(container.GetImage())
+			continue
+		}
 		image := container.GetImage()
 		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image, s, true)

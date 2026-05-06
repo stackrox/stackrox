@@ -186,7 +186,7 @@ export_test_environment() {
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
-    ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
+    ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-true}"
     ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
@@ -201,6 +201,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_TAILORED_PROFILES "${ROX_TAILORED_PROFILES:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -349,7 +350,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_VIEW_BASED_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
@@ -380,6 +381,11 @@ deploy_central_via_operator() {
         true)  scannerV4ScannerComponent="Enabled"  ;;
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
+
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
+        customize_envVars+=$'\n        value: "vulnerability"'
+    fi
 
     local scannerV4DbPersistenceYaml
     scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
@@ -416,6 +422,10 @@ deploy_sensor() {
 
     ci_export ROX_AFTERGLOW_PERIOD "15"
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
+
+    # Per-namespace filtering tests expect to have one namespace configured
+    # without persistence.
+    ci_export ROX_PROCESS_INDICATORS_PER_NAMESPACE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
@@ -1190,16 +1200,29 @@ wait_for_ready_deployment() {
 wait_for_scanner_V4() {
     local namespace="$1"
     local max_seconds=${MAX_WAIT_SECONDS:-300}
+    local matcher_max_seconds="$max_seconds"
     info "Waiting for Scanner V4 to become ready..."
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
         # OCP Interop tests are run on minimal instances and will take longer
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
+        matcher_max_seconds="$max_seconds"
         info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
+    fi
+    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+        # Slowness or timeout may indicate that a low performance disk is used by
+        # the Scanner V4 DB PVC. If storage class is unset the cluster default
+        # storage class is used.
+        info "SCANNER_V4_DB_STORAGE_CLASS=${SCANNER_V4_DB_STORAGE_CLASS:-<unset>}"
+        info "Listing available storage classes:"
+        kubectl describe storageclasses 2>/dev/null || true
+
+        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-2400}
+        info "Waiting ${matcher_max_seconds}s for matcher vulnerability readiness..."
     fi
 
     wait_for_ready_deployment "$namespace" "scanner-v4-indexer" "$max_seconds"
-    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$max_seconds"
+    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$matcher_max_seconds"
 }
 
 # shellcheck disable=SC2120

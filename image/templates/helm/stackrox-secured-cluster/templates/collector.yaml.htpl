@@ -294,6 +294,8 @@ spec:
       - name: certs
         secret:
           secretName: tls-cert-collector
+          optional: false
+          items: null
       {{- else }}
       - name: certs
         secret:

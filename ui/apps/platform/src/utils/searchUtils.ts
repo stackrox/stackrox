@@ -24,6 +24,7 @@ import {
     clusterTypeAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
+import { profileName } from 'Components/CompoundSearchFilter/attributes/profile';
 
 import type { NonEmptyArray, ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
@@ -423,6 +424,7 @@ const regexSearchOptions = [
     clusterPlatformTypeAttribute,
     clusterTypeAttribute,
     policyAttributes,
+    profileName,
 ]
     .flat()
     .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
@@ -454,7 +456,7 @@ export function isKeyValueSearchTerm(searchTerm: string): boolean {
     return keyValueSearchOptions.has(searchTerm.toLowerCase());
 }
 
-function isQuotedString(value: string): boolean {
+export function isQuotedString(value: string): boolean {
     return value.startsWith('"') && value.endsWith('"') && value.length >= 2;
 }
 

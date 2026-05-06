@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -310,11 +312,13 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
 	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
 
-	// Sort the w.Deployment.Containers by name and p.Status.ContainerStatuses by name
-	// This is because the order is not guaranteed
-	sort.SliceStable(w.GetDeployment().GetContainers(), func(i, j int) bool {
-		return w.GetDeployment().GetContainers()[i].GetName() < w.GetDeployment().GetContainers()[j].GetName()
-	})
+	// Build a map from container name to deployment container for name-based matching.
+	// This avoids index-based alignment which breaks when other container types are
+	// present in deployment.Containers but not in pod container statuses.
+	containersByName := make(map[string]*storage.Container, len(w.GetDeployment().GetContainers()))
+	for _, c := range w.GetDeployment().GetContainers() {
+		containersByName[c.GetName()] = c
+	}
 
 	// Sort the pods by time created as that pod will be most likely to have the most updated spec
 	sort.SliceStable(pods, func(i, j int) bool {
@@ -323,19 +327,39 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
-		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
-			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
-		})
-		sort.SliceStable(p.Spec.Containers, func(i, j int) bool {
-			return p.Spec.Containers[i].Name < p.Spec.Containers[j].Name
-		})
-		for i, c := range p.Status.ContainerStatuses {
-			if i >= len(w.GetDeployment().GetContainers()) || i >= len(p.Spec.Containers) {
-				// This should not happen, but could happen if w.Deployment.Containers and container status are out of sync
-				break
+		// Build a map from container name to pod spec container for name-based lookup.
+		mapSize := len(p.Spec.Containers)
+		statusCount := len(p.Status.ContainerStatuses)
+		if features.InitContainerSupport.Enabled() {
+			mapSize += len(p.Spec.InitContainers)
+			statusCount += len(p.Status.InitContainerStatuses)
+		}
+
+		specContainersByName := make(map[string]v1.Container, mapSize)
+		for _, sc := range p.Spec.Containers {
+			specContainersByName[sc.Name] = sc
+		}
+		if features.InitContainerSupport.Enabled() {
+			for _, sc := range p.Spec.InitContainers {
+				specContainersByName[sc.Name] = sc
+			}
+		}
+
+		// Process both regular and init container statuses.
+		allStatuses := make([]v1.ContainerStatus, 0, statusCount)
+		allStatuses = append(allStatuses, p.Status.ContainerStatuses...)
+		if features.InitContainerSupport.Enabled() {
+			allStatuses = append(allStatuses, p.Status.InitContainerStatuses...)
+		}
+
+		for _, c := range allStatuses {
+			deployContainer, found := containersByName[c.Name]
+			if !found {
+				log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), p.GetName())
+				continue
 			}
 
-			image := w.GetDeployment().GetContainers()[i].GetImage()
+			image := deployContainer.GetImage()
 
 			var runtimeImageName *storage.ImageName
 			if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
@@ -365,7 +389,12 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 				continue
 			}
 
-			parsedName, err := imageUtils.GenerateImageFromStringWithOverride(p.Spec.Containers[i].Image, w.registryOverride)
+			specContainer, found := specContainersByName[c.Name]
+			if !found {
+				continue
+			}
+
+			parsedName, err := imageUtils.GenerateImageFromStringWithOverride(specContainer.Image, w.registryOverride)
 			if err != nil {
 				// This error will only happen if we could not parse the image, this is possible if the image in kubernetes is malformed
 				// e.g. us.gcr.io/$PROJECT/xyz:latest is an example that we have seen
@@ -473,11 +502,16 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
+	dep := w.GetDeployment().CloneVT()
+	if !centralcaps.Has(centralsensor.InitContainerSupport) {
+		dep.Containers = containers.FilterRegularContainers(dep.GetContainers())
+	}
+
 	return &central.SensorEvent{
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.GetDeployment().CloneVT(),
+			Deployment: dep,
 		},
 	}
 }

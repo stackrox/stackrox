@@ -129,3 +129,71 @@ func (r *resourceCountByFixability) GetTotal() int {
 func (r *resourceCountByFixability) GetFixable() int {
 	return r.fixable
 }
+
+type cveComponentResponse struct {
+	ComponentName    string `db:"component"`
+	ComponentVersion string `db:"component_version"`
+	ComponentSource  int32  `db:"component_source"`
+	FixedBy          string `db:"fixed_by"`
+	AdvisoryName     string `db:"advisory_name"`
+	AdvisoryLink     string `db:"advisory_link"`
+}
+
+func (c *cveComponentResponse) GetComponentName() string    { return c.ComponentName }
+func (c *cveComponentResponse) GetComponentVersion() string { return c.ComponentVersion }
+func (c *cveComponentResponse) GetComponentSource() int32   { return c.ComponentSource }
+func (c *cveComponentResponse) GetFixedBy() string          { return c.FixedBy }
+func (c *cveComponentResponse) GetAdvisoryName() string     { return c.AdvisoryName }
+func (c *cveComponentResponse) GetAdvisoryLink() string     { return c.AdvisoryLink }
+
+type vmSeverityCountsResponse struct {
+	VMID                          string `db:"virtual_machine_id"`
+	CriticalSeverityCount         int    `db:"critical_severity_count"`
+	FixableCriticalSeverityCount  int    `db:"fixable_critical_severity_count"`
+	ImportantSeverityCount        int    `db:"important_severity_count"`
+	FixableImportantSeverityCount int    `db:"fixable_important_severity_count"`
+	ModerateSeverityCount         int    `db:"moderate_severity_count"`
+	FixableModerateSeverityCount  int    `db:"fixable_moderate_severity_count"`
+	LowSeverityCount              int    `db:"low_severity_count"`
+	FixableLowSeverityCount       int    `db:"fixable_low_severity_count"`
+	UnknownSeverityCount          int    `db:"unknown_severity_count"`
+	FixableUnknownSeverityCount   int    `db:"fixable_unknown_severity_count"`
+}
+
+func (r *vmSeverityCountsResponse) GetVMID() string { return r.VMID }
+func (r *vmSeverityCountsResponse) GetSeverityCounts() common.ResourceCountByCVESeverity {
+	return &resourceCountByVMCVESeverity{
+		CriticalSeverityCount:         r.CriticalSeverityCount,
+		FixableCriticalSeverityCount:  r.FixableCriticalSeverityCount,
+		ImportantSeverityCount:        r.ImportantSeverityCount,
+		FixableImportantSeverityCount: r.FixableImportantSeverityCount,
+		ModerateSeverityCount:         r.ModerateSeverityCount,
+		FixableModerateSeverityCount:  r.FixableModerateSeverityCount,
+		LowSeverityCount:              r.LowSeverityCount,
+		FixableLowSeverityCount:       r.FixableLowSeverityCount,
+		UnknownSeverityCount:          r.UnknownSeverityCount,
+		FixableUnknownSeverityCount:   r.FixableUnknownSeverityCount,
+	}
+}
+
+type affectedVMResponse struct {
+	VMID                   string  `db:"virtual_machine_id"`
+	VMName                 string  `db:"virtual_machine_name"`
+	MaxSeverity            int32   `db:"severity_max"`
+	FixableCount           int     `db:"fixable_count"`
+	MaxCVSS                float32 `db:"cvss_max"`
+	GuestOS                string  `db:"guest_os"`
+	AffectedComponentCount int     `db:"component_id_count"`
+}
+
+func (r *affectedVMResponse) GetVMID() string                { return r.VMID }
+func (r *affectedVMResponse) GetVMName() string              { return r.VMName }
+func (r *affectedVMResponse) GetMaxSeverity() int32          { return r.MaxSeverity }
+func (r *affectedVMResponse) GetIsFixable() bool             { return r.FixableCount > 0 }
+func (r *affectedVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
+func (r *affectedVMResponse) GetGuestOS() string             { return r.GuestOS }
+func (r *affectedVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
+
+type affectedVMCount struct {
+	VMCount int `db:"virtual_machine_id_count"`
+}

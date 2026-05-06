@@ -1021,6 +1021,14 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:Enabled
         - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: |-
+          Whether to persist individual process indicators.
+          The default is: Enabled.
+        displayName: Persistence
+        path: processIndicators.persistence
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
@@ -1124,6 +1132,14 @@ spec:
           checking host-level configurations.
         displayName: Compliance Settings
         path: perNode.compliance
+      - description: |-
+          Whether to persist process indicators originating from openshift namespaces.
+          The default is: Disabled.
+        displayName: Exclude Openshift Ns
+        path: processIndicators.excludeOpenshiftNs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
         displayName: Analyzer
         path: scanner.analyzer
@@ -1183,6 +1199,10 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
+      - description: A regex specifying namespaces whose process indicators should
+          not be persisted.
+        displayName: Exclude Namespace Regex
+        path: processIndicators.excludeNamespaceRegex
       - description: 'The default is: 2.'
         displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
@@ -1322,6 +1342,11 @@ spec:
       - description: Network configuration.
         displayName: Network
         path: network
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Per-namespace filtering configuration for process indicators.
+        displayName: ProcessIndicators
+        path: processIndicators
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
