@@ -24,6 +24,11 @@ defaults:
     # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
     shell: bash
 
+env:
+  # Match timestamp from cache-go-dependencies for consistency (Jan 1, 2001)
+  # Ensures reproducible builds for all artifacts (UI, docs, OSS notices)
+  SOURCE_DATE_EPOCH: 978307200
+
 jobs:
   define-job-matrix:
     outputs:
