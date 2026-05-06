@@ -129,6 +129,9 @@ dependencies {
 
 // Apply some base attributes to all the test tasks.
 tasks.withType<Test>().configureEach {
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+
     testLogging {
         showStandardStreams = true
         exceptionFormat = TestExceptionFormat.FULL
