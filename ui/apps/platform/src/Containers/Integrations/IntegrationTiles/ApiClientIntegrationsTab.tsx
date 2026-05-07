@@ -39,7 +39,13 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                             <ServiceNowLogo
                                 aria-label="ServiceNow VR logo"
                                 role="img"
-                                style={{ height: '100px', width: 'auto', maxWidth: '100%' }}
+                                style={{
+                                    height: '100px',
+                                    width: 'auto',
+                                    maxWidth: '100%',
+                                    display: 'block',
+                                    margin: '0 auto',
+                                }}
                             />
                         </CardHeader>
                         <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
