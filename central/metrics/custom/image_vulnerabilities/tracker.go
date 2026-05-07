@@ -10,12 +10,13 @@ import (
 )
 
 func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
+	activeDS := deploymentDS.NewActiveStateDatastore(ds)
 	return tracker.MakeTrackerBase(
 		"image_vuln",
 		"image vulnerabilities",
 		lazyLabels,
 		func(ctx context.Context, md tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
-			return track(ctx, ds)
+			return track(ctx, activeDS)
 		},
 	)
 }

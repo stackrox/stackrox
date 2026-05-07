@@ -13,13 +13,15 @@ import (
 // This view is used to populate ListDeployment protos from database queries.
 // The db tags use search field labels (lowercase with underscores), not database column names.
 type ListDeploymentView struct {
-	ID          string     `db:"deployment_id"`
-	Hash        uint64     `db:"deployment_hash"`
-	Name        string     `db:"deployment"`
-	ClusterName string     `db:"cluster"`
-	ClusterID   string     `db:"cluster_id"`
-	Namespace   string     `db:"namespace"`
-	Created     *time.Time `db:"created"`
+	ID          string                  `db:"deployment_id"`
+	Hash        uint64                  `db:"deployment_hash"`
+	Name        string                  `db:"deployment"`
+	ClusterName string                  `db:"cluster"`
+	ClusterID   string                  `db:"cluster_id"`
+	Namespace   string                  `db:"namespace"`
+	Created     *time.Time              `db:"created"`
+	Deleted     *time.Time              `db:"deployment_deleted"`
+	State       storage.DeploymentState `db:"deployment_state"`
 	// Priority is NOT selected from DB - it's computed by the ranker
 }
 
@@ -33,6 +35,8 @@ func (v *ListDeploymentView) ToListDeployment() *storage.ListDeployment {
 		ClusterId: v.ClusterID,
 		Namespace: v.Namespace,
 		Created:   protocompat.ConvertTimeToTimestampOrNil(v.Created),
+		Deleted:   protocompat.ConvertTimeToTimestampOrNil(v.Deleted),
+		State:     v.State,
 		// Priority is set by updateListDeploymentPriority in the datastore layer
 	}
 }
@@ -47,5 +51,7 @@ func ListDeploymentViewSelects() []*v1.QuerySelect {
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.Created).Proto(),
+		search.NewQuerySelect(search.DeploymentDeleted).Proto(),
+		search.NewQuerySelect(search.DeploymentState).Proto(),
 	}
 }

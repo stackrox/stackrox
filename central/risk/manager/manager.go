@@ -110,7 +110,7 @@ func New(nodeStorage nodeDS.DataStore,
 	return m
 }
 
-// ReprocessDeploymentRisk will reprocess the passed deployment's risk and save the results
+// ReprocessDeploymentRisk will reprocess the passed deployment's risk and save the results.
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
 

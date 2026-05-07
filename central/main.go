@@ -831,7 +831,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton(), imageV2Datastore.Singleton()),
+			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.NewActiveStateDatastore(deploymentDatastore.Singleton()), imageDatastore.Singleton(), imageV2Datastore.Singleton()),
 			Compression:   true,
 		},
 		{

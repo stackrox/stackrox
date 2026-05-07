@@ -85,7 +85,7 @@ func newManager(standardsRegistry *standards.Registry, complianceOperatorManager
 
 		clusterStore:    clusterStore,
 		nodeStore:       nodeStore,
-		deploymentStore: deploymentStore,
+		deploymentStore: datastore.NewActiveStateDatastore(deploymentStore),
 		podStore:        podStore,
 
 		dataRepoFactory: dataRepoFactory,

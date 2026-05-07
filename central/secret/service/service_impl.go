@@ -67,13 +67,13 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		return nil, errors.Wrapf(errox.NotFound, "secret with id '%s' does not exist", request.GetId())
 	}
 
-	psr := search.NewQueryBuilder().
+	baseQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, secret.GetClusterId()).
 		AddExactMatches(search.Namespace, secret.GetNamespace()).
 		AddExactMatches(search.SecretName, secret.GetName()).
 		ProtoQuery()
 
-	deploymentResults, err := s.deployments.SearchDeployments(ctx, psr)
+	deploymentResults, err := s.deployments.SearchDeployments(ctx, baseQuery)
 	if err != nil {
 		return nil, err
 	}

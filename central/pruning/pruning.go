@@ -129,59 +129,61 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	roleStore roleDataStore.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
-		alerts:          alerts,
-		clusters:        clusters,
-		nodes:           nodes,
-		images:          images,
-		imagesV2:        imagesV2,
-		deployments:     deployments,
-		pods:            pods,
-		processes:       processes,
-		processbaseline: processbaseline,
-		networkflows:    networkflows,
-		config:          config,
-		risks:           risks,
-		vulnReqs:        vulnReqs,
-		serviceAccts:    serviceAccts,
-		k8sRoles:        k8sRoles,
-		k8sRoleBindings: k8sRoleBindings,
-		logimbueStore:   logimbueStore,
-		stopper:         concurrency.NewStopper(),
-		postgres:        globaldb.GetPostgres(),
-		reportSnapshot:  reportSnapshotDS,
-		plops:           plops,
-		blobStore:       blobStore,
-		nodeCVEStore:    nodeCVEStore,
-		roleStore:       roleStore,
+		alerts:            alerts,
+		clusters:          clusters,
+		nodes:             nodes,
+		images:            images,
+		imagesV2:          imagesV2,
+		deployments:       deployments,
+		activeDeployments: deploymentDatastore.NewActiveStateDatastore(deployments),
+		pods:              pods,
+		processes:         processes,
+		processbaseline:   processbaseline,
+		networkflows:      networkflows,
+		config:            config,
+		risks:             risks,
+		vulnReqs:          vulnReqs,
+		serviceAccts:      serviceAccts,
+		k8sRoles:          k8sRoles,
+		k8sRoleBindings:   k8sRoleBindings,
+		logimbueStore:     logimbueStore,
+		stopper:           concurrency.NewStopper(),
+		postgres:          globaldb.GetPostgres(),
+		reportSnapshot:    reportSnapshotDS,
+		plops:             plops,
+		blobStore:         blobStore,
+		nodeCVEStore:      nodeCVEStore,
+		roleStore:         roleStore,
 	}
 }
 
 type garbageCollectorImpl struct {
 	postgres pgPkg.DB
 
-	alerts          alertDatastore.DataStore
-	clusters        clusterDatastore.DataStore
-	nodes           nodeDatastore.DataStore
-	images          imageDatastore.DataStore
-	imagesV2        imageV2Datastore.DataStore
-	deployments     deploymentDatastore.DataStore
-	pods            podDatastore.DataStore
-	processes       processDatastore.DataStore
-	processbaseline processBaselineDatastore.DataStore
-	networkflows    networkFlowDatastore.ClusterDataStore
-	config          configDatastore.DataStore
-	risks           riskDataStore.DataStore
-	vulnReqs        vulnReqDataStore.DataStore
-	serviceAccts    serviceAccountDataStore.DataStore
-	k8sRoles        k8sRoleDataStore.DataStore
-	k8sRoleBindings roleBindingDataStore.DataStore
-	logimbueStore   logimbueDataStore.Store
-	stopper         concurrency.Stopper
-	reportSnapshot  snapshotDS.DataStore
-	plops           plopDataStore.DataStore
-	blobStore       blobDatastore.Datastore
-	nodeCVEStore    nodeCVEDS.DataStore
-	roleStore       roleDataStore.DataStore
+	alerts            alertDatastore.DataStore
+	clusters          clusterDatastore.DataStore
+	nodes             nodeDatastore.DataStore
+	images            imageDatastore.DataStore
+	imagesV2          imageV2Datastore.DataStore
+	deployments       deploymentDatastore.DataStore
+	activeDeployments deploymentDatastore.DataStore
+	pods              podDatastore.DataStore
+	processes         processDatastore.DataStore
+	processbaseline   processBaselineDatastore.DataStore
+	networkflows      networkFlowDatastore.ClusterDataStore
+	config            configDatastore.DataStore
+	risks             riskDataStore.DataStore
+	vulnReqs          vulnReqDataStore.DataStore
+	serviceAccts      serviceAccountDataStore.DataStore
+	k8sRoles          k8sRoleDataStore.DataStore
+	k8sRoleBindings   roleBindingDataStore.DataStore
+	logimbueStore     logimbueDataStore.Store
+	stopper           concurrency.Stopper
+	reportSnapshot    snapshotDS.DataStore
+	plops             plopDataStore.DataStore
+	blobStore         blobDatastore.Datastore
+	nodeCVEStore      nodeCVEDS.DataStore
+	roleStore         roleDataStore.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -360,7 +362,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
-	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
+	deploymentIDs, err := g.activeDeployments.GetDeploymentIDs(pruningCtx, search.EmptyQuery())
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
 		return
@@ -879,7 +881,7 @@ func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cl
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, cluster.GetId()).
 		AddExactMatches(search.DeploymentName, "central")
-	deploys, err := g.deployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
+	deploys, err := g.activeDeployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
 	if err != nil {
 		return false, err
 	}
@@ -1034,7 +1036,7 @@ func (g *garbageCollectorImpl) removeOrphanedRisks() {
 func (g *garbageCollectorImpl) removeOrphanedDeploymentRisks() {
 	defer metrics.SetPruningDuration(time.Now(), "DeploymentRisks")
 	deploymentsWithRisk := g.getRisks(storage.RiskSubjectType_DEPLOYMENT)
-	results, err := g.deployments.Search(pruningCtx, search.EmptyQuery())
+	results, err := g.activeDeployments.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
 		log.Errorf("[Risk pruning] Searching deployments: %v", err)
 		return

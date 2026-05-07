@@ -5,7 +5,9 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/generated/storage"
 	detectionPkg "github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -34,9 +36,10 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 		if err != nil {
 			return err
 		}
-		if !exists {
-			// Assume it's not excluded if it doesn't exist, otherwise runtime alerts for deleted deployments
-			// will always get removed every time we update a policy.
+		if !exists || (features.DeploymentSoftDeletion.Enabled() && dep.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_DELETED) {
+			// Assume it's not excluded if it doesn't exist or is soft-deleted,
+			// otherwise runtime alerts for deleted deployments will always get
+			// removed every time we update a policy.
 			result = false
 			return nil
 		}
@@ -50,10 +53,10 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 }
 
 func (d *detectorImpl) DeploymentInactive(deploymentID string) bool {
-	_, exists, err := d.deployments.ListDeployment(detectorCtx, deploymentID)
+	dep, exists, err := d.deployments.ListDeployment(detectorCtx, deploymentID)
 	if err != nil {
 		log.Errorf("Couldn't determine inactive state of deployment %q: %v", deploymentID, err)
 		return false
 	}
-	return !exists
+	return !exists || (features.DeploymentSoftDeletion.Enabled() && dep.GetState() == storage.DeploymentState_DEPLOYMENT_STATE_DELETED)
 }

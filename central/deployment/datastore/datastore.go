@@ -16,6 +16,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -35,7 +36,6 @@ type DataStore interface {
 
 	GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error)
 	GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error)
-	CountDeployments(ctx context.Context) (int, error)
 	// UpsertDeployment adds or updates a deployment. If the deployment exists, the tags in the deployment are taken from
 	// the stored deployment.
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
@@ -43,11 +43,24 @@ type DataStore interface {
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
-	GetDeploymentIDs(ctx context.Context) ([]string, error)
+	GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error)
 
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 
 	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
+}
+
+// ActiveDeploymentsQuery returns a query that filters for active deployments only.
+// When the soft deletion feature flag is disabled, it returns an empty query so
+// callers behave as if there is no state filter.
+func ActiveDeploymentsQuery() *v1.Query {
+	if !features.DeploymentSoftDeletion.Enabled() {
+		return pkgSearch.EmptyQuery()
+	}
+	return pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.DeploymentState,
+			storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE.String()).
+		ProtoQuery()
 }
 
 func newDataStore(

@@ -134,7 +134,7 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		watchedImages: watchedImages,
 
-		deployments:       deployments,
+		deployments:       deploymentDatastore.NewActiveStateDatastore(deployments),
 		deploymentRiskSet: set.NewStringSet(),
 
 		nodeEnricher: nodeEnricher,
@@ -244,12 +244,13 @@ func (l *loopImpl) ReprocessSignatureVerifications(firstIntegration bool) {
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
+	queryBuilder := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
 	if len(deploymentIDs) > 0 {
-		query = query.AddDocIDs(deploymentIDs...)
+		queryBuilder = queryBuilder.AddDocIDs(deploymentIDs...)
 	}
+	query := queryBuilder.ProtoQuery()
 
-	results, err := l.deployments.SearchDeployments(allAccessCtx, query.ProtoQuery())
+	results, err := l.deployments.SearchDeployments(allAccessCtx, query)
 	if err != nil {
 		log.Errorw("Error getting results for deployment reprocessing", logging.Err(err))
 		return

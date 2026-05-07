@@ -349,7 +349,6 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if err != nil {
 		return nil, err
 	}
-
 	count, err := s.deployments.Count(ctx, deploymentQuery)
 	if err != nil {
 		return nil, err
@@ -763,7 +762,6 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to construct filter and scope queries")
 	}
-
 	count, err := s.deployments.Count(ctx, deploymentQuery)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to count deployments")

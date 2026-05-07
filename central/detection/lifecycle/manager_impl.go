@@ -102,9 +102,12 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIn
 
 func (m *managerImpl) buildIndicatorFilter() {
 	ctx := sac.WithAllAccess(context.Background())
-	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx)
+	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx, search.EmptyQuery())
 	if err != nil {
 		utils.Should(errors.Wrap(err, "error getting deployment IDs"))
+		return
+	}
+	if len(deploymentIDs) == 0 {
 		return
 	}
 
@@ -456,7 +459,7 @@ func (m *managerImpl) filterOutDisabledPolicies(alerts *[]*storage.Alert) {
 	*alerts = filteredAlerts
 }
 
-// HandleDeploymentAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified deployment
+// HandleDeploymentAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified deployment.
 func (m *managerImpl) HandleDeploymentAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	defer m.reprocessor.ReprocessRiskForDeployments(deploymentID)
 
