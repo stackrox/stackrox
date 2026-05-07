@@ -353,8 +353,8 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 			}
 		}
 		if !isConfigController {
-			return nil, errors.Wrap(errox.InvalidArgs,
-				"A declarative policy cannot be deleted via the API. Delete the SecurityPolicy custom resource instead.")
+			return nil, errors.Wrap(errox.NotAuthorized,
+				"An externally managed policy can only be deleted by deleting the corresponding SecurityPolicy custom resource.")
 		}
 	}
 
