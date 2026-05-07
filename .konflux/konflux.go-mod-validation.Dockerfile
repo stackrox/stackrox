@@ -8,7 +8,7 @@ COPY go.mod .
 # Validate Go version compatibility
 # go mod tidy will fail if go.mod requires a Go version higher than available in the builder
 RUN echo "Go version of the builder:" && \
-    go version
+    go version 2>/dev/null
 RUN echo "go.mod version requirement:" && \
     grep -E '^(go|toolchain) ' go.mod
 RUN echo "Checking go.mod compatibility..." && \
@@ -18,7 +18,7 @@ RUN echo "SUCCESS: Go version is compatible with go.mod"
 # Test that go mod tidy actually fails on incompatible versions
 # This validates we're not relying on behavior that silently changed
 RUN echo "Testing go mod tidy failure detection..."
-RUN go mod edit -go=1.200.0
+RUN go mod edit -go=1.200.0 2>/dev/null
 RUN if go mod tidy; then \
         echo "ERROR: go mod tidy succeeded with incompatible version"; \
         echo "Our assumption about go mod tidy behavior is broken!"; \
