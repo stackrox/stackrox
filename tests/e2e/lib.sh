@@ -12,6 +12,10 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=lib-yaml.sh
+source "$TEST_ROOT/tests/e2e/lib-yaml.sh"
+# shellcheck source=lib-compat.sh
+source "$TEST_ROOT/tests/e2e/lib-compat.sh"
 
 export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
@@ -83,6 +87,157 @@ deploy_stackrox() {
     fi
 
     touch "${STATE_DEPLOYED}"
+}
+
+# Deploy StackRox using roxie.
+#
+# This is the preferred way of deploying StackRox for tests as of 2026Q2.
+# This function expects two arguments:
+# 1) Namespace to deploy into (required)
+# 2) Path to a 'roxie override file' (optional)
+#
+# The override file is a YAML file with two top-level keys: 'central' and 'securedCluster',
+# which correspond to the central and sensor components respectively.
+# Expected under each key is an overlay for a central or a secured cluster custom resource.
+#
+deploy_stackrox_with_roxie() {
+    info "╔═════════════════════════════════╗"
+    info "║                                 ║"
+    info "║  Deploying StackRox with roxie  ║"
+    info "║                                 ║"
+    info "╚═════════════════════════════════╝"
+
+    local namespace="$1"
+    info "Deploying into namespace ${namespace}"
+
+    local provided_override_file="${2:-}"
+    local override_file; override_file="$(mktemp)"
+    if [[ -n "$provided_override_file" ]]; then
+        info "Applying overrides from ${provided_override_file}"
+        cp "$provided_override_file" "$override_file"
+    fi
+
+    local use_konflux_images="${USE_KONFLUX_IMAGES:-false}"
+    if [[ "${use_konflux_images}" == "true" ]]; then
+        if [[ -z "$MAIN_IMAGE_TAG" ]]; then
+            die "Missing main image tag in MAIN_IMAGE_TAG environment variable"
+        fi
+        export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG}-fast" # This will be done by a future roxie version automatically.
+        info "Using Konflux-built downstream images for main image tag ${MAIN_IMAGE_TAG}."
+    fi
+
+    # Downscale sensor, as being done here: https://github.com/stackrox/stackrox/blob/768451c8d876573b326d8a2093f9435b610e2e88/deploy/common/k8sbased.sh#L1036
+    # This can be removed once https://github.com/stackrox/roxie/pull/128 lands in the apollo-ci images used in CI.
+    merge_yaml "$override_file" <<EOF
+securedCluster:
+  spec:
+    sensor:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 500Mi
+EOF
+
+    info "Creating admin password"
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
+
+    # Print out the override file in use for transparency.
+    # This does not contain secrets.
+    info "Override configuration for roxie deployment:"
+    info "------------------------------------"
+    while IFS="" read -r line; do # IFS="" for preserving indentation in the output.
+        info "${line}"
+    done < <(yq eval --prettyPrint "$override_file")
+    info "------------------------------------"
+
+    # Replaces deploy_stackrox steps:
+    # - deploy_stackrox_operator (implicit)
+    # - deploy_central
+    # - pause_stackrox_operator_reconcile (--pause-reconciliation)
+    # - wait_for_api (implicit)
+    # Note: --single-namespace deploys both components into the namespace "stackrox".
+    local roxie_envrc; roxie_envrc="$(mktemp)"
+    roxie deploy \
+        --resources=ci \
+        --konflux="${use_konflux_images}" \
+        --envrc "$roxie_envrc" \
+        --single-namespace \
+        --central-wait=20m \
+        --secured-cluster-wait=20m \
+        --pause-reconciliation \
+        --override "$override_file"
+
+    # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
+    extend_roxie_envrc "$roxie_envrc"
+    if [[ -n "${BASH_ENV:-}" ]]; then
+        cat "$roxie_envrc" >> "$BASH_ENV"
+    fi
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+
+    record_build_info "${namespace}"
+
+    # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
+    # It just waits for sensor and collector workloads to be up and running.
+    # We use the same mechanism here instead of `--early-readiness=false`, because the latter
+    # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
+    # and we don't want to slow down this deployment path using roxie.
+    sensor_wait "$namespace"
+    wait_for_collectors_to_be_operational "$namespace"
+    if retrying_kubectl </dev/null -n "$namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "$namespace"
+    fi
+
+    touch "${STATE_DEPLOYED}"
+    rm -f "$roxie_envrc"
+    rm -f "$override_file"
+
+    info "╔═════════════════════╗"
+    info "║                     ║"
+    info "║  StackRox deployed  ║"
+    info "║                     ║"
+    info "╚═════════════════════╝"
+}
+
+
+check_for_roxie() {
+    if ! command -v roxie >/dev/null 2>&1; then
+        die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
+    fi
+
+    info "roxie found, version: $(roxie version)"
+}
+
+extend_roxie_envrc() {
+    local roxie_envrc="$1"
+    local orchestrator_flavor="${ORCHESTRATOR_FLAVOR:-k8s}"
+
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+
+    # roxie does not export these (yet?) via envrc, but they are needed by the tests.
+    ## First validation
+    if [[ ! "$API_ENDPOINT" =~ ^[^:]+:[0-9]+$ ]]; then
+        die "API_ENDPOINT has unexpected format: $API_ENDPOINT (expected hostname:port)"
+    fi
+    ## CLUSTER
+    local CLUSTER; CLUSTER="$(echo "$orchestrator_flavor" | tr '[:lower:]' '[:upper:]')"
+    ## API_HOSTNAME, remove :port from end of API_ENDPOINT.
+    local API_HOSTNAME; API_HOSTNAME="${API_ENDPOINT%:*}"
+    ## API_PORT, remove hostname: from beginning of API_ENDPOINT.
+    local API_PORT; API_PORT="${API_ENDPOINT##*:}"
+
+    # Add these to roxie's envrc.
+    cat >> "$roxie_envrc" <<EOF
+export CLUSTER="${CLUSTER}"
+export API_HOSTNAME="${API_HOSTNAME}"
+export API_PORT="${API_PORT}"
+EOF
+}
+
+gen_admin_password() {
+    tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true
 }
 
 # shellcheck disable=SC2120

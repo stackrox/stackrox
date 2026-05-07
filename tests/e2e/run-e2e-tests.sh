@@ -142,13 +142,15 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
       -e "BUILD_TAG=${BUILD_TAG:-}" \
+      -e "USE_ROXIE_DEPLOY=${USE_ROXIE_DEPLOY:-}" \
+      -e "ORCHESTRATOR_FLAVOR=${ORCHESTRATOR_FLAVOR:-}" \
       -v "${ROXCTL_FOR_TEST}:/usr/local/bin/roxctl:z" \
       -v "${ROOT}/.gitconfig:/etc/gitconfig:ro" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
       --rm -it \
       --entrypoint="$0" \
-      quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11 "$@"
+      quay.io/stackrox-io/apollo-ci:stackrox-test-latest "$@"
     exit 0
 fi
 
