@@ -46,7 +46,7 @@ runs:
           find "$target_path" -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
 
           echo "Computing SHA256 of downloaded files for reproducibility verification:"
-          find "$target_path" -type f -exec sha256sum {} \; | sort -k2 | head -20
+          find "$target_path" -type f -exec sha256sum {} \; | sort -k2 | head -20 || true
         else
           echo "SOURCE_DATE_EPOCH not set, skipping mtime normalization"
         fi
