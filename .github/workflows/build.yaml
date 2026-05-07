@@ -52,11 +52,16 @@ jobs:
           echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
           # Compute build tag: tagged builds use the tag directly, release branches
-          # derive version from branch name, everything else uses STACKROX_VERSION.
+          # find their latest release tag via the API, master uses STACKROX_VERSION.
           if [[ "$TAGGED" == "true" ]]; then
             build_tag="${GITHUB_REF#refs/tags/}"
           elif [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
-            version="${BASH_REMATCH[1]}.x"
+            branch_version="${BASH_REMATCH[1]}"
+            # Find the latest release tag for this branch (e.g., 4.10.2 for release-4.10).
+            version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/${branch_version}" \
+              --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
+              | grep -E "^${branch_version}\.[0-9]+$" | sort -V | tail -1)"
+            version="${version:-${branch_version}.x}"
           else
             version="${STACKROX_VERSION}"
           fi
@@ -67,7 +72,7 @@ jobs:
             api_pid=$!
           fi
 
-          echo "short-commit=${COMMIT_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "short-commit=${COMMIT_SHA:0:10}" >> "$GITHUB_OUTPUT"
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
