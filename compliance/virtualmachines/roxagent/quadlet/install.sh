@@ -3,9 +3,9 @@
 #
 # Usage:
 #   ./install.sh                                                      # Install locally
-#   ./install.sh user@host                                            # SSH (port 22)
-#   ./install.sh user@host 2222                                       # SSH with custom port
-#   ./install.sh virtctl -n openshift-cnv cloud-user@vmi/rhel10-1     # Via virtctl
+#   ./install.sh -n openshift-cnv cloud-user@vmi/rhel10-1             # Via virtctl (default remote)
+#   ./install.sh --ssh user@host                                      # SSH (port 22)
+#   ./install.sh --ssh user@host 2222                                 # SSH with custom port
 
 set -euo pipefail
 
@@ -39,39 +39,58 @@ VIRTCTL_TARGET=""
 VIRTCTL_FLAGS=()
 
 main() {
-    if [ "${#}" -eq 0 ]; then
+    if [ $# -eq 0 ]; then
         setup_transport_local
         install_local
-    elif [ "${1}" = "--stage-dir" ]; then
-        if [ "${#}" -ne 2 ]; then
-            echo "usage: ${0} --stage-dir <dir>" >&2
+    elif [ "$1" = "--stage-dir" ]; then
+        if [ $# -ne 2 ]; then
+            echo "usage: $0 --stage-dir <dir>" >&2
             exit 1
         fi
-        install_from_stage_dir "${2}"
-    elif [ "${1}" = "virtctl" ]; then
+        install_from_stage_dir "$2"
+        return
+    elif [ "$1" = "--ssh" ]; then
         shift
-        setup_transport_virtctl "${@}"
+        if [ $# -lt 1 ]; then
+            usage
+            exit 1
+        fi
+        setup_transport_ssh "$1" "${2:-22}"
         install_remote
     else
-        setup_transport_ssh "${1}" "${2:-22}"
+        setup_transport_virtctl "$@"
         install_remote
     fi
 
     echo ""
-    echo "Done! The roxagent will run hourly."
+    echo "Done! The roxagent will run periodically."
     echo ""
     echo "To run immediately:  sudo systemctl start roxagent.service"
     echo "To view logs:        sudo journalctl -u roxagent.service -f"
     echo "To check timer:      sudo systemctl list-timers roxagent.timer"
 }
 
+usage() {
+    cat >&2 <<EOF
+Usage:
+  $0                                                # Install locally
+  $0 [virtctl-flags...] <user@vmi/name>            # Remote install via virtctl (default)
+  $0 --ssh <user@host> [port]                      # Remote install via SSH
+
+Examples:
+  $0 -n openshift-cnv cloud-user@vmi/rhel10-1
+  $0 --ssh root@192.168.1.10
+  $0 --ssh root@192.168.1.10 2222
+EOF
+}
+
 remote_copy() {
     case "${TRANSPORT_KIND}" in
         ssh)
-            scp -P "${SSH_PORT}" "${1}" "${SSH_HOST}:${2}"
+            scp -P "${SSH_PORT}" "$1" "${SSH_HOST}:$2"
             ;;
         virtctl)
-            virtctl scp "${VIRTCTL_FLAGS[@]}" "${1}" "${VIRTCTL_TARGET}:${2}"
+            virtctl scp "${VIRTCTL_FLAGS[@]}" "$1" "${VIRTCTL_TARGET}:$2"
             ;;
         *)
             echo "remote_copy called without a remote transport" >&2
@@ -101,18 +120,28 @@ setup_transport_local() {
 
 setup_transport_ssh() {
     TRANSPORT_KIND="ssh"
-    SSH_HOST="${1}"
+    SSH_HOST="$1"
     SSH_PORT="${2:-22}"
 }
 
 setup_transport_virtctl() {
+    if [ $# -eq 0 ]; then
+        echo "error: virtctl mode requires at least a target (e.g. cloud-user@vmi/rhel10-1)" >&2
+        echo "" >&2
+        usage
+        exit 1
+    fi
+
     # Expects virtctl flags + target, e.g.:
     #   -n openshift-cnv cloud-user@vmi/rhel10-1
     # The last positional arg is the target; everything else are flags.
     TRANSPORT_KIND="virtctl"
     VIRTCTL_TARGET="${*: -1}"
-    if (( ${#} > 1 )); then
-        VIRTCTL_FLAGS=("${@:1:${#}-1}")
+
+    local argc=$#
+    if (( argc > 1 )); then
+        # Collect all arguments except the last one (the target) as flags.
+        VIRTCTL_FLAGS=("${@:1:argc-1}")
     else
         VIRTCTL_FLAGS=()
     fi
@@ -140,7 +169,7 @@ SCRIPT
 }
 
 copy_remote_stage_files() {
-    local remote_stage_dir="${1}"
+    local remote_stage_dir="$1"
     local file
     for file in "${STAGED_INSTALL_FILES[@]}"; do
         remote_copy "${SCRIPT_DIR}/${file}" "${remote_stage_dir}/${file}"
@@ -148,9 +177,10 @@ copy_remote_stage_files() {
 }
 
 validate_stage_dir() {
-    local stage_dir="${1}"
+    local stage_dir="$1"
     local file
-    for file in roxagent.container roxagent.timer roxagent-prep.service roxagent-tmpfiles.conf; do
+    for file in "${STAGED_INSTALL_FILES[@]}"; do
+        [ "${file}" = "install.sh" ] && continue
         if [ ! -f "${stage_dir}/${file}" ]; then
             echo "missing staged file: ${stage_dir}/${file}" >&2
             return 1
@@ -159,7 +189,7 @@ validate_stage_dir() {
 }
 
 install_from_stage_dir() {
-    local stage_dir="${1}"
+    local stage_dir="$1"
     validate_stage_dir "${stage_dir}"
 
     echo "Installing Quadlet units from ${stage_dir}..."
@@ -220,7 +250,7 @@ SCRIPT
 # Produce a filtered roxagent.container on stdout, removing Volume= lines
 # whose host source path does not exist on this machine.
 filter_container_file() {
-    local file="${1}"
+    local file="$1"
     local pattern=""
     for p in "${OPTIONAL_HOST_PATHS[@]}"; do
         if [ ! -e "${p}" ]; then
@@ -235,4 +265,4 @@ filter_container_file() {
     fi
 }
 
-main "${@}"
+main "$@"
