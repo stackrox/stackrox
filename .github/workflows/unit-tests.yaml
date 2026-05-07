@@ -27,6 +27,16 @@ jobs:
         ^.github/actions/job-preamble/
 
   go:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/') ||
+      contains(needs.detect-changes.outputs.files, '^generated/') ||
+      contains(needs.detect-changes.outputs.files, '^operator/') ||
+      contains(needs.detect-changes.outputs.files, '^config-controller/')
     strategy:
       fail-fast: false
       matrix:
@@ -110,6 +120,13 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/')
     strategy:
       fail-fast: false
       matrix:
@@ -186,6 +203,13 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/')
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
@@ -325,6 +349,15 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/') ||
+      contains(needs.detect-changes.outputs.files, '^scripts/') ||
+      contains(needs.detect-changes.outputs.files, '^tests/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -425,6 +458,15 @@ jobs:
         run: make -C .openshift-ci test
 
   sensor-integration-tests:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '^proto/') ||
+      contains(needs.detect-changes.outputs.files, '^sensor/') ||
+      contains(needs.detect-changes.outputs.files, '^scripts/')
     env:
       KUBECONFIG: "/tmp/kubeconfig"
       # Stable version ldflags for test caching (see go job comment).
