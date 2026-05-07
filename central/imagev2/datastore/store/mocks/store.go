@@ -119,21 +119,6 @@ func (mr *MockStoreMockRecorder) GetByIDs(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDs", reflect.TypeOf((*MockStore)(nil).GetByIDs), ctx, ids)
 }
 
-// GetImageIdentifiersView mocks base method.
-func (m *MockStore) GetImageIdentifiersView(ctx context.Context, q *v1.Query) ([]*views.ImageIdentifiersView, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageIdentifiersView", ctx, q)
-	ret0, _ := ret[0].([]*views.ImageIdentifiersView)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImageIdentifiersView indicates an expected call of GetImageIdentifiersView.
-func (mr *MockStoreMockRecorder) GetImageIdentifiersView(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIdentifiersView", reflect.TypeOf((*MockStore)(nil).GetImageIdentifiersView), ctx, q)
-}
-
 // GetImageMetadata mocks base method.
 func (m *MockStore) GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	m.ctrl.T.Helper()

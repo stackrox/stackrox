@@ -34,8 +34,6 @@ type Store interface {
 
 	// GetImagesRiskView retrieves an image id and risk score to initialize rankers
 	GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error)
-	// GetImageIdentifiersView retrieves image identifiers (id, digest, full name)
-	GetImageIdentifiersView(ctx context.Context, q *v1.Query) ([]*views.ImageIdentifiersView, error)
 	// GetListImagesView retrieves the fields needed for ListImage responses
 	GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error)
 }

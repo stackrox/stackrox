@@ -576,6 +576,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
+			gc.postgres = s.pool
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -760,6 +761,7 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
+			gc.postgres = s.pool
 
 			for _, dep := range c.deployments {
 				require.NoError(t, deployments.UpsertDeployment(ctx, dep))

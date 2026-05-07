@@ -945,25 +945,6 @@ func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*view
 	return results, err
 }
 
-// GetImageIdentifiersView retrieves image identifiers (id, digest, full name)
-func (s *storeImpl) GetImageIdentifiersView(ctx context.Context, q *v1.Query) ([]*views.ImageIdentifiersView, error) {
-	selects := []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageID).Proto(),
-		search.NewQuerySelect(search.ImageSHA).Proto(),
-		search.NewQuerySelect(search.ImageName).Proto(),
-	}
-	q.Selects = selects
-	var results []*views.ImageIdentifiersView
-	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageIdentifiersView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(row *views.ImageIdentifiersView) error {
-		results = append(results, row)
-		return nil
-	})
-	if err != nil {
-		log.Errorf("unable to retrieve image identifiers: %v", err)
-	}
-	return results, err
-}
-
 // GetListImagesView retrieves the fields needed for ListImage responses.
 func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ListImagesView")

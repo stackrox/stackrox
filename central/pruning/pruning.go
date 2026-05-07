@@ -18,7 +18,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
-	imageV2Views "github.com/stackrox/rox/central/imagev2/views"
+
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -636,31 +636,23 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 		log.Info("[Image Pruning] pruning is disabled.")
 		return
 	}
-	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	if features.FlattenImageData.Enabled() {
-		imageResults, err := g.imagesV2.GetImageIdentifiers(pruningCtx, qb)
+		imageResults, err := postgres.GetInactiveImageIdentifiers(pruningCtx, g.postgres, int(pruneImageAfterDays))
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		log.Infof("[Image pruning] Found %d image search results", len(imageResults))
+		log.Infof("[Image pruning] Found %d inactive images", len(imageResults))
 
 		imagesToPrune := make([]string, 0, len(imageResults))
 		for _, result := range imageResults {
-			q1 := search.NewQueryBuilder().AddExactMatches(search.ImageID, result.ImageID).ProtoQuery()
-			deploymentResults, err := g.deployments.Search(pruningCtx, q1)
-			if err != nil {
-				log.Errorf("[Image pruning] searching deployments: %v", err)
-				continue
-			}
-			if len(deploymentResults) != 0 {
-				continue
-			}
-
+			// Check if the image is still active in any pods. This can happen if the deployment was updated
+			// to run a different image but the pods running the old image are not yet terminated.
+			// We should keep the image around in this case.
 			if g.isImageActiveInPods(result) {
 				continue
 			}
-			imagesToPrune = append(imagesToPrune, result.ImageID)
+			imagesToPrune = append(imagesToPrune, result.ID)
 		}
 		if len(imagesToPrune) > 0 {
 			log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
@@ -670,6 +662,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			}
 		}
 	} else {
+		qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 		imageResults, err := g.images.Search(pruningCtx, qb)
 		if err != nil {
 			log.Error(err)
@@ -710,13 +703,13 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 }
 
-// isImageActiveInPods checks if there are pods running an image with the same name and digest.
-// Returns true if the image should be kept (not pruned).
+// isImageActiveInPods checks if there are pods running an image with the given identifiers.
+// Returns true if the image is active in any pods.
 //
 // TODO(ROX-33447): This would be simpler if we stored image full name and IdV2 in
 // pods_live_instances. Then we could look up pods directly by IdV2 instead of having to
 // cross-reference digests through deployments. This is a workaround until that is done.
-func (g *garbageCollectorImpl) isImageActiveInPods(img *imageV2Views.ImageIdentifiersView) bool {
+func (g *garbageCollectorImpl) isImageActiveInPods(img *postgres.ImageIdentifier) bool {
 	// Get deployment IDs of pods running images with the same digest.
 	deploymentIDs, err := g.pods.GetDeploymentIDsByDigest(pruningCtx, img.Digest)
 	if err != nil {

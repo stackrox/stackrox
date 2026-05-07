@@ -93,8 +93,10 @@ func (ds *datastoreImpl) GetDeploymentIDsByDigest(ctx context.Context, digest st
 		return nil, nil
 	}
 
+	// Filter pods with the given digest and a valid (non-NULL) deployment.
 	query := pkgSearch.NewQueryBuilder().
 		AddExactMatches(pkgSearch.ContainerImageDigest, digest).
+		AddStrings(pkgSearch.DeploymentID, pkgSearch.WildcardString).
 		ForSearchResults(pkgSearch.DeploymentID).
 		ProtoQuery()
 	results, err := ds.Search(ctx, query)
