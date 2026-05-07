@@ -15,8 +15,10 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -27,6 +29,12 @@ import (
 
 func TestVirtualMachineHandler(t *testing.T) {
 	suite.Run(t, new(virtualMachineHandlerSuite))
+}
+
+type staticClusterIDGetter string
+
+func (c staticClusterIDGetter) GetNoWait() string {
+	return string(c)
 }
 
 type virtualMachineHandlerSuite struct {
@@ -40,6 +48,7 @@ func (s *virtualMachineHandlerSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
 	s.handler = &handlerImpl{
+		clusterID:    staticClusterIDGetter("test-cluster"),
 		centralReady: concurrency.NewSignal(),
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
@@ -72,7 +81,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	go func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, nil)
 		s.Require().NoError(err)
 	}()
 
@@ -91,6 +100,81 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	case <-time.After(time.Second):
 		s.Fail("Expected message to be sent to central")
 	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSendEmitsVirtualMachineUpdateForDiscoveredData() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+	s.Require().NotNil(s.handler.toCentral)
+
+	cid := "1"
+	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(
+		&virtualmachine.Info{
+			ID:        "test-vm",
+			Name:      "test-vm-name",
+			Namespace: "test-namespace",
+			GuestOS:   "Red Hat Enterprise Linux 9",
+			Running:   true,
+		})
+	s.store.EXPECT().AddOrUpdate(gomock.AssignableToTypeOf(&virtualmachine.Info{})).Times(1).DoAndReturn(
+		func(vm *virtualmachine.Info) *virtualmachine.Info {
+			s.Equal(
+				map[string]string{
+					pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.2",
+					pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusInactive,
+					pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusUnavailable,
+				},
+				vm.AgentFacts,
+			)
+			return vm
+		},
+	)
+
+	go func() {
+		err := s.handler.Send(context.Background(), &v1.IndexReport{VsockCid: cid}, &v1.DiscoveredData{
+			DetectedOs:        v1.DetectedOS_RHEL,
+			OsVersion:         "9.2",
+			ActivationStatus:  v1.ActivationStatus_INACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_UNAVAILABLE,
+		})
+		s.Require().NoError(err)
+	}()
+
+	var msgs []*message.ExpiringMessage
+	for range 2 {
+		select {
+		case msg := <-s.handler.ResponsesC():
+			msgs = append(msgs, msg)
+		case <-time.After(time.Second):
+			s.Fail("Expected virtual machine update and index report messages to be sent to central")
+		}
+	}
+
+	s.Require().Len(msgs, 2)
+
+	firstEvent := msgs[0].GetEvent()
+	s.Require().NotNil(firstEvent)
+	s.Equal("test-vm", firstEvent.GetId())
+	s.Equal(central.ResourceAction_UPDATE_RESOURCE, firstEvent.GetAction())
+	s.Require().NotNil(firstEvent.GetVirtualMachine())
+	s.Equal(
+		map[string]string{
+			pkgVM.GuestOSKey:           "Red Hat Enterprise Linux 9",
+			pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.2",
+			pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusInactive,
+			pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusUnavailable,
+		},
+		firstEvent.GetVirtualMachine().GetFacts(),
+	)
+
+	secondEvent := msgs[1].GetEvent()
+	s.Require().NotNil(secondEvent)
+	s.Equal("test-vm", secondEvent.GetId())
+	s.Equal(central.ResourceAction_SYNC_RESOURCE, secondEvent.GetAction())
+	s.Require().NotNil(secondEvent.GetVirtualMachineIndexReport())
+	s.Equal("test-vm", secondEvent.GetVirtualMachineIndexReport().GetId())
 }
 
 func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
@@ -132,7 +216,7 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 					}
 					cont++
 				})
-				err := s.handler.Send(ctx, req)
+				err := s.handler.Send(ctx, req, nil)
 				s.Require().NoError(err)
 			}
 		}(i)
@@ -169,7 +253,7 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
 	wg.Go(func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, nil)
 		s.Require().NoError(err)
 	})
 
@@ -196,7 +280,7 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
 	wg.Go(func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, nil)
 		s.Require().NoError(err)
 	})
 
@@ -650,7 +734,7 @@ func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
 	vm := &v1.IndexReport{VsockCid: cid}
 
 	// Send should return errCapabilityNotSupported when capability is absent
-	err := s.handler.Send(context.Background(), vm)
+	err := s.handler.Send(context.Background(), vm, nil)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errCapabilityNotSupported)
 	s.Require().ErrorIs(err, errox.NotImplemented)
@@ -663,7 +747,7 @@ func (s *virtualMachineHandlerSuite) TestSend_AfterStop() {
 	s.handler.Stop()
 
 	vm := &v1.IndexReport{VsockCid: "1"}
-	err = s.handler.Send(context.Background(), vm)
+	err = s.handler.Send(context.Background(), vm, nil)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errInputChanClosed)
 	s.Require().ErrorIs(err, errox.InvariantViolation)
@@ -675,7 +759,7 @@ func (s *virtualMachineHandlerSuite) TestSend_CentralNotReachable() {
 	defer s.handler.Stop()
 
 	vm := &v1.IndexReport{VsockCid: "1"}
-	err = s.handler.Send(context.Background(), vm)
+	err = s.handler.Send(context.Background(), vm, nil)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errCentralNotReachable)
 	s.Require().ErrorIs(err, errox.ResourceExhausted)

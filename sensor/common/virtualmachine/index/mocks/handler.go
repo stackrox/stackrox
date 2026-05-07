@@ -23,6 +23,44 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
+// MockclusterIDGetter is a mock of clusterIDGetter interface.
+type MockclusterIDGetter struct {
+	ctrl     *gomock.Controller
+	recorder *MockclusterIDGetterMockRecorder
+	isgomock struct{}
+}
+
+// MockclusterIDGetterMockRecorder is the mock recorder for MockclusterIDGetter.
+type MockclusterIDGetterMockRecorder struct {
+	mock *MockclusterIDGetter
+}
+
+// NewMockclusterIDGetter creates a new mock instance.
+func NewMockclusterIDGetter(ctrl *gomock.Controller) *MockclusterIDGetter {
+	mock := &MockclusterIDGetter{ctrl: ctrl}
+	mock.recorder = &MockclusterIDGetterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockclusterIDGetter) EXPECT() *MockclusterIDGetterMockRecorder {
+	return m.recorder
+}
+
+// GetNoWait mocks base method.
+func (m *MockclusterIDGetter) GetNoWait() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNoWait")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetNoWait indicates an expected call of GetNoWait.
+func (mr *MockclusterIDGetterMockRecorder) GetNoWait() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNoWait", reflect.TypeOf((*MockclusterIDGetter)(nil).GetNoWait))
+}
+
 // MockHandler is a mock of Handler interface.
 type MockHandler struct {
 	ctrl     *gomock.Controller
@@ -144,17 +182,17 @@ func (mr *MockHandlerMockRecorder) ResponsesC() *gomock.Call {
 }
 
 // Send mocks base method.
-func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (m *MockHandler) Send(ctx context.Context, indexReport *v1.IndexReport, discoveredData *v1.DiscoveredData) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, vm)
+	ret := m.ctrl.Call(m, "Send", ctx, indexReport, discoveredData)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Send(ctx, indexReport, discoveredData any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, indexReport, discoveredData)
 }
 
 // Start mocks base method.
@@ -219,6 +257,20 @@ func NewMockVirtualMachineStore(ctrl *gomock.Controller) *MockVirtualMachineStor
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockVirtualMachineStore) EXPECT() *MockVirtualMachineStoreMockRecorder {
 	return m.recorder
+}
+
+// AddOrUpdate mocks base method.
+func (m *MockVirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddOrUpdate", vm)
+	ret0, _ := ret[0].(*virtualmachine.Info)
+	return ret0
+}
+
+// AddOrUpdate indicates an expected call of AddOrUpdate.
+func (mr *MockVirtualMachineStoreMockRecorder) AddOrUpdate(vm any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdate", reflect.TypeOf((*MockVirtualMachineStore)(nil).AddOrUpdate), vm)
 }
 
 // Get mocks base method.
