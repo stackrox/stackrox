@@ -626,6 +626,134 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
+  # Self-contained build: compiles Go, builds UI, and pushes Docker images
+  # in a single job. No pre-build dependencies — starts immediately.
+  build-and-push-combined:
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    needs:
+      - define-job-matrix
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        env:
+          GOARCH: ${{ matrix.arch }}
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Build Go binaries
+        run: |
+          ARCH="${{ matrix.arch }}"
+          if [[ "$ARCH" == "amd64" ]]; then
+            GOOS=linux GOARCH="$ARCH" CGO_ENABLED=1 make build-prep main-build-nodeps
+          else
+            GOOS=linux GOARCH="$ARCH" CGO_ENABLED=0 make build-prep main-build-nodeps
+          fi
+
+      - name: Check for UI changes
+        id: ui-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ui_changed=false
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          if [[ -n "$PR_NUMBER" ]]; then
+            pr_files=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" \
+              --paginate --jq '.[].filename' 2>/dev/null || echo "")
+            if echo "$pr_files" | grep -qE '^(ui/|\.github/|image/)'; then
+              ui_changed=true
+            fi
+          else
+            git fetch --depth=2 origin "${{ github.sha }}" 2>/dev/null || true
+            if git diff --name-only HEAD~1 HEAD -- 'ui/' '.github/' 'image/' 2>/dev/null | grep -q .; then
+              ui_changed=true
+            fi
+          fi
+          echo "ui_changed=${ui_changed}" >> "$GITHUB_OUTPUT"
+          echo "UI changed: ${ui_changed}"
+
+      - name: Set up Node.js
+        if: steps.ui-check.outputs.ui_changed == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+        with:
+          node-version-file: ui/package.json
+
+      - name: Cache UI dependencies
+        if: steps.ui-check.outputs.ui_changed == 'true'
+        uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Build UI
+        if: steps.ui-check.outputs.ui_changed == 'true'
+        run: |
+          for brand in RHACS_BRANDING STACKROX_BRANDING; do
+            ROX_PRODUCT_BRANDING="${brand}" make -C ui deps
+            ROX_PRODUCT_BRANDING="${brand}" make -C ui build
+            mkdir -p "ui-${brand}"
+            cp -a ui/build "ui-${brand}/build"
+            rm -rf ui/build
+          done
+
+      - name: Login to docker.io
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+      - name: Build and push images
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          source ./scripts/ci/lib.sh
+
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+
+          for brand in RHACS_BRANDING STACKROX_BRANDING; do
+            echo "::group::${brand} images"
+            export ROX_PRODUCT_BRANDING="${brand}"
+
+            # Use inline-built UI if available, otherwise use pre-built
+            if [[ -d "ui-${brand}/build" ]]; then
+              rm -rf ui/build
+              cp -a "ui-${brand}/build" ui/build
+            fi
+
+            GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+            GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
+
+            registry_ro_login "quay.io/rhacs-eng"
+            push_main_image_set "$push_context" "${brand}" "${{ matrix.arch }}"
+
+            echo "::endgroup::"
+          done
+
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
     needs:
