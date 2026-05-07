@@ -46,6 +46,11 @@ jobs:
         inputVars:
           podReplicas: 2
 
+      - objectTemplate: file-activity-load-daemonset.yml
+        replicas: 1
+        inputVars:
+          podReplicas: 2
+
       - objectTemplate: service.yml
         replicas: 10
 
@@ -56,4 +61,7 @@ jobs:
         replicas: 10
 
       - objectTemplate: berserker-configmap-processes.yml
+        replicas: 10
+
+      - objectTemplate: berserker-configmap-file-activity.yml
         replicas: 10
