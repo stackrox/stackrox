@@ -102,6 +102,14 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 	deploymentID := "2c507da1-b882-48cc-8143-b74e14c5cd4f"
 	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID}))
 
+	// Insert a soft-deleted deployment. Alerts referencing it should be treated as orphaned.
+	softDeletedDeploymentID := uuid.NewV4().String()
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
+		Id:      softDeletedDeploymentID,
+		State:   storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
+		Deleted: protocompat.TimestampNow(),
+	}))
+
 	now := protocompat.TimestampNow()
 	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * orphanWindow))
 
@@ -154,6 +162,21 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 				},
 			},
 			shouldBePruned: false,
+		},
+		{
+			name: "deployment is soft-deleted",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: softDeletedDeploymentID,
+					},
+				},
+			},
+			shouldBePruned: true,
 		},
 		{
 			name: "not the right state",
@@ -341,7 +364,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 		s.T().Run(c.name, func(t *testing.T) {
 
 			s.testDB = pgtest.ForT(s.T())
-			// Add deployments if necessary
+			// Add deployments if necessary.
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			s.Require().NoError(err)
 			for _, deploymentID := range c.deployments.AsSlice() {
@@ -384,6 +407,41 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			}
 		})
 	}
+}
+
+func (s *PostgresPruningSuite) TestGetOrphanedProcessesBySoftDeletedDeployment() {
+	s.testDB = pgtest.ForT(s.T())
+
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	// Insert an active deployment and a soft-deleted deployment.
+	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
+		Id:        fixtureconsts.Deployment6,
+		ClusterId: fixtureconsts.Cluster1,
+		State:     storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
+	}))
+	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
+		Id:        fixtureconsts.Deployment5,
+		ClusterId: fixtureconsts.Cluster1,
+		State:     storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
+		Deleted:   protocompat.TimestampNow(),
+	}))
+
+	processDatastore := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	indicators := []*storage.ProcessIndicator{
+		newIndicatorWithDeployment(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6),
+		newIndicatorWithDeployment(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5),
+	}
+	s.Require().NoError(processDatastore.AddProcessIndicators(s.ctx, indicators...))
+
+	orphanedIDs, err := GetOrphanedProcessIDsByDeployment(s.ctx, s.testDB.DB, orphanWindow)
+	s.Require().NoError(err)
+
+	// Indicator referencing the active deployment should not be orphaned.
+	s.NotContains(orphanedIDs, fixtureconsts.ProcessIndicatorID1)
+	// Indicator referencing the soft-deleted deployment should be orphaned.
+	s.Contains(orphanedIDs, fixtureconsts.ProcessIndicatorID2)
 }
 
 func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
