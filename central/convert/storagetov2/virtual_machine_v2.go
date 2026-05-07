@@ -51,6 +51,10 @@ func convertVMNote(note storage.VirtualMachineV2_Note) v2.VMNote {
 	switch note {
 	case storage.VirtualMachineV2_MISSING_SCAN_DATA:
 		return v2.VMNote_VM_NOTE_MISSING_SCAN_DATA
+	case storage.VirtualMachineV2_MISSING_SCANNER:
+		return v2.VMNote_VM_NOTE_MISSING_SCANNER
+	case storage.VirtualMachineV2_SCAN_FAILED:
+		return v2.VMNote_VM_NOTE_SCAN_FAILED
 	case storage.VirtualMachineV2_MISSING_SIGNATURE:
 		return v2.VMNote_VM_NOTE_MISSING_SIGNATURE
 	case storage.VirtualMachineV2_MISSING_SIGNATURE_VERIFICATION_DATA:

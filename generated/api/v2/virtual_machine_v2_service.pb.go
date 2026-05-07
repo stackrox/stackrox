@@ -128,6 +128,8 @@ const (
 	VMNote_VM_NOTE_MISSING_SCAN_DATA                   VMNote = 1
 	VMNote_VM_NOTE_MISSING_SIGNATURE                   VMNote = 2
 	VMNote_VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA VMNote = 3
+	VMNote_VM_NOTE_MISSING_SCANNER                     VMNote = 4
+	VMNote_VM_NOTE_SCAN_FAILED                         VMNote = 5
 )
 
 // Enum value maps for VMNote.
@@ -137,12 +139,16 @@ var (
 		1: "VM_NOTE_MISSING_SCAN_DATA",
 		2: "VM_NOTE_MISSING_SIGNATURE",
 		3: "VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA",
+		4: "VM_NOTE_MISSING_SCANNER",
+		5: "VM_NOTE_SCAN_FAILED",
 	}
 	VMNote_value = map[string]int32{
 		"VM_NOTE_MISSING_METADATA":                    0,
 		"VM_NOTE_MISSING_SCAN_DATA":                   1,
 		"VM_NOTE_MISSING_SIGNATURE":                   2,
 		"VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA": 3,
+		"VM_NOTE_MISSING_SCANNER":                     4,
+		"VM_NOTE_SCAN_FAILED":                         5,
 	}
 )
 
@@ -2515,12 +2521,14 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"VMScanNote\x12\x16\n" +
 	"\x12VM_SCAN_NOTE_UNSET\x10\x00\x12\x1b\n" +
 	"\x17VM_SCAN_NOTE_OS_UNKNOWN\x10\x01\x12\x1f\n" +
-	"\x1bVM_SCAN_NOTE_OS_UNSUPPORTED\x10\x02*\x95\x01\n" +
+	"\x1bVM_SCAN_NOTE_OS_UNSUPPORTED\x10\x02*\xcb\x01\n" +
 	"\x06VMNote\x12\x1c\n" +
 	"\x18VM_NOTE_MISSING_METADATA\x10\x00\x12\x1d\n" +
 	"\x19VM_NOTE_MISSING_SCAN_DATA\x10\x01\x12\x1d\n" +
 	"\x19VM_NOTE_MISSING_SIGNATURE\x10\x02\x12/\n" +
-	"+VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03*@\n" +
+	"+VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\x12\x1b\n" +
+	"\x17VM_NOTE_MISSING_SCANNER\x10\x04\x12\x17\n" +
+	"\x13VM_NOTE_SCAN_FAILED\x10\x05*@\n" +
 	"\vAgentStatus\x12\x18\n" +
 	"\x14AGENT_STATUS_UNKNOWN\x10\x00\x12\x17\n" +
 	"\x13AGENT_STATUS_ACTIVE\x10\x01*_\n" +
