@@ -1,8 +1,8 @@
 module github.com/stackrox/rox/operator/tools/envtest
 
-go 1.25.0
+go 1.26.0
 
-require sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20260209172322-2053ba3d414e
+require sigs.k8s.io/controller-runtime/tools/setup-envtest v0.24.0
 
 require (
 	github.com/go-logr/logr v1.4.3 // indirect
