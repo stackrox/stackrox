@@ -153,13 +153,14 @@ function PoliciesTable({
     let numDisabled = 0;
     let numDeletable = 0;
     let numSaveable = 0;
-    selectedPolicies.forEach(({ disabled, isDefault, source }) => {
+    selectedPolicies.forEach((policy) => {
+        const { disabled, isDefault } = policy;
         if (disabled) {
             numDisabled += 1;
         } else {
             numEnabled += 1;
         }
-        if (!isDefault && source !== 'DECLARATIVE') {
+        if (!isDefault && !isExternalPolicy(policy)) {
             numDeletable += 1;
         }
         if (!isDefault) {
@@ -297,9 +298,9 @@ function PoliciesTable({
                                                 setDeletingIds(
                                                     selectedPolicies
                                                         .filter(
-                                                            ({ isDefault, source }) =>
-                                                                !isDefault &&
-                                                                source !== 'DECLARATIVE'
+                                                            (policy) =>
+                                                                !policy.isDefault &&
+                                                                !isExternalPolicy(policy)
                                                         )
                                                         .map(({ id }) => id)
                                                 )
@@ -409,7 +410,6 @@ function PoliciesTable({
                                         name,
                                         notifiers: notifierIds,
                                         severity,
-                                        source,
                                     } = policy;
                                     const isExpanded = expandedRowSet.has(id);
 
@@ -461,11 +461,11 @@ function PoliciesTable({
                                               {
                                                   title: isDefault
                                                       ? 'Cannot delete a default policy'
-                                                      : source === 'DECLARATIVE'
+                                                      : isExternalPolicy(policy)
                                                         ? 'Cannot delete an externally managed policy'
                                                         : 'Delete policy',
                                                   onClick: () => setDeletingIds([id]),
-                                                  isDisabled: isDefault || source === 'DECLARATIVE',
+                                                  isDisabled: isDefault || isExternalPolicy(policy),
                                               },
                                           ]
                                         : [exportPolicyAction, saveAsCustomResourceActionItem];
