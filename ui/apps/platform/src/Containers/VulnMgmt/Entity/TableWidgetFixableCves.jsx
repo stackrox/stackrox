@@ -13,6 +13,7 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import queryService from 'utils/queryService';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
@@ -62,6 +63,8 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, id, 
     // `id` field is not needed in result,
     //   but is needed to keep apollo-client from throwing an error with certain entities,
     //   because apollo-client lib is "sub-optimal", https://github.com/apollographql/react-apollo/issues/1656
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const fixableCvesQuery = gql`
         query getFixableCvesForEntity(
             $id: ID!
@@ -70,6 +73,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, id, 
                     ? '$query: String'
                     : ''
             }
+            $deploymentQuery: String
             $scopeQuery: String
             $vulnQuery: String
             $vulnPagination: Pagination
@@ -91,6 +95,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, id, 
     const queryOptions = {
         variables: {
             id,
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             scopeQuery: getScopeQuery(entityContext),
             vulnQuery: queryService.objectToWhereClause({ Fixable: true }),
             vulnPagination: queryService.getPagination(cveSort, fixableCvesPage, LIST_PAGE_SIZE),

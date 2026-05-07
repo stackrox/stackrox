@@ -29,6 +29,7 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import queryService from 'utils/queryService';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
@@ -344,7 +345,12 @@ const VulnMgmtCves = ({
         case entityTypes.IMAGE_CVE:
         default: {
             cveQuery = gql`
-                query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                query getImageCves(
+                    $query: String
+                    $deploymentQuery: String
+                    $scopeQuery: String
+                    $pagination: Pagination
+                ) {
                     results: imageVulnerabilities(query: $query, pagination: $pagination) {
                         ...imageCVEFields
                     }
@@ -358,6 +364,7 @@ const VulnMgmtCves = ({
 
     const viewingSuppressed = getViewStateFromSearch(search, cveSortFields.SUPPRESSED);
 
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const tableSort = sort || defaultCveSort;
     const queryOptions = {
         variables: {
@@ -365,6 +372,7 @@ const VulnMgmtCves = ({
                 ...search,
                 cachebuster: refreshTrigger,
             }),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             scopeQuery: '',
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },

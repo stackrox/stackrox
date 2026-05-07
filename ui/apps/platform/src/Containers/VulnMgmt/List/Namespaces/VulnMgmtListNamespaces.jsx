@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import TableCellLink from 'Components/TableCellLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
@@ -28,6 +30,9 @@ export const defaultNamespaceSort = [
 ];
 
 const VulnMgmtListNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     function getNamespaceTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -169,10 +174,16 @@ const VulnMgmtListNamespaces = ({ selectedRowId, search, sort, page, data, total
     }
 
     const query = gql`
-        query getNamespaces($query: String, $policyQuery: String, $pagination: Pagination) {
+        query getNamespaces(
+            $query: String
+            $deploymentQuery: String
+            $policyQuery: String
+            $pagination: Pagination
+        ) {
             results: namespaces(query: $query, pagination: $pagination) {
                 ...namespaceFields
                 unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $deploymentQuery)
             }
             count: namespaceCount(query: $query)
         }
@@ -182,6 +193,7 @@ const VulnMgmtListNamespaces = ({ selectedRowId, search, sort, page, data, total
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
