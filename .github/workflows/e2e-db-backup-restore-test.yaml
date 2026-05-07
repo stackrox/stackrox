@@ -26,9 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Each shard runs on KinD by default. The auth shard also runs
-        # on GKE to validate that the same tests pass on both providers.
-        cluster-type: [kind]
+        # Each shard runs on KinD. The auth shard also runs on GKE
+        # to validate that the same tests pass on both providers.
         include:
           - name: auth
             cluster-type: kind
