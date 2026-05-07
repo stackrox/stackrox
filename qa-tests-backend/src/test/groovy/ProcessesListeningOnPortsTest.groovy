@@ -23,6 +23,12 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     static final private String TCPCONNECTIONTARGET2 = "tcp-connection-target-2"
     static final private String TCPCONNECTIONTARGET3 = "tcp-connection-target-3"
 
+    // Ports
+    static final private int PORT1 = 8079
+    static final private int PORT2 = 8080
+    static final private int PORT3 = 8081
+    static final private int PORT4 = 8082
+
     // Other namespace
     static final private String TEST_NAMESPACE = "qa-plop"
 
@@ -36,33 +42,33 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setNamespace(TEST_NAMESPACE)
                     .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
-                    .addPort(80)
-                    .addPort(8080)
+                    .addPort(PORT1)
+                    .addPort(PORT2)
                     .addLabel("app", TCPCONNECTIONTARGET1)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:80,fork STDOUT & " +
-                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:"+PORT1+",fork STDOUT & " +
+                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:"+PORT2+",fork STDOUT)" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET2)
                     .setNamespace(TEST_NAMESPACE)
                     .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
-                    .addPort(8081, "TCP")
+                    .addPort(PORT3, "TCP")
                     .addLabel("app", TCPCONNECTIONTARGET2)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:"+PORT3+",fork STDOUT)" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET3)
                     .setNamespace(TEST_NAMESPACE)
                     .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
-                    .addPort(8082, "TCP")
+                    .addPort(PORT4, "TCP")
                     .addLabel("app", TCPCONNECTIONTARGET3)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8082,fork STDOUT & " +
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:"+PORT4+",fork STDOUT & " +
                             "sleep 90 && pkill socat && sleep 3600)" as String,]),
                     // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
         ]
@@ -127,8 +133,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == TCPCONNECTIONTARGET1
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
-                signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
-                endpoint.port == 80
+                signal.args == "-d -d -v TCP-LISTEN:"+PORT1+",fork STDOUT"
+                endpoint.port == PORT1
         }
 
         def endpoint2 = list[1]
@@ -142,8 +148,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == TCPCONNECTIONTARGET1
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
-                signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
-                endpoint.port == 8080
+                signal.args == "-d -d -v TCP-LISTEN:"+PORT2+",fork STDOUT"
+                endpoint.port == PORT2
         }
 
         processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId2, 240)
@@ -154,7 +160,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() == 1
         assert processesListeningOnPorts.totalListeningEndpoints == 1
 
-        def endpoint = list.find { it.endpoint.port == 8081 }
+        def endpoint = list.find { it.endpoint.port == PORT3 }
 
         verifyAll(endpoint) {
                 deploymentId
@@ -165,7 +171,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == TCPCONNECTIONTARGET2
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
-                signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+                signal.args == "-d -d -v TCP-LISTEN:"+PORT3+",fork STDOUT"
         }
     }
 
@@ -208,7 +214,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() == 1
         assert processesListeningOnPorts.totalListeningEndpoints == 1
 
-        def endpoint = list.find { it.endpoint.port == 8082 }
+        def endpoint = list.find { it.endpoint.port == PORT4 }
 
         verifyAll(endpoint) {
                 deploymentId
@@ -219,7 +225,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == TCPCONNECTIONTARGET3
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
-                signal.args == "-d -d -v TCP-LISTEN:8082,fork STDOUT"
+                signal.args == "-d -d -v TCP-LISTEN:"+PORT4+",fork STDOUT"
         }
 
         // Allow enough time for the process and port to close and check that it is not in the API response
@@ -244,7 +250,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
 
-        def endpoint = list.find { it.endpoint.port == 8081 }
+        def endpoint = list.find { it.endpoint.port == PORT3 }
 
         verifyAll(endpoint) {
                 deploymentId
@@ -255,7 +261,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == TCPCONNECTIONTARGET2
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
-                signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+                signal.args == "-d -d -v TCP-LISTEN:"+PORT3+",fork STDOUT"
         }
 
         sleep 65000 // Sleep for 65 seconds
