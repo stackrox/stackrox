@@ -10,12 +10,12 @@ const acsRootBaseUrl = '/acs';
 const isProd = process.env.NODE_ENV === 'production';
 
 /*
- * Get the product version from the make tag command and convert it to valid semver format
- * e.g., "4.11.x-363-gbff801aa00-dirty" -> "4.11.0-363-gbff801aa00-dirty"
- * Note: replacing the .x with .0 is acceptable, as development will almost always be done
- * against the upcoming '0' z-stream.
+ * Get the product version from the make tag command.
+ * Uses base version only (no commit info) for reproducible builds.
  *
- * Production builds will get a clean x.y.z version instead
+ * Format:
+ *   On tag: "4.10.0" (unchanged)
+ *   On branch: "4.11.x" (base version only, no commit count/hash)
  */
 function getProductVersion() {
     const repositoryRoot = path.resolve(__dirname, '../../..');
@@ -23,7 +23,10 @@ function getProductVersion() {
         cwd: repositoryRoot,
         encoding: 'utf-8',
     }).trim();
-    const version = rawVersion.replace(/\.x/, '.0');
+
+    // Use base version only (first part before any dash)
+    // e.g., "4.10.0" stays "4.10.0", "4.11.x-921-gabcdef" becomes "4.11.x"
+    const version = rawVersion.split('-')[0];
 
     // eslint-disable-next-line no-console
     console.warn(`Product version: ${version}`);
@@ -38,7 +41,11 @@ function getProductVersion() {
 function getSrcAliases() {
     const aliases = {};
 
-    fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true }).forEach(({ name }) => {
+    const entries = fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true });
+    // Sort entries for deterministic ordering across different filesystems
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
+    entries.forEach(({ name }) => {
         if (name.startsWith('.')) {
             // avoid hidden directories, like `.DS_Store`
             return;
@@ -57,8 +64,8 @@ const config = {
     context: path.resolve(__dirname, 'src'),
     output: {
         path: path.resolve(__dirname, 'build', 'static', 'ocp-plugin'),
-        filename: isProd ? '[name]-bundle-[hash].min.js' : '[name]-bundle.js',
-        chunkFilename: isProd ? '[name]-chunk-[chunkhash].min.js' : '[name]-chunk.js',
+        filename: isProd ? '[name]-bundle-[contenthash].min.js' : '[name]-bundle.js',
+        chunkFilename: isProd ? '[name]-chunk-[contenthash].min.js' : '[name]-chunk.js',
     },
     resolve: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],

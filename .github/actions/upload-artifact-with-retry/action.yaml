@@ -19,6 +19,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Normalize file timestamps for reproducible builds
+      shell: bash
+      run: |
+        if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+          echo "Normalizing mtimes to SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+          while IFS= read -r path; do
+            [ -z "$path" ] && continue
+            echo "  Processing: $path"
+            find "$path" -exec touch -d "@$SOURCE_DATE_EPOCH" {} + 2>/dev/null || true
+
+            echo "Computing SHA256 of files before upload for reproducibility verification:"
+            find "$path" -type f -exec sha256sum {} \; 2>/dev/null | sort -k2 | head -20 || true
+          done <<< "${{ inputs.path }}"
+        else
+          echo "SOURCE_DATE_EPOCH not set, skipping mtime normalization"
+        fi
     - id: upload-artifact-try1
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:

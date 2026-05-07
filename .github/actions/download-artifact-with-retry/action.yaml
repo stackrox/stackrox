@@ -34,3 +34,19 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         pattern: ${{ inputs.pattern }}
+    - name: Normalize file timestamps for reproducible builds
+      shell: bash
+      run: |
+        if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+          target_path="${{ inputs.path }}"
+          if [ -z "$target_path" ]; then
+            target_path="$GITHUB_WORKSPACE"
+          fi
+          echo "Normalizing mtimes in $target_path to SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+          find "$target_path" -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
+
+          echo "Computing SHA256 of downloaded files for reproducibility verification:"
+          find "$target_path" -type f -exec sha256sum {} \; | sort -k2 | head -20 || true
+        else
+          echo "SOURCE_DATE_EPOCH not set, skipping mtime normalization"
+        fi
