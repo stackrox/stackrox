@@ -235,6 +235,7 @@ func createGRPCConn(ctx context.Context, o connOptions, rootCAs []*x509.Certific
 		clientconn.ServerName(o.serverName),
 		clientconn.MaxMsgReceiveSize(maxRespMsgSize),
 		clientconn.WithDialOptions(dialOpts...),
+		clientconn.AddRootCAs(),
 	}
 
 	if len(rootCAs) > 0 {
