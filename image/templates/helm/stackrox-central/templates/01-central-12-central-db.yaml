@@ -74,6 +74,7 @@ spec:
       {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
+      shareProcessNamespace: true
       initContainers:
       - name: init-db
         image: {{ ._rox.central.db.image.fullRef | quote }}
@@ -138,6 +139,30 @@ spec:
           mountPath: /run/secrets/stackrox.io/certs
         - mountPath: /dev/shm
           name: shared-memory
+      - name: cert-watcher
+        image: {{ ._rox.central.db.image.fullRef | quote }}
+        command:
+          - cert-watcher.sh
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: central-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+          readOnly: true
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 70
+          runAsGroup: 70
       securityContext:
         fsGroup: 70
       volumes:
