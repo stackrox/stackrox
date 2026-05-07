@@ -23,6 +23,7 @@ const (
 	CIDR         DataType = "cidr"
 	DateTimeTZ   DataType = "datetimetz"
 	MessageBytes DataType = "messagebytes"
+	ArrayColumn  DataType = "array_column"
 )
 
 var (

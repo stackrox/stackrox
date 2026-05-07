@@ -484,28 +484,95 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 			// DB round trip for child fetching and simplifies the write path.
 			childMsgType := structField.Type.Elem().Elem() // []*Foo -> Foo
 			if schema.Root().NoSerialized && !hasSearchableFields(childMsgType) {
-				field.DataType = postgres.MessageBytes
-				field.SQLType = "bytea"
-				field.MessageBytesElemType = childMsgType.String()
-				field.Type = "[]byte"
-				field.ModelType = "[]byte"
-				schema.Fields = append(schema.Fields, field)
-
-				// Build setter path from getter: "GetSignal().GetLineageInfo()" -> "Signal.LineageInfo"
-				getter := field.ObjectGetter.Value()
-				parts := strings.Split(getter, ".")
-				var setterParts []string
-				for _, part := range parts {
-					part = strings.TrimPrefix(part, "Get")
-					part = strings.TrimSuffix(part, "()")
-					setterParts = append(setterParts, part)
+				// Determine the storage strategy for this repeated field
+				// Use the actual protobuf field name from the tag
+				protoFieldName := field.ProtoBufName
+				if protoFieldName == "" {
+					protoFieldName = strings.ToLower(structField.Name)
 				}
-				schema.Root().InlinedRepeatedMessages = append(schema.Root().InlinedRepeatedMessages, InlinedRepeatedMessage{
-					ColumnName:  field.ColumnName,
-					ElementType: childMsgType.String(),
-					SetterPath:  strings.Join(setterParts, "."),
-				})
-				continue
+				fieldPath := buildProtoFieldPath(ctx, protoFieldName)
+				strategy := schema.Root().RepeatedFieldStrategies[fieldPath]
+				if strategy == "" {
+					strategy = "bytea" // default strategy
+				}
+
+				switch strategy {
+				case "bytea":
+					// Store as serialized bytea column
+					field.DataType = postgres.MessageBytes
+					field.SQLType = "bytea"
+					field.MessageBytesElemType = childMsgType.String()
+					field.Type = "[]byte"
+					field.ModelType = "[]byte"
+					schema.Fields = append(schema.Fields, field)
+
+					// Build setter path from getter: "GetSignal().GetLineageInfo()" -> "Signal.LineageInfo"
+					getter := field.ObjectGetter.Value()
+					parts := strings.Split(getter, ".")
+					var setterParts []string
+					for _, part := range parts {
+						part = strings.TrimPrefix(part, "Get")
+						part = strings.TrimSuffix(part, "()")
+						setterParts = append(setterParts, part)
+					}
+					schema.Root().InlinedRepeatedMessages = append(schema.Root().InlinedRepeatedMessages, InlinedRepeatedMessage{
+						ColumnName:  field.ColumnName,
+						ElementType: childMsgType.String(),
+						SetterPath:  strings.Join(setterParts, "."),
+					})
+					continue
+
+				case "array":
+					// Decompose the repeated message into parallel array columns
+					// For each exported field in the child message, create a separate array column
+					for j := 0; j < childMsgType.NumField(); j++ {
+						childField := childMsgType.Field(j)
+						if childField.PkgPath != "" {
+							// Skip unexported fields
+							continue
+						}
+						protoTag := childField.Tag.Get("protobuf")
+						if protoTag == "" {
+							// Skip fields without protobuf tag
+							continue
+						}
+
+						// Create an array field for this child field
+						arrayColumnName := field.ColumnName + "_" + strings.ToLower(childField.Name)
+						arraySQLType := goTypeToArraySQLType(childField.Type)
+						arrayGoType := goTypeToArrayGoType(childField.Type)
+
+						if arraySQLType == "" || arrayGoType == "" {
+							// Unsupported type for array decomposition
+							panic(fmt.Sprintf("Unsupported type %s for array decomposition in field %s.%s",
+								childField.Type, structField.Name, childField.Name))
+						}
+
+						arrayField := Field{
+							Schema:       schema,
+							Name:         structField.Name + childField.Name,
+							ProtoBufName: getProtoBufName(protoTag),
+							ColumnName:   arrayColumnName,
+							Type:         arrayGoType,
+							ModelType:    arrayGoType,
+							SQLType:      arraySQLType,
+							DataType:     postgres.ArrayColumn,
+							ObjectGetter: ObjectGetter{
+								// The getter will be complex and handled by template
+								value: ctx.Getter(structField.Name),
+							},
+						}
+						schema.Fields = append(schema.Fields, arrayField)
+					}
+					continue
+
+				case "child_table":
+					// Fall through to normal child table creation logic below
+					// Don't add bytea field, let the normal child schema creation handle it
+
+				default:
+					panic(fmt.Sprintf("Unknown repeated field strategy %q for field %s", strategy, fieldPath))
+				}
 			}
 
 			childSchema := &Schema{
