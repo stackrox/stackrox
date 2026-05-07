@@ -4,11 +4,9 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,28 +15,28 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable = "process_indicators"
-	storeName = "ProcessIndicator"
+	baseTable = "process_indicator_no_serializeds"
+	storeName = "ProcessIndicatorNoSerialized"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessIndicatorsSchema
+	schema         = pkgSchema.ProcessIndicatorNoSerializedsSchema
 	targetResource = resources.DeploymentExtension
 )
 
 type (
-	storeType = storage.ProcessIndicator
+	storeType = storage.ProcessIndicatorNoSerialized
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.ProcessIndicator
+// Store is the interface to interact with the storage for storage.ProcessIndicatorNoSerialized
 type Store = pgSearch.NoSerializedStore[storeType]
 
 // New returns a new Store instance using the provided sql instance.
@@ -47,16 +45,16 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoProcessIndicators,
+		insertIntoProcessIndicatorNoSerializeds,
 		nil,
 		scanRow,
 		scanRows,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		isUpsertAllowed,
+		nil,
 		targetResource,
 		pgSearch.NoSerializedStoreOpts[storeType]{
-			BulkInsert: bulkInsertIntoProcessIndicators,
+			BulkInsert: bulkInsertIntoProcessIndicatorNoSerializeds,
 		},
 	)
 }
@@ -74,25 +72,8 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
-func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if scopeChecker.IsAllowed() {
-		return nil
-	}
-	var deniedIDs []string
-	for _, obj := range objs {
-		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-		if !subScopeChecker.IsAllowed() {
-			deniedIDs = append(deniedIDs, obj.GetId())
-		}
-	}
-	if len(deniedIDs) != 0 {
-		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying processIndicators with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-	}
-	return nil
-}
 
-func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator) error {
+func insertIntoProcessIndicatorNoSerializeds(batch *pgx.Batch, obj *storage.ProcessIndicatorNoSerialized) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -110,7 +91,6 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 		obj.GetSignal().GetPid(),
 		obj.GetSignal().GetUid(),
 		obj.GetSignal().GetGid(),
-		obj.GetSignal().GetLineage(),
 		obj.GetSignal().GetScraped(),
 		pgutils.MustMarshalRepeatedMessages(obj.GetSignal().GetLineageInfo()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
@@ -119,13 +99,13 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 		obj.GetImageId(),
 	}
 
-	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, Signal_LineageInfo, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, Signal_LineageInfo = EXCLUDED.Signal_LineageInfo, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
+	finalStr := "INSERT INTO process_indicator_no_serializeds (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Scraped, Signal_LineageInfo, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Scraped = EXCLUDED.Signal_Scraped, Signal_LineageInfo = EXCLUDED.Signal_LineageInfo, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-var copyColsProcessIndicators = []string{
+var copyColsProcessIndicatorNoSerializeds = []string{
 	"id",
 	"deploymentid",
 	"containername",
@@ -140,7 +120,6 @@ var copyColsProcessIndicators = []string{
 	"signal_pid",
 	"signal_uid",
 	"signal_gid",
-	"signal_lineage",
 	"signal_scraped",
 	"signal_lineageinfo",
 	"clusterid",
@@ -149,7 +128,7 @@ var copyColsProcessIndicators = []string{
 	"imageid",
 }
 
-func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessIndicator) error {
+func copyFromProcessIndicatorNoSerializeds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessIndicatorNoSerialized) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -189,7 +168,6 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 			obj.GetSignal().GetPid(),
 			obj.GetSignal().GetUid(),
 			obj.GetSignal().GetGid(),
-			obj.GetSignal().GetLineage(),
 			obj.GetSignal().GetScraped(),
 			pgutils.MustMarshalRepeatedMessages(obj.GetSignal().GetLineageInfo()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
@@ -199,14 +177,14 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyColsProcessIndicators, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_indicator_no_serializeds"}, copyColsProcessIndicatorNoSerializeds, inputRows); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func bulkInsertIntoProcessIndicators(batch *pgx.Batch, objs []*storeType) error {
+func bulkInsertIntoProcessIndicatorNoSerializeds(batch *pgx.Batch, objs []*storeType) error {
 
 	// Build column arrays for unnest — one Go slice per unnestable DB column
 	arr_col_Id := make([]string, 0, len(objs))
@@ -254,7 +232,7 @@ func bulkInsertIntoProcessIndicators(batch *pgx.Batch, objs []*storeType) error 
 	}
 
 	// Unnest INSERT for parent table (unnestable columns only)
-	batch.Queue(`INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Scraped, Signal_LineageInfo, ClusterId, Namespace, ContainerStartTime, ImageId)
+	batch.Queue(`INSERT INTO process_indicator_no_serializeds (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Scraped, Signal_LineageInfo, ClusterId, Namespace, ContainerStartTime, ImageId)
         SELECT * FROM unnest($1::uuid[], $2::uuid[], $3::text[], $4::text[], $5::uuid[], $6::text[], $7::text[], $8::timestamp[], $9::text[], $10::text[], $11::text[], $12::bigint[], $13::bigint[], $14::bigint[], $15::bool[], $16::bytea[], $17::uuid[], $18::text[], $19::timestamp[], $20::text[])
         ON CONFLICT(Id) DO UPDATE SET
         Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Scraped = EXCLUDED.Signal_Scraped, Signal_LineageInfo = EXCLUDED.Signal_LineageInfo, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId`,
@@ -281,18 +259,13 @@ func bulkInsertIntoProcessIndicators(batch *pgx.Batch, objs []*storeType) error 
 	)
 
 	// Per-row UPDATE for columns that can't be unnested (arrays, maps)
-	for _, obj := range objs {
-		batch.Queue(`UPDATE process_indicators SET Signal_Lineage = $1 WHERE Id = $2`,
-			obj.GetSignal().GetLineage(), obj.GetId(),
-		)
-	}
 
 	return nil
 }
 
 func scanRow(row pgx.Row) (*storeType, error) {
 	obj := &storeType{}
-	obj.Signal = &storage.ProcessSignal{}
+	obj.Signal = &storage.ProcessSignalNoSerialized{}
 	var col_Id string
 	var col_DeploymentId string
 	var col_PodUid string
@@ -316,7 +289,6 @@ func scanRow(row pgx.Row) (*storeType, error) {
 		&obj.Signal.Pid,
 		&obj.Signal.Uid,
 		&obj.Signal.Gid,
-		&obj.Signal.Lineage,
 		&obj.Signal.Scraped,
 		&col_Signal_LineageInfo,
 		&col_ClusterId,
@@ -330,7 +302,9 @@ func scanRow(row pgx.Row) (*storeType, error) {
 	obj.DeploymentId = col_DeploymentId
 	obj.PodUid = col_PodUid
 	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
-	obj.Signal.LineageInfo = pgutils.MustUnmarshalRepeatedMessages(col_Signal_LineageInfo, func() *storage.ProcessSignal_LineageInfo { return &storage.ProcessSignal_LineageInfo{} })
+	obj.Signal.LineageInfo = pgutils.MustUnmarshalRepeatedMessages(col_Signal_LineageInfo, func() *storage.ProcessSignalNoSerialized_LineageInfoNoSerialized {
+		return &storage.ProcessSignalNoSerialized_LineageInfoNoSerialized{}
+	})
 	obj.ClusterId = col_ClusterId
 	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
 
@@ -339,7 +313,7 @@ func scanRow(row pgx.Row) (*storeType, error) {
 
 func scanRows(rows pgx.Rows) (*storeType, error) {
 	obj := &storeType{}
-	obj.Signal = &storage.ProcessSignal{}
+	obj.Signal = &storage.ProcessSignalNoSerialized{}
 	var col_Id string
 	var col_DeploymentId string
 	var col_PodUid string
@@ -363,7 +337,6 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 		&obj.Signal.Pid,
 		&obj.Signal.Uid,
 		&obj.Signal.Gid,
-		&obj.Signal.Lineage,
 		&obj.Signal.Scraped,
 		&col_Signal_LineageInfo,
 		&col_ClusterId,
@@ -377,7 +350,9 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 	obj.DeploymentId = col_DeploymentId
 	obj.PodUid = col_PodUid
 	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
-	obj.Signal.LineageInfo = pgutils.MustUnmarshalRepeatedMessages(col_Signal_LineageInfo, func() *storage.ProcessSignal_LineageInfo { return &storage.ProcessSignal_LineageInfo{} })
+	obj.Signal.LineageInfo = pgutils.MustUnmarshalRepeatedMessages(col_Signal_LineageInfo, func() *storage.ProcessSignalNoSerialized_LineageInfoNoSerialized {
+		return &storage.ProcessSignalNoSerialized_LineageInfoNoSerialized{}
+	})
 	obj.ClusterId = col_ClusterId
 	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
 
@@ -385,3 +360,23 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 }
 
 // endregion Helper functions
+
+// region Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db postgres.DB) {
+	dropTableProcessIndicatorNoSerializeds(ctx, db)
+}
+
+func dropTableProcessIndicatorNoSerializeds(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_indicator_no_serializeds CASCADE")
+
+}
+
+// endregion Used for testing

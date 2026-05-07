@@ -96,6 +96,8 @@ func init() {
 		&storage.ProcessBaselineResults{}:                       resources.DeploymentExtension,
 		&storage.ProcessBaseline{}:                              resources.DeploymentExtension,
 		&storage.ProcessIndicator{}:                             resources.DeploymentExtension,
+		&storage.ProcessIndicatorJsonb{}:                        resources.DeploymentExtension,
+		&storage.ProcessIndicatorNoSerialized{}:                 resources.DeploymentExtension,
 		&storage.ProcessListeningOnPortStorage{}:                resources.DeploymentExtension,
 		&storage.ReportConfiguration{}:                          resources.WorkflowAdministration,
 		&storage.ReportSnapshot{}:                               resources.WorkflowAdministration,

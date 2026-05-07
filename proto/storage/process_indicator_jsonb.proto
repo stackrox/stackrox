@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// ProcessIndicatorJsonb is a copy of ProcessIndicator used to test
+// the --jsonb store option. Data is stored as a jsonb blob instead of
+// binary bytea, making it human-readable and SQL-queryable.
+// Next available tag: 13
+message ProcessIndicatorJsonb {
+  // A unique UUID for the Indicator message
+  string id = 1; // @gotags: search:"Process Jsonb ID,hidden"  sql:"pk,type(uuid)"
+
+  string deployment_id = 2; // @gotags: search:"Deployment Jsonb ID,hidden" sql:"index,type(uuid)"
+  reserved 10;
+
+  string container_name = 3; // @gotags: search:"Container Jsonb Name,hidden"
+  // Pod name
+  string pod_id = 4; // @gotags: search:"Pod Jsonb ID,hidden"
+  string pod_uid = 11; // @gotags: search:"Pod Jsonb UID,hidden" sql:"index,type(uuid)"
+
+  reserved 5;
+
+  // A process signal message passed from Collector to Sensor
+  ProcessSignalJsonb signal = 6;
+
+  string cluster_id = 7; // @gotags: search:"Cluster Jsonb ID,hidden" sql:"type(uuid)"
+  string namespace = 8; // @gotags: search:"Namespace Jsonb,hidden"
+
+  google.protobuf.Timestamp container_start_time = 9; // @gotags: search:"Process Container Jsonb Start Time"
+
+  string image_id = 12;
+}
+
+message ProcessSignalJsonb {
+  // A unique UUID for identifying the message
+  string id = 1;
+
+  // ID of container associated with this process
+  string container_id = 2; // @gotags: search:"Container Jsonb Signal ID,hidden"
+
+  // Process creation time
+  google.protobuf.Timestamp time = 3; // @gotags: search:"Process Jsonb Creation Time,hidden" sql:"index=btree"
+
+  // Process name
+  string name = 4; // @gotags: search:"Process Jsonb Name"
+
+  // Process arguments
+  string args = 5; // @gotags: search:"Process Jsonb Arguments"
+
+  // Process executable file path
+  string exec_file_path = 6; // @gotags: search:"Process Jsonb Path"
+
+  // Host process ID
+  uint32 pid = 7;
+
+  // Real user ID
+  uint32 uid = 8; // @gotags: search:"Process Jsonb UID"
+
+  // Real group ID
+  uint32 gid = 9;
+
+  // Process Lineage
+  repeated string lineage = 10 [deprecated = true];
+
+  // Signal origin
+  bool scraped = 11;
+
+  // Process LineageInfo
+  repeated LineageInfoJsonb lineage_info = 12;
+
+  message LineageInfoJsonb {
+    uint32 parent_uid = 1;
+    string parent_exec_file_path = 2;
+  }
+}
