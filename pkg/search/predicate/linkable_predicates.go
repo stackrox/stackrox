@@ -44,7 +44,7 @@ func createLinkedNestedPredicate(fieldType reflect.Type, preds ...internalPredic
 		return createSliceLinkedPredicate(preds...), nil
 	case reflect.Map:
 		return createMapLinkedPredicate(preds...), nil
-	case reflect.Ptr, reflect.Struct:
+	case reflect.Pointer, reflect.Struct:
 		return createLinkedStructPredicate(preds...), nil
 	default:
 		return nil, fmt.Errorf("cannot link fields within a: %s", fieldType.String())

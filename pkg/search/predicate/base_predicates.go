@@ -29,7 +29,7 @@ func formatSingleMatchf(key, template string, val ...interface{}) map[string][]s
 
 func createBasePredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
 	switch fieldType.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return createPtrPredicate(fullPath, fieldType, value)
 	case reflect.Array, reflect.Slice:
 		return createSlicePredicate(fullPath, fieldType, value)

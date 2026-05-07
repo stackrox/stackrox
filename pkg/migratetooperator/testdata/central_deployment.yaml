@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        image: "quay.io/rhacs-eng/main:latest"
+        env:
+        - name: ROX_ENABLE_OPENSHIFT_AUTH
+          value: "true"
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"

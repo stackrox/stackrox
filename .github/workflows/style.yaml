@@ -54,8 +54,8 @@ jobs:
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
-#    - name: Cache Go dependencies
-#      uses: ./.github/actions/cache-go-dependencies
+    # No GOCACHE here — this job must validate go.mod/go.sum against
+    # real source files, not a cached module index that may be stale.
 
     - name: Download scanner module for proto generation
       run: go mod download github.com/stackrox/scanner
@@ -159,8 +159,8 @@ jobs:
           xmlstarlet --version
           pycodestyle --version
 
-#      - name: Cache Go dependencies
-#        uses: ./.github/actions/cache-go-dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner

@@ -140,6 +140,8 @@ spec:
         - name: certs
           secret:
             secretName: tls-cert-admission-control
+            optional: false
+            items: null
         {{- else }}
         - name: certs
           secret:

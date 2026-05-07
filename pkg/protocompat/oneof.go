@@ -10,7 +10,7 @@ import (
 )
 
 func oneOfFieldTypeCmp(a reflect.Type, b reflect.Type) int {
-	if a.Kind() != reflect.Ptr || b.Kind() != reflect.Ptr {
+	if a.Kind() != reflect.Pointer || b.Kind() != reflect.Pointer {
 		return 0
 	}
 

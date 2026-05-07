@@ -46,10 +46,23 @@ type CveView interface {
 	GetVMIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error)
 	CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error)
+	GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error)
+	CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // VMSeverityCounts provides per-VM severity counts.
 type VMSeverityCounts interface {
 	GetVMID() string
 	GetSeverityCounts() common.ResourceCountByCVESeverity
+}
+
+// AffectedVMCore provides per-VM aggregation for a specific CVE.
+type AffectedVMCore interface {
+	GetVMID() string
+	GetVMName() string
+	GetMaxSeverity() int32
+	GetIsFixable() bool
+	GetMaxCVSS() float32
+	GetGuestOS() string
+	GetAffectedComponentCount() int
 }

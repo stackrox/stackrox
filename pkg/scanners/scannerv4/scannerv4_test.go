@@ -96,6 +96,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 		indexReport                  *v4.IndexReport
 		expectedVulnerabilitiesCount int
 		expectedScanNotesCount       int
+		expectedOS                   string
 	}{
 		{
 			name: "successful enrichment with vulnerabilities",
@@ -121,6 +122,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 3,
 			expectedScanNotesCount:       0,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "successful enrichment with no vulnerabilities",
@@ -141,6 +143,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       0,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "enrichment with empty package list",
@@ -155,6 +158,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       0,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "enrichment with scan notes",
@@ -175,6 +179,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       2,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "enrichment with multiple scan notes",
@@ -195,6 +200,35 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 1,
 			expectedScanNotesCount:       4, // Test with 4 notes to show cycling
+			expectedOS:                   "unknown",
+		},
+		{
+			name: "enrichment with single distribution",
+			vm: &storage.VirtualMachine{
+				Id:   "vm-id-6",
+				Name: "distributed-vm",
+			},
+			indexReport: &v4.IndexReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"pkg-1": {
+							Id:      "pkg-1",
+							Name:    "dist-package",
+							Version: "3.0.0",
+						},
+					},
+					Distributions: map[string]*v4.Distribution{
+						"rhel-9": {
+							Id:        "rhel-9",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+				},
+			},
+			expectedVulnerabilitiesCount: 0,
+			expectedScanNotesCount:       0,
+			expectedOS:                   "rhel:9",
 		},
 	}
 
@@ -247,7 +281,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 
 			// Verify scan metadata
 			assert.NotNil(t, tt.vm.GetScan().GetScanTime())
-			assert.Equal(t, "", tt.vm.GetScan().GetOperatingSystem())
+			assert.Equal(t, tt.expectedOS, tt.vm.GetScan().GetOperatingSystem())
 		})
 	}
 }
