@@ -51,6 +51,16 @@ jobs:
         run: |
           echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
+          if [[ ${#COMMIT_SHA} -lt 10 ]]; then
+            echo "::error::COMMIT_SHA must be at least 10 characters (got ${#COMMIT_SHA}: ${COMMIT_SHA})"
+            exit 1
+          fi
+
+          if [[ -z "$STACKROX_VERSION" && "$TAGGED" != "true" ]]; then
+            echo "::error::vars.STACKROX_VERSION is not set. Configure it in GitHub repo Settings > Variables."
+            exit 1
+          fi
+
           # Compute build tag: tagged builds use the tag directly, release branches
           # find their latest release tag via the API, master uses STACKROX_VERSION.
           if [[ "$TAGGED" == "true" ]]; then
