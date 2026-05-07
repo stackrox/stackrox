@@ -42,8 +42,6 @@ jobs:
           PRERELEASE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-prerelease') }}
           RACE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug') }}
           TAGGED: ${{ startsWith(github.ref, 'refs/tags/') }}
-          # STACKROX_VERSION is a GitHub repo variable (e.g., "4.11.x") for the current dev cycle.
-          STACKROX_VERSION: ${{ vars.STACKROX_VERSION }}
           # Branch that this build targets (PR base branch, or the push branch itself).
           TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
           COMMIT_SHA: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
@@ -56,29 +54,35 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "$STACKROX_VERSION" && "$TAGGED" != "true" ]]; then
-            echo "::error::vars.STACKROX_VERSION is not set. Configure it in GitHub repo Settings > Variables."
-            exit 1
-          fi
-
-          # Compute build tag: tagged builds use the tag directly, release branches
-          # find their latest release tag via the API, master uses STACKROX_VERSION.
+          # Compute build tag in the background (runs during jq matrix below).
+          # Replicates git describe: finds the nearest version tag via the API,
+          # then gets the commit count since that tag.
+          # - Tagged builds: use the tag directly (no API needed).
+          # - release-X.Y branches: find latest X.Y.Z tag (e.g., 4.10.2).
+          # - master/other: find latest X.Y.x tag (e.g., 4.11.x).
           if [[ "$TAGGED" == "true" ]]; then
-            build_tag="${GITHUB_REF#refs/tags/}"
-          elif [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
-            branch_version="${BASH_REMATCH[1]}"
-            # Find the latest release tag for this branch (e.g., 4.10.2 for release-4.10).
-            version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/${branch_version}" \
-              --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
-              | grep -E "^${branch_version}\.[0-9]+$" | sort -V | tail -1)"
-            version="${version:-${branch_version}.x}"
+            echo "${GITHUB_REF#refs/tags/}" > /tmp/build_tag
           else
-            version="${STACKROX_VERSION}"
-          fi
-
-          if [[ -z "${build_tag:-}" ]]; then
-            # Fetch commit count since the version tag in the background (runs during jq matrix below).
-            gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '.ahead_by' > /tmp/ahead_by &
+            (
+              if [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
+                bv="${BASH_REMATCH[1]}"
+                version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/${bv}" \
+                  --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
+                  | grep -E "^${bv}\.[0-9]+$" | sort -V | tail -1)"
+                version="${version:-${bv}.x}"
+              else
+                version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/" \
+                  --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
+                  | grep -E '^[0-9]+\.[0-9]+\.x$' | sort -V | tail -1)"
+              fi
+              ahead_by="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '.ahead_by')"
+              if [[ "$ahead_by" =~ ^[0-9]+$ ]]; then
+                echo "${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
+              else
+                echo "::warning::Failed to fetch commit count from API, defaulting to 0" >&2
+                echo "${version}-0-g${COMMIT_SHA:0:10}"
+              fi
+            ) > /tmp/build_tag &
             api_pid=$!
           fi
 
@@ -139,15 +143,9 @@ jobs:
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
 
-          # Collect the commit count from the background API call and finalize build-tag.
-          if [[ -n "${api_pid:-}" ]]; then
-            if wait "$api_pid" && ahead_by="$(cat /tmp/ahead_by)" && [[ "$ahead_by" =~ ^[0-9]+$ ]]; then
-              build_tag="${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
-            else
-              echo "::warning::Failed to fetch commit count from API, defaulting to 0"
-              build_tag="${version}-0-g${COMMIT_SHA:0:10}"
-            fi
-          fi
+          # Collect build-tag from the background subshell.
+          [[ -n "${api_pid:-}" ]] && wait "$api_pid"
+          build_tag="$(cat /tmp/build_tag)"
           echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
 
           echo "Job matrix after conditionals:"
