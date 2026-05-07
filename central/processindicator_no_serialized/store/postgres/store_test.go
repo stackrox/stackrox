@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -60,6 +61,9 @@ func (s *ProcessIndicatorNoSerializedsStoreSuite) TestStore() {
 	foundProcessIndicatorNoSerialized, exists, err = store.Get(ctx, processIndicatorNoSerialized.GetId())
 	s.NoError(err)
 	s.True(exists)
+	// Round timestamps to microsecond precision for comparison,
+	// since Postgres timestamp columns have microsecond precision.
+	pgutils.RoundTimestampsToMicroseconds(processIndicatorNoSerialized)
 	protoassert.Equal(s.T(), processIndicatorNoSerialized, foundProcessIndicatorNoSerialized)
 
 	processIndicatorNoSerializedCount, err := store.Count(ctx, search.EmptyQuery())
@@ -96,6 +100,11 @@ func (s *ProcessIndicatorNoSerializedsStoreSuite) TestStore() {
 	foundProcessIndicatorNoSerializeds, missing, err := store.GetMany(ctx, processIndicatorNoSerializedIDs)
 	s.NoError(err)
 	s.Empty(missing)
+	// Round timestamps to microsecond precision for comparison,
+	// since Postgres timestamp columns have microsecond precision.
+	for _, obj := range processIndicatorNoSerializeds {
+		pgutils.RoundTimestampsToMicroseconds(obj)
+	}
 	protoassert.ElementsMatch(s.T(), processIndicatorNoSerializeds, foundProcessIndicatorNoSerializeds)
 
 	processIndicatorNoSerializedCount, err = store.Count(ctx, search.EmptyQuery())
