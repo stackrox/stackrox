@@ -1,0 +1,39 @@
+name: "Test helm.sh/chart label truncation for long versions"
+defs: |
+  def labels(resource):
+    resource.metadata.labels;
+
+  def chartLabel(resource):
+    labels(resource) | ."helm.sh/chart";
+
+values:
+  imagePullSecrets:
+    allowNone: true
+
+tests:
+- name: Admission Controller deployment has valid truncated chart label
+  expect: |
+    chartLabel(.deployments["admission-control"]) | length | assertThat(. <= 63)
+    chartLabel(.deployments["admission-control"]) | assertThat(test("^[a-zA-Z0-9]"))
+    chartLabel(.deployments["admission-control"]) | assertThat(test("[a-zA-Z0-9]$"))
+    chartLabel(.deployments["admission-control"]) | assertThat(startswith("stackrox-secured-cluster-services-"))
+
+- name: Admission Controller service has valid truncated chart label
+  expect: |
+    chartLabel(.services["admission-control"]) | length | assertThat(. <= 63)
+    chartLabel(.services["admission-control"]) | assertThat(test("[a-zA-Z0-9]$"))
+
+- name: Sensor deployment has valid truncated chart label
+  expect: |
+    chartLabel(.deployments.sensor) | length | assertThat(. <= 63)
+    chartLabel(.deployments.sensor) | assertThat(test("[a-zA-Z0-9]$"))
+
+- name: Sensor service has valid truncated chart label
+  expect: |
+    chartLabel(.services.sensor) | length | assertThat(. <= 63)
+    chartLabel(.services.sensor) | assertThat(test("[a-zA-Z0-9]$"))
+
+- name: Collector daemonset has valid truncated chart label
+  expect: |
+    chartLabel(.daemonsets.collector) | length | assertThat(. <= 63)
+    chartLabel(.daemonsets.collector) | assertThat(test("[a-zA-Z0-9]$"))
