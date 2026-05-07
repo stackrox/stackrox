@@ -17,31 +17,11 @@ if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
     echo "Using SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH for reproducible build"
     echo "Pushing directly to registry from BuildKit for reproducible layers"
 
-    # Extract image names from -t flags, preserve other args
-    NAMES=""
-    OTHER_ARGS=()
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -t|--tag)
-                if [ -z "$NAMES" ]; then
-                    NAMES="$2"
-                else
-                    NAMES="$NAMES,$2"
-                fi
-                shift 2
-                ;;
-            *)
-                OTHER_ARGS+=("$1")
-                shift
-                ;;
-        esac
-    done
-
     docker buildx build \
         --platform "linux/${GOARCH}" \
         --build-arg "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
-        --output "type=registry,push=true,rewrite-timestamp=true,compression=gzip,name=${NAMES}" \
-        "${OTHER_ARGS[@]}"
+        --output "type=registry,push=true,rewrite-timestamp=true,compression=gzip" \
+        "$@"
 else
     # Local development builds without SOURCE_DATE_EPOCH
     docker buildx build --platform "linux/${GOARCH}" --load "$@"
