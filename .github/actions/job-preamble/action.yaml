@@ -139,6 +139,13 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Monitor disk usage
+      shell: bash
+      run: |
+        (while sleep 30; do echo "$(date -u +%H:%M:%S) $(df -BGB --output=avail / | tail -1)"; done) \
+          >> /dev/shm/disk-monitor.log 2>&1 &
+        echo $! > /dev/shm/disk-monitor.pid
+
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
@@ -152,16 +159,19 @@ runs:
         run: >
           echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
-          source scripts/ci/lib.sh || true;
+          set +e;
+          source scripts/ci/lib.sh;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
-            started_at "${{ steps.record_job_info.outputs.started_at }}" || true;
+            started_at "${{ steps.record_job_info.outputs.started_at }}";
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
-            set -ex;\
+            set -x;\
             df --si;\
-            du -ks /* 2>/dev/null | sort -V || true;\
-            du -k / 2>/dev/null | sort -V | tail -100 || true; \
+            du -ks /* 2>/dev/null | sort -V;\
+            du -k / 2>/dev/null | sort -V | tail -100; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
+          cat /dev/shm/disk-monitor.log;
+          kill $(</dev/shm/disk-monitor.pid);
