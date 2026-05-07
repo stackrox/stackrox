@@ -54,6 +54,13 @@ func (c walkerContext) childContext(name string, searchDisabled bool, opts Postg
 }
 
 func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
+	// When NoSerialized is set, keep all child tables since all fields become columns.
+	if schema.Root().NoSerialized {
+		for _, child := range schema.Children {
+			removeTablesWithNoSearchableFields(child)
+		}
+		return true
+	}
 	includedChildren := schema.Children[:0]
 	for _, child := range schema.Children {
 		if shouldIncludeChild := removeTablesWithNoSearchableFields(child); shouldIncludeChild {
@@ -75,9 +82,9 @@ func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
 }
 
 func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
-	if len(parentPrimaryKeys) == 0 {
+	if len(parentPrimaryKeys) == 0 && !s.NoSerialized {
 		s.Fields = append(s.Fields, getSerializedField(s))
-	} else {
+	} else if len(parentPrimaryKeys) > 0 {
 		// Collect additional fields separately so we can put them in front of the field list
 		// (since these are primary keys, that is cleaner).
 		var additionalFields []Field
@@ -136,12 +143,35 @@ func postProcessSchema(s *Schema) {
 	addCommonFields(s)
 }
 
+// WalkOption is a functional option for Walk.
+type WalkOption func(*Schema)
+
+// WithNoSerialized returns a WalkOption that sets NoSerialized on the schema.
+func WithNoSerialized() WalkOption {
+	return func(s *Schema) { s.NoSerialized = true }
+}
+
+// WithJsonb returns a WalkOption that sets Jsonb on the schema,
+// storing the serialized column as jsonb instead of bytea.
+func WithJsonb() WalkOption {
+	return func(s *Schema) { s.Jsonb = true }
+}
+
+// WithRepeatedFieldStrategies returns a WalkOption that sets per-field storage
+// strategies for repeated fields when NoSerialized is enabled.
+func WithRepeatedFieldStrategies(strategies map[string]string) WalkOption {
+	return func(s *Schema) { s.RepeatedFieldStrategies = strategies }
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type, table string) *Schema {
+func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{
 		Table:    table,
 		Type:     obj.String(),
 		TypeName: obj.Elem().Name(),
+	}
+	for _, opt := range opts {
+		opt(schema)
 	}
 	handleStruct(walkerContext{}, schema, obj.Elem())
 
@@ -339,6 +369,32 @@ func tableName(parent, child string) string {
 	return fmt.Sprintf("%s_%s", parent, pgutils.NamingStrategy.TableName(child))
 }
 
+// hasSearchableFields checks whether a message type has any fields with search tags.
+// Used to determine if a repeated message can be inlined as bytea.
+func hasSearchableFields(typ reflect.Type) bool {
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		if protoreflect.IsInternalGeneratorField(f) {
+			continue
+		}
+		searchTag := f.Tag.Get("search")
+		if searchTag != "" && searchTag != "-" {
+			return true
+		}
+		// Recurse into nested structs and pointers to structs
+		ft := f.Type
+		if ft.Kind() == reflect.Ptr {
+			ft = ft.Elem()
+		}
+		if ft.Kind() == reflect.Struct && ft != protocompat.TimestampPtrType.Elem() {
+			if hasSearchableFields(ft) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func typeIsEnum(typ reflect.Type) bool {
 	enum, ok := reflect.Zero(typ).Interface().(protoreflect.ProtoEnum)
 	if !ok {
@@ -395,6 +451,14 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				schema.AddFieldWithType(field, dt, opts)
 				continue
 			}
+			// Track inlined sub-messages for NoSerialized scanner generation
+			if schema.Root().NoSerialized {
+				schema.Root().InlinedSubMessages = append(schema.Root().InlinedSubMessages, InlinedSubMessage{
+					FieldName:    structField.Name,
+					TypeName:     structField.Type.Elem().String(),
+					GetterPrefix: ctx.Getter(structField.Name),
+				})
+			}
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
@@ -413,6 +477,105 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
 				continue
+			}
+
+			// In NoSerialized mode, inline non-searchable repeated messages as bytea
+			// columns instead of creating child tables. This eliminates the extra
+			// DB round trip for child fetching and simplifies the write path.
+			childMsgType := structField.Type.Elem().Elem() // []*Foo -> Foo
+			if schema.Root().NoSerialized && !hasSearchableFields(childMsgType) {
+				// Determine the storage strategy for this repeated field
+				// Use the actual protobuf field name from the tag
+				protoFieldName := field.ProtoBufName
+				if protoFieldName == "" {
+					protoFieldName = strings.ToLower(structField.Name)
+				}
+				fieldPath := buildProtoFieldPath(ctx, protoFieldName)
+				strategy := schema.Root().RepeatedFieldStrategies[fieldPath]
+				if strategy == "" {
+					strategy = "bytea" // default strategy
+				}
+
+				switch strategy {
+				case "bytea":
+					// Store as serialized bytea column
+					field.DataType = postgres.MessageBytes
+					field.SQLType = "bytea"
+					field.MessageBytesElemType = childMsgType.String()
+					field.Type = "[]byte"
+					field.ModelType = "[]byte"
+					schema.Fields = append(schema.Fields, field)
+
+					// Build setter path from getter: "GetSignal().GetLineageInfo()" -> "Signal.LineageInfo"
+					getter := field.ObjectGetter.Value()
+					parts := strings.Split(getter, ".")
+					var setterParts []string
+					for _, part := range parts {
+						part = strings.TrimPrefix(part, "Get")
+						part = strings.TrimSuffix(part, "()")
+						setterParts = append(setterParts, part)
+					}
+					schema.Root().InlinedRepeatedMessages = append(schema.Root().InlinedRepeatedMessages, InlinedRepeatedMessage{
+						ColumnName:  field.ColumnName,
+						ElementType: childMsgType.String(),
+						SetterPath:  strings.Join(setterParts, "."),
+					})
+					continue
+
+				case "array":
+					// Decompose the repeated message into parallel array columns
+					// For each exported field in the child message, create a separate array column
+					for j := 0; j < childMsgType.NumField(); j++ {
+						childField := childMsgType.Field(j)
+						if childField.PkgPath != "" {
+							// Skip unexported fields
+							continue
+						}
+						protoTag := childField.Tag.Get("protobuf")
+						if protoTag == "" {
+							// Skip fields without protobuf tag
+							continue
+						}
+
+						// Create an array field for this child field
+						arrayColumnName := field.ColumnName + "_" + strings.ToLower(childField.Name)
+						arraySQLType := goTypeToArraySQLType(childField.Type)
+						arrayGoType := goTypeToArrayGoType(childField.Type)
+
+						if arraySQLType == "" || arrayGoType == "" {
+							// Unsupported type for array decomposition
+							panic(fmt.Sprintf("Unsupported type %s for array decomposition in field %s.%s",
+								childField.Type, structField.Name, childField.Name))
+						}
+
+						arrayField := Field{
+							Schema:       schema,
+							Name:         structField.Name + childField.Name,
+							ProtoBufName: getProtoBufName(protoTag),
+							ColumnName:   arrayColumnName,
+							Type:         arrayGoType,
+							ModelType:    arrayGoType,
+							SQLType:      arraySQLType,
+							DataType:     postgres.ArrayColumn,
+							ObjectGetter: ObjectGetter{
+								// The getter will be complex and handled by template
+								value: ctx.Getter(structField.Name),
+							},
+							ArraySourceGetter:   ctx.Getter(structField.Name),
+							ArrayFieldName:      childField.Name,
+							ArraySourceElemType: childMsgType.String(),
+						}
+						schema.Fields = append(schema.Fields, arrayField)
+					}
+					continue
+
+				case "child_table":
+					// Fall through to normal child table creation logic below
+					// Don't add bytea field, let the normal child schema creation handle it
+
+				default:
+					panic(fmt.Sprintf("Unknown repeated field strategy %q for field %s", strategy, fieldPath))
+				}
 			}
 
 			childSchema := &Schema{

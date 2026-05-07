@@ -117,6 +117,13 @@ type properties struct {
 
 	// Generates helper functions to create/destroy tables and store
 	GenerateDataModelHelpers bool
+
+	// NoSerialized indicates that the store should not use a serialized bytea column.
+	// All proto fields become DB columns, reads reconstruct the proto from columns.
+	NoSerialized bool
+
+	// Jsonb indicates that the serialized column should use jsonb instead of bytea.
+	Jsonb bool
 }
 
 type parsedReference struct {
@@ -158,6 +165,13 @@ func main() {
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
 
 	c.Flags().BoolVar(&props.GenerateDataModelHelpers, "generate-data-model-helpers", false, "if true, generates CreateTableAndNewStore and Destroy functions")
+	c.Flags().BoolVar(&props.NoSerialized, "no-serialized", false, "if true, the store does not use a serialized bytea column; all fields become columns")
+	c.Flags().BoolVar(&props.Jsonb, "jsonb", false, "if true, the serialized column uses jsonb type instead of bytea")
+
+	var repeatedFieldStrategyRaw string
+	c.Flags().StringVar(&repeatedFieldStrategyRaw, "repeated-field-strategy", "",
+		"comma-separated field:strategy pairs for repeated fields (e.g., signal.lineage_info:array,tags:child_table)")
+
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
@@ -169,7 +183,33 @@ func main() {
 		if props.Table == "" {
 			props.Table = pgutils.NamingStrategy.TableName(trimmedType)
 		}
-		schema := walker.Walk(mt, props.Table)
+		var walkOpts []walker.WalkOption
+		if props.NoSerialized {
+			walkOpts = append(walkOpts, walker.WithNoSerialized())
+		}
+		if props.Jsonb {
+			walkOpts = append(walkOpts, walker.WithJsonb())
+		}
+
+		strategies := make(map[string]string)
+		if repeatedFieldStrategyRaw != "" {
+			for _, pair := range strings.Split(repeatedFieldStrategyRaw, ",") {
+				parts := strings.SplitN(pair, ":", 2)
+				if len(parts) != 2 {
+					return fmt.Errorf("invalid --repeated-field-strategy entry %q: expected field:strategy", pair)
+				}
+				strategy := parts[1]
+				if strategy != "bytea" && strategy != "array" && strategy != "child_table" {
+					return fmt.Errorf("invalid strategy %q for field %q: must be bytea, array, or child_table", strategy, parts[0])
+				}
+				strategies[parts[0]] = strategy
+			}
+		}
+		if len(strategies) > 0 {
+			walkOpts = append(walkOpts, walker.WithRepeatedFieldStrategies(strategies))
+		}
+
+		schema := walker.Walk(mt, props.Table, walkOpts...)
 		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
@@ -247,6 +287,9 @@ func main() {
 			"Singleton":            props.SingletonStore,
 
 			"GenerateDataModelHelpers": props.GenerateDataModelHelpers,
+			"NoSerialized":             props.NoSerialized,
+			"Jsonb":                    props.Jsonb,
+			"RepeatedFieldStrategies":  strategies,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

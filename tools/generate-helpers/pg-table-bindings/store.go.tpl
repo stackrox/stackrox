@@ -30,6 +30,9 @@ import (
     "github.com/stackrox/rox/pkg/protocompat"
     "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+    {{- if .Jsonb }}
+    "google.golang.org/protobuf/encoding/protojson"
+    {{- end }}
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/utils"
@@ -53,6 +56,10 @@ type (
     callback  = func(obj *storeType) error
 )
 
+{{- if or .NoSerialized .Jsonb }}
+// Store is the interface to interact with the storage for {{ .Type }}
+type Store = pgSearch.NoSerializedStore[storeType]
+{{- else }}
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
 {{- if not .JoinTable }}
@@ -86,6 +93,7 @@ type Store interface {
     GetAllFromCacheForSAC() []*storeType
 {{- end }}
 }
+{{- end }}
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
@@ -103,6 +111,39 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
+    {{- if or .NoSerialized .Jsonb }}
+    return pgSearch.NewNoSerializedStore[storeType](
+            db,
+            schema,
+            pkGetter,
+            {{- if not .JoinTable }}
+            {{ template "insertFunctionName" .Schema }},
+            {{- if and (not .NoCopyFrom) (not .Jsonb) }}
+            nil,
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- else }}
+            nil,
+            nil,
+            {{- end }}
+            scanRow,
+            scanRows,
+            metricsSetAcquireDBConnDuration,
+            metricsSetPostgresOperationDurationTime,
+            {{- if .Obj.IsDirectlyScoped }}
+            isUpsertAllowed,
+            {{- else }}
+            nil,
+            {{- end }}
+            targetResource,
+            {{- if .NoSerialized }}
+            pgSearch.NoSerializedStoreOpts[storeType]{
+                BulkInsert: bulkInsertInto{{ .Schema.Table|upperCamelCase }},
+            },
+            {{- end }}
+    )
+    {{- else }}
     {{ if .CachedStore -}}
     // Use of {{ template "storeCreator" . }} can be dangerous with high cardinality stores,
     // and be the source of memory pressure. Think twice about the need for in-memory caching
@@ -143,6 +184,7 @@ func New(db postgres.DB) Store {
             nil,
             {{- end }}
     )
+    {{- end }}
 }
 
 // region Helper functions
@@ -195,7 +237,9 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertValues"}}{{- $schema := . -}}
 {{- range $field := $schema.DBColumnFields -}}
-    {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+    {{- if isArrayColumn $field }}
+        {{ arrayExtractExpr $field }},
+    {{- else if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
         protocompat.NilOrTime({{$field.Getter "obj"}}),
     {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
@@ -203,6 +247,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         pgutils.NilOrCIDR({{$field.Getter "obj"}}),
     {{- else if eq $field.DataType "map" }}
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+    {{- else if eq $field.DataType "messagebytes" }}
+        pgutils.MustMarshalRepeatedMessages({{$field.Getter "obj"}}),
     {{- else if and (eq $field.DataType "string") ($field.Options.Reference) ($field.Options.Reference.Nullable) }}
         pgutils.NilOrString({{$field.Getter "obj"}}),
     {{- else }}
@@ -213,8 +259,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    {{if not $schema.Parent }}
+    {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
+    {{- if $schema.Jsonb }}
+    serialized, marshalErr := protojson.Marshal(obj)
+    {{- else }}
     serialized, marshalErr := obj.MarshalVT()
+    {{- end }}
     if marshalErr != nil {
         return marshalErr
     }
@@ -290,8 +340,12 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         obj := objs[idx]
         idx++
 
-        {{if not $schema.Parent }}
+        {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
+        {{- if $schema.Jsonb }}
+        serialized, marshalErr := protojson.Marshal(obj)
+        {{- else }}
         serialized, marshalErr := obj.MarshalVT()
+        {{- end }}
         if marshalErr != nil {
             return nil, marshalErr
         }
@@ -324,6 +378,285 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 {{- if not .NoCopyFrom }}
 {{ template "copyObject" dict "schema" .Schema }}
 {{- end }}
+{{- end }}
+
+{{- if .Jsonb }}
+
+func scanRow(row pgx.Row) (*storeType, error) {
+    var data []byte
+    if err := row.Scan(&data); err != nil {
+        return nil, err
+    }
+    msg := &storeType{}
+    if err := protojson.Unmarshal(data, msg); err != nil {
+        return nil, err
+    }
+    return msg, nil
+}
+
+func scanRows(rows pgx.Rows) (*storeType, error) {
+    var data []byte
+    if err := rows.Scan(&data); err != nil {
+        return nil, err
+    }
+    msg := &storeType{}
+    if err := protojson.Unmarshal(data, msg); err != nil {
+        return nil, err
+    }
+    return msg, nil
+}
+{{- end }}
+
+{{- if .NoSerialized }}
+
+func bulkInsertInto{{ .Schema.Table|upperCamelCase }}(batch *pgx.Batch, objs []*storeType) error {
+    {{- $schema := .Schema }}
+    {{- $fields := $schema.DBColumnFields }}
+    {{- $singlePK := index $schema.PrimaryKeys 0 }}
+
+    // Build column arrays for unnest — one Go slice per unnestable DB column
+    {{- range $field := $fields }}
+    {{- if canUnnest $field }}
+    arr_{{ scanVarName $field }} := make({{ unnestArrayGoType $field }}, 0, len(objs))
+    {{- end }}
+    {{- end }}
+    {{- range $child := $schema.Children }}
+    {{- range $field := $child.DBColumnFields }}
+    arr_child_{{ scanVarName $field }} := make({{ unnestArrayGoType $field }}, 0, len(objs)*2)
+    {{- end }}
+    {{- end }}
+
+    for _, obj := range objs {
+        {{- range $field := $fields }}
+        {{- if canUnnest $field }}
+        arr_{{ scanVarName $field }} = append(arr_{{ scanVarName $field }}, {{ unnestAppendExpr $field }})
+        {{- end }}
+        {{- end }}
+        {{- range $child := $schema.Children }}
+        for childIdx, child := range obj.{{ getterToSetter $child.ObjectGetter }} {
+            _ = child
+            {{- range $field := $child.DBColumnFields }}
+            {{- if eq $field.ColumnName "idx" }}
+            arr_child_{{ scanVarName $field }} = append(arr_child_{{ scanVarName $field }}, childIdx)
+            {{- else if $field.ObjectGetter.IsVariable }}
+            arr_child_{{ scanVarName $field }} = append(arr_child_{{ scanVarName $field }}, {{ $singlePK.Getter "obj" }})
+            {{- else }}
+            arr_child_{{ scanVarName $field }} = append(arr_child_{{ scanVarName $field }}, child.{{ joinPath (setterPath $field) }})
+            {{- end }}
+            {{- end }}
+        }
+        {{- end }}
+    }
+
+    // Unnest INSERT for parent table (unnestable columns only)
+    {{- $uFields := unnestableFields $fields }}
+    batch.Queue(`INSERT INTO {{ $schema.Table }} ({{ range $index, $field := $uFields }}{{ if $index }}, {{ end }}{{ $field.ColumnName }}{{ end }})
+        SELECT * FROM unnest({{ range $index, $field := $uFields }}{{ if $index }}, {{ end }}${{ add $index 1 }}::{{ pgArrayCast $field }}{{ end }})
+        ON CONFLICT({{ range $index, $pk := $schema.PrimaryKeys }}{{ if $index }}, {{ end }}{{ $pk.ColumnName }}{{ end }}) DO UPDATE SET
+        {{ range $index, $field := $uFields }}{{ if $index }}, {{ end }}{{ $field.ColumnName }} = EXCLUDED.{{ $field.ColumnName }}{{ end }}`,
+        {{- range $field := $uFields }}
+        arr_{{ scanVarName $field }},
+        {{- end }}
+    )
+
+    // Per-row UPDATE for columns that can't be unnested (arrays, maps)
+    {{- range $field := nonUnnestableFields $fields }}
+    for _, obj := range objs {
+        batch.Queue(`UPDATE {{ $schema.Table }} SET {{ $field.ColumnName }} = $1 WHERE {{ $singlePK.ColumnName }} = $2`,
+            {{ unnestAppendExpr $field }}, {{ $singlePK.Getter "obj" }},
+        )
+    }
+    {{- end }}
+
+    {{- range $child := $schema.Children }}
+    // Delete existing children, then bulk insert
+    batch.Queue(`DELETE FROM {{ $child.Table }} WHERE {{ (index $child.FieldsReferringToParent 0).ColumnName }} = ANY($1::{{ pgArrayCast $singlePK }})`,
+        arr_{{ scanVarName $singlePK }},
+    )
+    {{- $firstChildField := index $child.DBColumnFields 0 }}
+    if len(arr_child_{{ scanVarName $firstChildField }}) > 0 {
+        batch.Queue(`INSERT INTO {{ $child.Table }} ({{ range $index, $field := $child.DBColumnFields }}{{ if $index }}, {{ end }}{{ $field.ColumnName }}{{ end }})
+            SELECT * FROM unnest({{ range $index, $field := $child.DBColumnFields }}{{ if $index }}, {{ end }}${{ add $index 1 }}::{{ pgArrayCast $field }}{{ end }})`,
+            {{- range $field := $child.DBColumnFields }}
+            arr_child_{{ scanVarName $field }},
+            {{- end }}
+        )
+    }
+    {{- end }}
+
+    return nil
+}
+
+func scanRow(row pgx.Row) (*storeType, error) {
+    obj := &storeType{}
+    {{- range $sub := .Schema.InlinedSubMessages }}
+    obj.{{ $sub.FieldName }} = &{{ $sub.TypeName }}{}
+    {{- end }}
+
+    {{- /* Declare temp vars only for fields that need type conversion */}}
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if not (canScanDirect $field) }}
+    var {{ scanVarName $field }} {{ scanVarType $field }}
+    {{- end }}
+    {{- end }}
+
+    if err := row.Scan(
+        {{- range $field := .Schema.DBColumnFields }}
+        {{- if canScanDirect $field }}
+        &{{ fieldSetterExpr $field }},
+        {{- else }}
+        &{{ scanVarName $field }},
+        {{- end }}
+        {{- end }}
+    ); err != nil {
+        return nil, err
+    }
+
+    {{- /* Apply type conversions for fields that needed temp vars (non-array columns) */}}
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) (not (isArrayColumn $field)) }}
+    {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
+    {{- end }}
+    {{- end }}
+
+    {{- /* Reconstruct repeated messages from array columns */}}
+    {{- range $group := arrayColumnGroups .Schema.DBColumnFields }}
+    // Reconstruct {{ $group.SetterPath }} from parallel arrays
+    {{- $firstField := index $group.Fields 0 }}
+    if len({{ scanVarName $firstField }}) > 0 {
+        obj.{{ $group.SetterPath }} = make([]*{{ $group.ElemType }}, len({{ scanVarName $firstField }}))
+        for i := range {{ scanVarName $firstField }} {
+            obj.{{ $group.SetterPath }}[i] = &{{ $group.ElemType }}{
+                {{- range $field := $group.Fields }}
+                {{ $field.ArrayFieldName }}: {{ scanVarName $field }}[i],
+                {{- end }}
+            }
+        }
+    }
+    {{- end }}
+
+    return obj, nil
+}
+
+{{- if .Schema.Children }}
+// FetchChildren populates child table data (repeated message fields) for the given objects.
+// This is NOT called automatically by the store's read methods — callers must opt in.
+func FetchChildren(ctx context.Context, db postgres.DB, objs []*storeType) error {
+    if len(objs) == 0 {
+        return nil
+    }
+    objsByID := make(map[string]*storeType, len(objs))
+    ids := make([]string, 0, len(objs))
+    for _, obj := range objs {
+        id := pkGetter(obj)
+        objsByID[id] = obj
+        ids = append(ids, id)
+    }
+    {{- range $child := .Schema.Children }}
+    {{- $parentPKs := $.Schema.PrimaryKeys }}
+    {
+        q := "SELECT {{ range $index, $field := $child.DBColumnFields }}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}} FROM {{$child.Table}} WHERE {{range $index, $field := $child.FieldsReferringToParent}}{{if $index}} AND {{end}}{{$field.ColumnName}} = ANY(${{add $index 1}}::uuid[]){{end}} ORDER BY {{range $index, $field := $child.FieldsReferringToParent}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}, idx"
+        rows, err := db.Query(ctx, q, ids)
+        if err != nil {
+            return err
+        }
+        defer rows.Close()
+        for rows.Next() {
+            {{- /* Child rows: variable fields (parent FK, idx) always need temp vars */}}
+            {{- range $field := $child.DBColumnFields }}
+            var {{ scanVarName $field }} {{ scanVarType $field }}
+            {{- end }}
+            if err := rows.Scan(
+                {{- range $field := $child.DBColumnFields }}
+                &{{ scanVarName $field }},
+                {{- end }}
+            ); err != nil {
+                return err
+            }
+            {{- $parentIDField := index $child.FieldsReferringToParent 0 }}
+            parent, ok := objsByID[{{ scanVarName $parentIDField }}]
+            if !ok {
+                continue
+            }
+            {{- range $sub := $.Schema.InlinedSubMessages }}
+            if parent.{{ $sub.FieldName }} == nil {
+                parent.{{ $sub.FieldName }} = &{{ $sub.TypeName }}{}
+            }
+            {{- end }}
+            child := &{{ stripPointer $child.Type }}{}
+            {{- range $field := $child.DBColumnFields }}
+            {{- if not $field.ObjectGetter.IsVariable }}
+            {{- $setter := fieldSetterExpr $field }}
+            {{- if $setter }}
+            {{- $childSetter := (printf "child.%s" (joinPath (setterPath $field))) }}
+            {{- if needsTypeConversion $field }}
+            {{ $childSetter }} = {{ typeConversionExpr $field (scanVarName $field) }}
+            {{- else }}
+            {{ $childSetter }} = {{ scanVarName $field }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            parent.{{ getterToSetter $child.ObjectGetter }} = append(parent.{{ getterToSetter $child.ObjectGetter }}, child)
+        }
+        if err := rows.Err(); err != nil {
+            return err
+        }
+    }
+    {{- end }}
+    return nil
+}
+{{- end }}
+
+func scanRows(rows pgx.Rows) (*storeType, error) {
+    obj := &storeType{}
+    {{- range $sub := .Schema.InlinedSubMessages }}
+    obj.{{ $sub.FieldName }} = &{{ $sub.TypeName }}{}
+    {{- end }}
+
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if not (canScanDirect $field) }}
+    var {{ scanVarName $field }} {{ scanVarType $field }}
+    {{- end }}
+    {{- end }}
+
+    if err := rows.Scan(
+        {{- range $field := .Schema.DBColumnFields }}
+        {{- if canScanDirect $field }}
+        &{{ fieldSetterExpr $field }},
+        {{- else }}
+        &{{ scanVarName $field }},
+        {{- end }}
+        {{- end }}
+    ); err != nil {
+        return nil, err
+    }
+
+    {{- /* Apply type conversions for fields that needed temp vars (non-array columns) */}}
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) (not (isArrayColumn $field)) }}
+    {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
+    {{- end }}
+    {{- end }}
+
+    {{- /* Reconstruct repeated messages from array columns */}}
+    {{- range $group := arrayColumnGroups .Schema.DBColumnFields }}
+    // Reconstruct {{ $group.SetterPath }} from parallel arrays
+    {{- $firstField := index $group.Fields 0 }}
+    if len({{ scanVarName $firstField }}) > 0 {
+        obj.{{ $group.SetterPath }} = make([]*{{ $group.ElemType }}, len({{ scanVarName $firstField }}))
+        for i := range {{ scanVarName $firstField }} {
+            obj.{{ $group.SetterPath }}[i] = &{{ $group.ElemType }}{
+                {{- range $field := $group.Fields }}
+                {{ $field.ArrayFieldName }}: {{ scanVarName $field }}[i],
+                {{- end }}
+            }
+        }
+    }
+    {{- end }}
+
+    return obj, nil
+}
 {{- end }}
 
 // endregion Helper functions

@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -132,6 +133,276 @@ func arr(els ...any) []any {
 	return els
 }
 
+func isArrayColumn(f walker.Field) bool {
+	return f.DataType == postgres.ArrayColumn
+}
+
+func arrayExtractExpr(f walker.Field) string {
+	return fmt.Sprintf(`func() %s {
+		src := obj.%s
+		result := make(%s, len(src))
+		for i, elem := range src {
+			result[i] = elem.%s
+		}
+		return result
+	}()`, f.ModelType, f.ArraySourceGetter, f.ModelType, f.ArrayFieldName)
+}
+
+// scanVarType returns the Go type to use for scanning a field from the database.
+func scanVarType(f walker.Field) string {
+	if f.ObjectGetter.IsVariable() {
+		// Variable fields (serialized, idx, parent FK) use their own type
+		return f.Type
+	}
+	switch f.DataType {
+	case "datetime", "datetimetz":
+		return "*time.Time"
+	case "enum":
+		return "int32"
+	case "integer":
+		return "int32"
+	case "biginteger":
+		if f.Type == "uint32" || f.Type == "uint64" {
+			return f.Type
+		}
+		return "int64"
+	case "numeric":
+		if f.Type == "uint64" {
+			return "uint64"
+		}
+		if f.Type == "float32" {
+			return "float32"
+		}
+		return "float64"
+	case "bool":
+		return "bool"
+	case "string":
+		return "string"
+	case "stringarray":
+		return "[]string"
+	case "bytes", "messagebytes":
+		return "[]byte"
+	case "enumarray":
+		return "[]int32"
+	case "intarray":
+		return "[]int32"
+	case "map":
+		return f.Type
+	case postgres.ArrayColumn:
+		return f.ModelType
+	}
+	return f.Type
+}
+
+// scanVarName returns a safe variable name for scanning a field.
+func scanVarName(f walker.Field) string {
+	return "col_" + strings.ReplaceAll(f.ColumnName, ".", "_")
+}
+
+// setterPath converts an ObjectGetter path like "GetSignal().GetName()" into a
+// setter assignment path. Returns the field path parts for building nested struct assignments.
+// For example: "GetSignal().GetName()" -> ["Signal", "Name"]
+func setterPath(f walker.Field) []string {
+	getter := f.ObjectGetter.Value()
+	if f.ObjectGetter.IsVariable() {
+		return nil
+	}
+	// Split "GetSignal().GetName()" -> ["GetSignal()", "GetName()"]
+	parts := strings.Split(getter, ".")
+	var result []string
+	for _, part := range parts {
+		// Remove "Get" prefix and "()" suffix
+		part = strings.TrimPrefix(part, "Get")
+		part = strings.TrimSuffix(part, "()")
+		result = append(result, part)
+	}
+	return result
+}
+
+// fieldSetterExpr returns the Go expression to set the field on "obj", e.g., "obj.Signal.Name".
+// For variable fields (serialized, idx), returns empty string.
+func fieldSetterExpr(f walker.Field) string {
+	if f.ObjectGetter.IsVariable() {
+		return ""
+	}
+	path := setterPath(f)
+	return "obj." + strings.Join(path, ".")
+}
+
+// needsTypeConversion returns whether a field needs type conversion when scanning from DB.
+func needsTypeConversion(f walker.Field) bool {
+	switch f.DataType {
+	case "datetime", "datetimetz":
+		return true
+	case "enum":
+		return true
+	case "messagebytes":
+		return true
+	}
+	if f.SQLType == "uuid" && f.Type == "string" {
+		return true
+	}
+	return false
+}
+
+// typeConversionExpr returns the Go expression to convert a scanned value to the proto field type.
+func typeConversionExpr(f walker.Field, varName string) string {
+	switch f.DataType {
+	case "datetime", "datetimetz":
+		return fmt.Sprintf("protocompat.ConvertTimeToTimestampOrNil(%s)", varName)
+	case "enum":
+		return fmt.Sprintf("%s(%s)", f.Type, varName)
+	case "messagebytes":
+		return fmt.Sprintf("pgutils.MustUnmarshalRepeatedMessages(%s, func() *%s { return &%s{} })",
+			varName, f.MessageBytesElemType, f.MessageBytesElemType)
+	}
+	return varName
+}
+
+// canScanDirect returns whether a field can be scanned directly into the proto
+// struct field, without needing an intermediate variable and type conversion.
+func canScanDirect(f walker.Field) bool {
+	if f.ObjectGetter.IsVariable() {
+		return false
+	}
+	if f.DataType == postgres.ArrayColumn {
+		return false
+	}
+	return !needsTypeConversion(f)
+}
+
+// canUnnest returns whether a field type can be used in a multi-arg unnest().
+// 2D arrays (stringarray, enumarray, intarray) and maps don't work with unnest's
+// parallel-array iteration because unnest flattens them instead of producing subarrays.
+// ArrayColumn fields can't be unnested either — they need per-row UPDATE fallback.
+func canUnnest(f walker.Field) bool {
+	switch f.DataType {
+	case "stringarray", "enumarray", "intarray", "map", postgres.ArrayColumn:
+		return false
+	}
+	return true
+}
+
+// pgArrayCast returns the Postgres array type cast for use in unnest(), e.g., "uuid[]", "text[]".
+func pgArrayCast(f walker.Field) string {
+	switch f.SQLType {
+	case "uuid":
+		return "uuid[]"
+	case "cidr":
+		return "cidr[]"
+	case "bytea":
+		return "bytea[]"
+	}
+	switch f.DataType {
+	case "datetime":
+		return "timestamp[]"
+	case "datetimetz":
+		return "timestamptz[]"
+	case "bool":
+		return "bool[]"
+	case "integer", "enum":
+		return "int[]"
+	case "biginteger":
+		return "bigint[]"
+	case "numeric":
+		return "numeric[]"
+	case "stringarray":
+		return "text[][]"
+	case "enumarray":
+		return "int[][]"
+	case "intarray":
+		return "int[][]"
+	case "map":
+		return "jsonb[]"
+	}
+	return "text[]"
+}
+
+// unnestArrayGoType returns the Go type for a slice of scan values, e.g., "[]string", "[]*time.Time".
+func unnestArrayGoType(f walker.Field) string {
+	return "[]" + scanVarType(f)
+}
+
+// unnestAppendExpr returns the Go expression to append a value from obj to the array.
+// This mirrors the insertValues template but for array accumulation.
+func unnestAppendExpr(f walker.Field) string {
+	getter := f.Getter("obj")
+	switch {
+	case f.DataType == postgres.ArrayColumn:
+		return arrayExtractExpr(f)
+	case f.DataType == "messagebytes":
+		return fmt.Sprintf("pgutils.MustMarshalRepeatedMessages(%s)", getter)
+	case f.DataType == "datetime" || f.DataType == "datetimetz":
+		return fmt.Sprintf("protocompat.NilOrTime(%s)", getter)
+	case f.SQLType == "uuid":
+		return getter // pgx handles string -> uuid cast via SQL
+	case f.SQLType == "cidr":
+		return getter
+	case f.DataType == "map":
+		return fmt.Sprintf("pgutils.EmptyOrMap(%s)", getter)
+	case f.DataType == "string" && f.Options.Reference != nil && f.Options.Reference.Nullable:
+		return getter
+	default:
+		return getter
+	}
+}
+
+func isMessageBytes(f walker.Field) bool {
+	return f.DataType == "messagebytes"
+}
+
+// ArrayColumnGroup represents a group of array columns that came from the same repeated message.
+type ArrayColumnGroup struct {
+	SetterPath string         // e.g., "Signal.LineageInfo"
+	ElemType   string         // e.g., "storage.LineageInfoNoSerializedArrays"
+	Fields     []walker.Field // Array columns for this repeated message
+}
+
+// arrayColumnGroups groups array columns by their source repeated message (ArraySourceGetter).
+// Returns groups that need reconstruction after scanning.
+func arrayColumnGroups(fields []walker.Field) []ArrayColumnGroup {
+	groups := make(map[string]*ArrayColumnGroup)
+	for _, f := range fields {
+		if f.DataType != postgres.ArrayColumn {
+			continue
+		}
+		sourceGetter := f.ArraySourceGetter
+		if sourceGetter == "" {
+			continue
+		}
+		group, ok := groups[sourceGetter]
+		if !ok {
+			// Convert getter path to setter path: "GetSignal().GetLineageInfo()" -> "Signal.LineageInfo"
+			setterPath := convertGetterToSetter(sourceGetter)
+			group = &ArrayColumnGroup{
+				SetterPath: setterPath,
+				ElemType:   f.ArraySourceElemType,
+			}
+			groups[sourceGetter] = group
+		}
+		group.Fields = append(group.Fields, f)
+	}
+
+	// Convert map to slice for deterministic iteration
+	var result []ArrayColumnGroup
+	for _, group := range groups {
+		result = append(result, *group)
+	}
+	return result
+}
+
+// convertGetterToSetter converts "GetSignal().GetLineageInfo()" to "Signal.LineageInfo"
+func convertGetterToSetter(getter string) string {
+	parts := strings.Split(getter, ".")
+	var result []string
+	for _, part := range parts {
+		part = strings.TrimPrefix(part, "Get")
+		part = strings.TrimSuffix(part, "()")
+		result = append(result, part)
+	}
+	return strings.Join(result, ".")
+}
+
 var funcMap = template.FuncMap{
 	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
@@ -142,6 +413,52 @@ var funcMap = template.FuncMap{
 	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
 	"isSacScoping":                 isSacScoping,
 	"dict":                         dict,
+	"scanVarType":                  scanVarType,
+	"scanVarName":                  scanVarName,
+	"setterPath":                   setterPath,
+	"joinPath":                     func(parts []string) string { return strings.Join(parts, ".") },
+	"stripPointer":                 func(s string) string { return strings.TrimPrefix(s, "*") },
+	"getterToSetter": func(getter string) string {
+		// Convert "GetSignal().GetLineageInfo()" to "Signal.LineageInfo"
+		parts := strings.Split(getter, ".")
+		var result []string
+		for _, part := range parts {
+			part = strings.TrimPrefix(part, "Get")
+			part = strings.TrimSuffix(part, "()")
+			result = append(result, part)
+		}
+		return strings.Join(result, ".")
+	},
+	"fieldSetterExpr":   fieldSetterExpr,
+	"canUnnest":         canUnnest,
+	"isArrayColumn":     isArrayColumn,
+	"arrayExtractExpr":  arrayExtractExpr,
+	"arrayColumnGroups": arrayColumnGroups,
+	"unnestableFields": func(fields []walker.Field) []walker.Field {
+		var out []walker.Field
+		for _, f := range fields {
+			if canUnnest(f) {
+				out = append(out, f)
+			}
+		}
+		return out
+	},
+	"nonUnnestableFields": func(fields []walker.Field) []walker.Field {
+		var out []walker.Field
+		for _, f := range fields {
+			if !canUnnest(f) {
+				out = append(out, f)
+			}
+		}
+		return out
+	},
+	"isMessageBytes":      isMessageBytes,
+	"canScanDirect":       canScanDirect,
+	"needsTypeConversion": needsTypeConversion,
+	"typeConversionExpr":  typeConversionExpr,
+	"pgArrayCast":         pgArrayCast,
+	"unnestArrayGoType":   unnestArrayGoType,
+	"unnestAppendExpr":    unnestAppendExpr,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {
 			return fmt.Sprintf("%sies", strings.TrimSuffix(s, "y"))
