@@ -581,6 +581,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"containers: [Container]!",
 		"created: Time",
+		"deleted: Time",
 		"hostIpc: Boolean!",
 		"hostNetwork: Boolean!",
 		"hostPid: Boolean!",
@@ -602,10 +603,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"runtimeClass: String!",
 		"serviceAccount: String!",
 		"serviceAccountPermissionLevel: PermissionLevel!",
+		"state: DeploymentState!",
 		"stateTimestamp: Int!",
 		"tolerations: [Toleration]!",
 		"type: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.DeploymentState(0)))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
 		"autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig",
@@ -7196,6 +7199,14 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
+func (resolver *deploymentResolver) Deleted(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetDeleted()
+	if resolver.data == nil {
+		value = resolver.list.GetDeleted()
+	}
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
 func (resolver *deploymentResolver) HostIpc(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetHostIpc()
@@ -7330,6 +7341,14 @@ func (resolver *deploymentResolver) ServiceAccountPermissionLevel(ctx context.Co
 	return value.String()
 }
 
+func (resolver *deploymentResolver) State(ctx context.Context) string {
+	value := resolver.data.GetState()
+	if resolver.data == nil {
+		value = resolver.list.GetState()
+	}
+	return value.String()
+}
+
 func (resolver *deploymentResolver) StateTimestamp(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetStateTimestamp()
@@ -7346,6 +7365,24 @@ func (resolver *deploymentResolver) Type(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetType()
 	return value
+}
+
+func toDeploymentState(value *string) storage.DeploymentState {
+	if value != nil {
+		return storage.DeploymentState(storage.DeploymentState_value[*value])
+	}
+	return storage.DeploymentState(0)
+}
+
+func toDeploymentStates(values *[]string) []storage.DeploymentState {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.DeploymentState, len(*values))
+	for i, v := range *values {
+		output[i] = toDeploymentState(&v)
+	}
+	return output
 }
 
 type dynamicClusterConfigResolver struct {
