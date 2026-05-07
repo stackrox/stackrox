@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/credentialexpiry/service"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -12,7 +13,7 @@ import (
 
 func New(s service.Service) *tracker.TrackerBase[*finding] {
 	return tracker.MakeGlobalTrackerBase(
-		"cert_exp",
+		metrics.Expiry,
 		"hours before certificate expires",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {

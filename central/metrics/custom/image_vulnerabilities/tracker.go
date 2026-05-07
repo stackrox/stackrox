@@ -4,6 +4,7 @@ import (
 	"context"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -11,7 +12,7 @@ import (
 
 func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"image_vuln",
+		metrics.ImageVulns,
 		"image vulnerabilities",
 		lazyLabels,
 		func(ctx context.Context, md tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
