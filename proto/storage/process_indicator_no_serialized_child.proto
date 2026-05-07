@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+
+message ProcessIndicatorNoSerializedChild {
+    string id                                        = 1; // @gotags: sql:"pk,id,type(uuid)" search:"Process ID,hidden"
+    string deployment_id                             = 2; // @gotags: sql:"index=btree,fk(Deployment:id),type(uuid)" search:"Deployment ID,hidden"
+    string container_name                            = 3; // @gotags: search:"Container Name,hidden"
+    string pod_id                                    = 4; // @gotags: search:"Pod ID,hidden"
+    string pod_uid                                   = 5; // @gotags: sql:"index=btree,type(uuid)" search:"Pod UID,hidden"
+    ProcessSignalNoSerializedChild signal            = 8;
+    string cluster_id                                = 9; // @gotags: sql:"type(uuid)" search:"Cluster ID,hidden"
+    string namespace                                 = 10; // @gotags: search:"Namespace,hidden"
+    google.protobuf.Timestamp container_start_time   = 11; // @gotags: search:"Process Container Start Time"
+    string image_id                                  = 12;
+}
+
+message ProcessSignalNoSerializedChild {
+    string id                                        = 1;
+    string container_id                              = 2; // @gotags: search:"Container ID,hidden"
+    google.protobuf.Timestamp time                   = 3; // @gotags: sql:"index=btree" search:"Process Creation Time,hidden"
+    string name                                      = 4; // @gotags: search:"Process Name"
+    string args                                      = 5; // @gotags: search:"Process Arguments"
+    string exec_file_path                            = 6; // @gotags: search:"Process Path"
+    uint32 pid                                       = 7;
+    uint32 uid                                       = 8; // @gotags: search:"Process UID"
+    uint32 gid                                       = 9;
+    bool scraped                                     = 10;
+    repeated LineageInfoNoSerializedChild lineage_info = 11;
+}
+
+message LineageInfoNoSerializedChild {
+    uint32 parent_uid            = 1;
+    string parent_exec_file_path = 2;
+}
