@@ -2,6 +2,8 @@ package runner
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -51,6 +54,7 @@ type Runner struct {
 	started        atomic.Bool
 	targetSeqNum   int
 	retryInterval  time.Duration
+	skipMigrations set.IntSet
 }
 
 // NewRunner creates a new Runner.
@@ -61,6 +65,7 @@ func NewRunner(db postgres.DB, rolloutChecker RolloutChecker) *Runner {
 		stopper:        concurrency.NewStopper(),
 		targetSeqNum:   backgroundmigrations.CurrentBgMigrationSeqNum,
 		retryInterval:  retryInterval,
+		skipMigrations: parseSkipMigrations(),
 	}
 }
 
@@ -150,6 +155,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "reading current state")
 	}
+	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
 
 	overrideSeqNum, overrideTag, shouldOverride := r.checkSeqNumOverrideConfig(r.targetSeqNum, dbOverrideTag)
 	if shouldOverride {
@@ -176,8 +182,12 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		dbSeqNum = r.targetSeqNum
 	}
 
+	// apply potential changes from overrides or rollbacks to the metric
+	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
+
 	if dbSeqNum == r.targetSeqNum {
 		log.Infof("up to date at seq num %d", dbSeqNum)
+		bgMigrationCompleteGauge.Set(1)
 		return nil
 	}
 
@@ -193,6 +203,15 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			return errors.Errorf("no migration found starting at %d", seqNum)
 		}
 
+		if r.skipMigrations.Contains(seqNum) {
+			log.Infof("skipping migration %d based on %s", seqNum, env.SkipBackgroundMigrations.EnvVar())
+			if err := r.writeSeqNum(ctx, migration.VersionAfterSeqNum); err != nil {
+				return errors.Wrapf(err, "updating seq num to %d after skipping migration %d", migration.VersionAfterSeqNum, seqNum)
+			}
+			bgMigrationSeqNumGauge.Set(float64(migration.VersionAfterSeqNum))
+			continue
+		}
+
 		log.Infof("running migration %d: %s", seqNum, migration.Description)
 
 		if err := migration.Run(ctx, r.db); err != nil {
@@ -203,8 +222,12 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			return errors.Wrapf(err, "updating seq num to %d", migration.VersionAfterSeqNum)
 		}
 
+		bgMigrationSeqNumGauge.Set(float64(migration.VersionAfterSeqNum))
+
 		log.Infof("completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
 	}
+
+	bgMigrationCompleteGauge.Set(1)
 
 	log.Infof("all migrations complete, at seq num %d", r.targetSeqNum)
 	return nil
@@ -262,4 +285,21 @@ func (r *Runner) checkSeqNumOverrideConfig(currSeqNum int, dbOverrideTag string)
 	}
 
 	return seqNum, tag, true
+}
+
+func parseSkipMigrations() set.IntSet {
+	val := env.SkipBackgroundMigrations.Setting()
+	if val == "" {
+		return set.NewIntSet()
+	}
+	s := set.NewIntSet()
+	for _, entry := range strings.Split(val, ",") {
+		n, err := strconv.Atoi(strings.TrimSpace(entry))
+		if err != nil {
+			log.Errorf("could not parse %q from %s, not skipping", entry, env.SkipBackgroundMigrations.EnvVar())
+			continue
+		}
+		s.Add(n)
+	}
+	return s
 }

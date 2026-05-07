@@ -16,6 +16,7 @@ import type { OnSearchCallback, SelectSearchFilterAttribute } from '../types';
 
 export type SearchFilterSelectInclusiveProps = {
     attribute: SelectSearchFilterAttribute;
+    isDisabled?: boolean;
     isSeparate?: boolean; // default false if within CompoundSearchFilter
     onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
@@ -23,6 +24,7 @@ export type SearchFilterSelectInclusiveProps = {
 
 function SearchFilterSelectInclusive({
     attribute,
+    isDisabled = false,
     isSeparate = false,
     onSearch,
     searchFilter,
@@ -79,6 +81,7 @@ function SearchFilterSelectInclusive({
     return (
         <ToolbarItem>
             <CheckboxSelect
+                isDisabled={isDisabled}
                 selection={selection}
                 onChange={(checked, _value) => {
                     onSearch([
