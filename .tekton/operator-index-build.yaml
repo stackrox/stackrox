@@ -166,7 +166,7 @@ spec:
       name: build-platforms
       type: array
     - name: bundle-image-repo
-      description: Repository where the operator bundle image is pushed.
+      description: Repository where the operator bundle image is pushed by operator-bundle-build.yaml.
       type: string
       default: "quay.io/rhacs-eng/release-operator-bundle"
 
@@ -297,7 +297,6 @@ spec:
         resolver: bundles
       # This timeout must be the same as the pipeline timeout in `operator-bundle-build.yaml`.
       timeout: 3h20m
-
 
     - name: generate-index-content
       runAfter:

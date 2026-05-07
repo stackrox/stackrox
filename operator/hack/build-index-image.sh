@@ -15,7 +15,7 @@ MANDATORY:
   --index-tag          The new index image tag. Example: quay.io/stackrox-io/stackrox-operator-index:v1.1.0
   --bundle-tag         The bundle image tag that should be appended to base index. Example: quay.io/stackrox-io/stackrox-operator-bundle:v1.1.0
 
-OPTION (for upgrade chain mode):
+OPTION (mandatory for upgrade chain mode, ignored for single bundle mode):
   --base-index-tag     The base index image tag. Example: quay.io/stackrox-io/stackrox-operator-index:v1.0.0
   --replaced-version   Version that the bundle replaces. Example: v1.0.0
 
