@@ -83,6 +83,11 @@ type ProcessIndicatorNoSerializedChild struct {
 	DeploymentsRef     Deployments `gorm:"foreignKey:deploymentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
+// TableName specifies the name of the table in postgres.
+func (*ProcessIndicatorNoSerializedChild) TableName() string {
+	return ProcessIndicatorNoSerializedChildTableName
+}
+
 // ProcessIndicatorNoSerializedChildLineageInfos holds the Gorm model for Postgres table `process_indicator_no_serialized_child_lineage_infos`.
 type ProcessIndicatorNoSerializedChildLineageInfos struct {
 	ProcessIndicatorNoSerializedChildID  string                            `gorm:"column:process_indicator_no_serialized_child_id;type:uuid;primaryKey"`
@@ -90,4 +95,9 @@ type ProcessIndicatorNoSerializedChildLineageInfos struct {
 	ParentUID                            uint32                            `gorm:"column:parentuid;type:bigint"`
 	ParentExecFilePath                   string                            `gorm:"column:parentexecfilepath;type:varchar"`
 	ProcessIndicatorNoSerializedChildRef ProcessIndicatorNoSerializedChild `gorm:"foreignKey:process_indicator_no_serialized_child_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// TableName specifies the name of the table in postgres.
+func (*ProcessIndicatorNoSerializedChildLineageInfos) TableName() string {
+	return ProcessIndicatorNoSerializedChildLineageInfosTableName
 }
