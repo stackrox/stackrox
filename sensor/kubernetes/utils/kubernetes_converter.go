@@ -10,7 +10,7 @@ import (
 
 // FromUnstructuredToSpecificTypePointer converts the unstructured object 'from' into the specific type 'to'
 func FromUnstructuredToSpecificTypePointer(from any, to any) error {
-	if reflect.ValueOf(to).Kind() != reflect.Ptr {
+	if reflect.ValueOf(to).Kind() != reflect.Pointer {
 		return errors.Errorf("expected 'to' to be a pointer, but got: '%T'", to)
 	}
 	unstructuredObj, ok := from.(*unstructured.Unstructured)

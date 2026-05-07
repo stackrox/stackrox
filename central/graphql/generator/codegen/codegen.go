@@ -75,7 +75,7 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 		if fd.Type.Key().Kind() == reflect.String && fd.Type.Elem().Kind() == reflect.String {
 			return "label", "labels"
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if fd.Type == protocompat.TimestampPtrType {
 			return "time", "(*graphql.Time, error)"
 		}

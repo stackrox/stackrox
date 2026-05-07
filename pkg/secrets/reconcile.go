@@ -60,7 +60,7 @@ func reconcileScrubbedWithExisting(updated reflect.Value, existing reflect.Value
 			if err := reconcileScrubbedWithExisting(updatedField, existingField, verifyOnly, path); err != nil {
 				return err
 			}
-		case reflect.Ptr, reflect.Interface:
+		case reflect.Pointer, reflect.Interface:
 			if updatedField.IsNil() && !existingField.IsNil() {
 				return errors.Errorf("non-nil existing field '%s'",
 					strings.Join(append(path, updatedType.Field(i).Name), "."))

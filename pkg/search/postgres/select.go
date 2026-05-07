@@ -34,7 +34,7 @@ func getArrayFieldsFromType[T any]() map[string]bool {
 	var zero T
 	t := reflect.TypeOf(zero)
 
-	if t != nil && t.Kind() == reflect.Ptr {
+	if t != nil && t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	if t == nil || t.Kind() != reflect.Struct {
