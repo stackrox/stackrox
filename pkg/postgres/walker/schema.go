@@ -588,6 +588,10 @@ type Field struct {
 	// ArrayFieldName is the Go field name within the repeated message element, e.g., "ParentUid"
 	// Only set for ArrayColumn fields.
 	ArrayFieldName string
+
+	// ArraySourceElemType is the Go type of the repeated message element (e.g., "storage.LineageInfoNoSerializedArrays").
+	// Only set for ArrayColumn fields. Used by scanner codegen to reconstruct the repeated message.
+	ArraySourceElemType string
 }
 
 // DerivedSearchField represents a search field that's derived.

@@ -265,6 +265,9 @@ func canScanDirect(f walker.Field) bool {
 	if f.ObjectGetter.IsVariable() {
 		return false
 	}
+	if f.DataType == postgres.ArrayColumn {
+		return false
+	}
 	return !needsTypeConversion(f)
 }
 
@@ -348,6 +351,58 @@ func isMessageBytes(f walker.Field) bool {
 	return f.DataType == "messagebytes"
 }
 
+// ArrayColumnGroup represents a group of array columns that came from the same repeated message.
+type ArrayColumnGroup struct {
+	SetterPath string         // e.g., "Signal.LineageInfo"
+	ElemType   string         // e.g., "storage.LineageInfoNoSerializedArrays"
+	Fields     []walker.Field // Array columns for this repeated message
+}
+
+// arrayColumnGroups groups array columns by their source repeated message (ArraySourceGetter).
+// Returns groups that need reconstruction after scanning.
+func arrayColumnGroups(fields []walker.Field) []ArrayColumnGroup {
+	groups := make(map[string]*ArrayColumnGroup)
+	for _, f := range fields {
+		if f.DataType != postgres.ArrayColumn {
+			continue
+		}
+		sourceGetter := f.ArraySourceGetter
+		if sourceGetter == "" {
+			continue
+		}
+		group, ok := groups[sourceGetter]
+		if !ok {
+			// Convert getter path to setter path: "GetSignal().GetLineageInfo()" -> "Signal.LineageInfo"
+			setterPath := convertGetterToSetter(sourceGetter)
+			group = &ArrayColumnGroup{
+				SetterPath: setterPath,
+				ElemType:   f.ArraySourceElemType,
+			}
+			groups[sourceGetter] = group
+		}
+		group.Fields = append(group.Fields, f)
+	}
+
+	// Convert map to slice for deterministic iteration
+	var result []ArrayColumnGroup
+	for _, group := range groups {
+		result = append(result, *group)
+	}
+	return result
+}
+
+// convertGetterToSetter converts "GetSignal().GetLineageInfo()" to "Signal.LineageInfo"
+func convertGetterToSetter(getter string) string {
+	parts := strings.Split(getter, ".")
+	var result []string
+	for _, part := range parts {
+		part = strings.TrimPrefix(part, "Get")
+		part = strings.TrimSuffix(part, "()")
+		result = append(result, part)
+	}
+	return strings.Join(result, ".")
+}
+
 var funcMap = template.FuncMap{
 	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
@@ -374,10 +429,11 @@ var funcMap = template.FuncMap{
 		}
 		return strings.Join(result, ".")
 	},
-	"fieldSetterExpr":  fieldSetterExpr,
-	"canUnnest":        canUnnest,
-	"isArrayColumn":    isArrayColumn,
-	"arrayExtractExpr": arrayExtractExpr,
+	"fieldSetterExpr":   fieldSetterExpr,
+	"canUnnest":         canUnnest,
+	"isArrayColumn":     isArrayColumn,
+	"arrayExtractExpr":  arrayExtractExpr,
+	"arrayColumnGroups": arrayColumnGroups,
 	"unnestableFields": func(fields []walker.Field) []walker.Field {
 		var out []walker.Field
 		for _, f := range fields {

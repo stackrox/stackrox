@@ -512,11 +512,27 @@ func scanRow(row pgx.Row) (*storeType, error) {
         return nil, err
     }
 
-    {{- /* Apply type conversions for fields that needed temp vars */}}
+    {{- /* Apply type conversions for fields that needed temp vars (non-array columns) */}}
     {{- range $field := .Schema.DBColumnFields }}
-    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) }}
+    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) (not (isArrayColumn $field)) }}
     {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
     {{- end }}
+    {{- end }}
+
+    {{- /* Reconstruct repeated messages from array columns */}}
+    {{- range $group := arrayColumnGroups .Schema.DBColumnFields }}
+    // Reconstruct {{ $group.SetterPath }} from parallel arrays
+    {{- $firstField := index $group.Fields 0 }}
+    if len({{ scanVarName $firstField }}) > 0 {
+        obj.{{ $group.SetterPath }} = make([]*{{ $group.ElemType }}, len({{ scanVarName $firstField }}))
+        for i := range {{ scanVarName $firstField }} {
+            obj.{{ $group.SetterPath }}[i] = &{{ $group.ElemType }}{
+                {{- range $field := $group.Fields }}
+                {{ $field.ArrayFieldName }}: {{ scanVarName $field }}[i],
+                {{- end }}
+            }
+        }
+    }
     {{- end }}
 
     return obj, nil
@@ -616,10 +632,27 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
         return nil, err
     }
 
+    {{- /* Apply type conversions for fields that needed temp vars (non-array columns) */}}
     {{- range $field := .Schema.DBColumnFields }}
-    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) }}
+    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) (not (isArrayColumn $field)) }}
     {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
     {{- end }}
+    {{- end }}
+
+    {{- /* Reconstruct repeated messages from array columns */}}
+    {{- range $group := arrayColumnGroups .Schema.DBColumnFields }}
+    // Reconstruct {{ $group.SetterPath }} from parallel arrays
+    {{- $firstField := index $group.Fields 0 }}
+    if len({{ scanVarName $firstField }}) > 0 {
+        obj.{{ $group.SetterPath }} = make([]*{{ $group.ElemType }}, len({{ scanVarName $firstField }}))
+        for i := range {{ scanVarName $firstField }} {
+            obj.{{ $group.SetterPath }}[i] = &{{ $group.ElemType }}{
+                {{- range $field := $group.Fields }}
+                {{ $field.ArrayFieldName }}: {{ scanVarName $field }}[i],
+                {{- end }}
+            }
+        }
+    }
     {{- end }}
 
     return obj, nil

@@ -341,6 +341,8 @@ func scanRow(row pgx.Row) (*storeType, error) {
 	var col_DeploymentId string
 	var col_PodUid string
 	var col_Signal_Time *time.Time
+	var col_Signal_LineageInfo_parentuid []uint32
+	var col_Signal_LineageInfo_parentexecfilepath []string
 	var col_ClusterId string
 	var col_ContainerStartTime *time.Time
 
@@ -360,8 +362,8 @@ func scanRow(row pgx.Row) (*storeType, error) {
 		&obj.Signal.Uid,
 		&obj.Signal.Gid,
 		&obj.Signal.Scraped,
-		&obj.Signal.LineageInfo,
-		&obj.Signal.LineageInfo,
+		&col_Signal_LineageInfo_parentuid,
+		&col_Signal_LineageInfo_parentexecfilepath,
 		&col_ClusterId,
 		&obj.Namespace,
 		&col_ContainerStartTime,
@@ -375,6 +377,16 @@ func scanRow(row pgx.Row) (*storeType, error) {
 	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
 	obj.ClusterId = col_ClusterId
 	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
+	// Reconstruct Signal.LineageInfo from parallel arrays
+	if len(col_Signal_LineageInfo_parentuid) > 0 {
+		obj.Signal.LineageInfo = make([]*storage.LineageInfoNoSerializedArrays, len(col_Signal_LineageInfo_parentuid))
+		for i := range col_Signal_LineageInfo_parentuid {
+			obj.Signal.LineageInfo[i] = &storage.LineageInfoNoSerializedArrays{
+				ParentUid:          col_Signal_LineageInfo_parentuid[i],
+				ParentExecFilePath: col_Signal_LineageInfo_parentexecfilepath[i],
+			}
+		}
+	}
 
 	return obj, nil
 }
@@ -386,6 +398,8 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 	var col_DeploymentId string
 	var col_PodUid string
 	var col_Signal_Time *time.Time
+	var col_Signal_LineageInfo_parentuid []uint32
+	var col_Signal_LineageInfo_parentexecfilepath []string
 	var col_ClusterId string
 	var col_ContainerStartTime *time.Time
 
@@ -405,8 +419,8 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 		&obj.Signal.Uid,
 		&obj.Signal.Gid,
 		&obj.Signal.Scraped,
-		&obj.Signal.LineageInfo,
-		&obj.Signal.LineageInfo,
+		&col_Signal_LineageInfo_parentuid,
+		&col_Signal_LineageInfo_parentexecfilepath,
 		&col_ClusterId,
 		&obj.Namespace,
 		&col_ContainerStartTime,
@@ -420,6 +434,16 @@ func scanRows(rows pgx.Rows) (*storeType, error) {
 	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
 	obj.ClusterId = col_ClusterId
 	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
+	// Reconstruct Signal.LineageInfo from parallel arrays
+	if len(col_Signal_LineageInfo_parentuid) > 0 {
+		obj.Signal.LineageInfo = make([]*storage.LineageInfoNoSerializedArrays, len(col_Signal_LineageInfo_parentuid))
+		for i := range col_Signal_LineageInfo_parentuid {
+			obj.Signal.LineageInfo[i] = &storage.LineageInfoNoSerializedArrays{
+				ParentUid:          col_Signal_LineageInfo_parentuid[i],
+				ParentExecFilePath: col_Signal_LineageInfo_parentexecfilepath[i],
+			}
+		}
+	}
 
 	return obj, nil
 }

@@ -29,7 +29,9 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicatorNoSerializedArrays)(nil)), "process_indicator_no_serialized_arrays", walker.WithNoSerialized())
+		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicatorNoSerializedArrays)(nil)), "process_indicator_no_serialized_arrays", walker.WithNoSerialized(), walker.WithRepeatedFieldStrategies(map[string]string{
+			"signal.lineage_info": "array",
+		}))
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Deployment": DeploymentsSchema,
 		}
