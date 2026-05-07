@@ -92,6 +92,10 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				return
 			}
 
+			t.Run("PipelineMetrics", func(t *testing.T) {
+				s.assertPipelineMetrics(s.ctx, t, vm.NodeName)
+			})
+
 			t.Run("ConsistencyCheck", func(t *testing.T) {
 				fetched := s.mustGetVM(rescan.GetId())
 				require.Equal(t, first.GetId(), fetched.GetId(),
