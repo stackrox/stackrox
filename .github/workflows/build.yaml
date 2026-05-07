@@ -604,7 +604,7 @@ jobs:
         env:
           # For PRs with RHACS branding, push directly from BuildKit for deterministic gzip compression
           # STACKROX branding requires quay.io/stackrox-io/* creds which PRs don't have
-          DOCKER_BUILD_PUSH: ${{ github.event_name == 'pull_request' && matrix.branding == 'RHACS_BRANDING' && 'true' || 'false' }}
+          DOCKER_BUILD_PUSH: ${{ github.event_name == 'pull_request' && matrix.name == 'RHACS_BRANDING' && 'true' || 'false' }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
@@ -616,7 +616,7 @@ jobs:
         env:
           # For PRs with RHACS branding, push directly from BuildKit for deterministic gzip compression
           # STACKROX branding requires quay.io/stackrox-io/* creds which PRs don't have
-          DOCKER_BUILD_PUSH: ${{ github.event_name == 'pull_request' && matrix.branding == 'RHACS_BRANDING' && 'true' || 'false' }}
+          DOCKER_BUILD_PUSH: ${{ github.event_name == 'pull_request' && matrix.name == 'RHACS_BRANDING' && 'true' || 'false' }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
