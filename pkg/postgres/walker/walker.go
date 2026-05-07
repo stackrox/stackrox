@@ -386,7 +386,7 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 		}
 
 		switch structField.Type.Kind() {
-		case reflect.Ptr:
+		case reflect.Pointer:
 			if structField.Type == protocompat.TimestampPtrType {
 				dt := postgres.DateTime
 				if opts.ColumnType == "timestamptz" {

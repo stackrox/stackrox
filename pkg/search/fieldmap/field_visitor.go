@@ -19,7 +19,7 @@ func visitChildrenRec(parentType, currentType reflect.Type, path FieldPath, visi
 	switch currentType.Kind() {
 	case reflect.Struct:
 		visitStructFields(currentType, path, visitField)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		visitElemField(currentType, path, visitField)
 	case reflect.Interface:
 		visitInterfaceFields(parentType, currentType, path, visitField)
