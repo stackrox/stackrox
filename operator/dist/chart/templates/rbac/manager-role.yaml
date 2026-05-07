@@ -1,0 +1,49 @@
+apiVersion: rbac.authorization.k8s.io/v1
+{{- if .Values.rbac.namespaced }}
+kind: Role
+{{- else }}
+kind: ClusterRole
+{{- end }}
+metadata:
+{{- if .Values.rbac.namespaced }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+  labels:
+    app: rhacs-operator
+  name: {{ include "rhacs-operator.resourceName" (dict "suffix" "manager-role" "context" $) }}
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - platform.stackrox.io
+  resources:
+  - centrals
+  - securedclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.stackrox.io
+  resources:
+  - centrals/finalizers
+  - securedclusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.stackrox.io
+  resources:
+  - centrals/status
+  - securedclusters/status
+  verbs:
+  - get
+  - patch
+  - update

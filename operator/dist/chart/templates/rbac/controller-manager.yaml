@@ -1,0 +1,18 @@
+{{- if ne .Values.serviceAccount.enable false }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: rhacs-operator
+    {{- with .Values.serviceAccount.labels }}
+    {{- with omit . "app" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "rhacs-operator.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}

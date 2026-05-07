@@ -1,0 +1,141 @@
+{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rhacs-operator
+    control-plane: controller-manager
+    {{- with .Values.manager.labels }}
+    {{- with omit . "app" "control-plane" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  name: {{ include "rhacs-operator.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.manager.annotations }}
+  annotations:
+    {{- toYaml .Values.manager.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.manager.strategy }}
+  strategy: {{ toYaml . | nindent 6 }}
+  {{- end }}
+  replicas: {{ .Values.manager.replicas }}
+  selector:
+    matchLabels:
+      app: rhacs-operator
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        {{- with .Values.manager.pod }}
+        {{- with .annotations }}
+        {{- with omit . "kubectl.kubernetes.io/default-container" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+      labels:
+        app: rhacs-operator
+        control-plane: controller-manager
+        {{- with .Values.manager.pod }}
+        {{- with .labels }}
+        {{- with omit . "app" "control-plane" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+    spec:
+      {{- with .Values.manager.topologySpreadConstraints }}
+      topologySpreadConstraints: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.manager.tolerations }}
+      tolerations: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.affinity }}
+      affinity: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      containers:
+      - args:
+        {{- if .Values.metrics.enable }}
+        - --metrics-bind-address=0.0.0.0:{{ .Values.metrics.port }}
+        {{- if not .Values.metrics.secure }}
+        - --metrics-secure=false
+        {{- end }}
+        {{- else }}
+        # Bind to :0 to disable the controller-runtime managed metrics server
+        - --metrics-bind-address=0
+        {{- end }}
+        - --health-probe-bind-address=:8081
+        {{- range .Values.manager.args }}
+        - {{ . }}
+        {{- end }}
+        env:
+{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}
+          {{- if .Values.manager.env }}
+          {{- toYaml .Values.manager.env | nindent 10 }}
+          {{- end }}
+          {{- if kindIs "map" .Values.manager.envOverrides }}
+          {{- range $k, $v := .Values.manager.envOverrides }}
+          - name: {{ $k }}
+            value: {{ $v | quote }}
+          {{ end }}
+          {{- end }}
+          {{- else }}
+          []
+          {{- end }}
+        image: "{{ .Values.manager.image.repository }}{{- if not (contains "@" .Values.manager.image.repository) }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"
+        {{- with .Values.manager.image.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          {{- if .Values.manager.resources }}
+          {{- toYaml .Values.manager.resources | nindent 10 }}
+          {{- else }}
+          {}
+          {{- end }}
+        securityContext:
+          {{- if .Values.manager.securityContext }}
+          {{- toYaml .Values.manager.securityContext | nindent 10 }}
+          {{- else }}
+          {}
+          {{- end }}
+      {{- with .Values.manager.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- if .Values.manager.podSecurityContext }}
+        {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
+        {{- else }}
+        {}
+        {{- end }}
+      serviceAccountName: {{ include "rhacs-operator.serviceAccountName" . }}
+      {{- if and (hasKey .Values.manager "terminationGracePeriodSeconds") (ne .Values.manager.terminationGracePeriodSeconds nil) }}
+      terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+      {{- end }}
+{{- end }}

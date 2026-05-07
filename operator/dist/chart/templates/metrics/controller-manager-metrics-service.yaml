@@ -1,0 +1,19 @@
+{{- if .Values.metrics.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: rhacs-operator
+    control-plane: controller-manager
+  name: {{ include "rhacs-operator.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: {{ if .Values.metrics.secure }}https{{ else }}http{{ end }}
+    port: {{ .Values.metrics.port }}
+    protocol: TCP
+    targetPort: https
+  selector:
+    app: rhacs-operator
+    control-plane: controller-manager
+{{- end }}

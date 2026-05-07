@@ -1,0 +1,14 @@
+apiVersion: v2
+name: rhacs-operator
+description: A Helm chart to distribute rhacs-operator
+type: application
+
+version: 4.11.0-889-gb557a9eb42
+appVersion: "4.11.0-889-gb557a9eb42"
+
+keywords:
+  - kubernetes
+  - operator
+
+annotations:
+  kubebuilder.io/generated-by: kubebuilder

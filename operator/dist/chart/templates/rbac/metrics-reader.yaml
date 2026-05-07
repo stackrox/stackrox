@@ -1,0 +1,13 @@
+{{- if and .Values.metrics.enable .Values.metrics.secure }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: rhacs-operator
+  name: {{ include "rhacs-operator.resourceName" (dict "suffix" "metrics-reader" "context" $) }}
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+{{- end }}

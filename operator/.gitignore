@@ -29,7 +29,6 @@ go.work
 
 # Temp files created during build process
 /build/
-/dist/
 
 # kuttl ignored files
 # Workaround for https://github.com/kudobuilder/kuttl/issues/297
