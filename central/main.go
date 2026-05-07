@@ -968,7 +968,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	// Append report custom routes
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
-		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)),
+		Authorizer:    user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)),
 		ServerHandler: v2Service.NewDownloadHandler(),
 		Compression:   true,
 	})
