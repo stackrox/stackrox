@@ -22,13 +22,14 @@ if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
         echo "Pushing directly to registry from BuildKit for reproducible layers"
 
         # Extract only quay.io tags for direct push (PRs don't have docker.io creds)
+        # Add architecture suffix to tags for multi-arch manifest creation
         FILTERED_ARGS=()
         while [[ $# -gt 0 ]]; do
             case "$1" in
                 -t|--tag)
-                    # Only include tags that start with quay.io/
+                    # Only include tags that start with quay.io/ and add arch suffix
                     if [[ "$2" == quay.io/* ]]; then
-                        FILTERED_ARGS+=("-t" "$2")
+                        FILTERED_ARGS+=("-t" "${2}-${GOARCH}")
                     fi
                     shift 2
                     ;;
