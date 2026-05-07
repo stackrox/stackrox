@@ -16,6 +16,10 @@ settings=(
     --set central.db.enabled=true
 )
 
+if [[ -n ${ROX_SCANNER_V4:-} ]]; then
+    settings+=(--set scannerV4.disable="$ROX_SCANNER_V4")
+fi
+
 if [[ -n ${DOCKER_USERNAME:-} ]]; then
     settings+=(--set imagePullSecrets.username="$DOCKER_USERNAME")
 fi
