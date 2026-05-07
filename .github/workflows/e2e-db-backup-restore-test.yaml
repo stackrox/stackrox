@@ -175,24 +175,15 @@ jobs:
 
     - name: Setup TLS client certs
       run: |
-        # Generate client CA + certs for ClientCertAuthTest.
-        # Uses the same setup-certs.sh that Prow uses.
+        # Generate client CA + certs using the same script Prow uses.
+        # setup_client_TLS_certs calls export_client_TLS_certs which sets
+        # KEYSTORE_PATH, CLIENT_CA_PATH, TRUSTSTORE_PATH in the shell.
+        # The keystore uses empty password (pass:) matching the Java code.
         source tests/scripts/setup-certs.sh
-        CERT_DIR="/tmp/client-tls-certs"
-        setup_client_TLS_certs "$CERT_DIR"
-
-        # Extract Central's CA for truststore
-        kubectl -n stackrox get secret central-tls \
-          -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.pem
-
-        # Create Java truststore with Central's CA
-        keytool -import -noprompt -trustcacerts \
-          -alias central-ca -file /tmp/central-ca.pem \
-          -keystore /tmp/truststore.jks -storepass changeit 2>/dev/null
-
-        echo "CLIENT_CA_PATH=${CERT_DIR}/ca.crt" >> "$GITHUB_ENV"
-        echo "KEYSTORE_PATH=${CERT_DIR}/keystore.p12" >> "$GITHUB_ENV"
-        echo "TRUSTSTORE_PATH=/tmp/truststore.jks" >> "$GITHUB_ENV"
+        setup_client_TLS_certs "/tmp/client-tls-certs"
+        echo "CLIENT_CA_PATH=${CLIENT_CA_PATH}" >> "$GITHUB_ENV"
+        echo "KEYSTORE_PATH=${KEYSTORE_PATH}" >> "$GITHUB_ENV"
+        echo "TRUSTSTORE_PATH=${TRUSTSTORE_PATH}" >> "$GITHUB_ENV"
 
     - name: Compile QA tests
       working-directory: qa-tests-backend
