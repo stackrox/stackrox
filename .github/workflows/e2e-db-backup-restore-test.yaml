@@ -224,6 +224,14 @@ jobs:
         AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
         AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
         REMOTE_CLUSTER_ARCH: multi-arch
+        # Slack webhooks: dummy values to satisfy mustGet() without
+        # sending real notifications. Some test classes (DefaultPoliciesTest,
+        # IntegrationsTest) load SlackUtil at class init which crashes if
+        # these are missing. Replace with real webhook URLs from the vault
+        # to restore in-job Slack reporting of test results.
+        SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
+        SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
+        SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
       run: |
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
