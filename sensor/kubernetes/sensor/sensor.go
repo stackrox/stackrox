@@ -98,7 +98,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.LabelBasedPolicyScoping.Enabled() {
 		namespaces = storeProvider.Namespaces()
 	}
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabelsStore(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
 	var factSettingsMgr *filesystem.FactSettingsManager
 	if features.SensitiveFileActivity.Enabled() {
 		factSettingsMgr = filesystem.NewFactSettingsManager()
@@ -113,7 +113,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
 	if features.LabelBasedPolicyScoping.Enabled() && helmManagedConfig != nil {
-		storeProvider.ClusterLabels().Set(helmManagedConfig.GetClusterConfig().GetClusterLabels())
+		storeProvider.ClusterLabelsStore().Set(helmManagedConfig.GetClusterConfig().GetClusterLabels())
 	}
 
 	if cfg.introspectionK8sClient == nil {
@@ -149,11 +149,25 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
 
 	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
-	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.Registries(), localScan)
+	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.RegistryStore(), localScan)
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels(), factSettingsMgr)
+	policyDetector, err := detector.NewBuilder().
+		WithStoreProvider(storeProvider).
+		WithClusterID(clusterID).
+		WithEnforcer(enforcer).
+		WithAdmCtrlSettingsMgr(admCtrlSettingsMgr).
+		WithImageCache(imageCache).
+		WithAuditLogEvents(auditLogEventsInput).
+		WithAuditLogUpdater(auditLogCollectionManager).
+		WithLocalScan(localScan).
+		WithFactSettingsMgr(factSettingsMgr).
+		Build()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating detector")
+	}
+
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {

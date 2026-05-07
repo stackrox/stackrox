@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -32,7 +31,6 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 		action             central.ResourceAction
 		podLister          *mockPodLister
 		systemNamespaces   *orchestratornamespaces.OrchestratorNamespaces
-		registryStore      *registry.Store
 		expectedDeployment *storage.Deployment
 	}{
 		{
@@ -111,7 +109,6 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				},
 			},
 			systemNamespaces: storeProvider.orchestratorNamespaces,
-			registryStore:    storeProvider.Registries(),
 			expectedDeployment: &storage.Deployment{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
@@ -249,7 +246,6 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				},
 			},
 			systemNamespaces: storeProvider.orchestratorNamespaces,
-			registryStore:    storeProvider.Registries(),
 			expectedDeployment: &storage.Deployment{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
