@@ -49,11 +49,6 @@ jobs:
         run: |
           echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
 
-          if [[ ${#COMMIT_SHA} -lt 10 ]]; then
-            echo "::error::COMMIT_SHA must be at least 10 characters (got ${#COMMIT_SHA}: ${COMMIT_SHA})"
-            exit 1
-          fi
-
           # Compute build tag in the background (runs during jq matrix below).
           # Replicates git describe: finds the nearest version tag via the API,
           # then gets the commit count since that tag.
