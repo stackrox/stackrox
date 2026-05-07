@@ -96,6 +96,9 @@ func GetValidReportConfigWithMultipleNotifiersV2() *storage.ReportConfiguration 
 				CvesSince: &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
 					SinceLastSentScheduledReport: true,
 				},
+				IncludeNvdCvss:         true,
+				IncludeAdvisory:        true,
+				IncludeEpssProbability: true,
 			},
 		},
 		Schedule: &storage.Schedule{
