@@ -20,7 +20,7 @@ type ListDeploymentView struct {
 	ClusterID   string                  `db:"cluster_id"`
 	Namespace   string                  `db:"namespace"`
 	Created     *time.Time              `db:"created"`
-	Deleted     *time.Time              `db:"deleted"`
+	Deleted     *time.Time              `db:"deployment_deleted"`
 	State       storage.DeploymentState `db:"deployment_state"`
 	// Priority is NOT selected from DB - it's computed by the ranker
 }
