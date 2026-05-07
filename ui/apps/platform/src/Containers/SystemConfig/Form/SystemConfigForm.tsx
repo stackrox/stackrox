@@ -33,6 +33,7 @@ import * as yup from 'yup';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import type { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -81,16 +82,27 @@ export type SystemConfigFormProps = {
     defaultRedHatLayeredProductsRule: string;
 };
 
-const validationSchema = yup.object().shape({
-    privateConfig: yup.object().shape({
-        reportRetentionConfig: yup.object().shape({
-            downloadableReportGlobalRetentionBytes: yup
-                .number()
-                .min(convertBetweenBytesAndMB(50, 'MB'), 'The number must be at least 50 MB')
-                .required(),
+function buildValidationSchema(isDeploymentSoftDeletionEnabled: boolean) {
+    return yup.object().shape({
+        privateConfig: yup.object().shape({
+            reportRetentionConfig: yup.object().shape({
+                downloadableReportGlobalRetentionBytes: yup
+                    .number()
+                    .min(convertBetweenBytesAndMB(50, 'MB'), 'The number must be at least 50 MB')
+                    .required(),
+            }),
+            ...(isDeploymentSoftDeletionEnabled && {
+                resourceRetentionConfig: yup.object().shape({
+                    deploymentDurationDays: yup
+                        .number()
+                        .integer('The number must be a whole number')
+                        .min(0, 'The number must be at least 0')
+                        .required('Deleted deployments retention is required'),
+                }),
+            }),
         }),
-    }),
-});
+    });
+}
 
 function convertConfigRulesToComponentConfig({
     coreSystemRule,
@@ -115,6 +127,8 @@ const SystemConfigForm = ({
     defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const { isTelemetryConfigured, telemetryConfig } = useTelemetryConfig();
     const { refetchPublicConfig } = usePublicConfig();
     const { privateConfig } = systemConfig;
@@ -134,7 +148,7 @@ const SystemConfigForm = ({
         values,
     } = useFormik<Values>({
         initialValues: { privateConfig, publicConfig, platformComponentConfigRules },
-        validationSchema,
+        validationSchema: buildValidationSchema(isDeploymentSoftDeletionEnabled),
         onSubmit: async () => {
             const rules = values.platformComponentConfigRules;
 
@@ -359,6 +373,28 @@ const SystemConfigForm = ({
                                 />
                             </FormGroup>
                         </GridItem>
+                        {isDeploymentSoftDeletionEnabled && (
+                            <GridItem>
+                                <FormGroup
+                                    label="Deleted deployments"
+                                    isRequired
+                                    fieldId="privateConfig.resourceRetentionConfig.deploymentDurationDays"
+                                >
+                                    <TextInput
+                                        isRequired
+                                        type="number"
+                                        id="privateConfig.resourceRetentionConfig.deploymentDurationDays"
+                                        name="privateConfig.resourceRetentionConfig.deploymentDurationDays"
+                                        value={
+                                            values?.privateConfig?.resourceRetentionConfig
+                                                ?.deploymentDurationDays
+                                        }
+                                        onChange={(event, value) => onChange(value, event)}
+                                        min={0}
+                                    />
+                                </FormGroup>
+                            </GridItem>
+                        )}
                         <GridItem>
                             <FormGroup
                                 label="Expired vulnerability requests"

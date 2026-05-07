@@ -100,7 +100,7 @@ function getUrlBuilder(viewId: string): WorkloadCveView['urlBuilder'] {
 
 function getWorkloadCveContextFromView(
     viewId: string,
-    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
+    isFeatureFlagEnabled: IsFeatureFlagEnabled
 ): WorkloadCveView {
     let pageTitle: string = '';
     let pageTitleDescription: string | undefined;
@@ -112,14 +112,18 @@ function getWorkloadCveContextFromView(
         case userWorkloadViewId:
             pageTitle = 'User workload vulnerabilities';
             pageTitleDescription = 'Vulnerabilities affecting user-managed workloads and images';
-            baseSearchFilter = { 'Platform Component': ['false'] };
+            baseSearchFilter = {
+                'Platform Component': ['false'],
+            };
             viewContext = 'User workloads';
             break;
         case platformViewId:
             pageTitle = 'Platform vulnerabilities';
             pageTitleDescription =
                 'Vulnerabilities affecting images and workloads used by the OpenShift Platform and layered services';
-            baseSearchFilter = { 'Platform Component': ['true'] };
+            baseSearchFilter = {
+                'Platform Component': ['true'],
+            };
             viewContext = 'Platform';
             break;
         case allImagesViewId:
@@ -133,7 +137,9 @@ function getWorkloadCveContextFromView(
             pageTitle = 'Inactive images only';
             pageTitleDescription =
                 'Findings for watched images and images not currently deployed as workloads based on your image retention settings';
-            baseSearchFilter = { 'Platform Component': ['-'] };
+            baseSearchFilter = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION')
+                ? { 'Deployment State': ['-', 'DEPLOYMENT_STATE_DELETED'] }
+                : { 'Platform Component': ['-'] };
             overviewEntityTabs = ['CVE', 'Image'];
             viewContext = 'Inactive images';
             break;

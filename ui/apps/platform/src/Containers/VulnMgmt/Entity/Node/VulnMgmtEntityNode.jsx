@@ -7,6 +7,8 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtNodeOverview from './VulnMgmtNodeOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -26,6 +28,8 @@ const VulnMgmtEntityNode = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
         query getNode($id: ID!) {
@@ -72,13 +76,14 @@ const VulnMgmtEntityNode = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query getNode${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getNode${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
                 result: node(id: $id) {
                     id
                     ${defaultCountKeyMap[entityListType]}(query: $query)
                     ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
+                    unusedVarSink(query: $deploymentQuery)
                 }
             }
             ${fragment}
@@ -89,7 +94,13 @@ const VulnMgmtEntityNode = ({
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                entityContext,
+                isDeploymentSoftDeletionEnabled
+            ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: queryService.objectToWhereClause({

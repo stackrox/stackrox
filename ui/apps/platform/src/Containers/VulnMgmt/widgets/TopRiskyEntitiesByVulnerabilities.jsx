@@ -4,7 +4,9 @@ import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
 
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import Loader from 'Components/Loader';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Widget from 'Components/Widget';
@@ -176,6 +178,8 @@ const TopRiskyEntitiesByVulnerabilities = ({
     small,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
@@ -261,7 +265,10 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
     const vulnQuery = cveFilter === 'Fixable' ? { Fixable: true } : '';
     const variables = {
-        query: queryService.entityContextToQueryString(entityContext),
+        query: withActiveDeploymentQuery(
+            queryService.entityContextToQueryString(entityContext),
+            isDeploymentSoftDeletionEnabled && selectedEntityType === entityTypes.DEPLOYMENT
+        ),
         vulnQuery: queryService.objectToWhereClause(vulnQuery),
         entityPagination: queryService.getPagination(
             {
