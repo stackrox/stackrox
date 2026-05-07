@@ -135,13 +135,12 @@ jobs:
   # builders support. Remove once Konflux tracks upstream Go releases:
   # https://github.com/stackrox/stackrox/pull/19737
   go-version-ceiling:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
         with:
