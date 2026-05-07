@@ -8,6 +8,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtNodeOverview from './VulnMgmtNodeOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -75,13 +76,14 @@ const VulnMgmtEntityNode = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query getNode${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getNode${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
                 result: node(id: $id) {
                     id
                     ${defaultCountKeyMap[entityListType]}(query: $query)
                     ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
+                    unusedVarSink(query: $deploymentQuery)
                 }
             }
             ${fragment}
@@ -98,6 +100,7 @@ const VulnMgmtEntityNode = ({
                 entityContext,
                 isDeploymentSoftDeletionEnabled
             ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: queryService.objectToWhereClause({

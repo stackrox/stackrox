@@ -7,6 +7,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import {
     vulMgmtPolicyQuery,
@@ -31,7 +32,7 @@ const VulnMgmtEntityCluster = ({
     const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
-        query getCluster($id: ID!) {
+        query getCluster($id: ID!, $deploymentQuery: String) {
             result: cluster(id: $id) {
                 id
                 name
@@ -46,7 +47,7 @@ const VulnMgmtEntityCluster = ({
                 istioEnabled
                 nodeCount
                 namespaceCount
-                deploymentCount
+                deploymentCount(query: $deploymentQuery)
                 imageCount
                 imageComponentCount
                 nodeComponentCount
@@ -62,13 +63,14 @@ const VulnMgmtEntityCluster = ({
         const parsedListFieldName = listFieldName;
         const parsedEntityListType = defaultCountKeyMap[entityListType];
         return gql`
-            query getCluster${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getCluster${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
                 result: cluster(id: $id) {
                     id
                     ${parsedEntityListType}(query: $query)
                     ${parsedListFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
+                    unusedVarSink(query: $deploymentQuery)
                 }
             }
             ${fragment}
@@ -85,6 +87,7 @@ const VulnMgmtEntityCluster = ({
                 entityContext,
                 isDeploymentSoftDeletionEnabled
             ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(fullEntityContext),

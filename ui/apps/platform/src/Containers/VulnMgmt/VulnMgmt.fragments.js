@@ -459,7 +459,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
             fullName
         }
         watchStatus
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         priority
         topVuln: topImageVulnerability {
             cvss
@@ -615,7 +615,7 @@ export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
             scoreVersion
         }
         imageCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         priority
         operatingSystem
     }
@@ -656,7 +656,7 @@ export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
             scoreVersion
         }
         imageCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         operatingSystem
         priority
     }

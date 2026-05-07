@@ -17,7 +17,9 @@ import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { imageSortFields } from 'constants/sortFields';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowListPage from '../WorkflowListPage';
 import removeEntityContextColumns from '../tableUtils';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
@@ -193,10 +195,12 @@ const VulnMgmtListImages = ({
     totalResults,
     refreshTrigger,
 }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const fragmentToUse = IMAGE_LIST_FRAGMENT;
 
     const query = gql`
-        query getImages($query: String, $pagination: Pagination) {
+        query getImages($query: String, $deploymentQuery: String, $pagination: Pagination) {
             results: images(query: $query, pagination: $pagination) {
                 ...imageFields
             }
@@ -212,6 +216,7 @@ const VulnMgmtListImages = ({
                 ...search,
                 cachebuster: refreshTrigger,
             }),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
     };
