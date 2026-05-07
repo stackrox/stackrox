@@ -176,6 +176,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 func makeAdminContext(t *testing.T) context.Context {
 	authProvider, _ := authproviders.NewProvider(
+		t.Context(),
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
 		authproviders.WithName("Test Auth Provider"),

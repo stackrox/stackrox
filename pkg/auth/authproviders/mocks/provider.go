@@ -60,9 +60,9 @@ func (mr *MockProviderMockRecorder) Active() *gomock.Call {
 }
 
 // ApplyOptions mocks base method.
-func (m *MockProvider) ApplyOptions(options ...authproviders.ProviderOption) error {
+func (m *MockProvider) ApplyOptions(ctx context.Context, options ...authproviders.ProviderOption) error {
 	m.ctrl.T.Helper()
-	varargs := []any{}
+	varargs := []any{ctx}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
@@ -72,9 +72,10 @@ func (m *MockProvider) ApplyOptions(options ...authproviders.ProviderOption) err
 }
 
 // ApplyOptions indicates an expected call of ApplyOptions.
-func (mr *MockProviderMockRecorder) ApplyOptions(options ...any) *gomock.Call {
+func (mr *MockProviderMockRecorder) ApplyOptions(ctx any, options ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyOptions", reflect.TypeOf((*MockProvider)(nil).ApplyOptions), options...)
+	varargs := append([]any{ctx}, options...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyOptions", reflect.TypeOf((*MockProvider)(nil).ApplyOptions), varargs...)
 }
 
 // AttributeVerifier mocks base method.

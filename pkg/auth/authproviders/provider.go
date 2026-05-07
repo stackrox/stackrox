@@ -46,17 +46,17 @@ type Provider interface {
 	// authentication.
 	AttributeVerifier() user.AttributeVerifier
 
-	ApplyOptions(options ...ProviderOption) error
+	ApplyOptions(ctx context.Context, options ...ProviderOption) error
 	Active() bool
 	MarkAsActive() error
 }
 
 // NewProvider creates a new provider with the input options.
-func NewProvider(options ...ProviderOption) (Provider, error) {
+func NewProvider(ctx context.Context, options ...ProviderOption) (Provider, error) {
 	provider := &providerImpl{
 		storedInfo: &storage.AuthProvider{},
 	}
-	if err := applyOptions(provider, options...); err != nil {
+	if err := applyOptions(ctx, provider, options...); err != nil {
 		return nil, err
 	}
 	if err := validateProvider(provider); err != nil {
@@ -66,9 +66,9 @@ func NewProvider(options ...ProviderOption) (Provider, error) {
 }
 
 // Input provider must be locked when run.
-func applyOptions(provider *providerImpl, options ...ProviderOption) error {
+func applyOptions(ctx context.Context, provider *providerImpl, options ...ProviderOption) error {
 	for _, option := range options {
-		if err := option(provider); err != nil {
+		if err := option(ctx, provider); err != nil {
 			return err
 		}
 	}

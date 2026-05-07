@@ -49,7 +49,7 @@ func (s *mockedAuthProviderServiceTestSuite) SetupTest() {
 	mockRoleMapper := permissionsMocks.NewMockRoleMapper(s.mockCtrl)
 
 	mapperFactory := permissionsMocks.NewMockRoleMapperFactory(s.mockCtrl)
-	mapperFactory.EXPECT().GetRoleMapper(gomock.Any()).AnyTimes().Return(mockRoleMapper)
+	mapperFactory.EXPECT().GetRoleMapper(gomock.Any(), gomock.Any()).AnyTimes().Return(mockRoleMapper)
 
 	registry := authproviders.NewStoreBackedRegistry(
 		urlPathPrefix,

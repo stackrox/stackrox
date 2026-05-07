@@ -6,6 +6,22 @@ export type ClusterType =
 
 export type ClusterLabels = Record<string, string>;
 
+export type ClusterMetadataType =
+    | 'UNSPECIFIED'
+    | 'AKS'
+    | 'ARO'
+    | 'EKS'
+    | 'GKE'
+    | 'OCP'
+    | 'OSD'
+    | 'ROSA';
+
+export type ClusterMetadata = {
+    type: ClusterMetadataType;
+    name: string;
+    id: string;
+};
+
 export type ClusterProviderMetadata =
     | ClusterGoogleProviderMetadata
     | ClusterAWSProviderMetadata
@@ -40,6 +56,7 @@ export type ClusterBaseProviderMetadata = {
     region: string;
     zone: string;
     verified: boolean;
+    cluster?: ClusterMetadata;
 };
 
 export type ClusterOrchestratorMetadata = {

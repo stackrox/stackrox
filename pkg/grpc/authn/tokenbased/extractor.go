@@ -13,8 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
+
+var log = logging.LoggerForModule()
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -152,6 +155,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		return nil, errors.New("external user tokens must originate from exactly one source")
 	}
 
+	log.Info("tokenBasedExtractor - getting role mapper")
 	roleMapper := authProvider.RoleMapper()
 	if roleMapper == nil {
 		return nil, errors.New("misconfigured authentication provider: no role mapper defined")
