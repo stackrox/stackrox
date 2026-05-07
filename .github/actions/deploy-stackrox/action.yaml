@@ -28,6 +28,12 @@ inputs:
   registry:
     description: Image registry for helm --set
     default: quay.io/rhacs-eng
+  load-balancer:
+    description: >
+      Matches LOAD_BALANCER in CI scripts.
+      "lb" waits for a real LoadBalancer IP (GKE, matches Prow behavior).
+      Anything else uses port-forward (KinD, simple setup).
+    default: ""
 
 runs:
   using: composite
@@ -62,15 +68,31 @@ runs:
             --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
           ts "helm install complete"
 
-          # Port-forward with auto-reconnect
-          while true; do
-            kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null || sleep 2
-          done &
+          # Set up API endpoint based on load-balancer mode
+          LOAD_BALANCER="${{ inputs.load-balancer }}"
+          if [ "$LOAD_BALANCER" = "lb" ]; then
+            ts "waiting for LoadBalancer IP..."
+            LB_IP=""
+            for _ in $(seq 1 120); do
+              LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+              [ -n "$LB_IP" ] && [ "$LB_IP" != "null" ] && break
+              LB_IP=""
+              sleep 5
+            done
+            API_ENDPOINT="${LB_IP}:443"
+            ts "LoadBalancer IP: ${LB_IP}"
+          else
+            # Port-forward with auto-reconnect
+            while true; do
+              kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null || sleep 2
+            done &
+            API_ENDPOINT="localhost:8000"
+          fi
 
           # Wait for Central API
           ts "waiting for Central API..."
           for _ in $(seq 1 120); do
-            curl -sk --connect-timeout 1 https://localhost:8000/v1/metadata >/dev/null 2>&1 && break
+            curl -sk --connect-timeout 1 "https://${API_ENDPOINT}/v1/metadata" >/dev/null 2>&1 && break
             sleep 1
           done
           ts "Central API ready"
@@ -78,17 +100,18 @@ runs:
           # Generate auth token
           set +x
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://localhost:8000/v1/apitokens/generate" \
+            "https://${API_ENDPOINT}/v1/apitokens/generate" \
             -X POST -d '{"name":"ci-test","role":"Admin"}' \
             | jq -r '.token' > /tmp/rox-auth-token
+          echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
           set -x
-          ts "auth token written"
+          ts "auth token written (endpoint: ${API_ENDPOINT})"
 
           # Deploy sensor via init-bundle
           ts "sensor deploy"
           set +x
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://localhost:8000/v1/cluster-init/init-bundles" \
+            "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
             -X POST -d '{"name":"ci-cluster"}' \
             > /tmp/init-response.json
           set -x
@@ -117,7 +140,7 @@ runs:
 
           for _ in $(seq 1 60); do
             dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8000/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
+              "https://${API_ENDPOINT}/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
             [ "${dep_count:-0}" -gt 5 ] && break
             sleep 3
           done
