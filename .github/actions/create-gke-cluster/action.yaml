@@ -1,0 +1,86 @@
+name: Create GKE cluster with StackRox charts
+description: >
+  Creates a GKE cluster via scripts/ci/gke.sh and renders helm charts.
+  Drop-in alternative to create-kind-cluster for running the same
+  tests against real cloud infrastructure.
+
+inputs:
+  cluster-name:
+    description: Unique cluster identifier (used as GKE cluster name suffix)
+    required: true
+  tag:
+    description: Main image tag
+    required: true
+  registry:
+    description: Image registry
+    default: quay.io/rhacs-eng
+  num-nodes:
+    description: Number of GKE nodes
+    default: "3"
+  machine-type:
+    description: GKE machine type
+    default: e2-standard-8
+  gcp-account:
+    description: GCP service account JSON
+    required: true
+  quay-user:
+    description: Quay.io username (for image pull secrets)
+    required: true
+  quay-pass:
+    description: Quay.io password
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ inputs.gcp-account }}
+        export_environment_variables: true
+        create_credentials_file: true
+
+    - name: Setup gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    - name: Render charts
+      shell: bash
+      run: |
+        SCANNER_TAG=$(cat SCANNER_VERSION)
+        .github/workflows/scripts/render-chart.sh central /tmp/central-chart \
+          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
+        .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart \
+          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
+
+    - name: Create GKE cluster
+      shell: bash
+      env:
+        USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+        MACHINE_TYPE: ${{ inputs.machine-type }}
+        NUM_NODES: ${{ inputs.num-nodes }}
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster "${{ inputs.cluster-name }}"
+        echo "CLUSTER_NAME=${CLUSTER_NAME}" >> "$GITHUB_ENV"
+        echo "ZONE=${ZONE}" >> "$GITHUB_ENV"
+      timeout-minutes: 20
+
+    - name: Wait for cluster
+      shell: bash
+      run: |
+        source scripts/ci/gke.sh
+        wait_for_cluster
+      timeout-minutes: 5
+
+    - name: Create image pull secret
+      shell: bash
+      run: |
+        set +x
+        kubectl create namespace stackrox 2>/dev/null || true
+        kubectl -n stackrox create secret docker-registry quay-pull-secret \
+          --docker-server=quay.io \
+          --docker-username="${{ inputs.quay-user }}" \
+          --docker-password="${{ inputs.quay-pass }}" 2>/dev/null || true
+        set -x
