@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -63,6 +64,9 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.True(exists)
+	// Round timestamps to microsecond precision for comparison,
+	// since Postgres timestamp columns have microsecond precision.
+	pgutils.RoundTimestampsToMicroseconds(processIndicator)
 	protoassert.Equal(s.T(), processIndicator, foundProcessIndicator)
 
 	processIndicatorCount, err := store.Count(ctx, search.EmptyQuery())
@@ -99,6 +103,11 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	foundProcessIndicators, missing, err := store.GetMany(ctx, processIndicatorIDs)
 	s.NoError(err)
 	s.Empty(missing)
+	// Round timestamps to microsecond precision for comparison,
+	// since Postgres timestamp columns have microsecond precision.
+	for _, obj := range processIndicators {
+		pgutils.RoundTimestampsToMicroseconds(obj)
+	}
 	protoassert.ElementsMatch(s.T(), processIndicators, foundProcessIndicators)
 
 	processIndicatorCount, err = store.Count(ctx, search.EmptyQuery())
@@ -347,6 +356,9 @@ func (s *ProcessIndicatorsStoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
+				// Round timestamps to microsecond precision for comparison,
+				// since Postgres timestamp columns have microsecond precision.
+				pgutils.RoundTimestampsToMicroseconds(objA)
 				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
@@ -419,6 +431,11 @@ func (s *ProcessIndicatorsStoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetId(), objB.GetId()})
 			assert.NoError(t, err)
+			// Round timestamps to microsecond precision for comparison,
+			// since Postgres timestamp columns have microsecond precision.
+			for _, obj := range testCase.expectedObjects {
+				pgutils.RoundTimestampsToMicroseconds(obj)
+			}
 			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})

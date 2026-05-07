@@ -16,6 +16,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
+	{{- if .NoSerialized }}
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	{{- end }}
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -80,6 +83,11 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{$paramList}})
 	s.NoError(err)
 	s.True(exists)
+	{{- if .NoSerialized }}
+	// Round timestamps to microsecond precision for comparison,
+	// since Postgres timestamp columns have microsecond precision.
+	pgutils.RoundTimestampsToMicroseconds({{$name}})
+	{{- end }}
 	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
 
 	{{$name}}Count, err := store.Count(ctx, search.EmptyQuery())
@@ -124,6 +132,13 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	found{{.TrimmedType|upperCamelCase}}s, missing, err := store.GetMany(ctx, {{$name}}IDs)
 	s.NoError(err)
 	s.Empty(missing)
+	{{- if .NoSerialized }}
+	// Round timestamps to microsecond precision for comparison,
+	// since Postgres timestamp columns have microsecond precision.
+	for _, obj := range {{.TrimmedType|lowerCamelCase}}s {
+		pgutils.RoundTimestampsToMicroseconds(obj)
+	}
+	{{- end }}
 	protoassert.ElementsMatch(s.T(), {{.TrimmedType|lowerCamelCase}}s, found{{.TrimmedType|upperCamelCase}}s)
 
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
@@ -387,6 +402,11 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
+				{{- if .NoSerialized }}
+				// Round timestamps to microsecond precision for comparison,
+				// since Postgres timestamp columns have microsecond precision.
+				pgutils.RoundTimestampsToMicroseconds(objA)
+				{{- end }}
 				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
@@ -459,6 +479,13 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{ {{ "objA" | .Obj.GetID }}, {{ "objB" | .Obj.GetID }} })
 			assert.NoError(t, err)
+			{{- if .NoSerialized }}
+			// Round timestamps to microsecond precision for comparison,
+			// since Postgres timestamp columns have microsecond precision.
+			for _, obj := range testCase.expectedObjects {
+				pgutils.RoundTimestampsToMicroseconds(obj)
+			}
+			{{- end }}
 			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
