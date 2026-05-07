@@ -3,9 +3,13 @@ package verifier
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"path/filepath"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/certwatch"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlsprofile"
 )
 
@@ -27,6 +31,34 @@ func (f TLSConfigurerFunc) TLSConfig() (*tls.Config, error) {
 // A NonCA verifier picks up a certificate from the file system, rather than
 // issuing one to itself, and serves it.
 type NonCA struct{}
+
+var (
+	leafCert     atomic.Pointer[tls.Certificate]
+	leafCertOnce sync.Once
+)
+
+func loadAndWatchLeafCert() {
+	leafCertOnce.Do(func() {
+		certwatch.WatchCertDir("service", filepath.Dir(mtls.CertFilePath()),
+			loadLeafCertFromDirectory, func(cert *tls.Certificate) {
+				if cert != nil {
+					leafCert.Store(cert)
+				}
+			}, certwatch.WithVerify(false))
+	})
+}
+
+func loadLeafCertFromDirectory(dir string) (*tls.Certificate, error) {
+	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
+	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading service certificate from %q", dir)
+	}
+
+	return &cert, nil
+}
 
 // TrustedCertPool creates a CertPool that contains the CA certificate.
 func TrustedCertPool() (*x509.CertPool, error) {
@@ -64,20 +96,26 @@ func addSecondaryCACertIfExists(certPool *x509.CertPool) {
 
 // TLSConfig initializes a server configuration that requires client TLS
 // authentication based on a single certificate in the filesystem.
+// The returned config uses GetConfigForClient to serve the latest cert
+// from a file watcher, enabling hot reload when cert files change on disk.
 func (NonCA) TLSConfig() (*tls.Config, error) {
-	serverTLSCert, err := mtls.LeafCertificateFromFile()
-	if err != nil {
-		return nil, errors.Wrap(err, "tls conversion")
-	}
+	loadAndWatchLeafCert()
 
-	conf, err := config(serverTLSCert)
+	rootConf, err := serverTLSConfig()
 	if err != nil {
 		return nil, err
 	}
-	// TODO(cg): Sensors should also issue creds to, and verify, their clients.
-	// For the time being, we only verify that the client cert is from the central CA.
-	conf.ClientAuth = tls.VerifyClientCertIfGiven
-	return conf, nil
+
+	rootConf.ClientAuth = tls.VerifyClientCertIfGiven
+	rootConf.GetCertificate = func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+		cert := leafCert.Load()
+		if cert == nil {
+			return nil, errors.New("no leaf certificate available")
+		}
+		return cert, nil
+	}
+
+	return rootConf, nil
 }
 
 // DefaultTLSServerConfig returns the default TLS config for servers in StackRox.
@@ -99,14 +137,10 @@ func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *t
 	return cfg
 }
 
-func config(serverBundle tls.Certificate) (*tls.Config, error) {
+func serverTLSConfig() (*tls.Config, error) {
 	certPool, err := TrustedCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "CA cert")
 	}
-
-	// This is based on TLSClientAuthServerConfig from cfssl/transport.
-	// However, we don't use enough of their ecosystem to fully use it yet.
-	cfg := DefaultTLSServerConfig(certPool, []tls.Certificate{serverBundle})
-	return cfg, nil
+	return DefaultTLSServerConfig(certPool, nil), nil
 }
