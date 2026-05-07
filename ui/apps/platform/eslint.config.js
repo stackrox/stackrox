@@ -1099,7 +1099,6 @@ module.exports = [
             'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/Integrations/IntegrationsListPage/IntegrationsListPage.tsx', // replace
-            'src/Containers/Integrations/hooks/useIntegrationPermissions.ts', // replace hook itself
             'src/Containers/Integrations/hooks/useIntegrations.ts', // replace hook itself
             'src/Containers/Login/LoginPage.jsx', // replace
             'src/Containers/Login/TestLoginResultsPage.jsx', // replace

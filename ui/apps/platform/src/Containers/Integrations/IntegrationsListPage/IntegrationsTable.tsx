@@ -12,7 +12,7 @@ import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { TableUIState } from 'utils/getTableUIState';
 import { isUserResource } from 'utils/traits.utils';
-import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
+import usePermissions from 'hooks/usePermissions';
 import usePageState from '../hooks/usePageState';
 import { getIsAPIToken } from '../utils/integrationUtils';
 import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
@@ -48,7 +48,8 @@ function IntegrationsTable({
     type,
 }: IntegrationsTableProps): ReactElement {
     const navigate = useNavigate();
-    const permissions = useIntegrationPermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWritePermission = hasReadWriteAccess('Integration');
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const integrations = tableState?.type === 'COMPLETE' ? tableState.data : [];
     const {
@@ -94,7 +95,7 @@ function IntegrationsTable({
                         <Flex>
                             {hasSelections &&
                                 hasMultipleDelete &&
-                                permissions[source].write &&
+                                hasWritePermission &&
                                 !isReadOnly && (
                                     <FlexItem>
                                         <Button
@@ -106,7 +107,7 @@ function IntegrationsTable({
                                         </Button>
                                     </FlexItem>
                                 )}
-                            {permissions[source].write && !isReadOnly && (
+                            {hasWritePermission && !isReadOnly && (
                                 <FlexItem>
                                     <Button
                                         variant="primary"
@@ -232,7 +233,7 @@ function IntegrationsTable({
                                             <Td isActionCell>
                                                 <ActionsColumn
                                                     isDisabled={
-                                                        !permissions[source].write ||
+                                                        !hasWritePermission ||
                                                         !isUserResource(integration.traits)
                                                     }
                                                     items={actionItems}
