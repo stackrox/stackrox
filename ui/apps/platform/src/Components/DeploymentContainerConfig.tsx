@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { ExpandableSection, Stack, StackItem } from '@patternfly/react-core';
+import {
+    ExpandableSection,
+    Label,
+    Split,
+    SplitItem,
+    Stack,
+    StackItem,
+} from '@patternfly/react-core';
 
 import type { Container } from 'types/deployment.proto';
 import ContainerImageInfo from 'Components/ContainerImageInfo';
@@ -22,11 +29,22 @@ function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContain
         setIsExpanded(_isExpanded);
     };
 
-    const toggleText = container.name;
+    const toggleContent = (
+        <Split hasGutter>
+            <SplitItem>{container.name}</SplitItem>
+            {container.type === 'INIT' && (
+                <SplitItem>
+                    <Label isCompact color="teal">
+                        Init
+                    </Label>
+                </SplitItem>
+            )}
+        </Split>
+    );
 
     return (
         <ExpandableSection
-            toggleText={toggleText}
+            toggleContent={toggleContent}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             isExpanded={isExpanded}
             isWidthLimited

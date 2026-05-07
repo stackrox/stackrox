@@ -155,7 +155,7 @@ func getMatcherGeneratorForKind(kind reflect.Kind) (baseMatcherGenerator, error)
 	switch kind {
 	case reflect.String:
 		return generateStringMatcher, nil
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return generatePtrMatcher, nil
 	case reflect.Array, reflect.Slice:
 		return generateSliceMatcher, nil

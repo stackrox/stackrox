@@ -303,6 +303,21 @@ func (mr *MockCveViewMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockCveView)(nil).Count), ctx, q)
 }
 
+// CountAffectedVMs mocks base method.
+func (m *MockCveView) CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAffectedVMs", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAffectedVMs indicates an expected call of CountAffectedVMs.
+func (mr *MockCveViewMockRecorder) CountAffectedVMs(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAffectedVMs", reflect.TypeOf((*MockCveView)(nil).CountAffectedVMs), ctx, q)
+}
+
 // CountBySeverity mocks base method.
 func (m *MockCveView) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
 	m.ctrl.T.Helper()
@@ -318,6 +333,21 @@ func (mr *MockCveViewMockRecorder) CountBySeverity(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBySeverity", reflect.TypeOf((*MockCveView)(nil).CountBySeverity), ctx, q)
 }
 
+// CountBySeverityPerVM mocks base method.
+func (m *MockCveView) CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]vmcve.VMSeverityCounts, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountBySeverityPerVM", ctx, q)
+	ret0, _ := ret[0].([]vmcve.VMSeverityCounts)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountBySeverityPerVM indicates an expected call of CountBySeverityPerVM.
+func (mr *MockCveViewMockRecorder) CountBySeverityPerVM(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBySeverityPerVM", reflect.TypeOf((*MockCveView)(nil).CountBySeverityPerVM), ctx, q)
+}
+
 // Get mocks base method.
 func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]vmcve.CveCore, error) {
 	m.ctrl.T.Helper()
@@ -331,6 +361,21 @@ func (m *MockCveView) Get(ctx context.Context, q *v1.Query) ([]vmcve.CveCore, er
 func (mr *MockCveViewMockRecorder) Get(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCveView)(nil).Get), ctx, q)
+}
+
+// GetAffectedVMs mocks base method.
+func (m *MockCveView) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]vmcve.AffectedVMCore, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAffectedVMs", ctx, q)
+	ret0, _ := ret[0].([]vmcve.AffectedVMCore)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAffectedVMs indicates an expected call of GetAffectedVMs.
+func (mr *MockCveViewMockRecorder) GetAffectedVMs(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAffectedVMs", reflect.TypeOf((*MockCveView)(nil).GetAffectedVMs), ctx, q)
 }
 
 // GetCVEComponents mocks base method.
@@ -361,4 +406,178 @@ func (m *MockCveView) GetVMIDs(ctx context.Context, q *v1.Query) ([]string, erro
 func (mr *MockCveViewMockRecorder) GetVMIDs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMIDs", reflect.TypeOf((*MockCveView)(nil).GetVMIDs), ctx, q)
+}
+
+// MockVMSeverityCounts is a mock of VMSeverityCounts interface.
+type MockVMSeverityCounts struct {
+	ctrl     *gomock.Controller
+	recorder *MockVMSeverityCountsMockRecorder
+	isgomock struct{}
+}
+
+// MockVMSeverityCountsMockRecorder is the mock recorder for MockVMSeverityCounts.
+type MockVMSeverityCountsMockRecorder struct {
+	mock *MockVMSeverityCounts
+}
+
+// NewMockVMSeverityCounts creates a new mock instance.
+func NewMockVMSeverityCounts(ctrl *gomock.Controller) *MockVMSeverityCounts {
+	mock := &MockVMSeverityCounts{ctrl: ctrl}
+	mock.recorder = &MockVMSeverityCountsMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockVMSeverityCounts) EXPECT() *MockVMSeverityCountsMockRecorder {
+	return m.recorder
+}
+
+// GetSeverityCounts mocks base method.
+func (m *MockVMSeverityCounts) GetSeverityCounts() common.ResourceCountByCVESeverity {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSeverityCounts")
+	ret0, _ := ret[0].(common.ResourceCountByCVESeverity)
+	return ret0
+}
+
+// GetSeverityCounts indicates an expected call of GetSeverityCounts.
+func (mr *MockVMSeverityCountsMockRecorder) GetSeverityCounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSeverityCounts", reflect.TypeOf((*MockVMSeverityCounts)(nil).GetSeverityCounts))
+}
+
+// GetVMID mocks base method.
+func (m *MockVMSeverityCounts) GetVMID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVMID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetVMID indicates an expected call of GetVMID.
+func (mr *MockVMSeverityCountsMockRecorder) GetVMID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMID", reflect.TypeOf((*MockVMSeverityCounts)(nil).GetVMID))
+}
+
+// MockAffectedVMCore is a mock of AffectedVMCore interface.
+type MockAffectedVMCore struct {
+	ctrl     *gomock.Controller
+	recorder *MockAffectedVMCoreMockRecorder
+	isgomock struct{}
+}
+
+// MockAffectedVMCoreMockRecorder is the mock recorder for MockAffectedVMCore.
+type MockAffectedVMCoreMockRecorder struct {
+	mock *MockAffectedVMCore
+}
+
+// NewMockAffectedVMCore creates a new mock instance.
+func NewMockAffectedVMCore(ctrl *gomock.Controller) *MockAffectedVMCore {
+	mock := &MockAffectedVMCore{ctrl: ctrl}
+	mock.recorder = &MockAffectedVMCoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockAffectedVMCore) EXPECT() *MockAffectedVMCoreMockRecorder {
+	return m.recorder
+}
+
+// GetAffectedComponentCount mocks base method.
+func (m *MockAffectedVMCore) GetAffectedComponentCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAffectedComponentCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetAffectedComponentCount indicates an expected call of GetAffectedComponentCount.
+func (mr *MockAffectedVMCoreMockRecorder) GetAffectedComponentCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAffectedComponentCount", reflect.TypeOf((*MockAffectedVMCore)(nil).GetAffectedComponentCount))
+}
+
+// GetGuestOS mocks base method.
+func (m *MockAffectedVMCore) GetGuestOS() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGuestOS")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetGuestOS indicates an expected call of GetGuestOS.
+func (mr *MockAffectedVMCoreMockRecorder) GetGuestOS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGuestOS", reflect.TypeOf((*MockAffectedVMCore)(nil).GetGuestOS))
+}
+
+// GetIsFixable mocks base method.
+func (m *MockAffectedVMCore) GetIsFixable() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIsFixable")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetIsFixable indicates an expected call of GetIsFixable.
+func (mr *MockAffectedVMCoreMockRecorder) GetIsFixable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIsFixable", reflect.TypeOf((*MockAffectedVMCore)(nil).GetIsFixable))
+}
+
+// GetMaxCVSS mocks base method.
+func (m *MockAffectedVMCore) GetMaxCVSS() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxCVSS")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetMaxCVSS indicates an expected call of GetMaxCVSS.
+func (mr *MockAffectedVMCoreMockRecorder) GetMaxCVSS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxCVSS", reflect.TypeOf((*MockAffectedVMCore)(nil).GetMaxCVSS))
+}
+
+// GetMaxSeverity mocks base method.
+func (m *MockAffectedVMCore) GetMaxSeverity() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxSeverity")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetMaxSeverity indicates an expected call of GetMaxSeverity.
+func (mr *MockAffectedVMCoreMockRecorder) GetMaxSeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxSeverity", reflect.TypeOf((*MockAffectedVMCore)(nil).GetMaxSeverity))
+}
+
+// GetVMID mocks base method.
+func (m *MockAffectedVMCore) GetVMID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVMID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetVMID indicates an expected call of GetVMID.
+func (mr *MockAffectedVMCoreMockRecorder) GetVMID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMID", reflect.TypeOf((*MockAffectedVMCore)(nil).GetVMID))
+}
+
+// GetVMName mocks base method.
+func (m *MockAffectedVMCore) GetVMName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVMName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetVMName indicates an expected call of GetVMName.
+func (mr *MockAffectedVMCoreMockRecorder) GetVMName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMName", reflect.TypeOf((*MockAffectedVMCore)(nil).GetVMName))
 }

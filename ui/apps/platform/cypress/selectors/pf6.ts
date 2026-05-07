@@ -3,6 +3,10 @@ const actionsColumnSelectors = {
     menuListButton: '.pf-v6-c-menu__list button',
 } as const;
 
+const buttonSelectors = {
+    button: '[data-ouia-component-type="PF6/Button"]',
+} as const;
+
 const cardSelectors = {
     card: 'div[data-ouia-component-type="PF6/Card"]',
 } as const;
@@ -57,6 +61,7 @@ const wizardSelectors = {
 
 export default {
     ...actionsColumnSelectors,
+    ...buttonSelectors,
     ...cardSelectors,
     ...columnManagementSelectors,
     ...dropdownSelectors,

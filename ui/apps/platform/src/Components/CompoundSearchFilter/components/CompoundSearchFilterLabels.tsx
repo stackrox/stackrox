@@ -13,6 +13,7 @@ const iconGlobe = <Globe height="15px" />;
 export type CompoundSearchFilterLabelsProps = {
     attributesSeparateFromConfig: CompoundSearchFilterAttribute[];
     config: CompoundSearchFilterConfig;
+    hasClearFilters?: boolean;
     isGlobalPredicate?: IsGlobalPredicate; // for certain values in AdvancedFilterToolbar.tsx file
     onFilterChange?: (searchFilter: SearchFilter) => void; // omit for view-based report details
     searchFilter: SearchFilter;
@@ -21,6 +22,7 @@ export type CompoundSearchFilterLabelsProps = {
 function CompoundSearchFilterLabels({
     attributesSeparateFromConfig,
     config,
+    hasClearFilters = true,
     isGlobalPredicate,
     onFilterChange,
     searchFilter,
@@ -70,7 +72,7 @@ function CompoundSearchFilterLabels({
                     </FlexItem>
                 );
             })}
-            {labelGroupDescriptions.length !== 0 && onFilterChange && (
+            {hasClearFilters && labelGroupDescriptions.length !== 0 && onFilterChange && (
                 <Button variant="link" onClick={() => onFilterChange({})}>
                     Clear filters
                 </Button>

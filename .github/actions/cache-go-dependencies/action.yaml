@@ -41,6 +41,11 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        # Hash go.mod once for use in cache keys. When dependencies change,
+        # the GOCACHE must be invalidated because Go's module index caches
+        # parsed imports by (filename, mtime, size) and our fixed mtimes
+        # can cause stale cached imports when file content changes.
+        echo "GOMOD_HASH=$(sha256sum go.mod | cut -c1-16)" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
@@ -51,16 +56,16 @@ runs:
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
 
     - name: Cache Go Build (restore)
       if: ${{ inputs.save != 'true' }}
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
 
     - name: Mark GOCACHE entries for stale detection
       run: |
@@ -96,6 +101,16 @@ runs:
           after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
+    - name: Clear test cache on non-PR runs
+      if: github.event_name != 'pull_request'
+      run: |
+        # Non-PR runs (master, release branches, nightlies) always run tests
+        # from scratch to catch real failures. go clean -testcache removes
+        # cached test results while preserving the compilation cache.
+        go clean -testcache
+        echo "Cleared test cache for fresh run"
+      shell: bash
+
     - name: Stabilize file mtimes for Go test cache
       run: |
         # Go's test cache validates inputs by (path, size, mtime) — NOT content.
@@ -103,12 +118,14 @@ runs:
         # causing every test to miss the cache. Setting a fixed mtime makes the
         # test cache hit across runs when file content hasn't changed.
         #
-        # Risk: if a non-.go testdata file changes content but not size between
-        # commits, the test cache could return a stale result. This is extremely
-        # rare and Go's own test cache has the same inherent limitation.
+        # Go's module index also caches parsed imports by (filename, mtime, size).
+        # A fixed mtime can cause stale cached imports when a file changes content
+        # but keeps the same size. This is mitigated by including go.mod hash in
+        # the GOCACHE key — dependency changes invalidate the entire cache.
+        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
+
         git ls-files | xargs touch -t 200101010000
         # Also stabilize directory mtimes — tests using os.ReadDir or
-        # filepath.Walk check directory mtimes too. git ls-files only
-        # lists files, not directories.
+        # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash

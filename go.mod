@@ -3,10 +3,10 @@ module github.com/stackrox/rox
 go 1.25.9
 
 require (
-	cloud.google.com/go/artifactregistry v1.23.0
+	cloud.google.com/go/artifactregistry v1.24.0
 	cloud.google.com/go/compute/metadata v0.9.0
-	cloud.google.com/go/containeranalysis v0.17.0
-	cloud.google.com/go/securitycenter v1.42.0
+	cloud.google.com/go/containeranalysis v0.18.0
+	cloud.google.com/go/securitycenter v1.43.0
 	cloud.google.com/go/storage v1.62.1
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.6.0
@@ -39,7 +39,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/cloudflare/cfssl v1.6.5
-	github.com/cockroachdb/pebble/v2 v2.1.4
+	github.com/cockroachdb/pebble/v2 v2.1.5
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/coreos/go-systemd/v22 v22.7.0
@@ -79,7 +79,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
-	github.com/klauspost/compress v1.18.5
+	github.com/klauspost/compress v1.18.6
 	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.9.2
@@ -94,7 +94,7 @@ require (
 	github.com/onsi/gomega v1.40.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.499
+	github.com/openshift-online/ocm-sdk-go v0.1.500
 	github.com/openshift/api v0.0.0-20260317165824-54a3998d81eb
 	github.com/openshift/client-go v0.0.0-20260317180604-743f664b82d1
 	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
@@ -111,9 +111,8 @@ require (
 	github.com/prometheus/common v0.67.5
 	github.com/quay/claircore v1.5.53-0.20260402203018-c2f0b781a39b
 	github.com/quay/claircore/toolkit v1.6.0
-	github.com/quay/zlog v1.1.9
+	github.com/quay/zlog/v2 v2.1.1
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
-	github.com/rs/zerolog v1.35.1
 	github.com/russellhaering/gosaml2 v0.11.0
 	github.com/russellhaering/goxmldsig v1.6.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
@@ -152,10 +151,10 @@ require (
 	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.44.0
 	golang.stackrox.io/grpc-http1 v0.5.1
-	google.golang.org/api v0.277.0
+	google.golang.org/api v0.278.0
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7
 	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.81.0
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -260,7 +259,7 @@ require (
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/cncf/xds/go v0.0.0-20251210132809-ee656c7534f5 // indirect
+	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
 	github.com/cockroachdb/crlib v0.0.0-20250617202621-0794c595bbe6 // indirect
 	github.com/cockroachdb/errors v1.12.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
@@ -290,8 +289,8 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/envoyproxy/go-control-plane/envoy v1.36.0 // indirect
-	github.com/envoyproxy/protoc-gen-validate v1.3.0 // indirect
+	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
+	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
@@ -416,8 +415,8 @@ require (
 	github.com/olekukonko/errors v1.2.0 // indirect
 	github.com/olekukonko/ll v0.1.6 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.453 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.453 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.454 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.454 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
 	github.com/package-url/packageurl-go v0.1.5 // indirect
@@ -481,7 +480,7 @@ require (
 	gitlab.com/gitlab-org/api/client-go v1.11.0 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/contrib/detectors/gcp v1.39.0 // indirect
+	go.opentelemetry.io/contrib/detectors/gcp v1.42.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0 // indirect
 	go.opentelemetry.io/otel v1.43.0 // indirect
@@ -492,7 +491,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
+	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect

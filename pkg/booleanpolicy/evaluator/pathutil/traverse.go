@@ -33,7 +33,7 @@ func takeStep(startVal reflect.Value, step Step) (outputVal reflect.Value, err e
 		}
 	}()
 	switch kind := startVal.Kind(); kind {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return takeStep(startVal.Elem(), step)
 	case reflect.Struct:
 		if step.Field() == "" {

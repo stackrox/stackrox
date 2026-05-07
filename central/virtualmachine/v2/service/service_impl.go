@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/storagetov2"
+	"github.com/stackrox/rox/central/views/common"
 	"github.com/stackrox/rox/central/views/vmcve"
 	componentDS "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore"
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
@@ -92,19 +93,29 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 	if err != nil {
 		return nil, err
 	}
+	if len(vms) == 0 {
+		return &v2.ListVMsResponse{TotalCount: int32(totalCount)}, nil
+	}
 
-	// Batch fetch CVE severity counts and component scan counts for all VMs
-	// in two queries instead of 2*N queries.
 	vmIDs := make([]string, 0, len(vms))
 	for _, vm := range vms {
 		vmIDs = append(vmIDs, vm.GetId())
 	}
 
-	severityByVM, err := s.batchCVESeverityByVM(ctx, vmIDs)
+	// Fetch per-VM CVE severity counts via SQL GROUP BY.
+	vmFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
+	severityRows, err := s.cveView.CountBySeverityPerVM(ctx, vmFilter)
 	if err != nil {
 		return nil, err
 	}
+	severityByVM := make(map[string]*v2.VulnCountBySeverity, len(severityRows))
+	for _, row := range severityRows {
+		severityByVM[row.GetVMID()] = storagetov2.SeverityCountsToProto(row.GetSeverityCounts())
+	}
 
+	// Batch fetch component scan counts. The component Notes field has no dedicated
+	// column (no search tag), so SQL-level filtering of scanned vs unscanned is not
+	// possible and in-memory aggregation is used.
 	componentCountsByVM, err := s.batchComponentScanCounts(ctx, vmIDs)
 	if err != nil {
 		return nil, err
@@ -113,7 +124,11 @@ func (s *serviceImpl) ListVMs(ctx context.Context, request *v2.ListVMsRequest) (
 	items := make([]*v2.VMListItem, 0, len(vms))
 	for _, vm := range vms {
 		item := storagetov2.VirtualMachineV2ToListItem(vm)
-		item.CveSeverityCounts = severityByVM[vm.GetId()]
+		if counts, ok := severityByVM[vm.GetId()]; ok {
+			item.CveSeverityCounts = counts
+		} else {
+			item.CveSeverityCounts = &v2.VulnCountBySeverity{}
+		}
 		item.ComponentScanCount = componentCountsByVM[vm.GetId()]
 		items = append(items, item)
 	}
@@ -193,62 +208,9 @@ func (s *serviceImpl) GetVMDashboardCounts(ctx context.Context, request *v2.VMDa
 	}, nil
 }
 
-// batchCVESeverityByVM fetches all CVEs for the given VM IDs in one query
-// and aggregates severity counts per VM in memory.
-// TODO(ROX-34084): Evaluate whether a SQL view with GROUP BY vm_v2_id would
-// be more efficient than in-memory aggregation for large result sets.
-func (s *serviceImpl) batchCVESeverityByVM(ctx context.Context, vmIDs []string) (map[string]*v2.VulnCountBySeverity, error) {
-	result := make(map[string]*v2.VulnCountBySeverity, len(vmIDs))
-	for _, id := range vmIDs {
-		result[id] = &v2.VulnCountBySeverity{
-			Critical:  &v2.VulnFixableCount{},
-			Important: &v2.VulnFixableCount{},
-			Moderate:  &v2.VulnFixableCount{},
-			Low:       &v2.VulnFixableCount{},
-			Unknown:   &v2.VulnFixableCount{},
-		}
-	}
-	if len(vmIDs) == 0 {
-		return result, nil
-	}
-
-	q := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmIDs...).ProtoQuery()
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, cve := range cves {
-		counts, ok := result[cve.GetVmV2Id()]
-		if !ok {
-			continue
-		}
-		var bucket *v2.VulnFixableCount
-		switch cve.GetSeverity() {
-		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-			bucket = counts.GetCritical()
-		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-			bucket = counts.GetImportant()
-		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-			bucket = counts.GetModerate()
-		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-			bucket = counts.GetLow()
-		default:
-			bucket = counts.GetUnknown()
-		}
-		bucket.Total++
-		if cve.GetIsFixable() {
-			bucket.Fixable++
-		}
-	}
-
-	return result, nil
-}
-
 // batchComponentScanCounts fetches all components for the given VM IDs in one query
-// and counts total vs scanned per VM in memory.
-// TODO(ROX-34084): Evaluate whether a SQL view with GROUP BY vm_v2_id would
-// be more efficient than in-memory aggregation for large result sets.
+// and counts total vs scanned per VM in memory. The component Notes field is not
+// search-indexed, so SQL-level aggregation of scanned vs unscanned is not possible.
 func (s *serviceImpl) batchComponentScanCounts(ctx context.Context, vmIDs []string) (map[string]*v2.ComponentScanCount, error) {
 	result := make(map[string]*v2.ComponentScanCount, len(vmIDs))
 	for _, id := range vmIDs {
@@ -553,8 +515,7 @@ func (s *serviceImpl) GetVMCVEDetail(ctx context.Context, request *v2.GetVMCVEDe
 	}, nil
 }
 
-// ListVMCVEAffectedVMs returns VMs affected by a specific CVE.
-// TODO(ROX-34181): Replace with a SQL view to enable proper pagination.
+// ListVMCVEAffectedVMs returns VMs affected by a specific CVE with pagination.
 func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.ListVMCVEAffectedVMsRequest) (*v2.ListVMCVEAffectedVMsResponse, error) {
 	if request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cve_id must be specified")
@@ -568,65 +529,37 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 		searchQuery,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCveId()).ProtoQuery(),
 	)
+	searchQuery = common.UpdateSortAggs(searchQuery)
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
 
-	// Get all CVE records matching this CVE identifier to find affected VMs.
-	cves, err := s.cveDS.SearchRawVMCVEs(ctx, searchQuery)
+	countQuery := searchQuery.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := s.cveView.CountAffectedVMs(ctx, countQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build per-VM aggregation: for each VM, pick the highest severity CVE record.
-	type vmCVEInfo struct {
-		severity       v2.VulnerabilitySeverity
-		isFixable      bool
-		cvss           float32
-		componentCount int
-	}
-	vmMap := make(map[string]*vmCVEInfo)
-	for _, cve := range cves {
-		info, ok := vmMap[cve.GetVmV2Id()]
-		if !ok {
-			info = &vmCVEInfo{}
-			vmMap[cve.GetVmV2Id()] = info
-		}
-		info.componentCount++
-		severity := v2.VulnerabilitySeverity(cve.GetSeverity())
-		if severity > info.severity {
-			info.severity = severity
-			info.cvss = cve.GetPreferredCvss()
-		}
-		if cve.GetIsFixable() {
-			info.isFixable = true
-		}
-	}
-
-	vmIDs := make([]string, 0, len(vmMap))
-	for id := range vmMap {
-		vmIDs = append(vmIDs, id)
-	}
-
-	vms, _, err := s.vmDS.GetManyVirtualMachines(ctx, vmIDs)
+	affectedVMs, err := s.cveView.GetAffectedVMs(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	rows := make([]*v2.VMCVEAffectedVMRow, 0, len(vms))
-	for _, vm := range vms {
-		info := vmMap[vm.GetId()]
+	rows := make([]*v2.VMCVEAffectedVMRow, 0, len(affectedVMs))
+	for _, vm := range affectedVMs {
 		rows = append(rows, &v2.VMCVEAffectedVMRow{
-			VmId:                   vm.GetId(),
-			VmName:                 vm.GetName(),
-			Severity:               info.severity,
-			IsFixable:              info.isFixable,
-			Cvss:                   info.cvss,
-			GuestOs:                vm.GetGuestOs(),
-			AffectedComponentCount: int32(info.componentCount),
+			VmId:                   vm.GetVMID(),
+			VmName:                 vm.GetVMName(),
+			Severity:               v2.VulnerabilitySeverity(vm.GetMaxSeverity()),
+			IsFixable:              vm.GetIsFixable(),
+			Cvss:                   vm.GetMaxCVSS(),
+			GuestOs:                vm.GetGuestOS(),
+			AffectedComponentCount: int32(vm.GetAffectedComponentCount()),
 		})
 	}
 
 	return &v2.ListVMCVEAffectedVMsResponse{
 		Vms:        rows,
-		TotalCount: int32(len(rows)),
+		TotalCount: int32(totalCount),
 	}, nil
 }
 

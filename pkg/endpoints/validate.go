@@ -42,7 +42,7 @@ func ValidateEndpoints(obj interface{}) error {
 }
 
 func visitStructTags(value reflect.Value, visitor func(field reflect.Value, tag string) error) error {
-	if value.Kind() == reflect.Ptr {
+	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
 	if value.Kind() != reflect.Struct {
@@ -55,7 +55,7 @@ func visitStructTags(value reflect.Value, visitor func(field reflect.Value, tag 
 		switch fieldValue.Kind() {
 		case reflect.Struct:
 			err = visitStructTags(fieldValue, visitor)
-		case reflect.Ptr, reflect.Interface:
+		case reflect.Pointer, reflect.Interface:
 			if !fieldValue.IsNil() {
 				err = visitStructTags(fieldValue.Elem(), visitor)
 			}

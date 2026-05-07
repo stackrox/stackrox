@@ -7,6 +7,7 @@ package fixedby
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/url"
 	"strings"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
 )
 
@@ -63,8 +63,6 @@ func (e Enricher) Name() string { return fixedby.Name }
 
 // Enrich returns a mapping from package ID to the minimum version which fixes all vulnerabilities.
 func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/fixedby/Enricher.Enrich")
-
 	// package ID -> fixedBy version
 	m := make(map[string]string)
 	fixedBy := &claircore.IndexRecord{}
@@ -101,9 +99,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		if len(env.RepositoryIDs) > 0 {
 			repo, ok := vr.Repositories[env.RepositoryIDs[0]]
 			if !ok {
-				zlog.Warn(ctx).
-					Str("package", pkg.Name).
-					Msg("invalid repo id, skipping")
+				slog.WarnContext(ctx, "invalid repo id, skipping", "package", pkg.Name)
 				// We could try again, but this is unexpected and indicates some other kind of issue.
 				// Just continue.
 				continue
@@ -116,9 +112,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		matcher, versionType := findMatcher(ctx, fixedBy)
 		switch versionType {
 		case unknownVersionType:
-			zlog.Warn(ctx).
-				Str("package", pkg.Name).
-				Msg("unknown matcher, skipping")
+			slog.WarnContext(ctx, "unknown matcher, skipping", "package", pkg.Name)
 			continue
 		case semverVersionType, goSemverVersionType:
 			pkgVersion := pkg.Version
@@ -132,11 +126,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 			var err error
 			pkgSemver, err = semver.NewVersion(pkgVersion)
 			if err != nil {
-				zlog.Warn(ctx).
-					Err(err).
-					Str("package", pkg.Name).
-					Str("version", pkg.Version).
-					Msg("skipping")
+				slog.WarnContext(ctx, "skipping", "reason", err, "package", pkg.Name, "version", pkg.Version)
 				continue
 			}
 		default:
@@ -163,13 +153,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				}
 				vulnSemver, err := semver.NewVersion(v.FixedInVersion)
 				if err != nil {
-					zlog.Warn(ctx).
-						Err(err).
-						Str("package", pkg.Name).
-						Str("vulnerability_id", v.ID).
-						Str("vulnerability", v.Name).
-						Str("fixed_in_version", v.FixedInVersion).
-						Msg("skipping")
+					slog.WarnContext(ctx, "skipping", "reason", err, "package", pkg.Name, "vulnerability_id", v.ID, "vulnerability", v.Name, "fixed_in_version", v.FixedInVersion)
 					continue
 				}
 				if pkgSemver.LessThan(vulnSemver) {
@@ -187,13 +171,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				// with v.FixedInVersion.
 				vulnerable, err := matcher.Vulnerable(ctx, fixedBy, v)
 				if err != nil {
-					zlog.Warn(ctx).
-						Err(err).
-						Str("package", pkg.Name).
-						Str("vulnerability_id", v.ID).
-						Str("vulnerability", v.Name).
-						Str("fixed_in_version", v.FixedInVersion).
-						Msg("skipping")
+					slog.WarnContext(ctx, "skipping", "reason", err, "package", pkg.Name, "vulnerability_id", v.ID, "vulnerability", v.Name, "fixed_in_version", v.FixedInVersion)
 					continue
 				}
 				if !vulnerable {
@@ -220,9 +198,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				fixedBy.Package.Version = version
 			default:
 				// Just log and skip.
-				zlog.Warn(ctx).
-					Str("version_type", versionType.String()).
-					Msg("unexpected version type, skipping")
+				slog.WarnContext(ctx, "unexpected version type, skipping", "version_type", versionType.String())
 				continue
 			}
 		}
@@ -268,7 +244,6 @@ func parseURLEncoding(v string) string {
 // version comparisons became tricky without knowing more specifics about the matcher and expected
 // version formatting. Doing it this way is easier for us.
 func findMatcher(ctx context.Context, record *claircore.IndexRecord) (matcher, versionType) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/fixedby/matcher")
 	// THE ORDERING IS SPECIFICALLY CHOSEN TO ENSURE WE CHOOSE
 	// THE CORRECT MATCHER.
 	// CHANGE IT AT YOUR OWN RISK.
@@ -308,7 +283,7 @@ func findMatcher(ctx context.Context, record *claircore.IndexRecord) (matcher, v
 	case (*ubuntu.Matcher)(nil).Filter(record):
 		return &ubuntu.Matcher{}, normalVersionType
 	default:
-		zlog.Error(ctx).Str("package", record.Package.Name).Msg("unable to determine matcher")
+		slog.ErrorContext(ctx, "unable to determine matcher", "package", record.Package.Name)
 		return nil, unknownVersionType
 	}
 }

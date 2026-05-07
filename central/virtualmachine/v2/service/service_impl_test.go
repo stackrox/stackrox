@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	commonViews "github.com/stackrox/rox/central/views/common"
@@ -691,12 +690,6 @@ func TestListVMs(t *testing.T) {
 		State: storage.VirtualMachineV2_RUNNING,
 	}
 
-	cve1 := &storage.VirtualMachineCVEV2{
-		Id: "cve-uuid-1", VmV2Id: "vm-1",
-		Severity:  storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		IsFixable: true,
-	}
-
 	comp1 := &storage.VirtualMachineComponentV2{
 		Id: "comp-1", VmScanId: "scan-1", Name: "openssl", Version: "1.1.1",
 	}
@@ -719,7 +712,12 @@ func TestListVMs(t *testing.T) {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(1, nil)
 				mockVM.EXPECT().SearchRawVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{vm1}, nil)
-				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				sevCounts := cveViewMocks.NewMockVMSeverityCounts(gomock.NewController(t))
+				sevCounts.EXPECT().GetVMID().Return("vm-1").AnyTimes()
+				sevCounts.EXPECT().GetSeverityCounts().Return(&commonViews.ResourceCountByImageCVESeverity{
+					CriticalSeverityCount: 1, FixableCriticalSeverityCount: 1,
+				}).AnyTimes()
+				mockView.EXPECT().CountBySeverityPerVM(ctx, gomock.Any()).Return([]vmcve.VMSeverityCounts{sevCounts}, nil)
 				mockComp.EXPECT().SearchRawVMComponents(ctx, gomock.Any()).Return([]*storage.VirtualMachineComponentV2{comp1, compUnscanned}, nil)
 				mockScan.EXPECT().GetBatch(ctx, gomock.Any()).Return([]*storage.VirtualMachineScanV2{scan1}, nil)
 			},
@@ -736,7 +734,7 @@ func TestListVMs(t *testing.T) {
 		"empty list": {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(0, nil)
-				mockVM.EXPECT().SearchRawVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{}, nil)
+				mockVM.EXPECT().SearchRawVirtualMachines(ctx, gomock.Any()).Return(nil, nil)
 			},
 			expectedCount: 0,
 		},
@@ -782,28 +780,6 @@ func TestListVMs(t *testing.T) {
 	}
 }
 
-// mockCveCore implements vmcve.CveCore for testing ListVMCVEs.
-type mockCveCore struct {
-	cve        string
-	cveIDs     []string
-	topCVSS    float32
-	affected   int
-	epss       float32
-	published  *time.Time
-	discovered *time.Time
-}
-
-func (m *mockCveCore) GetCVE() string      { return m.cve }
-func (m *mockCveCore) GetCVEIDs() []string { return m.cveIDs }
-func (m *mockCveCore) GetVMsBySeverity() commonViews.ResourceCountByCVESeverity {
-	return &commonViews.ResourceCountByImageCVESeverity{}
-}
-func (m *mockCveCore) GetTopCVSS() float32                    { return m.topCVSS }
-func (m *mockCveCore) GetAffectedVMCount() int                { return m.affected }
-func (m *mockCveCore) GetFirstDiscoveredInSystem() *time.Time { return m.discovered }
-func (m *mockCveCore) GetPublishDate() *time.Time             { return m.published }
-func (m *mockCveCore) GetEPSSProbability() float32            { return m.epss }
-
 func TestListVMCVEs(t *testing.T) {
 	ctx := context.Background()
 
@@ -815,9 +791,14 @@ func TestListVMCVEs(t *testing.T) {
 		"successful list": {
 			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
 				mockView.EXPECT().Count(ctx, gomock.Any()).Return(1, nil)
-				mockView.EXPECT().Get(ctx, gomock.Any()).Return([]vmcve.CveCore{
-					&mockCveCore{cve: "CVE-2024-1234", topCVSS: 7.5, affected: 3, epss: 0.5},
-				}, nil)
+				cveCore := cveViewMocks.NewMockCveCore(gomock.NewController(t))
+				cveCore.EXPECT().GetCVE().Return("CVE-2024-1234").AnyTimes()
+				cveCore.EXPECT().GetVMsBySeverity().Return(&commonViews.ResourceCountByImageCVESeverity{}).AnyTimes()
+				cveCore.EXPECT().GetTopCVSS().Return(float32(7.5)).AnyTimes()
+				cveCore.EXPECT().GetAffectedVMCount().Return(3).AnyTimes()
+				cveCore.EXPECT().GetEPSSProbability().Return(float32(0.5)).AnyTimes()
+				cveCore.EXPECT().GetPublishDate().Return(nil).AnyTimes()
+				mockView.EXPECT().Get(ctx, gomock.Any()).Return([]vmcve.CveCore{cveCore}, nil)
 				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(10, nil)
 			},
 			expectedCount: 1,
@@ -864,20 +845,6 @@ func TestListVMCVEs(t *testing.T) {
 func TestListVMCVEAffectedVMs(t *testing.T) {
 	ctx := context.Background()
 
-	cve1 := &storage.VirtualMachineCVEV2{
-		Id:            "cve-uuid-1",
-		VmV2Id:        "vm-1",
-		VmComponentId: "comp-1",
-		CveBaseInfo:   &storage.CVEInfo{Cve: "CVE-2024-1234"},
-		PreferredCvss: 7.5,
-		Severity:      storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		IsFixable:     true,
-	}
-
-	vm1 := &storage.VirtualMachineV2{
-		Id: "vm-1", Name: "test-vm-1", GuestOs: "rhel-9",
-	}
-
 	tests := map[string]struct {
 		request       *v2.ListVMCVEAffectedVMsRequest
 		setupMock     func(*vmDSMocks.MockDataStore, *cveDSMocks.MockDataStore, *componentDSMocks.MockDataStore, *scanDSMocks.MockDataStore, *cveViewMocks.MockCveView)
@@ -892,18 +859,26 @@ func TestListVMCVEAffectedVMs(t *testing.T) {
 		},
 		"successful list": {
 			request: &v2.ListVMCVEAffectedVMsRequest{CveId: "CVE-2024-1234"},
-			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, _ *cveViewMocks.MockCveView) {
-				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
-				mockVM.EXPECT().GetManyVirtualMachines(ctx, gomock.Any()).Return([]*storage.VirtualMachineV2{vm1}, nil, nil)
+			setupMock: func(_ *vmDSMocks.MockDataStore, _ *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockView.EXPECT().CountAffectedVMs(ctx, gomock.Any()).Return(1, nil)
+				affectedVM := cveViewMocks.NewMockAffectedVMCore(gomock.NewController(t))
+				affectedVM.EXPECT().GetVMID().Return("vm-1").AnyTimes()
+				affectedVM.EXPECT().GetVMName().Return("test-vm-1").AnyTimes()
+				affectedVM.EXPECT().GetMaxSeverity().Return(int32(storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY)).AnyTimes()
+				affectedVM.EXPECT().GetIsFixable().Return(true).AnyTimes()
+				affectedVM.EXPECT().GetMaxCVSS().Return(float32(7.5)).AnyTimes()
+				affectedVM.EXPECT().GetGuestOS().Return("rhel-9").AnyTimes()
+				affectedVM.EXPECT().GetAffectedComponentCount().Return(1).AnyTimes()
+				mockView.EXPECT().GetAffectedVMs(ctx, gomock.Any()).Return([]vmcve.AffectedVMCore{affectedVM}, nil)
 			},
 			expectedCount: 1,
 		},
-		"cve search error": {
+		"count error": {
 			request: &v2.ListVMCVEAffectedVMsRequest{CveId: "CVE-2024-1234"},
-			setupMock: func(_ *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, _ *cveViewMocks.MockCveView) {
-				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return(nil, errors.New("search error"))
+			setupMock: func(_ *vmDSMocks.MockDataStore, _ *cveDSMocks.MockDataStore, _ *componentDSMocks.MockDataStore, _ *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockView.EXPECT().CountAffectedVMs(ctx, gomock.Any()).Return(0, errors.New("count error"))
 			},
-			expectedError: "search error",
+			expectedError: "count error",
 		},
 	}
 
