@@ -173,6 +173,27 @@ jobs:
         done
         set -x
 
+    - name: Setup TLS client certs
+      run: |
+        # Generate client CA + certs for ClientCertAuthTest.
+        # Uses the same setup-certs.sh that Prow uses.
+        source tests/scripts/setup-certs.sh
+        CERT_DIR="/tmp/client-tls-certs"
+        setup_client_TLS_certs "$CERT_DIR"
+
+        # Extract Central's CA for truststore
+        kubectl -n stackrox get secret central-tls \
+          -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.pem
+
+        # Create Java truststore with Central's CA
+        keytool -import -noprompt -trustcacerts \
+          -alias central-ca -file /tmp/central-ca.pem \
+          -keystore /tmp/truststore.jks -storepass changeit 2>/dev/null
+
+        echo "CLIENT_CA_PATH=${CERT_DIR}/ca.crt" >> "$GITHUB_ENV"
+        echo "KEYSTORE_PATH=${CERT_DIR}/keystore.p12" >> "$GITHUB_ENV"
+        echo "TRUSTSTORE_PATH=/tmp/truststore.jks" >> "$GITHUB_ENV"
+
     - name: Compile QA tests
       working-directory: qa-tests-backend
       run: |
@@ -190,10 +211,8 @@ jobs:
         POD_SECURITY_POLICIES: "false"
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: "{}"
-        # Use quay.io multi-arch images instead of us.gcr.io (avoids
-        # needing GCR pull secrets). Setting to non-"x86_64" triggers
-        # the multi-arch image path in test code.
+        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 || '{}' }}
+        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         REMOTE_CLUSTER_ARCH: multi-arch
       run: |
         set +x
