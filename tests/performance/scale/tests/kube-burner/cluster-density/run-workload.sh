@@ -29,7 +29,6 @@ OPTION:
   --num-patches        Number of times the deployments will be patched. (default 100)
                        This is only applied if the used template has a job type patch.
   --template           Indicates the template to the config to be used by kube-burner. (default cluster-density-template.yml)
-  --test-name          The test name
   --kube-burner-path   Path to kube-burner executable. (default: kube-burner)
   --help               Prints help information.
 
@@ -73,16 +72,9 @@ function run_workload() {
     template="${7}"
 
     local kube_burner_path="${8:-kube-burner}"
-    local test_name="${9:-}"
 
     local script_dir
     script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-
-    # Metrics collection file is decoupled from test.
-    local test_metrics_file="${script_dir}/metrics.yml"
-    if [ ! -f "${test_metrics_file}" ]; then
-        cp "${script_dir}/../../../config/metrics-full.yml" "${test_metrics_file}"
-    fi
 
     echo "Creating workload with following values:"
     echo "Template: ${template}"
@@ -91,7 +83,6 @@ function run_workload() {
     echo "Deployments per namespace: ${num_deployments}"
     echo "Pods per deployment: ${num_pods}"
     echo "Secrets and Configmaps per deployment: ${num_configs}"
-    echo "Test name: ${test_name}"
 
     local prometheus_url
     prometheus_url="https://$(oc get route --namespace openshift-monitoring prometheus-k8s --output jsonpath='{.spec.host}' | xargs)"
@@ -114,20 +105,16 @@ function run_workload() {
 
     local metadata_path="${script_dir}/user-metadata-${run_uuid}.yml"
 
-    metadata=(
-        --namespaces-count "${num_namespaces}"
-        --deployments-per-namespace-count "${num_deployments}"
-        --pods-per-deployment-count "${num_pods}"
-        --configs-per-deployment-count "${num_configs}"
-        --test-workload-type "${template}"
+    go run ../../metadata-collector/main.go \
+        --namespaces-count "${num_namespaces}" \
+        --deployments-per-namespace-count "${num_deployments}" \
+        --pods-per-deployment-count "${num_pods}" \
+        --configs-per-deployment-count "${num_configs}" \
+        --test-workload-type "${template}" \
         --output-file "${metadata_path}"
-    )
 
-    if [[ -n "${test_name:-}" ]]; then
-        metadata+=(--test-name "${test_name}")
-    fi
-
-    go run ../../metadata-collector/main.go "${metadata[@]}"
+    echo "-- Fix k8sVersion"
+    yq --inplace '.k8sVersion = 1.28' "${metadata_path}"
 
     echo "--- Starting kube-burner"
     "${kube_burner_path}" init \
@@ -193,10 +180,6 @@ function main() {
             kube_burner_path="${2:-}"
             shift
             ;;
-	"--test-name")
-	    test_name="${2:-}"
-            shift
-            ;;
         "--help")
             usage_exit
             ;;
@@ -225,8 +208,7 @@ function main() {
       "${num_configs}" \
       "${num_patches}" \
       "${template}" \
-      "${kube_burner_path}" \
-      "${test_name:-}"
+      "${kube_burner_path}"
 }
 
 main "$@"
