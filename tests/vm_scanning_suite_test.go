@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -24,10 +25,14 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -458,7 +463,12 @@ func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 	s.logf("VM placement:\n%s", s.vmPlacementSummary(ctx))
 }
 
-const vmImagePullSecretName = "vm-image-pull-secret" //nolint:gosec // G101: not a credential, just the k8s Secret resource name
+const (
+	vmImagePullSecretName = "vm-image-pull-secret" //nolint:gosec // G101: not a credential, just the k8s Secret resource name
+
+	defaultServiceAccountWaitTimeout  = 10 * time.Second
+	defaultServiceAccountPollInterval = 100 * time.Millisecond
+)
 
 func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	if s.cfg.ImagePullSecretPath == "" {
@@ -475,11 +485,18 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	}
 	_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Create(ctx, secret, metaV1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
-		_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Update(ctx, secret, metaV1.UpdateOptions{})
+		existingSecret, getErr := s.k8sClient.CoreV1().Secrets(s.namespace).Get(ctx, vmImagePullSecretName, metaV1.GetOptions{})
+		require.NoError(s.T(), getErr, "get existing image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
+		existingSecret.Type = coreV1.SecretTypeDockerConfigJson
+		if existingSecret.Data == nil {
+			existingSecret.Data = make(map[string][]byte)
+		}
+		existingSecret.Data[coreV1.DockerConfigJsonKey] = dockerCfg
+		_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Update(ctx, existingSecret, metaV1.UpdateOptions{})
 	}
 	require.NoError(s.T(), err, "ensure image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
 
-	sa, err := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
+	sa, err := s.waitForDefaultServiceAccount(ctx)
 	require.NoError(s.T(), err, "get default service account in namespace %q", s.namespace)
 	hasRef := false
 	for _, ref := range sa.ImagePullSecrets {
@@ -494,6 +511,28 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 		require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
 	}
 	s.logf("provision persistent VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
+}
+
+func (s *VMScanningSuite) waitForDefaultServiceAccount(ctx context.Context) (*coreV1.ServiceAccount, error) {
+	waitCtx, cancel := context.WithTimeout(ctx, defaultServiceAccountWaitTimeout)
+	defer cancel()
+
+	var serviceAccount *coreV1.ServiceAccount
+	err := wait.PollUntilContextCancel(waitCtx, defaultServiceAccountPollInterval, true, func(ctx context.Context) (bool, error) {
+		sa, err := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		serviceAccount = sa
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccount, nil
 }
 
 // vmPlacementSummary returns a diagnostic table mapping each persistent VM to
@@ -682,4 +721,112 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	s.logf("[guest prep] activation status for %s/%s: activated=%v detail=%q", vm.Namespace, vm.Name, activated, activStatus)
 	s.logf("[guest prep] COMPLETED for %s/%s in %d step(s)", vm.Namespace, vm.Name, stepNum)
 	return nil
+}
+
+func writeDockerConfigFile(t *testing.T, content string) string {
+	t.Helper()
+	path := t.TempDir() + "/config.json"
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
+	return path
+}
+
+func newVMScanningSuiteForPullSecretTest(t *testing.T, client *kubefake.Clientset, namespace, secretPath string) *VMScanningSuite {
+	t.Helper()
+	s := &VMScanningSuite{
+		cfg: &vmScanConfig{
+			ImagePullSecretPath: secretPath,
+		},
+		k8sClient: client,
+		namespace: namespace,
+	}
+	s.SetT(t)
+	return s
+}
+
+func TestEnsureImagePullSecret_UpdatesExistingSecretUsingFetchedResourceVersion(t *testing.T) {
+	t.Parallel()
+
+	const namespace = "vm-scan-test"
+	secretPath := writeDockerConfigFile(t, `{"auths":{"quay.io":{"auth":"new"}}}`)
+
+	client := kubefake.NewSimpleClientset(
+		&coreV1.Secret{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:            vmImagePullSecretName,
+				Namespace:       namespace,
+				ResourceVersion: "7",
+			},
+			Type: coreV1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{
+				coreV1.DockerConfigJsonKey: []byte(`{"auths":{"quay.io":{"auth":"old"}}}`),
+			},
+		},
+		&coreV1.ServiceAccount{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:      "default",
+				Namespace: namespace,
+			},
+		},
+	)
+	client.PrependReactor("update", "secrets", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		updateAction := action.(k8stesting.UpdateAction)
+		secret := updateAction.GetObject().(*coreV1.Secret)
+		if secret.ResourceVersion == "" {
+			return true, nil, apierrors.NewInvalid(
+				coreV1.SchemeGroupVersion.WithKind("Secret").GroupKind(),
+				secret.Name,
+				field.ErrorList{field.Required(field.NewPath("metadata", "resourceVersion"), "must be set for an update")},
+			)
+		}
+		return false, nil, nil
+	})
+
+	s := newVMScanningSuiteForPullSecretTest(t, client, namespace, secretPath)
+
+	s.ensureImagePullSecret(t.Context())
+
+	secret, err := client.CoreV1().Secrets(namespace).Get(t.Context(), vmImagePullSecretName, metaV1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, "7", secret.ResourceVersion)
+	require.Equal(t, `{"auths":{"quay.io":{"auth":"new"}}}`, string(secret.Data[coreV1.DockerConfigJsonKey]))
+
+	sa, err := client.CoreV1().ServiceAccounts(namespace).Get(t.Context(), "default", metaV1.GetOptions{})
+	require.NoError(t, err)
+	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
+}
+
+func TestEnsureImagePullSecret_WaitsForDefaultServiceAccountToAppear(t *testing.T) {
+	t.Parallel()
+
+	const namespace = "vm-scan-test"
+	secretPath := writeDockerConfigFile(t, `{"auths":{"quay.io":{"auth":"new"}}}`)
+	client := kubefake.NewSimpleClientset()
+
+	var getAttempts atomic.Int32
+	client.PrependReactor("get", "serviceaccounts", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		getAction := action.(k8stesting.GetAction)
+		if getAction.GetName() != "default" || getAction.GetNamespace() != namespace {
+			return false, nil, nil
+		}
+
+		if getAttempts.Add(1) == 1 {
+			require.NoError(t, client.Tracker().Add(&coreV1.ServiceAccount{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "default",
+					Namespace: namespace,
+				},
+			}))
+			return true, nil, apierrors.NewNotFound(coreV1.Resource("serviceaccounts"), "default")
+		}
+		return false, nil, nil
+	})
+
+	s := newVMScanningSuiteForPullSecretTest(t, client, namespace, secretPath)
+
+	s.ensureImagePullSecret(t.Context())
+
+	require.GreaterOrEqual(t, getAttempts.Load(), int32(2))
+	sa, err := client.CoreV1().ServiceAccounts(namespace).Get(t.Context(), "default", metaV1.GetOptions{})
+	require.NoError(t, err)
+	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
 }
