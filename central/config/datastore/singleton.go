@@ -38,6 +38,9 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
+	// DefaultResourceRetention is the number of days to retain soft-deleted resources
+	// before they are permanently removed.
+	DefaultResourceRetention = 7
 	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
 	PlatformComponentSystemRuleName = "system rule"
 	// PlatformComponentSystemRegex is the system defined regex for matching kube and openshift workloads, this is un-editable by users
@@ -112,6 +115,10 @@ var (
 		RetentionDurationDays: DefaultAdministrationEventsRetention,
 	}
 
+	defaultResourceRetentionConfig = &storage.ResourceRetentionConfig{
+		DeploymentDurationDays: DefaultResourceRetention,
+	}
+
 	defaultPlatformConfigSystemRule = &storage.PlatformComponentConfig_Rule{
 		Name: PlatformComponentSystemRuleName,
 		NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
@@ -168,6 +175,11 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 
 	if privateConfig.GetAdministrationEventsConfig() == nil {
 		privateConfig.AdministrationEventsConfig = defaultAdministrationEventsConfig
+		needsUpsert = true
+	}
+
+	if privateConfig.GetResourceRetentionConfig() == nil {
+		privateConfig.ResourceRetentionConfig = defaultResourceRetentionConfig
 		needsUpsert = true
 	}
 
