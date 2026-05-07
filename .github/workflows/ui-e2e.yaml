@@ -160,12 +160,27 @@ jobs:
           NODE="${CLUSTER_NAME}-control-plane"
           (
             PEAK_MB=0
+            PEAK_CPU=0
             while true; do
-              mem_raw=$(docker stats --no-stream --format "{{.MemUsage}}" "$NODE" 2>/dev/null || echo "0MiB")
+              stats=$(docker stats --no-stream --format "{{.MemUsage}}|{{.CPUPerc}}" "$NODE" 2>/dev/null || echo "0MiB|0.00%")
+              mem_raw="${stats%%|*}"
+              cpu_raw="${stats##*|}"
               mem_val=$(echo "$mem_raw" | grep -oE '^[0-9.]+' || echo 0)
               mem_unit=$(echo "$mem_raw" | grep -oE '(MiB|GiB)' | head -1)
               [ "$mem_unit" = "GiB" ] && mem_mb=$(awk "BEGIN{printf \"%d\", $mem_val * 1024}") || mem_mb="${mem_val%.*}"
-              [ "${mem_mb:-0}" -gt "$PEAK_MB" ] 2>/dev/null && PEAK_MB="$mem_mb" && echo "$(date +%H:%M:%S) | NEW PEAK: ${PEAK_MB}MB"
+              cpu_val=$(echo "$cpu_raw" | grep -oE '[0-9.]+' || echo 0)
+              cpu_int="${cpu_val%.*}"
+              ts="$(date +%H:%M:%S)"
+              changed=""
+              if [ "${mem_mb:-0}" -gt "$PEAK_MB" ] 2>/dev/null; then
+                PEAK_MB="$mem_mb"
+                changed="${changed} mem=${PEAK_MB}MB"
+              fi
+              if [ "${cpu_int:-0}" -gt "$PEAK_CPU" ] 2>/dev/null; then
+                PEAK_CPU="$cpu_int"
+                changed="${changed} cpu=${PEAK_CPU}%"
+              fi
+              [ -n "$changed" ] && echo "${ts} | NEW PEAK:${changed}"
               sleep 15
             done
           ) > /tmp/resource-monitor.log 2>&1 &
@@ -177,7 +192,7 @@ jobs:
 
       - name: Wait for auth token
         run: |
-          for _ in $(seq 1 90); do
+          for i in $(seq 1 90); do
             [ -s /tmp/rox-auth-token ] && break
             sleep 2
           done
@@ -237,12 +252,17 @@ jobs:
         if: always()
         run: |
           mkdir -p "$ARTIFACT_DIR"
+          # Pod logs — scrub potential secrets before saving
           for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
             pod_name=$(basename "$pod")
-            kubectl -n stackrox logs "$pod" --all-containers > "${ARTIFACT_DIR}/${pod_name}.log" 2>&1 || true
+            kubectl -n stackrox logs "$pod" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "${ARTIFACT_DIR}/${pod_name}.log" || true
           done
           cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
           cp /tmp/resource-monitor.log "${ARTIFACT_DIR}/resource-monitor.log" 2>/dev/null || true
+          # Never upload: /tmp/rox-admin-password, /tmp/rox-auth-token,
+          # /tmp/sensor-init-bundle.yaml, /tmp/deploy.log
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
