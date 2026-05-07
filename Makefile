@@ -1,5 +1,9 @@
 include $(CURDIR)/make/env.mk
 
+# Reproducible builds - fixed timestamp for deterministic layer digests
+SOURCE_DATE_EPOCH ?= 978307200  # Jan 1, 2001 00:00:00 UTC
+export SOURCE_DATE_EPOCH
+
 PLATFORM ?= linux/amd64
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
@@ -644,6 +648,8 @@ main-image: all-builds
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
 	$(DOCKERBUILD) \
+		--output type=docker,rewrite-timestamp=true \
+		--build-arg SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg DEBUG_BUILD="$(DEBUG_BUILD)" \
@@ -663,6 +669,8 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 docker-build-roxctl-image:
 	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux
 	$(DOCKERBUILD) \
+		--output type=docker,rewrite-timestamp=true \
+		--build-arg SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl/Dockerfile \
