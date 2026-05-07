@@ -99,7 +99,6 @@ func TestDetermineConfigPath(t *testing.T) {
 
 func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	// This test verifies that when directory creation fails (e.g., permission denied),
-	// a helpful error message is returned suggesting alternative authentication methods.
 
 	testDir := t.TempDir()
 
@@ -117,22 +116,14 @@ func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	_, err := determineConfigDir()
 	require.Error(t, err)
 
-	// Verify the error is a NoCredentials error
-	assert.True(t, errors.Is(err, errox.NoCredentials))
-
-	// Verify the error message contains the expected config path and helpful suggestions
+	// Verify the error mentions the config path that failed
 	errMsg := err.Error()
 	assert.Contains(t, errMsg, expectedConfigPath, "error should mention the config path that failed")
-	assert.Contains(t, errMsg, "No authentication credentials are available")
-	assert.Contains(t, errMsg, "--password")
-	assert.Contains(t, errMsg, "ROX_API_TOKEN")
-	assert.Contains(t, errMsg, "--token-file")
-	assert.Contains(t, errMsg, "roxctl central login")
 }
 
 func TestEnsureRoxctlConfigFilePathExistsPermissionDenied(t *testing.T) {
-	// This test verifies that ensureRoxctlConfigFilePathExists also returns the helpful
-	// error message when directory creation fails.
+	// This test verifies that ensureRoxctlConfigFilePathExists returns
+	// a clear filesystem error when directory creation fails (not wrapped as NoCredentials).
 
 	testDir := t.TempDir()
 
@@ -146,15 +137,7 @@ func TestEnsureRoxctlConfigFilePathExistsPermissionDenied(t *testing.T) {
 	_, err := ensureRoxctlConfigFilePathExists(configDirPath)
 	require.Error(t, err)
 
-	// Verify the error is a NoCredentials error
-	assert.True(t, errors.Is(err, errox.NoCredentials))
-
-	// Verify the error message contains the expected config path and helpful suggestions
+	// Verify the error mentions the config path that failed
 	errMsg := err.Error()
 	assert.Contains(t, errMsg, configDirPath, "error should mention the config path that failed")
-	assert.Contains(t, errMsg, "No authentication credentials are available")
-	assert.Contains(t, errMsg, "--password")
-	assert.Contains(t, errMsg, "ROX_API_TOKEN")
-	assert.Contains(t, errMsg, "--token-file")
-	assert.Contains(t, errMsg, "roxctl central login")
 }
