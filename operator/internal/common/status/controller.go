@@ -128,7 +128,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// Watch owned Deployments to react to deployment status changes
+	// Watch owned Deployments to react to Deployment status changes.
 	emptyCR = reflect.New(typeOfDerefT).Interface().(T)
 	err = c.Watch(
 		source.Kind(mgr.GetCache(), &appsv1.Deployment{},
@@ -139,6 +139,22 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 				handler.OnlyControllerOwner(),
 			),
 			NewPassThroughUpdatedStatusPredicate(mgr.GetLogger().WithName(r.name)),
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Watch owned DaemonSets to react to DaemonSet status changes.
+	err = c.Watch(
+		source.Kind(mgr.GetCache(), &appsv1.DaemonSet{},
+			handler.TypedEnqueueRequestForOwner[*appsv1.DaemonSet](
+				mgr.GetScheme(),
+				mgr.GetRESTMapper(),
+				emptyCR,
+				handler.OnlyControllerOwner(),
+			),
+			NewPassThroughUpdatedDaemonSetStatusPredicate(mgr.GetLogger().WithName(r.name)),
 		),
 	)
 	if err != nil {
@@ -187,26 +203,82 @@ func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStat
 	return platform.StatusFalse, "ReconcileSuccessful", "Reconciliation completed"
 }
 
+type workloadStatus interface {
+	Name() string
+	IsAvailable() bool
+}
+
+type deploymentStatus struct {
+	name   string
+	status appsv1.DeploymentStatus
+}
+
+func (d deploymentStatus) Name() string {
+	return d.name
+}
+
+func (d deploymentStatus) IsAvailable() bool {
+	for _, cond := range d.status.Conditions {
+		if cond.Type == appsv1.DeploymentAvailable {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
+}
+
+type daemonSetStatus struct {
+	name   string
+	status appsv1.DaemonSetStatus
+}
+
+func (d daemonSetStatus) IsAvailable() bool {
+	return d.status.DesiredNumberScheduled > 0 &&
+		d.status.NumberAvailable >= d.status.DesiredNumberScheduled
+}
+
+func (d daemonSetStatus) Name() string {
+	return d.name
+}
+
 // updateAvailable updates the Available condition based on deployment readiness.
 // Returns true if the condition changed.
 func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) *platform.StackRoxCondition {
 	log := log.FromContext(ctx)
+	workloadMatchLabels := ctrlClient.MatchingLabels{
+		"app.kubernetes.io/instance": obj.GetName(),
+		"app.stackrox.io/managed-by": "operator",
+	}
 
 	// List all deployments owned by the resource currently under reconciliation.
-	deployments := &appsv1.DeploymentList{}
-	err := r.List(ctx, deployments,
-		ctrlClient.InNamespace(obj.GetNamespace()),
-		ctrlClient.MatchingLabels{
-			"app.kubernetes.io/instance": obj.GetName(),
-			"app.stackrox.io/managed-by": "operator",
-		},
-	)
-	if err != nil {
+	deployments := appsv1.DeploymentList{}
+	if err := r.List(ctx, &deployments, ctrlClient.InNamespace(obj.GetNamespace()), workloadMatchLabels); err != nil {
 		log.Error(err, "Failed to list deployments")
 		return nil
 	}
 
-	availableStatus, reason, message := determineAvailableState(deployments.Items)
+	// List all daemonsets owned by the resource currently under reconciliation.
+	daemonsets := appsv1.DaemonSetList{}
+	if err := r.List(ctx, &daemonsets, ctrlClient.InNamespace(obj.GetNamespace()), workloadMatchLabels); err != nil {
+		log.Error(err, "Failed to list daemonsets")
+		return nil
+	}
+
+	// Wrap into a list of workload statuses and compute overall available using it.
+	workloadStatuses := make([]workloadStatus, 0, len(deployments.Items)+len(daemonsets.Items))
+	for _, deployment := range deployments.Items {
+		workloadStatuses = append(workloadStatuses, deploymentStatus{
+			name:   deployment.GetName(),
+			status: deployment.Status,
+		})
+	}
+	for _, daemonset := range daemonsets.Items {
+		workloadStatuses = append(workloadStatuses, daemonSetStatus{
+			name:   daemonset.GetName(),
+			status: daemonset.Status,
+		})
+	}
+
+	availableStatus, reason, message := determineAvailableState(workloadStatuses)
 
 	newCond := platform.StackRoxCondition{
 		Type:               platform.ConditionAvailable,
@@ -223,36 +295,26 @@ func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) *platform.St
 	return nil
 }
 
-// determineAvailableState checks if all deployments are available.
-func determineAvailableState(deployments []appsv1.Deployment) (platform.ConditionStatus, platform.ConditionReason, string) {
-	if len(deployments) == 0 {
-		return platform.StatusFalse, "NoDeployments", "No deployments found"
+// determineAvailableState checks if all workloads are available.
+func determineAvailableState(statuses []workloadStatus) (platform.ConditionStatus, platform.ConditionReason, string) {
+	if len(statuses) == 0 {
+		return platform.StatusFalse, "NoWorkloads", "No workloads found"
 	}
 
 	var notReadyNames []string
-	for _, dep := range deployments {
-		if !isDeploymentReady(&dep) {
-			notReadyNames = append(notReadyNames, dep.Name)
+	for _, status := range statuses {
+		if !status.IsAvailable() {
+			notReadyNames = append(notReadyNames, status.Name())
 		}
 	}
 
 	if len(notReadyNames) == 0 {
-		return platform.StatusTrue, "DeploymentsReady", "All deployments are ready"
+		return platform.StatusTrue, "WorkloadsReady", "All workloads are ready"
 	}
 
 	// Sort to avoid updates merely due to ordering changes.
 	slices.Sort(notReadyNames)
 
-	return platform.StatusFalse, "DeploymentsNotReady",
-		fmt.Sprintf("%d of %d deployments are not ready: %s", len(notReadyNames), len(deployments), strings.Join(notReadyNames, ", "))
-}
-
-// isDeploymentReady checks if a deployment has all replicas available.
-func isDeploymentReady(dep *appsv1.Deployment) bool {
-	for _, cond := range dep.Status.Conditions {
-		if cond.Type == appsv1.DeploymentAvailable {
-			return cond.Status == corev1.ConditionTrue
-		}
-	}
-	return false
+	return platform.StatusFalse, "WorkloadsNotReady",
+		fmt.Sprintf("%d of %d workloads are not ready: %s", len(notReadyNames), len(statuses), strings.Join(notReadyNames, ", "))
 }
