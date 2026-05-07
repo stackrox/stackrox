@@ -17,6 +17,10 @@ export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
+# Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
+# Can be overridden by individual jobs. Setting to "" will load data from all sources.
+export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
 # `envsubst`` before passing it to `env`.
@@ -201,6 +205,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
+    ci_export ROX_SCANNER_V4 "true"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -383,9 +388,15 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
-    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "$scannerV4ScannerComponent" != "Disabled" ]]; then
-        customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
-        customize_envVars+=$'\n        value: "vulnerability"'
+    if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
+            customize_envVars+=$'\n        value: "vulnerability"'
+        fi
+        if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST'
+            customize_envVars+=$'\n        value: "'"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"'"'
+        fi
     fi
 
     local scannerV4DbPersistenceYaml

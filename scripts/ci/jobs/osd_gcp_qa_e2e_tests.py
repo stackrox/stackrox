@@ -11,6 +11,7 @@ from clusters import AutomationFlavorsCluster
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["KUBERNETES_PROVIDER"] = "ocp"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "ssd-csi"  # default was standard-csi
 
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
