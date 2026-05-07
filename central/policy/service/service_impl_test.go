@@ -3,22 +3,28 @@ package service
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
+	pkgErrors "github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	accesscontrol "github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
@@ -911,7 +917,7 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 		IsDefault: true,
 	}
 	s.policies.EXPECT().GetPolicy(ctx, mockPolicy.GetId()).Return(mockPolicy, true, nil)
-	expectedErr := errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	expectedErr := pkgErrors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 
 	// act
 	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicy.GetId()}
@@ -920,6 +926,57 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 	// assert
 	s.Require().Error(err, expectedErr)
 	s.Require().Nil(resp)
+}
+
+func (s *PolicyServiceTestSuite) TestDeletingDeclarativePolicyIsBlocked() {
+	// arrange
+	mockIdentity := authnMocks.NewMockIdentity(s.mockCtrl)
+	mockIdentity.EXPECT().Roles().Return(nil)
+	ctx := authn.ContextWithIdentity(context.Background(), mockIdentity, s.T())
+
+	mockPolicy := &storage.Policy{
+		Id:     mockRequestOneID.GetPolicyIds()[0],
+		Source: storage.PolicySource_DECLARATIVE,
+	}
+	s.policies.EXPECT().GetPolicy(ctx, mockPolicy.GetId()).Return(mockPolicy, true, nil)
+
+	// act
+	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicy.GetId()}
+	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
+
+	// assert
+	s.Require().Error(err)
+	s.True(errors.Is(err, errox.NotAuthorized))
+	s.Require().Nil(resp)
+	s.Contains(err.Error(), "externally managed policy")
+}
+
+func (s *PolicyServiceTestSuite) TestDeletingDeclarativePolicyByConfigControllerSucceeds() {
+	// arrange
+	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	mockRole.EXPECT().GetRoleName().Return(accesscontrol.ConfigController)
+
+	mockIdentity := authnMocks.NewMockIdentity(s.mockCtrl)
+	mockIdentity.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole})
+	ctx := authn.ContextWithIdentity(context.Background(), mockIdentity, s.T())
+
+	mockPolicy := &storage.Policy{
+		Id:     mockRequestOneID.GetPolicyIds()[0],
+		Source: storage.PolicySource_DECLARATIVE,
+	}
+	s.policies.EXPECT().GetPolicy(ctx, mockPolicy.GetId()).Return(mockPolicy, true, nil)
+	s.policies.EXPECT().RemovePolicy(ctx, mockPolicy).Return(nil)
+	s.mockLifecycleManager.EXPECT().RemovePolicy(mockPolicy.GetId()).Return(nil)
+	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
+	s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any())
+
+	// act
+	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicy.GetId()}
+	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
+
+	// assert
+	s.NoError(err)
+	s.NotNil(resp)
 }
 
 func (s *PolicyServiceTestSuite) TestDeletingNonExistentPolicyDoesNothing() {
@@ -943,9 +1000,9 @@ func (s *PolicyServiceTestSuite) TestDeletingPolicyErrOnDbError() {
 
 	// arrange
 	mockPolicyID := mockRequestOneID.GetPolicyIds()[0] // used only for the ID
-	dbErr := errors.New("the deebee has failed you")
+	dbErr := pkgErrors.New("the deebee has failed you")
 	s.policies.EXPECT().GetPolicy(ctx, mockPolicyID).Return(nil, true, dbErr)
-	expectedErr := errors.Wrap(dbErr, "DB error while trying to delete policy")
+	expectedErr := pkgErrors.Wrap(dbErr, "DB error while trying to delete policy")
 
 	// act
 	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicyID}
