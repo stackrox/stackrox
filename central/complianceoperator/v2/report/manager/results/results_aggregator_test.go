@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
@@ -16,11 +17,13 @@ import (
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -410,6 +413,31 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*datastore.ControlResult{}, nil
 			},
 		},
+		"nil last started time renders assessment time as N/A": {
+			check: &storage.ComplianceOperatorCheckResultV2{
+				ClusterName:  "cluster-1",
+				CheckName:    "check",
+				Description:  "description",
+				Status:       storage.ComplianceOperatorCheckResultV2_PASS,
+				Rationale:    "rationale",
+				Instructions: "instructions",
+			},
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return profiles, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
+			},
+		},
 		"profile matching benchmark regex resolves controls": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
@@ -540,16 +568,17 @@ func mockWalkByQueryWrapper(_ context.Context, clusterID string, clusterResults 
 
 func getRowFromCluster(check, clusterID string) *report.ResultRow {
 	return &report.ResultRow{
-		ClusterName:  clusterID,
-		CheckName:    fmt.Sprintf("check-%s-%s", clusterID, check),
-		Description:  fmt.Sprintf("description-%s-%s", clusterID, check),
-		Status:       fmt.Sprintf("status-%s-%s", clusterID, check),
-		Rationale:    fmt.Sprintf("rationale-%s-%s", clusterID, check),
-		Instructions: fmt.Sprintf("instructions-%s-%s", clusterID, check),
-		Profile:      fmt.Sprintf("profile-%s-%s", clusterID, check),
-		ProfileType:  fmt.Sprintf("profiletype-%s-%s", clusterID, check),
-		ControlRef:   fmt.Sprintf("control-%s-%s", clusterID, check),
-		Remediation:  fmt.Sprintf("remediation=%s-%s", clusterID, check),
+		ClusterName:    clusterID,
+		CheckName:      fmt.Sprintf("check-%s-%s", clusterID, check),
+		Description:    fmt.Sprintf("description-%s-%s", clusterID, check),
+		Status:         fmt.Sprintf("status-%s-%s", clusterID, check),
+		Rationale:      fmt.Sprintf("rationale-%s-%s", clusterID, check),
+		Instructions:   fmt.Sprintf("instructions-%s-%s", clusterID, check),
+		Profile:        fmt.Sprintf("profile-%s-%s", clusterID, check),
+		ProfileType:    fmt.Sprintf("profiletype-%s-%s", clusterID, check),
+		ControlRef:     fmt.Sprintf("control-%s-%s", clusterID, check),
+		Remediation:    fmt.Sprintf("remediation=%s-%s", clusterID, check),
+		AssessmentTime: "N/A",
 	}
 }
 
@@ -585,14 +614,17 @@ func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Result
 	}
 }
 
+var testLastStartedTime = timestamppb.New(time.Date(2025, 5, 7, 12, 0, 0, 0, time.UTC))
+
 func getCheckResult(status storage.ComplianceOperatorCheckResultV2_CheckStatus) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
-		ClusterName:  "cluster-1",
-		CheckName:    "check",
-		Description:  "description",
-		Status:       status,
-		Rationale:    "rationale",
-		Instructions: "instructions",
+		ClusterName:     "cluster-1",
+		CheckName:       "check",
+		Description:     "description",
+		Status:          status,
+		Rationale:       "rationale",
+		Instructions:    "instructions",
+		LastStartedTime: testLastStartedTime,
 	}
 }
 
@@ -620,6 +652,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	assert.Equal(t, tcase.check.GetStatus().String(), row.Status)
 	assert.Equal(t, tcase.check.GetRationale(), row.Rationale)
 	assert.Equal(t, tcase.check.GetInstructions(), row.Instructions)
+	assert.Equal(t, protocompat.ConvertTimestampToString(tcase.check.GetLastStartedTime(), time.RFC1123), row.AssessmentTime)
 	if tcase.expectedProfiles != nil {
 		expProfiles, _ := tcase.expectedProfiles()
 		if len(expProfiles) < 1 {
