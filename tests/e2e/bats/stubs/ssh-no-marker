@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Simulates a remote command that produces output without the __STAGE_DIR__ marker.
+# Used to test create_remote_stage_dir failure handling.
+echo "some garbage output without the marker"

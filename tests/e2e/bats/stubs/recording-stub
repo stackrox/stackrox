@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Generic recording stub for BATS tests.
+# Logs every invocation to CALL_LOG and handles stdin draining for commands
+# that receive heredocs (ssh, virtctl ssh).
+#
+# For the first ssh-like call, emits a __STAGE_DIR__ marker so that
+# create_remote_stage_dir() succeeds in tests.
+#
+# Requires: CALL_LOG environment variable set to a writable file path.
+
+printf '%s %s\n' "$(basename "$0")" "$*" >> "${CALL_LOG}"
+
+cmd_name="$(basename "$0")"
+
+# Determine if this is a command that receives stdin (ssh/remote_exec).
+# scp-like calls (virtctl scp, scp) don't pipe stdin so we must not block.
+reads_stdin=false
+case "${cmd_name}" in
+    ssh)
+        reads_stdin=true
+        ;;
+    virtctl)
+        # "virtctl ssh ..." reads stdin; "virtctl scp ..." does not.
+        if [ "${1:-}" = "ssh" ]; then
+            reads_stdin=true
+        fi
+        ;;
+esac
+
+if [ "${reads_stdin}" = "true" ]; then
+    # First ssh-like call: emit the stage dir marker (for create_remote_stage_dir).
+    # Subsequent ssh-like calls: just drain stdin.
+    if [ ! -f "${CALL_LOG}.${cmd_name}_emitted_marker" ]; then
+        echo "__STAGE_DIR__=/var/tmp/roxagent-install.TESTXX"
+        touch "${CALL_LOG}.${cmd_name}_emitted_marker"
+    else
+        cat > /dev/null 2>&1 || true
+    fi
+fi
