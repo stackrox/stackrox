@@ -264,7 +264,7 @@ function ViewVulnReportPage() {
                 </Tabs>
             </PageSection>
             {selectedTab === 'CONFIGURATION_DETAILS' && (
-                <PageSection isFilled hasOverflowScroll>
+                <PageSection isFilled hasOverflowScroll id={configDetailsTabId}>
                     <ImageVulnerabilityReportView
                         attributesSeparateFromConfig={
                             attributesSeparateFromConfigForImageVulnerabilityReport
