@@ -509,6 +509,15 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
+    # Feature flags set via ci_export (line ~200) reach Sensor in non-operator
+    # deployments (GKE) through the shell environment. Operator-deployed Sensor
+    # (OCP) only gets env vars injected via the SecuredCluster CR's
+    # customize.envVars, which is built separately here. Flags that Sensor needs
+    # must be added explicitly below until they are enabled by default.
+    if [[ -n "${ROX_INIT_CONTAINER_SUPPORT:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
+        customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
+    fi
 
     local scannerV4DbPersistenceYaml
     scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
