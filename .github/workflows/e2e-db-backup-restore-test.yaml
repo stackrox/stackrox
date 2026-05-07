@@ -2,9 +2,6 @@ name: e2e-db-backup-restore-test
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-    - master
   pull_request:
     types:
     - opened
@@ -18,11 +15,11 @@ defaults:
 
 jobs:
   kind-qa-e2e:
+    # Label-gated: only run on PRs with the label. No master/release
+    # triggers until KinD-based QA tests are fully stabilized.
     if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
-      )
+      !github.event.pull_request.head.repo.fork &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
     name: "QA ${{ matrix.name }}"
     runs-on: ubuntu-latest
     timeout-minutes: 60
