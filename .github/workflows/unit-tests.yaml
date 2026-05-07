@@ -31,6 +31,8 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        exclude:
+          - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -115,6 +117,8 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '15' ]
+        exclude:
+          - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
