@@ -134,7 +134,7 @@ fixup_artifacts_content_type() {
 make_artifacts_help() {
 
     _artifacts_preamble
-    
+
     local gs_workflow_url="$GS_URL/$WORKFLOW_SUBDIR"
     local gs_job_url="$gs_workflow_url/$JOB_SUBDIR"
     local browser_url="https://console.cloud.google.com/storage/browser/stackrox-ci-artifacts"

@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/deduperkey"

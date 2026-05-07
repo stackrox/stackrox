@@ -8,7 +8,6 @@ import (
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
-
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"

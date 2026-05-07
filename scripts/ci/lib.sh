@@ -610,7 +610,7 @@ _image_prefetcher_prebuilt_start() {
     # _image_prefetcher_prebuilt_await
 
     case "$CI_JOB_NAME" in
-    *qa-e2e-tests)
+    *qa-e2e-tests*)
         image_prefetcher_start_set qa-e2e
         # Override the default image pull policy for containers with quay.io
         # images to rely on prefetched images. This helps ensure that the static
@@ -660,13 +660,9 @@ _image_prefetcher_system_start() {
     # _image_prefetcher_system_await
 
     case "$CI_JOB_NAME" in
-    # ROX-24818: GKE is excluded from system image prefetch as it causes
-    # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*qa-e2e-tests*)
         image_prefetcher_start_set stackrox-images
         ;;
-    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
-    # for gathering some more data points for CI reliability.
     *-scanner-v4-install-tests)
         image_prefetcher_start_set stackrox-images
         ;;
@@ -780,7 +776,7 @@ _image_prefetcher_prebuilt_await() {
     # at the last moment before any of the prebuilt images is used. (See other existing examples.)
     # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
 
-    *qa-e2e-tests)
+    *qa-e2e-tests*)
         image_prefetcher_await_set qa-e2e
         ;;
     *nongroovy-e2e-tests)
@@ -804,13 +800,9 @@ _image_prefetcher_prebuilt_await() {
 
 _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
-    # ROX-24818: GKE is excluded from system image prefetch as it causes
-    # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*qa-e2e-tests*)
         image_prefetcher_await_set stackrox-images
         ;;
-    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
-    # for gathering some more data points for CI reliability.
     *-scanner-v4-install-tests)
         image_prefetcher_await_set stackrox-images
         ;;
