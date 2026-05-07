@@ -2,19 +2,19 @@ import type { ReactElement } from 'react';
 import { Alert, Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/react-core';
 import type { FormikProps } from 'formik';
 
-import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+// import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationForm from 'Components/NotifierConfiguration/NotifierConfigurationForm';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import usePermissions from 'hooks/usePermissions';
 
-import {
-    defaultEmailBody as customBodyDefault,
-    getDefaultEmailSubject,
-} from './emailTemplateFormUtils';
+// import {
+//     defaultEmailBody as customBodyDefault,
+//     getDefaultEmailSubject,
+// } from './emailTemplateFormUtils';
 import type { ReportFormValues } from './useReportFormValues';
-import EmailTemplatePreview from '../components/EmailTemplatePreview';
+// import EmailTemplatePreview from '../components/EmailTemplatePreview';
 
 export type DeliveryDestinationsFormProps = {
     title: string;
@@ -25,6 +25,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
 
+    /*
     const customSubjectDefault = getDefaultEmailSubject(
         formik.values.reportParameters.reportName,
         formik.values.reportParameters.reportScope?.name
@@ -44,6 +45,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
             />
         );
     }
+    */
 
     function onDeleteLastNotifierConfiguration() {
         // Update only the schedule because spread ...formik.values overwrites deletion of last notifier.
@@ -97,8 +99,8 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem flex={{ default: 'flexNone' }}>
                             <NotifierConfigurationForm
-                                customBodyDefault={customBodyDefault}
-                                customSubjectDefault={customSubjectDefault}
+                                // customBodyDefault={customBodyDefault}
+                                // customSubjectDefault={customSubjectDefault}
                                 errors={formik.errors}
                                 fieldIdPrefixForFormikAndPatternFly="deliveryDestinations"
                                 hasWriteAccessForIntegration={hasWriteAccessForIntegration}
@@ -106,7 +108,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                                 onDeleteLastNotifierConfiguration={
                                     onDeleteLastNotifierConfiguration
                                 }
-                                renderTemplatePreview={renderTemplatePreview}
+                                // renderTemplatePreview={renderTemplatePreview}
                                 setFieldValue={formik.setFieldValue}
                             />
                         </FlexItem>

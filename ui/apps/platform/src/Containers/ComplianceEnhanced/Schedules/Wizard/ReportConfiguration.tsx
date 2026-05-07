@@ -6,7 +6,7 @@ import { Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/r
 import NotifierConfigurationForm from 'Components/NotifierConfiguration/NotifierConfigurationForm';
 import usePermissions from 'hooks/usePermissions';
 
-import { getBodyDefault, getSubjectDefault } from '../compliance.scanConfigs.utils';
+// import { getBodyDefault, getSubjectDefault } from '../compliance.scanConfigs.utils';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 function ReportConfiguration(): ReactElement {
@@ -29,11 +29,11 @@ function ReportConfiguration(): ReactElement {
             <Divider component="div" />
             <Form className="pf-v6-u-py-lg pf-v6-u-px-lg">
                 <NotifierConfigurationForm
-                    customBodyDefault={getBodyDefault(formik.values.profiles)}
-                    customSubjectDefault={getSubjectDefault(
-                        formik.values.parameters.name,
-                        formik.values.profiles
-                    )}
+                    // customBodyDefault={getBodyDefault(formik.values.profiles)}
+                    // customSubjectDefault={getSubjectDefault(
+                    //     formik.values.parameters.name,
+                    //     formik.values.profiles
+                    // )}
                     errors={formik.errors}
                     fieldIdPrefixForFormikAndPatternFly="report.notifierConfigurations"
                     hasWriteAccessForIntegration={hasWriteAccessForIntegration}
