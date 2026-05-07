@@ -277,3 +277,80 @@ jobs:
         run: |
           kill "$MONITOR_PID" 2>/dev/null || true
           kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
+
+  # GKE comparison: run a single shard on GKE to validate that
+  # the same tests pass on both KinD and real cloud infrastructure.
+  gke-e2e:
+    name: "clusters (gke)"
+    needs: setup-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      CLUSTER_NAME: ui-e2e-gke-${{ github.run_id }}
+      ARTIFACT_DIR: ./test-artifacts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Create GKE cluster
+        uses: ./.github/actions/create-gke-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ inputs.tag }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Deploy StackRox
+        uses: ./.github/actions/deploy-stackrox
+
+      - name: Install Cypress dependencies
+        working-directory: ui/apps/platform
+        run: npm ci
+
+      - name: Wait for auth token
+        run: |
+          for _ in $(seq 1 90); do
+            [ -s /tmp/rox-auth-token ] && break
+            sleep 2
+          done
+          if [ ! -s /tmp/rox-auth-token ]; then
+            echo "::error::Auth token not generated"
+            tail -50 /tmp/deploy.log 2>/dev/null || true
+            exit 1
+          fi
+          set +x
+          ROX_AUTH_TOKEN=$(cat /tmp/rox-auth-token)
+          echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_AUTH_TOKEN}"
+          set -x
+
+      - name: Run Cypress (clusters shard)
+        working-directory: ui/apps/platform
+        run: |
+          npx cypress run \
+            --browser chrome \
+            --spec "cypress/integration/clusters/**" \
+            --config "baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+        env:
+          CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+          CYPRESS_ORCHESTRATOR_FLAVOR: k8s
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        if: always()
+        with:
+          name: gke-e2e-clusters-${{ github.run_id }}
+          path: ${{ env.ARTIFACT_DIR }}
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          source scripts/ci/gke.sh
+          teardown_gke_cluster 2>/dev/null || true
