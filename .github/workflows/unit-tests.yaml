@@ -17,20 +17,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  detect-changes:
-    uses: ./.github/workflows/detect-changes.yml
-    with:
-      run_all: |
-        ^Makefile$
-        ^make/
-        ^.github/workflows/unit-tests.yaml$
-        ^.github/actions/job-preamble/
-
   go:
     strategy:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        shard:
+          - name: pkg-helm
+            packages: ./pkg/helm/...
+          - name: pkg-other
+            packages: ./pkg/...
+            exclude-pattern: /helm/
+          - name: central-1
+            packages: ./central/...
+            exclude-pattern: /central/[o-z]
+          - name: central-2
+            packages: ./central/...
+            exclude-pattern: /central/[a-n]
+          - name: rest
+            packages: ./roxctl/... ./sensor/... ./operator/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./config-controller/... ./scale/... ./govulncheck/... ./image/...
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -40,16 +45,19 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -59,34 +67,35 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
+
+    - name: Cache timing debug
+      run: |
+        echo "GOCACHE size: $(du -sm "$(go env GOCACHE)" 2>/dev/null | cut -f1)MB"
+        echo "GOMODCACHE size: $(du -sm "$(go env GOMODCACHE)" 2>/dev/null | cut -f1)MB"
+      shell: bash
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        mkdir -p bin test-output
+        set -o pipefail
+        # Build package list, filtering out packages that have their own dedicated jobs
+        EXCLUDE='sensor/tests|operator/tests|/scanner/e2etests'
+        if [[ -n '${{ matrix.shard.exclude-pattern }}' ]]; then
+          EXCLUDE="${EXCLUDE}|${{ matrix.shard.exclude-pattern }}"
+        fi
+        PACKAGES=$(go list ${{ matrix.shard.packages }} | grep -Ev "$EXCLUDE")
+        # shellcheck disable=SC2086
+        GOTAGS="${GOTAGS:+$GOTAGS,}test" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
+          scripts/go-test.sh -timeout 25m -race -cover \
+          -coverprofile test-output/coverage.out -v \
+          $PACKAGES \
+          | tee test-output/test.log
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
-    - name: Go Integration Unit Tests
-      run: ${{ matrix.gotags }} make integration-unit-tests
-
-    - name: Go Operator Integration Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-integration
-
-    - name: Go Operator Helm Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-helm
 
     - name: Generate junit report
       if: always()
@@ -109,12 +118,93 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  go-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}-integration
+
+    - name: Go Integration Unit Tests
+      run: |
+        mkdir -p test-output
+        set -o pipefail
+        PACKAGES=$(go list ./... | grep -E 'registries|scanners|notifiers')
+        # shellcheck disable=SC2086
+        ${{ matrix.gotags }} GOTAGS="${GOTAGS:+$GOTAGS,}test,integration" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
+          scripts/go-test.sh -v $PACKAGES | tee test-output/test.log
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+  go-operator-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}-operator-integration
+
+    - name: Go Operator Integration Tests
+      run: ${{ matrix.gotags }} BUILD_TAG=0.0.0-test make -C operator/ test-integration
+
+    - name: Go Operator Helm Tests
+      run: ${{ matrix.gotags }} BUILD_TAG=0.0.0-test make -C operator/ test-helm
+
   go-postgres:
     strategy:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '15' ]
+        shard:
+          - name: main
+            make-target: go-postgres-unit-tests-main
+          - name: migrator
+            make-target: go-postgres-unit-tests-migrator
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -124,20 +214,19 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
-        fetch-depth: 0
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -145,19 +234,29 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
+          -p 5432:5432 \
+          docker.io/library/postgres:${{ matrix.pg }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for _ in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
+          sleep 1
+        done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-postgres-unit-tests
+      run: ${{ matrix.gotags }} SKIP_DEPS=1 make ${{ matrix.shard.make-target }}
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
@@ -186,21 +285,23 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
+
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -208,14 +309,24 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
+          -p 5432:5432 \
+          docker.io/library/postgres:15
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for _ in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
+          sleep 1
+        done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -234,19 +345,16 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
-    needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version: 22
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -276,33 +384,37 @@ jobs:
         directory: 'ui/apps/platform/test-results/reports'
 
   ui-component:
-    needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11@sha256:996ca7bf256805e4003f711a3915d5f7a86d58c9263bfca4402f0a0f3b47c025 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version: 22
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
-
     - name: UI Component Tests
-      run: make ui-component-tests
+      uses: cypress-io/github-action@v7
+      with:
+        component: true
+        working-directory: ui/apps/platform
+        reporter: mocha-multi-reporters
+        reporter-options: configFile=cypress/mocha.config.js
+      env:
+        TZ: UTC
+        CYPRESS_COMPONENT_TEST: 'true'
+        CYPRESS_VIDEO: 'false'
+        CYPRESS_SCREENSHOT_ON_RUN_FAILURE: 'true'
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
+      if: failure()
       with:
         name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
@@ -316,6 +428,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
+      continue-on-error: true
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
@@ -325,14 +438,17 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - name: development
+            files: tests/roxctl/bats-tests/local/*development* tests/roxctl/bats-tests/local/central-generate-interactive-flavors.bats tests/roxctl/bats-tests/local/central-help-output.bats tests/roxctl/bats-tests/local/deployment-bundles-psps.bats tests/roxctl/bats-tests/local/expect
+          - name: release
+            files: tests/roxctl/bats-tests/local/*release*
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -340,17 +456,43 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: bats-core/bats-action@5b1e60c2ee94cb1b44a616ea4b1f466f9d6e38ef # v4.0.0
+      with:
+        support-path: /usr/lib/node_modules/bats-support
+        assert-path: /usr/lib/node_modules/bats-assert
+        detik-install: false
+        file-install: false
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: roxctl-${{ matrix.variant.name }}
 
     - uses: ./.github/actions/handle-tagged-build
 
     - name: Local roxctl tests
-      run: ./scripts/ci/jobs/local-roxctl-tests.sh
+      run: |
+        MAIN_TAG=$(make --quiet --no-print-directory tag)
+        export MAIN_TAG
+        export SKIP_DEPS=1
+        mkdir -p roxctl-test-output
+        bats --print-output-on-failure --verbose-run \
+          --report-formatter junit --output roxctl-test-output \
+          ${{ matrix.variant.files }}
 
     - name: Publish Test Report
       uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
@@ -373,14 +515,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: bats-core/bats-action@5b1e60c2ee94cb1b44a616ea4b1f466f9d6e38ef # v4.0.0
+      with:
+        support-path: /usr/lib/node_modules/bats-support
+        assert-path: /usr/lib/node_modules/bats-assert
+        detik-install: false
+        file-install: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -409,7 +556,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -460,7 +607,7 @@ jobs:
         password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
     - name: Create k8s Kind Cluster
-      uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # ratchet:helm/kind-action@v1
+      uses: helm/kind-action@v1
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
 
