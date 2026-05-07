@@ -15,13 +15,43 @@ fi
 # Docker daemon's is not).
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
     echo "Using SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH for reproducible build"
-    echo "Pushing directly to registry from BuildKit for reproducible layers"
 
-    docker buildx build \
-        --platform "linux/${GOARCH}" \
-        --build-arg "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
-        --output "type=registry,push=true,rewrite-timestamp=true,compression=gzip" \
-        "$@"
+    # For direct registry push, filter tags to only include registries we can push to
+    # This avoids "push access denied" errors for docker.io/stackrox/* on PRs
+    if [ "${DOCKER_BUILD_PUSH:-false}" = "true" ]; then
+        echo "Pushing directly to registry from BuildKit for reproducible layers"
+
+        # Extract only quay.io tags for direct push (PRs don't have docker.io creds)
+        FILTERED_ARGS=()
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -t|--tag)
+                    # Only include tags that start with quay.io/
+                    if [[ "$2" == quay.io/* ]]; then
+                        FILTERED_ARGS+=("-t" "$2")
+                    fi
+                    shift 2
+                    ;;
+                *)
+                    FILTERED_ARGS+=("$1")
+                    shift
+                    ;;
+            esac
+        done
+
+        docker buildx build \
+            --platform "linux/${GOARCH}" \
+            --build-arg "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
+            --output "type=registry,push=true,rewrite-timestamp=true,compression=gzip" \
+            "${FILTERED_ARGS[@]}"
+    else
+        # Load to Docker daemon (for local dev or non-PR builds that use separate push step)
+        docker buildx build \
+            --platform "linux/${GOARCH}" \
+            --build-arg "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
+            --output "type=docker,rewrite-timestamp=true" \
+            "$@"
+    fi
 else
     # Local development builds without SOURCE_DATE_EPOCH
     docker buildx build --platform "linux/${GOARCH}" --load "$@"
