@@ -195,6 +195,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
+	} else if d.isOwnerBeingDeleted(obj) {
+		// The deployment has a DeletionTimestamp, meaning it is about to be
+		// removed. Skip the update to avoid sending a deployment with empty
+		// image IDs to central — pods may already be terminated so the
+		// image digests cannot be resolved from container statuses. The
+		// subsequent REMOVE event will handle the actual deletion.
+		log.Infof("Skipping deployment update for %s/%s: deployment has DeletionTimestamp set",
+			deploymentWrap.GetNamespace(), deploymentWrap.GetName())
 	} else {
 		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 		// references up the chain, which will be used to trigger the actual deployment event and detection.
@@ -275,10 +283,23 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 	}
 }
 
+// isOwnerBeingDeleted checks whether the Kubernetes resource backing a
+// deployment wrap is marked for deletion by inspecting the object stored
+// in sensor's deployment store. There is a theoretical race if the store
+// has not yet processed the DeletionTimestamp update from the API server,
+// but in practice Kubernetes sets the timestamp well before the controller
+// starts terminating pods.
+func (d *deploymentHandler) isOwnerBeingDeleted(original interface{}) bool {
+	if meta, ok := original.(metaV1.Object); ok {
+		return meta.GetDeletionTimestamp() != nil
+	}
+	return false
+}
+
 // maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
 // We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
 func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction, rootEvent *component.ResourceEvent) {
-	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
+	// We care if the pod is running OR if the pod is being removed as that can impact the top level object.
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
 		return
 	}
@@ -301,6 +322,20 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
 	for _, owner := range owners {
+		// When a pod is removed and the owning deployment is being deleted,
+		// skip the parent update. Rebuilding the deployment with zero pods
+		// would clear the container image IDs (digests come from pod
+		// container statuses), losing the association to the image. The
+		// deployment's REMOVE event will handle the actual deletion.
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			if d.isOwnerBeingDeleted(owner.original) {
+				log.Infof("Skipping parent update for deployment %s/%s: deployment is being deleted, preserving image IDs",
+					owner.GetNamespace(), owner.GetName())
+				continue
+			}
+			log.Infof("Pod removed but deployment %s/%s is not being deleted (DeletionTimestamp not set), sending parent update",
+				owner.GetNamespace(), owner.GetName())
+		}
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
 		rootEvent.MergeResourceEvent(ev)
 	}
