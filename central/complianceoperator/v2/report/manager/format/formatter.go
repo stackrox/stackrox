@@ -30,6 +30,7 @@ var (
 		"Remediation",
 		"Rationale",
 		"Instructions",
+		"Assessment Time",
 	}
 	failedClusterCSVHeader = []string{
 		"Cluster ID",
@@ -127,6 +128,7 @@ func generateRecord(row *report.ResultRow) []string {
 		row.Remediation,
 		row.Rationale,
 		row.Instructions,
+		row.AssessmentTime,
 	}
 }
 

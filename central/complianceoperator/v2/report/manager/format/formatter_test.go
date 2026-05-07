@@ -140,14 +140,15 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithPartialFaile
 	// Add partial results
 	results[clusterID2] = []*report.ResultRow{
 		{
-			ClusterName: "test_cluster-2",
-			CheckName:   "test_check-2",
-			Profile:     "test_profile-2",
-			ProfileType: "Profile",
-			ControlRef:  "test_control_ref-2",
-			Description: "description-2",
-			Status:      "Fail",
-			Remediation: "remediation-2",
+			ClusterName:    "test_cluster-2",
+			CheckName:      "test_check-2",
+			Profile:        "test_profile-2",
+			ProfileType:    "Profile",
+			ControlRef:     "test_control_ref-2",
+			Description:    "description-2",
+			Status:         "Fail",
+			Remediation:    "remediation-2",
+			AssessmentTime: "Wed, 07 May 2025 14:00:00 UTC",
 		},
 	}
 
@@ -312,24 +313,26 @@ func getFakeReportData() map[string][]*report.ResultRow {
 	results := make(map[string][]*report.ResultRow)
 	results[clusterID1] = []*report.ResultRow{
 		{
-			ClusterName: "test_cluster-1",
-			CheckName:   "test_check-1",
-			Profile:     "test_profile-1",
-			ProfileType: "Profile",
-			ControlRef:  "test_control_ref-1",
-			Description: "description-1",
-			Status:      "Pass",
-			Remediation: "remediation-1",
+			ClusterName:    "test_cluster-1",
+			CheckName:      "test_check-1",
+			Profile:        "test_profile-1",
+			ProfileType:    "Profile",
+			ControlRef:     "test_control_ref-1",
+			Description:    "description-1",
+			Status:         "Pass",
+			Remediation:    "remediation-1",
+			AssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		{
-			ClusterName: "test_cluster-1",
-			CheckName:   "test_check-2",
-			Profile:     "test_profile-2",
-			ProfileType: "Tailored Profile",
-			ControlRef:  "test_control_ref-2",
-			Description: "description-2",
-			Status:      "Fail",
-			Remediation: "remediation-2",
+			ClusterName:    "test_cluster-1",
+			CheckName:      "test_check-2",
+			Profile:        "test_profile-2",
+			ProfileType:    "Tailored Profile",
+			ControlRef:     "test_control_ref-2",
+			Description:    "description-2",
+			Status:         "Fail",
+			Remediation:    "remediation-2",
+			AssessmentTime: "Wed, 07 May 2025 13:00:00 UTC",
 		},
 	}
 	return results
