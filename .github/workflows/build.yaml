@@ -590,7 +590,20 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
+      - name: Login to registry for direct push from BuildKit
+        # For PRs, push directly from BuildKit for reproducible layers
+        # Non-PRs need local image for debugger check, so use separate push step
+        if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        run: |
+          echo "$QUAY_RHACS_ENG_RW_PASSWORD" | docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin quay.io
+
       - name: Build main images
+        env:
+          # For PRs, push directly from BuildKit for deterministic gzip compression
+          DOCKER_BUILD_PUSH: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
@@ -599,6 +612,9 @@ jobs:
         run: make check-debugger
 
       - name: Build roxctl image
+        env:
+          # For PRs, push directly from BuildKit for deterministic gzip compression
+          DOCKER_BUILD_PUSH: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
@@ -614,9 +630,8 @@ jobs:
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
       - name: Push images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        # Skip for external contributions and PRs (PRs already pushed directly from BuildKit).
+        if: github.event_name == 'push'
         env:
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}

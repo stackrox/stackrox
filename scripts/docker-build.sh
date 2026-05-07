@@ -10,18 +10,39 @@ if ! docker buildx version &>/dev/null; then
     exit 1
 fi
 
-# SOURCE_DATE_EPOCH is automatically propagated by buildx v0.10+, but we pass it
-# explicitly for older versions. The key for reproducible layers is rewrite-timestamp.
+# SOURCE_DATE_EPOCH enables reproducible builds. For reproducible layers, we need
+# rewrite-timestamp and direct registry push (BuildKit's gzip is deterministic,
+# Docker daemon's is not).
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
     echo "Using SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH for reproducible build"
-    # rewrite-timestamp=true applies SOURCE_DATE_EPOCH to file timestamps in layers
-    # Without this, only image metadata uses SOURCE_DATE_EPOCH, not layer contents
-    # Note: --output type=docker is equivalent to --load but allows extra options
+    echo "Pushing directly to registry from BuildKit for reproducible layers"
+
+    # Extract image names from -t flags, preserve other args
+    NAMES=""
+    OTHER_ARGS=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t|--tag)
+                if [ -z "$NAMES" ]; then
+                    NAMES="$2"
+                else
+                    NAMES="$NAMES,$2"
+                fi
+                shift 2
+                ;;
+            *)
+                OTHER_ARGS+=("$1")
+                shift
+                ;;
+        esac
+    done
+
     docker buildx build \
         --platform "linux/${GOARCH}" \
         --build-arg "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
-        --output "type=docker,rewrite-timestamp=true" \
-        "$@"
+        --output "type=registry,push=true,rewrite-timestamp=true,compression=gzip,name=${NAMES}" \
+        "${OTHER_ARGS[@]}"
 else
+    # Local development builds without SOURCE_DATE_EPOCH
     docker buildx build --platform "linux/${GOARCH}" --load "$@"
 fi
