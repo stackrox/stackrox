@@ -96,7 +96,7 @@ type CentralClient interface {
 	PutPolicy(context.Context, *storage.Policy) error
 	DeletePolicy(ctx context.Context, id string) error
 	ListNotifiers(ctx context.Context) ([]*storage.Notifier, error)
-	ListClusters(ctx context.Context) ([]*storage.Cluster, error)
+	ListClusters(ctx context.Context) ([]*v1.ClusterConfig, error)
 	TokenExchange(ctx context.Context) error
 }
 
@@ -165,10 +165,10 @@ func (gc *grpcClient) ListNotifiers(ctx context.Context) ([]*storage.Notifier, e
 	return allNotifiers.GetNotifiers(), nil
 }
 
-func (gc *grpcClient) ListClusters(ctx context.Context) ([]*storage.Cluster, error) {
+func (gc *grpcClient) ListClusters(ctx context.Context) ([]*v1.ClusterConfig, error) {
 	allClusters, err := gc.clusterSvc.GetClusters(ctx, &v1.GetClustersRequest{})
 	if err != nil {
-		return []*storage.Cluster{}, errors.Wrap(err, "Failed to list clusters from grpc client")
+		return []*v1.ClusterConfig{}, errors.Wrap(err, "Failed to list clusters from grpc client")
 	}
 
 	return allClusters.GetClusters(), nil

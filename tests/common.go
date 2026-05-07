@@ -1373,7 +1373,7 @@ func isOpenshift() bool {
 }
 
 // mustGetCluster returns the details of the one and only known secured cluster.
-func mustGetCluster(t *testing.T, ctx context.Context) *storage.Cluster {
+func mustGetCluster(t *testing.T, ctx context.Context) *v1.ClusterConfig {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	cluster, err := getCluster(ctx, conn)
@@ -1383,7 +1383,7 @@ func mustGetCluster(t *testing.T, ctx context.Context) *storage.Cluster {
 }
 
 // getCluster returns the details of the one and only known secured cluster.
-func getCluster(ctx context.Context, conn *grpc.ClientConn) (*storage.Cluster, error) {
+func getCluster(ctx context.Context, conn *grpc.ClientConn) (*v1.ClusterConfig, error) {
 	clustersSvc := v1.NewClustersServiceClient(conn)
 
 	clusters, err := clustersSvc.GetClusters(ctx, &v1.GetClustersRequest{})

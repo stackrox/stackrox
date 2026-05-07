@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -32,7 +31,7 @@ type clusterDeleteTestSuite struct {
 type mockClustersServiceServer struct {
 	v1.UnimplementedClustersServiceServer
 
-	clusters []*storage.Cluster
+	clusters []*v1.ClusterConfig
 }
 
 func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
@@ -43,7 +42,7 @@ func (m *mockClustersServiceServer) DeleteCluster(_ context.Context, _ *v1.Resou
 	return &v1.Empty{}, nil
 }
 
-func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*storage.Cluster) (*grpc.ClientConn, func()) {
+func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*v1.ClusterConfig) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -76,7 +75,7 @@ func (c *clusterDeleteTestSuite) SetupTest() {
 	os.Stderr = nil
 }
 
-func (c *clusterDeleteTestSuite) setupCommand(clusters []*storage.Cluster) (*cobra.Command, func(), *bytes.Buffer, *bytes.Buffer) {
+func (c *clusterDeleteTestSuite) setupCommand(clusters []*v1.ClusterConfig) (*cobra.Command, func(), *bytes.Buffer, *bytes.Buffer) {
 	conn, closeFunction := c.createGRPCMockClustersService(clusters)
 	mockedEnv, stdout, stderr := mocks.NewEnvWithConn(conn, c.T())
 	cbr := Command(mockedEnv)
@@ -87,7 +86,7 @@ func (c *clusterDeleteTestSuite) setupCommand(clusters []*storage.Cluster) (*cob
 }
 
 func (c *clusterDeleteTestSuite) TestCommandHappyPath() {
-	clusters := []*storage.Cluster{{Name: "dummy"}}
+	clusters := []*v1.ClusterConfig{{Name: "dummy"}}
 	cbr, closeFunction, stdout, _ := c.setupCommand(clusters)
 	defer closeFunction()
 
@@ -99,7 +98,7 @@ func (c *clusterDeleteTestSuite) TestCommandHappyPath() {
 }
 
 func (c *clusterDeleteTestSuite) TestCommandRequiresName() {
-	clusters := []*storage.Cluster{{Name: "dummy"}}
+	clusters := []*v1.ClusterConfig{{Name: "dummy"}}
 	cbr, closeFunction, _, _ := c.setupCommand(clusters)
 	defer closeFunction()
 
@@ -110,7 +109,7 @@ func (c *clusterDeleteTestSuite) TestCommandRequiresName() {
 }
 
 func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
-	clusters := []*storage.Cluster{}
+	clusters := []*v1.ClusterConfig{}
 	cbr, closeFunction, _, _ := c.setupCommand(clusters)
 	defer closeFunction()
 
