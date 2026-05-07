@@ -561,6 +561,8 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 								// The getter will be complex and handled by template
 								value: ctx.Getter(structField.Name),
 							},
+							ArraySourceGetter: ctx.Getter(structField.Name),
+							ArrayFieldName:    childField.Name,
 						}
 						schema.Fields = append(schema.Fields, arrayField)
 					}

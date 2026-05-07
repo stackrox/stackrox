@@ -580,6 +580,14 @@ type Field struct {
 	// repeated message element (e.g., "storage.Foo"). Used by scanner codegen
 	// to generate the unmarshal factory function.
 	MessageBytesElemType string
+
+	// ArraySourceGetter is the getter path for the source repeated message, e.g., "GetSignal().GetLineageInfo()"
+	// Only set for ArrayColumn fields.
+	ArraySourceGetter string
+
+	// ArrayFieldName is the Go field name within the repeated message element, e.g., "ParentUid"
+	// Only set for ArrayColumn fields.
+	ArrayFieldName string
 }
 
 // DerivedSearchField represents a search field that's derived.

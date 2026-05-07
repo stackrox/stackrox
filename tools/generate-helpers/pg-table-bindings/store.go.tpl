@@ -237,7 +237,9 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertValues"}}{{- $schema := . -}}
 {{- range $field := $schema.DBColumnFields -}}
-    {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+    {{- if isArrayColumn $field }}
+        {{ arrayExtractExpr $field }},
+    {{- else if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
         protocompat.NilOrTime({{$field.Getter "obj"}}),
     {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),

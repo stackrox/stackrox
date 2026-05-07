@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -132,6 +133,21 @@ func arr(els ...any) []any {
 	return els
 }
 
+func isArrayColumn(f walker.Field) bool {
+	return f.DataType == postgres.ArrayColumn
+}
+
+func arrayExtractExpr(f walker.Field) string {
+	return fmt.Sprintf(`func() %s {
+		src := obj.%s
+		result := make(%s, len(src))
+		for i, elem := range src {
+			result[i] = elem.%s
+		}
+		return result
+	}()`, f.ModelType, f.ArraySourceGetter, f.ModelType, f.ArrayFieldName)
+}
+
 // scanVarType returns the Go type to use for scanning a field from the database.
 func scanVarType(f walker.Field) string {
 	if f.ObjectGetter.IsVariable() {
@@ -172,6 +188,8 @@ func scanVarType(f walker.Field) string {
 		return "[]int32"
 	case "map":
 		return f.Type
+	case postgres.ArrayColumn:
+		return f.ModelType
 	}
 	return f.Type
 }
@@ -253,9 +271,10 @@ func canScanDirect(f walker.Field) bool {
 // canUnnest returns whether a field type can be used in a multi-arg unnest().
 // 2D arrays (stringarray, enumarray, intarray) and maps don't work with unnest's
 // parallel-array iteration because unnest flattens them instead of producing subarrays.
+// ArrayColumn fields can't be unnested either — they need per-row UPDATE fallback.
 func canUnnest(f walker.Field) bool {
 	switch f.DataType {
-	case "stringarray", "enumarray", "intarray", "map":
+	case "stringarray", "enumarray", "intarray", "map", postgres.ArrayColumn:
 		return false
 	}
 	return true
@@ -306,6 +325,8 @@ func unnestArrayGoType(f walker.Field) string {
 func unnestAppendExpr(f walker.Field) string {
 	getter := f.Getter("obj")
 	switch {
+	case f.DataType == postgres.ArrayColumn:
+		return arrayExtractExpr(f)
 	case f.DataType == "messagebytes":
 		return fmt.Sprintf("pgutils.MustMarshalRepeatedMessages(%s)", getter)
 	case f.DataType == "datetime" || f.DataType == "datetimetz":
@@ -353,8 +374,10 @@ var funcMap = template.FuncMap{
 		}
 		return strings.Join(result, ".")
 	},
-	"fieldSetterExpr": fieldSetterExpr,
-	"canUnnest":       canUnnest,
+	"fieldSetterExpr":  fieldSetterExpr,
+	"canUnnest":        canUnnest,
+	"isArrayColumn":    isArrayColumn,
+	"arrayExtractExpr": arrayExtractExpr,
 	"unnestableFields": func(fields []walker.Field) []walker.Field {
 		var out []walker.Field
 		for _, f := range fields {
