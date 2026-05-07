@@ -28,45 +28,65 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
-      build-tag: ${{ steps.build-tag.outputs.tag }}
-      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
-      gotags: ${{ steps.gotags.outputs.gotags }}
+      build-tag: ${{ steps.define-job-matrix.outputs.build-tag }}
+      short-commit: ${{ steps.define-job-matrix.outputs.short-commit }}
+      gotags: ${{ startsWith(github.ref, 'refs/tags/') && 'release' || '' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Compute build tag
-        id: build-tag
-        run: |
-          TAG=$(make --quiet --no-print-directory tag)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute short commit
-        id: short-commit
-        run: |
-          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
-          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute GOTAGS
-        id: gotags
-        run: |
-          GOTAGS=""
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
-            # Tag builds (release or nightly) get release GOTAGS
-            GOTAGS="release"
-          fi
-          echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
-
       - name: Define the matrix for build jobs
         id: define-job-matrix
+        env:
+          # PR labels that gate optional matrix entries.
+          # On non-PR events (master, tags), all are enabled regardless.
+          ALL_ARCH: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}
+          PRERELEASE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-prerelease') }}
+          RACE: ${{ !github.base_ref || contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug') }}
+          TAGGED: ${{ startsWith(github.ref, 'refs/tags/') }}
+          # Branch that this build targets (PR base branch, or the push branch itself).
+          TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
+          COMMIT_SHA: ${{ inputs.commit || github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          source './scripts/ci/lib.sh'
+          echo "Flags: ALL_ARCH=$ALL_ARCH PRERELEASE=$PRERELEASE RACE=$RACE TAGGED=$TAGGED"
+
+          # Compute build tag in the background (runs during jq matrix below).
+          # Replicates git describe: finds the nearest version tag via the API,
+          # then gets the commit count since that tag.
+          # - Tagged builds: use the tag directly (no API needed).
+          # - release-X.Y branches: find latest X.Y.Z tag (e.g., 4.10.2).
+          # - master/other: find latest X.Y.x tag (e.g., 4.11.x).
+          if [[ "$TAGGED" == "true" ]]; then
+            echo "${GITHUB_REF#refs/tags/}" > /tmp/build_tag
+          else
+            (
+              if [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
+                bv="${BASH_REMATCH[1]}"
+                candidates="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/${bv}" \
+                  --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
+                  | grep -E "^${bv}\.[0-9]+$" | sort -rV)"
+                candidates="${candidates:-${bv}.x}"
+              else
+                candidates="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/" \
+                  --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
+                  | grep -E '^[0-9]+\.[0-9]+\.x$' | sort -rV)"
+                candidates="${candidates:-0.0.0}"
+              fi
+              # Walk candidates from latest to oldest until we find an ancestor of this commit.
+              for version in $candidates; do
+                read -r status ahead_by < <(gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '[.status, .ahead_by] | @tsv')
+                if [[ ("$status" == "ahead" || "$status" == "identical") && "$ahead_by" =~ ^[0-9]+$ ]]; then
+                  echo "${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
+                  exit 0
+                fi
+                echo "::warning::Tag ${version} is not an ancestor of ${COMMIT_SHA:0:10} (status=${status:-unknown}), trying next" >&2
+              done
+              echo "::warning::No ancestor tag found, defaulting to 0.0.0" >&2
+              echo "0.0.0-0-g${COMMIT_SHA:0:10}"
+            ) > /tmp/build_tag &
+            api_pid=$!
+          fi
+
+          echo "short-commit=${COMMIT_SHA:0:10}" >> "$GITHUB_OUTPUT"
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
@@ -97,22 +117,20 @@ jobs:
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          if [[ "$ALL_ARCH" == "true" ]]; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-          fi;
+          fi
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
-          if ! is_tagged; then
-            if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-              matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
-            fi
+          if [[ "$TAGGED" != "true" && "$PRERELEASE" == "true" ]]; then
+            matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
 
           # Conditionally add a -race debug build (binaries built with -race)
-          if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
+          if [[ "$RACE" == "true" ]]; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
@@ -125,11 +143,14 @@ jobs:
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
 
+          # Collect build-tag from the background subshell.
+          [[ -n "${api_pid:-}" ]] && wait "$api_pid"
+          build_tag="$(cat /tmp/build_tag)"
+          echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
+
           echo "Job matrix after conditionals:"
           jq <<< "$matrix"
-
-          condensed="$(jq -c <<< "$matrix")"
-          echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(jq -c <<< "$matrix")" >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
     strategy:
