@@ -184,11 +184,13 @@ func verifyClusterVSOCKReadyPhases(
 	return ref, lastDiag, nil
 }
 
-func waitForKubeVirtWithVSOCKFeatureGate(ctx context.Context, dyn dynamic.Interface) (kubeVirtVSOCKRef, error) {
+func waitForKubeVirtWithVSOCKFeatureGate(ctx context.Context, t testing.TB, dyn dynamic.Interface) (kubeVirtVSOCKRef, error) {
+	t.Helper()
 	var ref kubeVirtVSOCKRef
 	err := wait.PollUntilContextCancel(ctx, vsockPreflightPollInterval, true, func(ctx context.Context) (bool, error) {
 		ns, kvObj, _, err := findKubeVirtWithVSOCKFeatureGate(ctx, dyn)
 		if err != nil {
+			t.Logf("VSOCK preflight: KubeVirt CR with VSOCK feature gate not found yet: %v", err)
 			return false, nil
 		}
 		ref = kubeVirtVSOCKRef{
@@ -223,7 +225,7 @@ func mustVerifyClusterVSOCKReady(t *testing.T, ctx context.Context, k8s kubernet
 		vsockFeatureGateWaitTimeout,
 		vsockVirtHandlerEvidenceWaitTimeout,
 		func(phaseCtx context.Context) (kubeVirtVSOCKRef, error) {
-			return waitForKubeVirtWithVSOCKFeatureGate(phaseCtx, dyn)
+			return waitForKubeVirtWithVSOCKFeatureGate(phaseCtx, t, dyn)
 		},
 		func(phaseCtx context.Context) (string, error) {
 			return waitForVirtHandlerVsockEvidence(phaseCtx, t, k8s)
