@@ -29,6 +29,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	backgroundmigrations "github.com/stackrox/rox/central/backgroundmigrations/runner"
 	baseImageService "github.com/stackrox/rox/central/baseimage/service"
 	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
@@ -176,9 +177,9 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
-	versionUtils "github.com/stackrox/rox/central/version/utils"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
+	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
@@ -319,7 +320,6 @@ func main() {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
 	}
-	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
 
@@ -399,6 +399,10 @@ func startServices() {
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
+
+	if features.BackgroundMigration.Enabled() {
+		backgroundmigrations.Singleton().Start()
 	}
 }
 
@@ -488,7 +492,12 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+		if features.VirtualMachinesEnhancedDataModel.Enabled() {
+			// V2 service replaces V1 to avoid route conflicts on /v2/virtualmachines/{id}.
+			servicesToRegister = append(servicesToRegister, virtualmachineV2Service.Singleton())
+		} else {
+			servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+		}
 	}
 
 	if features.BaseImageDetection.Enabled() {
@@ -683,7 +692,8 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(authProviderTelemetry.Gather)
 	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 	add(clusterDataStore.Gather)
-	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+	add(complianceScanDS.GatherTailoredProfiles(complianceScanDS.Singleton()))
 	add(declarativeconfig.ManagerSingleton().Gather())
 	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 	add(externalbackupsDS.Gather)
@@ -691,10 +701,10 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(globaldb.Gather)
 	add(imageintegrationsDS.Gather)
 	add(notifierDS.Gather)
+	add(policyDataStore.Gather)
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
-	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
-	add(policyDataStore.Gather)
+	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -1040,6 +1050,11 @@ func waitForTerminationSignal() {
 	if features.PlatformComponents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
+	}
+
+	if features.BackgroundMigration.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{backgroundmigrations.Singleton(), "background migrations"})
 	}
 
 	var wg sync.WaitGroup

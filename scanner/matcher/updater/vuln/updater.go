@@ -7,14 +7,17 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,7 +27,8 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -40,7 +44,7 @@ const (
 	defaultUpdateRetention = libvuln.DefaultUpdateRetention
 	defaultFullGCInterval  = 24 * time.Hour
 
-	defaultRetryMax   = 4
+	defaultRetryMax   = 12
 	defaultRetryDelay = 10 * time.Second
 )
 
@@ -75,6 +79,8 @@ type Opts struct {
 
 	RetryDelay time.Duration
 	RetryMax   int
+
+	VulnBundleAllowlist []string
 }
 
 // Updater represents a vulnerability updater.
@@ -106,6 +112,8 @@ type Updater struct {
 
 	retryDelay time.Duration
 	retryMax   int
+
+	vulnBundleAllowlist set.FrozenSet[string]
 
 	distManager *distManager
 }
@@ -143,6 +151,8 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		return u.Import(ctx, reader)
 	}
 	u.iterateFunc = jsonblob.Iterate
+
+	u.vulnBundleAllowlist = set.NewFrozenSet(normalizeAllowlist(opts.VulnBundleAllowlist)...)
 
 	u.tryRemoveExiting()
 
@@ -197,7 +207,6 @@ func validate(opts Opts) error {
 }
 
 func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Import")
 	iter, iterErr := u.iterateFunc(in)
 	// For each update operation in the JSON blob file.
 	iter(func(op *driver.UpdateOperation, it jsonblob.RecordIter) bool {
@@ -210,16 +219,11 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 			// This only helps if updaters don't keep something that
 			// changes in the fingerprint.
 			if o.Fingerprint == op.Fingerprint {
-				zlog.Info(ctx).
-					Str("updater", op.Updater).
-					Msg("fingerprint match, skipping")
+				slog.InfoContext(ctx, "fingerprint match, skipping", "updater", op.Updater)
 				return true
 			}
 		}
-		zlog.Info(ctx).
-			Str("updater", op.Updater).
-			Str("kind", string(op.Kind)).
-			Msg("importing update")
+		slog.InfoContext(ctx, "importing update", "updater", op.Updater, "kind", string(op.Kind))
 		var ref uuid.UUID
 		count := 0
 		switch op.Kind {
@@ -248,18 +252,13 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 				}
 			})
 		default:
-			zlog.Warn(ctx).Str("kind", string(op.Kind)).Msg("unknown kind, skipping")
+			slog.WarnContext(ctx, "unknown kind, skipping", "kind", string(op.Kind))
 		}
 		if err != nil {
 			err = fmt.Errorf("updating %s: %w", op.Kind, err)
 			return false
 		}
-		zlog.Info(ctx).
-			Str("updater", op.Updater).
-			Str("kind", string(op.Kind)).
-			Str("ref", ref.String()).
-			Int("count", count).
-			Msg("update imported")
+		slog.InfoContext(ctx, "update imported", "updater", op.Updater, "kind", string(op.Kind), "ref", ref.String(), "count", count)
 		return true
 	})
 	if err := iterErr(); err != nil {
@@ -277,16 +276,16 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 // It is assumed the previous updater used the same root directory.
 // Any errors when attempting to remove pre-existing files are simply logged.
 func (u *Updater) tryRemoveExiting() {
-	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.tryRemoveExiting")
+	ctx := u.ctx
 
 	files, err := fs.Glob(os.DirFS(u.root), updateFilePattern)
 	if err != nil {
-		zlog.Warn(ctx).Err(err).Msg("searching for previous update files to remove")
+		slog.WarnContext(ctx, "searching for previous update files to remove", "reason", err)
 		return
 	}
 	for _, file := range files {
 		if err := os.Remove(filepath.Join(u.root, file)); err != nil {
-			zlog.Warn(ctx).Err(err).Msgf("removing previous update file %s", file)
+			slog.WarnContext(ctx, "removing previous update file", "file", file, "reason", err)
 		}
 	}
 }
@@ -301,14 +300,18 @@ func (u *Updater) Stop() error {
 // Start periodically updates the vulnerability data.
 // Each period is adjusted by some amount of jitter.
 func (u *Updater) Start() error {
-	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.Start")
+	ctx := u.ctx
+
+	if !u.vulnBundleAllowlist.IsEmpty() {
+		slog.WarnContext(ctx, "vulnerability bundle allowlist is active: only listed bundles will be imported; do not use in production", "bundles", u.vulnBundleAllowlist.ElementsString(", "))
+	}
 
 	if !u.skipGC {
 		go u.runGCFullPeriodic()
 	}
 
 	if err := u.distManager.update(ctx); err != nil {
-		zlog.Warn(ctx).Err(err).Msg("failed to initialize known-distributions")
+		slog.WarnContext(ctx, "failed to initialize known-distributions", "reason", err)
 	}
 
 	// Start immediately, all matchers will compete to update each vulnerability
@@ -320,13 +323,20 @@ func (u *Updater) Start() error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-timer.C:
-			zlog.Info(ctx).Msg("starting update")
+			slog.InfoContext(ctx, "starting update")
 			if err := u.Update(ctx); err != nil {
-				zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
+				slog.ErrorContext(ctx, "errors encountered during updater run", "reason", err)
 			}
-			zlog.Info(ctx).Msg("completed update")
+			slog.InfoContext(ctx, "completed update")
 
-			timer.Reset(u.updateInterval + jitter())
+			// Skip jitter when vulns have never been loaded, so that
+			// failed initial attempts (e.g. Central not yet ready at startup)
+			// retry quicker to get the matcher into a functional state.
+			interval := u.updateInterval + jitter()
+			if !u.Initialized(ctx) {
+				interval = u.updateInterval
+			}
+			timer.Reset(interval)
 		}
 	}
 }
@@ -337,19 +347,15 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 	if u.initialized.Load() {
 		return true
 	}
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Initialized")
 	ts, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
-		zlog.
-			Warn(ctx).
-			Err(err).
-			Msg("did not get previous vuln update timestamp")
+		slog.WarnContext(ctx, "did not get previous vuln update timestamp", "reason", err)
 		return false
 	}
 	if ts.IsZero() {
 		return false
 	}
-	zlog.Info(ctx).Msg("all vulnerability bundles were updated at least once: setting to initialized")
+	slog.InfoContext(ctx, "all vulnerability bundles were updated at least once: setting to initialized")
 	u.initialized.Store(true)
 	return true
 }
@@ -362,8 +368,6 @@ func (u *Updater) KnownDistributions() []claircore.Distribution {
 //
 // Note: periodic full GC will not be started.
 func (u *Updater) Update(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Update")
-
 	var (
 		updated bool
 		err     error
@@ -379,7 +383,7 @@ func (u *Updater) Update(ctx context.Context) error {
 		u.runGC(ctx)
 	} else if !u.skipGC {
 		// Only log if GC is enabled to reduce noise when GC is disabled.
-		zlog.Info(ctx).Msg("no vulnerability updates: skipping GC")
+		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
 
 	return nil
@@ -388,18 +392,12 @@ func (u *Updater) Update(ctx context.Context) error {
 // runMultiBundleUpdate updates the vulnerability data with a multi-bundle and
 // returns a bool indicating if any updates actually happened.
 func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runMultiBundleUpdate")
-
 	prevTime, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("did not get previous vuln update timestamp")
+		slog.DebugContext(ctx, "did not get previous vuln update timestamp", "reason", err)
 		return false, err
 	}
-	zlog.Info(ctx).
-		Time("timestamp", prevTime).
-		Msg("previous vuln update")
+	slog.InfoContext(ctx, "previous vuln update", "timestamp", prevTime)
 
 	zipFile, zipTime, err := u.fetch(ctx, prevTime)
 	if err != nil {
@@ -407,15 +405,15 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	if zipFile == nil {
 		// Nothing to update at this time.
-		zlog.Info(ctx).Msg("no new vulnerability update")
+		slog.InfoContext(ctx, "no new vulnerability update")
 		return false, nil
 	}
 	defer func() {
 		if err := zipFile.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing temp update file")
+			slog.ErrorContext(ctx, "closing temp update file", "reason", err)
 		}
 		if err := os.Remove(zipFile.Name()); err != nil {
-			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", zipFile.Name())
+			slog.ErrorContext(ctx, "removing temp update file", "file", zipFile.Name(), "reason", err)
 		}
 	}()
 
@@ -432,14 +430,18 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	names := make([]string, 0, len(zipReader.File))
 	for i := range zipReader.File {
 		bundleF := zipReader.File[i]
+		if !u.isBundleAllowed(bundleF.Name) {
+			slog.InfoContext(ctx, "skipping bundle (not in allowlist)", "bundle", bundleF.Name)
+			continue
+		}
 		names = append(names, bundleF.Name)
-		ctx := zlog.ContextWithValues(ctx, "bundle", bundleF.Name)
-		zlog.Info(ctx).Msg("starting bundle update")
-		if err := u.updateBundle(ctx, bundleF, zipTime, prevTime); err != nil {
-			zlog.Error(ctx).Err(err).Msg("updating bundle failed")
+		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
+		slog.InfoContext(bundleCtx, "starting bundle update")
+		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
+			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
 			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
 		}
-		zlog.Info(ctx).Msg("completed bundle update")
+		slog.InfoContext(bundleCtx, "completed bundle update")
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
@@ -460,13 +462,11 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.updateBundle")
-
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
 	if err := lCtx.Err(); err != nil {
-		zlog.Info(ctx).Err(err).Msg("skipping: did not obtain lock")
+		slog.InfoContext(ctx, "skipping: did not obtain lock", "reason", err)
 		return nil
 	}
 
@@ -477,10 +477,7 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 		return fmt.Errorf("querying last update: %w", err)
 	}
 	if !lastTime.Before(zipTime) {
-		zlog.Info(ctx).
-			Time("last_update_time", lastTime).
-			Time("update_time", zipTime).
-			Msg("skipping: last update time is greater or equal to the zip archive time")
+		slog.InfoContext(ctx, "skipping: last update time is greater or equal to the zip archive time", "last_update_time", lastTime, "update_time", zipTime)
 		return nil
 	}
 
@@ -515,8 +512,6 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 // If there have been no updates since prevTimestamp, the returned file will be nil.
 // It is up to the user to close and delete the returned file.
 func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File, time.Time, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
-
 	var resp *http.Response
 	var err error
 	for i, vulnURL := range u.urls {
@@ -529,7 +524,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			// trying only on 404s.
 			break
 		}
-		zlog.Info(ctx).Msgf("skipping vuln URL #%d (%s): it does not exist (404)", i, vulnURL)
+		slog.InfoContext(ctx, "skipping vuln URL: does not exist (404)", "index", i, "url", vulnURL)
 		closeResponse(resp)
 	}
 	if resp == nil {
@@ -555,10 +550,10 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			return
 		}
 		if err := f.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing temp update file")
+			slog.ErrorContext(ctx, "closing temp update file", "reason", err)
 		}
 		if err := os.Remove(f.Name()); err != nil {
-			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", f.Name())
+			slog.ErrorContext(ctx, "removing temp update file", "file", f.Name(), "reason", err)
 		}
 	}()
 
@@ -583,10 +578,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp time.Time) (*http.Response, error) {
 	var resp *http.Response
 	for attempt := 1; attempt <= u.retryMax; attempt++ {
-		zlog.Info(ctx).
-			Str("url", url).
-			Int("attempt", attempt).
-			Msg("fetching vuln update")
+		slog.InfoContext(ctx, "fetching vuln update", "url", url, "attempt", attempt)
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, err
@@ -594,11 +586,8 @@ func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp ti
 		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
 		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		resp, err = u.client.Do(req)
-		if attempt < u.retryMax && isConnectionRefused(err) {
-			zlog.Error(ctx).
-				Err(err).
-				Str("delay", u.retryDelay.String()).
-				Msg("retrying...")
+		if attempt < u.retryMax && isRetryableDialError(err) {
+			slog.ErrorContext(ctx, "retrying...", "reason", err, "delay", u.retryDelay.String())
 			time.Sleep(u.retryDelay)
 			continue
 		}
@@ -617,7 +606,33 @@ func closeResponse(resp *http.Response) {
 	}
 }
 
-func isConnectionRefused(err error) bool {
+func isRetryableDialError(err error) bool {
 	var opErr *net.OpError
-	return errors.As(err, &opErr) && opErr.Op == "dial" && strings.Contains(opErr.Err.Error(), "connection refused")
+	if !errors.As(err, &opErr) || opErr.Op != "dial" {
+		return false
+	}
+	return errors.Is(err, syscall.ECONNREFUSED) || opErr.Timeout()
+}
+
+// normalizeAllowlist trims whitespace from each entry and drops empty strings.
+// This handles cases the allowed names are configured with surrounding spaces,
+// e.g. from a comma-separated environment variable or YAML value.
+func normalizeAllowlist(entries []string) []string {
+	result := make([]string, 0, len(entries))
+	for _, s := range entries {
+		if t := strings.TrimSpace(s); t != "" {
+			result = append(result, t)
+		}
+	}
+	return result
+}
+
+// isBundleAllowed reports whether the named bundle file should be imported.
+// When no allowlist is configured, all bundles are allowed.
+// Bundle filenames may include a directory prefix (e.g. "bundles/alpine.json.zst").
+func (u *Updater) isBundleAllowed(filename string) bool {
+	if u.vulnBundleAllowlist.IsEmpty() {
+		return true
+	}
+	return u.vulnBundleAllowlist.Contains(strings.TrimSuffix(path.Base(filename), ".json.zst"))
 }

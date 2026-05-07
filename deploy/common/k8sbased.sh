@@ -231,7 +231,7 @@ function launch_central {
     { command -v oc >/dev/null && pkill -f oc'.*port-forward.*'; } || true    # terminate stale port forwarding from earlier runs
     { command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*'; } || true
 
-    if [[ "${STORAGE_CLASS}" == "faster" ]]; then
+    if [[ "${STORAGE_CLASS}" == "faster" || "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
     fi
 
@@ -415,6 +415,12 @@ function launch_central {
         )
       fi
 
+      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-false}" != "false" ]]; then
+        helm_args+=(
+          --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
+        )
+      fi
+
       if [[ -n "$EXTERNAL_DB" ]]; then
           helm_args+=(
             --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
@@ -462,6 +468,10 @@ function launch_central {
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
       elif [[ -n "$CI" ]]; then
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
+      fi
+
+      if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
+        helm_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
       fi
 
       # Add a custom values file to Helm
@@ -523,7 +533,26 @@ function launch_central {
               if [[ -x "${unzip_dir}/scanner-v4/scripts/setup.sh" ]]; then
                 "${unzip_dir}/scanner-v4/scripts/setup.sh"
               fi
+              if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
+                pvc_file="${unzip_dir}/scanner-v4/02-scanner-v4-06-db-pvc.yaml"
+                if [[ -f "${pvc_file}" ]]; then
+                  sed -i "s|^spec:$|spec:\n  storageClassName: ${SCANNER_V4_DB_STORAGE_CLASS}|" "${pvc_file}"
+                else
+                  echo >&2 "WARNING: SCANNER_V4_DB_STORAGE_CLASS is set but ${pvc_file} not found; storage class will not be applied."
+                fi
+              fi
               launch_service "${unzip_dir}" scanner-v4
+
+              if [[ -n "$CI" ]]; then
+                ${ORCH_CMD} -n stackrox patch hpa scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch hpa scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch deployment scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-indexer-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch deployment scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-matcher-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch deployment scanner-v4-db --patch "$(cat "${common_dir}/scanner-v4-db-patch.yaml")"
+                if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+                  ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher SCANNER_V4_MATCHER_READINESS=vulnerability
+                fi
+              fi
             else
               echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."
               echo >&2 "WARNING: Scanner V4 will not be deployed now."
@@ -909,6 +938,10 @@ function launch_sensor {
         kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
+      if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
+        extra_helm_config+=(--set "processIndicators.excludeNamespaceFilter=namespace-without-persistence")
+      fi
+
       echo "Deploying sensor using Helm..."
       helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${sensor_helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
@@ -932,6 +965,15 @@ function launch_sensor {
             echo >&2 "Please make sure to have a roxctl version ${MAIN_IMAGE_TAG} in PATH."
             exit 1
         fi
+
+        if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
+          if [[ -n "$extra_json_dynamic_config" ]]; then
+              extra_json_dynamic_config+=", "
+          fi
+
+          extra_json_dynamic_config+='"processIndicators": {"excludeNamespaceFilter": "namespace-without-persistence"}'
+        fi
+
         extra_json_config="${extra_json_config}, "'"dynamicConfig"'": {${extra_json_dynamic_config}}"
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"

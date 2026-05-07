@@ -541,9 +541,11 @@ func (*MsgFromSensor_DeploymentEnhancementResponse) isMsgFromSensor_Msg() {}
 func (*MsgFromSensor_IssueSecuredClusterCertsRequest) isMsgFromSensor_Msg() {}
 
 type ReprocessDeployments struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// When true, Sensor uses targeted AC invalidation instead of a full flush.
+	SkipCacheFlush bool `protobuf:"varint,1,opt,name=skip_cache_flush,json=skipCacheFlush,proto3" json:"skip_cache_flush,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ReprocessDeployments) Reset() {
@@ -576,7 +578,14 @@ func (*ReprocessDeployments) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{1}
 }
 
-// next available tag: 30
+func (x *ReprocessDeployments) GetSkipCacheFlush() bool {
+	if x != nil {
+		return x.SkipCacheFlush
+	}
+	return false
+}
+
+// next available tag: 31
 type MsgToSensor struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Msg:
@@ -609,6 +618,7 @@ type MsgToSensor struct {
 	//	*MsgToSensor_DeploymentEnhancementRequest
 	//	*MsgToSensor_IssueSecuredClusterCertsResponse
 	//	*MsgToSensor_SensorAck
+	//	*MsgToSensor_RefreshImageCacheTtl
 	Msg           isMsgToSensor_Msg `protobuf_oneof:"msg"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -903,6 +913,15 @@ func (x *MsgToSensor) GetSensorAck() *SensorACK {
 	return nil
 }
 
+func (x *MsgToSensor) GetRefreshImageCacheTtl() *RefreshImageCacheTTL {
+	if x != nil {
+		if x, ok := x.Msg.(*MsgToSensor_RefreshImageCacheTtl); ok {
+			return x.RefreshImageCacheTtl
+		}
+	}
+	return nil
+}
+
 type isMsgToSensor_Msg interface {
 	isMsgToSensor_Msg()
 }
@@ -1020,6 +1039,10 @@ type MsgToSensor_SensorAck struct {
 	SensorAck *SensorACK `protobuf:"bytes,29,opt,name=sensor_ack,json=sensorAck,proto3,oneof"`
 }
 
+type MsgToSensor_RefreshImageCacheTtl struct {
+	RefreshImageCacheTtl *RefreshImageCacheTTL `protobuf:"bytes,30,opt,name=refresh_image_cache_ttl,json=refreshImageCacheTtl,proto3,oneof"`
+}
+
 func (*MsgToSensor_Enforcement) isMsgToSensor_Msg() {}
 
 func (*MsgToSensor_ScrapeCommand) isMsgToSensor_Msg() {}
@@ -1075,6 +1098,8 @@ func (*MsgToSensor_DeploymentEnhancementRequest) isMsgToSensor_Msg() {}
 func (*MsgToSensor_IssueSecuredClusterCertsResponse) isMsgToSensor_Msg() {}
 
 func (*MsgToSensor_SensorAck) isMsgToSensor_Msg() {}
+
+func (*MsgToSensor_RefreshImageCacheTtl) isMsgToSensor_Msg() {}
 
 type DeduperState struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -1414,16 +1439,76 @@ func (x *ReprocessDeployment) GetDeploymentIds() []string {
 	return nil
 }
 
+type ImageKey struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageId       string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	ImageFullName string                 `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName,proto3" json:"image_full_name,omitempty"`
+	ImageIdV2     string                 `protobuf:"bytes,3,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageKey) Reset() {
+	*x = ImageKey{}
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageKey) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageKey) ProtoMessage() {}
+
+func (x *ImageKey) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageKey.ProtoReflect.Descriptor instead.
+func (*ImageKey) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ImageKey) GetImageId() string {
+	if x != nil {
+		return x.ImageId
+	}
+	return ""
+}
+
+func (x *ImageKey) GetImageFullName() string {
+	if x != nil {
+		return x.ImageFullName
+	}
+	return ""
+}
+
+func (x *ImageKey) GetImageIdV2() string {
+	if x != nil {
+		return x.ImageIdV2
+	}
+	return ""
+}
+
 type InvalidateImageCache struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	ImageKeys     []*InvalidateImageCache_ImageKey `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImageKeys     []*ImageKey            `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InvalidateImageCache) Reset() {
 	*x = InvalidateImageCache{}
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1435,7 +1520,7 @@ func (x *InvalidateImageCache) String() string {
 func (*InvalidateImageCache) ProtoMessage() {}
 
 func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[9]
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1448,40 +1533,41 @@ func (x *InvalidateImageCache) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvalidateImageCache.ProtoReflect.Descriptor instead.
 func (*InvalidateImageCache) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{9}
+	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *InvalidateImageCache) GetImageKeys() []*InvalidateImageCache_ImageKey {
+func (x *InvalidateImageCache) GetImageKeys() []*ImageKey {
 	if x != nil {
 		return x.ImageKeys
 	}
 	return nil
 }
 
-type InvalidateImageCache_ImageKey struct {
+// RefreshImageCacheTTL bumps the TTL of existing image cache entries on
+// Sensor without replacing their data. Sent by Central's reprocessor for
+// images whose scan data has not changed.
+type RefreshImageCacheTTL struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ImageId       string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageFullName string                 `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName,proto3" json:"image_full_name,omitempty"`
-	ImageIdV2     string                 `protobuf:"bytes,3,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty"`
+	ImageKeys     []*ImageKey            `protobuf:"bytes,1,rep,name=image_keys,json=imageKeys,proto3" json:"image_keys,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *InvalidateImageCache_ImageKey) Reset() {
-	*x = InvalidateImageCache_ImageKey{}
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[13]
+func (x *RefreshImageCacheTTL) Reset() {
+	*x = RefreshImageCacheTTL{}
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InvalidateImageCache_ImageKey) String() string {
+func (x *RefreshImageCacheTTL) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InvalidateImageCache_ImageKey) ProtoMessage() {}
+func (*RefreshImageCacheTTL) ProtoMessage() {}
 
-func (x *InvalidateImageCache_ImageKey) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[13]
+func (x *RefreshImageCacheTTL) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_sensor_iservice_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1492,30 +1578,16 @@ func (x *InvalidateImageCache_ImageKey) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InvalidateImageCache_ImageKey.ProtoReflect.Descriptor instead.
-func (*InvalidateImageCache_ImageKey) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{9, 0}
+// Deprecated: Use RefreshImageCacheTTL.ProtoReflect.Descriptor instead.
+func (*RefreshImageCacheTTL) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *InvalidateImageCache_ImageKey) GetImageId() string {
+func (x *RefreshImageCacheTTL) GetImageKeys() []*ImageKey {
 	if x != nil {
-		return x.ImageId
+		return x.ImageKeys
 	}
-	return ""
-}
-
-func (x *InvalidateImageCache_ImageKey) GetImageFullName() string {
-	if x != nil {
-		return x.ImageFullName
-	}
-	return ""
-}
-
-func (x *InvalidateImageCache_ImageKey) GetImageIdV2() string {
-	if x != nil {
-		return x.ImageIdV2
-	}
-	return ""
+	return nil
 }
 
 var File_internalapi_central_sensor_iservice_proto protoreflect.FileDescriptor
@@ -1545,8 +1617,9 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x13compliance_response\x18\x11 \x01(\v2\x1b.central.ComplianceResponseH\x00R\x12complianceResponse\x12p\n" +
 	"\x1fdeployment_enhancement_response\x18\x12 \x01(\v2&.central.DeploymentEnhancementResponseH\x00R\x1ddeploymentEnhancementResponse\x12x\n" +
 	"#issue_secured_cluster_certs_request\x18\x13 \x01(\v2(.central.IssueSecuredClusterCertsRequestH\x00R\x1fissueSecuredClusterCertsRequestB\x05\n" +
-	"\x03msg\"\x16\n" +
-	"\x14ReprocessDeployments\"\xdf\x11\n" +
+	"\x03msg\"@\n" +
+	"\x14ReprocessDeployments\x12(\n" +
+	"\x10skip_cache_flush\x18\x01 \x01(\bR\x0eskipCacheFlush\"\xb7\x12\n" +
 	"\vMsgToSensor\x12>\n" +
 	"\venforcement\x18\x01 \x01(\v2\x1a.central.SensorEnforcementH\x00R\venforcement\x12?\n" +
 	"\x0escrape_command\x18\x02 \x01(\v2\x16.central.ScrapeCommandH\x00R\rscrapeCommand\x12[\n" +
@@ -1579,7 +1652,8 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x1edeployment_enhancement_request\x18\x1b \x01(\v2%.central.DeploymentEnhancementRequestH\x00R\x1cdeploymentEnhancementRequest\x12{\n" +
 	"$issue_secured_cluster_certs_response\x18\x1c \x01(\v2).central.IssueSecuredClusterCertsResponseH\x00R issueSecuredClusterCertsResponse\x123\n" +
 	"\n" +
-	"sensor_ack\x18\x1d \x01(\v2\x12.central.SensorACKH\x00R\tsensorAckB\x05\n" +
+	"sensor_ack\x18\x1d \x01(\v2\x12.central.SensorACKH\x00R\tsensorAck\x12V\n" +
+	"\x17refresh_image_cache_ttl\x18\x1e \x01(\v2\x1d.central.RefreshImageCacheTTLH\x00R\x14refreshImageCacheTtlB\x05\n" +
 	"\x03msg\"\xd5\x01\n" +
 	"\fDeduperState\x12R\n" +
 	"\x0fresource_hashes\x18\x01 \x03(\v2).central.DeduperState.ResourceHashesEntryR\x0eresourceHashes\x12\x18\n" +
@@ -1624,14 +1698,17 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01\"<\n" +
 	"\x13ReprocessDeployment\x12%\n" +
-	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"\xcc\x01\n" +
-	"\x14InvalidateImageCache\x12E\n" +
-	"\n" +
-	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeys\x1am\n" +
+	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"m\n" +
 	"\bImageKey\x12\x19\n" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12&\n" +
 	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName\x12\x1e\n" +
-	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV22P\n" +
+	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV2\"H\n" +
+	"\x14InvalidateImageCache\x120\n" +
+	"\n" +
+	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys\"H\n" +
+	"\x14RefreshImageCacheTTL\x120\n" +
+	"\n" +
+	"image_keys\x18\x01 \x03(\v2\x11.central.ImageKeyR\timageKeys2P\n" +
 	"\rSensorService\x12?\n" +
 	"\vCommunicate\x12\x16.central.MsgFromSensor\x1a\x14.central.MsgToSensor(\x010\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
@@ -1648,7 +1725,7 @@ func file_internalapi_central_sensor_iservice_proto_rawDescGZIP() []byte {
 }
 
 var file_internalapi_central_sensor_iservice_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_internalapi_central_sensor_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_internalapi_central_sensor_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_internalapi_central_sensor_iservice_proto_goTypes = []any{
 	(SensorACK_Action)(0),                    // 0: central.SensorACK.Action
 	(SensorACK_MessageType)(0),               // 1: central.SensorACK.MessageType
@@ -1663,111 +1740,114 @@ var file_internalapi_central_sensor_iservice_proto_goTypes = []any{
 	(*AuditLogSync)(nil),                     // 10: central.AuditLogSync
 	(*AuditLogStatusInfo)(nil),               // 11: central.AuditLogStatusInfo
 	(*ReprocessDeployment)(nil),              // 12: central.ReprocessDeployment
-	(*InvalidateImageCache)(nil),             // 13: central.InvalidateImageCache
-	nil,                                      // 14: central.DeduperState.ResourceHashesEntry
-	nil,                                      // 15: central.AuditLogSync.NodeAuditLogFileStatesEntry
-	nil,                                      // 16: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
-	(*InvalidateImageCache_ImageKey)(nil),    // 17: central.InvalidateImageCache.ImageKey
-	(*SensorEvent)(nil),                      // 18: central.SensorEvent
-	(*NetworkFlowUpdate)(nil),                // 19: central.NetworkFlowUpdate
-	(*ScrapeUpdate)(nil),                     // 20: central.ScrapeUpdate
-	(*NetworkPoliciesResponse)(nil),          // 21: central.NetworkPoliciesResponse
-	(*ClusterStatusUpdate)(nil),              // 22: central.ClusterStatusUpdate
-	(*PullTelemetryDataResponse)(nil),        // 23: central.PullTelemetryDataResponse
-	(*RawClusterHealthInfo)(nil),             // 24: central.RawClusterHealthInfo
-	(*SensorHello)(nil),                      // 25: central.SensorHello
-	(*IssueLocalScannerCertsRequest)(nil),    // 26: central.IssueLocalScannerCertsRequest
-	(*ClusterMetrics)(nil),                   // 27: central.ClusterMetrics
-	(*ProcessListeningOnPortsUpdate)(nil),    // 28: central.ProcessListeningOnPortsUpdate
-	(*ComplianceOperatorInfo)(nil),           // 29: central.ComplianceOperatorInfo
-	(*ComplianceResponse)(nil),               // 30: central.ComplianceResponse
-	(*DeploymentEnhancementResponse)(nil),    // 31: central.DeploymentEnhancementResponse
-	(*IssueSecuredClusterCertsRequest)(nil),  // 32: central.IssueSecuredClusterCertsRequest
-	(*SensorEnforcement)(nil),                // 33: central.SensorEnforcement
-	(*ScrapeCommand)(nil),                    // 34: central.ScrapeCommand
-	(*NetworkPoliciesCommand)(nil),           // 35: central.NetworkPoliciesCommand
-	(*ClusterConfig)(nil),                    // 36: central.ClusterConfig
-	(*SensorUpgradeTrigger)(nil),             // 37: central.SensorUpgradeTrigger
-	(*PullTelemetryDataRequest)(nil),         // 38: central.PullTelemetryDataRequest
-	(*PolicySync)(nil),                       // 39: central.PolicySync
-	(*BaselineSync)(nil),                     // 40: central.BaselineSync
-	(*CancelPullTelemetryDataRequest)(nil),   // 41: central.CancelPullTelemetryDataRequest
-	(*PushNetworkEntitiesRequest)(nil),       // 42: central.PushNetworkEntitiesRequest
-	(*CentralHello)(nil),                     // 43: central.CentralHello
-	(*NetworkBaselineSync)(nil),              // 44: central.NetworkBaselineSync
-	(*IssueLocalScannerCertsResponse)(nil),   // 45: central.IssueLocalScannerCertsResponse
-	(*storage.Image)(nil),                    // 46: storage.Image
-	(*DelegatedRegistryConfig)(nil),          // 47: central.DelegatedRegistryConfig
-	(*ScanImage)(nil),                        // 48: central.ScanImage
-	(*ImageIntegrations)(nil),                // 49: central.ImageIntegrations
-	(*ComplianceRequest)(nil),                // 50: central.ComplianceRequest
-	(*ClusterHealthResponse)(nil),            // 51: central.ClusterHealthResponse
-	(*DeploymentEnhancementRequest)(nil),     // 52: central.DeploymentEnhancementRequest
-	(*IssueSecuredClusterCertsResponse)(nil), // 53: central.IssueSecuredClusterCertsResponse
-	(*storage.AuditLogFileState)(nil),        // 54: storage.AuditLogFileState
+	(*ImageKey)(nil),                         // 13: central.ImageKey
+	(*InvalidateImageCache)(nil),             // 14: central.InvalidateImageCache
+	(*RefreshImageCacheTTL)(nil),             // 15: central.RefreshImageCacheTTL
+	nil,                                      // 16: central.DeduperState.ResourceHashesEntry
+	nil,                                      // 17: central.AuditLogSync.NodeAuditLogFileStatesEntry
+	nil,                                      // 18: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
+	(*SensorEvent)(nil),                      // 19: central.SensorEvent
+	(*NetworkFlowUpdate)(nil),                // 20: central.NetworkFlowUpdate
+	(*ScrapeUpdate)(nil),                     // 21: central.ScrapeUpdate
+	(*NetworkPoliciesResponse)(nil),          // 22: central.NetworkPoliciesResponse
+	(*ClusterStatusUpdate)(nil),              // 23: central.ClusterStatusUpdate
+	(*PullTelemetryDataResponse)(nil),        // 24: central.PullTelemetryDataResponse
+	(*RawClusterHealthInfo)(nil),             // 25: central.RawClusterHealthInfo
+	(*SensorHello)(nil),                      // 26: central.SensorHello
+	(*IssueLocalScannerCertsRequest)(nil),    // 27: central.IssueLocalScannerCertsRequest
+	(*ClusterMetrics)(nil),                   // 28: central.ClusterMetrics
+	(*ProcessListeningOnPortsUpdate)(nil),    // 29: central.ProcessListeningOnPortsUpdate
+	(*ComplianceOperatorInfo)(nil),           // 30: central.ComplianceOperatorInfo
+	(*ComplianceResponse)(nil),               // 31: central.ComplianceResponse
+	(*DeploymentEnhancementResponse)(nil),    // 32: central.DeploymentEnhancementResponse
+	(*IssueSecuredClusterCertsRequest)(nil),  // 33: central.IssueSecuredClusterCertsRequest
+	(*SensorEnforcement)(nil),                // 34: central.SensorEnforcement
+	(*ScrapeCommand)(nil),                    // 35: central.ScrapeCommand
+	(*NetworkPoliciesCommand)(nil),           // 36: central.NetworkPoliciesCommand
+	(*ClusterConfig)(nil),                    // 37: central.ClusterConfig
+	(*SensorUpgradeTrigger)(nil),             // 38: central.SensorUpgradeTrigger
+	(*PullTelemetryDataRequest)(nil),         // 39: central.PullTelemetryDataRequest
+	(*PolicySync)(nil),                       // 40: central.PolicySync
+	(*BaselineSync)(nil),                     // 41: central.BaselineSync
+	(*CancelPullTelemetryDataRequest)(nil),   // 42: central.CancelPullTelemetryDataRequest
+	(*PushNetworkEntitiesRequest)(nil),       // 43: central.PushNetworkEntitiesRequest
+	(*CentralHello)(nil),                     // 44: central.CentralHello
+	(*NetworkBaselineSync)(nil),              // 45: central.NetworkBaselineSync
+	(*IssueLocalScannerCertsResponse)(nil),   // 46: central.IssueLocalScannerCertsResponse
+	(*storage.Image)(nil),                    // 47: storage.Image
+	(*DelegatedRegistryConfig)(nil),          // 48: central.DelegatedRegistryConfig
+	(*ScanImage)(nil),                        // 49: central.ScanImage
+	(*ImageIntegrations)(nil),                // 50: central.ImageIntegrations
+	(*ComplianceRequest)(nil),                // 51: central.ComplianceRequest
+	(*ClusterHealthResponse)(nil),            // 52: central.ClusterHealthResponse
+	(*DeploymentEnhancementRequest)(nil),     // 53: central.DeploymentEnhancementRequest
+	(*IssueSecuredClusterCertsResponse)(nil), // 54: central.IssueSecuredClusterCertsResponse
+	(*storage.AuditLogFileState)(nil),        // 55: storage.AuditLogFileState
 }
 var file_internalapi_central_sensor_iservice_proto_depIdxs = []int32{
-	18, // 0: central.MsgFromSensor.event:type_name -> central.SensorEvent
-	19, // 1: central.MsgFromSensor.network_flow_update:type_name -> central.NetworkFlowUpdate
-	20, // 2: central.MsgFromSensor.scrape_update:type_name -> central.ScrapeUpdate
-	21, // 3: central.MsgFromSensor.network_policies_response:type_name -> central.NetworkPoliciesResponse
-	22, // 4: central.MsgFromSensor.cluster_status_update:type_name -> central.ClusterStatusUpdate
-	23, // 5: central.MsgFromSensor.telemetry_data_response:type_name -> central.PullTelemetryDataResponse
-	24, // 6: central.MsgFromSensor.cluster_health_info:type_name -> central.RawClusterHealthInfo
-	25, // 7: central.MsgFromSensor.hello:type_name -> central.SensorHello
+	19, // 0: central.MsgFromSensor.event:type_name -> central.SensorEvent
+	20, // 1: central.MsgFromSensor.network_flow_update:type_name -> central.NetworkFlowUpdate
+	21, // 2: central.MsgFromSensor.scrape_update:type_name -> central.ScrapeUpdate
+	22, // 3: central.MsgFromSensor.network_policies_response:type_name -> central.NetworkPoliciesResponse
+	23, // 4: central.MsgFromSensor.cluster_status_update:type_name -> central.ClusterStatusUpdate
+	24, // 5: central.MsgFromSensor.telemetry_data_response:type_name -> central.PullTelemetryDataResponse
+	25, // 6: central.MsgFromSensor.cluster_health_info:type_name -> central.RawClusterHealthInfo
+	26, // 7: central.MsgFromSensor.hello:type_name -> central.SensorHello
 	11, // 8: central.MsgFromSensor.audit_log_status_info:type_name -> central.AuditLogStatusInfo
-	26, // 9: central.MsgFromSensor.issue_local_scanner_certs_request:type_name -> central.IssueLocalScannerCertsRequest
-	27, // 10: central.MsgFromSensor.cluster_metrics:type_name -> central.ClusterMetrics
-	28, // 11: central.MsgFromSensor.process_listening_on_port_update:type_name -> central.ProcessListeningOnPortsUpdate
-	29, // 12: central.MsgFromSensor.compliance_operator_info:type_name -> central.ComplianceOperatorInfo
-	30, // 13: central.MsgFromSensor.compliance_response:type_name -> central.ComplianceResponse
-	31, // 14: central.MsgFromSensor.deployment_enhancement_response:type_name -> central.DeploymentEnhancementResponse
-	32, // 15: central.MsgFromSensor.issue_secured_cluster_certs_request:type_name -> central.IssueSecuredClusterCertsRequest
-	33, // 16: central.MsgToSensor.enforcement:type_name -> central.SensorEnforcement
-	34, // 17: central.MsgToSensor.scrape_command:type_name -> central.ScrapeCommand
-	35, // 18: central.MsgToSensor.network_policies_command:type_name -> central.NetworkPoliciesCommand
-	36, // 19: central.MsgToSensor.cluster_config:type_name -> central.ClusterConfig
-	37, // 20: central.MsgToSensor.sensor_upgrade_trigger:type_name -> central.SensorUpgradeTrigger
-	38, // 21: central.MsgToSensor.telemetry_data_request:type_name -> central.PullTelemetryDataRequest
-	39, // 22: central.MsgToSensor.policy_sync:type_name -> central.PolicySync
-	40, // 23: central.MsgToSensor.baseline_sync:type_name -> central.BaselineSync
-	41, // 24: central.MsgToSensor.cancel_pull_telemetry_data_request:type_name -> central.CancelPullTelemetryDataRequest
-	42, // 25: central.MsgToSensor.push_network_entities_request:type_name -> central.PushNetworkEntitiesRequest
-	43, // 26: central.MsgToSensor.hello:type_name -> central.CentralHello
-	44, // 27: central.MsgToSensor.network_baseline_sync:type_name -> central.NetworkBaselineSync
+	27, // 9: central.MsgFromSensor.issue_local_scanner_certs_request:type_name -> central.IssueLocalScannerCertsRequest
+	28, // 10: central.MsgFromSensor.cluster_metrics:type_name -> central.ClusterMetrics
+	29, // 11: central.MsgFromSensor.process_listening_on_port_update:type_name -> central.ProcessListeningOnPortsUpdate
+	30, // 12: central.MsgFromSensor.compliance_operator_info:type_name -> central.ComplianceOperatorInfo
+	31, // 13: central.MsgFromSensor.compliance_response:type_name -> central.ComplianceResponse
+	32, // 14: central.MsgFromSensor.deployment_enhancement_response:type_name -> central.DeploymentEnhancementResponse
+	33, // 15: central.MsgFromSensor.issue_secured_cluster_certs_request:type_name -> central.IssueSecuredClusterCertsRequest
+	34, // 16: central.MsgToSensor.enforcement:type_name -> central.SensorEnforcement
+	35, // 17: central.MsgToSensor.scrape_command:type_name -> central.ScrapeCommand
+	36, // 18: central.MsgToSensor.network_policies_command:type_name -> central.NetworkPoliciesCommand
+	37, // 19: central.MsgToSensor.cluster_config:type_name -> central.ClusterConfig
+	38, // 20: central.MsgToSensor.sensor_upgrade_trigger:type_name -> central.SensorUpgradeTrigger
+	39, // 21: central.MsgToSensor.telemetry_data_request:type_name -> central.PullTelemetryDataRequest
+	40, // 22: central.MsgToSensor.policy_sync:type_name -> central.PolicySync
+	41, // 23: central.MsgToSensor.baseline_sync:type_name -> central.BaselineSync
+	42, // 24: central.MsgToSensor.cancel_pull_telemetry_data_request:type_name -> central.CancelPullTelemetryDataRequest
+	43, // 25: central.MsgToSensor.push_network_entities_request:type_name -> central.PushNetworkEntitiesRequest
+	44, // 26: central.MsgToSensor.hello:type_name -> central.CentralHello
+	45, // 27: central.MsgToSensor.network_baseline_sync:type_name -> central.NetworkBaselineSync
 	10, // 28: central.MsgToSensor.audit_log_sync:type_name -> central.AuditLogSync
 	12, // 29: central.MsgToSensor.reprocess_deployment:type_name -> central.ReprocessDeployment
-	13, // 30: central.MsgToSensor.invalidate_image_cache:type_name -> central.InvalidateImageCache
-	45, // 31: central.MsgToSensor.issue_local_scanner_certs_response:type_name -> central.IssueLocalScannerCertsResponse
-	46, // 32: central.MsgToSensor.updated_image:type_name -> storage.Image
+	14, // 30: central.MsgToSensor.invalidate_image_cache:type_name -> central.InvalidateImageCache
+	46, // 31: central.MsgToSensor.issue_local_scanner_certs_response:type_name -> central.IssueLocalScannerCertsResponse
+	47, // 32: central.MsgToSensor.updated_image:type_name -> storage.Image
 	5,  // 33: central.MsgToSensor.reprocess_deployments:type_name -> central.ReprocessDeployments
 	9,  // 34: central.MsgToSensor.node_inventory_ack:type_name -> central.NodeInventoryACK
-	47, // 35: central.MsgToSensor.delegated_registry_config:type_name -> central.DelegatedRegistryConfig
-	48, // 36: central.MsgToSensor.scan_image:type_name -> central.ScanImage
-	49, // 37: central.MsgToSensor.image_integrations:type_name -> central.ImageIntegrations
-	50, // 38: central.MsgToSensor.compliance_request:type_name -> central.ComplianceRequest
-	51, // 39: central.MsgToSensor.cluster_health_response:type_name -> central.ClusterHealthResponse
+	48, // 35: central.MsgToSensor.delegated_registry_config:type_name -> central.DelegatedRegistryConfig
+	49, // 36: central.MsgToSensor.scan_image:type_name -> central.ScanImage
+	50, // 37: central.MsgToSensor.image_integrations:type_name -> central.ImageIntegrations
+	51, // 38: central.MsgToSensor.compliance_request:type_name -> central.ComplianceRequest
+	52, // 39: central.MsgToSensor.cluster_health_response:type_name -> central.ClusterHealthResponse
 	7,  // 40: central.MsgToSensor.deduper_state:type_name -> central.DeduperState
-	52, // 41: central.MsgToSensor.deployment_enhancement_request:type_name -> central.DeploymentEnhancementRequest
-	53, // 42: central.MsgToSensor.issue_secured_cluster_certs_response:type_name -> central.IssueSecuredClusterCertsResponse
+	53, // 41: central.MsgToSensor.deployment_enhancement_request:type_name -> central.DeploymentEnhancementRequest
+	54, // 42: central.MsgToSensor.issue_secured_cluster_certs_response:type_name -> central.IssueSecuredClusterCertsResponse
 	8,  // 43: central.MsgToSensor.sensor_ack:type_name -> central.SensorACK
-	14, // 44: central.DeduperState.resource_hashes:type_name -> central.DeduperState.ResourceHashesEntry
-	0,  // 45: central.SensorACK.action:type_name -> central.SensorACK.Action
-	1,  // 46: central.SensorACK.message_type:type_name -> central.SensorACK.MessageType
-	2,  // 47: central.NodeInventoryACK.action:type_name -> central.NodeInventoryACK.Action
-	3,  // 48: central.NodeInventoryACK.messageType:type_name -> central.NodeInventoryACK.MessageType
-	15, // 49: central.AuditLogSync.node_audit_log_file_states:type_name -> central.AuditLogSync.NodeAuditLogFileStatesEntry
-	16, // 50: central.AuditLogStatusInfo.node_audit_log_file_states:type_name -> central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
-	17, // 51: central.InvalidateImageCache.image_keys:type_name -> central.InvalidateImageCache.ImageKey
-	54, // 52: central.AuditLogSync.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
-	54, // 53: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
-	4,  // 54: central.SensorService.Communicate:input_type -> central.MsgFromSensor
-	6,  // 55: central.SensorService.Communicate:output_type -> central.MsgToSensor
-	55, // [55:56] is the sub-list for method output_type
-	54, // [54:55] is the sub-list for method input_type
-	54, // [54:54] is the sub-list for extension type_name
-	54, // [54:54] is the sub-list for extension extendee
-	0,  // [0:54] is the sub-list for field type_name
+	15, // 44: central.MsgToSensor.refresh_image_cache_ttl:type_name -> central.RefreshImageCacheTTL
+	16, // 45: central.DeduperState.resource_hashes:type_name -> central.DeduperState.ResourceHashesEntry
+	0,  // 46: central.SensorACK.action:type_name -> central.SensorACK.Action
+	1,  // 47: central.SensorACK.message_type:type_name -> central.SensorACK.MessageType
+	2,  // 48: central.NodeInventoryACK.action:type_name -> central.NodeInventoryACK.Action
+	3,  // 49: central.NodeInventoryACK.messageType:type_name -> central.NodeInventoryACK.MessageType
+	17, // 50: central.AuditLogSync.node_audit_log_file_states:type_name -> central.AuditLogSync.NodeAuditLogFileStatesEntry
+	18, // 51: central.AuditLogStatusInfo.node_audit_log_file_states:type_name -> central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
+	13, // 52: central.InvalidateImageCache.image_keys:type_name -> central.ImageKey
+	13, // 53: central.RefreshImageCacheTTL.image_keys:type_name -> central.ImageKey
+	55, // 54: central.AuditLogSync.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
+	55, // 55: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
+	4,  // 56: central.SensorService.Communicate:input_type -> central.MsgFromSensor
+	6,  // 57: central.SensorService.Communicate:output_type -> central.MsgToSensor
+	57, // [57:58] is the sub-list for method output_type
+	56, // [56:57] is the sub-list for method input_type
+	56, // [56:56] is the sub-list for extension type_name
+	56, // [56:56] is the sub-list for extension extendee
+	0,  // [0:56] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_sensor_iservice_proto_init() }
@@ -1840,6 +1920,7 @@ func file_internalapi_central_sensor_iservice_proto_init() {
 		(*MsgToSensor_DeploymentEnhancementRequest)(nil),
 		(*MsgToSensor_IssueSecuredClusterCertsResponse)(nil),
 		(*MsgToSensor_SensorAck)(nil),
+		(*MsgToSensor_RefreshImageCacheTtl)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1847,7 +1928,7 @@ func file_internalapi_central_sensor_iservice_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_sensor_iservice_proto_rawDesc), len(file_internalapi_central_sensor_iservice_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

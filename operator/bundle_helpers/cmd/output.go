@@ -32,7 +32,7 @@ func encodeAndNormalizeYAML(doc any, w io.Writer) error {
 func normalizeYAMLOutput(goYAML []byte, w io.Writer) error {
 	// Find yaml-normalizer.py: try current directory first (when run from bundle_helpers/),
 	// then try bundle_helpers/ subdirectory (when run from operator/)
-	normalizerPath := "yaml-normalizer.py"
+	normalizerPath := filepath.Join(".", "yaml-normalizer.py")
 	if _, err := os.Stat(normalizerPath); err != nil {
 		normalizerPath = filepath.Join("bundle_helpers", "yaml-normalizer.py")
 		if _, err := os.Stat(normalizerPath); err != nil {

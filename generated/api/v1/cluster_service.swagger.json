@@ -360,6 +360,24 @@
       },
       "title": "Next tag: 33"
     },
+    "DynamicClusterConfigProcessIndicatorsConfig": {
+      "type": "object",
+      "properties": {
+        "noPersistence": {
+          "type": "boolean",
+          "description": "Specifies whether to persist process indicators independently from\nother configuratons. If true, the filters above are ignored, and no\nprocess indicators are persisted. If false (the protobuf default for\nbooleans), process indicators are persisted according to\nnamespace_filter and exclude_openshift_ns."
+        },
+        "excludeNamespaceFilter": {
+          "type": "string",
+          "description": "A regex specifying to not persist process indicators from specified\nnamespaces. E.g. namespace_filter: \"test-.*\" will instruct Central to\nnot persist any process indicator coming from the \"test-filtering\"\nnamespace."
+        },
+        "excludeOpenshiftNs": {
+          "type": "boolean",
+          "description": "A short-cut to not persist process indicators from openshift namespaces.\nEquivalent to namespace_filter: \"openshift-.*\"."
+        }
+      },
+      "title": "Configure per-namespace persistence for ProcessIndicators"
+    },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
       "enum": [
@@ -806,6 +824,9 @@
         },
         "autoLockProcessBaselinesConfig": {
           "$ref": "#/definitions/storageAutoLockProcessBaselinesConfig"
+        },
+        "processIndicators": {
+          "$ref": "#/definitions/DynamicClusterConfigProcessIndicatorsConfig"
         }
       },
       "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."

@@ -33,16 +33,18 @@ export type VulnerabilityReportFiltersBase = {
     includeNvdCvss: boolean;
 };
 
-export type VulnerabilityReportFilters =
-    | (VulnerabilityReportFiltersBase & {
+export type VulnerabilityReportFilters = VulnerabilityReportFiltersBase & CvesSince;
+
+export type CvesSince =
+    | {
           allVuln: boolean;
-      })
-    | (VulnerabilityReportFiltersBase & {
+      }
+    | {
           sinceLastSentScheduledReport: boolean;
-      })
-    | (VulnerabilityReportFiltersBase & {
+      }
+    | {
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
-      });
+      };
 
 export type ViewBasedVulnerabilityReportFilters = {
     query: string;
@@ -94,11 +96,43 @@ export type NotifierConfiguration = {
 // Resource scope types
 
 export type ResourceScope = {
-    collectionScope: {
-        collectionId: string;
-        collectionName: string;
-    };
+    collectionScope: CollectionScope;
 };
+
+export type CollectionScope = {
+    collectionId: string;
+    collectionName: string;
+};
+
+export type EntityScope = {
+    rules: EntityScopeRule[];
+};
+
+export type MatchType = 'EXACT' | 'REGEX';
+
+export type RuleValue = {
+    value: string;
+    matchType: MatchType;
+};
+
+export type EntityScopeRule = {
+    entity: ScopeEntity;
+    field: ScopeField;
+    values: RuleValue[];
+};
+
+export type ScopeEntity =
+    | 'SCOPE_ENTITY_UNSET'
+    | 'SCOPE_ENTITY_DEPLOYMENT'
+    | 'SCOPE_ENTITY_NAMESPACE'
+    | 'SCOPE_ENTITY_CLUSTER';
+
+export type ScopeField =
+    | 'FIELD_UNSET'
+    | 'FIELD_ID'
+    | 'FIELD_NAME'
+    | 'FIELD_LABEL'
+    | 'FIELD_ANNOTATION';
 
 export type CollectionSnapshot = {
     id: string;

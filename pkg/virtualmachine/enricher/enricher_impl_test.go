@@ -181,7 +181,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 
 			// Verify scan metadata
 			assert.NotNil(t, tt.vm.GetScan().GetScanTime())
-			assert.Equal(t, "", tt.vm.GetScan().GetOperatingSystem())
+			assert.Equal(t, "unknown", tt.vm.GetScan().GetOperatingSystem())
 		})
 	}
 }

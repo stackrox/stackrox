@@ -1,6 +1,6 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c AS builder
-# This installs PyYAML (with Python) needed by bundle_helpers.
-RUN dnf -y install --allowerasing python3.12-pyyaml && \
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:7d4e47500f28ac3a2bff06c25eff9127ff21048538ae03ce240d57cf756acd00 AS builder
+# This installs PyYAML (with Python) and Go toolchain needed by bundle_helpers.
+RUN microdnf -y install python3.12-pyyaml go-toolset && \
     alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
 COPY . /stackrox

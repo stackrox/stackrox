@@ -128,6 +128,20 @@ updates:
       prefix: chore
 
   - package-ecosystem: 'gomod'
+    directory: '/tools/build/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "auto-merge"
+    - "auto-retest"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
     directory: '/operator/tools/controller-gen'
     schedule:
       interval: 'weekly'
@@ -267,6 +281,7 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'operator/'
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -282,6 +297,7 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'operator/tests/controller/metrics'
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: 'monthly'
     open-pull-requests-limit: 3
@@ -296,6 +312,7 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'image/rhel'
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -309,6 +326,7 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'image/postgres'
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -322,6 +340,7 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'scanner/image/scanner'
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -335,6 +354,7 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'scanner/image/db'
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: 'weekly'
       day: 'wednesday'

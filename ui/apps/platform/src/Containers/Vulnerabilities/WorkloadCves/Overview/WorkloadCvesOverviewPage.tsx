@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom-v5-compat';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
     Content,
@@ -36,20 +36,12 @@ import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
 
-import {
-    clusterSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    namespaceSearchFilterConfig,
-} from '../../searchFilterConfig';
+import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
 import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
 import {
     getNamespaceViewPagePath,
-    getVulnStateScopedQueryString,
-    getZeroCveScopedQueryString,
+    getRegexScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import {
@@ -71,6 +63,7 @@ import DefaultFilterModal from '../components/DefaultFilterModal';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
 
@@ -126,6 +119,7 @@ const defaultStorage: VulnMgmtLocalStorage = {
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+    const navigate = useNavigate();
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -175,18 +169,20 @@ function WorkloadCvesOverviewPage() {
     // If the user is viewing observed CVEs, we need to scope the query based on
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
     // need to scope the query to only show images/deployments with 0 CVEs.
-    const workloadCvesScopedQueryString = isViewingWithCves
-        ? getVulnStateScopedQueryString(
-              {
-                  ...baseSearchFilter,
-                  ...querySearchFilter,
-              },
-              currentVulnerabilityState
-          )
-        : getZeroCveScopedQueryString({
+    const workloadCvesScopedSearchFilter = isViewingWithCves
+        ? {
               ...baseSearchFilter,
               ...querySearchFilter,
-          });
+              'Vulnerability State': [currentVulnerabilityState],
+          }
+        : {
+              ...baseSearchFilter,
+              ...querySearchFilter,
+              'Image CVE Count': ['0'],
+          };
+
+    // For request and view-based report.
+    const workloadCvesScopedQueryString = getRegexScopedQueryString(workloadCvesScopedSearchFilter);
 
     const getDefaultSortOption = isViewingWithCves
         ? getWorkloadCveOverviewDefaultSortOption
@@ -281,19 +277,10 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
-    const searchFilterConfigWithFeatureFlagDependency = [
-        clusterSearchFilterConfig,
-        imageCVESearchFilterConfig,
-        deploymentSearchFilterConfig,
-        imageSearchFilterConfig,
-        imageComponentSearchFilterConfig,
-        namespaceSearchFilterConfig,
-    ];
-
+    // Keep getSearchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
         isFeatureFlagEnabled,
-        searchFilterConfigWithFeatureFlagDependency
+        searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport
     );
 
     // Report-specific state management
@@ -396,8 +383,15 @@ function WorkloadCvesOverviewPage() {
                     additionalToolbarItems={
                         isViewBasedReportsEnabled && (
                             <CreateReportDropdown
-                                onSelect={() => {
+                                onSelectExportReportAsCSV={() => {
                                     setIsCreateViewBasedReportModalOpen(true);
+                                }}
+                                onSelectCreateScheduledReport={() => {
+                                    navigate(
+                                        createScheduledReportForImageVulnerabilitiesURL(
+                                            workloadCvesScopedSearchFilter
+                                        )
+                                    );
                                 }}
                             />
                         )

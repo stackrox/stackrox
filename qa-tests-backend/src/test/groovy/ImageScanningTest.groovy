@@ -19,6 +19,7 @@ import objects.ECRRegistryIntegration
 import objects.GCRImageIntegration
 import objects.GoogleArtifactRegistry
 import objects.QuayImageIntegration
+import objects.ScannerV4Integration
 import objects.Secret
 import objects.StackroxScannerIntegration
 import services.ClusterService
@@ -43,15 +44,16 @@ class ImageScanningTest extends BaseSpecification {
 
     static final private String UBI8_0_IMAGE = "registry.access.redhat.com/ubi8:8.0-208"
     static final private String RHEL7_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:rhel7-minimal-7.5-422"
+    static final private String RHEL9_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:ubi9-minimal-9.6-1760515502"
     static final private String QUAY_IMAGE_WITH_CLAIR_SCAN_DATA = "quay.io/rhacs-eng/qa:nginx-unprivileged"
     static final private String GCR_IMAGE   = "us.gcr.io/acs-san-stackroxci/qa-multi-arch/registry-image:0.2"
     static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
     static final private String OCI_IMAGE   = "quay.io/rhacs-eng/qa:oci-manifest"
     static final private String LIST_IMAGE_OCI_MANIFEST = "quay.io/rhacs-eng/qa:list-image-oci-manifest"
     static final private String AR_IMAGE =
-        "us-west1-docker.pkg.dev/acs-san-stackroxci/artifact-registry-test/nginx:1.17"
-    static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
-    static final private String CENTOS_ECHO_IMAGE = "quay.io/rhacs-eng/qa:centos7-base-echo"
+        "us-west1-docker.pkg.dev/acs-san-stackroxci/artifact-registry-test/nginx:3.21-1-amd64"
+    static final private String UBI9_MINIMAL_IMAGE = "quay.io/rhacs-eng/qa:ubi9-minimal-9.5-1747111267-amd64"
+    static final private String UBI9_MINIMAL_ECHO_IMAGE = "quay.io/rhacs-eng/qa:ubi9-minimal-9.5-1747111267-amd64-echo"
     static final private String LINEAGE_IMAGE_A = "quay.io/rhacs-eng/qa:lineage-jdk-17.0.11"
     static final private String LINEAGE_IMAGE_B = "quay.io/rhacs-eng/qa:lineage-jdk-17.0.13"
 
@@ -419,7 +421,9 @@ class ImageScanningTest extends BaseSpecification {
         "Add scanner"
         String integrationId = scanner.createDefaultIntegration()
         assert integrationId
-        integrationIds.add(integrationId)
+        if (scanner.isDeletable()) {
+            integrationIds.add(integrationId)
+        }
 
         and:
         "Scan Image and verify results"
@@ -465,6 +469,11 @@ class ImageScanningTest extends BaseSpecification {
         new ClairV4ScannerIntegration()  | "platform-python-pip"      | "9.0.3-13.el8"                | 0   | "RHSA-2020:4432" | UBI8_0_IMAGE            | ""
         new StackroxScannerIntegration() | "java-17-openjdk-headless" | "1:17.0.11.0.9-2.el8.x86_64"  | 135 | ""               | LINEAGE_IMAGE_A         | ""
         new StackroxScannerIntegration() | "java-17-openjdk-headless" | "1:17.0.13.0.11-3.el8.x86_64" | 137 | ""               | LINEAGE_IMAGE_B         | ""
+        new ScannerV4Integration()       | "openssl-libs"             | "1:3.2.2-6.el9_5.1"           | 18  | "CVE-2025-15467" | RHEL9_IMAGE             | ""
+        new ScannerV4Integration()       | "systemd"                  | "229-4ubuntu21.29"            | 0   | "CVE-2021-33910" | OCI_IMAGE               | ""
+        new ScannerV4Integration()       | "libc6"                    | "2.35-0ubuntu3.1"             | 4   | "CVE-2023-4911"  | LIST_IMAGE_OCI_MANIFEST | ""
+        new ScannerV4Integration()       | "java-17-openjdk-headless" | "1:17.0.11.0.9-2.el8"         | 135 | ""               | LINEAGE_IMAGE_A         | ""
+        new ScannerV4Integration()       | "java-17-openjdk-headless" | "1:17.0.13.0.11-3.el8"        | 137 | ""               | LINEAGE_IMAGE_B         | ""
     }
 
     @Unroll
@@ -506,8 +515,8 @@ class ImageScanningTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        registry                     | component | version   | idx | cve              | image
-        new GoogleArtifactRegistry() | "gcc-8"   | "8.3.0-6" | 0   | "CVE-2018-12886" | AR_IMAGE
+        registry                     | component   | version     | idx | cve              | image
+        new GoogleArtifactRegistry() | "libxslt"   | "1.1.32-r0" | 4   | "CVE-2019-11068" | AR_IMAGE
     }
 
     static final private IMAGES_FOR_ERROR_TESTS = [
@@ -531,7 +540,9 @@ class ImageScanningTest extends BaseSpecification {
         "Add scanner"
         String integrationId = scanner.createDefaultIntegration()
         assert integrationId
-        integrationIds.add(integrationId)
+        if (scanner.isDeletable()) {
+            integrationIds.add(integrationId)
+        }
 
         and:
         "Scan image"
@@ -726,28 +737,32 @@ class ImageScanningTest extends BaseSpecification {
 
     def "Validate image deletion does not affect other images"() {
         given:
-        ImageIntegrationService.addStackroxScannerIntegration()
+        if (!scannerV4Enabled) {
+            ImageIntegrationService.addStackroxScannerIntegration()
+        }
 
         when:
-        "Scan CentOS image and derivative echo image (centos + touch file)"
-        ImageService.scanImage(CENTOS_ECHO_IMAGE, false)
-        def expectedDetails = ImageService.scanImage(CENTOS_IMAGE, false)
+        "Scan UBI9 image and derivative echo image (UBI9 + touch file)"
+        ImageService.scanImage(UBI9_MINIMAL_ECHO_IMAGE, false)
+        def expectedDetails = ImageService.scanImage(UBI9_MINIMAL_IMAGE, false)
 
         and:
-        "Delete CentOS image and ensure echo still same number of vulns"
-        ImageService.deleteImages(
-                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${CENTOS_ECHO_IMAGE}").build(), true)
+        "Delete UBI9 image and ensure echo still same number of vulns"
+        ImageService.deleteImages(SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
+            "Image:${UBI9_MINIMAL_ECHO_IMAGE}").build(), true)
         def actualDetails = ImageService.getImage(expectedDetails.id)
         assert actualDetails.scan.componentsList.sum { it.vulnsList.size() } > 0
 
         then:
-        "Delete CentOS image and ensure echo still same number of vulns"
+        "Delete UBI9 image and ensure echo still same number of vulns"
         expectedDetails.scan.componentsList.size() == actualDetails.scan.componentsList.size()
         expectedDetails.scan.componentsList.sum { it.vulnsList.size() } ==
                 actualDetails.scan.componentsList.sum { it.vulnsList.size() }
 
         cleanup:
-        deleteStackroxScanner = true
+        if (!scannerV4Enabled) {
+            deleteStackroxScanner = true
+        }
     }
 
     @Unroll
@@ -766,6 +781,10 @@ class ImageScanningTest extends BaseSpecification {
 
         when:
         "Image registry and scanner integrations are configured"
+        String scannerName = useQuayScanner ? "quay"
+            : scannerV4Enabled ? "Scanner V4"
+            : "Stackrox Scanner"
+
         if (scannerName == "Stackrox Scanner") {
             ImageIntegrationService.addStackroxScannerIntegration()
             deleteStackroxScanner = true
@@ -802,20 +821,20 @@ class ImageScanningTest extends BaseSpecification {
         }
 
         where:
-        testName                                           | integrationName  | scannerName |
+        testName                                           | integrationName  | useQuayScanner |
                 imageIntegrationConfig
-        "quay registry with token"                         | "quay"           | "Stackrox Scanner" |
+        "quay registry with token"                         | "quay"           | false |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: false,]) }
-        "quay with robot creds only"                       | "quay"           |  "Stackrox Scanner" |
+        "quay with robot creds only"                       | "quay"           | false |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: "", useRobotCreds: true, includeScanner: false,]) }
 
-        "quay registry+scanner with token"                  | "quay"          | "quay" |
+        "quay registry+scanner with token"                  | "quay"          | true  |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: true,]) }
 
-        "quay registry+scanner with token and robot creds"  | "quay"          | "quay" |
+        "quay registry+scanner with token and robot creds"  | "quay"          | true  |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), useRobotCreds: true,
                          includeScanner: true,]) }

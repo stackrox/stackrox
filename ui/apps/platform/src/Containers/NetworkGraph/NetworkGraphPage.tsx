@@ -73,9 +73,6 @@ const emptyModelState = {
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
-// for MVP, always show Orchestrator Components
-const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
-
 // This is a query param used to add policy data in the response for the network graph data
 const INCLUDE_POLICIES = true;
 
@@ -190,8 +187,7 @@ function NetworkGraphPageContent() {
                     deploymentsFromUrl,
                     queryToUse,
                     sinceTimestamp,
-                    includePorts,
-                    ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
+                    includePorts
                 ),
                 // fetch the network graph data, including policies, for the inactive graph
                 fetchNetworkFlowGraph(
@@ -201,7 +197,6 @@ function NetworkGraphPageContent() {
                     queryToUse,
                     undefined,
                     includePorts,
-                    ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS,
                     INCLUDE_POLICIES
                 ),
             ])

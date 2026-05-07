@@ -61,6 +61,38 @@ func TestFromString(t *testing.T) {
 	}
 }
 
+func TestNewV7(t *testing.T) {
+	t.Run("valid UUID", func(t *testing.T) {
+		id := NewV7()
+		_, err := FromString(id.String())
+		assert.NoError(t, err)
+	})
+
+	t.Run("version nibble is 7", func(t *testing.T) {
+		id := NewV7()
+		// Version is the 13th hex character (index 14 in the string, after the second hyphen).
+		assert.Equal(t, byte('7'), id.String()[14])
+	})
+
+	t.Run("unique", func(t *testing.T) {
+		seen := make(map[string]bool)
+		for range 100 {
+			id := NewV7().String()
+			assert.False(t, seen[id], "duplicate UUID generated: %s", id)
+			seen[id] = true
+		}
+	})
+
+	t.Run("monotonically increasing", func(t *testing.T) {
+		prev := NewV7().String()
+		for range 100 {
+			curr := NewV7().String()
+			assert.Greater(t, curr, prev, "UUIDv7 should be monotonically increasing")
+			prev = curr
+		}
+	})
+}
+
 func TestNewTestUUID(t *testing.T) {
 	test := NewTestUUID(-1)
 	require.NotNil(t, test)

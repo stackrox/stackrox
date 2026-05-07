@@ -12,9 +12,11 @@ from post_tests import PostClusterTest, FinalPost
 
 os.environ["COMPARISON_METRICS"] = "scale-test/gke"
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["STORAGE"] = "pvc"
 os.environ["STORAGE_CLASS"] = "faster"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "stackrox-gke-ssd"
 os.environ["STORAGE_SIZE"] = "100"
 os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"

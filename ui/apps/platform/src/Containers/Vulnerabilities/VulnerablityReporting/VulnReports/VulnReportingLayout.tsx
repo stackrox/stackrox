@@ -32,9 +32,9 @@ function VulnReportingLayout() {
 
     return (
         <>
-            <PageTitle title="Vulnerability reporting" />
+            <PageTitle title="Image vulnerability reports" />
             <PageSection>
-                <Title headingLevel="h1">Vulnerability reporting</Title>
+                <Title headingLevel="h1">Image vulnerability reports</Title>
             </PageSection>
             <PageSection type="tabs">
                 <Tabs

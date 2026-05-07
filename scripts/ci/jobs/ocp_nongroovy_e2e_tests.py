@@ -13,6 +13,7 @@ from post_tests import PostClusterTest, FinalPost
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+os.environ["KUBERNETES_PROVIDER"] = "ocp"
 
 # delegated scanning support in the secured cluster
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"

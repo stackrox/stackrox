@@ -35,11 +35,13 @@ func (s *managementServiceSuite) SetupTest() {
 func (s *managementServiceSuite) createManagementService() {
 	s.mockSettingsManager.EXPECT().SettingsStream().Times(1)
 	s.mockSettingsManager.EXPECT().SensorEventsStream().Times(1)
+	s.mockSettingsManager.EXPECT().ImageCacheInvalidationStream().Times(1)
 	s.service = &managementService{
-		settingsStream:     s.mockSettingsManager.SettingsStream(),
-		sensorEventsStream: s.mockSettingsManager.SensorEventsStream(),
-		alertHandler:       s.mockAlertHandler,
-		admCtrlMgr:         s.mockSettingsManager,
+		settingsStream:               s.mockSettingsManager.SettingsStream(),
+		sensorEventsStream:           s.mockSettingsManager.SensorEventsStream(),
+		imageCacheInvalidationStream: s.mockSettingsManager.ImageCacheInvalidationStream(),
+		alertHandler:                 s.mockAlertHandler,
+		admCtrlMgr:                   s.mockSettingsManager,
 	}
 }
 

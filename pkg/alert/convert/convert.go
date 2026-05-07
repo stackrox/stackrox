@@ -24,7 +24,7 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		EnforcementAction: alert.GetEnforcement().GetAction(),
 	}
 	if alert.GetState() == storage.ViolationState_ACTIVE {
-		listAlert.EnforcementCount = enforcementCount(alert)
+		listAlert.EnforcementCount = EnforcementCount(alert)
 	}
 
 	if alert.GetDeployment() != nil {
@@ -84,12 +84,16 @@ func populateListAlertEntityInfoForNode(listAlert *storage.ListAlert, alert *sto
 		},
 	}
 	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-		ClusterName: alert.GetClusterName(),
-		ClusterId:   alert.GetClusterId(),
+		ClusterName:  alert.GetClusterName(),
+		ClusterId:    alert.GetClusterId(),
+		ResourceType: storage.ListAlert_NODE,
 	}
 }
 
-func enforcementCount(alert *storage.Alert) int32 {
+// EnforcementCount computes the enforcement count for an alert based on its
+// lifecycle stage and enforcement action. For RUNTIME+KILL_POD alerts, it counts
+// unique pod IDs from ProcessViolation.Processes.
+func EnforcementCount(alert *storage.Alert) int32 {
 	if alert.GetEnforcement() == nil {
 		return 0
 	}

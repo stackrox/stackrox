@@ -5,6 +5,7 @@ package imagecomponentflat
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"testing"
 
@@ -658,7 +659,7 @@ func (s *ImageComponentFlatViewTestSuite) compileExpected(images []*storage.Imag
 	expected := make([]*imageComponentFlatResponse, 0, len(componentMap))
 	for _, entry := range componentMap {
 		// Sort component IDs for consistent results (matches the view implementation)
-		sort.Strings(entry.ComponentIDs)
+		slices.Sort(entry.ComponentIDs)
 		expected = append(expected, entry)
 	}
 

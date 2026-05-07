@@ -7,8 +7,13 @@ var (
 	// This setting is only consulted when the ROX_BASE_IMAGE_DETECTION feature flag is true.
 	BaseImageWatcherEnabled = RegisterBooleanSetting("ROX_BASE_IMAGE_WATCHER_ENABLED", true)
 
-	// BaseImageWatcherPollInterval controls how often the base image watcher polls for new tags.
+	// BaseImageWatcherPollInterval controls the per-repository polling cadence.
+	// A repository is due for scanning when last_polled_at + this interval < now.
 	BaseImageWatcherPollInterval = registerDurationSetting("ROX_BASE_IMAGE_WATCHER_POLL_INTERVAL", 4*time.Hour)
+
+	// BaseImageWatcherSchedulerCadence controls how often the scheduler checks for due repositories.
+	// Lower values reduce latency for newly created repositories but increase scheduling overhead.
+	BaseImageWatcherSchedulerCadence = registerDurationSetting("ROX_BASE_IMAGE_WATCHER_SCHEDULER_CADENCE", 1*time.Minute)
 
 	// BaseImageWatcherMaxConcurrentRepositories controls the maximum number of repositories
 	// processed concurrently during a poll cycle.

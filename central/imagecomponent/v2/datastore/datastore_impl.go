@@ -4,15 +4,19 @@ import (
 	"context"
 	"strings"
 
-	pgStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
+	"github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
+	"github.com/stackrox/rox/central/imagecomponent/v2/views"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -20,7 +24,8 @@ var (
 )
 
 type datastoreImpl struct {
-	storage pgStore.Store
+	storage postgres.Store
+	db      pgPkg.DB
 
 	risks                riskDataStore.DataStore
 	imageComponentRanker *ranking.Ranker
@@ -109,16 +114,29 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image, resources.Node)))
 
-	err := ds.storage.Walk(readCtx, func(component *storage.ImageComponentV2) error {
-		ds.imageComponentRanker.Add(component.GetId(), component.GetRiskScore())
-		return nil
-	})
+	// The entire component is not needed to initialize the ranker. We only need the component ID and risk score.
+	selects := []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ComponentID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ComponentRiskScore).Proto(),
+	}
+	query := pkgSearch.EmptyQuery()
+	query.Selects = selects
+
+	count := 0
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ComponentRiskView](
+		readCtx, ds.db, pkgSchema.ImageComponentV2Schema, query,
+		func(r *views.ComponentRiskView) error {
+			ds.imageComponentRanker.Add(r.ComponentID, r.ComponentRiskScore)
+			count++
+			return nil
+		},
+	)
 	if err != nil {
 		log.Errorf("unable to initialize image component ranking: %v", err)
 		return
 	}
 
-	log.Info("Initialized image component ranking")
+	log.Infof("Initialized image component ranking with %d components", count)
 }
 
 func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageComponentV2) {

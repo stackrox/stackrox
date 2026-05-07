@@ -15,18 +15,19 @@ func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruc
 		return nil, err
 	}
 	model := &TestSingleUUIDKeyStructs{
-		Key:         obj.GetKey(),
-		Name:        obj.GetName(),
-		StringSlice: pq.Array(obj.GetStringSlice()).(*pq.StringArray),
-		Bool:        obj.GetBool(),
-		Uint64:      obj.GetUint64(),
-		Int64:       obj.GetInt64(),
-		Float:       obj.GetFloat(),
-		Labels:      obj.GetLabels(),
-		Timestamp:   protocompat.NilOrTime(obj.GetTimestamp()),
-		Enum:        obj.GetEnum(),
-		Enums:       pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
-		Serialized:  serialized,
+		Key:          obj.GetKey(),
+		Name:         obj.GetName(),
+		StringSlice:  pq.Array(obj.GetStringSlice()).(*pq.StringArray),
+		Bool:         obj.GetBool(),
+		Uint64:       obj.GetUint64(),
+		Int64:        obj.GetInt64(),
+		Float:        obj.GetFloat(),
+		Labels:       obj.GetLabels(),
+		Timestamp:    protocompat.NilOrTime(obj.GetTimestamp()),
+		Enum:         obj.GetEnum(),
+		Enums:        pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
+		OptionalUUID: obj.GetOptionalUuid(),
+		Serialized:   serialized,
 	}
 	return model, nil
 }

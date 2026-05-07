@@ -79,6 +79,20 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockDataStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockDataStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockDataStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // GetProcessIndicator mocks base method.
 func (m *MockDataStore) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
 	m.ctrl.T.Helper()
@@ -126,32 +140,32 @@ func (mr *MockDataStoreMockRecorder) IterateOverProcessIndicatorsRiskView(ctx, q
 }
 
 // PruneProcessIndicators mocks base method.
-func (m *MockDataStore) PruneProcessIndicators(ctx context.Context, ids []string) (int, error) {
+func (m *MockDataStore) PruneProcessIndicators(ctx context.Context, ids []string, reason string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PruneProcessIndicators", ctx, ids)
+	ret := m.ctrl.Call(m, "PruneProcessIndicators", ctx, ids, reason)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PruneProcessIndicators indicates an expected call of PruneProcessIndicators.
-func (mr *MockDataStoreMockRecorder) PruneProcessIndicators(ctx, ids any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) PruneProcessIndicators(ctx, ids, reason any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).PruneProcessIndicators), ctx, ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).PruneProcessIndicators), ctx, ids, reason)
 }
 
 // RemoveProcessIndicators mocks base method.
-func (m *MockDataStore) RemoveProcessIndicators(ctx context.Context, ids []string) error {
+func (m *MockDataStore) RemoveProcessIndicators(ctx context.Context, ids []string, reason string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveProcessIndicators", ctx, ids)
+	ret := m.ctrl.Call(m, "RemoveProcessIndicators", ctx, ids, reason)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveProcessIndicators indicates an expected call of RemoveProcessIndicators.
-func (mr *MockDataStoreMockRecorder) RemoveProcessIndicators(ctx, ids any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemoveProcessIndicators(ctx, ids, reason any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessIndicators), ctx, ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessIndicators), ctx, ids, reason)
 }
 
 // RemoveProcessIndicatorsByPod mocks base method.

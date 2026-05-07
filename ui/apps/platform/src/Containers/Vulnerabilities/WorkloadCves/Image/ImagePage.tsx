@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
@@ -18,7 +18,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import isEmpty from 'lodash/isEmpty';
 
@@ -53,9 +53,10 @@ import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
+import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 
@@ -127,6 +128,7 @@ function ImagePage({
     showVulnerabilityStateTabs,
     deploymentResourceColumnOverrides,
 }: ImagePageProps) {
+    const navigate = useNavigate();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
@@ -168,17 +170,13 @@ function ImagePage({
             viewContext === 'Inactive images');
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const onReportSelect = (_value: string | number | undefined) => {
-        setIsCreateViewBasedReportModalOpen(true);
+    // Create a scoped search filter that includes the image SHA filter plus any applied search filters.
+    const imageScopedSearchFilterForReport = {
+        ...baseSearchFilter,
+        ...(isNewImageDataModelEnabled ? { 'Image ID': [imageId] } : { 'Image SHA': [imageId] }),
+        ...querySearchFilter,
+        'Vulnerability State': [vulnerabilityState],
     };
-
-    const getImageQueryForReport = useCallback(() => {
-        // Create a scoped query that includes the image SHA filter plus any applied search filters
-        const imageScopedFilter = { 'Image SHA': [imageId] };
-        const combinedFilter = { ...baseSearchFilter, ...imageScopedFilter, ...querySearchFilter };
-        return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
-    }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
     const imageData = data?.image;
     const imageName = imageData?.name;
@@ -325,7 +323,18 @@ function ImagePage({
                                 setSearchFilter={setSearchFilter}
                                 additionalToolbarItems={
                                     isViewBasedReportsEnabled && (
-                                        <CreateReportDropdown onSelect={onReportSelect} />
+                                        <CreateReportDropdown
+                                            onSelectExportReportAsCSV={() => {
+                                                setIsCreateViewBasedReportModalOpen(true);
+                                            }}
+                                            onSelectCreateScheduledReport={() => {
+                                                navigate(
+                                                    createScheduledReportForImageVulnerabilitiesURL(
+                                                        imageScopedSearchFilterForReport
+                                                    )
+                                                );
+                                            }}
+                                        />
                                     )
                                 }
                             />
@@ -377,7 +386,7 @@ function ImagePage({
                 <CreateViewBasedReportModal
                     isOpen={isCreateViewBasedReportModalOpen}
                     setIsOpen={setIsCreateViewBasedReportModalOpen}
-                    query={getImageQueryForReport()}
+                    query={getRegexScopedQueryString(imageScopedSearchFilterForReport)}
                     areaOfConcern={viewContext}
                 />
             )}

@@ -15,7 +15,7 @@ import (
 
 // PatchCSV patches a ClusterServiceVersion YAML file with version and image information.
 func PatchCSV(args []string) error {
-	flags := flag.NewFlagSet("patch-csv", flag.ExitOnError)
+	flags := flag.NewFlagSet("patch-csv", flag.ContinueOnError)
 
 	version := flags.String("use-version", "", "SemVer version of the operator (required)")
 	firstVersion := flags.String("first-version", "", "First version of operator ever published (required)")
@@ -36,13 +36,10 @@ func PatchCSV(args []string) error {
 	}
 
 	if err := flags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
 		return err
-	}
-
-	// Handle help
-	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
-		flags.Usage()
-		return nil
 	}
 
 	// Validate required flags

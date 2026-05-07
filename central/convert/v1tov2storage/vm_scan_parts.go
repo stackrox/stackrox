@@ -16,7 +16,7 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 		return nil
 	}
 
-	scanID := uuid.NewV4().String()
+	scanID := uuid.NewV7().String()
 
 	var (
 		components       []*storage.VirtualMachineComponentV2
@@ -26,7 +26,7 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 	)
 
 	for _, comp := range sourceComponents {
-		componentID := uuid.NewV4().String()
+		componentID := uuid.NewV7().String()
 		var compTopCvss float32
 		var compCveCount int32
 
@@ -82,7 +82,7 @@ func convertVulnerability(vmID, componentID string, vuln *storage.VirtualMachine
 	impactScore := extractImpactScore(info)
 
 	cve := &storage.VirtualMachineCVEV2{
-		Id:                   uuid.NewV4().String(),
+		Id:                   uuid.NewV7().String(),
 		VmV2Id:               vmID,
 		VmComponentId:        componentID,
 		CveBaseInfo:          convertCVEBaseInfo(info),

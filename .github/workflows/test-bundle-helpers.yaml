@@ -9,11 +9,23 @@ on:
     branches:
     - master
     - release-*
+    paths:
+    - '.github/**'
+    - 'operator/**'
+    - 'go.mod'
+    - 'go.sum'
+    - 'scripts/ci/**'
   pull_request:
     types:
     - opened
     - reopened
     - synchronize
+    paths:
+    - '.github/**'
+    - 'operator/**'
+    - 'go.mod'
+    - 'go.sum'
+    - 'scripts/ci/**'
 
 env:
  ROX_PRODUCT_BRANDING: RHACS_BRANDING
@@ -45,13 +57,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6.2.0
         with:
           python-version: '3.12'
 
@@ -62,6 +74,20 @@ jobs:
 
       - name: Run Python unit tests
         run: make test-bundle-helpers
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+      # with newer go directives (e.g. tools/proto) can auto-download.
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: Generate bundle with Python
         env:
@@ -78,7 +104,7 @@ jobs:
           git diff --exit-code HEAD
 
       - name: Upload Python bundle artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
         with:
           name: bundle-python-${{ matrix.related_img_mode }}
           path: /tmp/artifacts/
@@ -100,16 +126,21 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
+
+      # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+      # with newer go directives (e.g. tools/proto) can auto-download.
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -121,7 +152,7 @@ jobs:
 
       # Needed since the Go implementation uses yaml-normalizer.py
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6.2.0
         with:
           python-version: '3.12'
 
@@ -146,7 +177,7 @@ jobs:
           git diff --exit-code HEAD
 
       - name: Upload Go bundle artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
         with:
           name: bundle-go-${{ matrix.related_img_mode }}
           path: /tmp/artifacts/
@@ -166,13 +197,13 @@ jobs:
 
     steps:
       - name: Download Python bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
         with:
           name: bundle-python-${{ matrix.related_img_mode }}
           path: /tmp/python
 
       - name: Download Go bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
         with:
           name: bundle-go-${{ matrix.related_img_mode }}
           path: /tmp/go

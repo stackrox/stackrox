@@ -146,7 +146,7 @@ function ViewBasedReportsTab() {
 
     return (
         <>
-            <PageTitle title="Vulnerability reporting - View-based reports" />
+            <PageTitle title="Image vulnerability reports - View-based reports" />
             <PageSection>
                 <Content component="p">
                     Check job status and download view-based reports in CSV format. Requests are

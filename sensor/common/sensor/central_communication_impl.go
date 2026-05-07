@@ -156,6 +156,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	if features.FlattenImageData.Enabled() {
 		capsSet.Add(centralsensor.FlattenImageData)
 	}
+	if features.InitContainerSupport.Enabled() {
+		capsSet.Add(centralsensor.InitContainerSupport)
+	}
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -217,10 +220,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		return errors.New("central did not acknowledge SensorHello," +
-			" likely due to a networking or TLS configuration issue" +
-			" (e.g., re-encrypt routes or TLS termination)" +
-			" preventing central from receiving sensor's TLS certificate")
+		return DiagnoseConnectionFailure(stream, "the credentials may be revoked or expired")
 	}
 
 	var centralHello *central.CentralHello

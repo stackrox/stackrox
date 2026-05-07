@@ -117,6 +117,12 @@ class Deployment {
         return this
     }
 
+    Deployment addHostMount(String name, String mountPath, boolean readOnly = false) {
+        this.volumes.add(new Volume(name: name, hostPath: true, mountPath: "/"))
+        this.volumeMounts.add(new VolumeMount(name: name, mountPath: mountPath, readOnly: readOnly))
+        return this
+    }
+
     Deployment addVolume(String name, String path, boolean enableHostPath = false, boolean readOnly = false) {
         this.volumes.add(new Volume(name: name,
                 hostPath: enableHostPath,

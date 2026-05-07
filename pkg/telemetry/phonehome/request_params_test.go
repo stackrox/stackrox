@@ -1,104 +1,116 @@
 package phonehome
 
 import (
+	"maps"
+	"net/http"
+	"slices"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestHasHeader(t *testing.T) {
+func TestMatchHeaders(t *testing.T) {
 
 	t.Run("empty request", func(t *testing.T) {
 		r := &RequestParams{}
-		assert.True(t, r.HasHeader(nil))
-		assert.False(t, r.HasHeader(map[string]glob.Pattern{"header": "value"}))
-		assert.True(t, r.HasHeader(map[string]glob.Pattern{"header": NoHeaderOrAnyValue}))
+		assert.Equal(t, Headers{}, r.MatchHeaders(nil))
+		assert.Nil(t, r.MatchHeaders(GlobMap{"header": "value"}))
+		assert.Equal(t, Headers{}, r.MatchHeaders(GlobMap{"header": NoHeaderOrAnyValue}))
 	})
 
 	rp := RequestParams{
-		Headers: func(s string) []string {
-			headers := map[string][]string{
-				"empty": {},
-				"one":   {"one"},
-				"two":   {"one", "two"},
-			}
-			return headers[s]
-		},
+		Headers: Headers(http.Header{
+			"Empty": {},
+			"One":   {"one"},
+			"Two":   {"one", "two"},
+		}),
 	}
 
 	tests := map[string]struct {
-		headers  map[string]glob.Pattern
-		expected bool
+		headers  GlobMap
+		expected Headers
 	}{
 		"empty": {
-			expected: true,
+			expected: Headers{},
 		},
 		"empty not matching": {
-			headers: map[string]glob.Pattern{
-				"empty": "with value",
+			headers: GlobMap{
+				"Empty": "with value",
 			},
-			expected: false,
+			expected: nil,
 		},
 		"empty matching": {
-			headers: map[string]glob.Pattern{
-				"empty": NoHeaderOrAnyValue,
+			headers: GlobMap{
+				"Empty": NoHeaderOrAnyValue,
 			},
-			expected: true,
+			expected: Headers{"Empty": {}},
 		},
 		"unknown empty": {
-			headers: map[string]glob.Pattern{
-				"third": NoHeaderOrAnyValue,
+			headers: GlobMap{
+				"Third": NoHeaderOrAnyValue,
 			},
-			expected: true,
+			expected: Headers{},
 		},
 		"one": {
-			headers: map[string]glob.Pattern{
-				"one": "on?",
+			headers: GlobMap{
+				"One": "on?",
 			},
-			expected: true,
+			expected: Headers{"One": {"one"}},
 		},
 		"one-two": {
-			headers: map[string]glob.Pattern{
-				"two": "two",
+			headers: GlobMap{
+				"Two": "two",
 			},
-			expected: true,
+			expected: Headers{"Two": {"two"}},
 		},
 		"no match": {
-			headers: map[string]glob.Pattern{
-				"three": "x*",
+			headers: GlobMap{
+				"Three": "x*",
 			},
-			expected: false,
+			expected: nil,
 		},
 		"one of multiple match": {
-			headers: map[string]glob.Pattern{
-				"one": "on?",
-				"two": "x",
+			headers: GlobMap{
+				"One": "on?",
+				"Two": "x",
 			},
-			expected: false,
+			expected: nil,
 		},
 		"all of multiple match": {
-			headers: map[string]glob.Pattern{
-				"one": "on?",
-				"two": "two",
+			headers: GlobMap{
+				"One": "on?",
+				"Two": "two",
 			},
-			expected: true,
+			expected: Headers{"One": {"one"}, "Two": {"two"}},
 		},
 		"one of multiple doesn't exist": {
-			headers: map[string]glob.Pattern{
-				"one":   "on?",
-				"two":   "two",
-				"three": "th*",
+			headers: GlobMap{
+				"One":   "on?",
+				"Two":   "two",
+				"Three": "th*",
 			},
-			expected: false,
+			expected: nil,
+		},
+		"multiple matching": {
+			headers: GlobMap{
+				"Tw?": "one",
+				"?wo": "two",
+			},
+			expected: Headers{"Two": {"one", "two"}},
 		},
 	}
 	for name, test := range tests {
 		require.NoError(t, (&APICallCampaignCriterion{Headers: test.headers}).Compile())
 
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, test.expected, rp.HasHeader(test.headers))
+			h := rp.MatchHeaders(test.headers)
+			// The order of the values joined from different matching keys may differ due to the map access order.
+			if assert.ElementsMatch(t, slices.Collect(maps.Keys(test.expected)), slices.Collect(maps.Keys(h))) {
+				for k, values := range test.expected {
+					assert.ElementsMatch(t, values, h[k])
+				}
+			}
 		})
 	}
 }

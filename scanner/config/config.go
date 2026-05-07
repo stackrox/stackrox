@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net"
 	"net/url"
 	"os"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mitchellh/mapstructure"
-	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
@@ -64,7 +64,7 @@ var (
 		Proxy: ProxyConfig{
 			ConfigFile: "config.yaml",
 		},
-		LogLevel: zerolog.InfoLevel,
+		LogLevel: slog.LevelInfo,
 	}
 )
 
@@ -78,7 +78,7 @@ type Config struct {
 	GRPCListenAddr   string        `mapstructure:"grpc_listen_addr"`
 	MTLS             MTLSConfig    `mapstructure:"mtls"`
 	Proxy            ProxyConfig   `mapstructure:"proxy"`
-	LogLevel         zerolog.Level `mapstructure:"log_level"`
+	LogLevel         slog.Level    `mapstructure:"log_level"`
 }
 
 func (c *Config) validate() error {
@@ -190,6 +190,16 @@ type MatcherConfig struct {
 	VulnerabilityVersion string `mapstructure:"vulnerability_version"`
 	// Readiness determine the readiness type for the Matcher.
 	Readiness MatcherReadiness `mapstructure:"readiness"`
+	// VulnBundleAllowlist, when non-empty, restricts which vulnerability bundles
+	// are imported on each update cycle. An empty list imports all bundles.
+	// Bundle names are specified without file extension (e.g. "alpine", "nvd").
+	// For the full list of bundle names see the vulnerability updater exporter.
+	//
+	// When populated, names not in the list are skipped during import. This reduces
+	// the vulnerabilities loaded into the database, which speeds up update cycles
+	// but means vulnerabilities from excluded bundles will not be detected,
+	// leading to potentially incomplete scan results.
+	VulnBundleAllowlist []string `mapstructure:"vuln_bundle_allowlist"`
 }
 
 // resolveVersions returns values for ROX_VERSION and ROX_VULNERABILITY_VERSION
@@ -362,17 +372,16 @@ func (c *ProxyConfig) validate() error {
 	return nil
 }
 
-// LogLevel is YAML serializable zerolog.Level
-type LogLevel zerolog.Level
+// LogLevel is YAML serializable slog.Level
+type LogLevel slog.Level
 
 // UnmarshalText implements YAML's TextUnmarshaler for LogLevel
 func (l *LogLevel) UnmarshalText(level []byte) error {
-	levelS := string(level)
-	zl, err := zerolog.ParseLevel(levelS)
+	sl, err := parseSlogLevel(string(level))
 	if err != nil {
-		return fmt.Errorf("unknown log_level string: %q", levelS)
+		return err
 	}
-	*l = LogLevel(zl)
+	*l = LogLevel(sl)
 	return nil
 }
 
@@ -390,9 +399,24 @@ func (d *Duration) UnmarshalText(dBytes []byte) error {
 	return nil
 }
 
-// stringToZeroLogLevelFunc returns a DecodeHookFunc that converts
-// strings to zerolog.Level
-func stringToZeroLogLevelFunc() mapstructure.DecodeHookFunc {
+func parseSlogLevel(s string) (slog.Level, error) {
+	switch strings.ToLower(s) {
+	case "trace", "debug":
+		return slog.LevelDebug, nil
+	case "info", "":
+		return slog.LevelInfo, nil
+	case "warn", "warning":
+		return slog.LevelWarn, nil
+	case "error", "fatal", "panic":
+		return slog.LevelError, nil
+	default:
+		return slog.LevelInfo, fmt.Errorf("unknown log_level string: %q", s)
+	}
+}
+
+// stringToSlogLevelFunc returns a DecodeHookFunc that converts
+// strings to slog.Level.
+func stringToSlogLevelFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
@@ -400,10 +424,10 @@ func stringToZeroLogLevelFunc() mapstructure.DecodeHookFunc {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
-		if t != reflect.TypeOf(zerolog.InfoLevel) {
+		if t != reflect.TypeOf(slog.LevelInfo) {
 			return data, nil
 		}
-		return zerolog.ParseLevel(data.(string))
+		return parseSlogLevel(data.(string))
 	}
 }
 
@@ -436,7 +460,7 @@ func Load(r io.Reader) (*Config, error) {
 	if err := v.UnmarshalExact(&cfg, viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
-		stringToZeroLogLevelFunc(),
+		stringToSlogLevelFunc(),
 	))); err != nil {
 		return nil, fmt.Errorf("loading config file: %w", err)
 	}

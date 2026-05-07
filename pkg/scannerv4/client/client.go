@@ -5,19 +5,21 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scannerv4"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,6 +31,16 @@ var (
 	errIndexerNotConfigured = errors.New("indexer not configured")
 	errMatcherNotConfigured = errors.New("matcher not configured")
 )
+
+// Repo2CPEResult contains the result of a GetRepositoryToCPEMapping call.
+type Repo2CPEResult struct {
+	// Modified is true if the data has been modified since the ifModifiedSince time.
+	Modified bool
+	// LastModified is the timestamp to use for the next conditional request.
+	LastModified string
+	// Data is the mapping file (nil if Modified is false).
+	Data *repositorytocpe.MappingFile
+}
 
 // callOptions contains optional data and gRPC parameters for the underlying
 // Scanner calls.
@@ -98,6 +110,10 @@ type Scanner interface {
 	// hint to the Scanner whether it should overwrite the contents of ref
 	// if ref already exists in its datastore.
 	StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
+
+	// GetRepositoryToCPEMapping returns the repository-to-CPE mapping from the indexer.
+	// If ifModifiedSince is non-empty, returns Modified=false if data hasn't changed.
+	GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*Repo2CPEResult, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -256,12 +272,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 		return nil, false, errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "GetImageIndex",
-		"hash_id", hashID,
-	)
-
+	ctx = log.With(ctx, "method", "GetImageIndex", "hash_id", hashID)
 	options := makeCallOptions(callOpts...)
 
 	return c.getImageIndex(ctx, hashID, options)
@@ -273,12 +284,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "GetOrCreateImageIndex",
-		"image", ref.String(),
-	)
-
+	ctx = log.With(ctx, "method", "GetOrCreateImageIndex", "image", ref.String())
 	options := makeCallOptions(callOpts...)
 
 	return c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
@@ -294,12 +300,7 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 		return nil, errMatcherNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "IndexAndScanImage",
-		"image", ref.String(),
-	)
-
+	ctx = log.With(ctx, "method", "IndexAndScanImage", "image", ref.String())
 	options := makeCallOptions(callOpts...)
 
 	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
@@ -377,12 +378,7 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 		return nil, errMatcherNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "GetVulnerabilities",
-		"image", ref.String(),
-	)
-
+	ctx = log.With(ctx, "method", "GetVulnerabilities", "image", ref.String())
 	options := makeCallOptions(callOpts...)
 
 	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents, options)
@@ -410,8 +406,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 		return nil, errMatcherNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
-
+	ctx = log.With(ctx, "method", "GetMatcherMetadata")
 	options := makeCallOptions(callOpts...)
 
 	var m *v4.Metadata
@@ -437,8 +432,7 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 		return errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreImageIndex")
-
+	ctx = log.With(ctx, "method", "StoreImageIndex", "image", ref.String())
 	req := &v4.StoreIndexReportRequest{
 		HashId:         getImageManifestID(ref),
 		IndexerVersion: indexerVersion,
@@ -453,9 +447,50 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	if err != nil {
 		return fmt.Errorf("storing external index report: %w", err)
 	}
-	zlog.Debug(ctx).Err(err).Str("status", r.GetStatus()).Msg("received response from StoreIndexReport")
+	slog.DebugContext(ctx, "received response from StoreIndexReport", "status", r.GetStatus())
 
 	return nil
+}
+
+// GetRepositoryToCPEMapping calls the Indexer's gRPC endpoint GetRepositoryToCPEMapping.
+// If ifModifiedSince is non-empty, returns Modified=false if data hasn't changed.
+func (c *gRPCScanner) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*Repo2CPEResult, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+
+	var resp *v4.GetRepositoryToCPEMappingResponse
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetRepositoryToCPEMapping", func() error {
+		var err error
+		resp, err = c.indexer.GetRepositoryToCPEMapping(ctx, &v4.GetRepositoryToCPEMappingRequest{
+			IfModifiedSince: ifModifiedSince,
+		})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("getting repository-to-CPE mapping: %w", err)
+	}
+
+	// If not modified, return early.
+	if !resp.GetModified() {
+		return &Repo2CPEResult{
+			Modified:     false,
+			LastModified: resp.GetLastModified(),
+		}, nil
+	}
+
+	// Convert proto response to MappingFile.
+	data := make(map[string]repositorytocpe.Repo, len(resp.GetMapping()))
+	for repo, info := range resp.GetMapping() {
+		data[repo] = repositorytocpe.Repo{CPEs: info.GetCpes()}
+	}
+
+	slog.DebugContext(ctx, "received repo-to-CPE mapping", "entries", len(data))
+	return &Repo2CPEResult{
+		Modified:     true,
+		LastModified: resp.GetLastModified(),
+		Data:         &repositorytocpe.MappingFile{Data: data},
+	}, nil
 }
 
 func getImageManifestID(ref name.Digest) string {
@@ -465,7 +500,6 @@ func getImageManifestID(ref name.Digest) string {
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common
 // retryable gRPC codes.
 func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
-	ctx = zlog.ContextWithValues(ctx, "rpc", rpc)
 	f := func() error {
 		err := op()
 		if e, ok := status.FromError(err); ok {
@@ -480,7 +514,7 @@ func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op bac
 		return err
 	}
 	return backoff.RetryNotify(f, backoff.WithContext(b, ctx), func(err error, duration time.Duration) {
-		zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying gRPC call")
+		slog.DebugContext(ctx, "retrying gRPC call", "rpc", rpc, "reason", err, "duration", duration)
 	})
 }
 

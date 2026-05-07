@@ -33,4 +33,10 @@ compliance-v2-tests:
 	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 30m -cover -v -run TestComplianceV2 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compliance-v2-tests-results
 
+.PHONY: vm-scanning-tests
+vm-scanning-tests:
+	@echo "+ $@"
+	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test,test_e2e_vm $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v . 2>&1 | tee test.log'
+	@$(MAKE) report JUNIT_OUT=vm-scanning-tests-results
+
 include ../make/stackrox.mk

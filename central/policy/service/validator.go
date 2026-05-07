@@ -196,7 +196,7 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 }
 
 func validateNoLabelsInScopeForAuditEvent(scope *storage.Scope, context string) error {
-	if scope.GetLabel() != nil || (features.LabelBasedPolicyScoping.Enabled() && (scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil)) {
+	if scope.GetLabel() != nil {
 		return errors.Errorf("labels in `%s` section are not permitted for audit log events based policies", context)
 	}
 	return nil
@@ -313,7 +313,16 @@ func (s *policyValidator) validateDeploymentExclusion(exclusion *storage.Exclusi
 		return errors.New("at least one field of deployment exclusion scope must be defined")
 	}
 	if deployment.GetScope() != nil {
-		if err := s.validateScope(deployment.GetScope()); err != nil {
+		// No feature flag check — exclusion scopes do not
+		// support cluster and namespace labels.
+		scope := deployment.GetScope()
+		if scope.GetClusterLabel() != nil {
+			return errors.New("exclusion scopes do not support cluster labels")
+		}
+		if scope.GetNamespaceLabel() != nil {
+			return errors.New("exclusion scopes do not support namespace labels")
+		}
+		if err := s.validateScope(scope); err != nil {
 			return errors.Wrap(err, "deployment exclusion scope is invalid")
 		}
 	}

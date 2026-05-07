@@ -47,9 +47,9 @@ jobs:
       SHORTCOMMIT: "0000000"
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -92,7 +92,7 @@ jobs:
           $PACKAGES \
           | tee test-output/test.log
 
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
@@ -102,7 +102,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -126,9 +126,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -156,7 +156,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -169,9 +169,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -216,9 +216,9 @@ jobs:
       SHORTCOMMIT: "0000000"
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -258,7 +258,7 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} SKIP_DEPS=1 make ${{ matrix.shard.make-target }}
 
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
@@ -268,7 +268,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -289,11 +289,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -336,7 +336,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -350,9 +350,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
       with:
         node-version: 22
 
@@ -367,7 +367,7 @@ jobs:
       run: make ui-test
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
@@ -389,9 +389,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
       with:
         node-version: 22
 
@@ -420,7 +420,7 @@ jobs:
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
@@ -451,12 +451,12 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -495,7 +495,7 @@ jobs:
           ${{ matrix.variant.files }}
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
@@ -517,7 +517,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -537,7 +537,7 @@ jobs:
       run: make shell-unit-tests
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'shell-test-output/*.xml'
@@ -559,7 +559,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -582,12 +582,12 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: false
@@ -600,7 +600,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Login to Quay.io
-      uses: docker/login-action@v4
+      uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -637,7 +637,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@v2
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -679,7 +679,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - name: Slack message
       env:

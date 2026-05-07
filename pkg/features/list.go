@@ -82,7 +82,7 @@ var (
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
 	// Flattens Image Data Model for improved accuracy and performance
-	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
+	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA", enabled)
 
 	// Adds the ability to generate view-based vulnerability reports
 	VulnerabilityViewBasedReports = registerFeature("Adds the ability to generate view-based vulnerability reports", "ROX_VULNERABILITY_VIEW_BASED_REPORTS", enabled)
@@ -120,16 +120,21 @@ var (
 	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB", enabled)
 
 	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
-	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
+	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING", enabled)
 
 	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
 	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING")
 
+	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
+	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
+
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
 
-	// TailoredProfiles enables support for compliance tailored profiles
-	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
+	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
+	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
+	// BackgroundMigration enables long-running background migrations in Central
+	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION")
 )
 
 // The following feature flags are related to Scanner V4.

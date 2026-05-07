@@ -646,7 +646,7 @@ const (
 
 // CentralStatus defines the observed state of Central.
 type CentralStatus struct {
-	Conditions      []StackRoxCondition `json:"conditions"`
+	Conditions      []StackRoxCondition `json:"conditions,omitempty"`
 	DeployedRelease *StackRoxRelease    `json:"deployedRelease,omitempty"`
 
 	// The deployed version of the product.
