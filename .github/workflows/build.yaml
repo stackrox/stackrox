@@ -129,8 +129,8 @@ jobs:
             if wait "$api_pid" && ahead_by="$(cat /tmp/ahead_by)" && [[ "$ahead_by" =~ ^[0-9]+$ ]]; then
               build_tag="${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
             else
-              echo "::warning::Failed to fetch commit count from API, omitting from build tag"
-              build_tag="${version}-g${COMMIT_SHA:0:10}"
+              echo "::warning::Failed to fetch commit count from API, defaulting to 0"
+              build_tag="${version}-0-g${COMMIT_SHA:0:10}"
             fi
           fi
           echo "build-tag=${build_tag}" >> "$GITHUB_OUTPUT"
