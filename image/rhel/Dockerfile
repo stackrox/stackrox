@@ -23,7 +23,9 @@ COPY --from=ubi-micro-base / /out/
 COPY --from=downloads /output/rpms/ /tmp/
 COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 
-RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
+    --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf install -y \
         --installroot=/out/ \
         --releasever=9 \

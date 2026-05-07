@@ -70,10 +70,10 @@ jobs:
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
+            "build_and_push_images": { "branding":[], "arch":[] },
+            "push_multiarch_manifests": { "branding":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
-            "build_and_push_operator": { "name":[], "arch":[] },
-            "push_operator_multiarch_manifests": { "name":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
@@ -81,16 +81,10 @@ jobs:
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_images.branding += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_images.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
-          matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-
-          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
+          matrix="$(jq '.push_multiarch_manifests.branding += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
@@ -99,7 +93,7 @@ jobs:
 
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_images.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
           fi;
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
@@ -107,7 +101,11 @@ jobs:
             if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
               matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
               matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
+              if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+                matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
+              fi
             fi
           fi
 
@@ -115,14 +113,12 @@ jobs:
           if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.arch += ["amd64"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
             # Exclude "arm64", "ppc64le", "s390x"
             matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
@@ -619,17 +615,147 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
+            push_context="$(get_push_context)"
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+  build-and-push-images:
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    needs:
+      - define-job-matrix
+      - pre-build-cli
+      - pre-build-docs
+      - pre-build-go-binaries
+      - pre-build-oss-notice
+      - pre-build-ui
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_images }}
+    env:
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Login to docker.io to mitigate rate limiting on downloading images
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up QEMU
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+      - name: Checkout submodules
+        run: |
+            git submodule update --init
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
+          path: ui
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: cli-build
+
+      - name: Unpack cli build
+        run: |
+          tar xzf cli-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-${{ matrix.arch }}-default
+
+      - name: Unpack Go binaries build
+        run: |
+          tar xzf go-binaries-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: docs-build
+          path: image/rhel/docs
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
+
+      - name: Build main images
+        run: |
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+
+      - name: Check debugger presence in the main image
+        run: make check-debugger
+
+      - name: Build roxctl image
+        run: |
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
+
+      - name: Build operator image
+        run: |
+          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
+
+      - name: Docker login
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+
+      - name: Push main images
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        run: |
+            source ./scripts/ci/lib.sh
+            push_context="$(get_push_context)"
+            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+      - name: Push operator image
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        run: |
+            source ./scripts/ci/lib.sh
+            push_context="$(get_push_context)"
+            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
+            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
+              echo "ERROR: push_operator_image failed" >&2
+              exit 1
+            fi
+            echo "Operator image push completed successfully"
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
+      - build-and-push-images
     if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
@@ -748,15 +874,8 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
       run: |
         source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        architectures="amd64,arm64"
-        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
-        fi
+        push_context="$(get_push_context)"
+        architectures="$(get_build_architectures)"
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi
@@ -785,22 +904,24 @@ jobs:
         message-id: build-images-ready
         message-path: build-comment.md
 
-  build-and-push-operator:
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+  push-multiarch-manifests:
+    runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-      - pre-build-go-binaries
+      - build-and-push-images
+    if: ${{ !cancelled() }}
+    permissions:
+      pull-requests: write
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_multiarch_manifests }}
     env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-      # Proto sources freshness is checked in another workflow.
-      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
@@ -808,38 +929,16 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
 
-      - name: Download prebuilt operator binaries
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-default
-          path: .
+      - name: Checkout submodules
+        run: |
+          git submodule update --init
 
-      - name: Extract prebuilt binaries
-        run: tar xzf go-binaries-build.tgz
-
-      - name: PR labels
-        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
-
-      - name: Setup Go release build environment
-        if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
-        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
-
-      - name: Setup Go RHACS build environment
-        if: matrix.name == 'RHACS_BRANDING'
-        run: echo "QUAY_ORG=rhacs-eng" >> "$GITHUB_ENV"
-
-      - name: Setup Go StackRox build environment
-        if: matrix.name == 'STACKROX_BRANDING'
-        run: echo "QUAY_ORG=stackrox-io" >> "$GITHUB_ENV"
-
-      - name: Docker login
-        # Skip for external contributions.
+      - name: Build and push main manifest lists
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
@@ -848,104 +947,47 @@ jobs:
           QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+          source ./scripts/ci/lib.sh
+          push_context="$(get_push_context)"
+          architectures="$(get_build_architectures)"
+          push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
-      - name: Build Operator image
-        run: |
-          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
-
-      - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
-
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
-
-      - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
-
-      - name: Push image
-        # Skip for external contributions.
+      - name: Build and push operator manifest lists
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
-            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
-              echo "ERROR: push_operator_image failed" >&2
-              exit 1
-            fi
-            echo "Operator image push completed successfully"
+          source ./scripts/ci/lib.sh
+          push_context="$(get_push_context)"
+          architectures="$(get_build_architectures)"
+          push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
-  push-operator-manifests:
-    runs-on: ubuntu-latest
-    needs:
-    - define-job-matrix
-    - build-and-push-operator
-    # This step will run even if some of the build-and-push-matrix steps failed.
-    # By following this approach as much of the build matrix as possible is
-    # completed despite transient issues e.g. docker pull timeouts. In this way
-    # some e2e jobs that require some part of the build matrix can still
-    # proceed.
-    if: ${{ !cancelled() }}
-    strategy:
-      # Supports image builds (see Setup build env):
-      # RHACS_BRANDING
-      # STACKROX_BRANDING
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - name: Prepare build comment
+        if: |
+          matrix.branding == 'RHACS_BRANDING' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+        run: |
+          cat > build-comment.md <<EOF
+          ## 🚀 Build Images Ready
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          Images are ready for commit ${{ needs.define-job-matrix.outputs.short-commit }}. To use with deploy scripts:
+          \`\`\`bash
+          export MAIN_IMAGE_TAG=${{ needs.define-job-matrix.outputs.build-tag }}
+          \`\`\`
+          EOF
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
-
-    - name: Push operator manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-      run: |
-        source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
+      - name: Comment on the PR
+        if: |
+          matrix.branding == 'RHACS_BRANDING' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+        uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # ratchet:mshick/add-pr-comment@v3
+        with:
+          message-id: build-images-ready
+          message-path: build-comment.md
 
   scan-go-binaries:
     if: |
@@ -1013,9 +1055,10 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
       - build-and-push-main
-      - build-and-push-operator
+      - build-and-push-images
       - define-job-matrix
       - push-main-manifests
+      - push-multiarch-manifests
       - push-matching-collector-scanner
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
@@ -1085,7 +1128,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-and-push-main
-      - build-and-push-operator
+      - build-and-push-images
       - build-operator-bundle
       - pre-build-cli
       - pre-build-docs
