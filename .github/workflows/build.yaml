@@ -69,6 +69,7 @@ jobs:
                 version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/" \
                   --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
                   | grep -E '^[0-9]+\.[0-9]+\.x$' | sort -V | tail -1)"
+                version="${version:-0.0.0}"
               fi
               ahead_by="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '.ahead_by')"
               if [[ "$ahead_by" =~ ^[0-9]+$ ]]; then
