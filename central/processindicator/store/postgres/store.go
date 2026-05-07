@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -41,44 +39,25 @@ type (
 )
 
 // Store is the interface to interact with the storage for storage.ProcessIndicator
-type Store interface {
-	Upsert(ctx context.Context, obj *storeType) error
-	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
-	DeleteMany(ctx context.Context, identifiers []string) error
-	PruneMany(ctx context.Context, identifiers []string) error
-
-	Count(ctx context.Context, q *v1.Query) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-
-	Get(ctx context.Context, id string) (*storeType, bool, error)
-	// Deprecated: use GetByQueryFn instead
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
-	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
-	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
-	GetIDs(ctx context.Context) ([]string, error)
-
-	Walk(ctx context.Context, fn callback) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
-}
+type Store = pgSearch.NoSerializedStore[storeType]
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewNoSerializedStore[storeType](
 		db,
 		schema,
 		pkGetter,
 		insertIntoProcessIndicators,
-		copyFromProcessIndicators,
+		nil,
+		scanRow,
+		scanRows,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
-		nil,
-		nil,
+		pgSearch.NoSerializedStoreOpts[storeType]{
+			BulkInsert: bulkInsertIntoProcessIndicators,
+		},
 	)
 }
 
@@ -115,11 +94,6 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator) error {
 
-	serialized, marshalErr := obj.MarshalVT()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -127,19 +101,25 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 		obj.GetContainerName(),
 		obj.GetPodId(),
 		pgutils.NilOrUUID(obj.GetPodUid()),
+		obj.GetSignal().GetId(),
 		obj.GetSignal().GetContainerId(),
 		protocompat.NilOrTime(obj.GetSignal().GetTime()),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
+		obj.GetSignal().GetPid(),
 		obj.GetSignal().GetUid(),
+		obj.GetSignal().GetGid(),
+		obj.GetSignal().GetLineage(),
+		obj.GetSignal().GetScraped(),
+		pgutils.MustMarshalRepeatedMessages(obj.GetSignal().GetLineageInfo()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		protocompat.NilOrTime(obj.GetContainerStartTime()),
-		serialized,
+		obj.GetImageId(),
 	}
 
-	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, ContainerStartTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, Signal_LineageInfo, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, Signal_LineageInfo = EXCLUDED.Signal_LineageInfo, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -151,16 +131,22 @@ var copyColsProcessIndicators = []string{
 	"containername",
 	"podid",
 	"poduid",
+	"signal_id",
 	"signal_containerid",
 	"signal_time",
 	"signal_name",
 	"signal_args",
 	"signal_execfilepath",
+	"signal_pid",
 	"signal_uid",
+	"signal_gid",
+	"signal_lineage",
+	"signal_scraped",
+	"signal_lineageinfo",
 	"clusterid",
 	"namespace",
 	"containerstarttime",
-	"serialized",
+	"imageid",
 }
 
 func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessIndicator) error {
@@ -188,27 +174,28 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 		obj := objs[idx]
 		idx++
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return nil, marshalErr
-		}
-
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			obj.GetContainerName(),
 			obj.GetPodId(),
 			pgutils.NilOrUUID(obj.GetPodUid()),
+			obj.GetSignal().GetId(),
 			obj.GetSignal().GetContainerId(),
 			protocompat.NilOrTime(obj.GetSignal().GetTime()),
 			obj.GetSignal().GetName(),
 			obj.GetSignal().GetArgs(),
 			obj.GetSignal().GetExecFilePath(),
+			obj.GetSignal().GetPid(),
 			obj.GetSignal().GetUid(),
+			obj.GetSignal().GetGid(),
+			obj.GetSignal().GetLineage(),
+			obj.GetSignal().GetScraped(),
+			pgutils.MustMarshalRepeatedMessages(obj.GetSignal().GetLineageInfo()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetNamespace(),
 			protocompat.NilOrTime(obj.GetContainerStartTime()),
-			serialized,
+			obj.GetImageId(),
 		}, nil
 	})
 
@@ -217,6 +204,184 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 	}
 
 	return nil
+}
+
+func bulkInsertIntoProcessIndicators(batch *pgx.Batch, objs []*storeType) error {
+
+	// Build column arrays for unnest — one Go slice per unnestable DB column
+	arr_col_Id := make([]string, 0, len(objs))
+	arr_col_DeploymentId := make([]string, 0, len(objs))
+	arr_col_ContainerName := make([]string, 0, len(objs))
+	arr_col_PodId := make([]string, 0, len(objs))
+	arr_col_PodUid := make([]string, 0, len(objs))
+	arr_col_Signal_Id := make([]string, 0, len(objs))
+	arr_col_Signal_ContainerId := make([]string, 0, len(objs))
+	arr_col_Signal_Time := make([]*time.Time, 0, len(objs))
+	arr_col_Signal_Name := make([]string, 0, len(objs))
+	arr_col_Signal_Args := make([]string, 0, len(objs))
+	arr_col_Signal_ExecFilePath := make([]string, 0, len(objs))
+	arr_col_Signal_Pid := make([]uint32, 0, len(objs))
+	arr_col_Signal_Uid := make([]uint32, 0, len(objs))
+	arr_col_Signal_Gid := make([]uint32, 0, len(objs))
+	arr_col_Signal_Scraped := make([]bool, 0, len(objs))
+	arr_col_Signal_LineageInfo := make([][]byte, 0, len(objs))
+	arr_col_ClusterId := make([]string, 0, len(objs))
+	arr_col_Namespace := make([]string, 0, len(objs))
+	arr_col_ContainerStartTime := make([]*time.Time, 0, len(objs))
+	arr_col_ImageId := make([]string, 0, len(objs))
+
+	for _, obj := range objs {
+		arr_col_Id = append(arr_col_Id, obj.GetId())
+		arr_col_DeploymentId = append(arr_col_DeploymentId, obj.GetDeploymentId())
+		arr_col_ContainerName = append(arr_col_ContainerName, obj.GetContainerName())
+		arr_col_PodId = append(arr_col_PodId, obj.GetPodId())
+		arr_col_PodUid = append(arr_col_PodUid, obj.GetPodUid())
+		arr_col_Signal_Id = append(arr_col_Signal_Id, obj.GetSignal().GetId())
+		arr_col_Signal_ContainerId = append(arr_col_Signal_ContainerId, obj.GetSignal().GetContainerId())
+		arr_col_Signal_Time = append(arr_col_Signal_Time, protocompat.NilOrTime(obj.GetSignal().GetTime()))
+		arr_col_Signal_Name = append(arr_col_Signal_Name, obj.GetSignal().GetName())
+		arr_col_Signal_Args = append(arr_col_Signal_Args, obj.GetSignal().GetArgs())
+		arr_col_Signal_ExecFilePath = append(arr_col_Signal_ExecFilePath, obj.GetSignal().GetExecFilePath())
+		arr_col_Signal_Pid = append(arr_col_Signal_Pid, obj.GetSignal().GetPid())
+		arr_col_Signal_Uid = append(arr_col_Signal_Uid, obj.GetSignal().GetUid())
+		arr_col_Signal_Gid = append(arr_col_Signal_Gid, obj.GetSignal().GetGid())
+		arr_col_Signal_Scraped = append(arr_col_Signal_Scraped, obj.GetSignal().GetScraped())
+		arr_col_Signal_LineageInfo = append(arr_col_Signal_LineageInfo, pgutils.MustMarshalRepeatedMessages(obj.GetSignal().GetLineageInfo()))
+		arr_col_ClusterId = append(arr_col_ClusterId, obj.GetClusterId())
+		arr_col_Namespace = append(arr_col_Namespace, obj.GetNamespace())
+		arr_col_ContainerStartTime = append(arr_col_ContainerStartTime, protocompat.NilOrTime(obj.GetContainerStartTime()))
+		arr_col_ImageId = append(arr_col_ImageId, obj.GetImageId())
+	}
+
+	// Unnest INSERT for parent table (unnestable columns only)
+	batch.Queue(`INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Scraped, Signal_LineageInfo, ClusterId, Namespace, ContainerStartTime, ImageId)
+        SELECT * FROM unnest($1::uuid[], $2::uuid[], $3::text[], $4::text[], $5::uuid[], $6::text[], $7::text[], $8::timestamp[], $9::text[], $10::text[], $11::text[], $12::bigint[], $13::bigint[], $14::bigint[], $15::bool[], $16::bytea[], $17::uuid[], $18::text[], $19::timestamp[], $20::text[])
+        ON CONFLICT(Id) DO UPDATE SET
+        Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Scraped = EXCLUDED.Signal_Scraped, Signal_LineageInfo = EXCLUDED.Signal_LineageInfo, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId`,
+		arr_col_Id,
+		arr_col_DeploymentId,
+		arr_col_ContainerName,
+		arr_col_PodId,
+		arr_col_PodUid,
+		arr_col_Signal_Id,
+		arr_col_Signal_ContainerId,
+		arr_col_Signal_Time,
+		arr_col_Signal_Name,
+		arr_col_Signal_Args,
+		arr_col_Signal_ExecFilePath,
+		arr_col_Signal_Pid,
+		arr_col_Signal_Uid,
+		arr_col_Signal_Gid,
+		arr_col_Signal_Scraped,
+		arr_col_Signal_LineageInfo,
+		arr_col_ClusterId,
+		arr_col_Namespace,
+		arr_col_ContainerStartTime,
+		arr_col_ImageId,
+	)
+
+	// Per-row UPDATE for columns that can't be unnested (arrays, maps)
+	for _, obj := range objs {
+		batch.Queue(`UPDATE process_indicators SET Signal_Lineage = $1 WHERE Id = $2`,
+			obj.GetSignal().GetLineage(), obj.GetId(),
+		)
+	}
+
+	return nil
+}
+
+func scanRow(row pgx.Row) (*storeType, error) {
+	obj := &storeType{}
+	obj.Signal = &storage.ProcessSignal{}
+	var col_Id string
+	var col_DeploymentId string
+	var col_PodUid string
+	var col_Signal_Time *time.Time
+	var col_Signal_LineageInfo []byte
+	var col_ClusterId string
+	var col_ContainerStartTime *time.Time
+
+	if err := row.Scan(
+		&col_Id,
+		&col_DeploymentId,
+		&obj.ContainerName,
+		&obj.PodId,
+		&col_PodUid,
+		&obj.Signal.Id,
+		&obj.Signal.ContainerId,
+		&col_Signal_Time,
+		&obj.Signal.Name,
+		&obj.Signal.Args,
+		&obj.Signal.ExecFilePath,
+		&obj.Signal.Pid,
+		&obj.Signal.Uid,
+		&obj.Signal.Gid,
+		&obj.Signal.Lineage,
+		&obj.Signal.Scraped,
+		&col_Signal_LineageInfo,
+		&col_ClusterId,
+		&obj.Namespace,
+		&col_ContainerStartTime,
+		&obj.ImageId,
+	); err != nil {
+		return nil, err
+	}
+	obj.Id = col_Id
+	obj.DeploymentId = col_DeploymentId
+	obj.PodUid = col_PodUid
+	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
+	obj.Signal.LineageInfo = pgutils.MustUnmarshalRepeatedMessages(col_Signal_LineageInfo, func() *storage.ProcessSignal_LineageInfo { return &storage.ProcessSignal_LineageInfo{} })
+	obj.ClusterId = col_ClusterId
+	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
+
+	return obj, nil
+}
+
+func scanRows(rows pgx.Rows) (*storeType, error) {
+	obj := &storeType{}
+	obj.Signal = &storage.ProcessSignal{}
+	var col_Id string
+	var col_DeploymentId string
+	var col_PodUid string
+	var col_Signal_Time *time.Time
+	var col_Signal_LineageInfo []byte
+	var col_ClusterId string
+	var col_ContainerStartTime *time.Time
+
+	if err := rows.Scan(
+		&col_Id,
+		&col_DeploymentId,
+		&obj.ContainerName,
+		&obj.PodId,
+		&col_PodUid,
+		&obj.Signal.Id,
+		&obj.Signal.ContainerId,
+		&col_Signal_Time,
+		&obj.Signal.Name,
+		&obj.Signal.Args,
+		&obj.Signal.ExecFilePath,
+		&obj.Signal.Pid,
+		&obj.Signal.Uid,
+		&obj.Signal.Gid,
+		&obj.Signal.Lineage,
+		&obj.Signal.Scraped,
+		&col_Signal_LineageInfo,
+		&col_ClusterId,
+		&obj.Namespace,
+		&col_ContainerStartTime,
+		&obj.ImageId,
+	); err != nil {
+		return nil, err
+	}
+	obj.Id = col_Id
+	obj.DeploymentId = col_DeploymentId
+	obj.PodUid = col_PodUid
+	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
+	obj.Signal.LineageInfo = pgutils.MustUnmarshalRepeatedMessages(col_Signal_LineageInfo, func() *storage.ProcessSignal_LineageInfo { return &storage.ProcessSignal_LineageInfo{} })
+	obj.ClusterId = col_ClusterId
+	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
+
+	return obj, nil
 }
 
 // endregion Helper functions
