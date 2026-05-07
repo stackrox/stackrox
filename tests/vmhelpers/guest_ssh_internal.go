@@ -14,6 +14,9 @@ import (
 // SSH reachability and guest wait tuning: probe cadence, per-category stall thresholds,
 // single-probe timeout, and wait-loop logging/truncation for cloud-init and similar polls.
 const (
+	// rhsmPrecheckSSHRetryThreshold bounds transport retries for guest-preparation
+	// commands that run after initial SSH contact succeeds.
+	rhsmPrecheckSSHRetryThreshold = 5
 	// sshReachablePollInterval is the sleep between consecutive SSH probe attempts.
 	sshReachablePollInterval = 10 * time.Second
 	// sshAuthFailureThreshold is the number of consecutive "permission denied" probe
