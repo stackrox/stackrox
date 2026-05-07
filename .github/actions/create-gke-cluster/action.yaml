@@ -65,14 +65,12 @@ runs:
         provision_gke_cluster "${{ inputs.cluster-name }}"
         echo "CLUSTER_NAME=${CLUSTER_NAME}" >> "$GITHUB_ENV"
         echo "ZONE=${ZONE}" >> "$GITHUB_ENV"
-      timeout-minutes: 20
 
     - name: Wait for cluster
       shell: bash
       run: |
         source scripts/ci/gke.sh
         wait_for_cluster
-      timeout-minutes: 5
 
     - name: Create image pull secret
       shell: bash
