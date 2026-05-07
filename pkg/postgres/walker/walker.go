@@ -157,6 +157,12 @@ func WithJsonb() WalkOption {
 	return func(s *Schema) { s.Jsonb = true }
 }
 
+// WithRepeatedFieldStrategies returns a WalkOption that sets per-field storage
+// strategies for repeated fields when NoSerialized is enabled.
+func WithRepeatedFieldStrategies(strategies map[string]string) WalkOption {
+	return func(s *Schema) { s.RepeatedFieldStrategies = strategies }
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{

@@ -136,6 +136,10 @@ type Schema struct {
 	// binary vtproto, making it human-readable and SQL-queryable.
 	Jsonb bool
 
+	// RepeatedFieldStrategies maps field paths to their storage strategy (bytea, array, child_table).
+	// Only used when NoSerialized is true. Allows per-field control over how repeated fields are stored.
+	RepeatedFieldStrategies map[string]string
+
 	// InlinedSubMessages tracks sub-message fields that were flattened into this schema's columns.
 	// Only populated when NoSerialized is true. Used by scanner code generation.
 	InlinedSubMessages []InlinedSubMessage
