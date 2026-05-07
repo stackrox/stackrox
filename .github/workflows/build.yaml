@@ -61,23 +61,27 @@ jobs:
             (
               if [[ "$TARGET_BRANCH" =~ ^release-(.+)$ ]]; then
                 bv="${BASH_REMATCH[1]}"
-                version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/${bv}" \
+                candidates="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/${bv}" \
                   --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
-                  | grep -E "^${bv}\.[0-9]+$" | sort -V | tail -1)"
-                version="${version:-${bv}.x}"
+                  | grep -E "^${bv}\.[0-9]+$" | sort -rV)"
+                candidates="${candidates:-${bv}.x}"
               else
-                version="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/" \
+                candidates="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/" \
                   --jq ".[].ref | ltrimstr(\"refs/tags/\")" \
-                  | grep -E '^[0-9]+\.[0-9]+\.x$' | sort -V | tail -1)"
-                version="${version:-0.0.0}"
+                  | grep -E '^[0-9]+\.[0-9]+\.x$' | sort -rV)"
+                candidates="${candidates:-0.0.0}"
               fi
-              read -r status ahead_by < <(gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '[.status, .ahead_by] | @tsv')
-              if [[ ("$status" == "ahead" || "$status" == "identical") && "$ahead_by" =~ ^[0-9]+$ ]]; then
-                echo "${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
-              else
-                echo "::warning::Tag ${version} is not an ancestor of ${COMMIT_SHA:0:10} (status=${status:-unknown}), defaulting to 0" >&2
-                echo "${version}-0-g${COMMIT_SHA:0:10}"
-              fi
+              # Walk candidates from latest to oldest until we find an ancestor of this commit.
+              for version in $candidates; do
+                read -r status ahead_by < <(gh api "repos/${GITHUB_REPOSITORY}/compare/${version}...${COMMIT_SHA}" --jq '[.status, .ahead_by] | @tsv')
+                if [[ ("$status" == "ahead" || "$status" == "identical") && "$ahead_by" =~ ^[0-9]+$ ]]; then
+                  echo "${version}-${ahead_by}-g${COMMIT_SHA:0:10}"
+                  exit 0
+                fi
+                echo "::warning::Tag ${version} is not an ancestor of ${COMMIT_SHA:0:10} (status=${status:-unknown}), trying next" >&2
+              done
+              echo "::warning::No ancestor tag found, defaulting to 0.0.0" >&2
+              echo "0.0.0-0-g${COMMIT_SHA:0:10}"
             ) > /tmp/build_tag &
             api_pid=$!
           fi
