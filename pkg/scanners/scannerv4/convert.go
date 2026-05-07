@@ -22,18 +22,41 @@ import (
 const vulnDataSourceDelimiter = "::"
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
+	repos := report.GetContents().GetRepositories()
+	if len(repos) > 0 {
+		for id, repo := range repos {
+			log.Debugf("Repository CPE: repo id=%q name=%q key=%q cpe=%q", id, repo.GetName(), repo.GetKey(), repo.GetCpe())
+		}
+	} else {
+		log.Debugf("Repository CPE: vulnerability report contains 0 repositories")
+	}
+
+	var withRepoID, withoutRepoID int
+	for _, vuln := range report.GetVulnerabilities() {
+		if vuln.GetRepositoryId() != "" {
+			withRepoID++
+		} else {
+			withoutRepoID++
+		}
+	}
+	log.Debugf("Repository CPE: %d vulns with repo ID, %d without; %d environments, %d packages",
+		withRepoID, withoutRepoID,
+		len(report.GetContents().GetEnvironments())+len(report.GetContents().GetEnvironmentsDEPRECATED()),
+		len(report.GetContents().GetPackages())+len(report.GetContents().GetPackagesDEPRECATED()),
+	)
+
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: os(report),
-		Components:      components(metadata, report),
+		Components:      components(metadata, report, repos),
 		Notes:           notes(report),
 	}
 
 	return scan
 }
 
-func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
+func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, repositories map[string]*v4.Repository) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
 	pkgs := report.GetContents().GetPackages()
@@ -57,13 +80,25 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		if env != nil {
 			source, location = ParsePackageDB(env.GetPackageDb())
 			layerIdx = layerIndex(layerSHAToIndex, env)
+			if len(vulnIDs) > 0 {
+				log.Debugf("[CPE-TRACE-0] package=%q envRepoIds=%v repoMapSize=%d", pkg.GetName(), env.GetRepositoryIds(), len(repositories))
+				for _, rid := range env.GetRepositoryIds() {
+					if repo, ok := repositories[rid]; ok {
+						log.Debugf("[CPE-TRACE-0]   repoId=%q cpe=%q key=%q", rid, repo.GetCpe(), repo.GetKey())
+					} else {
+						log.Debugf("[CPE-TRACE-0]   repoId=%q NOT FOUND in repositories map", rid)
+					}
+				}
+			}
+		} else if len(vulnIDs) > 0 {
+			log.Debugf("[CPE-TRACE-0] package=%q has %d vulns but NO environment", pkg.GetName(), len(vulnIDs))
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
 			Name:         pkg.GetName(),
 			Version:      pkg.GetVersion(),
 			Architecture: pkg.GetArch(),
-			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report)),
+			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report), repositories, env),
 			FixedBy:      pkg.GetFixedInVersion(),
 			Source:       source,
 			Location:     location,
@@ -173,7 +208,7 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 	}
 }
 
-func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string) []*storage.EmbeddedVulnerability {
+func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string, repositories map[string]*v4.Repository, env *v4.Environment) []*storage.EmbeddedVulnerability {
 	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
@@ -207,7 +242,12 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Epss:                  epss(ccVuln.GetEpssMetrics()),
 			FixAvailableTimestamp: ccVuln.GetFixedDate(),
 			Datasource:            vulnDataSource(ccVuln, envOS),
+			RepositoryCpe:         repositoryCPE(repositories, ccVuln.GetRepositoryId()),
 		}
+		if vuln.RepositoryCpe == "" {
+			vuln.RepositoryCpe = envRepositoryCPE(repositories, env)
+		}
+		log.Debugf("[CPE-TRACE-1] convert.vulnerabilities: cve=%q repositoryCpe=%q", vuln.GetCve(), vuln.GetRepositoryCpe())
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
 		}
@@ -257,6 +297,34 @@ func vulnDataSource(ccVuln *v4.VulnerabilityReport_Vulnerability, os string) str
 		ccVuln.GetUpdater(),
 		os,
 	}, vulnDataSourceDelimiter)
+}
+
+func repositoryCPE(repositories map[string]*v4.Repository, repoID string) string {
+	if repoID == "" {
+		return ""
+	}
+	repo, ok := repositories[repoID]
+	if !ok {
+		log.Debugf("Repository CPE lookup: repo ID %q not found in %d repositories", repoID, len(repositories))
+		return ""
+	}
+	cpeStr := repo.GetCpe()
+	if cpeStr == "" {
+		log.Debugf("Repository CPE lookup: repo ID %q (name=%q, key=%q) has empty CPE", repoID, repo.GetName(), repo.GetKey())
+	}
+	return cpeStr
+}
+
+func envRepositoryCPE(repositories map[string]*v4.Repository, env *v4.Environment) string {
+	if env == nil {
+		return ""
+	}
+	for _, repoID := range env.GetRepositoryIds() {
+		if repo, ok := repositories[repoID]; ok {
+			return repo.GetCpe()
+		}
+	}
+	return ""
 }
 
 func advisory(advisory *v4.VulnerabilityReport_Advisory) *storage.Advisory {

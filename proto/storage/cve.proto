@@ -39,7 +39,7 @@ enum CvssScoreVersion {
 // EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
 message EPSS {
   float epss_probability = 1; // @gotags: search:"EPSS Probability"
-  float epss_percentile = 2;
+  float epss_percentile = 2; // @gotags: search:"EPSS Percentile,hidden"
 }
 
 // ******************************
@@ -124,8 +124,8 @@ message CVEInfo {
     UNKNOWN = 2;
   }
   string cve = 1; // @gotags: search:"CVE" sql:"index=btree"
-  string summary = 2;
-  string link = 3;
+  string summary = 2; // @gotags: search:"CVE Summary,hidden"
+  string link = 3; // @gotags: search:"CVE Link,hidden"
   // This indicates the timestamp when the cve was first published in the cve feeds.
   google.protobuf.Timestamp published_on = 4; // @gotags: search:"CVE Published On"
   // Time when the CVE was first seen in the system.
@@ -200,6 +200,12 @@ message ImageCVEV2 {
   // Timestamp when the fix for this CVE was made available according to the sources.
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
   string datasource = 17;
+  // repository_cpe is the CPE of the repository (product stream) this vulnerability was matched against.
+  string repository_cpe = 18; // @gotags: search:"Repository CPE,hidden"
+  // component_name is the name of the component this CVE was found in.
+  string component_name = 19; // @gotags: search:"CVE Component Name,hidden"
+  // component_version is the version of the component this CVE was found in.
+  string component_version = 20; // @gotags: search:"CVE Component Version,hidden"
 }
 
 message NodeCVE {

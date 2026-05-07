@@ -6763,6 +6763,21 @@
                 "id": 17,
                 "name": "datasource",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "repository_cpe",
+                "type": "string"
+              },
+              {
+                "id": 19,
+                "name": "component_name",
+                "type": "string"
+              },
+              {
+                "id": 20,
+                "name": "component_version",
+                "type": "string"
               }
             ]
           },
@@ -20551,6 +20566,11 @@
               {
                 "id": 26,
                 "name": "datasource",
+                "type": "string"
+              },
+              {
+                "id": 27,
+                "name": "repository_cpe",
                 "type": "string"
               }
             ],

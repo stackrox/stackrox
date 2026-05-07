@@ -79,6 +79,11 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
+// WalkByQuery calls fn for every ImageCVEV2 matching q, in storage order.
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.ImageCVEV2) error) error {
+	return ds.storage.GetByQueryFn(ctx, q, fn)
+}
+
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
 	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
