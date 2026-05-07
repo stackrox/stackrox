@@ -1,6 +1,7 @@
 package common
 
 import (
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -40,7 +41,7 @@ func (q *queryBuilderViewBased) BuildQueryViewBased(
 	if err != nil {
 		return nil, err
 	}
-	deployedImagesQuery := search.ConjunctionQuery(deploymentsScopedQuery, cveFilterQuery)
+	deployedImagesQuery := search.ConjunctionQuery(deploymentsScopedQuery, cveFilterQuery, deploymentDataStore.ActiveDeploymentsQuery())
 
 	watchedImagesQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
