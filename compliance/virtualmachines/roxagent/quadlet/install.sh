@@ -10,6 +10,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Directory containing the Quadlet unit files (roxagent.container, .timer, etc.)
+# to install. Defaults to the script's own directory; override for testing.
+QUADLET_FILES_DIR="${QUADLET_FILES_DIR:-${SCRIPT_DIR}}"
 
 # Host paths that may not exist on all RHEL versions (e.g. DNF paths on
 # yum-only RHEL 8). Volume= lines referencing these are stripped when the
@@ -172,7 +175,7 @@ copy_remote_stage_files() {
     local remote_stage_dir="$1"
     local file
     for file in "${STAGED_INSTALL_FILES[@]}"; do
-        remote_copy "${SCRIPT_DIR}/${file}" "${remote_stage_dir}/${file}"
+        remote_copy "${QUADLET_FILES_DIR}/${file}" "${remote_stage_dir}/${file}"
     done
 }
 
@@ -224,7 +227,7 @@ install_from_stage_dir() {
 }
 
 install_local() {
-    install_from_stage_dir "${SCRIPT_DIR}"
+    install_from_stage_dir "${QUADLET_FILES_DIR}"
 }
 
 install_remote() {

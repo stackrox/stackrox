@@ -1,9 +1,57 @@
 #!/usr/bin/env bats
 # shellcheck disable=SC1091
+#
+# Unit tests for compliance/virtualmachines/roxagent/quadlet/install.sh
+#
+# Test strategy:
+#   The install script calls external commands (sudo, ssh, scp, virtctl) that
+#   require privileges or remote hosts. To test locally without either, we place
+#   stub scripts on PATH (in BIN_DIR) that shadow the real binaries.
+#
+#   Stubs live in tests/e2e/bats/stubs/ as standalone executable scripts because
+#   the install script invokes them as external processes — bash functions
+#   (export -f) would not survive the child shell boundary reliably.
+#
+#   Three kinds of stubs are used:
+#     - sudo stub:       rewrites /etc/* paths into a temp FAKE_ROOT for assertion
+#     - recording stubs: log every call to CALL_LOG so tests can assert on args
+#     - unexpected stubs: fail immediately if invoked (tripwire guards)
+#
+#   See stubs/README or individual stub headers for details.
 
 load "../../../scripts/test_helpers.bats"
 
 INSTALL_SCRIPT_REL="compliance/virtualmachines/roxagent/quadlet/install.sh"
+
+# --- Test fixture content (container file variants) ---------------------------
+
+CONTAINER_ALL_PATHS_EXIST='[Container]
+Image=registry.example.com/roxagent:latest
+Volume=/etc/yum.repos.d:/etc/yum.repos.d:ro
+Volume=/data:/data:rw'
+
+CONTAINER_WITH_MISSING_PATHS='[Container]
+Image=registry.example.com/roxagent:latest
+Volume=/nonexistent/path1:/container/path1:ro
+Volume=/tmp:/container/tmp:rw
+Volume=/nonexistent/path2:/container/path2:ro'
+
+CONTAINER_MIXED_LINES='[Container]
+Image=registry.example.com/roxagent:latest
+Environment=SOME_VAR=value
+Volume=/missing/path:/dst:ro
+Label=com.example=test'
+
+# --- Test fixture content (staged install files) ------------------------------
+
+STAGE_CONTAINER='[Container]
+SENTINEL-CONTAINER=true'
+
+STAGE_TIMER='SENTINEL-TIMER=true'
+
+STAGE_PREP_SERVICE='SENTINEL-PREP=true'
+
+STAGE_TMPFILES_CONF='SENTINEL-TMPFILES=true'
 
 setup() {
     INSTALL_SCRIPT="${BATS_TEST_DIRNAME}/../../../${INSTALL_SCRIPT_REL}"
@@ -13,6 +61,7 @@ setup() {
     CALL_LOG="${BATS_TEST_TMPDIR}/calls.log"
 
     mkdir -p "${STAGE_DIR}" "${BIN_DIR}" "${FAKE_ROOT}"
+    # Truncate file to 0 bytes
     : > "${CALL_LOG}"
 
     export FAKE_ROOT
@@ -27,12 +76,41 @@ setup() {
 }
 
 # =============================================================================
+# Local install (no args)
+# =============================================================================
+
+@test "local install (no args) installs files from QUADLET_FILES_DIR into FAKE_ROOT" {
+    QUADLET_FILES_DIR="${STAGE_DIR}" run bash "${INSTALL_SCRIPT}"
+    assert_success
+    assert_output --partial "Done!"
+    assert_output --partial "periodically"
+
+    [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
+    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent.timer" ]
+    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
+    [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
+
+    run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
+    assert_output --partial "SENTINEL-CONTAINER"
+
+    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent.timer"
+    assert_output --partial "SENTINEL-TIMER"
+
+    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
+    assert_output --partial "SENTINEL-PREP"
+
+    run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
+    assert_output --partial "SENTINEL-TMPFILES"
+}
+
+# =============================================================================
 # Install from explicit stage dir (--stage-dir)
 # =============================================================================
 
 @test "--stage-dir installs all unit files to correct locations" {
     run bash "${INSTALL_SCRIPT}" --stage-dir "${STAGE_DIR}"
     assert_success
+    refute_output --partial "Done!"
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent.timer" ]
@@ -183,34 +261,21 @@ setup() {
 
 @test "filter_container_file passes file through when all paths exist" {
     local container_file="${BATS_TEST_TMPDIR}/test.container"
-    cat > "${container_file}" <<'EOF'
-[Container]
-Image=registry.example.com/roxagent:latest
-Volume=/etc/yum.repos.d:/etc/yum.repos.d:ro
-Volume=/data:/data:rw
-EOF
+    printf '%s\n' "${CONTAINER_ALL_PATHS_EXIST}" > "${container_file}"
 
-    # Source the script in a subshell to get access to filter_container_file.
-    # Override OPTIONAL_HOST_PATHS to paths that DO exist.
+    # Override OPTIONAL_HOST_PATHS to paths that DO exist on any system.
     run bash -c "
         source '${INSTALL_SCRIPT}'  --source-only 2>/dev/null || true
         OPTIONAL_HOST_PATHS=(/tmp /var)
         filter_container_file '${container_file}'
     "
-    # Since /tmp and /var exist, no stripping occurs.
     assert_output --partial "Volume=/etc/yum.repos.d:/etc/yum.repos.d:ro"
     assert_output --partial "Volume=/data:/data:rw"
 }
 
 @test "filter_container_file strips Volume lines for missing paths" {
     local container_file="${BATS_TEST_TMPDIR}/test.container"
-    cat > "${container_file}" <<'EOF'
-[Container]
-Image=registry.example.com/roxagent:latest
-Volume=/nonexistent/path1:/container/path1:ro
-Volume=/tmp:/container/tmp:rw
-Volume=/nonexistent/path2:/container/path2:ro
-EOF
+    printf '%s\n' "${CONTAINER_WITH_MISSING_PATHS}" > "${container_file}"
 
     run bash -c "
         set -euo pipefail
@@ -228,13 +293,7 @@ EOF
 
 @test "filter_container_file preserves non-Volume lines unchanged" {
     local container_file="${BATS_TEST_TMPDIR}/test.container"
-    cat > "${container_file}" <<'EOF'
-[Container]
-Image=registry.example.com/roxagent:latest
-Environment=SOME_VAR=value
-Volume=/missing/path:/dst:ro
-Label=com.example=test
-EOF
+    printf '%s\n' "${CONTAINER_MIXED_LINES}" > "${container_file}"
 
     run bash -c "
         set -euo pipefail
@@ -256,14 +315,7 @@ EOF
 # =============================================================================
 
 @test "create_remote_stage_dir parses __STAGE_DIR__ marker from remote output" {
-    # Write an ssh stub that outputs the marker as a remote mktemp would
-    cat > "${BIN_DIR}/ssh" <<'EOF'
-#!/usr/bin/env bash
-# Simulate remote execution that outputs the stage dir marker
-cat <<'REMOTE'
-__STAGE_DIR__=/var/tmp/roxagent-install.ABC123
-REMOTE
-EOF
+    cp "${BATS_TEST_DIRNAME}/stubs/ssh-emit-marker" "${BIN_DIR}/ssh"
     chmod 0755 "${BIN_DIR}/ssh"
 
     run bash -c "
@@ -283,10 +335,7 @@ EOF
 }
 
 @test "create_remote_stage_dir fails when marker is missing" {
-    cat > "${BIN_DIR}/ssh" <<'EOF'
-#!/usr/bin/env bash
-echo "some garbage output without the marker"
-EOF
+    cp "${BATS_TEST_DIRNAME}/stubs/ssh-no-marker" "${BIN_DIR}/ssh"
     chmod 0755 "${BIN_DIR}/ssh"
 
     run bash -c "
@@ -312,6 +361,7 @@ EOF
     run bash -c "
         set -euo pipefail
         SCRIPT_DIR='${BATS_TEST_TMPDIR}'
+        QUADLET_FILES_DIR='${BATS_TEST_TMPDIR}'
         TRANSPORT_KIND=ssh
         SSH_HOST=testhost
         SSH_PORT=22
@@ -334,27 +384,7 @@ EOF
 }
 
 @test "install_remote heredoc includes cleanup trap with rm -rf" {
-    write_recording_stub ssh
-
-    # Mock create_remote_stage_dir to return a known path
-    cat > "${BIN_DIR}/ssh" <<'STUB'
-#!/usr/bin/env bash
-# First call: create_remote_stage_dir (output marker)
-# Subsequent calls: run the heredoc (just record stdin)
-if [ ! -f "${CALL_LOG}.ssh_call_count" ]; then
-    echo "0" > "${CALL_LOG}.ssh_call_count"
-fi
-count=$(cat "${CALL_LOG}.ssh_call_count")
-count=$((count + 1))
-echo "${count}" > "${CALL_LOG}.ssh_call_count"
-
-if [ "${count}" -eq 1 ]; then
-    echo "__STAGE_DIR__=/var/tmp/roxagent-install.FAKEXX"
-else
-    # Record the heredoc content that was piped in
-    cat >> "${CALL_LOG}.heredoc"
-fi
-STUB
+    cp "${BATS_TEST_DIRNAME}/stubs/ssh-counting-stub" "${BIN_DIR}/ssh"
     chmod 0755 "${BIN_DIR}/ssh"
     write_recording_stub scp
 
@@ -407,129 +437,46 @@ STUB
 # =============================================================================
 
 write_stage_files() {
-    cat > "${STAGE_DIR}/roxagent.container" <<'EOF'
-[Container]
-SENTINEL-CONTAINER=true
-EOF
-
-    cat > "${STAGE_DIR}/roxagent.timer" <<'EOF'
-SENTINEL-TIMER=true
-EOF
-
-    cat > "${STAGE_DIR}/roxagent-prep.service" <<'EOF'
-SENTINEL-PREP=true
-EOF
-
-    cat > "${STAGE_DIR}/roxagent-tmpfiles.conf" <<'EOF'
-SENTINEL-TMPFILES=true
-EOF
+    printf '%s\n' "${STAGE_CONTAINER}" > "${STAGE_DIR}/roxagent.container"
+    printf '%s\n' "${STAGE_TIMER}" > "${STAGE_DIR}/roxagent.timer"
+    printf '%s\n' "${STAGE_PREP_SERVICE}" > "${STAGE_DIR}/roxagent-prep.service"
+    printf '%s\n' "${STAGE_TMPFILES_CONF}" > "${STAGE_DIR}/roxagent-tmpfiles.conf"
 }
 
+# Place a fake "sudo" on PATH that intercepts file operations and redirects
+# them into FAKE_ROOT instead of real system directories.
+#
+# Example: "sudo cp foo /etc/systemd/system/" actually writes to
+#          "${FAKE_ROOT}/etc/systemd/system/foo", which tests can then inspect.
+#
+# See: stubs/sudo for the full list of supported commands.
 write_sudo_stub() {
-    cat > "${BIN_DIR}/sudo" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-
-rewrite_system_path() {
-    local path="${1}"
-    case "${path}" in
-        /etc/*|/run/*)
-            printf '%s%s\n' "${FAKE_ROOT}" "${path}"
-            ;;
-        *)
-            printf '%s\n' "${path}"
-            ;;
-    esac
-}
-
-cmd="${1}"
-shift
-
-case "${cmd}" in
-    mkdir)
-        args=()
-        for arg in "$@"; do
-            args+=("$(rewrite_system_path "${arg}")")
-        done
-        command mkdir "${args[@]}"
-        ;;
-    tee)
-        target="$(rewrite_system_path "${1}")"
-        command mkdir -p "$(dirname "${target}")"
-        cat > "${target}"
-        ;;
-    cp)
-        src="${1}"
-        dst="$(rewrite_system_path "${2}")"
-        if [[ "${2}" == */ ]]; then
-            command mkdir -p "${dst}"
-        else
-            command mkdir -p "$(dirname "${dst}")"
-        fi
-        command cp "${src}" "${dst}"
-        ;;
-    restorecon)
-        exit 0
-        ;;
-    systemd-tmpfiles|systemctl)
-        printf '%s %s\n' "${cmd}" "$*" >> "${FAKE_ROOT}/sudo.log"
-        exit 0
-        ;;
-    *)
-        printf 'unsupported sudo command: %s\n' "${cmd}" >&2
-        exit 1
-        ;;
-esac
-EOF
+    cp "${BATS_TEST_DIRNAME}/stubs/sudo" "${BIN_DIR}/sudo"
     chmod 0755 "${BIN_DIR}/sudo"
 }
 
+# Place a stub named $1 on PATH that immediately fails (exit 99) if called.
+# Used as a tripwire to verify that a command is never invoked in a given test.
+#
+# Example: write_unexpected_remote_stub ssh
+#          → if install.sh accidentally calls "ssh", the test fails with
+#            "unexpected ssh invocation: <args>"
 write_unexpected_remote_stub() {
-    local name="${1}"
-
-    cat > "${BIN_DIR}/${name}" <<EOF
-#!/usr/bin/env bash
-printf 'unexpected ${name} invocation: %s\n' "\$*" >&2
-exit 99
-EOF
+    local name="$1"
+    cp "${BATS_TEST_DIRNAME}/stubs/unexpected-stub" "${BIN_DIR}/${name}"
     chmod 0755 "${BIN_DIR}/${name}"
 }
 
+# Place a stub named $1 on PATH that logs every call to CALL_LOG for later
+# assertion. Also handles stdin draining for ssh-like commands (heredocs) and
+# emits __STAGE_DIR__ on the first ssh call so the remote staging flow works.
+#
+# Example: write_recording_stub scp
+#          → after install.sh runs, CALL_LOG contains lines like:
+#            "scp -P 22 /path/to/file user@host:/remote/path"
+#          which tests assert with: assert_output --partial "scp -P 22"
 write_recording_stub() {
-    local name="${1}"
-
-    cat > "${BIN_DIR}/${name}" <<'STUB'
-#!/usr/bin/env bash
-# Record the invocation to the shared call log.
-printf '%s %s\n' "$(basename "$0")" "$*" >> "${CALL_LOG}"
-
-cmd_name="$(basename "$0")"
-
-# Determine if this is a command that receives stdin (ssh/remote_exec).
-# scp-like calls (virtctl scp, scp) don't pipe stdin so we must not block.
-reads_stdin=false
-case "${cmd_name}" in
-    ssh)
-        reads_stdin=true
-        ;;
-    virtctl)
-        # "virtctl ssh ..." reads stdin; "virtctl scp ..." does not.
-        if [ "${1:-}" = "ssh" ]; then
-            reads_stdin=true
-        fi
-        ;;
-esac
-
-if [ "${reads_stdin}" = "true" ]; then
-    # First ssh-like call: emit the stage dir marker (for create_remote_stage_dir).
-    # Subsequent ssh-like calls: just drain stdin.
-    if [ ! -f "${CALL_LOG}.${cmd_name}_emitted_marker" ]; then
-        echo "__STAGE_DIR__=/var/tmp/roxagent-install.TESTXX"
-        touch "${CALL_LOG}.${cmd_name}_emitted_marker"
-    else
-        cat > /dev/null 2>&1 || true
-    fi
-fi
-STUB
+    local name="$1"
+    cp "${BATS_TEST_DIRNAME}/stubs/recording-stub" "${BIN_DIR}/${name}"
     chmod 0755 "${BIN_DIR}/${name}"
 }
