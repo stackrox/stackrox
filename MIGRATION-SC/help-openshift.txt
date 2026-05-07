@@ -1,0 +1,137 @@
+Generate the required files to deploy StackRox services into an OpenShift 
+cluster.
+
+Generate the required YAML configuration files to deploy StackRox Sensor and 
+Collector into an OpenShift cluster.
+
+Options:
+    --disable-audit-logs=false:
+        Disable audit log collection for runtime detection.
+
+    --openshift-version=0:
+        OpenShift major version to generate deployment files for.
+
+Global Options:
+    --admission-controller-disable-bypass=false:
+        Disable the bypass annotations for the admission controller.
+
+    --admission-controller-enforcement=true:
+        Enforce security policies on the admission review request.
+
+    --admission-controller-fail-on-error=false:
+        Fail the admission review request in case of errors or timeouts in 
+        request evaluation.
+
+    --auto-lock-process-baselines=false:
+        Locks process baselines when their deployments leave the observation 
+        period.
+
+    --ca:
+        Path to a custom CA certificate to use (PEM format). Alternatively pass 
+        the file path using the ROX_CA_CERT_FILE environment variable.
+
+    --central='central.stackrox:443':
+        Endpoint that sensor should connect to.
+
+    --collection-method=default:
+        Which collection method to use for runtime support (none, default, 
+        core_bpf).
+
+    --collector-image-repository:
+        Image repository collector should be deployed with (if unset, a default 
+        will be derived according to the effective --main-image-repository 
+        value).
+
+    --continue-if-exists=false:
+        Continue with downloading the sensor bundle even if the cluster already 
+        exists.
+
+    --create-upgrader-sa=true:
+        Whether to create the upgrader service account, with cluster-admin 
+        privileges, to facilitate automated sensor upgrades.
+
+    --direct-grpc=false:
+        Use direct gRPC (advanced; only use if you encounter connection issues).
+        Alternately, enable by setting the ROX_DIRECT_GRPC_CLIENT environment 
+        variable to true.
+
+    --disable-tolerations=false:
+        Disable tolerations for tainted nodes.
+
+    --enable-pod-security-policies=false:
+        Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).
+
+    -e, --endpoint='localhost:8443':
+        Endpoint for service to contact. Alternatively, set the endpoint via the
+        ROX_ENDPOINT environment variable.
+
+    --force-http1=false:
+        Always use HTTP/1 for all connections (advanced; only use if you 
+        encounter connection issues). Alternatively, enable by setting the 
+        ROX_CLIENT_FORCE_HTTP1 environment variable to true.
+
+    -h, --help=false:
+        Help.
+
+    --insecure=false:
+        Enable insecure connection options (DANGEROUS; USE WITH CAUTION). 
+        Alternatively, enable insecure connection options by setting the 
+        ROX_INSECURE_CLIENT environment variable to true.
+
+    --insecure-skip-tls-verify=false:
+        Skip TLS certificate validation. Alternatively, disable TLS certivicate 
+        validation by setting the ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY 
+        environment variable to true.
+
+    --istio-support:
+        Generate deployment files supporting the given Istio version. Valid 
+        versions: 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7.
+
+    --main-image-repository:
+        Image repository sensor should be deployed with (if unset, a default 
+        will be used).
+
+    --name:
+        Cluster name to identify the cluster.
+
+    --no-color=false:
+        Disable color output. Alternately disable the color output by setting 
+        the ROX_NO_COLOR environment variable.
+
+    --output-dir:
+        Output directory for bundle contents (default: auto-generated directory 
+        name inside the current directory).
+
+    -p, --password:
+        Password for basic auth. Alternatively, set the password via the 
+        ROX_ADMIN_PASSWORD environment variable.
+
+    --plaintext=false:
+        Use a plaintext (unencrypted) connection; only works in conjunction with
+        --insecure. Alternatively can be enabled by setting the ROX_PLAINTEXT 
+        environment variable to true.
+
+    --retry-timeout='20s':
+        Timeout after which API requests are retried; zero means the full 
+        request duration is awaited without retry.
+
+    -s, --server-name:
+        TLS ServerName to use for SNI (if empty, derived from endpoint). 
+        Alternately, set the server name via the ROX_SERVER_NAME environment 
+        variable.
+
+    -t, --timeout='5m0s':
+        Timeout for API requests; represents the maximum duration of a request.
+
+    --token-file:
+        Use the API token in the provided file to authenticate. Alternatively, 
+        set the path via the ROX_API_TOKEN_FILE environment variable or set the 
+        token via the ROX_API_TOKEN environment variable.
+
+    --use-current-k8s-context=false:
+        Use the current kubeconfig context to connect to the central service via
+        port-forwarding. Alternatively, set ROX_USE_KUBECONTEXT environment 
+        variable to true.
+
+Usage:
+  tmp/roxctl-bats/bin/roxctl-dev sensor generate openshift [flags]
