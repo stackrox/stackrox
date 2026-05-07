@@ -369,9 +369,12 @@ type PatchPolicyRequest struct {
 	// Types that are valid to be assigned to SetDisabled:
 	//
 	//	*PatchPolicyRequest_Disabled
-	SetDisabled   isPatchPolicyRequest_SetDisabled `protobuf_oneof:"set_disabled"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	SetDisabled isPatchPolicyRequest_SetDisabled `protobuf_oneof:"set_disabled"`
+	// When set, replaces the policy's evaluation filter.
+	// An empty EvaluationFilter clears all filters.
+	EvaluationFilter *storage.EvaluationFilter `protobuf:"bytes,3,opt,name=evaluation_filter,json=evaluationFilter,proto3" json:"evaluation_filter,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PatchPolicyRequest) Reset() {
@@ -425,6 +428,13 @@ func (x *PatchPolicyRequest) GetDisabled() bool {
 		}
 	}
 	return false
+}
+
+func (x *PatchPolicyRequest) GetEvaluationFilter() *storage.EvaluationFilter {
+	if x != nil {
+		return x.EvaluationFilter
+	}
+	return nil
 }
 
 type isPatchPolicyRequest_SetDisabled interface {
@@ -1263,10 +1273,11 @@ const file_api_v1_policy_service_proto_rawDesc = "" +
 	"\bpolicies\x18\x01 \x03(\v2\x13.storage.ListPolicyR\bpolicies\"v\n" +
 	"\x11PostPolicyRequest\x12'\n" +
 	"\x06policy\x18\x01 \x01(\v2\x0f.storage.PolicyR\x06policy\x128\n" +
-	"\x18enable_strict_validation\x18\x02 \x01(\bR\x16enableStrictValidation\"R\n" +
+	"\x18enable_strict_validation\x18\x02 \x01(\bR\x16enableStrictValidation\"\x9a\x01\n" +
 	"\x12PatchPolicyRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
-	"\bdisabled\x18\x02 \x01(\bH\x00R\bdisabledB\x0e\n" +
+	"\bdisabled\x18\x02 \x01(\bH\x00R\bdisabled\x12F\n" +
+	"\x11evaluation_filter\x18\x03 \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilterB\x0e\n" +
 	"\fset_disabled\"6\n" +
 	"\x15ExportPoliciesRequest\x12\x1d\n" +
 	"\n" +
@@ -1371,67 +1382,69 @@ var file_api_v1_policy_service_proto_goTypes = []any{
 	(*GetPolicyMitreVectorsRequest_Options)(nil),   // 22: v1.GetPolicyMitreVectorsRequest.Options
 	(*storage.ListPolicy)(nil),                     // 23: storage.ListPolicy
 	(*storage.Policy)(nil),                         // 24: storage.Policy
-	(*storage.MitreAttackVector)(nil),              // 25: storage.MitreAttackVector
-	(*ResourceByID)(nil),                           // 26: v1.ResourceByID
-	(*RawQuery)(nil),                               // 27: v1.RawQuery
-	(*Empty)(nil),                                  // 28: v1.Empty
-	(*storage.ExportPoliciesResponse)(nil),         // 29: storage.ExportPoliciesResponse
+	(*storage.EvaluationFilter)(nil),               // 25: storage.EvaluationFilter
+	(*storage.MitreAttackVector)(nil),              // 26: storage.MitreAttackVector
+	(*ResourceByID)(nil),                           // 27: v1.ResourceByID
+	(*RawQuery)(nil),                               // 28: v1.RawQuery
+	(*Empty)(nil),                                  // 29: v1.Empty
+	(*storage.ExportPoliciesResponse)(nil),         // 30: storage.ExportPoliciesResponse
 }
 var file_api_v1_policy_service_proto_depIdxs = []int32{
 	21, // 0: v1.DryRunResponse.alerts:type_name -> v1.DryRunResponse.Alert
 	0,  // 1: v1.DryRunJobStatusResponse.result:type_name -> v1.DryRunResponse
 	23, // 2: v1.ListPoliciesResponse.policies:type_name -> storage.ListPolicy
 	24, // 3: v1.PostPolicyRequest.policy:type_name -> storage.Policy
-	9,  // 4: v1.PolicyOperationError.error:type_name -> v1.PolicyError
-	10, // 5: v1.PolicyOperationErrorList.errors:type_name -> v1.PolicyOperationError
-	13, // 6: v1.ImportPoliciesRequest.metadata:type_name -> v1.ImportPoliciesMetadata
-	24, // 7: v1.ImportPoliciesRequest.policies:type_name -> storage.Policy
-	24, // 8: v1.ImportPolicyResponse.policy:type_name -> storage.Policy
-	15, // 9: v1.ImportPolicyResponse.errors:type_name -> v1.ImportPolicyError
-	16, // 10: v1.ImportPoliciesResponse.responses:type_name -> v1.ImportPolicyResponse
-	24, // 11: v1.PolicyFromSearchResponse.policy:type_name -> storage.Policy
-	22, // 12: v1.GetPolicyMitreVectorsRequest.options:type_name -> v1.GetPolicyMitreVectorsRequest.Options
-	24, // 13: v1.GetPolicyMitreVectorsResponse.policy:type_name -> storage.Policy
-	25, // 14: v1.GetPolicyMitreVectorsResponse.vectors:type_name -> storage.MitreAttackVector
-	26, // 15: v1.PolicyService.GetPolicy:input_type -> v1.ResourceByID
-	19, // 16: v1.PolicyService.GetPolicyMitreVectors:input_type -> v1.GetPolicyMitreVectorsRequest
-	27, // 17: v1.PolicyService.ListPolicies:input_type -> v1.RawQuery
-	6,  // 18: v1.PolicyService.PostPolicy:input_type -> v1.PostPolicyRequest
-	24, // 19: v1.PolicyService.PutPolicy:input_type -> storage.Policy
-	7,  // 20: v1.PolicyService.PatchPolicy:input_type -> v1.PatchPolicyRequest
-	26, // 21: v1.PolicyService.DeletePolicy:input_type -> v1.ResourceByID
-	4,  // 22: v1.PolicyService.EnableDisablePolicyNotification:input_type -> v1.EnableDisablePolicyNotificationRequest
-	28, // 23: v1.PolicyService.ReassessPolicies:input_type -> v1.Empty
-	24, // 24: v1.PolicyService.DryRunPolicy:input_type -> storage.Policy
-	24, // 25: v1.PolicyService.SubmitDryRunPolicyJob:input_type -> storage.Policy
-	1,  // 26: v1.PolicyService.QueryDryRunJobStatus:input_type -> v1.JobId
-	1,  // 27: v1.PolicyService.CancelDryRunJob:input_type -> v1.JobId
-	28, // 28: v1.PolicyService.GetPolicyCategories:input_type -> v1.Empty
-	8,  // 29: v1.PolicyService.ExportPolicies:input_type -> v1.ExportPoliciesRequest
-	12, // 30: v1.PolicyService.PolicyFromSearch:input_type -> v1.PolicyFromSearchRequest
-	14, // 31: v1.PolicyService.ImportPolicies:input_type -> v1.ImportPoliciesRequest
-	24, // 32: v1.PolicyService.GetPolicy:output_type -> storage.Policy
-	20, // 33: v1.PolicyService.GetPolicyMitreVectors:output_type -> v1.GetPolicyMitreVectorsResponse
-	5,  // 34: v1.PolicyService.ListPolicies:output_type -> v1.ListPoliciesResponse
-	24, // 35: v1.PolicyService.PostPolicy:output_type -> storage.Policy
-	28, // 36: v1.PolicyService.PutPolicy:output_type -> v1.Empty
-	28, // 37: v1.PolicyService.PatchPolicy:output_type -> v1.Empty
-	28, // 38: v1.PolicyService.DeletePolicy:output_type -> v1.Empty
-	28, // 39: v1.PolicyService.EnableDisablePolicyNotification:output_type -> v1.Empty
-	28, // 40: v1.PolicyService.ReassessPolicies:output_type -> v1.Empty
-	0,  // 41: v1.PolicyService.DryRunPolicy:output_type -> v1.DryRunResponse
-	1,  // 42: v1.PolicyService.SubmitDryRunPolicyJob:output_type -> v1.JobId
-	2,  // 43: v1.PolicyService.QueryDryRunJobStatus:output_type -> v1.DryRunJobStatusResponse
-	28, // 44: v1.PolicyService.CancelDryRunJob:output_type -> v1.Empty
-	3,  // 45: v1.PolicyService.GetPolicyCategories:output_type -> v1.PolicyCategoriesResponse
-	29, // 46: v1.PolicyService.ExportPolicies:output_type -> storage.ExportPoliciesResponse
-	18, // 47: v1.PolicyService.PolicyFromSearch:output_type -> v1.PolicyFromSearchResponse
-	17, // 48: v1.PolicyService.ImportPolicies:output_type -> v1.ImportPoliciesResponse
-	32, // [32:49] is the sub-list for method output_type
-	15, // [15:32] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	25, // 4: v1.PatchPolicyRequest.evaluation_filter:type_name -> storage.EvaluationFilter
+	9,  // 5: v1.PolicyOperationError.error:type_name -> v1.PolicyError
+	10, // 6: v1.PolicyOperationErrorList.errors:type_name -> v1.PolicyOperationError
+	13, // 7: v1.ImportPoliciesRequest.metadata:type_name -> v1.ImportPoliciesMetadata
+	24, // 8: v1.ImportPoliciesRequest.policies:type_name -> storage.Policy
+	24, // 9: v1.ImportPolicyResponse.policy:type_name -> storage.Policy
+	15, // 10: v1.ImportPolicyResponse.errors:type_name -> v1.ImportPolicyError
+	16, // 11: v1.ImportPoliciesResponse.responses:type_name -> v1.ImportPolicyResponse
+	24, // 12: v1.PolicyFromSearchResponse.policy:type_name -> storage.Policy
+	22, // 13: v1.GetPolicyMitreVectorsRequest.options:type_name -> v1.GetPolicyMitreVectorsRequest.Options
+	24, // 14: v1.GetPolicyMitreVectorsResponse.policy:type_name -> storage.Policy
+	26, // 15: v1.GetPolicyMitreVectorsResponse.vectors:type_name -> storage.MitreAttackVector
+	27, // 16: v1.PolicyService.GetPolicy:input_type -> v1.ResourceByID
+	19, // 17: v1.PolicyService.GetPolicyMitreVectors:input_type -> v1.GetPolicyMitreVectorsRequest
+	28, // 18: v1.PolicyService.ListPolicies:input_type -> v1.RawQuery
+	6,  // 19: v1.PolicyService.PostPolicy:input_type -> v1.PostPolicyRequest
+	24, // 20: v1.PolicyService.PutPolicy:input_type -> storage.Policy
+	7,  // 21: v1.PolicyService.PatchPolicy:input_type -> v1.PatchPolicyRequest
+	27, // 22: v1.PolicyService.DeletePolicy:input_type -> v1.ResourceByID
+	4,  // 23: v1.PolicyService.EnableDisablePolicyNotification:input_type -> v1.EnableDisablePolicyNotificationRequest
+	29, // 24: v1.PolicyService.ReassessPolicies:input_type -> v1.Empty
+	24, // 25: v1.PolicyService.DryRunPolicy:input_type -> storage.Policy
+	24, // 26: v1.PolicyService.SubmitDryRunPolicyJob:input_type -> storage.Policy
+	1,  // 27: v1.PolicyService.QueryDryRunJobStatus:input_type -> v1.JobId
+	1,  // 28: v1.PolicyService.CancelDryRunJob:input_type -> v1.JobId
+	29, // 29: v1.PolicyService.GetPolicyCategories:input_type -> v1.Empty
+	8,  // 30: v1.PolicyService.ExportPolicies:input_type -> v1.ExportPoliciesRequest
+	12, // 31: v1.PolicyService.PolicyFromSearch:input_type -> v1.PolicyFromSearchRequest
+	14, // 32: v1.PolicyService.ImportPolicies:input_type -> v1.ImportPoliciesRequest
+	24, // 33: v1.PolicyService.GetPolicy:output_type -> storage.Policy
+	20, // 34: v1.PolicyService.GetPolicyMitreVectors:output_type -> v1.GetPolicyMitreVectorsResponse
+	5,  // 35: v1.PolicyService.ListPolicies:output_type -> v1.ListPoliciesResponse
+	24, // 36: v1.PolicyService.PostPolicy:output_type -> storage.Policy
+	29, // 37: v1.PolicyService.PutPolicy:output_type -> v1.Empty
+	29, // 38: v1.PolicyService.PatchPolicy:output_type -> v1.Empty
+	29, // 39: v1.PolicyService.DeletePolicy:output_type -> v1.Empty
+	29, // 40: v1.PolicyService.EnableDisablePolicyNotification:output_type -> v1.Empty
+	29, // 41: v1.PolicyService.ReassessPolicies:output_type -> v1.Empty
+	0,  // 42: v1.PolicyService.DryRunPolicy:output_type -> v1.DryRunResponse
+	1,  // 43: v1.PolicyService.SubmitDryRunPolicyJob:output_type -> v1.JobId
+	2,  // 44: v1.PolicyService.QueryDryRunJobStatus:output_type -> v1.DryRunJobStatusResponse
+	29, // 45: v1.PolicyService.CancelDryRunJob:output_type -> v1.Empty
+	3,  // 46: v1.PolicyService.GetPolicyCategories:output_type -> v1.PolicyCategoriesResponse
+	30, // 47: v1.PolicyService.ExportPolicies:output_type -> storage.ExportPoliciesResponse
+	18, // 48: v1.PolicyService.PolicyFromSearch:output_type -> v1.PolicyFromSearchResponse
+	17, // 49: v1.PolicyService.ImportPolicies:output_type -> v1.ImportPoliciesResponse
+	33, // [33:50] is the sub-list for method output_type
+	16, // [16:33] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_policy_service_proto_init() }

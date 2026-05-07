@@ -136,7 +136,8 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 
 	return &kubeEventMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:      sectionsAndEvals,
+			filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(KubeEventKind),
 		},
 		kubeEventOnlyEvaluators: kubeEventOnlyEvaluators,
 	}, nil
@@ -150,7 +151,8 @@ func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (Au
 	}
 	return &auditLogEventMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:      sectionsAndEvals,
+			filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(AuditLogKind),
 		},
 	}, nil
 }
@@ -196,7 +198,8 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 
 	return &processMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:      sectionsAndEvals,
+			filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(ProcessKind),
 		},
 		processOnlyEvaluators: processOnlyEvaluators,
 	}, nil
@@ -236,7 +239,8 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 	// since it implements another check func MatchDeploymentWithNetworkFlowInfo
 	return &networkFlowMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:      sectionsAndEvals,
+			filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(NetworkFlowKind),
 		},
 		networkFlowOnlyEvaluators: networkFlowOnlyEvaluators,
 	}, nil
@@ -274,7 +278,8 @@ func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...Validate
 
 	return &fileAccessMatcherImpl{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:      sectionsAndEvals,
+			filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(FileAccessKind),
 		},
 		fileAccessOnlyEvaluators: fileAccessOnlyEvaluators,
 	}, nil
@@ -289,7 +294,8 @@ func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (Deplo
 	}
 
 	return &matcherImpl{
-		evaluators: sectionsAndEvals,
+		evaluators:      sectionsAndEvals,
+		filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(DeploymentKind),
 	}, nil
 }
 
@@ -301,7 +307,8 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 		return nil, err
 	}
 	return &matcherImpl{
-		evaluators: sectionsAndEvals,
+		evaluators:      sectionsAndEvals,
+		filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(ImageKind),
 	}, nil
 }
 
@@ -314,7 +321,8 @@ func BuildNodeEventMatcher(p *storage.Policy, options ...ValidateOption) (NodeEv
 	}
 	return &nodeEventMatcher{
 		matcherImpl: matcherImpl{
-			evaluators: sectionsAndEvals,
+			evaluators:      sectionsAndEvals,
+			filterFactories: CompileEvaluationFilter(p.GetEvaluationFilter()).ForKind(NodeKind),
 		},
 	}, nil
 }

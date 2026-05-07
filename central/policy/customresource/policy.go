@@ -131,6 +131,7 @@ type Policy struct {
 	CriteriaLocked     bool                                 `yaml:"criteriaLocked"`
 	MitreVectorsLocked bool                                 `yaml:"mitreVectorsLocked"`
 	IsDefault          bool                                 `yaml:"isDefault"`
+	EvaluationFilter   *storage.EvaluationFilter            `yaml:"evaluationFilter,omitempty"`
 }
 
 // convertPolicy Converts storage.Policy to *Policy
@@ -158,6 +159,7 @@ func convertPolicy(p *storage.Policy) *Policy {
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
+		EvaluationFilter:   p.EvaluationFilter,
 	}
 }
 
