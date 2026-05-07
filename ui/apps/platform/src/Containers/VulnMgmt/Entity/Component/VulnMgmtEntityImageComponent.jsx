@@ -6,6 +6,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
@@ -52,13 +53,14 @@ const VulnMgmtEntityImageComponent = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query getImageComponent${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getImageComponent${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
                 result: imageComponent(id: $id) {
                     id
                     ${defaultCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
                     ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
+                    unusedVarSink(query: $deploymentQuery)
                 }
             }
             ${fragment}
@@ -75,6 +77,7 @@ const VulnMgmtEntityImageComponent = ({
                 entityContext,
                 isDeploymentSoftDeletionEnabled
             ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(fullEntityContext),

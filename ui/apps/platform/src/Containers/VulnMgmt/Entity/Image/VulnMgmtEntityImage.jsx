@@ -7,6 +7,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import {
     VULN_CVE_ONLY_FRAGMENT,
@@ -34,11 +35,11 @@ const VulnMgmtEntityImage = ({
     const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
-        query getImage($id: ID!, $query: String, $scopeQuery: String) {
+        query getImage($id: ID!, $query: String, $deploymentQuery: String, $scopeQuery: String) {
             result: image(id: $id) {
                 id
                 lastUpdated
-                ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount(query: $query)'}
+                ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount(query: $deploymentQuery)'}
                 metadata {
                     layerShas
                     v1 {
@@ -95,13 +96,14 @@ const VulnMgmtEntityImage = ({
                 ? activeStatusFragment
                 : fragment;
         return gql`
-        query getImage${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+        query getImage${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
             result: image(id: $id) {
                 id
                 ${defaultCountKeyMap[entityListType]}(query: $query)
                 ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
+                unusedVarSink(query: $deploymentQuery)
             }
         }
         ${fragmentToUse}
@@ -118,6 +120,7 @@ const VulnMgmtEntityImage = ({
                 undefined,
                 isDeploymentSoftDeletionEnabled
             ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(fullEntityContext),
